@@ -81,7 +81,7 @@ When a flag is set by an option, the value of the flag is the number of times
 that the option was set. For example, ``-b`` sets :c:data:`Py_BytesWarningFlag`
 to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
-.. c:var:: Py_BytesWarningFlag
+.. c:var:: int Py_BytesWarningFlag
 
    Issue a warning when comparing :class:`bytes` or :class:`bytearray` with
    :class:`str` or :class:`bytes` with :class:`int`.  Issue an error if greater
@@ -89,7 +89,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    Set by the :option:`-b` option.
 
-.. c:var:: Py_DebugFlag
+.. c:var:: int Py_DebugFlag
 
    Turn on parser debugging output (for expert only, depending on compilation
    options).
@@ -97,7 +97,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-d` option and the :envvar:`PYTHONDEBUG` environment
    variable.
 
-.. c:var:: Py_DontWriteBytecodeFlag
+.. c:var:: int Py_DontWriteBytecodeFlag
 
    If set to non-zero, Python won't try to write ``.pyc`` files on the
    import of source modules.
@@ -105,14 +105,14 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-B` option and the :envvar:`PYTHONDONTWRITEBYTECODE`
    environment variable.
 
-.. c:var:: Py_FrozenFlag
+.. c:var:: int Py_FrozenFlag
 
    Suppress error messages when calculating the module search path in
    :c:func:`Py_GetPath`.
 
    Private flag used by ``_freeze_importlib`` and ``frozenmain`` programs.
 
-.. c:var:: Py_HashRandomizationFlag
+.. c:var:: int Py_HashRandomizationFlag
 
    Set to ``1`` if the :envvar:`PYTHONHASHSEED` environment variable is set to
    a non-empty string.
@@ -120,14 +120,14 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    If the flag is non-zero, read the :envvar:`PYTHONHASHSEED` environment
    variable to initialize the secret hash seed.
 
-.. c:var:: Py_IgnoreEnvironmentFlag
+.. c:var:: int Py_IgnoreEnvironmentFlag
 
    Ignore all :envvar:`PYTHON*` environment variables, e.g.
    :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that might be set.
 
    Set by the :option:`-E` and :option:`-I` options.
 
-.. c:var:: Py_InspectFlag
+.. c:var:: int Py_InspectFlag
 
    When a script is passed as first argument or the :option:`-c` option is used,
    enter interactive mode after executing the script or the command, even when
@@ -136,11 +136,11 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-i` option and the :envvar:`PYTHONINSPECT` environment
    variable.
 
-.. c:var:: Py_InteractiveFlag
+.. c:var:: int Py_InteractiveFlag
 
    Set by the :option:`-i` option.
 
-.. c:var:: Py_IsolatedFlag
+.. c:var:: int Py_IsolatedFlag
 
    Run Python in isolated mode. In isolated mode :data:`sys.path` contains
    neither the script's directory nor the user's site-packages directory.
@@ -149,7 +149,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. versionadded:: 3.4
 
-.. c:var:: Py_LegacyWindowsFSEncodingFlag
+.. c:var:: int Py_LegacyWindowsFSEncodingFlag
 
    If the flag is non-zero, use the ``mbcs`` encoding instead of the UTF-8
    encoding for the filesystem encoding.
@@ -161,7 +161,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. availability:: Windows.
 
-.. c:var:: Py_LegacyWindowsStdioFlag
+.. c:var:: int Py_LegacyWindowsStdioFlag
 
    If the flag is non-zero, use :class:`io.FileIO` instead of
    :class:`WindowsConsoleIO` for :mod:`sys` standard streams.
@@ -173,7 +173,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. availability:: Windows.
 
-.. c:var:: Py_NoSiteFlag
+.. c:var:: int Py_NoSiteFlag
 
    Disable the import of the module :mod:`site` and the site-dependent
    manipulations of :data:`sys.path` that it entails.  Also disable these
@@ -182,7 +182,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    Set by the :option:`-S` option.
 
-.. c:var:: Py_NoUserSiteDirectory
+.. c:var:: int Py_NoUserSiteDirectory
 
    Don't add the :data:`user site-packages directory <site.USER_SITE>` to
    :data:`sys.path`.
@@ -190,12 +190,12 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-s` and :option:`-I` options, and the
    :envvar:`PYTHONNOUSERSITE` environment variable.
 
-.. c:var:: Py_OptimizeFlag
+.. c:var:: int Py_OptimizeFlag
 
    Set by the :option:`-O` option and the :envvar:`PYTHONOPTIMIZE` environment
    variable.
 
-.. c:var:: Py_QuietFlag
+.. c:var:: int Py_QuietFlag
 
    Don't display the copyright and version messages even in interactive mode.
 
@@ -203,14 +203,14 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. versionadded:: 3.2
 
-.. c:var:: Py_UnbufferedStdioFlag
+.. c:var:: int Py_UnbufferedStdioFlag
 
    Force the stdout and stderr streams to be unbuffered.
 
    Set by the :option:`-u` option and the :envvar:`PYTHONUNBUFFERED`
    environment variable.
 
-.. c:var:: Py_VerboseFlag
+.. c:var:: int Py_VerboseFlag
 
    Print a message each time a module is initialized, showing the place
    (filename or built-in module) from which it is loaded.  If greater or equal
@@ -830,7 +830,7 @@ code, or when embedding the Python interpreter:
 .. c:type:: PyThreadState
 
    This data structure represents the state of a single thread.  The only public
-   data member is :c:type:`PyInterpreterState \*`:attr:`interp`, which points to
+   data member is :attr:`interp` (:c:type:`PyInterpreterState *`), which points to
    this thread's interpreter state.
 
 
@@ -1619,7 +1619,7 @@ The Python interpreter provides low-level support for thread-local storage
 (TLS) which wraps the underlying native TLS implementation to support the
 Python-level thread local storage API (:class:`threading.local`).  The
 CPython C level APIs are similar to those offered by pthreads and Windows:
-use a thread key and functions to associate a :c:type:`void\*` value per
+use a thread key and functions to associate a :c:type:`void*` value per
 thread.
 
 The GIL does *not* need to be held when calling these functions; they supply
@@ -1630,8 +1630,8 @@ you need to include :file:`pythread.h` to use thread-local storage.
 
 .. note::
    None of these API functions handle memory management on behalf of the
-   :c:type:`void\*` values.  You need to allocate and deallocate them yourself.
-   If the :c:type:`void\*` values happen to be :c:type:`PyObject\*`, these
+   :c:type:`void*` values.  You need to allocate and deallocate them yourself.
+   If the :c:type:`void*` values happen to be :c:type:`PyObject*`, these
    functions don't do refcount operations on them either.
 
 .. _thread-specific-storage-api:
@@ -1727,14 +1727,14 @@ undefined if the given :c:type:`Py_tss_t` has not been initialized by
 
 .. c:function:: int PyThread_tss_set(Py_tss_t *key, void *value)
 
-   Return a zero value to indicate successfully associating a :c:type:`void\*`
+   Return a zero value to indicate successfully associating a :c:type:`void*`
    value with a TSS key in the current thread.  Each thread has a distinct
-   mapping of the key to a :c:type:`void\*` value.
+   mapping of the key to a :c:type:`void*` value.
 
 
 .. c:function:: void* PyThread_tss_get(Py_tss_t *key)
 
-   Return the :c:type:`void\*` value associated with a TSS key in the current
+   Return the :c:type:`void*` value associated with a TSS key in the current
    thread.  This returns ``NULL`` if no value is associated with the key in the
    current thread.
 

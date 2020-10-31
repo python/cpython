@@ -2,6 +2,73 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(complex_conjugate__doc__,
+"conjugate($self, /)\n"
+"--\n"
+"\n"
+"Return the complex conjugate of its argument. (3-4j).conjugate() == 3+4j.");
+
+#define COMPLEX_CONJUGATE_METHODDEF    \
+    {"conjugate", (PyCFunction)complex_conjugate, METH_NOARGS, complex_conjugate__doc__},
+
+static PyObject *
+complex_conjugate_impl(PyComplexObject *self);
+
+static PyObject *
+complex_conjugate(PyComplexObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return complex_conjugate_impl(self);
+}
+
+PyDoc_STRVAR(complex___getnewargs____doc__,
+"__getnewargs__($self, /)\n"
+"--\n"
+"\n");
+
+#define COMPLEX___GETNEWARGS___METHODDEF    \
+    {"__getnewargs__", (PyCFunction)complex___getnewargs__, METH_NOARGS, complex___getnewargs____doc__},
+
+static PyObject *
+complex___getnewargs___impl(PyComplexObject *self);
+
+static PyObject *
+complex___getnewargs__(PyComplexObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return complex___getnewargs___impl(self);
+}
+
+PyDoc_STRVAR(complex___format____doc__,
+"__format__($self, format_spec, /)\n"
+"--\n"
+"\n"
+"Convert to a string according to format_spec.");
+
+#define COMPLEX___FORMAT___METHODDEF    \
+    {"__format__", (PyCFunction)complex___format__, METH_O, complex___format____doc__},
+
+static PyObject *
+complex___format___impl(PyComplexObject *self, PyObject *format_spec);
+
+static PyObject *
+complex___format__(PyComplexObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *format_spec;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("__format__", "argument", "str", arg);
+        goto exit;
+    }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    format_spec = arg;
+    return_value = complex___format___impl(self, format_spec);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(complex_new__doc__,
 "complex(real=0, imag=0)\n"
 "--\n"
@@ -46,4 +113,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a0fe23fdbdc9b06b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=193a37aebaaa5f89 input=a9049054013a1b77]*/

@@ -7,9 +7,10 @@ executing have not been removed.
 import unittest
 import test.support
 from test import support
+from test.support import os_helper
 from test.support import socket_helper
-from test.support import (captured_stderr, TESTFN, EnvironmentVarGuard,
-                          change_cwd)
+from test.support import captured_stderr
+from test.support.os_helper import TESTFN, EnvironmentVarGuard, change_cwd
 import builtins
 import encodings
 import glob
@@ -159,6 +160,12 @@ class HelperFunctionsTests(unittest.TestCase):
         # XXX: ditto previous XXX comment.
         self.assertRegex(err_out.getvalue(), 'Traceback')
         self.assertRegex(err_out.getvalue(), 'ModuleNotFoundError')
+
+    def test_addpackage_empty_lines(self):
+        # Issue 33689
+        pth_dir, pth_fn = self.make_pth("\n\n  \n\n")
+        known_paths = site.addpackage(pth_dir, pth_fn, set())
+        self.assertEqual(known_paths, set())
 
     def test_addpackage_import_bad_pth_file(self):
         # Issue 5258
@@ -509,8 +516,6 @@ class ImportSideEffectTests(unittest.TestCase):
 
     @test.support.requires_resource('network')
     @test.support.system_must_validate_cert
-    @unittest.skipUnless(sys.version_info[3] == 'final',
-                         'only for released versions')
     @unittest.skipUnless(hasattr(urllib.request, "HTTPSHandler"),
                          'need SSL support to download license')
     def test_license_exists_at_url(self):
@@ -518,6 +523,8 @@ class ImportSideEffectTests(unittest.TestCase):
         # string displayed by license in the absence of a LICENSE file.
         url = license._Printer__data.split()[1]
         req = urllib.request.Request(url, method='HEAD')
+        # Reset global urllib.request._opener
+        self.addCleanup(urllib.request.urlcleanup)
         try:
             with socket_helper.transient_internet(url):
                 with urllib.request.urlopen(req) as data:
@@ -594,14 +601,13 @@ class StartupImportTests(unittest.TestCase):
             'import site, sys; site.enablerlcompleter(); sys.exit(hasattr(sys, "__interactivehook__"))']).wait()
         self.assertTrue(r, "'__interactivehook__' not added by enablerlcompleter()")
 
-
 @unittest.skipUnless(sys.platform == 'win32', "only supported on Windows")
 class _pthFileTests(unittest.TestCase):
 
     def _create_underpth_exe(self, lines, exe_pth=True):
         import _winapi
         temp_dir = tempfile.mkdtemp()
-        self.addCleanup(test.support.rmtree, temp_dir)
+        self.addCleanup(os_helper.rmtree, temp_dir)
         exe_file = os.path.join(temp_dir, os.path.split(sys.executable)[1])
         dll_src_file = _winapi.GetModuleFileName(sys.dllhandle)
         dll_file = os.path.join(temp_dir, os.path.split(dll_src_file)[1])

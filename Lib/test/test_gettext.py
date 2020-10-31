@@ -820,8 +820,8 @@ class GettextCacheTestCase(GettextBaseTest):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {'c2py', 'ENOENT'}
-        support.check__all__(self, gettext, blacklist=blacklist)
+        support.check__all__(self, gettext,
+                             not_exported={'c2py', 'ENOENT'})
 
 
 if __name__ == '__main__':

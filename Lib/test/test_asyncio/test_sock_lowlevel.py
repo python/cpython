@@ -415,6 +415,25 @@ class BaseSockTestsMixin:
         conn.close()
         listener.close()
 
+    def test_cancel_sock_accept(self):
+        listener = socket.socket()
+        listener.setblocking(False)
+        listener.bind(('127.0.0.1', 0))
+        listener.listen(1)
+        sockaddr = listener.getsockname()
+        f = asyncio.wait_for(self.loop.sock_accept(listener), 0.1)
+        with self.assertRaises(asyncio.TimeoutError):
+            self.loop.run_until_complete(f)
+
+        listener.close()
+        client = socket.socket()
+        client.setblocking(False)
+        f = self.loop.sock_connect(client, sockaddr)
+        with self.assertRaises(ConnectionRefusedError):
+            self.loop.run_until_complete(f)
+
+        client.close()
+
     def test_create_connection_sock(self):
         with test_utils.run_test_server() as httpd:
             sock = None

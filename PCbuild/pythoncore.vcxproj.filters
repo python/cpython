@@ -573,6 +573,9 @@
     <ClInclude Include="..\Include\internal\pycore_tuple.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_unionobject.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="$(zlibDir)\crc32.h">
       <Filter>Modules\zlib</Filter>
     </ClInclude>
@@ -1028,9 +1031,6 @@
     <ClCompile Include="..\Python\pathconfig.c">
       <Filter>Python</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\peephole.c">
-      <Filter>Python</Filter>
-    </ClCompile>
     <ClCompile Include="..\Python\preconfig.c">
       <Filter>Python</Filter>
     </ClCompile>
@@ -1176,6 +1176,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\genericaliasobject.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\unionobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
   </ItemGroup>

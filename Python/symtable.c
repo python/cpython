@@ -202,8 +202,8 @@ static int symtable_visit_excepthandler(struct symtable *st, excepthandler_ty);
 static int symtable_visit_alias(struct symtable *st, alias_ty);
 static int symtable_visit_comprehension(struct symtable *st, comprehension_ty);
 static int symtable_visit_keyword(struct symtable *st, keyword_ty);
-static int symtable_visit_params(struct symtable *st, asdl_seq *args);
-static int symtable_visit_argannotations(struct symtable *st, asdl_seq *args);
+static int symtable_visit_params(struct symtable *st, asdl_arg_seq *args);
+static int symtable_visit_argannotations(struct symtable *st, asdl_arg_seq *args);
 static int symtable_implicit_arg(struct symtable *st, int pos);
 static int symtable_visit_annotations(struct symtable *st, arguments_ty, expr_ty);
 static int symtable_visit_withitem(struct symtable *st, withitem_ty item);
@@ -261,7 +261,7 @@ struct symtable *
 PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
 {
     struct symtable *st = symtable_new();
-    asdl_seq *seq;
+    asdl_stmt_seq *seq;
     int i;
     PyThreadState *tstate;
     int recursion_limit = Py_GetRecursionLimit();
@@ -1116,7 +1116,7 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag) {
 
 #define VISIT_SEQ(ST, TYPE, SEQ) { \
     int i; \
-    asdl_seq *seq = (SEQ); /* avoid variable capture */ \
+    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
     for (i = 0; i < asdl_seq_LEN(seq); i++) { \
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
         if (!symtable_visit_ ## TYPE((ST), elt)) \
@@ -1126,7 +1126,7 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag) {
 
 #define VISIT_SEQ_TAIL(ST, TYPE, SEQ, START) { \
     int i; \
-    asdl_seq *seq = (SEQ); /* avoid variable capture */ \
+    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
     for (i = (START); i < asdl_seq_LEN(seq); i++) { \
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
         if (!symtable_visit_ ## TYPE((ST), elt)) \
@@ -1136,7 +1136,7 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag) {
 
 #define VISIT_SEQ_WITH_NULL(ST, TYPE, SEQ) {     \
     int i = 0; \
-    asdl_seq *seq = (SEQ); /* avoid variable capture */ \
+    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
     for (i = 0; i < asdl_seq_LEN(seq); i++) { \
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
         if (!elt) continue; /* can be NULL */ \
@@ -1318,7 +1318,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         break;
     case Global_kind: {
         int i;
-        asdl_seq *seq = s->v.Global.names;
+        asdl_identifier_seq *seq = s->v.Global.names;
         for (i = 0; i < asdl_seq_LEN(seq); i++) {
             identifier name = (identifier)asdl_seq_GET(seq, i);
             long cur = symtable_lookup(st, name);
@@ -1351,7 +1351,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
     }
     case Nonlocal_kind: {
         int i;
-        asdl_seq *seq = s->v.Nonlocal.names;
+        asdl_identifier_seq *seq = s->v.Nonlocal.names;
         for (i = 0; i < asdl_seq_LEN(seq); i++) {
             identifier name = (identifier)asdl_seq_GET(seq, i);
             long cur = symtable_lookup(st, name);
@@ -1683,7 +1683,7 @@ symtable_implicit_arg(struct symtable *st, int pos)
 }
 
 static int
-symtable_visit_params(struct symtable *st, asdl_seq *args)
+symtable_visit_params(struct symtable *st, asdl_arg_seq *args)
 {
     int i;
 
@@ -1700,7 +1700,7 @@ symtable_visit_params(struct symtable *st, asdl_seq *args)
 }
 
 static int
-symtable_visit_argannotations(struct symtable *st, asdl_seq *args)
+symtable_visit_argannotations(struct symtable *st, asdl_arg_seq *args)
 {
     int i;
 
@@ -1850,7 +1850,7 @@ symtable_visit_keyword(struct symtable *st, keyword_ty k)
 
 static int
 symtable_handle_comprehension(struct symtable *st, expr_ty e,
-                              identifier scope_name, asdl_seq *generators,
+                              identifier scope_name, asdl_comprehension_seq *generators,
                               expr_ty elt, expr_ty value)
 {
     int is_generator = (e->kind == GeneratorExp_kind);

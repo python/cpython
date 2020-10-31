@@ -1,0 +1,1 @@
+Fix possible ref leaks in :mod:`sqlite3` module init.

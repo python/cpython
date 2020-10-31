@@ -2296,8 +2296,8 @@ Gregory K. Johnson
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {"linesep", "fcntl"}
-        support.check__all__(self, mailbox, blacklist=blacklist)
+        support.check__all__(self, mailbox,
+                             not_exported={"linesep", "fcntl"})
 
 
 def test_main():

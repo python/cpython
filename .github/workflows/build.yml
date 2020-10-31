@@ -32,7 +32,20 @@ jobs:
             echo '::set-output name=run_tests::true'
           else
             git fetch origin $GITHUB_BASE_REF --depth=1
-            git diff --name-only origin/$GITHUB_BASE_REF... | grep -qvE '(\.rst$|^Doc|^Misc)' && echo '::set-output name=run_tests::true' || true
+            # git diff "origin/$GITHUB_BASE_REF..." (3 dots) may be more
+            # reliable than git diff "origin/$GITHUB_BASE_REF.." (2 dots),
+            # but it requires to download more commits (this job uses
+            # "git fetch --depth=1").
+            #
+            # git diff "origin/$GITHUB_BASE_REF..." (3 dots) works with Git
+            # 2.26, but Git 2.28 is stricter and fails with "no merge base".
+            #
+            # git diff "origin/$GITHUB_BASE_REF.." (2 dots) should be enough on
+            # GitHub, since GitHub starts by merging origin/$GITHUB_BASE_REF
+            # into the PR branch anyway.
+            #
+            # https://github.com/python/core-workflow/issues/373
+            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc)' && echo '::set-output name=run_tests::true' || true
           fi
   build_win32:
     name: 'Windows (x86)'

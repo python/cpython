@@ -77,7 +77,7 @@ class saved_test_environment:
         return list(urllib.request._url_tempfiles)
     def restore_urllib_requests__url_tempfiles(self, tempfiles):
         for filename in tempfiles:
-            support.unlink(filename)
+            os_helper.unlink(filename)
 
     def get_urllib_requests__opener(self):
         return urllib.request._opener
@@ -245,9 +245,9 @@ class saved_test_environment:
         fn = os_helper.TESTFN
         if fn not in saved_value and (fn + '/') not in saved_value:
             if os.path.isfile(fn):
-                support.unlink(fn)
+                os_helper.unlink(fn)
             elif os.path.isdir(fn):
-                support.rmtree(fn)
+                os_helper.rmtree(fn)
 
     _lc = [getattr(locale, lc) for lc in dir(locale)
            if lc.startswith('LC_')]

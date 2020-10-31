@@ -5,9 +5,11 @@ import time
 import unittest
 
 from test import support
+from test.support import import_helper
+
 
 support.requires('audio')
-winsound = support.import_module('winsound')
+winsound = import_helper.import_module('winsound')
 
 
 # Unless we actually have an ear in the room, we have no idea whether a sound

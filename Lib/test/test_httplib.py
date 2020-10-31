@@ -1,5 +1,5 @@
 import errno
-from http import client
+from http import client, HTTPStatus
 import io
 import itertools
 import os
@@ -519,6 +519,10 @@ class TransferEncodingTest(TestCase):
 
 
 class BasicTest(TestCase):
+    def test_dir_with_added_behavior_on_status(self):
+        # see issue40084
+        self.assertTrue({'description', 'name', 'phrase', 'value'} <= set(dir(HTTPStatus(404))))
+
     def test_status_lines(self):
         # Test HTTP status lines
 
@@ -1434,9 +1438,9 @@ class OfflineTest(TestCase):
         expected = {"responses"}  # White-list documented dict() object
         # HTTPMessage, parse_headers(), and the HTTP status code constants are
         # intentionally omitted for simplicity
-        blacklist = {"HTTPMessage", "parse_headers"}
+        denylist = {"HTTPMessage", "parse_headers"}
         for name in dir(client):
-            if name.startswith("_") or name in blacklist:
+            if name.startswith("_") or name in denylist:
                 continue
             module_object = getattr(client, name)
             if getattr(module_object, "__module__", None) == "http.client":

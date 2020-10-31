@@ -30,6 +30,7 @@ import unittest
 import uuid
 import warnings
 from test import support
+from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
@@ -2674,8 +2675,8 @@ class Win32JunctionTests(unittest.TestCase):
 @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
 class Win32NtTests(unittest.TestCase):
     def test_getfinalpathname_handles(self):
-        nt = support.import_module('nt')
-        ctypes = support.import_module('ctypes')
+        nt = import_helper.import_module('nt')
+        ctypes = import_helper.import_module('ctypes')
         import ctypes.wintypes
 
         kernel = ctypes.WinDLL('Kernel32.dll', use_last_error=True)

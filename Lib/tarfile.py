@@ -420,6 +420,8 @@ class _Stream:
         self.__write(b"\037\213\010\010" + timestamp + b"\002\377")
         if self.name.endswith(".gz"):
             self.name = self.name[:-3]
+        # Honor "directory components removed" from RFC1952
+        self.name = os.path.basename(self.name)
         # RFC1952 says we must use ISO-8859-1 for the FNAME field.
         self.__write(self.name.encode("iso-8859-1", "replace") + NUL)
 
@@ -2091,9 +2093,10 @@ class TarFile(object):
 
     def extractfile(self, member):
         """Extract a member from the archive as a file object. `member' may be
-           a filename or a TarInfo object. If `member' is a regular file or a
-           link, an io.BufferedReader object is returned. Otherwise, None is
-           returned.
+           a filename or a TarInfo object. If `member' is a regular file or
+           a link, an io.BufferedReader object is returned. For all other
+           existing members, None is returned. If `member' does not appear
+           in the archive, KeyError is raised.
         """
         self._check("r")
 

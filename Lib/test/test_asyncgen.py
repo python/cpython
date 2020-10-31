@@ -2,7 +2,7 @@ import inspect
 import types
 import unittest
 
-from test.support import import_module
+from test.support.import_helper import import_module
 asyncio = import_module("asyncio")
 
 

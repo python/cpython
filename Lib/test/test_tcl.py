@@ -6,6 +6,7 @@ import os
 import warnings
 from test import support
 from test.support import import_helper
+from test.support import os_helper
 
 # Skip this test if the _tkinter module wasn't built.
 _tkinter = import_helper.import_module('_tkinter')
@@ -192,26 +193,26 @@ class TclTest(unittest.TestCase):
 
     def testEvalFile(self):
         tcl = self.interp
-        with open(support.TESTFN, 'w') as f:
-            self.addCleanup(support.unlink, support.TESTFN)
+        with open(os_helper.TESTFN, 'w') as f:
+            self.addCleanup(os_helper.unlink, os_helper.TESTFN)
             f.write("""set a 1
             set b 2
             set c [ expr $a + $b ]
             """)
-        tcl.evalfile(support.TESTFN)
+        tcl.evalfile(os_helper.TESTFN)
         self.assertEqual(tcl.eval('set a'),'1')
         self.assertEqual(tcl.eval('set b'),'2')
         self.assertEqual(tcl.eval('set c'),'3')
 
     def test_evalfile_null_in_result(self):
         tcl = self.interp
-        with open(support.TESTFN, 'w') as f:
-            self.addCleanup(support.unlink, support.TESTFN)
+        with open(os_helper.TESTFN, 'w') as f:
+            self.addCleanup(os_helper.unlink, os_helper.TESTFN)
             f.write("""
             set a "a\0b"
             set b "a\\0b"
             """)
-        tcl.evalfile(support.TESTFN)
+        tcl.evalfile(os_helper.TESTFN)
         self.assertEqual(tcl.eval('set a'), 'a\x00b')
         self.assertEqual(tcl.eval('set b'), 'a\x00b')
 
@@ -243,7 +244,7 @@ class TclTest(unittest.TestCase):
         if not os.path.exists(unc_name):
             raise unittest.SkipTest('Cannot connect to UNC Path')
 
-        with support.EnvironmentVarGuard() as env:
+        with os_helper.EnvironmentVarGuard() as env:
             env.unset("TCL_LIBRARY")
             stdout = subprocess.check_output(
                     [unc_name, '-c', 'import tkinter; print(tkinter)'])
