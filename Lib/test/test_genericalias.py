@@ -320,7 +320,11 @@ class BaseTest(unittest.TestCase):
                     with self.assertRaises(TypeError):
                         eval(bad)
 
-
+        # bpo-42195
+        with self.subTest("Testing collections.abc.Callable's consistency "
+                          "with typing.Callable"):
+            self.assertEquals(typing.Callable[[int, str], dict].__args__,
+                              Callable[[int, str], dict].__args__)
 
 if __name__ == "__main__":
     unittest.main()
