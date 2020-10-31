@@ -1,0 +1,1 @@
+Modernized integer test/conversion in randrange() to use operator.index().
