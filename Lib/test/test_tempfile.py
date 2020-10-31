@@ -153,8 +153,8 @@ class TestRandomNameSequence(BaseTestCase):
         self.r = tempfile._RandomNameSequence()
         super().setUp()
 
-    def test_get_eight_char_str(self):
-        # _RandomNameSequence returns a eight-character string
+    def test_get_six_char_str(self):
+        # _RandomNameSequence returns a six-character string
         s = next(self.r)
         self.nameCheck(s, '', '', '')
 
