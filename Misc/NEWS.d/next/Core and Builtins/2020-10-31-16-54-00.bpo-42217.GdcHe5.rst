@@ -1,0 +1,1 @@
+Make the compiler merges co_code and co_lnotab in a module.
