@@ -126,15 +126,30 @@ Functions and classes provided:
 
    .. versionadded:: 3.7
 
-   :func:`asynccontextmanager` uses :class:`AsyncContextDecorator` so the context managers
-   it creates can be used as decorators as well as in :keyword:`async with` statements.
+   Context managers defined with :func:`asynccontextmanager` can be used
+   either as decorators or with :keyword:`async with` statements::
+   
+     import time
+   
+     async def timeit():         
+         now = time.monotonic()
+         try:
+             yield
+         finally:
+             print(f'it took {time.monotonic() - now}s to run')
+             
+      @timeit()
+      async def main():
+          # ... async code ...
+
    When used as a decorator, a new generator instance is implicitly created on
-   each function call (this allows the otherwise "one-shot" context managers
+   each function call. This allows the otherwise "one-shot" context managers
    created by :func:`asynccontextmanager` to meet the requirement that context
-   managers support multiple invocations in order to be used as decorators).
+   managers support multiple invocations in order to be used as decorators.
 
   .. versionchanged:: 3.10
-  Use of :class:`AsyncContextDecorator`.
+     Async context managers created with :func:`asynccontextmanager` can
+     be used as decorators.
 
 
 .. function:: closing(thing)
