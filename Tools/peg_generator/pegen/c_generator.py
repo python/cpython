@@ -502,6 +502,9 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 )
                 self.print("p->mark = _mark;")
                 self.print(f"void *_raw = {node.name}_raw(p);")
+                self.print("if (p->error_indicator)")
+                with self.indent():
+                    self.print("return NULL;")
                 self.print("if (_raw == NULL || p->mark <= _resmark)")
                 with self.indent():
                     self.print("break;")
