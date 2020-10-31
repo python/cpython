@@ -3238,14 +3238,19 @@ dict_popitem_impl(PyDictObject *self)
     j = lookdict_index(self->ma_keys, ep->me_hash, i);
     assert(j >= 0);
     assert(dictkeys_get_index(self->ma_keys, j) == i);
-    dictkeys_set_index(self->ma_keys, j, DKIX_DUMMY);
+    // DKIX_DUMMY is used by DelItem to not break scanning.
+    // But we are removing the last item. It must be the last item of the chain.
+    // So we can use DKIX_EMPTY here.
+    dictkeys_set_index(self->ma_keys, j, DKIX_EMPTY);
 
+    // Move reference from dict to tuple.
     PyTuple_SET_ITEM(res, 0, ep->me_key);
     PyTuple_SET_ITEM(res, 1, ep->me_value);
     ep->me_key = NULL;
     ep->me_value = NULL;
-    /* We can't dk_usable++ since there is DKIX_DUMMY in indices */
+
     self->ma_keys->dk_nentries = i;
+    self->ma_keys->dk_usable++;
     self->ma_used--;
     self->ma_version_tag = DICT_NEXT_VERSION();
     ASSERT_CONSISTENT(self);
