@@ -51,6 +51,7 @@ from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
 from math import tau as TWOPI, floor as _floor, isfinite as _isfinite
 from os import urandom as _urandom
 from _collections_abc import Set as _Set, Sequence as _Sequence
+from operator import index as _index
 from itertools import accumulate as _accumulate, repeat as _repeat
 from bisect import bisect as _bisect
 import os as _os
@@ -297,8 +298,9 @@ class Random(_random.Random):
 
         # This code is a bit messy to make it fast for the
         # common case while still doing adequate error checking.
-        istart = int(start)
-        if istart != start:
+        try:
+            istart = _index(start)
+        except TypeError:
             raise ValueError("non-integer arg 1 for randrange()")
         if stop is None:
             if istart > 0:
@@ -306,8 +308,9 @@ class Random(_random.Random):
             raise ValueError("empty range for randrange()")
 
         # stop argument supplied.
-        istop = int(stop)
-        if istop != stop:
+        try:
+            istop = _index(stop)
+        except TypeError:
             raise ValueError("non-integer stop for randrange()")
         width = istop - istart
         if step == 1 and width > 0:
@@ -316,8 +319,9 @@ class Random(_random.Random):
             raise ValueError("empty range for randrange() (%d, %d, %d)" % (istart, istop, width))
 
         # Non-unit step argument supplied.
-        istep = int(step)
-        if istep != step:
+        try:
+            istep = _index(step)
+        except TypeError:
             raise ValueError("non-integer step for randrange()")
         if istep > 0:
             n = (width + istep - 1) // istep
