@@ -128,16 +128,16 @@ Functions and classes provided:
 
    Context managers defined with :func:`asynccontextmanager` can be used
    either as decorators or with :keyword:`async with` statements::
-   
+
      import time
-   
-     async def timeit():         
+
+     async def timeit():
          now = time.monotonic()
          try:
              yield
          finally:
              print(f'it took {time.monotonic() - now}s to run')
-             
+
       @timeit()
       async def main():
           # ... async code ...
@@ -377,11 +377,11 @@ Functions and classes provided:
 
 
 .. class:: AsyncContextManager
-    
+
    Similar as ContextManger only for async
 
    Example of ``ContextDecorator``::
-      
+
       from asyncio import run
       from contextlib import AsyncContextDecorator
 
