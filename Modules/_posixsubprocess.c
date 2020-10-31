@@ -99,9 +99,10 @@ _enable_gc(int need_to_reenable_gc, PyObject *gc_module)
         result = PyObject_CallMethodNoArgs(
             gc_module, _posixsubprocessstate_global->enable);
         if (result == NULL) {
-            /* We might have created a child process at this point,
-             * so we have no good way to handle a failure to reenable GC. */
-            PyErr_Clear();
+            /* We might have created a child process at this point, we
+             * we have no good way to handle a failure to reenable GC
+             * and return information about the child process. */
+            PyErr_Print();
         }
         Py_XDECREF(result);
         if (exctype != NULL) {
