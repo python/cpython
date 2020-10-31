@@ -5844,7 +5844,7 @@ compute_code_flags(struct compiler *c)
     return flags;
 }
 
-// Merge *tuple* with constant cache.
+// Merge *obj* with constant cache.
 // Unlike merge_consts_recursive(), this function doesn't work recursively.
 static int
 merge_const_one(struct compiler *c, PyObject **obj)
