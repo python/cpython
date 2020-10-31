@@ -8,9 +8,12 @@ Unit tests are in test_collections.
 
 from abc import ABCMeta, abstractmethod
 import sys
-import types
 
 GenericAlias = type(list[int])
+EllipsisType = type(...)
+def _f(): pass
+FunctionType = type(_f)
+
 
 __all__ = ["Awaitable", "Coroutine",
            "AsyncIterable", "AsyncIterator", "AsyncGenerator",
@@ -418,21 +421,22 @@ class _CallableGenericAlias(GenericAlias):
 
     See :issue:`42195`.
     """
+
     def __new__(cls, *args, **kwargs):
         if not isinstance(args, tuple) or len(args) != 2:
             raise TypeError("Callable must be used as "
                             "Callable[[arg, ...], result].")
         _typ, _args = args
-        if not isinstance(_args, (tuple, types.EllipsisType)) or len(_args) != 2:
+        if not isinstance(_args, (tuple, EllipsisType)) or len(_args) != 2:
             raise TypeError("Callable must be used as "
                             "Callable[[arg, ...], result].")
         t_args, t_result = _args
-        if not isinstance(t_args, (list, types.EllipsisType)):
+        if not isinstance(t_args, (list, EllipsisType)):
             raise TypeError("Callable[args, result]: args must be a list. Got"
                             f" {_type_repr(t_args)}")
 
         ga_args = []
-        for arg in args[1]:
+        for arg in _args:
             if isinstance(arg, list):
                 ga_args.extend(arg)
             else:
@@ -459,7 +463,7 @@ class _CallableGenericAlias(GenericAlias):
         args = f"{', '.join(_type_repr(a) for a in t_args)}"
         result = _type_repr(t_result)
 
-        if not isinstance(t_args[0], types.EllipsisType):
+        if not isinstance(t_args[0], EllipsisType):
             args = f"[{args}]"
 
         return f"{orig}[{args}, {result}]"
@@ -481,7 +485,7 @@ def _type_repr(obj):
         return f'{obj.__module__}.{obj.__qualname__}'
     if obj is ...:
         return('...')
-    if isinstance(obj, types.FunctionType):
+    if isinstance(obj, FunctionType):
         return obj.__name__
     return repr(obj)
 
