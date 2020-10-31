@@ -421,11 +421,11 @@ class _CallableGenericAlias(GenericAlias):
             raise TypeError("Callable must be used as "
                             "Callable[[arg, ...], result].")
         _typ, _args = args
-        if not isinstance(_args, tuple) or len(_args) != 2:
+        if not isinstance(_args, (tuple, type(...))) or len(_args) != 2:
             raise TypeError("Callable must be used as "
                             "Callable[[arg, ...], result].")
         t_args, t_result = _args
-        if not isinstance(t_args, list):
+        if not isinstance(t_args, (list, type(...))):
             raise TypeError("Callable must be used as "
                             "Callable[[arg, ...], result].")
 
@@ -440,12 +440,27 @@ class _CallableGenericAlias(GenericAlias):
     def __init__(self, *args, **kwargs):
         pass
 
+    def __eq__(self, other):
+        if not isinstance(other, GenericAlias):
+            return NotImplemented
+        return (self.__origin__ == other.__origin__
+                and self.__args__ == other.__args__)
+
+    def __hash__(self):
+        return super().__hash__()
+
     def __repr__(self):
         t_args = self.__args__[:-1]
         t_result = self.__args__[-1]
-        return f"{_type_repr(self.__origin__)}" \
-               f"[[{', '.join(_type_repr(a) for a in t_args)}], " \
-               f"{_type_repr(t_result)}]"
+
+        orig = _type_repr(self.__origin__)
+        args = f"{', '.join(_type_repr(a) for a in t_args)}"
+        result = _type_repr(t_result)
+
+        if not isinstance(t_args[0], type(...)):
+            args = f"[{args}]"
+
+        return f"{orig}[{args}, {result}]"
 
 
 def _type_repr(obj):
