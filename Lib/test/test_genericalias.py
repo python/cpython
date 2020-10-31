@@ -302,6 +302,25 @@ class BaseTest(unittest.TestCase):
                 alias = t[int]
                 self.assertEqual(ref(alias)(), alias)
 
+    def test_abc_callable(self):
+        alias = Callable[[int, str], float]
+        with self.subTest("Testing collections.abc.Callable's subscription"):
+            self.assertIs(alias.__origin__, Callable)
+            self.assertEqual(alias.__args__, (int, str, float))
+            self.assertEqual(alias.__parameters__, ())
+
+        with self.subTest("Testing collections.abc.Callable's instance checks"):
+            self.assertIsInstance(alias, GenericAlias)
+
+        invalid_params = ('Callable[int]', 'Callable[int, str]')
+        with self.subTest("Testing collections.abc.Callable's parameter "
+                          "validation"):
+            for bad in invalid_params:
+                with self.subTest(f'Testing expression {bad}'):
+                    with self.assertRaises(TypeError):
+                        eval(bad)
+
+
 
 if __name__ == "__main__":
     unittest.main()

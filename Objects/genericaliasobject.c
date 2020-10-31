@@ -567,15 +567,38 @@ static PyGetSetDef ga_properties[] = {
 static PyObject *
 ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    gaobject *self;
+
+    assert(type != NULL && type->tp_alloc != NULL);
+    self = (gaobject *)type->tp_alloc(type, 0);
+    if (self == NULL)
+        return NULL;
+
     if (!_PyArg_NoKwnames("GenericAlias", kwds)) {
         return NULL;
     }
     if (!_PyArg_CheckPositional("GenericAlias", PyTuple_GET_SIZE(args), 2, 2)) {
         return NULL;
     }
-    PyObject *origin = PyTuple_GET_ITEM(args, 0);
+    PyObject *origin = PyTuple_GET_ITEM(args, 0); 
     PyObject *arguments = PyTuple_GET_ITEM(args, 1);
-    return Py_GenericAlias(origin, arguments);
+
+    // almost the same as Py_GenericAlias' code, but to assign to self
+    if (!PyTuple_Check(arguments)) {
+        arguments = PyTuple_Pack(1, arguments);
+        if (arguments == NULL) {
+            return NULL;
+        }
+    }
+    else {
+        Py_INCREF(arguments);
+    }
+
+    Py_INCREF(origin);
+    self->origin = origin;
+    self->args = arguments;
+    self->parameters = NULL;
+    return (PyObject *) self;
 }
 
 static PyNumberMethods ga_as_number = {
@@ -600,7 +623,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_hash = ga_hash,
     .tp_call = ga_call,
     .tp_getattro = ga_getattro,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
     .tp_traverse = ga_traverse,
     .tp_richcompare = ga_richcompare,
     .tp_weaklistoffset = offsetof(gaobject, weakreflist),

@@ -8,6 +8,7 @@ Unit tests are in test_collections.
 
 from abc import ABCMeta, abstractmethod
 import sys
+import types
 
 GenericAlias = type(list[int])
 
@@ -409,6 +410,65 @@ class Collection(Sized, Iterable, Container):
         return NotImplemented
 
 
+class _CallableGenericAlias(GenericAlias):
+    """ Internal class specifically for consistency between the ``__args__`` of
+    ``collections.abc.Callable``'s and ``typing.Callable``'s ``GenericAlias``.
+
+    See :issue:`42195`.
+    """
+    def __new__(cls, *args, **kwargs):
+        if not isinstance(args, tuple) or len(args) != 2:
+            raise TypeError("Callable must be used as "
+                            "Callable[[arg, ...], result].")
+        _typ, _args = args
+        if not isinstance(_args, tuple) or len(_args) != 2:
+            raise TypeError("Callable must be used as "
+                            "Callable[[arg, ...], result].")
+        t_args, t_result = _args
+        if not isinstance(t_args, list):
+            raise TypeError("Callable must be used as "
+                            "Callable[[arg, ...], result].")
+
+        ga_args = []
+        for arg in args[1]:
+            if isinstance(arg, list):
+                ga_args.extend(arg)
+            else:
+                ga_args.append(arg)
+        return super().__new__(cls, _typ, tuple(ga_args))
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __repr__(self):
+        t_args = self.__args__[:-1]
+        t_result = self.__args__[-1]
+        return f"{_type_repr(self.__origin__)}" \
+               f"[[{', '.join(_type_repr(a) for a in t_args)}], " \
+               f"{_type_repr(t_result)}]"
+
+
+def _type_repr(obj):
+    """Return the repr() of an object, special-casing types (internal helper).
+
+    If obj is a type, we return a shorter version than the default
+    type.__repr__, based on the module and qualified name, which is
+    typically enough to uniquely identify a type.  For everything
+    else, we fall back on repr(obj).
+
+    Borrowed from :mod:`typing`.
+    """
+    if isinstance(obj, type):
+        if obj.__module__ == 'builtins':
+            return obj.__qualname__
+        return f'{obj.__module__}.{obj.__qualname__}'
+    if obj is ...:
+        return('...')
+    if isinstance(obj, types.FunctionType):
+        return obj.__name__
+    return repr(obj)
+
+
 class Callable(metaclass=ABCMeta):
 
     __slots__ = ()
@@ -423,7 +483,7 @@ class Callable(metaclass=ABCMeta):
             return _check_methods(C, "__call__")
         return NotImplemented
 
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__ = classmethod(_CallableGenericAlias)
 
 
 ### SETS ###
