@@ -1572,7 +1572,6 @@
     <Compile Include="zoneinfo\__init__.py" />
     <Compile Include="zoneinfo\_tzpath.py" />
     <Compile Include="zoneinfo\_zoneinfo.py" />
-    <Compile Include="_bootlocale.py" />
     <Compile Include="_collections_abc.py" />
     <Compile Include="_compat_pickle.py" />
     <Compile Include="_compression.py" />
