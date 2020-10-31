@@ -96,7 +96,6 @@ LOG4 = _log(4.0)
 SG_MAGICCONST = 1.0 + _log(4.5)
 BPF = 53        # Number of bits in a float
 RECIP_BPF = 2 ** -BPF
-_ONE = 1
 
 
 class Random(_random.Random):
@@ -289,7 +288,7 @@ class Random(_random.Random):
 
     ## -------------------- integer methods  -------------------
 
-    def randrange(self, start, stop=None, step=_ONE):
+    def randrange(self, start, stop=None, step=1):
         """Choose a random item from range(start, stop[, step]).
 
         This fixes the problem with randint() which includes the
@@ -322,13 +321,6 @@ class Random(_random.Random):
             _warn('non-integer stop for randrange()',
                   DeprecationWarning, 2)
         width = istop - istart
-        # Fast path.
-        if step is _ONE:
-            if width > 0:
-                return istart + self._randbelow(width)
-            raise ValueError("empty range for randrange() (%d, %d, %d)" % (istart, istop, width))
-
-        # Non-unit step argument supplied.
         try:
             istep = _index(step)
         except TypeError:
@@ -337,6 +329,13 @@ class Random(_random.Random):
                 raise ValueError("non-integer step for randrange()")
             _warn('non-integer step for randrange()',
                   DeprecationWarning, 2)
+        # Fast path.
+        if istep == 1:
+            if width > 0:
+                return istart + self._randbelow(width)
+            raise ValueError("empty range for randrange() (%d, %d, %d)" % (istart, istop, width))
+
+        # Non-unit step argument supplied.
         if istep > 0:
             n = (width + istep - 1) // istep
         elif istep < 0:
