@@ -74,6 +74,8 @@
 #  define HAVE_UTIMENSAT_RUNTIME __builtin_available(macOS 10.13, iOS 11.0, tvOS 11.0, watchOS 4.0, *)
 #  define HAVE_PWRITEV_RUNTIME __builtin_available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
 
+#  define HAVE_POSIX_SPAWN_SETSID_RUNTIME __builtin_available(macOS 10.15, *)
+
 #else /* Xcode 8 or earlier */
 
    /* __builtin_available is not present in these compilers, but
@@ -5842,6 +5844,9 @@ parse_posix_spawn_flags(PyObject *module, const char *func_name, PyObject *setpg
     }
 
     if (setsid) {
+#ifdef HAVE_POSIX_SPAWN_SETSID_RUNTIME
+        if (HAVE_POSIX_SPAWN_SETSID_RUNTIME) {
+#endif
 #ifdef POSIX_SPAWN_SETSID
         all_flags |= POSIX_SPAWN_SETSID;
 #elif defined(POSIX_SPAWN_SETSID_NP)
@@ -5850,6 +5855,14 @@ parse_posix_spawn_flags(PyObject *module, const char *func_name, PyObject *setpg
         argument_unavailable_error(func_name, "setsid");
         return -1;
 #endif
+
+#ifdef HAVE_POSIX_SPAWN_SETSID_RUNTIME
+        } else {
+            argument_unavailable_error(func_name, "setsid");
+            return -1;
+        }
+#endif /* HAVE_POSIX_SPAWN_SETSID_RUNTIME */
+
     }
 
    if (setsigmask) {
