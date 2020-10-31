@@ -1,2 +1,3 @@
-Check for errors in left-recursive parser rules to avoid cases where such errors do not
-get handled in time and appear as long-distance bugs in other places.
+Fixed a bug in the PEG parser that was causing crashes in debug mode. Now errors are checked
+in left-recursive rules to avoid cases where such errors do not get handled in time and appear
+as long-distance crashes in other places.
