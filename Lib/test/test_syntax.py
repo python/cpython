@@ -975,7 +975,10 @@ def func2():
     def test_invalid_line_continuation_left_recursive(self):
         # Check bpo-42218: SyntaxErrors following left-recursive rules
         # (t_primary_raw in this case) need to be tested explicitly
-        self._check_error('A.\u018a\\ ', "unexpected character after line continuation character")
+        self._check_error("A.\u018a\\ ",
+                          "unexpected character after line continuation character")
+        self._check_error("A.\u03bc\\\n",
+                          "unexpected EOF while parsing")
 
 def test_main():
     support.run_unittest(SyntaxTestCase)
