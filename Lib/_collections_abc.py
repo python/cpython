@@ -423,13 +423,13 @@ class _CallableGenericAlias(GenericAlias):
             raise TypeError("Callable must be used as "
                             "Callable[[arg, ...], result].")
         _typ, _args = args
-        if not isinstance(_args, (tuple, type(...))) or len(_args) != 2:
+        if not isinstance(_args, (tuple, types.EllipsisType)) or len(_args) != 2:
             raise TypeError("Callable must be used as "
                             "Callable[[arg, ...], result].")
         t_args, t_result = _args
-        if not isinstance(t_args, (list, type(...))):
-            raise TypeError("Callable must be used as "
-                            "Callable[[arg, ...], result].")
+        if not isinstance(t_args, (list, types.EllipsisType)):
+            raise TypeError("Callable[args, result]: args must be a list. Got"
+                            f" {_type_repr(t_args)}")
 
         ga_args = []
         for arg in args[1]:
@@ -459,7 +459,7 @@ class _CallableGenericAlias(GenericAlias):
         args = f"{', '.join(_type_repr(a) for a in t_args)}"
         result = _type_repr(t_result)
 
-        if not isinstance(t_args[0], type(...)):
+        if not isinstance(t_args[0], types.EllipsisType):
             args = f"[{args}]"
 
         return f"{orig}[{args}, {result}]"
