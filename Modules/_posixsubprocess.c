@@ -1053,7 +1053,8 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         PyOS_AfterFork_Parent();
 
 cleanup:
-    if (saved_errno != 0) {
+    if (saved_errno != 0 || pid == -1) {
+        assert(pid == -1);
         errno = saved_errno;
         /* We can't call this above as PyOS_AfterFork_Parent() calls back
          * into Python code which would see the unreturned error. */
