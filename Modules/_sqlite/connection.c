@@ -33,7 +33,9 @@
 #define ACTION_FINALIZE 1
 #define ACTION_RESET 2
 
-#if SQLITE_VERSION_NUMBER >= 3014000
+#if SQLITE_VERSION_NUMBER >= 3014000 || \
+    defined(__APPLE__) && defined(__MACH__) \
+    && __MAC_OS_X_VERSION_MIN_REQUIRED >= __MAC_10_12
 #define HAVE_TRACE_V2
 #endif
 
