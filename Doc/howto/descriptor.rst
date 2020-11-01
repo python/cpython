@@ -990,3 +990,75 @@ For example, a classmethod and property could be chained together::
         @property
         def __doc__(cls):
             return f'A doc for {cls.__name__!r}'
+
+Member Objects
+--------------
+
+When a class defines ``__slots__``, it replaces instance dictionaries with a
+fixed-length array of slot values.  From a user point of view that has
+several effects:
+
+1. Provides immediate detection of bugs due to misspelled attribute
+assignments.  Only attribute names specified in ``__slots__`` are allowed::
+
+        class Vehicle:
+            __slots__ = ('id_number', 'make', 'model')
+
+        >>> auto = Vehicle()
+        >>> auto.id_nubmer = 'VYE483814LQEX'
+        Traceback (most recent call last):
+            ...
+        AttributeError: 'Vehicle' object has no attribute 'id_nubmer'
+
+2. Helps create immutable objects where descriptors manage access to private
+attributes stored in ``__slots__``::
+
+    class Immutable:
+
+        __slots__ = ('_dept', '_name')          # Replace instance dictionary
+
+        def __init__(self, dept, name):
+            self._dept = dept                   # Store to private attribute
+            self._name = name                   # Store to private attribute
+
+        @property                               # Read-only descriptor
+        def dept(self):
+            return self._dept
+
+        @property
+        def name(self):                         # Read-only descriptor
+            return self._name
+
+    mark = Immutable('Botany', 'Mark Watney')   # Create an immutable instance
+
+The :mod:`dataclasses` modules uses a different strategy to achieve
+immutability.  It overrides the :meth:`__setattr__` method.
+
+3. Saves memory.  On a 64-bit Linux build, an instance with two attributes
+takes 48 bytes with ``__slots__`` and 152 bytes without.  This `flyweight
+design pattern <https://en.wikipedia.org/wiki/Flyweight_pattern>`_ likely only
+matters when a large number of instances are going to be created.
+
+4. Affects performance.  Prior to version 3.10, instance variable access was
+faster when ``__slots__`` was defined.
+
+5. Blocks tools like :func:`functools.cached_property` which require an
+instance dictionary to function correctly::
+
+    from functools import cached_property
+
+    class CP:
+        __slots__ = ()                          # Eliminates the instance dict
+
+        @cached_property                        # Required an instance dict
+        def pi(self):
+            return 4 * sum((-1.0)**n / (2.0*n + 1.0)
+                           for n in reversed(range(100_000)))
+
+    >>> cp = CP()
+    >>> cp.pi
+    Traceback (most recent call last):
+      ...
+    TypeError: No '__dict__' attribute on 'CP' instance to cache 'pi' property.
+
+
