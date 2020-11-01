@@ -990,6 +990,3 @@ For example, a classmethod and property could be chained together::
         @property
         def __doc__(cls):
             return f'A doc for {cls.__name__!r}'
-
-
-.. XXX Describe member objects
