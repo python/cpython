@@ -150,7 +150,7 @@ the lookup or update::
 
         def __init__(self, name, age):
             self.name = name                # Regular instance attribute
-            self.age = age                  # Calls the descriptor's __get__()
+            self.age = age                  # Calls __set__()
 
         def birthday(self):
             self.age += 1                   # Calls both __get__() and __set__()
@@ -220,8 +220,8 @@ be recorded, giving each descriptor its own *public_name* and *private_name*::
 
     class Person:
 
-        name = LoggedAccess()                # First descriptor
-        age = LoggedAccess()                 # Second descriptor
+        name = LoggedAccess()                # First descriptor instance
+        age = LoggedAccess()                 # Second descriptor instance
 
         def __init__(self, name, age):
             self.name = name                 # Calls the first descriptor
@@ -496,40 +496,24 @@ placeholder is enough to make it a data descriptor.
 Overview of Descriptor Invocation
 ---------------------------------
 
-A descriptor can be called directly.  For example, ``d.__get__(obj)``.
+A descriptor can be called directly.  For example, ``desc.__get__(obj)``.
 
 But it is more common for a descriptor to be invoked automatically from
 attribute access.
 
-The expression ``obj.d`` looks up ``d`` in the dictionary of
-``obj``.  If ``d`` defines the method :meth:`__get__`, then ``d.__get__(obj)``
-is invoked according to the precedence rules listed below.
+The expression ``obj.x`` looks up the attribute ``x`` in the chain of
+namespaces for ``obj``.  If the search finds a descriptor, its method
+:meth:`__get__` method is invoked according to the precedence rules listed
+below.
 
-The details of invocation depend on whether ``obj`` is a class, object, or
+The details of invocation depend on whether ``obj`` is a object, class, or
 instance of super.
-
-
-Invocation from a Class
------------------------
-
-The logic for a dotted lookup such as ``A.x`` is in
-:meth:`type.__getattribute__`.
-
-The dot operator first searches the class and its parent classes according to
-the :term:`method resolution order` of the class.
-
-If a descriptor is found, it is invoked with ``d.__get__(None, A)``.
-
-The full C implementation can be found in :c:func:`type_getattro()` in
-:source:`Objects/typeobject.c`.
-
-.. XXX put in a pure python version of an mro search
 
 
 Invocation from an Instance
 ---------------------------
 
-Lookup from an instance is a little more involved.  The implementation scans
+Lookup from an instance is somewhat involved.  The implementation scans
 through a precedence chain that gives data descriptors priority over instance
 variables, instance variables priority over non-data descriptors, and lowest
 priority for :meth:`__getattr__` if provided.
@@ -565,6 +549,22 @@ The :exc:`TypeError` exception handler is needed because the instance dictionary
 doesn't exist when :term:`slots <__slots__>` is defined.
 
 
+
+Invocation from a Class
+-----------------------
+
+The logic for a dotted lookup such as ``A.x`` is in
+:meth:`type.__getattribute__`.  The steps are similar to the logic for
+:meth:`object.__getattribute` but it searches through the class's
+:term:`method resolution order` instead of just looking in an instance
+dictionary.
+
+If a descriptor is found, it is invoked with ``d.__get__(None, A)``.
+
+The full C implementation can be found in :c:func:`type_getattro()` in
+:source:`Objects/typeobject.c`.  The MRO search in in :c:func:`_PyType_Lookup()`
+
+
 Invocation from Super
 ---------------------
 
@@ -579,9 +579,8 @@ unchanged.  If not in the dictionary, ``m`` reverts to a search using
 
 The implementation details are in :c:func:`super_getattro()` in
 :source:`Objects/typeobject.c`.  A pure Python equivalent can be found in
-`Guido's Tutorial`_.
-
-.. _`Guido's Tutorial`: https://www.python.org/download/releases/2.2.3/descrintro/#cooperation
+`Guido's Tutorial
+<https://www.python.org/download/releases/2.2.3/descrintro/#cooperation>`_.
 
 
 Summary of Invocation Logic
@@ -996,4 +995,4 @@ For example, a classmethod and property could be chained together::
             return f'A doc for {cls.__name__!r}'
 
 
-.. XXX Describe member objects            
+.. XXX Describe member objects
