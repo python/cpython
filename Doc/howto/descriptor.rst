@@ -693,7 +693,7 @@ Pure Python Equivalents
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 The descriptor protocol is simple and offers exciting possibilities.  Several
-use cases are so common that they have been prepackaged into builtin tools.
+use cases are so common that they have been prepackaged into built-in tools.
 Properties, bound methods, static methods, and class methods are all based on
 the descriptor protocol.
 
