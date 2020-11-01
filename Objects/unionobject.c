@@ -237,7 +237,8 @@ dedup_and_flatten_args(PyObject* args)
         PyObject* i_element = PyTuple_GET_ITEM(args, i);
         for (Py_ssize_t j = i + 1; j < arg_length; j++) {
             PyObject* j_element = PyTuple_GET_ITEM(args, j);
-            if (i_element == j_element) {
+            // RichCompare to also deduplicate GenericAlias types
+            if (PyObject_RichCompareBool(i_element, j_element, Py_EQ) == 1) {
                 is_duplicate = 1;
             }
         }
@@ -403,7 +404,7 @@ static PyMethodDef union_methods[] = {
         {"__subclasscheck__", union_subclasscheck, METH_O},
         {0}};
 
-static PyNumberMethods union_as_number = {
+PyNumberMethods _Py_union_as_number = {
         .nb_or = (binaryfunc)type_or, // Add __or__ function
 };
 
@@ -423,7 +424,7 @@ PyTypeObject _Py_UnionType = {
     .tp_members = union_members,
     .tp_methods = union_methods,
     .tp_richcompare = union_richcompare,
-    .tp_as_number = &union_as_number,
+    .tp_as_number = &_Py_union_as_number,
     .tp_repr = union_repr,
 };
 

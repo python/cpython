@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_object.h"
+#include "pycore_unionobject.h"   // _Py_Union()
 #include "structmember.h"         // PyMemberDef
 
 typedef struct {
@@ -586,6 +587,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_basicsize = sizeof(gaobject),
     .tp_dealloc = ga_dealloc,
     .tp_repr = ga_repr,
+    .tp_as_number = &_Py_union_as_number,  // allow X | Y of GenericAlias objs
     .tp_as_mapping = &ga_as_mapping,
     .tp_hash = ga_hash,
     .tp_call = ga_call,
