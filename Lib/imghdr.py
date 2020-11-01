@@ -9,23 +9,13 @@ __all__ = ["what"]
 #-------------------------#
 
 def what(file, h=None):
-    f = None
-    try:
-        if h is None:
-            if isinstance(file, (str, PathLike)):
-                f = open(file, 'rb')
-                h = f.read(32)
-            else:
-                location = file.tell()
-                h = file.read(32)
-                file.seek(location)
-        for tf in tests:
-            res = tf(h, f)
-            if res:
-                return res
-    finally:
-        if f: f.close()
-    return None
+    "String describing the image type based on image data contained in `file`"
+    if h is None:
+        if isinstance(file, (str,PathLike)):
+            with open(file, 'rb') as f: h = f.peek(32)
+        else: h = file.peek(32)
+    res = filter(None, (tf(h) for tf in tests))
+    return next(res, None)
 
 
 #---------------------------------#
@@ -34,41 +24,41 @@ def what(file, h=None):
 
 tests = []
 
-def test_jpeg(h, f):
+def test_jpeg(h):
     """JPEG data in JFIF or Exif format"""
     if h[6:10] in (b'JFIF', b'Exif'):
         return 'jpeg'
 
 tests.append(test_jpeg)
 
-def test_png(h, f):
+def test_png(h):
     if h.startswith(b'\211PNG\r\n\032\n'):
         return 'png'
 
 tests.append(test_png)
 
-def test_gif(h, f):
+def test_gif(h):
     """GIF ('87 and '89 variants)"""
     if h[:6] in (b'GIF87a', b'GIF89a'):
         return 'gif'
 
 tests.append(test_gif)
 
-def test_tiff(h, f):
+def test_tiff(h):
     """TIFF (can be in Motorola or Intel byte order)"""
     if h[:2] in (b'MM', b'II'):
         return 'tiff'
 
 tests.append(test_tiff)
 
-def test_rgb(h, f):
+def test_rgb(h):
     """SGI image library"""
     if h.startswith(b'\001\332'):
         return 'rgb'
 
 tests.append(test_rgb)
 
-def test_pbm(h, f):
+def test_pbm(h):
     """PBM (portable bitmap)"""
     if len(h) >= 3 and \
         h[0] == ord(b'P') and h[1] in b'14' and h[2] in b' \t\n\r':
@@ -76,7 +66,7 @@ def test_pbm(h, f):
 
 tests.append(test_pbm)
 
-def test_pgm(h, f):
+def test_pgm(h):
     """PGM (portable graymap)"""
     if len(h) >= 3 and \
         h[0] == ord(b'P') and h[1] in b'25' and h[2] in b' \t\n\r':
@@ -84,7 +74,7 @@ def test_pgm(h, f):
 
 tests.append(test_pgm)
 
-def test_ppm(h, f):
+def test_ppm(h):
     """PPM (portable pixmap)"""
     if len(h) >= 3 and \
         h[0] == ord(b'P') and h[1] in b'36' and h[2] in b' \t\n\r':
@@ -92,33 +82,33 @@ def test_ppm(h, f):
 
 tests.append(test_ppm)
 
-def test_rast(h, f):
+def test_rast(h):
     """Sun raster file"""
     if h.startswith(b'\x59\xA6\x6A\x95'):
         return 'rast'
 
 tests.append(test_rast)
 
-def test_xbm(h, f):
+def test_xbm(h):
     """X bitmap (X10 or X11)"""
     if h.startswith(b'#define '):
         return 'xbm'
 
 tests.append(test_xbm)
 
-def test_bmp(h, f):
+def test_bmp(h):
     if h.startswith(b'BM'):
         return 'bmp'
 
 tests.append(test_bmp)
 
-def test_webp(h, f):
+def test_webp(h):
     if h.startswith(b'RIFF') and h[8:12] == b'WEBP':
         return 'webp'
 
 tests.append(test_webp)
 
-def test_exr(h, f):
+def test_exr(h):
     if h.startswith(b'\x76\x2f\x31\x01'):
         return 'exr'
 
