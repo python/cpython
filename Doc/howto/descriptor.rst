@@ -1055,10 +1055,100 @@ instance dictionary to function correctly::
             return 4 * sum((-1.0)**n / (2.0*n + 1.0)
                            for n in reversed(range(100_000)))
 
-    >>> cp = CP()
-    >>> cp.pi
+    >>> CP().pi
     Traceback (most recent call last):
       ...
     TypeError: No '__dict__' attribute on 'CP' instance to cache 'pi' property.
 
+It's not possible to create an exact drop-in pure Python version of
+``__slots__`` because it requires direct access to C structures and object
+allocators.  However, we can build a mostly faithful simulation where the actual
+C structure for slots is emulated by a private ``_slotvalues`` list.  Reads
+and writes to that private structure are managed by member descriptors::
 
+    class Member:
+
+        def __init__(self, name, clsname, offset):
+            'Emulate PyMemberDef in Include/structmember.h'
+            # Also see descr_new() in Objects/descrobject.c
+            self.name = name
+            self.clsname = clsname
+            self.offset = offset
+
+        def __get__(self, obj, objtype=None):
+            'Emulate member_get() in Objects/descrobject.c'
+            # Also see PyMember_GetOne() in Python/structmember.c
+            return obj._slotvalues[self.offset]
+
+        def __set__(self, obj, value):
+            'Emulate member_set() in Objects/descrobject.c'
+            obj._slotvalues[self.offset] = value
+
+        def __repr__(self):
+            'Emulate member_repr() in Objects/descrobject.c'
+            return f'<Member {self.name!r} of {self.clsname!r}>'
+
+The :meth:`type.__new__` method takes care of adding member objects to class
+variables.  The :meth:`object.__new__` method takes care of creating instances
+that have slots instead of a instance dictionary.  Here is a rough equivalent
+in pure Python::
+
+    class Type(type):
+        'Simulate how the type metaclass adds member objects for slots'
+
+        def __new__(mcls, clsname, bases, mapping):
+            'Emuluate type_new() in Objects/typeobject.c'
+            # type_new() calls PyTypeReady() which calls add_methods()
+            slot_names = mapping.get('slot_names', [])
+            for offset, name in enumerate(slot_names):
+                mapping[name] = Member(name, clsname, offset)
+            return type.__new__(mcls, clsname, bases, mapping)
+
+        def __call__(cls, *args):
+            inst = object.__new__(cls)
+            num_slots = len(getattr(cls, 'slot_names', []))
+            if num_slots:
+                inst._slotvalues = [None] * num_slots
+            inst.__init__(*args)
+            return inst
+
+To use the simulation in a real class, just set the :term:`metaclass` to
+:class:`Type`::
+
+    class H(metaclass=Type):
+
+        slot_names = ['x', 'y']
+
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
+
+At this point, the metaclass has loaded member objects for *x* and *y*:
+
+    >>> import pprint
+    >>> pprint.pp(dict(vars(H)))
+    {'__module__': '__main__',
+     'slot_names': ['x', 'y'],
+     '__init__': <function H.__init__ at 0x7f9dae02e9d0>,
+     'x': <Member 'x' of 'H'>,
+     'y': <Member 'y' of 'H'>,
+     '__dict__': <attribute '__dict__' of 'H' objects>,
+     '__weakref__': <attribute '__weakref__' of 'H' objects>,
+     '__doc__': None}
+
+When instances are created, they have a `slot_values` list where the
+attributes are stored::
+
+    >>> h = H(10, 20)
+    >>> vars(h)
+    {'_slotvalues': [10, 20]}
+    >>> h.x = 55
+    >>> vars(h)
+    {'_slotvalues': [55, 20]}
+
+Unlike the real ``__slots__``, this simulation does have an instance
+dictionary just to hold the ``_slotvalues`` array.  So, the real
+``__slots__``, this simulation doesn't block assignments to variables that
+aren't in ``_slotvalues``::
+
+    >>> h.z = 30    # For actual __slots__, this wouldn't be allowed
