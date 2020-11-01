@@ -574,6 +574,10 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return Py_GenericAlias(origin, arguments);
 }
 
+static PyNumberMethods union_as_number = {
+        .nb_or = (binaryfunc)_Py_union_type_or, // Add __or__ function
+};
+
 // TODO:
 // - argument clinic?
 // - __doc__?
@@ -587,7 +591,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_basicsize = sizeof(gaobject),
     .tp_dealloc = ga_dealloc,
     .tp_repr = ga_repr,
-    .tp_as_number = &_Py_union_as_number,  // allow X | Y of GenericAlias objs
+    .tp_as_number = &union_as_number,  // allow X | Y of GenericAlias objs
     .tp_as_mapping = &ga_as_mapping,
     .tp_hash = ga_hash,
     .tp_call = ga_call,

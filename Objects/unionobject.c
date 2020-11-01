@@ -299,8 +299,8 @@ is_unionable(PyObject *obj)
         type == &_Py_UnionType);
 }
 
-static PyObject *
-type_or(PyTypeObject* self, PyObject* param)
+PyObject *
+_Py_union_type_or(PyTypeObject* self, PyObject* param)
 {
     PyObject *tuple = PyTuple_Pack(2, self, param);
     if (tuple == NULL) {
@@ -412,8 +412,8 @@ static PyMethodDef union_methods[] = {
         {"__subclasscheck__", union_subclasscheck, METH_O},
         {0}};
 
-PyNumberMethods _Py_union_as_number = {
-        .nb_or = (binaryfunc)type_or, // Add __or__ function
+static PyNumberMethods union_as_number = {
+        .nb_or = (binaryfunc)_Py_union_type_or, // Add __or__ function
 };
 
 PyTypeObject _Py_UnionType = {
@@ -432,7 +432,7 @@ PyTypeObject _Py_UnionType = {
     .tp_members = union_members,
     .tp_methods = union_methods,
     .tp_richcompare = union_richcompare,
-    .tp_as_number = &_Py_union_as_number,
+    .tp_as_number = &union_as_number,
     .tp_repr = union_repr,
 };
 
