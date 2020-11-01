@@ -6058,6 +6058,8 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
             self.assertEqual(sent, self.FILESIZE - 5000)
             self.assertEqual(file.tell(), self.FILESIZE)
 
+    @unittest.skipIf(sys.platform.startswith('sunos'),
+                     "pending resolution of issue 42237")
     def testOffset(self):
         conn = self.accept_conn()
         data = self.recv_data(conn)
@@ -6078,6 +6080,8 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
             self.assertEqual(sent, count)
             self.assertEqual(file.tell(), count)
 
+    @unittest.skipIf(sys.platform.startswith('sunos'),
+                     "pending resolution of issue 42237")
     def testCount(self):
         count = 5000007
         conn = self.accept_conn()
@@ -6153,6 +6157,8 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
             sent = meth(file)
             self.assertEqual(sent, self.FILESIZE)
 
+    @unittest.skipIf(sys.platform.startswith('sunos'),
+                     "pending resolution of issue 42237")
     def testWithTimeout(self):
         conn = self.accept_conn()
         data = self.recv_data(conn)
