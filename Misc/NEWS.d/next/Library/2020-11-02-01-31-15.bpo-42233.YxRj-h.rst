@@ -1,0 +1,3 @@
+The :func:`repr` of :mod:`typing` types containing 
+:ref:`Generic Alias Types <types-genericalias>` previously did not show the 
+parameterized types in the ``GenericAlias``.  They have now been changed to do so.
