@@ -1318,7 +1318,7 @@ config_read_env_vars(PyConfig *config)
 
 #ifdef MS_WINDOWS
     _Py_get_env_flag(use_env, &config->legacy_windows_stdio,
-                 "PYTHONLEGACYWINDOWSSTDIO");
+                     "PYTHONLEGACYWINDOWSSTDIO");
 #endif
 
     if (config_get_env(config, "PYTHONDUMPREFS")) {
@@ -1498,15 +1498,9 @@ static PyStatus
 config_get_locale_encoding(PyConfig *config, const PyPreConfig *preconfig,
                            wchar_t **locale_encoding)
 {
-    const char *errmsg;
-    wchar_t *encoding = _Py_GetLocaleEncoding(&errmsg);
+    wchar_t *encoding = _Py_GetLocaleEncoding();
     if (encoding == NULL) {
-        if (errmsg != NULL) {
-            return _PyStatus_ERR(errmsg);
-        }
-        else {
-            return _PyStatus_NO_MEMORY();
-        }
+        return _PyStatus_NO_MEMORY();
     }
     PyStatus status = PyConfig_SetString(config, locale_encoding, encoding);
     PyMem_RawFree(encoding);

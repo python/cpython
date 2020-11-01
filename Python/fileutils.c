@@ -826,20 +826,15 @@ _Py_EncodeLocaleEx(const wchar_t *text, char **str,
 // - Return "UTF-8" if _Py_FORCE_UTF8_LOCALE macro is defined (ex: on Android)
 // - Return "UTF-8" if the UTF-8 Mode is enabled
 // - On Windows, return the ANSI code page (ex: "cp1250")
-// - Return "UTF-8" if nl_langinfo(CODESET) returns an empty string
-//   and if the _Py_FORCE_UTF8_FS_ENCODING macro is defined (ex: on macOS).
+// - Return "UTF-8" if nl_langinfo(CODESET) returns an empty string.
 // - Otherwise, return nl_langinfo(CODESET).
 //
-// Return NULL and set errmsg to an error message
-// if nl_langinfo(CODESET) fails.
-//
-// Return NULL and set errmsg to NULL on memory allocation failure.
+// Return NULL on memory allocation failure.
 //
 // See also config_get_locale_encoding()
 wchar_t*
-_Py_GetLocaleEncoding(const char **errmsg)
+_Py_GetLocaleEncoding(void)
 {
-    *errmsg = NULL;
 #ifdef _Py_FORCE_UTF8_LOCALE
     // On Android langinfo.h and CODESET are missing,
     // and UTF-8 is always used in mbstowcs() and wcstombs().
@@ -859,21 +854,14 @@ _Py_GetLocaleEncoding(const char **errmsg)
 #else
     const char *encoding = nl_langinfo(CODESET);
     if (!encoding || encoding[0] == '\0') {
-#ifdef _Py_FORCE_UTF8_FS_ENCODING
-        // nl_langinfo() can return an empty string when the LC_CTYPE locale is
-        // not supported. Default to UTF-8 in that case, because UTF-8 is the
-        // default charset on macOS.
+        // Use UTF-8 if nl_langinfo() returns an empty string. It can happen on
+        // macOS if the LC_CTYPE locale is not supported.
         return _PyMem_RawWcsdup(L"UTF-8");
-#else
-        *errmsg = "failed to get the locale encoding: "
-                  "nl_langinfo(CODESET) returns an empty string";
-        return NULL;
-#endif
     }
 
     wchar_t *wstr;
     int res = decode_current_locale(encoding, &wstr, NULL,
-                                    errmsg, _Py_ERROR_SURROGATEESCAPE);
+                                    NULL, _Py_ERROR_SURROGATEESCAPE);
     if (res < 0) {
         return NULL;
     }
@@ -887,15 +875,9 @@ _Py_GetLocaleEncoding(const char **errmsg)
 PyObject *
 _Py_GetLocaleEncodingObject(void)
 {
-    const char *errmsg;
-    wchar_t *encoding = _Py_GetLocaleEncoding(&errmsg);
+    wchar_t *encoding = _Py_GetLocaleEncoding();
     if (encoding == NULL) {
-        if (errmsg != NULL) {
-            PyErr_SetString(PyExc_ValueError, errmsg);
-        }
-        else {
-            PyErr_NoMemory();
-        }
+        PyErr_NoMemory();
         return NULL;
     }
 
