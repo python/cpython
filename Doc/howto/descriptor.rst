@@ -1106,6 +1106,7 @@ in pure Python::
             return type.__new__(mcls, clsname, bases, mapping)
 
     class Object:
+        'Simulate how object.__new__() allocates memory for __slots__'
 
         def __new__(cls, *args):
             'Emulate object_new() in Objects/typeobject.c'
