@@ -493,11 +493,10 @@ called.  Defining the :meth:`__set__` method with an exception raising
 placeholder is enough to make it a data descriptor.
 
 
-Invoking Descriptors
---------------------
+Overview of Descriptor Invocation
+---------------------------------
 
-A descriptor can be called directly by its method name.  For example,
-``d.__get__(obj)``.
+A descriptor can be called directly.  For example, ``d.__get__(obj)``.
 
 But it is more common for a descriptor to be invoked automatically from
 attribute access.
@@ -506,47 +505,69 @@ The expression ``obj.d`` looks up ``d`` in the dictionary of
 ``obj``.  If ``d`` defines the method :meth:`__get__`, then ``d.__get__(obj)``
 is invoked according to the precedence rules listed below.
 
-The details of invocation depend on whether ``obj`` is an object, class, or
+The details of invocation depend on whether ``obj`` is a class, object, or
 instance of super.
 
 
-Invoking a Descriptor from an Instance
---------------------------------------
-
-The logic for a dotted lookup such as ``a.x`` is in
-:meth:`object.__getattribute__`.
-
-First, the dot operator looks up the descriptor in class dictionary with
-``d = type(a).__dict__['x']``.
-
-Next, it invokes the descriptor with ``d.__get__(a, type(a))``.
-
-The implementation works through a precedence chain that gives data descriptors
-priority over instance variables, instance variables priority over non-data
-descriptors, and assigns lowest priority to :meth:`__getattr__` if provided.
-
-The full C implementation can be found in :c:func:`PyObject_GenericGetAttr()` in
-:source:`Objects/object.c`.
-
-
-Invoking a Descriptor from a Class
-----------------------------------
+Invocation from a Class
+-----------------------
 
 The logic for a dotted lookup such as ``A.x`` is in
 :meth:`type.__getattribute__`.
 
-First, the dot operator looks up the descriptor in the class dictionary with
-``d = A.__dict__['x']``.
+The dot operator first searches the class and its parent classes according to
+the :term:`method resolution order` of the class.
 
-Next, it invokes the descriptor with ``d.__get__(None, A)``.
+If a descriptor is found, it is invoked with ``d.__get__(None, A)``.
 
 The full C implementation can be found in :c:func:`type_getattro()` in
 :source:`Objects/typeobject.c`.
 
+.. XXX put in a pure python version of an mro search
 
-Invoking a Descriptor from Super
---------------------------------
-        
+
+Invocation from an Instance
+---------------------------
+
+Lookup from an instance is a little more involved.  The implementation scans
+through a precedence chain that gives data descriptors priority over instance
+variables, instance variables priority over non-data descriptors, and lowest
+priority for :meth:`__getattr__` if provided.
+
+If a descriptor is found for ``a.x``, then it is invoked with:
+``desc.__get__(a, type(a))``.
+
+The logic for a dotted lookup is in :meth:`object.__getattribute__`.  Here is
+a pure Python equivalent::
+
+    def object_getattribute(obj, name):
+        "Emulate PyObject_GenericGetAttr() in Objects/object.c"
+        null = object()
+        objtype = type(obj)
+        value = getattr(objtype, name, null)
+        if value is not null and hasattr(value, '__get__'):
+            if hasattr(value, '__set__') or hasattr(value, '__delete__'):
+                return value.__get__(obj, objtype)  # data descriptor
+        try:
+            return vars(obj)[name]                  # instance variable
+        except (KeyError, TypeError):
+            pass
+        if hasattr(value, '__get__'):
+            return value.__get__(obj, objtype)      # non-data descriptor
+        if value is not null:
+            return value                            # class variable
+        # Emulate slot_tp_getattr_hook() in Objects/typeobject.c
+        if hasattr(objtype, '__getattr__'):
+            return objtype.__getattr__(obj, name)   # __getattr__ hook
+        raise AttributeError(name)
+
+The :exc:`TypeError` exception handler is needed because the instance dictionary
+doesn't exist when :term:`slots <__slots__>` is defined.
+
+
+Invocation from Super
+---------------------
+
 The logic for super's dotted lookup is in the :meth:`__getattribute__` method for
 object returned by :class:`super()`.
 
@@ -563,8 +584,8 @@ The implementation details are in :c:func:`super_getattro()` in
 .. _`Guido's Tutorial`: https://www.python.org/download/releases/2.2.3/descrintro/#cooperation
 
 
-Summary for Invocation Logic
-----------------------------
+Summary of Invocation Logic
+---------------------------
 
 The mechanism for descriptors is embedded in the :meth:`__getattribute__()`
 methods for :class:`object`, :class:`type`, and :func:`super`.
@@ -973,3 +994,6 @@ For example, a classmethod and property could be chained together::
         @property
         def __doc__(cls):
             return f'A doc for {cls.__name__!r}'
+
+
+.. XXX Describe member objects            
