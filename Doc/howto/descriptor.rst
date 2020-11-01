@@ -52,7 +52,7 @@ To use the descriptor, it must be stored as a class variable in another class::
 
     class A:
         x = 5                       # Regular class attribute
-        y = Ten()                   # Descriptor
+        y = Ten()                   # Descriptor instance
 
 An interactive session shows the difference between normal attribute lookup
 and descriptor lookup::
@@ -80,7 +80,6 @@ Dynamic lookups
 
 Interesting descriptors typically run computations instead of doing lookups::
 
-
     import os
 
     class DirectorySize:
@@ -90,7 +89,7 @@ Interesting descriptors typically run computations instead of doing lookups::
 
     class Directory:
 
-        size = DirectorySize()              # Descriptor
+        size = DirectorySize()              # Descriptor instance
 
         def __init__(self, dirname):
             self.dirname = dirname          # Regular instance attribute
@@ -147,11 +146,11 @@ the lookup or update::
 
     class Person:
 
-        age = LoggedAgeAccess()             # Descriptor
+        age = LoggedAgeAccess()             # Descriptor instance
 
         def __init__(self, name, age):
             self.name = name                # Regular instance attribute
-            self.age = age                  # Calls the descriptor
+            self.age = age                  # Calls __set__()
 
         def birthday(self):
             self.age += 1                   # Calls both __get__() and __set__()
@@ -221,8 +220,8 @@ be recorded, giving each descriptor its own *public_name* and *private_name*::
 
     class Person:
 
-        name = LoggedAccess()                # First descriptor
-        age = LoggedAccess()                 # Second descriptor
+        name = LoggedAccess()                # First descriptor instance
+        age = LoggedAccess()                 # Second descriptor instance
 
         def __init__(self, name, age):
             self.name = name                 # Calls the first descriptor
@@ -494,56 +493,98 @@ called.  Defining the :meth:`__set__` method with an exception raising
 placeholder is enough to make it a data descriptor.
 
 
-Invoking Descriptors
---------------------
+Overview of Descriptor Invocation
+---------------------------------
 
-A descriptor can be called directly by its method name.  For example,
-``d.__get__(obj)``.
+A descriptor can be called directly with ``desc.__get__(obj)`` or
+``desc.__get__(None, cls)``.
 
 But it is more common for a descriptor to be invoked automatically from
-attribute access.  The expression ``obj.d`` looks up ``d`` in the dictionary of
-``obj``.  If ``d`` defines the method :meth:`__get__`, then ``d.__get__(obj)``
-is invoked according to the precedence rules listed below.
+attribute access.
+
+The expression ``obj.x`` looks up the attribute ``x`` in the chain of
+namespaces for ``obj``.  If the search finds a descriptor, its :meth:`__get__`
+method is invoked according to the precedence rules listed below.
 
 The details of invocation depend on whether ``obj`` is an object, class, or
 instance of super.
 
-**Objects**:  The machinery is in :meth:`object.__getattribute__`.
 
-It transforms ``b.x`` into ``type(b).__dict__['x'].__get__(b, type(b))``.
+Invocation from an Instance
+---------------------------
 
-The implementation works through a precedence chain that gives data descriptors
-priority over instance variables, instance variables priority over non-data
-descriptors, and assigns lowest priority to :meth:`__getattr__` if provided.
+Instance lookup scans through a chain of namespaces giving data descriptors
+the highest priority, followed by instance variables, then non-data
+descriptors, then class variables, and lastly :meth:`__getattr__` if it is
+provided.
 
-The full C implementation can be found in :c:func:`PyObject_GenericGetAttr()` in
-:source:`Objects/object.c`.
+If a descriptor is found for ``a.x``, then it is invoked with:
+``desc.__get__(a, type(a))``.
 
-**Classes**:  The machinery is in :meth:`type.__getattribute__`.
+The logic for a dotted lookup is in :meth:`object.__getattribute__`.  Here is
+a pure Python equivalent::
 
-It transforms ``A.x`` into ``A.__dict__['x'].__get__(None, A)``.
+    def object_getattribute(obj, name):
+        "Emulate PyObject_GenericGetAttr() in Objects/object.c"
+        null = object()
+        objtype = type(obj)
+        value = getattr(objtype, name, null)
+        if value is not null and hasattr(value, '__get__'):
+            if hasattr(value, '__set__') or hasattr(value, '__delete__'):
+                return value.__get__(obj, objtype)  # data descriptor
+        try:
+            return vars(obj)[name]                  # instance variable
+        except (KeyError, TypeError):
+            pass
+        if hasattr(value, '__get__'):
+            return value.__get__(obj, objtype)      # non-data descriptor
+        if value is not null:
+            return value                            # class variable
+        # Emulate slot_tp_getattr_hook() in Objects/typeobject.c
+        if hasattr(objtype, '__getattr__'):
+            return objtype.__getattr__(obj, name)   # __getattr__ hook
+        raise AttributeError(name)
 
-The full C implementation can be found in :c:func:`type_getattro()` in
-:source:`Objects/typeobject.c`.
+The :exc:`TypeError` exception handler is needed because the instance dictionary
+doesn't exist when its class defines :term:`__slots__`.
 
-**Super**:  The machinery is in the custom :meth:`__getattribute__` method for
+
+Invocation from a Class
+-----------------------
+
+The logic for a dotted lookup such as ``A.x`` is in
+:meth:`type.__getattribute__`.  The steps are similar to those for
+:meth:`object.__getattribute__` but the instance dictionary lookup is replaced
+by a search through the class's :term:`method resolution order`.
+
+If a descriptor is found, it is invoked with ``desc.__get__(None, A)``.
+
+The full C implementation can be found in :c:func:`type_getattro()` and
+:c:func:`_PyType_Lookup()` in :source:`Objects/typeobject.c`.
+
+
+Invocation from Super
+---------------------
+
+The logic for super's dotted lookup is in the :meth:`__getattribute__` method for
 object returned by :class:`super()`.
 
-The attribute lookup ``super(A, obj).m`` searches ``obj.__class__.__mro__`` for
-the base class ``B`` immediately following ``A`` and then returns
+A dotted lookup such as ``super(A, obj).m`` searches ``obj.__class__.__mro__``
+for the base class ``B`` immediately following ``A`` and then returns
 ``B.__dict__['m'].__get__(obj, A)``.  If not a descriptor, ``m`` is returned
-unchanged.  If not in the dictionary, ``m`` reverts to a search using
-:meth:`object.__getattribute__`.
+unchanged.
 
-The implementation details are in :c:func:`super_getattro()` in
+The full C implementation can be found in :c:func:`super_getattro()` in
 :source:`Objects/typeobject.c`.  A pure Python equivalent can be found in
-`Guido's Tutorial`_.
+`Guido's Tutorial
+<https://www.python.org/download/releases/2.2.3/descrintro/#cooperation>`_.
 
-.. _`Guido's Tutorial`: https://www.python.org/download/releases/2.2.3/descrintro/#cooperation
 
-**Summary**: The mechanism for descriptors is embedded in the
-:meth:`__getattribute__()` methods for :class:`object`, :class:`type`, and
-:func:`super`.
+Summary of Invocation Logic
+---------------------------
+
+The mechanism for descriptors is embedded in the :meth:`__getattribute__()`
+methods for :class:`object`, :class:`type`, and :func:`super`.
 
 The important points to remember are:
 
@@ -652,7 +693,7 @@ Pure Python Equivalents
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 The descriptor protocol is simple and offers exciting possibilities.  Several
-use cases are so common that they have been prepackaged into builtin tools.
+use cases are so common that they have been prepackaged into built-in tools.
 Properties, bound methods, static methods, and class methods are all based on
 the descriptor protocol.
 
