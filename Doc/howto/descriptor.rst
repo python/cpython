@@ -1108,10 +1108,10 @@ in pure Python::
     class Object:
 
         def __new__(cls, *args):
+            'Emulate object_new() in Objects/typeobject.c'
             inst = super().__new__(cls)
             if hasattr(cls, 'slot_names'):
                 inst._slotvalues = [None] * len(cls.slot_names)
-            inst.__init__(*args)
             return inst
 
 To use the simulation in a real class, just inherit from :class:`Object` and
