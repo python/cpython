@@ -2,7 +2,7 @@
 
 #include "Python.h"
 #include "pycore_object.h"
-#include "pycore_unionobject.h"   // _Py_Union()
+#include "pycore_unionobject.h"   // _Py_union_as_number
 #include "structmember.h"         // PyMemberDef
 
 typedef struct {
