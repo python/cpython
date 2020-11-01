@@ -1155,7 +1155,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         }
     }
     if (encoding == NULL && self->encoding == NULL) {
-        self->encoding = _Py_GetLocaleEncoding();
+        self->encoding = _Py_GetLocaleEncodingObject();
         if (self->encoding == NULL) {
             goto error;
         }

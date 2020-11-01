@@ -11,11 +11,7 @@
 
 #include "osdefs.h"               // DELIM
 #include <locale.h>               // setlocale()
-#ifdef HAVE_LANGINFO_H
-#  include <langinfo.h>           // nl_langinfo(CODESET)
-#endif
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
-#  include <windows.h>            // GetACP()
 #  ifdef HAVE_IO_H
 #    include <io.h>
 #  endif
@@ -1497,41 +1493,24 @@ config_get_stdio_errors(const PyPreConfig *preconfig)
 }
 
 
-// See also _Py_GetLocaleEncoding() and config_get_fs_encoding()
+// See also config_get_fs_encoding()
 static PyStatus
 config_get_locale_encoding(PyConfig *config, const PyPreConfig *preconfig,
                            wchar_t **locale_encoding)
 {
-#ifdef _Py_FORCE_UTF8_LOCALE
-    return PyConfig_SetString(config, locale_encoding, L"utf-8");
-#else
-    if (preconfig->utf8_mode) {
-        return PyConfig_SetString(config, locale_encoding, L"utf-8");
+    const char *errmsg;
+    wchar_t *encoding = _Py_GetLocaleEncoding(&errmsg);
+    if (encoding == NULL) {
+        if (errmsg != NULL) {
+            return _PyStatus_ERR(errmsg);
+        }
+        else {
+            return _PyStatus_NO_MEMORY();
+        }
     }
-
-#ifdef MS_WINDOWS
-    char encoding[20];
-    PyOS_snprintf(encoding, sizeof(encoding), "cp%u", GetACP());
-    return PyConfig_SetBytesString(config, locale_encoding, encoding);
-#else
-    const char *encoding = nl_langinfo(CODESET);
-    if (!encoding || encoding[0] == '\0') {
-#ifdef _Py_FORCE_UTF8_FS_ENCODING
-        // nl_langinfo() can return an empty string when the LC_CTYPE locale is
-        // not supported. Default to UTF-8 in that case, because UTF-8 is the
-        // default charset on macOS.
-        encoding = "UTF-8";
-#else
-        return _PyStatus_ERR("failed to get the locale encoding: "
-                             "nl_langinfo(CODESET) returns an empty string");
-#endif
-    }
-    /* nl_langinfo(CODESET) is decoded by Py_DecodeLocale() */
-    return CONFIG_SET_BYTES_STR(config,
-                                locale_encoding, encoding,
-                                "nl_langinfo(CODESET)");
-#endif  // !MS_WINDOWS
-#endif  // !_Py_FORCE_UTF8_LOCALE
+    PyStatus status = PyConfig_SetString(config, locale_encoding, encoding);
+    PyMem_RawFree(encoding);
+    return status;
 }
 
 

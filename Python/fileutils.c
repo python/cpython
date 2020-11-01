@@ -821,23 +821,41 @@ _Py_EncodeLocaleEx(const wchar_t *text, char **str,
 }
 
 
-// Get the current locale encoding: locale.getpreferredencoding(False).
+// Get the current locale encoding name:
+//
+// - Return "UTF-8" if _Py_FORCE_UTF8_LOCALE macro is defined (ex: on Android)
+// - Return "UTF-8" if the UTF-8 Mode is enabled
+// - On Windows, return the ANSI code page (ex: "cp1250")
+// - Return "UTF-8" if nl_langinfo(CODESET) returns an empty string
+//   and if the _Py_FORCE_UTF8_FS_ENCODING macro is defined (ex: on macOS).
+// - Otherwise, return nl_langinfo(CODESET).
+//
+// Return NULL and set errmsg to an error message
+// if nl_langinfo(CODESET) fails.
+//
+// Return NULL and set errmsg to NULL on memory allocation failure.
+//
 // See also config_get_locale_encoding()
-PyObject *
-_Py_GetLocaleEncoding(void)
+wchar_t*
+_Py_GetLocaleEncoding(const char **errmsg)
 {
+    *errmsg = NULL;
 #ifdef _Py_FORCE_UTF8_LOCALE
     // On Android langinfo.h and CODESET are missing,
     // and UTF-8 is always used in mbstowcs() and wcstombs().
-    return PyUnicode_FromString("UTF-8");
+    return _PyMem_RawWcsdup(L"UTF-8");
 #else
     const PyPreConfig *preconfig = &_PyRuntime.preconfig;
     if (preconfig->utf8_mode) {
-        return PyUnicode_FromString("UTF-8");
+        return _PyMem_RawWcsdup(L"UTF-8");
     }
 
-#if defined(MS_WINDOWS)
-    return PyUnicode_FromFormat("cp%u", GetACP());
+#ifdef MS_WINDOWS
+    wchar_t encoding[23];
+    unsigned int ansi_codepage = GetACP();
+    swprintf(encoding, Py_ARRAY_LENGTH(encoding), L"cp%u", ansi_codepage);
+    encoding[Py_ARRAY_LENGTH(encoding) - 1] = 0;
+    return _PyMem_RawWcsdup(encoding);
 #else
     const char *encoding = nl_langinfo(CODESET);
     if (!encoding || encoding[0] == '\0') {
@@ -845,19 +863,45 @@ _Py_GetLocaleEncoding(void)
         // nl_langinfo() can return an empty string when the LC_CTYPE locale is
         // not supported. Default to UTF-8 in that case, because UTF-8 is the
         // default charset on macOS.
-        encoding = "UTF-8";
+        return _PyMem_RawWcsdup(L"UTF-8");
 #else
-        PyErr_SetString(PyExc_ValueError,
-                        "failed to get the locale encoding: "
-                        "nl_langinfo(CODESET) returns an empty string");
+        *errmsg = "failed to get the locale encoding: "
+                  "nl_langinfo(CODESET) returns an empty string";
         return NULL;
 #endif
     }
-    // Decode from UTF-8
-    return PyUnicode_FromString(encoding);
-#endif  // !CODESET
 
-#endif
+    wchar_t *wstr;
+    int res = decode_current_locale(encoding, &wstr, NULL,
+                                    errmsg, _Py_ERROR_SURROGATEESCAPE);
+    if (res < 0) {
+        return NULL;
+    }
+    return wstr;
+#endif  // !MS_WINDOWS
+
+#endif  // !_Py_FORCE_UTF8_LOCALE
+}
+
+
+PyObject *
+_Py_GetLocaleEncodingObject(void)
+{
+    const char *errmsg;
+    wchar_t *encoding = _Py_GetLocaleEncoding(&errmsg);
+    if (encoding == NULL) {
+        if (errmsg != NULL) {
+            PyErr_SetString(PyExc_ValueError, errmsg);
+        }
+        else {
+            PyErr_NoMemory();
+        }
+        return NULL;
+    }
+
+    PyObject *str = PyUnicode_FromWideChar(encoding, -1);
+    PyMem_RawFree(encoding);
+    return str;
 }
 
 
