@@ -1136,7 +1136,7 @@ At this point, the metaclass has loaded member objects for *x* and *y*:
      '__weakref__': <attribute '__weakref__' of 'H' objects>,
      '__doc__': None}
 
-When instances are created, they have a `slot_values` list where the
+When instances are created, they have a ``slot_values`` list where the
 attributes are stored::
 
     >>> h = H(10, 20)
