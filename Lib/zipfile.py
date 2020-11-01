@@ -510,7 +510,8 @@ class ZipInfo (object):
         if arcname is None:
             arcname = filename
         arcname = os.path.normpath(os.path.splitdrive(arcname)[1])
-        while arcname[0] in (os.sep, os.altsep) and arcname[1] in (os.sep, os.altsep):
+        while (arcname[0] in (os.sep, os.altsep) and
+               arcname[1] in (os.sep, os.altsep)):
             arcname = arcname[1:]
         if arcname[0] in (os.sep, os.altsep) and os.sep not in arcname[1:]:
             arcname = arcname[1:]

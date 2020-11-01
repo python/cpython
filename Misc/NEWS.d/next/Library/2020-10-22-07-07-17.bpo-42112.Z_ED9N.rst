@@ -1,2 +1,2 @@
-Fix unnecessary removing of a leading slash in :func:`zipfile.ZipInfo.from_file`
+Fix unnecessary removing of a leading slash in :meth:`zipfile.ZipInfo.from_file`
 when member's archive name is in the form of `/directory/filename`.
