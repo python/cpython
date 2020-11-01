@@ -1105,17 +1105,19 @@ in pure Python::
                 mapping[name] = Member(name, clsname, offset)
             return type.__new__(mcls, clsname, bases, mapping)
 
-        def __call__(cls, *args):
-            inst = object.__new__(cls)
+    class Object:
+
+        def __new__(cls, *args):
+            inst = super().__new__(cls)
             if hasattr(cls, 'slot_names'):
                 inst._slotvalues = [None] * len(cls.slot_names)
             inst.__init__(*args)
             return inst
 
-To use the simulation in a real class, just set the :term:`metaclass` to
-:class:`Type`::
+To use the simulation in a real class, just inherit from :class:`Object` and
+set the :term:`metaclass` to :class:`Type`::
 
-    class H(metaclass=Type):
+    class H(Object, metaclass=Type):
 
         slot_names = ['x', 'y']
 
@@ -1129,11 +1131,9 @@ At this point, the metaclass has loaded member objects for *x* and *y*::
     >>> pprint.pp(dict(vars(H)))
     {'__module__': '__main__',
      'slot_names': ['x', 'y'],
-     '__init__': <function H.__init__ at 0x7f9dae02e9d0>,
+     '__init__': <function H.__init__ at 0x7fb5d302f9d0>,
      'x': <Member 'x' of 'H'>,
      'y': <Member 'y' of 'H'>,
-     '__dict__': <attribute '__dict__' of 'H' objects>,
-     '__weakref__': <attribute '__weakref__' of 'H' objects>,
      '__doc__': None}
 
 When instances are created, they have a ``slot_values`` list where the
