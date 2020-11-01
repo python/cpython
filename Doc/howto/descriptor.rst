@@ -1031,7 +1031,7 @@ attributes stored in ``__slots__``::
 
     mark = Immutable('Botany', 'Mark Watney')   # Create an immutable instance
 
-The :mod:`dataclasses` modules uses a different strategy to achieve
+The :mod:`dataclasses` module uses a different strategy to achieve
 immutability.  It overrides the :meth:`__setattr__` method.
 
 3. Saves memory.  On a 64-bit Linux build, an instance with two attributes
@@ -1050,7 +1050,7 @@ instance dictionary to function correctly::
     class CP:
         __slots__ = ()                          # Eliminates the instance dict
 
-        @cached_property                        # Required an instance dict
+        @cached_property                        # Requires an instance dict
         def pi(self):
             return 4 * sum((-1.0)**n / (2.0*n + 1.0)
                            for n in reversed(range(100_000)))
@@ -1061,10 +1061,11 @@ instance dictionary to function correctly::
     TypeError: No '__dict__' attribute on 'CP' instance to cache 'pi' property.
 
 It's not possible to create an exact drop-in pure Python version of
-``__slots__`` because it requires direct access to C structures and object
-allocators.  However, we can build a mostly faithful simulation where the actual
-C structure for slots is emulated by a private ``_slotvalues`` list.  Reads
-and writes to that private structure are managed by member descriptors::
+``__slots__`` because it requires direct access to C structures and control
+over object memory allocation.  However, we can build a mostly faithful
+simulation where the actual C structure for slots is emulated by a private
+``_slotvalues`` list.  Reads and writes to that private structure are managed
+by member descriptors::
 
     class Member:
 
@@ -1106,9 +1107,8 @@ in pure Python::
 
         def __call__(cls, *args):
             inst = object.__new__(cls)
-            num_slots = len(getattr(cls, 'slot_names', []))
-            if num_slots:
-                inst._slotvalues = [None] * num_slots
+            if hasattr(cls, 'slot_names'):
+                inst._slotvalues = [None] * len(cls.slot_names)
             inst.__init__(*args)
             return inst
 
@@ -1147,8 +1147,7 @@ attributes are stored::
     {'_slotvalues': [55, 20]}
 
 Unlike the real ``__slots__``, this simulation does have an instance
-dictionary just to hold the ``_slotvalues`` array.  So, the real
-``__slots__``, this simulation doesn't block assignments to variables that
-aren't in ``_slotvalues``::
+dictionary just to hold the ``_slotvalues`` array.  So, unlike the real code,
+this simulation doesn't block assignments to misspelled attributes::
 
-    >>> h.z = 30    # For actual __slots__, this wouldn't be allowed
+    >>> h.xz = 30   # For actual __slots__ this would raise an AttributeError
