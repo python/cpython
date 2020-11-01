@@ -4792,6 +4792,15 @@ class TestOptionalsHelpVersionActions(TestCase):
             self.assertPrintHelpExit(parser, format % '--help')
             self.assertRaises(AttributeError, getattr, parser, 'format_version')
 
+    def test_whitespace_help(self):
+        for formatter_class in (argparse.ArgumentDefaultsHelpFormatter, argparse.HelpFormatter,
+                                argparse.MetavarTypeHelpFormatter,
+                                argparse.RawDescriptionHelpFormatter, argparse.RawTextHelpFormatter):
+            parser = argparse.ArgumentParser(formatter_class=formatter_class)
+            parser.add_argument('--foo', action='store_true', help=' ')
+            parser.add_argument('bar', type=float, help=' ')
+            parser.format_help()  # does not raise any error
+
 
 # ======================
 # str() and repr() tests

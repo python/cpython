@@ -1,0 +1,1 @@
+Fix a minor bug in argparse with whitespace-only argument help messages
