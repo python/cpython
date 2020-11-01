@@ -1123,7 +1123,7 @@ To use the simulation in a real class, just set the :term:`metaclass` to
             self.x = x
             self.y = y
 
-At this point, the metaclass has loaded member objects for *x* and *y*:
+At this point, the metaclass has loaded member objects for *x* and *y*::
 
     >>> import pprint
     >>> pprint.pp(dict(vars(H)))
