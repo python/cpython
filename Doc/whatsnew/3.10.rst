@@ -164,6 +164,14 @@ New Modules
 Improved Modules
 ================
 
+ast
+---
+
+Sequential and optional fields for AST nodes are now auto-initialized with the
+corresponding empty values. See the :ref:`ASDL <abstract-grammar>` for more
+information about the AST node classes and fields they have.
+(Contributed by Batuhan Taskaya in :issue:`39981`)
+
 base64
 ------
 

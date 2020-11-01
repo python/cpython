@@ -358,19 +358,52 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x._fields, ('posonlyargs', 'args', 'vararg', 'kwonlyargs',
                                      'kw_defaults', 'kwarg', 'defaults'))
 
-        with self.assertRaises(AttributeError):
-            x.args
         self.assertIsNone(x.vararg)
+        self.assertEqual(x.args, [])
 
         x = ast.arguments(*range(1, 8))
         self.assertEqual(x.args, 2)
         self.assertEqual(x.vararg, 3)
 
+    def test_field_defaults(self):
+        func = ast.FunctionDef("foo", ast.arguments())
+        self.assertEqual(func.name, "foo")
+        self.assertEqual(ast.dump(func.args), ast.dump(ast.arguments()))
+        self.assertEqual(func.body, [])
+        self.assertEqual(func.decorator_list, [])
+        self.assertEqual(func.returns, None)
+        self.assertEqual(func.type_comment, None)
+
+        func2 = ast.FunctionDef()
+        with self.assertRaises(AttributeError):
+            func2.name2
+
+        self.assertEqual(func.body, [])
+        self.assertEqual(func.returns, None)
+
+        func3 = ast.FunctionDef(body=[1])
+        self.assertEqual(func3.body, [1])
+        self.assertFalse(hasattr(func3, "name"))
+        self.assertTrue(hasattr(func3, "returns"))
+
     def test_field_attr_writable(self):
         x = ast.Num()
         # We can assign to _fields
         x._fields = 666
+        x._field_qualifiers = 999
         self.assertEqual(x._fields, 666)
+        self.assertEqual(x._field_qualifiers, 999)
+
+        functiondef_qualifiers = ast.FunctionDef._field_qualifiers
+        del ast.FunctionDef._field_qualifiers
+        fnctdef = ast.FunctionDef("foo")
+        self.assertEqual(fnctdef.name, "foo")
+        with self.assertRaises(AttributeError):
+            fnctdef.body
+        ast.FunctionDef._field_qualifiers = (5,) * len(functiondef_qualifiers)
+        with self.assertRaises(ValueError):
+            ast.FunctionDef() # 5 as a field qualifier is an invalid value
+        ast.FunctionDef._field_qualifiers = functiondef_qualifiers
 
     def test_classattrs(self):
         x = ast.Num()
