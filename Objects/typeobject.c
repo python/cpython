@@ -57,7 +57,6 @@ static unsigned int next_version_tag = 0;
 #endif
 
 typedef struct PySlot_Offset {
-    int slot;
     short subslot_offset;
     short slot_offset;
 } PySlot_Offset;
@@ -2877,7 +2876,7 @@ error:
 }
 
 static const PySlot_Offset pyslot_offsets[] = {
-    {0, 0, 0},
+    {0, 0},
 #include "typeslots.inc"
 };
 
@@ -3136,7 +3135,7 @@ PyType_GetSlot(PyTypeObject *type, int slot)
     }
 
     for (int i = 1; i < slots_len; i++) {
-        if (pyslot_offsets[i].slot != slot) {
+        if (i != slot) {
             continue;
         }
         parent_slot = *(void**)((char*)type + pyslot_offsets[i].slot_offset);

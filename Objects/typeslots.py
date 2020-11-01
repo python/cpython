@@ -12,24 +12,23 @@ def generate_typeslots(out=sys.stdout):
         if not m:
             continue
 
-        slot_name = re.match("#define ([A-Za-z_]+) ([0-9]+)", line).group(1)
         member = m.group(1)
         if member.startswith("tp_"):
-            member = f'{{{slot_name}, -1, offsetof(PyTypeObject, {member})}}'
+            member = f'{{-1, offsetof(PyTypeObject, {member})}}'
         elif member.startswith("am_"):
-            member = (f'{{{slot_name}, offsetof(PyAsyncMethods, {member}),'+
+            member = (f'{{offsetof(PyAsyncMethods, {member}),'+
                       ' offsetof(PyTypeObject, tp_as_async)}')
         elif member.startswith("nb_"):
-            member = (f'{{{slot_name}, offsetof(PyNumberMethods, {member}),'+
+            member = (f'{{offsetof(PyNumberMethods, {member}),'+
                       ' offsetof(PyTypeObject, tp_as_number)}')
         elif member.startswith("mp_"):
-            member = (f'{{{slot_name}, offsetof(PyMappingMethods, {member}),'+
+            member = (f'{{offsetof(PyMappingMethods, {member}),'+
                       ' offsetof(PyTypeObject, tp_as_mapping)}')
         elif member.startswith("sq_"):
-            member = (f'{{{slot_name}, offsetof(PySequenceMethods, {member}),'+
+            member = (f'{{offsetof(PySequenceMethods, {member}),'+
                       ' offsetof(PyTypeObject, tp_as_sequence)}')
         elif member.startswith("bf_"):
-            member = (f'{{{slot_name}, offsetof(PyBufferProcs, {member}),'+
+            member = (f'{{offsetof(PyBufferProcs, {member}),'+
                       ' offsetof(PyTypeObject, tp_as_buffer)}')
         res[int(m.group(2))] = member
 
