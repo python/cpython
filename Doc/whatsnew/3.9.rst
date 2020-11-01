@@ -1289,6 +1289,10 @@ New Features
   representation of a function-like object.
   (Patch by Jeroen Demeyer in :issue:`37645`.)
 
+* Added :c:func:`PyObject_CallOneArg` for calling an object with one
+  positional argument
+  (Patch by Jeroen Demeyer in :issue:`37483`.)
+
 
 Porting to Python 3.9
 ---------------------
