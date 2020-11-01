@@ -783,7 +783,7 @@ static PyObject *
 _locale__get_locale_encoding_impl(PyObject *module)
 /*[clinic end generated code: output=e8e2f6f6f184591a input=513d9961d2f45c76]*/
 {
-    return _Py_GetLocaleEncoding();
+    return _Py_GetLocaleEncodingObject();
 }
 
 
