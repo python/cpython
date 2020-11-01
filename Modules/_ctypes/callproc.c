@@ -1467,6 +1467,8 @@ static PyObject *py_dyld_shared_cache_contains_path(PyObject *self, PyObject *ar
      char *name_str;
 
      if (__builtin_available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)) {
+         int r;
+
          if (!PyArg_ParseTuple(args, "O", &name))
              return NULL;
     
@@ -1475,15 +1477,16 @@ static PyObject *py_dyld_shared_cache_contains_path(PyObject *self, PyObject *ar
     
          if (PyUnicode_FSConverter(name, &name2) == 0)
              return NULL;
-         if (PyBytes_Check(name2))
-             name_str = PyBytes_AS_STRING(name2);
-         else
-             name_str = PyByteArray_AS_STRING(name2);
+         name_str = PyBytes_AS_STRING(name2);
     
-         if(_dyld_shared_cache_contains_path(name_str))
+         r = _dyld_shared_cache_contains_path(name_str);
+         Py_DECREF(name2);
+
+         if (r) {
              Py_RETURN_TRUE;
-         else
+         } else {
              Py_RETURN_FALSE;
+         }
 
      } else {
          PyErr_SetString(PyExc_NotImplementedError, "_dyld_shared_cache_contains_path symbol is missing");

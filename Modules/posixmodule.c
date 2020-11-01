@@ -2471,7 +2471,7 @@ posix_do_stat(PyObject *module, const char *function_name, path_t *path,
     STRUCT_STAT st;
     int result;
 
-#if defined(HAVE_FSTATAT)
+#ifdef HAVE_FSTATAT
     int fstatat_unavailable = 0;
 #endif
 
@@ -2990,7 +2990,7 @@ os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd,
         result = access(path->narrow, mode);
     Py_END_ALLOW_THREADS
 
-#if defined(HAVE_FACCESSAT)
+#ifdef HAVE_FACCESSAT
     if (faccessat_unavailable) {
         if (dir_fd != DEFAULT_DIR_FD) {
             argument_unavailable_error("access", "dir_fd");

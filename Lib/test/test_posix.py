@@ -2024,12 +2024,10 @@ class TestPosixWeaklinking(unittest.TestCase):
                 os.link("source", "target",  src_dir_fd=0, dst_dir_fd=0)
 
             # issue 41355: !HAVE_LINKAT code path ignores the follow_symlinks flag
-            base_path = os.path.abspath(support.TESTFN) + '.link'
-            link_path = os.path.join(base_path, "link")
-            target_path = os.path.join(base_path, "target")
-            source_path = os.path.join(base_path, "source")
-            try:
-                os.mkdir(base_path)
+            with os_helper.temp_dir() as base_path:
+                link_path = os.path.join(base_path, "link")
+                target_path = os.path.join(base_path, "target")
+                source_path = os.path.join(base_path, "source")
 
                 with open(source_path, "w") as fp:
                     fp.write("data")
@@ -2046,8 +2044,6 @@ class TestPosixWeaklinking(unittest.TestCase):
                 with self.assertRaises(FileExistsError):
                     os.link(source_path, link_path, follow_symlinks=False)
 
-            finally:
-                support.rmtree(base_path)
 
     def test_listdir_scandir(self):
         self._verify_available("HAVE_FDOPENDIR")
@@ -2142,21 +2138,18 @@ class TestPosixWeaklinking(unittest.TestCase):
                 os.symlink("a", "b",  dir_fd=0)
 
     def test_utime(self):
-        self._verify_available("HAVE_FUTIMENS_RUNTIME")
-        self._verify_available("HAVE_UTIMENSAT_RUNTIME")
+        self._verify_available("HAVE_FUTIMENS")
+        self._verify_available("HAVE_UTIMENSAT")
         if self.mac_ver >= (10, 13):
-            self.assertIn("HAVE_FUTIMENS_RUNTIME", posix._have_functions)
-            self.assertIn("HAVE_UTIMENSAT_RUNTIME", posix._have_functions)
+            self.assertIn("HAVE_FUTIMENS", posix._have_functions)
+            self.assertIn("HAVE_UTIMENSAT", posix._have_functions)
 
         else:
-            self.assertNotIn("HAVE_FUTIMENS_RUNTIME", posix._have_functions)
-            self.assertNotIn("HAVE_UTIMENSAT_RUNTIME", posix._have_functions)
+            self.assertNotIn("HAVE_FUTIMENS", posix._have_functions)
+            self.assertNotIn("HAVE_UTIMENSAT", posix._have_functions)
 
             with self.assertRaisesRegex(NotImplementedError, "dir_fd unavailable"):
                 os.utime("path", dir_fd=0)
-
-            with self.assertRaisesRegex(NotImplementedError, "follow_symlinks unavailable"):
-                os.utime("path", follow_symlinks=False)
 
 
 def test_main():

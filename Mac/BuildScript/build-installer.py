@@ -828,7 +828,7 @@ def build_universal_openssl(basedir, archList):
         arch_opts = {
             "i386": ["darwin-i386-cc"],
             "x86_64": ["darwin64-x86_64-cc", "enable-ec_nistp_64_gcc_128"],
-            "arm64": ["darwin64-arm64-cc" ],
+            "arm64": ["darwin64-arm64-cc"],
             "ppc": ["darwin-ppc-cc"],
             "ppc64": ["darwin64-ppc-cc"],
         }

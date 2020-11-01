@@ -413,7 +413,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 #   if USING_APPLE_OS_LIBFFI
 #      define HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME __builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)
 #   else
-#      define HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME true
+#      define HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME 1
 #   endif
     if (HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME) {
         result = ffi_prep_closure_loc(p->pcl_write, &p->cif, closure_fcn,
