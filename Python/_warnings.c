@@ -852,7 +852,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     }
 
     if (f == NULL) {
-        globals = _PyInterpreterState_GET()->sysdict;
+        globals = tstate->interp->sysdict;
         *filename = PyUnicode_FromString("sys");
         *lineno = 1;
     }
