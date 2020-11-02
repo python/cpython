@@ -1794,6 +1794,37 @@ add_model_module(PyObject *mod)
     return 0;
 }
 
+static int add_features(PyObject *mod) {
+    #if XML_COMBINED_VERSION > 19505
+    PyObject *list = PyList_New(0);
+    if (list == NULL) {
+        return -1;
+    }
+
+    const XML_Feature *features = XML_GetFeatureList();
+    for (size_t i = 0; features[i].feature != XML_FEATURE_END; ++i) {
+        PyObject *item = Py_BuildValue("si", features[i].name,
+                                        features[i].value);
+        if (item == NULL) {
+            goto error;
+        }
+        int ok = PyList_Append(list, item);
+        Py_DECREF(item);
+        if (ok < 0) {
+            goto error;
+        }
+    }
+    if (PyModule_AddObject(mod, "features", list) < 0) {
+        goto error;
+    }
+    
+#endif
+    return 0;
+error:
+    Py_DECREF(list);
+    return -1;
+}
+
 static int
 pyexpat_exec(PyObject *mod)
 {
@@ -1862,36 +1893,9 @@ pyexpat_exec(PyObject *mod)
         return -1;
     }
 
-#if XML_COMBINED_VERSION > 19505
-    {
-        const XML_Feature *features = XML_GetFeatureList();
-        PyObject *list = PyList_New(0);
-        if (list == NULL) {
-            return -1;
-        }
-
-        int i = 0;
-        for (; features[i].feature != XML_FEATURE_END; ++i) {
-            PyObject *item = Py_BuildValue("si", features[i].name,
-                                            features[i].value);
-            if (item == NULL) {
-                Py_DECREF(list);
-                return -1;
-            }
-            int ok = PyList_Append(list, item);
-            Py_DECREF(item);
-            if (ok < 0) {
-                PyErr_Clear();
-                Py_DECREF(list);
-                return -1;
-            }
-        }
-        if (PyModule_AddObject(mod, "features", list) < 0) {
-            Py_DECREF(list);
-            return -1;
-        }
+    if (add_features(mod) < 0) {
+        return -1;
     }
-#endif
 
 #define MYCONST(c) do {                                 \
         if (PyModule_AddIntConstant(mod, #c, c) < 0) {  \
@@ -1949,24 +1953,26 @@ pyexpat_exec(PyObject *mod)
     return 0;
 }
 
-static PyModuleDef_Slot pyexpat_slots[] = {
-    {Py_mod_exec, pyexpat_exec},
-    {0, NULL}
-};
-
 static struct PyModuleDef pyexpatmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = MODULE_NAME,
     .m_doc = pyexpat_module_documentation,
-    .m_size = 0,
+    .m_size = -1,
     .m_methods = pyexpat_methods,
-    .m_slots = pyexpat_slots
 };
 
 PyMODINIT_FUNC
 PyInit_pyexpat(void)
 {
-    return PyModuleDef_Init(&pyexpatmodule);
+    PyObject *mod = PyModule_Create(&pyexpatmodule);
+    if (mod == NULL)
+        return NULL;
+
+    if (pyexpat_exec(mod) < 0) {
+        Py_DECREF(mod);
+        return NULL;
+    }
+    return mod;
 }
 
 static void
