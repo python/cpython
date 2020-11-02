@@ -840,9 +840,11 @@ regen-ast:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Parser/asdl_c.py \
 		$(srcdir)/Parser/Python.asdl \
 		-H $(srcdir)/Include/Python-ast.h.new \
+		-I $(srcdir)/Include/internal/pycore_ast.h.new \
 		-C $(srcdir)/Python/Python-ast.c.new
 
 	$(UPDATE_FILE) $(srcdir)/Include/Python-ast.h $(srcdir)/Include/Python-ast.h.new
+	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_ast.h $(srcdir)/Include/internal/pycore_ast.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/Python-ast.c $(srcdir)/Python/Python-ast.c.new
 
 .PHONY: regen-opcode
