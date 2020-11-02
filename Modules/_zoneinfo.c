@@ -90,13 +90,17 @@ struct StrongCacheNode {
     PyObject *zone;
 };
 
-static PyTypeObject PyZoneInfo_ZoneInfoType;
+typedef struct {
+    PyTypeObject *ZoneInfoType;
+} zoneinfo_state;
 
 // Globals
 static PyObject *TIMEDELTA_CACHE = NULL;
 static PyObject *ZONEINFO_WEAK_CACHE = NULL;
 static StrongCacheNode *ZONEINFO_STRONG_CACHE = NULL;
 static size_t ZONEINFO_STRONG_CACHE_MAX_SIZE = 8;
+
+static zoneinfo_state global_state;
 
 static _ttinfo NO_TTINFO = {NULL, NULL, NULL, 0};
 
@@ -185,6 +189,11 @@ update_strong_cache(const PyTypeObject *const type, PyObject *key,
 static PyObject *
 zone_from_strong_cache(const PyTypeObject *const type, PyObject *const key);
 
+zoneinfo_state *zoneinfo_get_state()
+{
+    return &global_state;
+}
+
 static PyObject *
 zoneinfo_new_instance(PyTypeObject *type, PyObject *key)
 {
@@ -253,7 +262,7 @@ cleanup:
 static PyObject *
 get_weak_cache(PyTypeObject *type)
 {
-    if (type == &PyZoneInfo_ZoneInfoType) {
+    if (type == zoneinfo_get_state()->ZoneInfoType) {
         return ZONEINFO_WEAK_CACHE;
     }
     else {
@@ -307,10 +316,28 @@ zoneinfo_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     return instance;
 }
 
+static int
+zoneinfo_traverse(PyZoneInfo_ZoneInfo *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->key);
+    return 0;
+}
+
+static int
+zoneinfo_clear(PyZoneInfo_ZoneInfo *self)
+{
+    Py_CLEAR(self->key);
+    Py_CLEAR(self->file_repr);
+    return 0;
+}
+
 static void
 zoneinfo_dealloc(PyObject *obj_self)
 {
     PyZoneInfo_ZoneInfo *self = (PyZoneInfo_ZoneInfo *)obj_self;
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
 
     if (self->weakreflist != NULL) {
         PyObject_ClearWeakRefs(obj_self);
@@ -339,10 +366,9 @@ zoneinfo_dealloc(PyObject *obj_self)
 
     free_tzrule(&(self->tzrule_after));
 
-    Py_XDECREF(self->key);
-    Py_XDECREF(self->file_repr);
-
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    tp->tp_clear(obj_self);
+    tp->tp_free(obj_self);
+    Py_DECREF(tp);
 }
 
 /*[clinic input]
@@ -2382,7 +2408,7 @@ find_in_strong_cache(const StrongCacheNode *const root, PyObject *const key)
 static int
 eject_from_strong_cache(const PyTypeObject *const type, PyObject *key)
 {
-    if (type != &PyZoneInfo_ZoneInfoType) {
+    if (type != zoneinfo_get_state()->ZoneInfoType) {
         return 0;
     }
 
@@ -2435,7 +2461,7 @@ move_strong_cache_node_to_front(StrongCacheNode **root, StrongCacheNode *node)
 static PyObject *
 zone_from_strong_cache(const PyTypeObject *const type, PyObject *const key)
 {
-    if (type != &PyZoneInfo_ZoneInfoType) {
+    if (type != zoneinfo_get_state()->ZoneInfoType) {
         return NULL;  // Strong cache currently only implemented for base class
     }
 
@@ -2460,7 +2486,7 @@ static void
 update_strong_cache(const PyTypeObject *const type, PyObject *key,
                     PyObject *zone)
 {
-    if (type != &PyZoneInfo_ZoneInfoType) {
+    if (type != zoneinfo_get_state()->ZoneInfoType) {
         return;
     }
 
@@ -2493,7 +2519,7 @@ update_strong_cache(const PyTypeObject *const type, PyObject *key,
 void
 clear_strong_cache(const PyTypeObject *const type)
 {
-    if (type != &PyZoneInfo_ZoneInfoType) {
+    if (type != zoneinfo_get_state()->ZoneInfoType) {
         return;
     }
 
@@ -2594,23 +2620,33 @@ static PyMemberDef zoneinfo_members[] = {
      .type = T_OBJECT_EX,
      .flags = READONLY,
      .doc = NULL},
+    {.name = "__weaklistoffset__",
+     .offset = offsetof(PyZoneInfo_ZoneInfo, weakreflist),
+     .type = T_PYSSIZET,
+     .flags = READONLY},
     {NULL}, /* Sentinel */
 };
 
-static PyTypeObject PyZoneInfo_ZoneInfoType = {
-    PyVarObject_HEAD_INIT(NULL, 0)  //
-        .tp_name = "zoneinfo.ZoneInfo",
-    .tp_basicsize = sizeof(PyZoneInfo_ZoneInfo),
-    .tp_weaklistoffset = offsetof(PyZoneInfo_ZoneInfo, weakreflist),
-    .tp_repr = (reprfunc)zoneinfo_repr,
-    .tp_str = (reprfunc)zoneinfo_str,
-    .tp_getattro = PyObject_GenericGetAttr,
-    .tp_flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE),
-    /* .tp_doc = zoneinfo_doc, */
-    .tp_methods = zoneinfo_methods,
-    .tp_members = zoneinfo_members,
-    .tp_new = zoneinfo_new,
-    .tp_dealloc = zoneinfo_dealloc,
+static PyType_Slot zoneinfo_slots[] = {
+    {Py_tp_base, NULL},  // placeholder
+    {Py_tp_repr, zoneinfo_repr},
+    {Py_tp_str, zoneinfo_str},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_methods, zoneinfo_methods},
+    {Py_tp_members, zoneinfo_members},
+    {Py_tp_new, zoneinfo_new},
+    {Py_tp_dealloc, zoneinfo_dealloc},
+    {Py_tp_traverse, zoneinfo_traverse},
+    {Py_tp_clear, zoneinfo_clear},
+    {0, NULL},
+};
+
+static PyType_Spec zoneinfo_spec = {
+    .name = "zoneinfo.ZoneInfo",
+    .basicsize = sizeof(PyZoneInfo_ZoneInfo),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = zoneinfo_slots,
 };
 
 /////
@@ -2642,7 +2678,7 @@ module_free(void *m)
         Py_CLEAR(ZONEINFO_WEAK_CACHE);
     }
 
-    clear_strong_cache(&PyZoneInfo_ZoneInfoType);
+    clear_strong_cache(zoneinfo_get_state()->ZoneInfoType);
 }
 
 static int
@@ -2652,12 +2688,18 @@ zoneinfomodule_exec(PyObject *m)
     if (PyDateTimeAPI == NULL) {
         goto error;
     }
-    PyZoneInfo_ZoneInfoType.tp_base = PyDateTimeAPI->TZInfoType;
-    if (PyType_Ready(&PyZoneInfo_ZoneInfoType) < 0) {
+
+    zoneinfo_state *state = zoneinfo_get_state();
+    PyObject *base = (PyObject *)PyDateTimeAPI->TZInfoType;
+    state->ZoneInfoType = (PyTypeObject *)PyType_FromModuleAndSpec(m,
+                                                        &zoneinfo_spec, base);
+    if (state->ZoneInfoType == NULL) {
         goto error;
     }
 
-    if (PyModule_AddObjectRef(m, "ZoneInfo", (PyObject *)&PyZoneInfo_ZoneInfoType) < 0) {
+    int rc = PyModule_AddObjectRef(m, "ZoneInfo",
+                                   (PyObject *)state->ZoneInfoType);
+    if (rc < 0) {
         goto error;
     }
 
