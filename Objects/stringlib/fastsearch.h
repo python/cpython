@@ -288,11 +288,12 @@ STRINGLIB(_factorize)(const STRINGLIB_CHAR *needle,
 }
 
 #define SHIFT_TYPE uint16_t
-#define MAX_SHIFT ((1U<<(8*sizeof(SHIFT_TYPE))) - 1U)
+#define NOT_FOUND ((1U<<(8*sizeof(SHIFT_TYPE))) - 1U)
+#define SHIFT_OVERFLOW (NOT_FOUND - 1U)
 
 #define TABLE_SIZE_BITS 7
-#define TABLE_SIZE (1 << TABLE_SIZE_BITS)
-#define TABLE_MASK (TABLE_SIZE - 1)
+#define TABLE_SIZE (1U << TABLE_SIZE_BITS)
+#define TABLE_MASK (TABLE_SIZE - 1U)
 
 typedef struct STRINGLIB(_pre) {
     const STRINGLIB_CHAR *needle;
@@ -315,15 +316,17 @@ STRINGLIB(_preprocess)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
                                   needle + p->period,
                                   p->cut * STRINGLIB_SIZEOF_CHAR));
     // Now fill up a table
-    SHIFT_TYPE default_shift = Py_SAFE_DOWNCAST(Py_MIN(len_needle, MAX_SHIFT),
-                                                Py_ssize_t, SHIFT_TYPE);
-    for (int i = 0; i < TABLE_SIZE; i++) {
-        p->table[i] = default_shift;
-    }
+    memset(&(p->table[0]), 0xff, TABLE_SIZE*sizeof(SHIFT_TYPE));
+    assert(p->table[0] == NOT_FOUND);
+    assert(p->table[TABLE_MASK] == NOT_FOUND);
     for (Py_ssize_t i = 0; i < len_needle; i++) {
-        Py_ssize_t shift = Py_MIN(MAX_SHIFT, len_needle - i);
-        int index = needle[i] & TABLE_MASK;
-        p->table[index] = Py_SAFE_DOWNCAST(shift, Py_ssize_t, SHIFT_TYPE);
+        Py_ssize_t shift = len_needle - i;
+        if (shift > SHIFT_OVERFLOW) {
+            shift = SHIFT_OVERFLOW;
+        }
+        p->table[needle[i] & TABLE_MASK] = Py_SAFE_DOWNCAST(shift,
+                                                            Py_ssize_t,
+                                                            SHIFT_TYPE);
     }
 }
 
@@ -339,7 +342,6 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
     const STRINGLIB_CHAR *needle = p->needle;
     const STRINGLIB_CHAR *window = haystack;
     const STRINGLIB_CHAR *last_window = haystack + len_haystack - len_needle;
-    SHIFT_TYPE *table = p->table;
     LOG("===== Two-way: \"%s\" in \"%s\". =====\n", needle, haystack);
 
     if (p->is_periodic) {
@@ -360,9 +362,16 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                 // as well jump to line up the character *after* the
                 // current window.
                 STRINGLIB_CHAR first_outside = window[len_needle];
-                SHIFT_TYPE shift = table[first_outside & TABLE_MASK];
-                LOG("Shifting to line up \"%c\".\n", first_outside);
-                window += shift;
+                SHIFT_TYPE shift = p->table[first_outside & TABLE_MASK];
+                if (shift == NOT_FOUND) {
+                    LOG("\"%c\" not found. Skipping entirely.\n",
+                        first_outside);
+                    window += len_needle + 1;
+                }
+                else {
+                    LOG("Shifting to line up \"%c\".\n", first_outside);
+                    window += shift;
+                }
                 memory = 0;
                 continue;
             }
@@ -414,9 +423,16 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                 // as well jump to line up the character *after* the
                 // current window.
                 STRINGLIB_CHAR first_outside = window[len_needle];
-                SHIFT_TYPE shift = table[first_outside & TABLE_MASK];
-                LOG("Shifting to line up \"%c\".\n", first_outside);
-                window += shift;
+                SHIFT_TYPE shift = p->table[first_outside & TABLE_MASK];
+                if (shift == NOT_FOUND) {
+                    LOG("\"%c\" not found. Skipping entirely.\n",
+                        first_outside);
+                    window += len_needle + 1;
+                }
+                else {
+                    LOG("Shifting to line up \"%c\".\n", first_outside);
+                    window += shift;
+                }
                 continue;
             }
 
@@ -528,7 +544,8 @@ STRINGLIB(_two_way_count)(const STRINGLIB_CHAR *haystack,
 }
 
 #undef SHIFT_TYPE
-#undef MAX_SHIFT
+#undef NOT_FOUND
+#undef SHIFT_OVERFLOW
 #undef TABLE_SIZE_BITS
 #undef TABLE_SIZE
 #undef TABLE_MASK
@@ -571,7 +588,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
     }
 
     mlast = m - 1;
-    skip = mlast;
+    skip = mlast - 1;
     mask = 0;
 
     if (mode != FAST_RSEARCH) {
