@@ -27,7 +27,7 @@ This guide has four major sections:
 
 4) The last section has pure Python equivalents for built-in descriptors that
    are written in C.  Read this if you're curious about how functions turn
-   into bound methods or about how to implement common tools like
+   into bound methods or about the implementation of common tools like
    :func:`classmethod`, :func:`staticmethod`, :func:`property`, and
    :term:`__slots__`.
 
