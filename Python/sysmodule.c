@@ -1838,6 +1838,21 @@ sys__current_frames_impl(PyObject *module)
 }
 
 /*[clinic input]
+sys._current_exceptions
+
+Return a dict mapping each thread's identifier to its current raised exception.
+
+This function should be used for specialized purposes only.
+[clinic start generated code]*/
+
+static PyObject *
+sys__current_exceptions_impl(PyObject *module)
+/*[clinic end generated code: output=2ccfd838c746f0ba input=0e91818fbf2edc1f]*/
+{
+    return _PyThread_CurrentExceptions();
+}
+
+/*[clinic input]
 sys.call_tracing
 
     func: object
@@ -1953,6 +1968,7 @@ static PyMethodDef sys_methods[] = {
      METH_FASTCALL | METH_KEYWORDS, breakpointhook_doc},
     SYS__CLEAR_TYPE_CACHE_METHODDEF
     SYS__CURRENT_FRAMES_METHODDEF
+    SYS__CURRENT_EXCEPTIONS_METHODDEF
     SYS_DISPLAYHOOK_METHODDEF
     SYS_EXC_INFO_METHODDEF
     SYS_EXCEPTHOOK_METHODDEF

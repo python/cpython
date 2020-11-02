@@ -1222,6 +1222,69 @@ done:
     return result;
 }
 
+PyObject *
+_PyThread_CurrentExceptions(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+
+    _Py_EnsureTstateNotNULL(tstate);
+
+    if (_PySys_Audit(tstate, "sys._current_exceptions", NULL) < 0) {
+        return NULL;
+    }
+
+    PyObject *result = PyDict_New();
+    if (result == NULL) {
+        return NULL;
+    }
+
+    /* for i in all interpreters:
+     *     for t in all of i's thread states:
+     *          if t's frame isn't NULL, map t's id to its frame
+     * Because these lists can mutate even when the GIL is held, we
+     * need to grab head_mutex for the duration.
+     */
+    _PyRuntimeState *runtime = tstate->interp->runtime;
+    HEAD_LOCK(runtime);
+    PyInterpreterState *i;
+    for (i = runtime->interpreters.head; i != NULL; i = i->next) {
+        PyThreadState *t;
+        for (t = i->tstate_head; t != NULL; t = t->next) {
+            _PyErr_StackItem *err_info = _PyErr_GetTopmostException(t);
+            if (err_info == NULL) {
+                continue;
+            }
+            PyObject *id = PyLong_FromUnsignedLong(t->thread_id);
+            if (id == NULL) {
+                goto fail;
+            }
+            PyObject *exc_info = PyTuple_Pack(
+                3,
+                err_info->exc_type != NULL ? err_info->exc_type : Py_None,
+                err_info->exc_value != NULL ? err_info->exc_value : Py_None,
+                err_info->exc_traceback != NULL ? err_info->exc_traceback : Py_None);
+            if (exc_info == NULL) {
+                Py_DECREF(id);
+                goto fail;
+            }
+            int stat = PyDict_SetItem(result, id, exc_info);
+            Py_DECREF(id);
+            Py_DECREF(exc_info);
+            if (stat < 0) {
+                goto fail;
+            }
+        }
+    }
+    goto done;
+
+fail:
+    Py_CLEAR(result);
+
+done:
+    HEAD_UNLOCK(runtime);
+    return result;
+}
+
 /* Python "auto thread state" API. */
 
 /* Keep this as a static, as it is not reliable!  It can only
