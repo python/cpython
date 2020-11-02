@@ -27,8 +27,9 @@ This guide has four major sections:
 
 4) The last section has pure Python equivalents for built-in descriptors that
    are written in C.  Read this if you're curious about how functions turn
-   into bound methods or about how to implement common tools like
-   :func:`classmethod`, :func:`staticmethod`, and :func:`property`.
+   into bound methods or about the implementation of common tools like
+   :func:`classmethod`, :func:`staticmethod`, :func:`property`, and
+   :term:`__slots__`.
 
 
 Primer
@@ -188,7 +189,7 @@ logged attribute and that its name is unchangeable.  In the next example,
 we'll fix that problem.
 
 
-Customized Names
+Customized names
 ----------------
 
 When a class uses descriptors, it can inform each descriptor about what
@@ -438,7 +439,7 @@ creates a deeper understanding of how Python works and an appreciation for the
 elegance of its design.
 
 
-Definition and Introduction
+Definition and introduction
 ---------------------------
 
 In general, a descriptor is an object attribute with "binding behavior", one
@@ -463,7 +464,7 @@ simplify the underlying C code and offer a flexible set of new tools for
 everyday Python programs.
 
 
-Descriptor Protocol
+Descriptor protocol
 -------------------
 
 ``descr.__get__(self, obj, type=None) -> value``
@@ -493,7 +494,7 @@ called.  Defining the :meth:`__set__` method with an exception raising
 placeholder is enough to make it a data descriptor.
 
 
-Overview of Descriptor Invocation
+Overview of descriptor invocation
 ---------------------------------
 
 A descriptor can be called directly with ``desc.__get__(obj)`` or
@@ -510,7 +511,7 @@ The details of invocation depend on whether ``obj`` is an object, class, or
 instance of super.
 
 
-Invocation from an Instance
+Invocation from an instance
 ---------------------------
 
 Instance lookup scans through a chain of namespaces giving data descriptors
@@ -549,7 +550,7 @@ The :exc:`TypeError` exception handler is needed because the instance dictionary
 doesn't exist when its class defines :term:`__slots__`.
 
 
-Invocation from a Class
+Invocation from a class
 -----------------------
 
 The logic for a dotted lookup such as ``A.x`` is in
@@ -563,7 +564,7 @@ The full C implementation can be found in :c:func:`type_getattro()` and
 :c:func:`_PyType_Lookup()` in :source:`Objects/typeobject.c`.
 
 
-Invocation from Super
+Invocation from super
 ---------------------
 
 The logic for super's dotted lookup is in the :meth:`__getattribute__` method for
@@ -580,7 +581,7 @@ The full C implementation can be found in :c:func:`super_getattro()` in
 <https://www.python.org/download/releases/2.2.3/descrintro/#cooperation>`_.
 
 
-Summary of Invocation Logic
+Summary of invocation logic
 ---------------------------
 
 The mechanism for descriptors is embedded in the :meth:`__getattribute__()`
@@ -606,7 +607,7 @@ The important points to remember are:
 * Non-data descriptors may be overridden by instance dictionaries.
 
 
-Automatic Name Notification
+Automatic name notification
 ---------------------------
 
 Sometimes it is desirable for a descriptor to know what class variable name it
@@ -624,7 +625,7 @@ place at the time of class creation.  If descriptors are added to the class
 afterwards, :meth:`__set_name__` will need to be called manually.
 
 
-ORM Example
+ORM example
 -----------
 
 The following code is simplified skeleton showing how data descriptors could
@@ -694,8 +695,8 @@ Pure Python Equivalents
 
 The descriptor protocol is simple and offers exciting possibilities.  Several
 use cases are so common that they have been prepackaged into built-in tools.
-Properties, bound methods, static methods, and class methods are all based on
-the descriptor protocol.
+Properties, bound methods, static methods, class methods, and \_\_slots\_\_ are
+all based on the descriptor protocol.
 
 
 Properties
@@ -774,7 +775,7 @@ to wrap access to the value attribute in a property data descriptor::
             return self._value
 
 
-Functions and Methods
+Functions and methods
 ---------------------
 
 Python's object oriented features are built upon a function based environment.
@@ -858,7 +859,7 @@ If you have ever wondered where *self* comes from in regular methods or where
 *cls* comes from in class methods, this is it!
 
 
-Static Methods
+Static methods
 --------------
 
 Non-data descriptors provide a simple mechanism for variations on the usual
@@ -926,7 +927,7 @@ Using the non-data descriptor protocol, a pure Python version of
             return self.f
 
 
-Class Methods
+Class methods
 -------------
 
 Unlike static methods, class methods prepend the class reference to the
@@ -991,8 +992,8 @@ For example, a classmethod and property could be chained together::
         def __doc__(cls):
             return f'A doc for {cls.__name__!r}'
 
-Member Objects
---------------
+Member objects and __slots__
+----------------------------
 
 When a class defines ``__slots__``, it replaces instance dictionaries with a
 fixed-length array of slot values.  From a user point of view that has
