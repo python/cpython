@@ -9,11 +9,14 @@ from tkinter import PhotoImage
 from tkinter.font import Font
 from tkinter.ttk import Scrollbar
 
-from idlelib import macosx
 from idlelib.window import ListedToplevel
 
 
 def underscore_at_end(s):
+    """Helper used when displaying a sorted list of local or global variables
+    so that internal variables (starting with an underscore) are displayed
+    after others, not before.
+    """
     return s.replace('_', '~')
 
 
@@ -154,8 +157,7 @@ class Debugger:
         self.flist = pyshell.flist
         self.root = root = pyshell.root
         self.clickable_cursor = 'hand2'
-        windowingsystem = self.root.tk.call('tk', 'windowingsystem')
-        if windowingsystem == 'aqua':
+        if self.root._windowingsystem == 'aqua':
             self.clickable_cursor = 'pointinghand'
         self.tooltip = None
         self.var_values = {}
@@ -207,7 +209,7 @@ class Debugger:
         self.stack.bind('<<TreeviewSelect>>',
                         lambda e: self.stack_selection_changed())
         self.stack.bind('<Double-1>', lambda e: self.stack_doubleclick())
-        if windowingsystem == 'aqua':
+        if self.root._windowingsystem == 'aqua':
             self.stack.bind('<Button-2>', self.stack_contextmenu)
             self.stack.bind('<Control-Button-1>', self.stack_contextmenu)
         else:
@@ -383,15 +385,15 @@ class Debugger:
             self.add_varheader()
             for name in sorted(locals.keys(), key=underscore_at_end):
                 self.add_var(name, locals[name])
-            self.add_varheader(isGlobal=True)
+            self.add_varheader(is_global=True)
             for name in sorted(globals.keys(), key=underscore_at_end):
-                self.add_var(name, globals[name], isGlobal=True)
+                self.add_var(name, globals[name], is_global=True)
 
-    def add_varheader(self, isGlobal=False):
+    def add_varheader(self, is_global=False):
         pass
 
-    def add_var(self, varname, value, isGlobal=False):
-        item = self.vars.insert(self.globals if isGlobal else self.locals,
+    def add_var(self, varname, value, is_global=False):
+        item = self.vars.insert(self.globals if is_global else self.locals,
                          'end', text=varname, values=(value, ))
         self.var_values[item] = value
 
