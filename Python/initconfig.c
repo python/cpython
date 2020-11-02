@@ -543,6 +543,7 @@ _Py_SetArgcArgv(Py_ssize_t argc, wchar_t * const *argv)
 }
 
 
+// _PyConfig_Write() calls _Py_SetArgcArgv() with PyConfig.orig_argv.
 void
 Py_GetArgcArgv(int *argc, wchar_t ***argv)
 {
