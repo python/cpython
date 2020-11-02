@@ -315,8 +315,7 @@ class PtyTest(unittest.TestCase):
     def test_master_read(self):
         debug("Calling pty.openpty()")
         master_fd, slave_fd = pty.openpty()
-        debug("Got master_fd '%d', slave_fd '%d'" %
-              (master_fd, slave_fd))
+        debug(f"Got master_fd '{master_fd}', slave_fd '{slave_fd}'")
 
         debug("Closing slave_fd")
         os.close(slave_fd)
