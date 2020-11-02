@@ -1,11 +1,12 @@
-"Test calltip, coverage 76%"
+"Test calltip, coverage 83%"
 
 from idlelib import calltip
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 import textwrap
 import types
 import re
+from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Text
 
 
@@ -259,9 +260,35 @@ class Get_entityTest(unittest.TestCase):
         self.assertIs(calltip.get_entity('int'), int)
 
 
-# Test the 9 Calltip methods.
-# open_calltip is about half the code; the others are fairly trivial.
-# The default mocks are what are needed for open_calltip.
+class CalltipNoneTest(unittest.TestCase):
+    # Test some methods with Calltip(None).
+
+    @classmethod
+    def setUpClass(cls):
+        cls.ct = calltip.Calltip(None)
+        cls.ct.text = 'text'
+
+    @patch.object(calltip.calltip_w, 'CalltipWindow', new_callable=Func)
+    def test_make_tk_calltip_window(self, CW):
+        self.ct._make_tk_calltip_window()
+        self.assertEqual((CW.called, CW.args), (1, ('text',)))
+
+    @patch.object(calltip.Calltip, "open_calltip", new_callable=Func)
+    def test_open_callers(self, op):
+        eq = self.assertEqual
+        ct = self.ct
+        eq(ct.editwin, None)
+        ct.active_calltip = None
+        ct.refresh_calltip_event(None)
+        self.assertEqual((op.called, op.args), (0, None))
+        ct.force_open_calltip_event(None)
+        self.assertEqual((op.called, op.args), (1, (True,)))
+        ct.try_open_calltip_event(None)
+        self.assertEqual((op.called, op.args), (2, (False,)))
+        ct.active_calltip = mock_CalltipWindow
+        ct.refresh_calltip_event(None)
+        self.assertEqual((op.called, op.args), (3, (False,)))
+
 
 class mock_Shell():
     "Return mock sufficient to pass to hyperparser."
@@ -273,7 +300,9 @@ class mock_Shell():
         self.tabwidth = 8
 
 
-class mock_TipWindow:
+class mock_CalltipWindow:
+    tipwindow = True
+
     def __init__(self):
         pass
 
@@ -284,7 +313,7 @@ class mock_TipWindow:
 
 class WrappedCalltip(calltip.Calltip):
     def _make_tk_calltip_window(self):
-        return mock_TipWindow()
+        return mock_CalltipWindow()
 
     def remove_calltip_window(self, event=None):
         if self.active_calltip:  # Setup to None.
@@ -295,7 +324,8 @@ class WrappedCalltip(calltip.Calltip):
         return 'tip'
 
 
-class CalltipTest(unittest.TestCase):
+class CalltipEWTest(unittest.TestCase):
+    # Test some methods with Calltip(mock_Shell)
 
     @classmethod
     def setUpClass(cls):
@@ -307,6 +337,16 @@ class CalltipTest(unittest.TestCase):
         self.ct.active_calltip = None
         # Test .active_calltip, +args
         self.ct.tips_removed = 0
+
+    def test_init_ew(self):
+        self.assertTrue(isinstance(self.ct.editwin, mock_Shell))
+        self.assertEqual(self.ct.text, self.text)
+
+    def test_close(self):
+        # Patch attribute with callable so restored after change.
+        with patch.object(self.ct, '_calltip_window', new_function=Func):
+            self.ct.close()
+            self.assertIsNone(self.ct._calltip_window)
 
     def open_close(self, testfunc):
         # Open-close template with testfunc called in between.
