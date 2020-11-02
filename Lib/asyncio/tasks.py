@@ -373,7 +373,7 @@ ALL_COMPLETED = concurrent.futures.ALL_COMPLETED
 async def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
     """Wait for the Futures and coroutines given by fs to complete.
 
-    The sequence futures must not be empty.
+    The fs iterable must not be empty.
 
     Coroutines will be wrapped in Tasks.
 
@@ -573,7 +573,7 @@ def as_completed(fs, *, loop=None, timeout=None):
     Note: The futures 'f' are not necessarily members of fs.
     """
     if futures.isfuture(fs) or coroutines.iscoroutine(fs):
-        raise TypeError(f"expect a list of futures, not {type(fs).__name__}")
+        raise TypeError(f"expect an iterable of futures, not {type(fs).__name__}")
 
     from .queues import Queue  # Import here to avoid circular import problem.
     done = Queue(loop=loop)
