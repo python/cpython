@@ -2,10 +2,10 @@
 
 from idlelib import calltip
 import unittest
+from unittest.mock import Mock
 import textwrap
 import types
 import re
-from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Text
 
 
@@ -263,15 +263,10 @@ class Get_entityTest(unittest.TestCase):
 # open_calltip is about half the code; the others are fairly trivial.
 # The default mocks are what are needed for open_calltip.
 
-def mock_prevrange(tag, index):
-    # Hyperparser call this to find code in Shell.
-    return None  # Shell test text starts at index "1.0"
-
-
 class mock_Shell():
     "Return mock sufficient to pass to hyperparser."
     def __init__(self, text):
-        text.tag_prevrange = mock_prevrange
+        text.tag_prevrange = Mock(return_value=None)
         self.text = text
         self.prompt_last_line = ">>> "
         self.indentwidth = 4
@@ -281,23 +276,23 @@ class mock_Shell():
 class mock_TipWindow:
     def __init__(self):
         pass
+
     def showtip(self, text, parenleft, parenright):
         self.args = parenleft, parenright
         self.parenline, self.parencol = map(int, parenleft.split('.'))
 
 
-def mock_calltip_window(self):
-    return mock_TipWindow()
+class WrappedCalltip(calltip.Calltip):
+    def _make_tk_calltip_window(self):
+        return mock_TipWindow()
 
+    def remove_calltip_window(self, event=None):
+        if self.active_calltip:  # Setup to None.
+            self.active_calltip = None
+            self.tips_removed += 1  # Setup to 0.
 
-def mock_remove_calltip_window(self):
-    if self.active_calltip:  # Setup to None.
-        self.active_calltip = None
-        self.tips_removed += 1  # Setup to 0.
-
-
-def mock_fetch_tip(self, expression):
-    return 'tip'
+    def fetch_tip(self, expression):
+        return 'tip'
 
 
 class CalltipTest(unittest.TestCase):
@@ -305,12 +300,7 @@ class CalltipTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.text = Text()
-        C = calltip.Calltip
-        C._make_tk_calltip_window = mock_calltip_window
-        C.orig_remove_calltip_window = C.remove_calltip_window
-        C.remove_calltip_window = mock_remove_calltip_window
-        C.fetch_tip = mock_fetch_tip
-        cls.ct = C(mock_Shell(cls.text))
+        cls.ct = WrappedCalltip(mock_Shell(cls.text))
 
     def setUp(self):
         self.text.delete('1.0', 'end')  # Insert and call
