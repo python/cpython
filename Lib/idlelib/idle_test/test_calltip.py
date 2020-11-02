@@ -353,6 +353,22 @@ class CalltipTest(unittest.TestCase):
             self.text.insert('insert', "\n")
         self.open_close(comment)
 
+    def test_reopen_after_close_paren(self):
+        def inner(self):
+            self.text.insert('insert', 'bar(')
+            self.ct.open_calltip(False)
+            self.assertEqual(
+                self.ct.active_calltip.args[0],
+                f'1.{len("f(bar(") - 1}',
+            )
+            self.text.insert('insert', ')')
+            self.ct.open_calltip(False)
+            self.assertEqual(
+                self.ct.active_calltip.args[0],
+                f'1.{len("f(") - 1}',
+            )
+        self.open_close(inner)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
