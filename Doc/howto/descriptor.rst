@@ -1031,9 +1031,6 @@ attributes stored in ``__slots__``::
 
     mark = Immutable('Botany', 'Mark Watney')   # Create an immutable instance
 
-The :mod:`dataclasses` module uses a different strategy to achieve
-immutability.  It overrides the :meth:`__setattr__` method.
-
 3. Saves memory.  On a 64-bit Linux build, an instance with two attributes
 takes 48 bytes with ``__slots__`` and 152 bytes without.  This `flyweight
 design pattern <https://en.wikipedia.org/wiki/Flyweight_pattern>`_ likely only
