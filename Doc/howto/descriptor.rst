@@ -189,7 +189,7 @@ logged attribute and that its name is unchangeable.  In the next example,
 we'll fix that problem.
 
 
-Customized Names
+Customized names
 ----------------
 
 When a class uses descriptors, it can inform each descriptor about what
