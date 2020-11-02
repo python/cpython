@@ -150,7 +150,7 @@ class PtyTest(unittest.TestCase):
             mode = None
 
         new_stdin_winsz = None
-        if _HAVE_WINSZ:
+        if self.stdin_rows != None and self.stdin_cols != None:
             try:
                 debug("Setting pty.STDIN_FILENO window size")
                 # Set number of columns and rows to be the
