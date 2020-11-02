@@ -1039,10 +1039,7 @@ takes 48 bytes with ``__slots__`` and 152 bytes without.  This `flyweight
 design pattern <https://en.wikipedia.org/wiki/Flyweight_pattern>`_ likely only
 matters when a large number of instances are going to be created.
 
-4. Affects performance.  Prior to version 3.10, instance variable access was
-faster when ``__slots__`` was defined.
-
-5. Blocks tools like :func:`functools.cached_property` which require an
+4. Blocks tools like :func:`functools.cached_property` which require an
 instance dictionary to function correctly::
 
     from functools import cached_property
