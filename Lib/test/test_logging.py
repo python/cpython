@@ -4310,8 +4310,8 @@ class ModuleLevelMiscTest(BaseTest):
             logging.setLoggerClass(logging.Logger)
 
     def test_logging_at_shutdown(self):
-        # Issue #20037
-        code = """if 1:
+        # bpo-20037: Doing text I/O late at interpreter shutdown must not crash
+        code = textwrap.dedent("""
             import logging
 
             class A:
@@ -4321,22 +4321,55 @@ class ModuleLevelMiscTest(BaseTest):
                     except Exception:
                         logging.exception("exception in __del__")
 
-            a = A()"""
+            a = A()
+        """)
         rc, out, err = assert_python_ok("-c", code)
         err = err.decode()
         self.assertIn("exception in __del__", err)
         self.assertIn("ValueError: some error", err)
 
+    def test_logging_at_shutdown_open(self):
+        # bpo-26789: FileHandler keeps a reference to the builtin open()
+        # function to be able to open or reopen the file during Python
+        # finalization.
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+
+        code = textwrap.dedent(f"""
+            import builtins
+            import logging
+
+            class A:
+                def __del__(self):
+                    logging.error("log in __del__")
+
+            # basicConfig() opens the file, but logging.shutdown() closes
+            # it at Python exit. When A.__del__() is called,
+            # FileHandler._open() must be called again to re-open the file.
+            logging.basicConfig(filename={filename!r})
+
+            a = A()
+
+            # Simulate the Python finalization which removes the builtin
+            # open() function.
+            del builtins.open
+        """)
+        assert_python_ok("-c", code)
+
+        with open(filename) as fp:
+            self.assertEqual(fp.read().rstrip(), "ERROR:root:log in __del__")
+
     def test_recursion_error(self):
         # Issue 36272
-        code = """if 1:
+        code = textwrap.dedent("""
             import logging
 
             def rec():
                 logging.error("foo")
                 rec()
 
-            rec()"""
+            rec()
+        """)
         rc, out, err = assert_python_failure("-c", code)
         err = err.decode()
         self.assertNotIn("Cannot recover from stack overflow.", err)
