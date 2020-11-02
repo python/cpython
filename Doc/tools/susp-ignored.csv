@@ -5,7 +5,7 @@ c-api/sequence,,:i2,o[i1:i2]
 c-api/tuple,,:high,p[low:high]
 c-api/unicode,,:end,str[start:end]
 c-api/unicode,,:start,unicode[start:start+length]
-distutils/examples,267,`,This is the description of the ``foobar`` package.
+distutils/examples,,`,This is the description of the ``foobar`` package.
 distutils/setupscript,,::,
 extending/embedding,,:numargs,"if(!PyArg_ParseTuple(args, "":numargs""))"
 extending/extending,,:myfunction,"PyArg_ParseTuple(args, ""D:myfunction"", &c);"

@@ -1,5 +1,6 @@
 #include "Python.h"
-#include "pycore_fileutils.h"
+#include "pycore_fileutils.h"     // fileutils definitions
+#include "pycore_runtime.h"       // _PyRuntime
 #include "osdefs.h"               // SEP
 #include <locale.h>
 
@@ -817,6 +818,72 @@ _Py_EncodeLocaleEx(const wchar_t *text, char **str,
 {
     return encode_locale_ex(text, str, error_pos, reason, 1,
                             current_locale, errors);
+}
+
+
+// Get the current locale encoding name:
+//
+// - Return "UTF-8" if _Py_FORCE_UTF8_LOCALE macro is defined (ex: on Android)
+// - Return "UTF-8" if the UTF-8 Mode is enabled
+// - On Windows, return the ANSI code page (ex: "cp1250")
+// - Return "UTF-8" if nl_langinfo(CODESET) returns an empty string.
+// - Otherwise, return nl_langinfo(CODESET).
+//
+// Return NULL on memory allocation failure.
+//
+// See also config_get_locale_encoding()
+wchar_t*
+_Py_GetLocaleEncoding(void)
+{
+#ifdef _Py_FORCE_UTF8_LOCALE
+    // On Android langinfo.h and CODESET are missing,
+    // and UTF-8 is always used in mbstowcs() and wcstombs().
+    return _PyMem_RawWcsdup(L"UTF-8");
+#else
+    const PyPreConfig *preconfig = &_PyRuntime.preconfig;
+    if (preconfig->utf8_mode) {
+        return _PyMem_RawWcsdup(L"UTF-8");
+    }
+
+#ifdef MS_WINDOWS
+    wchar_t encoding[23];
+    unsigned int ansi_codepage = GetACP();
+    swprintf(encoding, Py_ARRAY_LENGTH(encoding), L"cp%u", ansi_codepage);
+    encoding[Py_ARRAY_LENGTH(encoding) - 1] = 0;
+    return _PyMem_RawWcsdup(encoding);
+#else
+    const char *encoding = nl_langinfo(CODESET);
+    if (!encoding || encoding[0] == '\0') {
+        // Use UTF-8 if nl_langinfo() returns an empty string. It can happen on
+        // macOS if the LC_CTYPE locale is not supported.
+        return _PyMem_RawWcsdup(L"UTF-8");
+    }
+
+    wchar_t *wstr;
+    int res = decode_current_locale(encoding, &wstr, NULL,
+                                    NULL, _Py_ERROR_SURROGATEESCAPE);
+    if (res < 0) {
+        return NULL;
+    }
+    return wstr;
+#endif  // !MS_WINDOWS
+
+#endif  // !_Py_FORCE_UTF8_LOCALE
+}
+
+
+PyObject *
+_Py_GetLocaleEncodingObject(void)
+{
+    wchar_t *encoding = _Py_GetLocaleEncoding();
+    if (encoding == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    PyObject *str = PyUnicode_FromWideChar(encoding, -1);
+    PyMem_RawFree(encoding);
+    return str;
 }
 
 
