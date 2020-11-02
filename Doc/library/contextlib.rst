@@ -154,6 +154,39 @@ Functions and classes provided:
    ``page.close()`` will be called when the :keyword:`with` block is exited.
 
 
+.. class:: aclosing(thing)
+
+   Return an async context manager that calls the ``aclose()`` method of *thing*
+   upon completion of the block.  This is basically equivalent to::
+
+      from contextlib import asynccontextmanager
+
+      @asynccontextmanager
+      async def aclosing(thing):
+          try:
+              yield thing
+          finally:
+              await thing.aclose()
+
+   Significantly, ``aclosing()`` supports deterministic cleanup of async
+   generators when they happen to exit early by :keyword:`break` or an
+   exception.  For example::
+
+      from contextlib import aclosing
+
+      async with aclosing(my_generator()) as values:
+          async for value in values:
+              if value == 42:
+                  break
+
+   This pattern ensures that the generator's async exit code is executed in
+   the same context as its iterations (so that exceptions and context
+   variables work as expected, and the exit code isn't run after the
+   lifetime of some task it depends on).
+
+   .. versionadded:: 3.10
+
+
 .. _simplifying-support-for-single-optional-context-managers:
 
 .. function:: nullcontext(enter_result=None)

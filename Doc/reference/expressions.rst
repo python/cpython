@@ -643,6 +643,16 @@ after resuming depends on the method which resumed the execution.  If
 :meth:`~agen.asend` is used, then the result will be the value passed in to
 that method.
 
+If an asynchronous generator happens to exit early by :keyword:`break`, the caller
+task being cancelled, or other exceptions, the generator's async cleanup code
+will run and possibly raise exceptions or access context variables in an
+unexpected context--perhaps after the lifetime of tasks it depends, or
+during the event loop shutdown when the async-generator garbage collection hook
+is called.
+To prevent this, the caller must explicitly close the async generator by calling
+:meth:`~agen.aclose` method to finalize the generator and ultimately detach it
+from the event loop.
+
 In an asynchronous generator function, yield expressions are allowed anywhere
 in a :keyword:`try` construct. However, if an asynchronous generator is not
 resumed before it is finalized (by reaching a zero reference count or by
@@ -654,9 +664,9 @@ generator-iterator's :meth:`~agen.aclose` method and run the resulting
 coroutine object, thus allowing any pending :keyword:`!finally` clauses
 to execute.
 
-To take care of finalization, an event loop should define
-a *finalizer* function which takes an asynchronous generator-iterator
-and presumably calls :meth:`~agen.aclose` and executes the coroutine.
+To take care of finalization upon event loop termination, an event loop should
+define a *finalizer* function which takes an asynchronous generator-iterator and
+presumably calls :meth:`~agen.aclose` and executes the coroutine.
 This  *finalizer* may be registered by calling :func:`sys.set_asyncgen_hooks`.
 When first iterated over, an asynchronous generator-iterator will store the
 registered *finalizer* to be called upon finalization. For a reference example
