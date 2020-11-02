@@ -253,10 +253,16 @@ PyPreConfig
 
       See :c:member:`PyConfig.isolated`.
 
-   .. c:member:: int legacy_windows_fs_encoding (Windows only)
+   .. c:member:: int legacy_windows_fs_encoding
 
-      If non-zero, disable UTF-8 Mode, set the Python filesystem encoding to
-      ``mbcs``, set the filesystem error handler to ``replace``.
+      If non-zero:
+
+      * Set :c:member:`PyPreConfig.utf8_mode` to ``0``,
+      * Set :c:member:`PyConfig.filesystem_encoding` to ``"mbcs"``,
+      * Set :c:member:`PyConfig.filesystem_errors` to ``"replace"``.
+
+      Initialized the from :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment
+      variable value.
 
       Only available on Windows. ``#ifdef MS_WINDOWS`` macro can be used for
       Windows specific code.
@@ -499,11 +505,47 @@ PyConfig
 
    .. c:member:: wchar_t* filesystem_encoding
 
-      Filesystem encoding, :func:`sys.getfilesystemencoding`.
+      Filesystem encoding: :func:`sys.getfilesystemencoding`.
+
+      On macOS, Android and VxWorks: use ``"utf-8"`` by default.
+
+      On Windows: use ``"utf-8"`` by default, or ``"mbcs"`` if
+      :c:member:`~PyPreConfig.legacy_windows_fs_encoding` of
+      :c:type:`PyPreConfig` is non-zero.
+
+      Default encoding on other platforms:
+
+      * ``"utf-8"`` if :c:member:`PyPreConfig.utf8_mode` is non-zero.
+      * ``"ascii"`` if Python detects that ``nl_langinfo(CODESET)`` announces
+        the ASCII encoding (or Roman8 encoding on HP-UX), whereas the
+        ``mbstowcs()`` function decodes from a different encoding (usually
+        Latin1).
+      * ``"utf-8"`` if ``nl_langinfo(CODESET)`` returns an empty string.
+      * Otherwise, use the LC_CTYPE locale encoding:
+        ``nl_langinfo(CODESET)`` result.
+
+      At Python statup, the encoding name is normalized to the Python codec
+      name. For example, ``"ANSI_X3.4-1968"`` is replaced with ``"ascii"``.
+
+      See also the :c:member:`~PyConfig.filesystem_errors` member.
 
    .. c:member:: wchar_t* filesystem_errors
 
-      Filesystem encoding errors, :func:`sys.getfilesystemencodeerrors`.
+      Filesystem error handler: :func:`sys.getfilesystemencodeerrors`.
+
+      On Windows: use ``"surrogatepass"`` by default, or ``"replace"``  if
+      :c:member:`~PyPreConfig.legacy_windows_fs_encoding` of
+      :c:type:`PyPreConfig` is non-zero.
+
+      On other platforms: use ``"surrogateescape"`` by default.
+
+      Supported error handlers:
+
+      * ``"strict"``
+      * ``"surrogateescape"``
+      * ``"surrogatepass"`` (only supported with the UTF-8 encoding)
+
+      See also the :c:member:`~PyConfig.filesystem_encoding` member.
 
    .. c:member:: unsigned long hash_seed
    .. c:member:: int use_hash_seed

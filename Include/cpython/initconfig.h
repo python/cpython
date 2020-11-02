@@ -156,36 +156,13 @@ typedef struct {
     /* Python filesystem encoding and error handler:
        sys.getfilesystemencoding() and sys.getfilesystemencodeerrors().
 
-       Default encoding and error handler:
+       The Doc/c-api/init_config.rst documentation explains how Python selects
+       the filesystem encoding and error handler.
 
-       * if Py_SetStandardStreamEncoding() has been called: they have the
-         highest priority;
-       * PYTHONIOENCODING environment variable;
-       * The UTF-8 Mode uses UTF-8/surrogateescape;
-       * If Python forces the usage of the ASCII encoding (ex: C locale
-         or POSIX locale on FreeBSD or HP-UX), use ASCII/surrogateescape;
-       * locale encoding: ANSI code page on Windows, UTF-8 on Android and
-         VxWorks, LC_CTYPE locale encoding on other platforms;
-       * On Windows, "surrogateescape" error handler;
-       * "surrogateescape" error handler if the LC_CTYPE locale is "C" or "POSIX";
-       * "surrogateescape" error handler if the LC_CTYPE locale has been coerced
-         (PEP 538);
-       * "strict" error handler.
-
-       Supported error handlers: "strict", "surrogateescape" and
-       "surrogatepass". The surrogatepass error handler is only supported
-       if Py_DecodeLocale() and Py_EncodeLocale() use directly the UTF-8 codec;
-       it's only used on Windows.
-
-       initfsencoding() updates the encoding to the Python codec name.
-       For example, "ANSI_X3.4-1968" is replaced with "ascii".
-
-       On Windows, sys._enablelegacywindowsfsencoding() sets the
-       encoding/errors to mbcs/replace at runtime.
-
-
-       See Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors.
-       */
+      _PyUnicode_InitEncodings() updates the encoding name to the Python codec
+      name. For example, "ANSI_X3.4-1968" is replaced with "ascii". It also
+      sets Py_FileSystemDefaultEncoding to filesystem_encoding and
+      sets Py_FileSystemDefaultEncodeErrors to filesystem_errors. */
     wchar_t *filesystem_encoding;
     wchar_t *filesystem_errors;
 

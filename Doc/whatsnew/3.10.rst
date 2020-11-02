@@ -134,7 +134,7 @@ arguments of multiple types, :data:`typing.Union` was used::
        return number ** 2
 
 
-Now, type hints can be written in a more succinct manner::
+Type hints can now be written in a more succinct manner::
 
    def square(number: int | float) -> int | float:
        return number ** 2
@@ -261,7 +261,7 @@ Optimizations
 
 * The ``LOAD_ATTR`` instruction now uses new "per opcode cache" mechanism.
   It is about 36% faster now.  (Contributed by Pablo Galindo and Yury Selivanov
-  in :issue:`42093`.)
+  in :issue:`42093`, based on ideas implemented originally in PyPy and MicroPython.)
 
 * When building Python with ``--enable-optimizations`` now
   ``-fno-semantic-interposition`` is added to both the compile and link line.

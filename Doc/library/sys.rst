@@ -616,29 +616,20 @@ always available.
 .. function:: getfilesystemencoding()
 
    Return the name of the encoding used to convert between Unicode
-   filenames and bytes filenames. For best compatibility, str should be
-   used for filenames in all cases, although representing filenames as bytes
-   is also supported. Functions accepting or returning filenames should support
-   either str or bytes and internally convert to the system's preferred
-   representation.
+   filenames and bytes filenames.
+
+   For best compatibility, str should be used for filenames in all cases,
+   although representing filenames as bytes is also supported. Functions
+   accepting or returning filenames should support either str or bytes and
+   internally convert to the system's preferred representation.
 
    This encoding is always ASCII-compatible.
 
    :func:`os.fsencode` and :func:`os.fsdecode` should be used to ensure that
    the correct encoding and errors mode are used.
 
-   * In the UTF-8 mode, the encoding is ``utf-8`` on any platform.
-
-   * On macOS, the encoding is ``'utf-8'``.
-
-   * On Unix, the encoding is the locale encoding.
-
-   * On Windows, the encoding may be ``'utf-8'`` or ``'mbcs'``, depending
-     on user configuration.
-
-   * On Android, the encoding is ``'utf-8'``.
-
-   * On VxWorks, the encoding is ``'utf-8'``.
+   The filesystem encoding is initialized from
+   :c:member:`PyConfig.filesystem_encoding`.
 
    .. versionchanged:: 3.2
       :func:`getfilesystemencoding` result cannot be ``None`` anymore.
@@ -659,6 +650,9 @@ always available.
 
    :func:`os.fsencode` and :func:`os.fsdecode` should be used to ensure that
    the correct encoding and errors mode are used.
+
+   The filesystem error handler is initialized from
+   :c:member:`PyConfig.filesystem_errors`.
 
    .. versionadded:: 3.6
 
@@ -1456,6 +1450,9 @@ always available.
 
    This is equivalent to defining the :envvar:`PYTHONLEGACYWINDOWSFSENCODING`
    environment variable before launching Python.
+
+   See also :func:`sys.getfilesystemencoding` and
+   :func:`sys.getfilesystemencodeerrors`.
 
    .. availability:: Windows.
 
