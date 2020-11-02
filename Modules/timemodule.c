@@ -1371,6 +1371,23 @@ _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
     return 0;
 }
 
+#elif defined(__sun) && defined(__SVR4)
+#define HAVE_THREAD_TIME
+static int
+_PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
+{
+    /* bpo-35455: On Solaris, CLOCK_THREAD_CPUTIME_ID clock is not always
+       available; use gethrvtime() to substitute this functionality. */
+    if (info) {
+        info->implementation = "gethrvtime()";
+        info->resolution = 1e-9;
+        info->monotonic = 1;
+        info->adjustable = 0;
+    }
+    *tp = _PyTime_FromNanoseconds(gethrvtime());
+    return 0;
+}
+
 #elif defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_PROCESS_CPUTIME_ID)
 #define HAVE_THREAD_TIME
 static int
