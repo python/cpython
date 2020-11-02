@@ -597,6 +597,8 @@ However, for reading convenience, most of the examples show sorted sequences.
       >>> covariance(z, x)
       -7.5
 
+   .. versionadded:: 3.10
+
 .. function:: correlation(x, y, /)
 
    Return the `Pearson's correlation coefficient
@@ -619,6 +621,8 @@ However, for reading convenience, most of the examples show sorted sequences.
       1.0
       >>> correlation(x, y)
       -1.0
+
+   .. versionadded:: 3.10
 
 .. function:: linear_regression(regressor, dependent_variable)
 
@@ -660,6 +664,8 @@ However, for reading convenience, most of the examples show sorted sequences.
 
       >>> round(intercept + slope * 1)
       -610
+
+   .. versionadded:: 3.10
 
 
 Exceptions
