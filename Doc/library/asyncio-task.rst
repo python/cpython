@@ -501,7 +501,7 @@ Waiting Primitives
                             return_when=ALL_COMPLETED)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   set concurrently and block until the condition specified
+   iterable concurrently and block until the condition specified
    by *return_when*.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
@@ -588,9 +588,9 @@ Waiting Primitives
 .. function:: as_completed(aws, \*, loop=None, timeout=None)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   set concurrently.  Return an iterator of coroutines.
+   iterable concurrently.  Return an iterator of coroutines.
    Each coroutine returned can be awaited to get the earliest next
-   result from the set of the remaining awaitables.
+   result from the iterable of the remaining awaitables.
 
    Raises :exc:`asyncio.TimeoutError` if the timeout occurs before
    all Futures are done.
