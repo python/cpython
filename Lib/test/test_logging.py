@@ -4350,9 +4350,9 @@ class ModuleLevelMiscTest(BaseTest):
 
             a = A()
 
-            # Simulate the Python finalization which sets
-            # modules attributess to None
-            builtins.open = None
+            # Simulate the Python finalization which removes the builtin
+            # open() function.
+            del builtins.open
         """)
         assert_python_ok("-c", code)
 
