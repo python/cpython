@@ -990,3 +990,159 @@ For example, a classmethod and property could be chained together::
         @property
         def __doc__(cls):
             return f'A doc for {cls.__name__!r}'
+
+Member Objects
+--------------
+
+When a class defines ``__slots__``, it replaces instance dictionaries with a
+fixed-length array of slot values.  From a user point of view that has
+several effects:
+
+1. Provides immediate detection of bugs due to misspelled attribute
+assignments.  Only attribute names specified in ``__slots__`` are allowed::
+
+        class Vehicle:
+            __slots__ = ('id_number', 'make', 'model')
+
+        >>> auto = Vehicle()
+        >>> auto.id_nubmer = 'VYE483814LQEX'
+        Traceback (most recent call last):
+            ...
+        AttributeError: 'Vehicle' object has no attribute 'id_nubmer'
+
+2. Helps create immutable objects where descriptors manage access to private
+attributes stored in ``__slots__``::
+
+    class Immutable:
+
+        __slots__ = ('_dept', '_name')          # Replace instance dictionary
+
+        def __init__(self, dept, name):
+            self._dept = dept                   # Store to private attribute
+            self._name = name                   # Store to private attribute
+
+        @property                               # Read-only descriptor
+        def dept(self):
+            return self._dept
+
+        @property
+        def name(self):                         # Read-only descriptor
+            return self._name
+
+    mark = Immutable('Botany', 'Mark Watney')   # Create an immutable instance
+
+3. Saves memory.  On a 64-bit Linux build, an instance with two attributes
+takes 48 bytes with ``__slots__`` and 152 bytes without.  This `flyweight
+design pattern <https://en.wikipedia.org/wiki/Flyweight_pattern>`_ likely only
+matters when a large number of instances are going to be created.
+
+4. Blocks tools like :func:`functools.cached_property` which require an
+instance dictionary to function correctly::
+
+    from functools import cached_property
+
+    class CP:
+        __slots__ = ()                          # Eliminates the instance dict
+
+        @cached_property                        # Requires an instance dict
+        def pi(self):
+            return 4 * sum((-1.0)**n / (2.0*n + 1.0)
+                           for n in reversed(range(100_000)))
+
+    >>> CP().pi
+    Traceback (most recent call last):
+      ...
+    TypeError: No '__dict__' attribute on 'CP' instance to cache 'pi' property.
+
+It's not possible to create an exact drop-in pure Python version of
+``__slots__`` because it requires direct access to C structures and control
+over object memory allocation.  However, we can build a mostly faithful
+simulation where the actual C structure for slots is emulated by a private
+``_slotvalues`` list.  Reads and writes to that private structure are managed
+by member descriptors::
+
+    class Member:
+
+        def __init__(self, name, clsname, offset):
+            'Emulate PyMemberDef in Include/structmember.h'
+            # Also see descr_new() in Objects/descrobject.c
+            self.name = name
+            self.clsname = clsname
+            self.offset = offset
+
+        def __get__(self, obj, objtype=None):
+            'Emulate member_get() in Objects/descrobject.c'
+            # Also see PyMember_GetOne() in Python/structmember.c
+            return obj._slotvalues[self.offset]
+
+        def __set__(self, obj, value):
+            'Emulate member_set() in Objects/descrobject.c'
+            obj._slotvalues[self.offset] = value
+
+        def __repr__(self):
+            'Emulate member_repr() in Objects/descrobject.c'
+            return f'<Member {self.name!r} of {self.clsname!r}>'
+
+The :meth:`type.__new__` method takes care of adding member objects to class
+variables.  The :meth:`object.__new__` method takes care of creating instances
+that have slots instead of a instance dictionary.  Here is a rough equivalent
+in pure Python::
+
+    class Type(type):
+        'Simulate how the type metaclass adds member objects for slots'
+
+        def __new__(mcls, clsname, bases, mapping):
+            'Emuluate type_new() in Objects/typeobject.c'
+            # type_new() calls PyTypeReady() which calls add_methods()
+            slot_names = mapping.get('slot_names', [])
+            for offset, name in enumerate(slot_names):
+                mapping[name] = Member(name, clsname, offset)
+            return type.__new__(mcls, clsname, bases, mapping)
+
+    class Object:
+        'Simulate how object.__new__() allocates memory for __slots__'
+
+        def __new__(cls, *args):
+            'Emulate object_new() in Objects/typeobject.c'
+            inst = super().__new__(cls)
+            if hasattr(cls, 'slot_names'):
+                inst._slotvalues = [None] * len(cls.slot_names)
+            return inst
+
+To use the simulation in a real class, just inherit from :class:`Object` and
+set the :term:`metaclass` to :class:`Type`::
+
+    class H(Object, metaclass=Type):
+
+        slot_names = ['x', 'y']
+
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
+
+At this point, the metaclass has loaded member objects for *x* and *y*::
+
+    >>> import pprint
+    >>> pprint.pp(dict(vars(H)))
+    {'__module__': '__main__',
+     'slot_names': ['x', 'y'],
+     '__init__': <function H.__init__ at 0x7fb5d302f9d0>,
+     'x': <Member 'x' of 'H'>,
+     'y': <Member 'y' of 'H'>,
+     '__doc__': None}
+
+When instances are created, they have a ``slot_values`` list where the
+attributes are stored::
+
+    >>> h = H(10, 20)
+    >>> vars(h)
+    {'_slotvalues': [10, 20]}
+    >>> h.x = 55
+    >>> vars(h)
+    {'_slotvalues': [55, 20]}
+
+Unlike the real ``__slots__``, this simulation does have an instance
+dictionary just to hold the ``_slotvalues`` array.  So, unlike the real code,
+this simulation doesn't block assignments to misspelled attributes::
+
+    >>> h.xz = 30   # For actual __slots__ this would raise an AttributeError
