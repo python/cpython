@@ -2773,6 +2773,17 @@ static struct PyModuleDef sremodule = {
         NULL
 };
 
+#define ADD_ULONG_CONSTANT(module, name, value)            \
+    do {                                                   \
+        PyObject *o = PyLong_FromUnsignedLong(value);      \
+        if (!o)                                            \
+            return NULL;                                   \
+        if (PyModule_AddObject(module, name, o) < 0) {     \
+            Py_DECREF(o);                                  \
+            return NULL;                                   \
+        }                                                  \
+} while (0)
+
 PyMODINIT_FUNC PyInit__sre(void)
 {
     PyObject* m;
@@ -2794,13 +2805,8 @@ PyMODINIT_FUNC PyInit__sre(void)
         return NULL;
     }
 
-    if (PyModule_AddIntConstant(m, "MAXREPEAT", SRE_MAXREPEAT) < 0) {
-        return NULL;
-    }
-
-    if (PyModule_AddIntConstant(m, "MAXGROUPS", SRE_MAXGROUPS) < 0) {
-        return NULL;
-    }
+    ADD_ULONG_CONSTANT(m, "MAXREPEAT", SRE_MAXREPEAT);
+    ADD_ULONG_CONSTANT(m, "MAXGROUPS", SRE_MAXGROUPS);
 
     if (PyModule_AddStringConstant(m, "copyright", copyright) < 0) {
         return NULL;
