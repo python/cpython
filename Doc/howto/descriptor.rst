@@ -28,7 +28,8 @@ This guide has four major sections:
 4) The last section has pure Python equivalents for built-in descriptors that
    are written in C.  Read this if you're curious about how functions turn
    into bound methods or about how to implement common tools like
-   :func:`classmethod`, :func:`staticmethod`, and :func:`property`.
+   :func:`classmethod`, :func:`staticmethod`, :func:`property`, and
+   :term:`__slots__`.
 
 
 Primer
@@ -694,8 +695,8 @@ Pure Python Equivalents
 
 The descriptor protocol is simple and offers exciting possibilities.  Several
 use cases are so common that they have been prepackaged into built-in tools.
-Properties, bound methods, static methods, and class methods are all based on
-the descriptor protocol.
+Properties, bound methods, static methods, class methods, and \_\_slots\_\_ are
+all based on the descriptor protocol.
 
 
 Properties
@@ -991,8 +992,8 @@ For example, a classmethod and property could be chained together::
         def __doc__(cls):
             return f'A doc for {cls.__name__!r}'
 
-Member Objects
---------------
+Member Objects and __slots__
+----------------------------
 
 When a class defines ``__slots__``, it replaces instance dictionaries with a
 fixed-length array of slot values.  From a user point of view that has
