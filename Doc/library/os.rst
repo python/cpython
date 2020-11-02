@@ -808,6 +808,12 @@ as internal buffering of data.
    Return a string describing the encoding of the device associated with *fd*
    if it is connected to a terminal; else return :const:`None`.
 
+   On Unix, if the :ref:`Python UTF-8 Mode <utf8-mode>` is enabled, return
+   ``'UTF-8'`` rather than the device encoding.
+
+   .. versionchanged:: 3.10
+      On Unix, the function now implements the Python UTF-8 Mode.
+
 
 .. function:: dup(fd)
 
