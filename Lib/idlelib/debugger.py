@@ -3,11 +3,9 @@ import os
 import linecache
 
 from tkinter import *
-from tkinter.ttk import Frame, Scrollbar
 from tkinter import ttk
 from tkinter import PhotoImage
 from tkinter.font import Font
-from tkinter.ttk import Scrollbar
 
 from idlelib.window import ListedToplevel
 
@@ -178,7 +176,7 @@ class Debugger:
         controls = ttk.Frame(left)
         self.buttondata = {}
         self.buttons = ['go', 'step', 'over', 'out', 'stop', 'prefs']
-        self.button_names = {'go':'Go', 'step':'Step', 'over':'Over',
+        button_names = {'go':'Go', 'step':'Step', 'over':'Over',
                              'out':'Out', 'stop':'Stop', 'prefs':'Options'}
         self.button_cmds = {'go':self.cont, 'step':self.step,
                             'over':self.next, 'out':self.ret,
@@ -186,7 +184,7 @@ class Debugger:
         for col, key in enumerate(self.buttons):
             normal = self.getimage('debug_'+key+'.gif')
             disabled = self.getimage('debug_'+key+'_disabled.gif')
-            b = ttk.Label(controls, image=normal, text=self.button_names[key],
+            b = ttk.Label(controls, image=normal, text=button_names[key],
                           compound='top', font='TkIconFont')
             b.grid(column=col, row=0, padx=[0,5])
             self.buttondata[key] = (b, normal, disabled)
