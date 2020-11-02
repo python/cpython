@@ -627,21 +627,24 @@ always available.
 
 .. function:: getfilesystemencoding()
 
-   Return the name of the encoding used to convert between Unicode
-   filenames and bytes filenames.
+   Get the :term:`filesystem encoding <filesystem encoding and error handler>`:
+   the encoding used with the :term:`filesystem error handler <filesystem
+   encoding and error handler>` to convert between Unicode filenames and bytes
+   filenames. The filesystem error handler is returned from
+   :func:`getfilesystemencoding`.
 
    For best compatibility, str should be used for filenames in all cases,
    although representing filenames as bytes is also supported. Functions
    accepting or returning filenames should support either str or bytes and
    internally convert to the system's preferred representation.
 
-   This encoding is always ASCII-compatible.
-
    :func:`os.fsencode` and :func:`os.fsdecode` should be used to ensure that
    the correct encoding and errors mode are used.
 
-   The filesystem encoding is initialized from
-   :c:member:`PyConfig.filesystem_encoding`.
+   The :term:`filesystem encoding and error handler` are configured at Python
+   startup by the :c:func:`PyConfig_Read` function: see
+   :c:member:`~PyConfig.filesystem_encoding` and
+   :c:member:`~PyConfig.filesystem_errors` members of :c:type:`PyConfig`.
 
    .. versionchanged:: 3.2
       :func:`getfilesystemencoding` result cannot be ``None`` anymore.
@@ -651,20 +654,25 @@ always available.
       and :func:`_enablelegacywindowsfsencoding` for more information.
 
    .. versionchanged:: 3.7
-      Return 'utf-8' in the UTF-8 mode.
+      Return ``'utf-8'`` if the :ref:`Python UTF-8 Mode <utf8-mode>` is
+      enabled.
 
 
 .. function:: getfilesystemencodeerrors()
 
-   Return the name of the error mode used to convert between Unicode filenames
-   and bytes filenames. The encoding name is returned from
+   Get the :term:`filesystem error handler <filesystem encoding and error
+   handler>`: the error handler used with the :term:`filesystem encoding
+   <filesystem encoding and error handler>` to convert between Unicode
+   filenames and bytes filenames. The filesystem encoding is returned from
    :func:`getfilesystemencoding`.
 
    :func:`os.fsencode` and :func:`os.fsdecode` should be used to ensure that
    the correct encoding and errors mode are used.
 
-   The filesystem error handler is initialized from
-   :c:member:`PyConfig.filesystem_errors`.
+   The :term:`filesystem encoding and error handler` are configured at Python
+   startup by the :c:func:`PyConfig_Read` function: see
+   :c:member:`~PyConfig.filesystem_encoding` and
+   :c:member:`~PyConfig.filesystem_errors` members of :c:type:`PyConfig`.
 
    .. versionadded:: 3.6
 
@@ -1457,8 +1465,9 @@ always available.
 
 .. function:: _enablelegacywindowsfsencoding()
 
-   Changes the default filesystem encoding and errors mode to 'mbcs' and
-   'replace' respectively, for consistency with versions of Python prior to 3.6.
+   Changes the :term:`filesystem encoding and error handler` to 'mbcs' and
+   'replace' respectively, for consistency with versions of Python prior to
+   3.6.
 
    This is equivalent to defining the :envvar:`PYTHONLEGACYWINDOWSFSENCODING`
    environment variable before launching Python.
@@ -1488,9 +1497,8 @@ always available.
    returned by the :func:`open` function.  Their parameters are chosen as
    follows:
 
-   * The character encoding is platform-dependent.  Non-Windows
-     platforms use the locale encoding (see
-     :meth:`locale.getpreferredencoding()`).
+   * The encoding and error handling are is initialized from
+     :c:member:`PyConfig.stdio_encoding` and :c:member:`PyConfig.stdio_errors`.
 
      On Windows, UTF-8 is used for the console device.  Non-character
      devices such as disk files and pipes use the system locale
@@ -1498,7 +1506,7 @@ always available.
      devices such as NUL (i.e. where ``isatty()`` returns ``True``) use the
      value of the console input and output codepages at startup,
      respectively for stdin and stdout/stderr. This defaults to the
-     system locale encoding if the process is not initially attached
+     system :term:`locale encoding` if the process is not initially attached
      to a console.
 
      The special behaviour of the console can be overridden
