@@ -1,1 +1,0 @@
-Add decompression pitfalls to zipfile module documentation.

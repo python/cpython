@@ -15,6 +15,8 @@ for parsing and creating XML data.
 
 .. versionchanged:: 3.3
    This module will use a fast implementation whenever available.
+
+.. deprecated:: 3.3
    The :mod:`xml.etree.cElementTree` module is deprecated.
 
 
@@ -249,11 +251,17 @@ We can remove elements using :meth:`Element.remove`.  Let's say we want to
 remove all countries with a rank higher than 50::
 
    >>> for country in root.findall('country'):
+   ...     # using root.findall() to avoid removal during traversal
    ...     rank = int(country.find('rank').text)
    ...     if rank > 50:
    ...         root.remove(country)
    ...
    >>> tree.write('output.xml')
+
+Note that concurrent modification while iterating can lead to problems,
+just like when iterating and modifying Python lists or dicts.
+Therefore, the example first collects all matching elements with
+``root.findall()``, and only then iterates over the list of matches.
 
 Our XML now looks like this:
 
@@ -586,8 +594,8 @@ Functions
 
 .. function:: iselement(element)
 
-   Checks if an object appears to be a valid element object.  *element* is an
-   element instance.  Returns a true value if this is an element object.
+   Check if an object appears to be a valid element object.  *element* is an
+   element instance.  Return ``True`` if this is an element object.
 
 
 .. function:: iterparse(source, events=None, parser=None)
@@ -816,15 +824,24 @@ Functions
    loader fails, it can return None or raise an exception.
 
 
-.. function:: xml.etree.ElementInclude.include( elem, loader=None)
+.. function:: xml.etree.ElementInclude.include( elem, loader=None, base_url=None, \
+                                                max_depth=6)
 
    This function expands XInclude directives.  *elem* is the root element.  *loader* is
    an optional resource loader.  If omitted, it defaults to :func:`default_loader`.
    If given, it should be a callable that implements the same interface as
-   :func:`default_loader`.  Returns the expanded resource.  If the parse mode is
+   :func:`default_loader`.  *base_url* is base URL of the original file, to resolve
+   relative include file references.  *max_depth* is the maximum number of recursive
+   inclusions.  Limited to reduce the risk of malicious content explosion. Pass a
+   negative value to disable the limitation.
+
+   Returns the expanded resource.  If the parse mode is
    ``"xml"``, this is an ElementTree instance.  If the parse mode is "text",
    this is a Unicode string.  If the loader fails, it can return None or
    raise an exception.
+
+   .. versionadded:: 3.9
+      The *base_url* and *max_depth* parameters.
 
 
 .. _elementtree-element-objects:

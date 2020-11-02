@@ -26,8 +26,6 @@ Copyright (C) 1994 Steen Lumholt.
 #include "Python.h"
 #include <ctype.h>
 
-#include "pythread.h"
-
 #ifdef MS_WINDOWS
 #include <windows.h>
 #endif
@@ -56,7 +54,7 @@ Copyright (C) 1994 Steen Lumholt.
 
 #if TK_HEX_VERSION >= 0x08050208 && TK_HEX_VERSION < 0x08060000 || \
     TK_HEX_VERSION >= 0x08060200
-#define HAVE_LIBTOMMAMTH
+#define HAVE_LIBTOMMATH
 #include <tclTomMath.h>
 #endif
 
@@ -574,9 +572,9 @@ SplitObj(PyObject *arg)
     else if (PyBytes_Check(arg)) {
         int argc;
         const char **argv;
-        char *list = PyBytes_AS_STRING(arg);
+        const char *list = PyBytes_AS_STRING(arg);
 
-        if (Tcl_SplitList((Tcl_Interp *)NULL, list, &argc, &argv) != TCL_OK) {
+        if (Tcl_SplitList((Tcl_Interp *)NULL, (char *)list, &argc, &argv) != TCL_OK) {
             Py_INCREF(arg);
             return arg;
         }
@@ -833,7 +831,7 @@ typedef struct {
 } PyTclObject;
 
 static PyObject *PyTclObject_Type;
-#define PyTclObject_Check(v) ((v)->ob_type == (PyTypeObject *) PyTclObject_Type)
+#define PyTclObject_Check(v) Py_IS_TYPE(v, (PyTypeObject *) PyTclObject_Type)
 
 static PyObject *
 newPyTclObject(Tcl_Obj *arg)
@@ -967,7 +965,7 @@ static PyType_Spec PyTclObject_Type_spec = {
 #define CHECK_STRING_LENGTH(s)
 #endif
 
-#ifdef HAVE_LIBTOMMAMTH
+#ifdef HAVE_LIBTOMMATH
 static Tcl_Obj*
 asBignumObj(PyObject *value)
 {
@@ -1047,7 +1045,7 @@ AsObj(PyObject *value)
 #endif
         /* If there is an overflow in the wideInt conversion,
            fall through to bignum handling. */
-#ifdef HAVE_LIBTOMMAMTH
+#ifdef HAVE_LIBTOMMATH
         return asBignumObj(value);
 #endif
         /* If there is no wideInt or bignum support,
@@ -1169,7 +1167,7 @@ fromWideIntObj(TkappObject *tkapp, Tcl_Obj *value)
         return NULL;
 }
 
-#ifdef HAVE_LIBTOMMAMTH
+#ifdef HAVE_LIBTOMMATH
 static PyObject*
 fromBignumObj(TkappObject *tkapp, Tcl_Obj *value)
 {
@@ -1249,7 +1247,7 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
            fall through to bignum handling. */
     }
 
-#ifdef HAVE_LIBTOMMAMTH
+#ifdef HAVE_LIBTOMMATH
     if (value->typePtr == tkapp->IntType ||
         value->typePtr == tkapp->WideIntType ||
         value->typePtr == tkapp->BignumType) {
@@ -1302,7 +1300,7 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
     }
 #endif
 
-#ifdef HAVE_LIBTOMMAMTH
+#ifdef HAVE_LIBTOMMATH
     if (tkapp->BignumType == NULL &&
         strcmp(value->typePtr->name, "bignum") == 0) {
         /* bignum type is not registered in Tcl */
@@ -1734,7 +1732,7 @@ varname_converter(PyObject *in, void *_out)
     }
     PyErr_Format(PyExc_TypeError,
                  "must be str, bytes or Tcl_Obj, not %.50s",
-                 in->ob_type->tp_name);
+                 Py_TYPE(in)->tp_name);
     return 0;
 }
 
@@ -2003,7 +2001,7 @@ _tkinter_tkapp_getint(TkappObject *self, PyObject *arg)
        Prefer bignum because Tcl_GetWideIntFromObj returns ambiguous result for
        value in ranges -2**64..-2**63-1 and 2**63..2**64-1 (on 32-bit platform).
      */
-#ifdef HAVE_LIBTOMMAMTH
+#ifdef HAVE_LIBTOMMATH
     result = fromBignumObj(self, value);
 #else
     result = fromWideIntObj(self, value);
@@ -2166,11 +2164,9 @@ _tkinter_tkapp_exprdouble_impl(TkappObject *self, const char *s)
 
     CHECK_STRING_LENGTH(s);
     CHECK_TCL_APPARTMENT;
-    PyFPE_START_PROTECT("Tkapp_ExprDouble", return 0)
     ENTER_TCL
     retval = Tcl_ExprDouble(Tkapp_Interp(self), s, &v);
     ENTER_OVERLAP
-    PyFPE_END_PROTECT(retval)
     if (retval == TCL_ERROR)
         res = Tkinter_Error(self);
     else
@@ -3555,11 +3551,13 @@ PyInit__tkinter(void)
             if (!ret && GetLastError() == ERROR_ENVVAR_NOT_FOUND) {
                 str_path = _get_tcl_lib_path();
                 if (str_path == NULL && PyErr_Occurred()) {
+                    Py_DECREF(m);
                     return NULL;
                 }
                 if (str_path != NULL) {
                     wcs_path = PyUnicode_AsWideCharString(str_path, NULL);
                     if (wcs_path == NULL) {
+                        Py_DECREF(m);
                         return NULL;
                     }
                     SetEnvironmentVariableW(L"TCL_LIBRARY", wcs_path);

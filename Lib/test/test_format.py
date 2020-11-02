@@ -1,6 +1,7 @@
 from test.support import verbose, TestFailed
 import locale
 import sys
+import re
 import test.support as support
 import unittest
 
@@ -484,6 +485,36 @@ class FormatTest(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             format(c, ".%sf" % (INT_MAX + 1))
 
+    def test_g_format_has_no_trailing_zeros(self):
+        # regression test for bugs.python.org/issue40780
+        self.assertEqual("%.3g" % 1505.0, "1.5e+03")
+        self.assertEqual("%#.3g" % 1505.0, "1.50e+03")
+
+        self.assertEqual(format(1505.0, ".3g"), "1.5e+03")
+        self.assertEqual(format(1505.0, "#.3g"), "1.50e+03")
+
+        self.assertEqual(format(12300050.0, ".6g"), "1.23e+07")
+        self.assertEqual(format(12300050.0, "#.6g"), "1.23000e+07")
+
+    def test_with_two_commas_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify ',' with ','.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:,,}'.format(1)
+
+    def test_with_two_underscore_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify '_' with '_'.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:__}'.format(1)
+
+    def test_with_a_commas_and_an_underscore_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify both ',' and '_'.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:,_}'.format(1)
+
+    def test_with_an_underscore_and_a_comma_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify both ',' and '_'.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:_,}'.format(1)
 
 if __name__ == "__main__":
     unittest.main()

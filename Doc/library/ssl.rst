@@ -42,7 +42,7 @@ This module provides a class, :class:`ssl.SSLSocket`, which is derived from the
 :class:`socket.socket` type, and provides a socket-like wrapper that also
 encrypts and decrypts the data going over the socket with SSL.  It supports
 additional methods such as :meth:`getpeercert`, which retrieves the
-certificate of the other side of the connection, and :meth:`cipher`,which
+certificate of the other side of the connection, and :meth:`cipher`, which
 retrieves the cipher being used for the secure connection.
 
 For more sophisticated applications, the :class:`ssl.SSLContext` class
@@ -615,7 +615,7 @@ Constants
    Possible value for :attr:`SSLContext.verify_flags`. In this mode, only the
    peer cert is checked but none of the intermediate CA certificates. The mode
    requires a valid CRL that is signed by the peer cert's issuer (its direct
-   ancestor CA). If no proper CRL has has been loaded with
+   ancestor CA). If no proper CRL has been loaded with
    :attr:`SSLContext.load_verify_locations`, validation will fail.
 
    .. versionadded:: 3.4
@@ -1256,6 +1256,9 @@ SSL sockets also have the following additional methods and attributes:
       The returned dictionary includes additional X509v3 extension items
         such as ``crlDistributionPoints``, ``caIssuers`` and ``OCSP`` URIs.
 
+   .. versionchanged:: 3.9
+      IPv6 address strings no longer have a trailing new line.
+
 .. method:: SSLSocket.cipher()
 
    Returns a three-value tuple containing the name of the cipher being used, the
@@ -1658,7 +1661,7 @@ to speed up repeated connections from the same clients.
    return the agreed-upon protocol.
 
    This method will raise :exc:`NotImplementedError` if :data:`HAS_ALPN` is
-   False.
+   ``False``.
 
    OpenSSL 1.1.0 to 1.1.0e will abort the handshake and raise :exc:`SSLError`
    when both sides support ALPN but cannot agree on a protocol. 1.1.0f+
@@ -1677,7 +1680,7 @@ to speed up repeated connections from the same clients.
    return the agreed-upon protocol.
 
    This method will raise :exc:`NotImplementedError` if :data:`HAS_NPN` is
-   False.
+   ``False``.
 
    .. versionadded:: 3.3
 
@@ -2029,6 +2032,16 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.7
 
+.. attribute:: SSLContext.security_level
+
+   An integer representing the `security level
+   <https://www.openssl.org/docs/manmaster/man3/SSL_CTX_get_security_level.html>`_
+   for the context. This attribute is read-only.
+
+   .. availability:: OpenSSL 1.1.0 or newer
+
+   .. versionadded:: 3.10
+
 .. attribute:: SSLContext.verify_flags
 
    The flags for certificate verification operations. You can set flags like
@@ -2268,7 +2281,7 @@ Visual inspection shows that the certificate does identify the desired service
                 (('postalCode', '03894-4801'),),
                 (('countryName', 'US'),),
                 (('stateOrProvinceName', 'NH'),),
-                (('localityName', 'Wolfeboro,'),),
+                (('localityName', 'Wolfeboro'),),
                 (('organizationName', 'Python Software Foundation'),),
                 (('commonName', 'www.python.org'),)),
     'subjectAltName': (('DNS', 'www.python.org'),
@@ -2483,14 +2496,17 @@ provided.
    - :meth:`~SSLSocket.read`
    - :meth:`~SSLSocket.write`
    - :meth:`~SSLSocket.getpeercert`
+   - :meth:`~SSLSocket.selected_alpn_protocol`
    - :meth:`~SSLSocket.selected_npn_protocol`
    - :meth:`~SSLSocket.cipher`
    - :meth:`~SSLSocket.shared_ciphers`
    - :meth:`~SSLSocket.compression`
    - :meth:`~SSLSocket.pending`
    - :meth:`~SSLSocket.do_handshake`
+   - :meth:`~SSLSocket.verify_client_post_handshake`
    - :meth:`~SSLSocket.unwrap`
    - :meth:`~SSLSocket.get_channel_binding`
+   - :meth:`~SSLSocket.version`
 
    When compared to :class:`SSLSocket`, this object lacks the following
    features:

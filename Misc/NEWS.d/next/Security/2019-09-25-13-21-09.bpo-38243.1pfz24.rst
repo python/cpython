@@ -1,3 +1,0 @@
-Escape the server title of :class:`xmlrpc.server.DocXMLRPCServer`
-when rendering the document page as HTML.
-(Contributed by Dong-hee Na in :issue:`38243`.)

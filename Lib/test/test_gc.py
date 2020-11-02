@@ -1,9 +1,11 @@
 import unittest
+import unittest.mock
 from test.support import (verbose, refcount_test, run_unittest,
-                          strip_python_stderr, cpython_only, start_threads,
-                          temp_dir, requires_type_collecting, TESTFN, unlink,
-                          import_module)
+                          cpython_only)
+from test.support.import_helper import import_module
+from test.support.os_helper import temp_dir, TESTFN, unlink
 from test.support.script_helper import assert_python_ok, make_script
+from test.support import threading_helper
 
 import gc
 import sys
@@ -21,6 +23,11 @@ except ImportError:
             def __new__(cls, *args, **kwargs):
                 raise TypeError('requires _testcapi.with_tp_del')
         return C
+
+try:
+    from _testcapi import ContainerNoGC
+except ImportError:
+    ContainerNoGC = None
 
 ### Support code
 ###############################################################################
@@ -125,7 +132,6 @@ class GCTests(unittest.TestCase):
         del a
         self.assertNotEqual(gc.collect(), 0)
 
-    @requires_type_collecting
     def test_newinstance(self):
         class A(object):
             pass
@@ -410,7 +416,7 @@ class GCTests(unittest.TestCase):
             for i in range(N_THREADS):
                 t = threading.Thread(target=run_thread)
                 threads.append(t)
-            with start_threads(threads, lambda: exit.append(1)):
+            with threading_helper.start_threads(threads, lambda: exit.append(1)):
                 time.sleep(1.0)
         finally:
             sys.setswitchinterval(old_switchinterval)
@@ -576,9 +582,27 @@ class GCTests(unittest.TestCase):
         self.assertTrue(gc.is_tracked(UserInt()))
         self.assertTrue(gc.is_tracked([]))
         self.assertTrue(gc.is_tracked(set()))
-        self.assertFalse(gc.is_tracked(UserClassSlots()))
-        self.assertFalse(gc.is_tracked(UserFloatSlots()))
-        self.assertFalse(gc.is_tracked(UserIntSlots()))
+        self.assertTrue(gc.is_tracked(UserClassSlots()))
+        self.assertTrue(gc.is_tracked(UserFloatSlots()))
+        self.assertTrue(gc.is_tracked(UserIntSlots()))
+
+    def test_is_finalized(self):
+        # Objects not tracked by the always gc return false
+        self.assertFalse(gc.is_finalized(3))
+
+        storage = []
+        class Lazarus:
+            def __del__(self):
+                storage.append(self)
+
+        lazarus = Lazarus()
+        self.assertFalse(gc.is_finalized(lazarus))
+
+        del lazarus
+        gc.collect()
+
+        lazarus = storage.pop()
+        self.assertTrue(gc.is_finalized(lazarus))
 
     def test_bug1055820b(self):
         # Corresponds to temp2b.py in the bug report.
@@ -665,8 +689,8 @@ class GCTests(unittest.TestCase):
             p.stdout.close()
             p.stderr.close()
             self.assertEqual(p.returncode, 0)
-            self.assertEqual(stdout.strip(), b"")
-            return strip_python_stderr(stderr)
+            self.assertEqual(stdout, b"")
+            return stderr
 
         stderr = run_command(code % "0")
         self.assertIn(b"ResourceWarning: gc: 2 uncollectable objects at "
@@ -685,7 +709,6 @@ class GCTests(unittest.TestCase):
         stderr = run_command(code % "gc.DEBUG_SAVEALL")
         self.assertNotIn(b"uncollectable objects at shutdown", stderr)
 
-    @requires_type_collecting
     def test_gc_main_module_at_shutdown(self):
         # Create a reference cycle through the __main__ module and check
         # it gets collected at interpreter shutdown.
@@ -699,7 +722,6 @@ class GCTests(unittest.TestCase):
         rc, out, err = assert_python_ok('-c', code)
         self.assertEqual(out.strip(), b'__del__ called')
 
-    @requires_type_collecting
     def test_gc_ordinary_module_at_shutdown(self):
         # Same as above, but with a non-__main__ module.
         with temp_dir() as script_dir:
@@ -719,7 +741,6 @@ class GCTests(unittest.TestCase):
             rc, out, err = assert_python_ok('-c', code)
             self.assertEqual(out.strip(), b'__del__ called')
 
-    @requires_type_collecting
     def test_global_del_SystemExit(self):
         code = """if 1:
             class ClassWithDel:
@@ -958,6 +979,66 @@ class GCTests(unittest.TestCase):
         self.assertEqual(nc - oldnc, 0)
 
         gc.enable()
+
+    @unittest.skipIf(ContainerNoGC is None,
+                     'requires ContainerNoGC extension type')
+    def test_trash_weakref_clear(self):
+        # Test that trash weakrefs are properly cleared (bpo-38006).
+        #
+        # Structure we are creating:
+        #
+        #   Z <- Y <- A--+--> WZ -> C
+        #             ^  |
+        #             +--+
+        # where:
+        #   WZ is a weakref to Z with callback C
+        #   Y doesn't implement tp_traverse
+        #   A contains a reference to itself, Y and WZ
+        #
+        # A, Y, Z, WZ are all trash.  The GC doesn't know that Z is trash
+        # because Y does not implement tp_traverse.  To show the bug, WZ needs
+        # to live long enough so that Z is deallocated before it.  Then, if
+        # gcmodule is buggy, when Z is being deallocated, C will run.
+        #
+        # To ensure WZ lives long enough, we put it in a second reference
+        # cycle.  That trick only works due to the ordering of the GC prev/next
+        # linked lists.  So, this test is a bit fragile.
+        #
+        # The bug reported in bpo-38006 is caused because the GC did not
+        # clear WZ before starting the process of calling tp_clear on the
+        # trash.  Normally, handle_weakrefs() would find the weakref via Z and
+        # clear it.  However, since the GC cannot find Z, WR is not cleared and
+        # it can execute during delete_garbage().  That can lead to disaster
+        # since the callback might tinker with objects that have already had
+        # tp_clear called on them (leaving them in possibly invalid states).
+
+        callback = unittest.mock.Mock()
+
+        class A:
+            __slots__ = ['a', 'y', 'wz']
+
+        class Z:
+            pass
+
+        # setup required object graph, as described above
+        a = A()
+        a.a = a
+        a.y = ContainerNoGC(Z())
+        a.wz = weakref.ref(a.y.value, callback)
+        # create second cycle to keep WZ alive longer
+        wr_cycle = [a.wz]
+        wr_cycle.append(wr_cycle)
+        # ensure trash unrelated to this test is gone
+        gc.collect()
+        gc.disable()
+        # release references and create trash
+        del a, wr_cycle
+        gc.collect()
+        # if called, it means there is a bug in the GC.  The weakref should be
+        # cleared before Z dies.
+        callback.assert_not_called()
+        gc.enable()
+
 
 class GCCallbackTests(unittest.TestCase):
     def setUp(self):

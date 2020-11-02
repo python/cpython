@@ -145,8 +145,8 @@ Cross Platform
 
 .. function:: system()
 
-   Returns the system/OS name, e.g. ``'Linux'``, ``'Windows'``, or ``'Java'``. An
-   empty string is returned if the value cannot be determined.
+   Returns the system/OS name, such as ``'Linux'``, ``'Darwin'``, ``'Java'``,
+   ``'Windows'``. An empty string is returned if the value cannot be determined.
 
 
 .. function:: system_alias(system, release, version)
@@ -226,8 +226,8 @@ Windows Platform
 
 .. function:: win32_is_iot()
 
-   Returns True if the windows edition returned by win32_edition is recognized
-   as an IoT edition.
+   Return ``True`` if the Windows edition returned by :func:`win32_edition`
+   is recognized as an IoT edition.
 
    .. versionadded:: 3.8
 
@@ -260,4 +260,3 @@ Unix Platforms
    using :program:`gcc`.
 
    The file is read and scanned in chunks of *chunksize* bytes.
-

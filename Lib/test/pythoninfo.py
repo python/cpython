@@ -199,11 +199,19 @@ def collect_os(info_add):
     )
     copy_attributes(info_add, os, 'os.%s', attributes, formatter=format_attr)
 
-    call_func(info_add, 'os.getcwd', os, 'getcwd')
-
-    call_func(info_add, 'os.getuid', os, 'getuid')
-    call_func(info_add, 'os.getgid', os, 'getgid')
-    call_func(info_add, 'os.uname', os, 'uname')
+    for func in (
+        'cpu_count',
+        'getcwd',
+        'getegid',
+        'geteuid',
+        'getgid',
+        'getloadavg',
+        'getresgid',
+        'getresuid',
+        'getuid',
+        'uname',
+    ):
+        call_func(info_add, 'os.%s' % func, os, func)
 
     def format_groups(groups):
         return ', '.join(map(str, groups))
@@ -219,9 +227,6 @@ def collect_os(info_add):
             pass
         else:
             info_add("os.login", login)
-
-    call_func(info_add, 'os.cpu_count', os, 'cpu_count')
-    call_func(info_add, 'os.getloadavg', os, 'getloadavg')
 
     # Environment variables used by the stdlib and tests. Don't log the full
     # environment: filter to list to not leak sensitive information.
@@ -303,7 +308,7 @@ def collect_os(info_add):
     if hasattr(os, 'umask'):
         mask = os.umask(0)
         os.umask(mask)
-        info_add("os.umask", '%03o' % mask)
+        info_add("os.umask", '0o%03o' % mask)
 
 
 def collect_pwd(info_add):
@@ -371,6 +376,9 @@ def collect_gdb(info_add):
                                 stderr=subprocess.PIPE,
                                 universal_newlines=True)
         version = proc.communicate()[0]
+        if proc.returncode:
+            # ignore gdb failure: test_gdb will log the error
+            return
     except OSError:
         return
 
@@ -712,6 +720,25 @@ def collect_windows(info_add):
         pass
 
 
+def collect_fips(info_add):
+    try:
+        import _hashlib
+    except ImportError:
+        _hashlib = None
+
+    if _hashlib is not None:
+        call_func(info_add, 'fips.openssl_fips_mode', _hashlib, 'get_fips_mode')
+
+    try:
+        with open("/proc/sys/crypto/fips_enabled", encoding="utf-8") as fp:
+            line = fp.readline().rstrip()
+
+        if line:
+            info_add('fips.linux_crypto_fips_enabled', line)
+    except OSError:
+        pass
+
+
 def collect_info(info):
     error = False
     info_add = info.add
@@ -727,6 +754,7 @@ def collect_info(info):
         collect_datetime,
         collect_decimal,
         collect_expat,
+        collect_fips,
         collect_gdb,
         collect_gdbm,
         collect_get_config,
@@ -754,7 +782,7 @@ def collect_info(info):
     ):
         try:
             collect_func(info_add)
-        except Exception as exc:
+        except Exception:
             error = True
             print("ERROR: %s() failed" % (collect_func.__name__),
                   file=sys.stderr)

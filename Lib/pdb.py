@@ -68,6 +68,7 @@ Debugger commands
 # commands and is appended to __doc__ after the class has been defined.
 
 import os
+import io
 import re
 import sys
 import cmd
@@ -78,6 +79,7 @@ import glob
 import pprint
 import signal
 import inspect
+import tokenize
 import traceback
 import linecache
 
@@ -92,7 +94,7 @@ __all__ = ["run", "pm", "Pdb", "runeval", "runctx", "runcall", "set_trace",
 def find_function(funcname, filename):
     cre = re.compile(r'def\s+%s\s*[(]' % re.escape(funcname))
     try:
-        fp = open(filename)
+        fp = tokenize.open(filename)
     except OSError:
         return None
     # consumer of this info expects the first line to be 1
@@ -472,7 +474,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except Exception:
             ret = []
         # Then, try to complete file names as well.
-        globs = glob.glob(text + '*')
+        globs = glob.glob(glob.escape(text) + '*')
         for fn in globs:
             if os.path.isdir(fn):
                 ret.append(fn + '/')
@@ -1310,14 +1312,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             # _getval() already printed the error
             return
         code = None
-        # Is it a function?
-        try:
-            code = value.__code__
-        except Exception:
-            pass
-        if code:
-            self.message('Function %s' % code.co_name)
-            return
         # Is it an instance method?
         try:
             code = value.__func__.__code__
@@ -1325,6 +1319,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             pass
         if code:
             self.message('Method %s' % code.co_name)
+            return
+        # Is it a function?
+        try:
+            code = value.__code__
+        except Exception:
+            pass
+        if code:
+            self.message('Function %s' % code.co_name)
             return
         # Is it a class?
         if value.__class__ is type:
@@ -1565,7 +1567,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self._wait_for_mainpyfile = True
         self.mainpyfile = self.canonic(filename)
         self._user_requested_quit = False
-        with open(filename, "rb") as fp:
+        with io.open_code(filename) as fp:
             statement = "exec(compile(%r, %r, 'exec'))" % \
                         (fp.read(), self.mainpyfile)
         self.run(statement)

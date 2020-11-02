@@ -41,7 +41,8 @@ static const char copyright[] =
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "structmember.h" /* offsetof */
+#include "pycore_long.h"          // _PyLong_GetZero()
+#include "structmember.h"         // PyMemberDef
 
 #include "sre.h"
 
@@ -211,7 +212,7 @@ data_stack_grow(SRE_STATE* state, Py_ssize_t size)
     if (cursize < minsize) {
         void* stack;
         cursize = minsize+minsize/4+1024;
-        TRACE(("allocate/grow stack %" PY_FORMAT_SIZE_T "d\n", cursize));
+        TRACE(("allocate/grow stack %zd\n", cursize));
         stack = PyMem_REALLOC(state->data_stack, cursize);
         if (!stack) {
             data_stack_dealloc(state);
@@ -351,7 +352,7 @@ state_reset(SRE_STATE* state)
     data_stack_dealloc(state);
 }
 
-static void*
+static const void*
 getstring(PyObject* string, Py_ssize_t* p_length,
           int* p_isbytes, int* p_charsize,
           Py_buffer *view)
@@ -398,11 +399,11 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
 
     Py_ssize_t length;
     int isbytes, charsize;
-    void* ptr;
+    const void* ptr;
 
     memset(state, 0, sizeof(SRE_STATE));
 
-    state->mark = PyMem_New(void *, pattern->groups * 2);
+    state->mark = PyMem_New(const void *, pattern->groups * 2);
     if (!state->mark) {
         PyErr_NoMemory();
         goto err;
@@ -454,7 +455,10 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
 
     return string;
   err:
-    PyMem_Del(state->mark);
+    /* We add an explicit cast here because MSVC has a bug when
+       compiling C code where it believes that `const void**` cannot be
+       safely casted to `void*`, see bpo-39943 for details. */
+    PyMem_Del((void*) state->mark);
     state->mark = NULL;
     if (state->buffer.buf)
         PyBuffer_Release(&state->buffer);
@@ -468,7 +472,8 @@ state_fini(SRE_STATE* state)
         PyBuffer_Release(&state->buffer);
     Py_XDECREF(state->string);
     data_stack_dealloc(state);
-    PyMem_Del(state->mark);
+    /* See above PyMem_Del for why we explicitly cast here. */
+    PyMem_Del((void*) state->mark);
     state->mark = NULL;
 }
 
@@ -891,7 +896,7 @@ _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
     Py_ssize_t status;
     Py_ssize_t n;
     Py_ssize_t i;
-    void* last;
+    const void* last;
 
     assert(self->codesize != 0);
 
@@ -984,7 +989,7 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
     PyObject* item;
     PyObject* filter;
     PyObject* match;
-    void* ptr;
+    const void* ptr;
     Py_ssize_t status;
     Py_ssize_t n;
     Py_ssize_t i, b, e;
@@ -1002,7 +1007,6 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
         int literal;
         view.buf = NULL;
         ptr = getstring(ptemplate, &n, &isbytes, &charsize, &view);
-        b = charsize;
         if (ptr) {
             if (charsize == 1)
                 literal = memchr(ptr, '\\', n) == NULL;
@@ -1082,7 +1086,7 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
             match = pattern_new_match(self, &state, 1);
             if (!match)
                 goto error;
-            item = _PyObject_CallOneArg(filter, match);
+            item = PyObject_CallOneArg(filter, match);
             Py_DECREF(match);
             if (!item)
                 goto error;
@@ -1339,7 +1343,7 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
 
     n = PyList_GET_SIZE(code);
     /* coverity[ampersand_in_size] */
-    self = PyObject_NEW_VAR(PatternObject, &Pattern_Type, n);
+    self = PyObject_NewVar(PatternObject, &Pattern_Type, n);
     if (!self)
         return NULL;
     self->weakreflist = NULL;
@@ -1896,7 +1900,7 @@ match_getslice_by_index(MatchObject* self, Py_ssize_t index, PyObject* def)
     int isbytes, charsize;
     Py_buffer view;
     PyObject *result;
-    void* ptr;
+    const void* ptr;
     Py_ssize_t i, j;
 
     assert(0 <= index && index < self->groups);
@@ -1996,7 +2000,7 @@ match_group(MatchObject* self, PyObject* args)
 
     switch (size) {
     case 0:
-        result = match_getslice(self, _PyLong_Zero, Py_None);
+        result = match_getslice(self, _PyLong_GetZero(), Py_None);
         break;
     case 1:
         result = match_getslice(self, PyTuple_GET_ITEM(args, 0), Py_None);
@@ -2328,8 +2332,8 @@ pattern_new_match(PatternObject* pattern, SRE_STATE* state, Py_ssize_t status)
 
         /* create match object (with room for extra group marks) */
         /* coverity[ampersand_in_size] */
-        match = PyObject_NEW_VAR(MatchObject, &Match_Type,
-                                 2*(pattern->groups+1));
+        match = PyObject_NewVar(MatchObject, &Match_Type,
+                                2*(pattern->groups+1));
         if (!match)
             return NULL;
 
@@ -2469,7 +2473,7 @@ pattern_scanner(PatternObject *self, PyObject *string, Py_ssize_t pos, Py_ssize_
     ScannerObject* scanner;
 
     /* create scanner object */
-    scanner = PyObject_NEW(ScannerObject, &Scanner_Type);
+    scanner = PyObject_New(ScannerObject, &Scanner_Type);
     if (!scanner)
         return NULL;
     scanner->pattern = NULL;
@@ -2519,7 +2523,7 @@ pattern_richcompare(PyObject *lefto, PyObject *righto, int op)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    if (Py_TYPE(lefto) != &Pattern_Type || Py_TYPE(righto) != &Pattern_Type) {
+    if (!Py_IS_TYPE(lefto, &Pattern_Type) || !Py_IS_TYPE(righto, &Pattern_Type)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
 
@@ -2569,6 +2573,8 @@ static PyMethodDef pattern_methods[] = {
     _SRE_SRE_PATTERN_SCANNER_METHODDEF
     _SRE_SRE_PATTERN___COPY___METHODDEF
     _SRE_SRE_PATTERN___DEEPCOPY___METHODDEF
+    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("See PEP 585")},
     {NULL, NULL}
 };
 
@@ -2639,6 +2645,8 @@ static PyMethodDef match_methods[] = {
     _SRE_SRE_MATCH_EXPAND_METHODDEF
     _SRE_SRE_MATCH___COPY___METHODDEF
     _SRE_SRE_MATCH___DEEPCOPY___METHODDEF
+    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("See PEP 585")},
     {NULL, NULL}
 };
 

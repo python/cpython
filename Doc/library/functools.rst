@@ -8,9 +8,15 @@
 .. moduleauthor:: Raymond Hettinger <python@rcn.com>
 .. moduleauthor:: Nick Coghlan <ncoghlan@gmail.com>
 .. moduleauthor:: Łukasz Langa <lukasz@langa.pl>
+.. moduleauthor:: Pablo Galindo <pablogsal@gmail.com>
 .. sectionauthor:: Peter Harris <scav@blueyonder.co.uk>
 
 **Source code:** :source:`Lib/functools.py`
+
+.. testsetup:: default
+
+   import functools
+   from functools import *
 
 --------------
 
@@ -19,6 +25,32 @@ or return other functions. In general, any callable object can be treated as a
 function for the purposes of this module.
 
 The :mod:`functools` module defines the following functions:
+
+.. decorator:: cache(user_function)
+
+   Simple lightweight unbounded function cache.  Sometimes called
+   `"memoize" <https://en.wikipedia.org/wiki/Memoization>`_.
+
+   Returns the same as ``lru_cache(maxsize=None)``, creating a thin
+   wrapper around a dictionary lookup for the function arguments.  Because it
+   never needs to evict old values, this is smaller and faster than
+   :func:`lru_cache()` with a size limit.
+
+   For example::
+
+        @cache
+        def factorial(n):
+            return n * factorial(n-1) if n else 1
+
+        >>> factorial(10)      # no previously cached result, makes 11 recursive calls
+        3628800
+        >>> factorial(5)       # just looks up cached value result
+        120
+        >>> factorial(12)      # makes two new recursive calls, the other 10 are cached
+        479001600
+
+   .. versionadded:: 3.9
+
 
 .. decorator:: cached_property(func)
 
@@ -41,16 +73,31 @@ The :mod:`functools` module defines the following functions:
            def variance(self):
                return statistics.variance(self._data)
 
+   Note, this decorator interferes with the operation of :pep:`412`
+   key-sharing dictionaries.  This means that instance dictionaries
+   can take more space than usual.
+
+   Also, this decorator requires that the ``__dict__`` attribute on each instance
+   be a mutable mapping. This means it will not work with some types, such as
+   metaclasses (since the ``__dict__`` attributes on type instances are
+   read-only proxies for the class namespace), and those that specify
+   ``__slots__`` without including ``__dict__`` as one of the defined slots
+   (as such classes don't provide a ``__dict__`` attribute at all).
+
+   If a mutable mapping is not available or if space-efficient key sharing
+   is desired, an effect similar to :func:`cached_property` can be achieved
+   by a stacking :func:`property` on top of :func:`cache`::
+
+       class DataSet:
+           def __init__(self, sequence_of_numbers):
+               self._data = sequence_of_numbers
+
+           @property
+           @cache
+           def stdev(self):
+               return statistics.stdev(self._data)
+
    .. versionadded:: 3.8
-
-   .. note::
-
-      This decorator requires that the ``__dict__`` attribute on each instance
-      be a mutable mapping. This means it will not work with some types, such as
-      metaclasses (since the ``__dict__`` attributes on type instances are
-      read-only proxies for the class namespace), and those that specify
-      ``__slots__`` without including ``__dict__`` as one of the defined slots
-      (as such classes don't provide a ``__dict__`` attribute at all).
 
 
 .. function:: cmp_to_key(func)
@@ -101,12 +148,16 @@ The :mod:`functools` module defines the following functions:
            return sum(sentence.count(vowel) for vowel in 'aeiou')
 
    If *maxsize* is set to ``None``, the LRU feature is disabled and the cache can
-   grow without bound.  The LRU feature performs best when *maxsize* is a
-   power-of-two.
+   grow without bound.
 
    If *typed* is set to true, function arguments of different types will be
    cached separately.  For example, ``f(3)`` and ``f(3.0)`` will be treated
    as distinct calls with distinct results.
+
+   The wrapped function is instrumented with a :func:`cache_parameters`
+   function that returns a new :class:`dict` showing the values for *maxsize*
+   and *typed*.  This is for information purposes only.  Mutating the values
+   has no effect.
 
    To help measure the effectiveness of the cache and tune the *maxsize*
    parameter, the wrapped function is instrumented with a :func:`cache_info`
@@ -122,11 +173,11 @@ The :mod:`functools` module defines the following functions:
    bypassing the cache, or for rewrapping the function with a different cache.
 
    An `LRU (least recently used) cache
-   <https://en.wikipedia.org/wiki/Cache_algorithms#Examples>`_ works
-   best when the most recent calls are the best predictors of upcoming calls (for
-   example, the most popular articles on a news server tend to change each day).
-   The cache's size limit assures that the cache does not grow without bound on
-   long-running processes such as web servers.
+   <https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)>`_
+   works best when the most recent calls are the best predictors of upcoming
+   calls (for example, the most popular articles on a news server tend to
+   change each day).  The cache's size limit assures that the cache does not
+   grow without bound on long-running processes such as web servers.
 
    In general, the LRU cache should only be used when you want to reuse
    previously computed values.  Accordingly, it doesn't make sense to cache
@@ -178,6 +229,9 @@ The :mod:`functools` module defines the following functions:
    .. versionchanged:: 3.8
       Added the *user_function* option.
 
+   .. versionadded:: 3.9
+      Added the function :func:`cache_parameters`
+
 .. decorator:: total_ordering
 
    Given a class defining one or more rich comparison ordering methods, this
@@ -214,6 +268,13 @@ The :mod:`functools` module defines the following functions:
       performance benchmarking indicates this is a bottleneck for a given
       application, implementing all six rich comparison methods instead is
       likely to provide an easy speed boost.
+
+   .. note::
+
+      This decorator makes no attempt to override methods that have been
+      declared in the class *or its superclasses*. Meaning that if a
+      superclass defines a comparison operator, *total_ordering* will not
+      implement it again, even if the original method is abstract.
 
    .. versionadded:: 3.2
 
@@ -414,6 +475,20 @@ The :mod:`functools` module defines the following functions:
    The original function decorated with ``@singledispatch`` is registered
    for the base ``object`` type, which means it is used if no better
    implementation is found.
+
+   If an implementation registered to :term:`abstract base class`, virtual
+   subclasses will be dispatched to that implementation::
+
+     >>> from collections.abc import Mapping
+     >>> @fun.register
+     ... def _(arg: Mapping, verbose=False):
+     ...     if verbose:
+     ...         print("Keys & Values")
+     ...     for key, value in arg.items():
+     ...         print(key, "=>", value)
+     ...
+     >>> fun({"a": "b"})
+     a => b
 
    To check which implementation will the generic function choose for
    a given type, use the ``dispatch()`` attribute::

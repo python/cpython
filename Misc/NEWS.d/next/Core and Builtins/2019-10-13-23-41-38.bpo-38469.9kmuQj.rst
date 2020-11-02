@@ -1,2 +1,0 @@
-Fixed a bug where the scope of named expressions was not being resolved
-correctly in the presence of the *global* keyword. Patch by Pablo Galindo.

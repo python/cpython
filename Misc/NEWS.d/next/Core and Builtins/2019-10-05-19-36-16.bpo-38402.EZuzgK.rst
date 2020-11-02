@@ -1,1 +1,0 @@
-Check the error from the system's underlying ``crypt`` or ``crypt_r``.

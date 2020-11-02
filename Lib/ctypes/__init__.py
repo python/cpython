@@ -1,6 +1,7 @@
 """create and manipulate C data types in Python"""
 
 import os as _os, sys as _sys
+import types as _types
 
 __version__ = "1.1.0"
 
@@ -52,11 +53,13 @@ def create_string_buffer(init, size=None):
     if isinstance(init, bytes):
         if size is None:
             size = len(init)+1
+        _sys.audit("ctypes.create_string_buffer", init, size)
         buftype = c_char * size
         buf = buftype()
         buf.value = init
         return buf
     elif isinstance(init, int):
+        _sys.audit("ctypes.create_string_buffer", None, init)
         buftype = c_char * init
         buf = buftype()
         return buf
@@ -283,11 +286,13 @@ def create_unicode_buffer(init, size=None):
                 # 32-bit wchar_t (1 wchar_t per Unicode character). +1 for
                 # trailing NUL character.
                 size = len(init) + 1
+        _sys.audit("ctypes.create_unicode_buffer", init, size)
         buftype = c_wchar * size
         buf = buftype()
         buf.value = init
         return buf
     elif isinstance(init, int):
+        _sys.audit("ctypes.create_unicode_buffer", None, init)
         buftype = c_wchar * init
         buf = buftype()
         return buf
@@ -445,6 +450,8 @@ class LibraryLoader(object):
 
     def LoadLibrary(self, name):
         return self._dlltype(name)
+
+    __class_getitem__ = classmethod(_types.GenericAlias)
 
 cdll = LibraryLoader(CDLL)
 pydll = LibraryLoader(PyDLL)

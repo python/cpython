@@ -47,8 +47,6 @@ PyAPI_DATA(wchar_t*) _Py_dll_path;
 #endif
 
 extern void _PyPathConfig_ClearGlobal(void);
-extern PyStatus _PyPathConfig_SetGlobal(
-    const struct _PyPathConfig *pathconfig);
 
 extern PyStatus _PyPathConfig_Calculate(
     _PyPathConfig *pathconfig,
@@ -67,6 +65,7 @@ extern wchar_t* _Py_GetDLLPath(void);
 
 extern PyStatus _PyConfig_WritePathConfig(const PyConfig *config);
 extern void _Py_DumpPathConfig(PyThreadState *tstate);
+extern PyObject* _PyPathConfig_AsDict(void);
 
 #ifdef __cplusplus
 }

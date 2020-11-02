@@ -6,20 +6,21 @@ try:
     import crypt
     IMPORT_ERROR = None
 except ImportError as ex:
+    if sys.platform != 'win32':
+        raise unittest.SkipTest(str(ex))
     crypt = None
     IMPORT_ERROR = str(ex)
 
 
-@unittest.skipIf(crypt, 'This should only run on windows')
+@unittest.skipUnless(sys.platform == 'win32', 'This should only run on windows')
+@unittest.skipIf(crypt, 'import succeeded')
 class TestWhyCryptDidNotImport(unittest.TestCase):
-    def test_failure_only_for_windows(self):
-        self.assertEqual(sys.platform, 'win32')
 
     def test_import_failure_message(self):
         self.assertIn('not supported', IMPORT_ERROR)
 
 
-@unittest.skipUnless(crypt, 'Not supported on Windows')
+@unittest.skipUnless(crypt, 'crypt module is required')
 class CryptTestCase(unittest.TestCase):
 
     def test_crypt(self):

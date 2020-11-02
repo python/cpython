@@ -102,7 +102,7 @@ CPython implementation improvements:
   * :ref:`PEP 538 <whatsnew37-pep538>`, legacy C locale coercion
   * :ref:`PEP 540 <whatsnew37-pep540>`, forced UTF-8 runtime mode
 * :ref:`PEP 552 <whatsnew37-pep552>`, deterministic .pycs
-* :ref:`the new development runtime mode <whatsnew37-devmode>`
+* :ref:`New Python Development Mode <whatsnew37-devmode>`
 * :ref:`PEP 565 <whatsnew37-pep565>`, improved :exc:`DeprecationWarning`
   handling
 
@@ -171,7 +171,7 @@ on a per-module basis in Python 3.7 using a :mod:`__future__` import::
 
     from __future__ import annotations
 
-It will become the default in Python 4.0.
+It will become the default in Python 3.10.
 
 .. seealso::
 
@@ -479,19 +479,24 @@ Three new translations have been added:
 
 .. _whatsnew37-devmode:
 
-Development Runtime Mode: -X dev
+Python Development Mode (-X dev)
 --------------------------------
 
 The new :option:`-X` ``dev`` command line option or the new
 :envvar:`PYTHONDEVMODE` environment variable can be used to enable
-CPython's *development mode*.  When in development mode, CPython performs
+:ref:`Python Development Mode <devmode>`.  When in development mode, Python performs
 additional runtime checks that are too expensive to be enabled by default.
-See :option:`-X` ``dev`` documentation for the full description of the effects
-of this mode.
+See :ref:`Python Development Mode <devmode>` documentation for the full
+description.
 
 
 Other Language Changes
 ======================
+
+* An :keyword:`await` expression and comprehensions containing an
+  :keyword:`async for` clause were illegal in the expressions in
+  :ref:`formatted string literals <f-strings>` due to a problem with the
+  implementation.  In Python 3.7 this restriction was lifted.
 
 * More than 255 arguments can now be passed to a function, and a function can
   now have more than 255 parameters. (Contributed by Serhiy Storchaka in
@@ -631,7 +636,7 @@ The :mod:`asyncio` module has received many new features, usability and
 :ref:`performance improvements <whatsnew37-asyncio-perf>`.  Notable changes
 include:
 
-* The new :term:`provisional <provisional api>` :func:`asyncio.run` function can
+* The new :term:`provisional <provisional API>` :func:`asyncio.run` function can
   be used to run a coroutine from synchronous code by automatically creating and
   destroying the event loop.
   (Contributed by Yury Selivanov in :issue:`32314`.)
@@ -1707,7 +1712,7 @@ The type of results of :c:func:`PyThread_start_new_thread` and
 (Contributed by Serhiy Storchaka in :issue:`6532`.)
 
 :c:func:`PyUnicode_AsWideCharString` now raises a :exc:`ValueError` if the
-second argument is *NULL* and the :c:type:`wchar_t*` string contains null
+second argument is ``NULL`` and the :c:type:`wchar_t*` string contains null
 characters.  (Contributed by Serhiy Storchaka in :issue:`30708`.)
 
 Changes to the startup sequence and the management of dynamic memory
@@ -2541,3 +2546,13 @@ This resolves a long standing issue where all virtual environments would have
 to be upgraded or recreated with each Python update. However, note that this
 release will still require recreation of virtual environments in order to get
 the new scripts.
+
+Notable changes in Python 3.7.6
+===============================
+
+Due to significant security concerns, the *reuse_address* parameter of
+:meth:`asyncio.loop.create_datagram_endpoint` is no longer supported. This is
+because of the behavior of the socket option ``SO_REUSEADDR`` in UDP. For more
+details, see the documentation for ``loop.create_datagram_endpoint()``.
+(Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
+:issue:`37228`.)

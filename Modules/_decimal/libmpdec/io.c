@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+ * Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,16 +27,16 @@
 
 
 #include "mpdecimal.h"
+
+#include <assert.h>
+#include <ctype.h>
+#include <errno.h>
+#include <limits.h>
+#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <limits.h>
-#include <assert.h>
-#include <errno.h>
-#include <locale.h>
-#include "bits.h"
-#include "constants.h"
+
 #include "typearith.h"
 #include "io.h"
 
@@ -277,7 +277,7 @@ mpd_qset_string(mpd_t *dec, const char *s, const mpd_context_t *ctx,
             }
         }
 
-            digits = end - coeff;
+        digits = end - coeff;
         if (dpoint) {
             size_t fracdigits = end-dpoint-1;
             if (dpoint > coeff) digits--;
@@ -324,6 +324,22 @@ mpd_qset_string(mpd_t *dec, const char *s, const mpd_context_t *ctx,
 conversion_error:
     /* standard wants a positive NaN */
     mpd_seterror(dec, MPD_Conversion_syntax, status);
+}
+
+/* convert a character string to a decimal, use a maxcontext for conversion */
+void
+mpd_qset_string_exact(mpd_t *dec, const char *s, uint32_t *status)
+{
+    mpd_context_t maxcontext;
+
+    mpd_maxcontext(&maxcontext);
+    mpd_qset_string(dec, s, &maxcontext, status);
+
+    if (*status & (MPD_Inexact|MPD_Rounded|MPD_Clamped)) {
+        /* we want exact results */
+        mpd_seterror(dec, MPD_Invalid_operation, status);
+    }
+    *status &= MPD_Errors;
 }
 
 /* Print word x with n decimal digits to string s. dot is either NULL
@@ -539,8 +555,8 @@ _mpd_to_string(char **result, const mpd_t *dec, int flags, mpd_ssize_t dplace)
                 dplace = -1 + mod_mpd_ssize_t(dec->exp+2, 3);
             }
             else { /* ldigits-1 is the adjusted exponent, which
-                * should be divisible by three. If not, move
-                * dplace one or two places to the right. */
+                    * should be divisible by three. If not, move
+                    * dplace one or two places to the right. */
                 dplace += mod_mpd_ssize_t(ldigits-1, 3);
             }
         }
@@ -1247,7 +1263,7 @@ mpd_qformat_spec(const mpd_t *dec, const mpd_spec_t *spec,
     }
 
     if (isupper((uchar)type)) {
-        type = tolower((uchar)type);
+        type = (char)tolower((uchar)type);
         flags |= MPD_FMT_UPPER;
     }
     if (spec->sign == ' ') {
@@ -1265,6 +1281,7 @@ mpd_qformat_spec(const mpd_t *dec, const mpd_spec_t *spec,
             stackspec.align = '>';
             spec = &stackspec;
         }
+        assert(strlen(spec->fill) == 1); /* annotation for scan-build */
         if (type == '%') {
             flags |= MPD_FMT_PERCENT;
         }
@@ -1579,5 +1596,3 @@ mpd_print(const mpd_t *dec)
         fputs("mpd_fprint: output error\n", stderr); /* GCOV_NOT_REACHED */
     }
 }
-
-

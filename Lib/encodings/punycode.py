@@ -143,7 +143,7 @@ def decode_generalized_number(extended, extpos, bias, errors):
             digit = char - 22 # 0x30-26
         elif errors == "strict":
             raise UnicodeError("Invalid extended code point '%s'"
-                               % extended[extpos])
+                               % extended[extpos-1])
         else:
             return extpos, None
         t = T(j, bias)

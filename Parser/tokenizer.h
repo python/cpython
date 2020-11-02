@@ -26,8 +26,8 @@ struct tok_state {
     char *buf;          /* Input buffer, or NULL; malloc'ed if fp != NULL */
     char *cur;          /* Next character in buffer */
     char *inp;          /* End of data in buffer */
-    char *end;          /* End of input buffer if buf != NULL */
-    char *start;        /* Start of current token if not NULL */
+    const char *end;    /* End of input buffer if buf != NULL */
+    const char *start;  /* Start of current token if not NULL */
     int done;           /* E_OK normally, E_EOF at EOF, otherwise error code */
     /* NB If done != E_OK, cur must be == inp!!! */
     FILE *fp;           /* Rest of input; NULL if tokenizing a string */
@@ -60,8 +60,8 @@ struct tok_state {
     PyObject *decoding_readline; /* open(...).readline */
     PyObject *decoding_buffer;
     const char* enc;        /* Encoding for the current str. */
-    const char* str;
-    const char* input; /* Tokenizer's newline translated copy of the string. */
+    char* str;
+    char* input;       /* Tokenizer's newline translated copy of the string. */
 
     int type_comments;      /* Whether to look for type comments */
 
@@ -78,7 +78,7 @@ extern struct tok_state *PyTokenizer_FromUTF8(const char *, int);
 extern struct tok_state *PyTokenizer_FromFile(FILE *, const char*,
                                               const char *, const char *);
 extern void PyTokenizer_Free(struct tok_state *);
-extern int PyTokenizer_Get(struct tok_state *, char **, char **);
+extern int PyTokenizer_Get(struct tok_state *, const char **, const char **);
 
 #define tok_dump _Py_tok_dump
 

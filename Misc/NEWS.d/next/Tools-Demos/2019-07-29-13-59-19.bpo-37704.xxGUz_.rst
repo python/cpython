@@ -1,1 +1,0 @@
-Remove ``Tools/scripts/h2py.py``: use cffi to access a C API in Python.

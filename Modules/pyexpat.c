@@ -1,7 +1,7 @@
 #include "Python.h"
 #include <ctype.h>
 
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include "frameobject.h"
 #include "expat.h"
 
@@ -119,7 +119,7 @@ set_error(xmlparseobject *self, enum XML_Error code)
                                   XML_ErrorString(code), lineno, column);
     if (buffer == NULL)
         return NULL;
-    err = _PyObject_CallOneArg(ErrorObject, buffer);
+    err = PyObject_CallOneArg(ErrorObject, buffer);
     Py_DECREF(buffer);
     if (  err != NULL
           && set_error_attr(err, "code", code)
@@ -1060,7 +1060,7 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
     static unsigned char template_buffer[256] = {0};
     PyObject* u;
     int i;
-    void *data;
+    const void *data;
     unsigned int kind;
 
     if (PyErr_Occurred())
@@ -1614,15 +1614,7 @@ static int init_handler_descrs(void)
         if (descr == NULL)
             return -1;
 
-        if (PyDict_GetItemWithError(Xmlparsetype.tp_dict, PyDescr_NAME(descr))) {
-            Py_DECREF(descr);
-            continue;
-        }
-        else if (PyErr_Occurred()) {
-            Py_DECREF(descr);
-            return -1;
-        }
-        if (PyDict_SetItem(Xmlparsetype.tp_dict, PyDescr_NAME(descr), descr) < 0) {
+        if (PyDict_SetDefault(Xmlparsetype.tp_dict, PyDescr_NAME(descr), descr) == NULL) {
             Py_DECREF(descr);
             return -1;
         }

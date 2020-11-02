@@ -14,6 +14,8 @@ import io
 import copy
 import pickle
 
+from test.support import import_helper
+
 
 class AbstractMemoryTests:
     source_bytes = b"abcdef"
@@ -508,7 +510,7 @@ class ArrayMemorySliceSliceTest(unittest.TestCase,
 class OtherTest(unittest.TestCase):
     def test_ctypes_cast(self):
         # Issue 15944: Allow all source formats when casting to bytes.
-        ctypes = test.support.import_module("ctypes")
+        ctypes = import_helper.import_module("ctypes")
         p6 = bytes(ctypes.c_double(0.6))
 
         d = ctypes.c_double()

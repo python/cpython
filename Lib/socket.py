@@ -839,7 +839,11 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
                 sock.close()
 
     if err is not None:
-        raise err
+        try:
+            raise err
+        finally:
+            # Break explicitly a reference cycle
+            err = None
     else:
         raise error("getaddrinfo returns an empty list")
 
@@ -874,7 +878,7 @@ def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
     connections. When false it will explicitly disable this option on
     platforms that enable it by default (e.g. Linux).
 
-    >>> with create_server((None, 8000)) as server:
+    >>> with create_server(('', 8000)) as server:
     ...     while True:
     ...         conn, addr = server.accept()
     ...         # handle new connection

@@ -73,6 +73,7 @@ XXX Possible additions:
 """
 
 import sys, os
+from types import GenericAlias
 
 __all__ = ["input", "close", "nextfile", "filename", "lineno", "filelineno",
            "fileno", "isfirstline", "isstdin", "FileInput", "hook_compressed",
@@ -390,6 +391,8 @@ class FileInput:
 
     def isstdin(self):
         return self._isstdin
+
+    __class_getitem__ = classmethod(GenericAlias)
 
 
 def hook_compressed(filename, mode):

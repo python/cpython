@@ -191,7 +191,7 @@ For every object which can support attributes, the corresponding type must
 provide the functions that control how the attributes are resolved.  There needs
 to be a function which can retrieve attributes (if any are defined), and another
 to set attributes (if setting attributes is allowed).  Removing an attribute is
-a special case, for which the new value passed to the handler is *NULL*.
+a special case, for which the new value passed to the handler is ``NULL``.
 
 Python supports two pairs of attribute handlers; a type that supports attributes
 only needs to implement the functions for one pair.  The difference is that one
@@ -233,9 +233,9 @@ attributes, when the values are computed, or how relevant data is stored.
 When :c:func:`PyType_Ready` is called, it uses three tables referenced by the
 type object to create :term:`descriptor`\s which are placed in the dictionary of the
 type object.  Each descriptor controls access to one attribute of the instance
-object.  Each of the tables is optional; if all three are *NULL*, instances of
+object.  Each of the tables is optional; if all three are ``NULL``, instances of
 the type will only have attributes that are inherited from their base type, and
-should leave the :c:member:`~PyTypeObject.tp_getattro` and :c:member:`~PyTypeObject.tp_setattro` fields *NULL* as
+should leave the :c:member:`~PyTypeObject.tp_getattro` and :c:member:`~PyTypeObject.tp_setattro` fields ``NULL`` as
 well, allowing the base type to handle attributes.
 
 The tables are declared as three fields of the type object::
@@ -244,7 +244,7 @@ The tables are declared as three fields of the type object::
    struct PyMemberDef *tp_members;
    struct PyGetSetDef *tp_getset;
 
-If :c:member:`~PyTypeObject.tp_methods` is not *NULL*, it must refer to an array of
+If :c:member:`~PyTypeObject.tp_methods` is not ``NULL``, it must refer to an array of
 :c:type:`PyMethodDef` structures.  Each entry in the table is an instance of this
 structure::
 
@@ -258,7 +258,7 @@ structure::
 One entry should be defined for each method provided by the type; no entries are
 needed for methods inherited from a base type.  One additional entry is needed
 at the end; it is a sentinel that marks the end of the array.  The
-:attr:`ml_name` field of the sentinel must be *NULL*.
+:attr:`ml_name` field of the sentinel must be ``NULL``.
 
 The second table is used to define attributes which map directly to data stored
 in the instance.  A variety of primitive C types are supported, and access may
@@ -307,7 +307,7 @@ application can use the introspection API to retrieve the descriptor from the
 class object, and get the doc string using its :attr:`__doc__` attribute.
 
 As with the :c:member:`~PyTypeObject.tp_methods` table, a sentinel entry with a :attr:`name` value
-of *NULL* is required.
+of ``NULL`` is required.
 
 .. XXX Descriptors need to be explained in more detail somewhere, but not here.
 
@@ -352,9 +352,9 @@ Here is an example::
 
 The :c:member:`~PyTypeObject.tp_setattr` handler is called when the :meth:`__setattr__` or
 :meth:`__delattr__` method of a class instance would be called.  When an
-attribute should be deleted, the third parameter will be *NULL*.  Here is an
+attribute should be deleted, the third parameter will be ``NULL``.  Here is an
 example that simply raises an exception; if this were really all you wanted, the
-:c:member:`~PyTypeObject.tp_setattr` handler should be set to *NULL*. ::
+:c:member:`~PyTypeObject.tp_setattr` handler should be set to ``NULL``. ::
 
    static int
    newdatatype_setattr(newdatatypeobject *obj, char *name, PyObject *v)
@@ -380,7 +380,7 @@ where the operator is one of ``Py_EQ``, ``Py_NE``, ``Py_LE``, ``Py_GT``,
 ``Py_LT`` or ``Py_GT``.  It should compare the two objects with respect to the
 specified operator and return ``Py_True`` or ``Py_False`` if the comparison is
 successful, ``Py_NotImplemented`` to indicate that comparison is not
-implemented and the other object's comparison method should be tried, or *NULL*
+implemented and the other object's comparison method should be tried, or ``NULL``
 if an exception was set.
 
 Here is a sample implementation, for a datatype that is considered equal if the
@@ -427,7 +427,7 @@ from the type implementation, the older protocols have been defined as optional
 blocks of handlers referenced by the type object.  For newer protocols there are
 additional slots in the main type object, with a flag bit being set to indicate
 that the slots are present and should be checked by the interpreter.  (The flag
-bit does not indicate that the slot values are non-*NULL*. The flag may be set
+bit does not indicate that the slot values are non-``NULL``. The flag may be set
 to indicate the presence of a slot, but a slot may still be unfilled.) ::
 
    PyNumberMethods   *tp_as_number;
@@ -478,9 +478,9 @@ This function takes three arguments:
    :c:func:`PyArg_ParseTuple` to extract the arguments.
 
 #. *kwds* is a dictionary of keyword arguments that were passed. If this is
-   non-*NULL* and you support keyword arguments, use
+   non-``NULL`` and you support keyword arguments, use
    :c:func:`PyArg_ParseTupleAndKeywords` to extract the arguments.  If you
-   do not want to support keyword arguments and this is non-*NULL*, raise a
+   do not want to support keyword arguments and this is non-``NULL``, raise a
    :exc:`TypeError` with a message saying that keyword arguments are not supported.
 
 Here is a toy ``tp_call`` implementation::
@@ -512,7 +512,7 @@ Here is a toy ``tp_call`` implementation::
 These functions provide support for the iterator protocol.  Both handlers
 take exactly one parameter, the instance for which they are being called,
 and return a new reference.  In the case of an error, they should set an
-exception and return *NULL*.  :c:member:`~PyTypeObject.tp_iter` corresponds
+exception and return ``NULL``.  :c:member:`~PyTypeObject.tp_iter` corresponds
 to the Python :meth:`__iter__` method, while :c:member:`~PyTypeObject.tp_iternext`
 corresponds to the Python :meth:`~iterator.__next__` method.
 
@@ -534,11 +534,11 @@ and :c:member:`~PyTypeObject.tp_iternext`.  An iterator's
 to the iterator.  Its :c:member:`~PyTypeObject.tp_iternext` handler should
 return a new reference to the next object in the iteration, if there is one.
 If the iteration has reached the end, :c:member:`~PyTypeObject.tp_iternext`
-may return *NULL* without setting an exception, or it may set
-:exc:`StopIteration` *in addition* to returning *NULL*; avoiding
+may return ``NULL`` without setting an exception, or it may set
+:exc:`StopIteration` *in addition* to returning ``NULL``; avoiding
 the exception can yield slightly better performance.  If an actual error
 occurs, :c:member:`~PyTypeObject.tp_iternext` should always set an exception
-and return *NULL*.
+and return ``NULL``.
 
 
 .. _weakref-support:
@@ -557,7 +557,7 @@ For an object to be weakly referencable, the extension type must do two things:
 
 #. Include a :c:type:`PyObject\*` field in the C object structure dedicated to
    the weak reference mechanism.  The object's constructor should leave it
-   *NULL* (which is automatic when using the default
+   ``NULL`` (which is automatic when using the default
    :c:member:`~PyTypeObject.tp_alloc`).
 
 #. Set the :c:member:`~PyTypeObject.tp_weaklistoffset` type member
@@ -582,7 +582,7 @@ And the corresponding member in the statically-declared type object::
 
 The only further addition is that ``tp_dealloc`` needs to clear any weak
 references (by calling :c:func:`PyObject_ClearWeakRefs`) if the field is
-non-*NULL*::
+non-``NULL``::
 
    static void
    Trivial_dealloc(TrivialObject *self)

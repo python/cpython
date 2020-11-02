@@ -19,6 +19,7 @@ from idlelib.config import idleConf
 from idlelib import macosx
 from idlelib import pyshell
 from idlelib.query import CustomRun
+from idlelib import outwin
 
 indent_message = """Error: Inconsistent indentation detected!
 
@@ -46,6 +47,9 @@ class ScriptBinding:
             self.editwin.text_frame.bind('<<run-module-event-2>>', self._run_module_event)
 
     def check_module_event(self, event):
+        if isinstance(self.editwin, outwin.OutputWindow):
+            self.editwin.text.bell()
+            return 'break'
         filename = self.getfilename()
         if not filename:
             return 'break'
@@ -129,6 +133,9 @@ class ScriptBinding:
         module being executed and also add that directory to its
         sys.path if not already included.
         """
+        if isinstance(self.editwin, outwin.OutputWindow):
+            self.editwin.text.bell()
+            return 'break'
         filename = self.getfilename()
         if not filename:
             return 'break'

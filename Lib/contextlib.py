@@ -4,7 +4,7 @@ import sys
 import _collections_abc
 from collections import deque
 from functools import wraps
-from types import MethodType
+from types import MethodType, GenericAlias
 
 __all__ = ["asynccontextmanager", "contextmanager", "closing", "nullcontext",
            "AbstractContextManager", "AbstractAsyncContextManager",
@@ -15,6 +15,8 @@ __all__ = ["asynccontextmanager", "contextmanager", "closing", "nullcontext",
 class AbstractContextManager(abc.ABC):
 
     """An abstract base class for context managers."""
+
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __enter__(self):
         """Return `self` upon entering the runtime context."""
@@ -35,6 +37,8 @@ class AbstractContextManager(abc.ABC):
 class AbstractAsyncContextManager(abc.ABC):
 
     """An abstract base class for asynchronous context managers."""
+
+    __class_getitem__ = classmethod(GenericAlias)
 
     async def __aenter__(self):
         """Return `self` upon entering the runtime context."""
@@ -297,6 +301,32 @@ class closing(AbstractContextManager):
         return self.thing
     def __exit__(self, *exc_info):
         self.thing.close()
+
+
+class aclosing(AbstractAsyncContextManager):
+    """Async context manager for safely finalizing an asynchronously cleaned-up
+    resource such as an async generator, calling its ``aclose()`` method.
+
+    Code like this:
+
+        async with aclosing(<module>.fetch(<arguments>)) as agen:
+            <block>
+
+    is equivalent to this:
+
+        agen = <module>.fetch(<arguments>)
+        try:
+            <block>
+        finally:
+            await agen.aclose()
+
+    """
+    def __init__(self, thing):
+        self.thing = thing
+    async def __aenter__(self):
+        return self.thing
+    async def __aexit__(self, *exc_info):
+        await self.thing.aclose()
 
 
 class _RedirectStream(AbstractContextManager):

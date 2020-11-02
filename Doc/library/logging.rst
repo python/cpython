@@ -159,6 +159,7 @@ is the module's name in the Python package namespace.
       message format string, and the *args* are the arguments which are merged into
       *msg* using the string formatting operator. (Note that this means that you can
       use keywords in the format string, together with a single dictionary argument.)
+      No % formatting operation is performed on *msg* when no *args* are supplied.
 
       There are four keyword arguments in *kwargs* which are inspected:
       *exc_info*, *stack_info*, *stacklevel* and *extra*.
@@ -294,7 +295,7 @@ is the module's name in the Python package namespace.
 
    .. method:: Logger.filter(record)
 
-      Applies this logger's filters to the record and returns a true value if the
+      Apply this logger's filters to the record and return ``True`` if the
       record is to be processed. The filters are consulted in turn, until one of
       them returns a false value. If none of them return a false value, the record
       will be processed (passed to handlers). If one returns a false value, no
@@ -447,7 +448,7 @@ subclasses. However, the :meth:`__init__` method in subclasses needs to call
 
    .. method:: Handler.filter(record)
 
-      Applies this handler's filters to the record and returns a true value if the
+      Apply this handler's filters to the record and return ``True`` if the
       record is to be processed. The filters are consulted in turn, until one of
       them returns a false value. If none of them return a false value, the record
       will be emitted. If one returns a false value, the handler will not emit the
@@ -528,7 +529,7 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
 :ref:`logrecord-attributes`.
 
 
-.. class:: Formatter(fmt=None, datefmt=None, style='%', validate=True)
+.. class:: Formatter(fmt=None, datefmt=None, style='%', validate=True, *, defaults=None)
 
    Returns a new instance of the :class:`Formatter` class.  The instance is
    initialized with a format string for the message as a whole, as well as a
@@ -544,6 +545,10 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
    :ref:`formatting-styles` for more information on using {- and $-formatting
    for log messages.
 
+   The *defaults* parameter can be a dictionary with default values to use in
+   custom fields. For example:
+   ``logging.Formatter('%(ip)s %(message)s', defaults={"ip": None})``
+
    .. versionchanged:: 3.2
       The *style* parameter was added.
 
@@ -551,6 +556,9 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
       The *validate* parameter was added. Incorrect or mismatched style and fmt
       will raise a ``ValueError``.
       For example: ``logging.Formatter('%(asctime)s - %(message)s', style='{')``.
+
+   .. versionchanged:: 3.10
+      The *defaults* parameter was added.
 
    .. method:: format(record)
 
@@ -566,9 +574,9 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
       pickled and sent across the wire, but you should be careful if you have
       more than one :class:`Formatter` subclass which customizes the formatting
       of exception information. In this case, you will have to clear the cached
-      value after a formatter has done its formatting, so that the next
-      formatter to handle the event doesn't use the cached value but
-      recalculates it afresh.
+      value (by setting the *exc_text* attribute to ``None``) after a formatter
+      has done its formatting, so that the next formatter to handle the event
+      doesn't use the cached value, but recalculates it afresh.
 
       If stack information is available, it's appended after the exception
       information, using :meth:`formatStack` to transform it if necessary.
@@ -606,6 +614,9 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
          overridden at the instance level when desired. The names of the
          attributes are ``default_time_format`` (for the strptime format string)
          and ``default_msec_format`` (for appending the millisecond value).
+
+      .. versionchanged:: 3.9
+         The ``default_msec_format`` can be ``None``.
 
    .. method:: formatException(exc_info)
 
@@ -1154,9 +1165,9 @@ functions.
    +--------------+---------------------------------------------+
    | Format       | Description                                 |
    +==============+=============================================+
-   | *filename*   | Specifies that a FileHandler be created,    |
-   |              | using the specified filename, rather than a |
-   |              | StreamHandler.                              |
+   | *filename*   | Specifies that a :class:`FileHandler` be    |
+   |              | created, using the specified filename,      |
+   |              | rather than a :class:`StreamHandler`.       |
    +--------------+---------------------------------------------+
    | *filemode*   | If *filename* is specified, open the file   |
    |              | in this :ref:`mode <filemodes>`. Defaults   |
@@ -1180,9 +1191,10 @@ functions.
    |              | :ref:`level <levels>`.                      |
    +--------------+---------------------------------------------+
    | *stream*     | Use the specified stream to initialize the  |
-   |              | StreamHandler. Note that this argument is   |
-   |              | incompatible with *filename* - if both      |
-   |              | are present, a ``ValueError`` is raised.    |
+   |              | :class:`StreamHandler`. Note that this      |
+   |              | argument is incompatible with *filename* -  |
+   |              | if both are present, a ``ValueError`` is    |
+   |              | raised.                                     |
    +--------------+---------------------------------------------+
    | *handlers*   | If specified, this should be an iterable of |
    |              | already created handlers to add to the root |
@@ -1201,18 +1213,18 @@ functions.
    +--------------+---------------------------------------------+
    | *encoding*   | If this keyword argument is specified along |
    |              | with *filename*, its value is used when the |
-   |              | FileHandler is created, and thus used when  |
-   |              | opening the output file.                    |
+   |              | :class:`FileHandler` is created, and thus   |
+   |              | used when opening the output file.          |
    +--------------+---------------------------------------------+
    | *errors*     | If this keyword argument is specified along |
    |              | with *filename*, its value is used when the |
-   |              | FileHandler is created, and thus used when  |
-   |              | opening the output file. If not specified,  |
-   |              | the value 'backslashreplace' is used. Note  |
-   |              | that if ``None`` is specified, it will be   |
-   |              | passed as such to func:`open`, which means  |
-   |              | that it will be treated the same as passing |
-   |              | 'errors'.                                   |
+   |              | :class:`FileHandler` is created, and thus   |
+   |              | used when opening the output file. If not   |
+   |              | specified, the value 'backslashreplace' is  |
+   |              | used. Note that if ``None`` is specified,   |
+   |              | it will be passed as such to :func:`open`,  |
+   |              | which means that it will be treated the     |
+   |              | same as passing 'errors'.                   |
    +--------------+---------------------------------------------+
 
    .. versionchanged:: 3.2

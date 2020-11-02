@@ -1,2 +1,0 @@
-Restructured the :mod:`datetime` docs in the interest of making them more
-user-friendly and improving readability. Patch by Brad Solomon.

@@ -360,7 +360,7 @@ the *new_callable* argument to :func:`patch`.
         assert the mock has been called with the specified calls.
         The :attr:`mock_calls` list is checked for the calls.
 
-        If *any_order* is false (the default) then the calls must be
+        If *any_order* is false then the calls must be
         sequential. There can be extra calls before or after the
         specified calls.
 
@@ -647,6 +647,9 @@ the *new_callable* argument to :func:`patch`.
         arguments and make more complex assertions. See
         :ref:`calls as tuples <calls-as-tuples>`.
 
+        .. versionchanged:: 3.8
+           Added ``args`` and ``kwargs`` properties.
+
 
     .. attribute:: call_args_list
 
@@ -854,7 +857,7 @@ object::
 
 .. class:: AsyncMock(spec=None, side_effect=None, return_value=DEFAULT, wraps=None, name=None, spec_set=None, unsafe=False, **kwargs)
 
-  An asynchronous version of :class:`Mock`. The :class:`AsyncMock` object will
+  An asynchronous version of :class:`MagicMock`. The :class:`AsyncMock` object will
   behave so the object is recognized as an async function, and the result of a
   call is an awaitable.
 
@@ -873,7 +876,7 @@ object::
     exception,
   - if ``side_effect`` is an iterable, the async function will return the
     next value of the iterable, however, if the sequence of result is
-    exhausted, ``StopIteration`` is raised immediately,
+    exhausted, ``StopAsyncIteration`` is raised immediately,
   - if ``side_effect`` is not defined, the async function will return the
     value defined by ``return_value``, hence, by default, the async function
     returns a new :class:`AsyncMock` object.
@@ -915,6 +918,7 @@ object::
   >>> mock.async_foo
   <AsyncMock name='mock.async_foo' id='...'>
 
+  .. versionadded:: 3.8
 
   .. method:: assert_awaited()
 
@@ -1006,11 +1010,11 @@ object::
       Assert the mock has been awaited with the specified calls.
       The :attr:`await_args_list` list is checked for the awaits.
 
-      If *any_order* is False (the default) then the awaits must be
+      If *any_order* is false then the awaits must be
       sequential. There can be extra calls before or after the
       specified awaits.
 
-      If *any_order* is True then the awaits can be in any order, but
+      If *any_order* is true then the awaits can be in any order, but
       they must all appear in :attr:`await_args_list`.
 
         >>> mock = AsyncMock()
@@ -1326,8 +1330,7 @@ patch
 
 .. note::
 
-    :func:`patch` is straightforward to use. The key is to do the patching in the
-    right namespace. See the section `where to patch`_.
+    The key is to do the patching in the right namespace. See the section `where to patch`_.
 
 .. function:: patch(target, new=DEFAULT, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, **kwargs)
 
@@ -1400,7 +1403,8 @@ patch
     "as"; very useful if :func:`patch` is creating a mock object for you.
 
     :func:`patch` takes arbitrary keyword arguments. These will be passed to
-    the :class:`Mock` (or *new_callable*) on construction.
+    :class:`AsyncMock` if the patched object is asynchronous, to
+    :class:`MagicMock` otherwise or to *new_callable* if specified.
 
     ``patch.dict(...)``, ``patch.multiple(...)`` and ``patch.object(...)`` are
     available for alternate use-cases.
@@ -2085,20 +2089,20 @@ to change the default.
 
 Methods and their defaults:
 
-* ``__lt__``: NotImplemented
-* ``__gt__``: NotImplemented
-* ``__le__``: NotImplemented
-* ``__ge__``: NotImplemented
-* ``__int__``: 1
-* ``__contains__``: False
-* ``__len__``: 0
-* ``__iter__``: iter([])
-* ``__exit__``: False
-* ``__aexit__``: False
-* ``__complex__``: 1j
-* ``__float__``: 1.0
-* ``__bool__``: True
-* ``__index__``: 1
+* ``__lt__``: ``NotImplemented``
+* ``__gt__``: ``NotImplemented``
+* ``__le__``: ``NotImplemented``
+* ``__ge__``: ``NotImplemented``
+* ``__int__``: ``1``
+* ``__contains__``: ``False``
+* ``__len__``: ``0``
+* ``__iter__``: ``iter([])``
+* ``__exit__``: ``False``
+* ``__aexit__``: ``False``
+* ``__complex__``: ``1j``
+* ``__float__``: ``1.0``
+* ``__bool__``: ``True``
+* ``__index__``: ``1``
 * ``__hash__``: default hash for the mock
 * ``__str__``: default str for the mock
 * ``__sizeof__``: default sizeof for the mock

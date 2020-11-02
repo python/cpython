@@ -56,8 +56,8 @@ test runner
       Kent Beck's original paper on testing frameworks using the pattern shared
       by :mod:`unittest`.
 
-   `Nose <https://nose.readthedocs.io/>`_ and `pytest <https://docs.pytest.org/>`_
-      Third-party unittest frameworks with a lighter-weight syntax for writing
+   `pytest <https://docs.pytest.org/>`_
+      Third-party unittest framework with a lighter-weight syntax for writing
       tests.  For example, ``assert func(10) == 42``.
 
    `The Python Testing Tools Taxonomy <https://wiki.python.org/moin/PythonTestingToolsTaxonomy>`_
@@ -73,7 +73,7 @@ test runner
    for those new to unit testing.  For production environments it is
    recommended that tests be driven by a continuous integration system such as
    `Buildbot <https://buildbot.net/>`_, `Jenkins <https://jenkins.io/>`_
-   or  `Hudson <http://hudson-ci.org/>`_.
+   or `Travis-CI <https://travis-ci.com>`_, or `AppVeyor <https://www.appveyor.com/>`_.
 
 
 .. _unittest-minimal-example:
@@ -593,8 +593,9 @@ The following decorators and exception implement test skipping and expected fail
 
 .. decorator:: expectedFailure
 
-   Mark the test as an expected failure.  If the test fails it will be
-   considered a success.  If the test passes, it will be considered a failure.
+   Mark the test as an expected failure or error.  If the test fails or errors
+   it will be considered a success.  If the test passes, it will be considered
+   a failure.
 
 .. exception:: SkipTest(reason)
 
@@ -910,10 +911,10 @@ Test cases
       .. versionadded:: 3.1
 
 
-   .. method:: assertIn(first, second, msg=None)
-               assertNotIn(first, second, msg=None)
+   .. method:: assertIn(member, container, msg=None)
+               assertNotIn(member, container, msg=None)
 
-      Test that *first* is (or is not) in *second*.
+      Test that *member* is (or is not) in *container*.
 
       .. versionadded:: 3.1
 
@@ -949,6 +950,9 @@ Test cases
    +---------------------------------------------------------+--------------------------------------+------------+
    | :meth:`assertLogs(logger, level)                        | The ``with`` block logs on *logger*  | 3.4        |
    | <TestCase.assertLogs>`                                  | with minimum *level*                 |            |
+   +---------------------------------------------------------+--------------------------------------+------------+
+   | :meth:`assertNoLogs(logger, level)                      | The ``with`` block does not log on   | 3.10       |
+   | <TestCase.assertNoLogs>`                                |  *logger* with minimum *level*       |            |
    +---------------------------------------------------------+--------------------------------------+------------+
 
    .. method:: assertRaises(exception, callable, *args, **kwds)
@@ -1088,7 +1092,8 @@ Test cases
 
       If given, *logger* should be a :class:`logging.Logger` object or a
       :class:`str` giving the name of a logger.  The default is the root
-      logger, which will catch all messages.
+      logger, which will catch all messages that were not blocked by a
+      non-propagating descendent logger.
 
       If given, *level* should be either a numeric logging level or
       its string equivalent (for example either ``"ERROR"`` or
@@ -1121,6 +1126,24 @@ Test cases
 
       .. versionadded:: 3.4
 
+   .. method:: assertNoLogs(logger=None, level=None)
+
+      A context manager to test that no messages are logged on
+      the *logger* or one of its children, with at least the given
+      *level*.
+
+      If given, *logger* should be a :class:`logging.Logger` object or a
+      :class:`str` giving the name of a logger.  The default is the root
+      logger, which will catch all messages.
+
+      If given, *level* should be either a numeric logging level or
+      its string equivalent (for example either ``"ERROR"`` or
+      :attr:`logging.ERROR`).  The default is :attr:`logging.INFO`.
+
+      Unlike :meth:`assertLogs`, nothing will be returned by the context
+      manager.
+
+      .. versionadded:: 3.10
 
    There are also other methods used to perform more specific checks, such as:
 
@@ -1563,7 +1586,7 @@ Test cases
       if __name__ == "__main__":
           unittest.main()
 
-   After running the test ``events`` would contain ``["setUp", "asyncSetUp", "test_response", "asyncTearDown", "tearDown", "cleanup"]``
+   After running the test, ``events`` would contain ``["setUp", "asyncSetUp", "test_response", "asyncTearDown", "tearDown", "cleanup"]``.
 
 
 .. class:: FunctionTestCase(testFunc, setUp=None, tearDown=None, description=None)
@@ -1945,7 +1968,7 @@ Loading and running tests
 
       A list containing 2-tuples of :class:`TestCase` instances and strings
       holding formatted tracebacks.  Each tuple represents an expected failure
-      of the test case.
+      or error of the test case.
 
    .. attribute:: unexpectedSuccesses
 
@@ -2071,8 +2094,8 @@ Loading and running tests
 
    .. method:: addExpectedFailure(test, err)
 
-      Called when the test case *test* fails, but was marked with the
-      :func:`expectedFailure` decorator.
+      Called when the test case *test* fails or errors, but was marked with
+      the :func:`expectedFailure` decorator.
 
       The default implementation appends a tuple ``(test, formatted_err)`` to
       the instance's :attr:`expectedFailures` attribute, where *formatted_err*

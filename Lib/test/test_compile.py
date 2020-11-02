@@ -7,7 +7,9 @@ import _ast
 import tempfile
 import types
 from test import support
-from test.support import script_helper, FakePath
+from test.support import script_helper
+from test.support.os_helper import FakePath
+
 
 class TestSpecifics(unittest.TestCase):
 
@@ -731,6 +733,34 @@ if 1:
             self.assertEqual(None, opcodes[0].argval)
             self.assertEqual('RETURN_VALUE', opcodes[1].opname)
 
+    def test_false_while_loop(self):
+        def break_in_while():
+            while False:
+                break
+
+        def continue_in_while():
+            while False:
+                continue
+
+        funcs = [break_in_while, continue_in_while]
+
+        # Check that we did not raise but we also don't generate bytecode
+        for func in funcs:
+            opcodes = list(dis.get_instructions(func))
+            self.assertEqual(2, len(opcodes))
+            self.assertEqual('LOAD_CONST', opcodes[0].opname)
+            self.assertEqual(None, opcodes[0].argval)
+            self.assertEqual('RETURN_VALUE', opcodes[1].opname)
+
+    def test_big_dict_literal(self):
+        # The compiler has a flushing point in "compiler_dict" that calls compiles
+        # a portion of the dictionary literal when the loop that iterates over the items
+        # reaches 0xFFFF elements but the code was not including the boundary element,
+        # dropping the key at position 0xFFFF. See bpo-41531 for more information
+
+        dict_size = 0xFFFF + 1
+        the_dict = "{" + ",".join(f"{x}:{x}" for x in range(dict_size)) + "}"
+        self.assertEqual(len(eval(the_dict)), dict_size)
 
 class TestExpressionStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object
