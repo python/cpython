@@ -892,10 +892,7 @@ class TestNamedTemporaryFile(BaseTestCase):
             fd.write(b''.join(lines))
             fd.seek(0)
 
-            for i, l in enumerate(lines):
-                self.assertEqual(l, next(fd))
-            self.assertEqual(i, len(lines) - 1)
-
+            self.assertEqual(list(fd), lines)
             with self.assertRaises(StopIteration):
                 next(fd)
 
