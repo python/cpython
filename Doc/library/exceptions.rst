@@ -313,8 +313,8 @@ The following exceptions are the exceptions that are usually raised.
    .. versionchanged:: 3.4
       The :attr:`filename` attribute is now the original file name passed to
       the function, instead of the name encoded to or decoded from the
-      filesystem encoding.  Also, the *filename2* constructor argument and
-      attribute was added.
+      :term:`filesystem encoding and error handler`. Also, the *filename2*
+      constructor argument and attribute was added.
 
 
 .. exception:: OverflowError
