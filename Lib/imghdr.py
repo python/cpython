@@ -1,8 +1,15 @@
 """Recognize image file formats based on their first few bytes."""
 
-from os import PathLike
+import os,contextlib
 
 __all__ = ["what"]
+
+@contextlib.contextmanager
+def maybe_open(f, mode='r', **kwargs):
+    "Context manager: open `f` if it is a path (and close on exit)"
+    if isinstance(f, (str,os.PathLike)):
+        with open(f, mode, **kwargs) as f: yield f
+    else: yield f
 
 #-------------------------#
 # Recognize image headers #
@@ -11,11 +18,14 @@ __all__ = ["what"]
 def what(file, h=None):
     "String describing the image type based on image data contained in `file`"
     if h is None:
-        if isinstance(file, (str,PathLike)):
-            with open(file, 'rb') as f: h = f.peek(32)
-        else: h = file.peek(32)
-    res = filter(None, (tf(h) for tf in tests))
-    return next(res, None)
+        with maybe_open(file, 'rb') as f:
+            location = f.tell()
+            h = f.read(32)
+            f.seek(location)
+    for tf in tests:
+        res = tf(h)
+        if res:
+            return res
 
 
 #---------------------------------#
