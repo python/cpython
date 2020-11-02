@@ -159,7 +159,7 @@ class Text:
         if char.endswith(' lineend') or char == 'end':
             return line, linelength
             # Tk requires that ignored chars before ' lineend' be valid int
-        if m := re.fullmatch('end-(\d*)c', char, re.A):  # Used by hyperparser.
+        if m := re.fullmatch(r'end-(\d*)c', char, re.A):  # Used by hyperparser.
             return line, linelength - int(m.group(1))
 
         # Out of bounds char becomes first or last index of line
