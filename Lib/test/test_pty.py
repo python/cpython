@@ -22,6 +22,13 @@ import platform
 TEST_STRING_1 = b"I wish to buy a fish license.\n"
 TEST_STRING_2 = b"For my pet fish, Eric.\n"
 
+try:
+    _TIOCGWINSZ = tty.TIOCGWINSZ
+    _TIOCSWINSZ = tty.TIOCSWINSZ
+    _HAVE_WINSZ = True
+except AttributeError:
+    _HAVE_WINSZ = False
+
 if verbose:
     def debug(msg):
         print(msg)
@@ -80,11 +87,17 @@ def expectedFailureOnBSD(fun):
         return unittest.expectedFailure(fun)
     return fun
 
+def _get_term_winsz(fd):
+    s = struct.pack("HHHH", 0, 0, 0, 0)
+    return fcntl.ioctl(fd, _TIOCGWINSZ, s)
+
+def _set_term_winsz(fd, winsz):
+    fcntl.ioctl(fd, _TIOCSWINSZ, winsz)
+
 
 # Marginal testing of pty suite. Cannot do extensive 'do or fail' testing
 # because pty code is not too portable.
 # XXX(nnorwitz):  these tests leak fds when there is an error.
-# Soumendra: test_openpty may leave tty in abnormal state upon failure.
 class PtyTest(unittest.TestCase):
     def setUp(self):
         old_alarm = signal.signal(signal.SIGALRM, self.handle_sig)
@@ -98,15 +111,32 @@ class PtyTest(unittest.TestCase):
         self.addCleanup(signal.alarm, 0)
         signal.alarm(10)
 
+        # Save original stdin window size
+        self.stdin_rows = None
+        self.stdin_cols = None
+        if _HAVE_WINSZ:
+            try:
+                stdin_dim = os.get_terminal_size(pty.STDIN_FILENO)
+                self.stdin_rows = stdin_dim.lines
+                self.stdin_cols = stdin_dim.columns
+                old_stdin_winsz = struct.pack("HHHH", self.stdin_rows,
+                                              self.stdin_cols, 0, 0)
+                self.addCleanup(_set_term_winsz, pty.STDIN_FILENO, old_stdin_winsz)
+            except OSError:
+                # possible reason: current stdin is not a tty
+                pass
+
     def handle_sig(self, sig, frame):
         self.fail("isatty hung")
 
-    # RELEVANT ANYMORE?
     @staticmethod
     def handle_sighup(signum, frame):
         # bpo-38547: if the process is the session leader, os.close(master_fd)
         # of "master_fd, slave_name = pty.master_open()" raises SIGHUP
         # signal: just ignore the signal.
+        #
+        # NOTE: the above comment is from an older version of the test;
+        # master_open() is not being used anymore.
         pass
 
     @expectedFailureIfStdinIsTTY
@@ -114,46 +144,37 @@ class PtyTest(unittest.TestCase):
         try:
             mode = tty.tcgetattr(pty.STDIN_FILENO)
         except tty.error:
-            # pty.STDIN_FILENO not a tty?
+            # possible reason: current stdin is not a tty
             debug("tty.tcgetattr(pty.STDIN_FILENO) failed")
             mode = None
 
-        try:
-            TIOCGWINSZ = tty.TIOCGWINSZ
-            TIOCSWINSZ = tty.TIOCSWINSZ
-        except AttributeError:
-            debug("TIOCSWINSZ/TIOCGWINSZ not available")
-            winsz = None
-        else:
+        new_stdin_winsz = None
+        if _HAVE_WINSZ:
             try:
                 debug("Setting pty.STDIN_FILENO window size")
-                current_stdin_winsz = os.get_terminal_size(pty.STDIN_FILENO)
-
                 # Set number of columns and rows to be the
                 # floors of 1/5 of respective original values
-                winsz = struct.pack("HHHH", current_stdin_winsz.lines//5,
-                                    current_stdin_winsz.columns//5, 0, 0)
-                fcntl.ioctl(pty.STDIN_FILENO, TIOCSWINSZ, winsz)
+                target_stdin_winsz = struct.pack("HHHH", self.stdin_rows//5,
+                                                 self.stdin_cols//5, 0, 0)
+                _set_term_winsz(pty.STDIN_FILENO, target_stdin_winsz)
 
                 # Were we able to set the window size
                 # of pty.STDIN_FILENO successfully?
-                s = struct.pack("HHHH", 0, 0, 0, 0)
-                new_stdin_winsz = fcntl.ioctl(pty.STDIN_FILENO, TIOCGWINSZ, s)
-                self.assertEqual(new_stdin_winsz, winsz,
+                new_stdin_winsz = _get_term_winsz(pty.STDIN_FILENO)
+                self.assertEqual(new_stdin_winsz, target_stdin_winsz,
                                  "pty.STDIN_FILENO window size unchanged")
             except OSError:
-                # pty.STDIN_FILENO not a tty?
-                debug("Failed to set pty.STDIN_FILENO window size")
-                winsz = None
+                # possible reason: current stdin is not a tty
+                warnings.warn("Failed to set pty.STDIN_FILENO window size")
+                pass
 
         try:
             debug("Calling pty.openpty()")
             try:
-                master_fd, slave_fd = pty.openpty(mode, winsz)
+                master_fd, slave_fd = pty.openpty(mode, new_stdin_winsz)
             except TypeError:
                 master_fd, slave_fd = pty.openpty()
-            debug("Got master_fd '%d', slave_fd '%d'" %
-                  (master_fd, slave_fd))
+            debug(f"Got master_fd '{master_fd}', slave_fd '{slave_fd}'")
         except OSError:
             # " An optional feature could not be imported " ... ?
             raise unittest.SkipTest("Pseudo-terminals (seemingly) not functional.")
@@ -163,15 +184,16 @@ class PtyTest(unittest.TestCase):
         if mode:
             self.assertEqual(tty.tcgetattr(slave_fd), mode,
                              "openpty() failed to set slave termios")
-        if winsz:
-            s = struct.pack("HHHH", 0, 0, 0, 0)
-            self.assertEqual(fcntl.ioctl(slave_fd, TIOCGWINSZ, s), winsz,
+        if new_stdin_winsz:
+            self.assertEqual(_get_term_winsz(slave_fd), new_stdin_winsz,
                              "openpty() failed to set slave window size")
 
-        # RELEVANT ANYMORE?
         # Solaris requires reading the fd before anything is returned.
         # My guess is that since we open and close the slave fd
         # in master_open(), we need to read the EOF.
+        #
+        # NOTE: the above comment is from an older version of the test;
+        # master_open() is not being used anymore.
 
         # Ensure the fd is non-blocking in case there's nothing to read.
         blocking = os.get_blocking(master_fd)
@@ -204,13 +226,6 @@ class PtyTest(unittest.TestCase):
         # the session leader: we installed a SIGHUP signal handler
         # to ignore this signal.
         os.close(master_fd)
-
-        if winsz:
-            winsz = struct.pack("HHHH", current_stdin_winsz.lines,
-                                current_stdin_winsz.columns, 0, 0)
-            fcntl.ioctl(pty.STDIN_FILENO, TIOCSWINSZ, winsz)
-
-        # pty.openpty() passed.
 
     def test_fork(self):
         debug("calling pty.fork()")
@@ -294,8 +309,6 @@ class PtyTest(unittest.TestCase):
             ##    raise TestFailed("Read from master_fd did not raise exception")
 
         os.close(master_fd)
-
-        # pty.fork() passed.
 
     @expectedFailureOnBSD
     def test_master_read(self):
@@ -406,6 +419,7 @@ class SmallPtyTests(unittest.TestCase):
 
         with self.assertRaises(IndexError):
             pty._copy(masters[0])
+
 
 def tearDownModule():
     reap_children()
