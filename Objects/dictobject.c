@@ -3568,7 +3568,6 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
     if (self == NULL) {
         return NULL;
     }
-
     if (nargs == 1) {
         if (dict_update_arg(self, args[0]) < 0) {
             Py_DECREF(self);
@@ -3577,10 +3576,8 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
 
         args++;
     }
-
     if (kwnames != NULL) {
         PyDictObject *mp = (PyDictObject *)self;
-
         Py_ssize_t kw_size = PyTuple_GET_SIZE(kwnames);
 
         if (dictresize(mp, estimate_keysize(mp->ma_used + kw_size))) {
