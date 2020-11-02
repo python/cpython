@@ -84,7 +84,6 @@ class Debugger:
         dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'Icons')
         return PhotoImage(master=self.root, file=os.path.join(dir, filename))
 
-
     def run(self, *args):
         # Deal with the scenario where we've already got a program running
         # in the debugger and we want to start another. If that is the case,
@@ -175,7 +174,6 @@ class Debugger:
         self.left = left = ttk.Frame(self.pane, padding=5)
         self.pane.add(left, weight=1)
         controls = ttk.Frame(left)
-        col = 0
         self.buttondata = {}
         self.buttons = ['go', 'step', 'over', 'out', 'stop', 'prefs']
         self.button_names = {'go':'Go', 'step':'Step', 'over':'Over',
@@ -183,14 +181,13 @@ class Debugger:
         self.button_cmds = {'go':self.cont, 'step':self.step,
                             'over':self.next, 'out':self.ret,
                             'stop':self.quit, 'prefs':self.options}
-        for key in self.buttons:
+        for col, key in enumerate(self.buttons):
             normal = self.getimage('debug_'+key+'.gif')
             disabled = self.getimage('debug_'+key+'_disabled.gif')
             b = ttk.Label(controls, image=normal, text=self.button_names[key],
                           compound='top', font='TkIconFont')
             b.grid(column=col, row=0, padx=[0,5])
             self.buttondata[key] = (b, normal, disabled)
-            col += 1
         self.enable_buttons(['prefs'])
         self.status_normal_font = Font(root=self.root, name='TkDefaultFont', exists=True)
         self.status_error_font = self.status_normal_font.copy()
@@ -254,7 +251,7 @@ class Debugger:
 
     def enable_buttons(self, buttons=None):
         for key in self.buttons:
-            if buttons is None or not key in buttons:
+            if buttons is None or key not in buttons:
                 self.buttondata[key][0]['image'] = self.buttondata[key][2]
                 self.buttondata[key][0]['foreground'] = '#aaaaaa'
                 self.buttondata[key][0]['cursor'] = ''
@@ -324,7 +321,7 @@ class Debugger:
         except Exception:
             pass
         stmt = linecache.getline(frame.f_code.co_filename, lineno).strip()
-        image=self.current_line_img if current else self.regular_line_img
+        image = self.current_line_img if current else self.regular_line_img
         item = self.stack.insert('', 'end', text=func,
                                values=(stmt,), image=image)
         self.framevars[item] = (frame.f_locals, frame.f_globals,
@@ -422,8 +419,8 @@ class Debugger:
             return
         filename, lineno = self.__frame2fileline(frame)
         if filename[:1] + filename[-1:] != "<>" and os.path.exists(filename):
-            if self.var_open_source_windows.get() or\
-                                    self.flist.already_open(filename):
+            if (self.var_open_source_windows.get() or
+                self.flist.already_open(filename)):
                 self.flist.gotofileline(filename, lineno)
 
     def __frame2fileline(self, frame):
