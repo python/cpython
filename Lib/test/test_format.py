@@ -428,13 +428,16 @@ class FormatTest(unittest.TestCase):
             localeconv = locale.localeconv()
             sep = localeconv['thousands_sep']
             point = localeconv['decimal_point']
+            grouping = localeconv['grouping']
 
             text = format(123456789, "n")
-            self.assertIn(sep, text)
+            if grouping:
+                self.assertIn(sep, text)
             self.assertEqual(text.replace(sep, ''), '123456789')
 
             text = format(1234.5, "n")
-            self.assertIn(sep, text)
+            if grouping:
+                self.assertIn(sep, text)
             self.assertIn(point, text)
             self.assertEqual(text.replace(sep, ''), '1234' + point + '5')
         finally:
