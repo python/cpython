@@ -1376,6 +1376,8 @@ _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 static int
 _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 {
+    /* bpo-35455: On Solaris, CLOCK_THREAD_CPUTIME_ID clock is not always
+       available; use gethrvtime() to substitute this functionality. */
     _PyTime_t t;
 
     if (info) {
