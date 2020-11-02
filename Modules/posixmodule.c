@@ -15028,7 +15028,9 @@ posixmodule_exec(PyObject *m)
     follow_symlinks_specified("", 1);
     dir_fd_and_follow_symlinks_invalid("chmod", DEFAULT_DIR_FD, 1);
     if(!dir_fd_converter(Py_None, &ignored))
+    {
        return 0;
+    }
     dir_fd_unavailable(Py_None, &ignored);
     }
 
