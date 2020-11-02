@@ -4462,7 +4462,7 @@ _PyEval_EvalCode(PyThreadState *tstate,
             goto fail;
         }
 
-        if (PyDict_SetItem(kwdict, keyword, value) == -1) {
+        if (_PyDict_SetItem_NoDuplicate(kwdict, keyword, value) < 0) {
             goto fail;
         }
         continue;

@@ -1153,71 +1153,6 @@ Fail:
     return -1;
 }
 
-// Same to insertdict but specialized for inserting without resizing and for 
-// dict that are populated in a loop and was empty before (see the empty arg).
-// Note that resizing must be done before calling this function. If not 
-// possible, use insertdict(). Furthermore, ma_version_tag is left unchanged, 
-// you have to change it after calling this function (probably at the end of 
-// a loop)
-static int
-insertdict_init(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value, int not_empty)
-{
-    PyObject *old_value = NULL;
-    PyDictKeyEntry *ep;
-    PyDictKeysObject *keys = mp->ma_keys;
-    Py_ssize_t ix;
-
-    Py_INCREF(key);
-    Py_INCREF(value);
-    MAINTAIN_TRACKING(mp, key, value);
-
-    if (not_empty) {
-        ix = keys->dk_lookup(mp, key, hash, &old_value);
-        if (ix == DKIX_ERROR)
-            goto Fail;
-
-        assert(PyUnicode_CheckExact(key) || keys->dk_lookup == lookdict);
-
-        not_empty = (ix != DKIX_EMPTY);
-    }
-    
-    if (! not_empty) {
-        /* Insert into new slot. */
-        assert(old_value == NULL);
-        const Py_ssize_t hashpos = find_empty_slot(keys, hash);
-        const Py_ssize_t dk_nentries = keys->dk_nentries;
-        ep = &DK_ENTRIES(keys)[dk_nentries];
-        dictkeys_set_index(keys, hashpos, dk_nentries);
-        ep->me_key = key;
-        ep->me_hash = hash;
-        ep->me_value = value;
-        mp->ma_used++;
-        keys->dk_usable--;
-        keys->dk_nentries++;
-        assert(mp->ma_keys->dk_usable >= 0);
-        ASSERT_CONSISTENT(mp);
-        return 0;
-    }
-
-#ifdef Py_DEBUG
-    if (old_value != value) {
-        assert(old_value != NULL);
-    }
-#endif
-
-    DK_ENTRIES(keys)[ix].me_value = value;
-
-    Py_XDECREF(old_value); /* which **CAN** re-enter (see issue #22653) */
-    ASSERT_CONSISTENT(mp);
-    Py_DECREF(key);
-    return 0;
-
-Fail:
-    Py_DECREF(value);
-    Py_DECREF(key);
-    return -1;
-}
-
 // Same to insertdict but specialized for ma_keys = Py_EMPTY_KEYS.
 static int
 insert_to_emptydict(PyDictObject *mp, PyObject *key, Py_hash_t hash,
@@ -1715,15 +1650,16 @@ PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
     return insertdict(mp, key, hash, value);
 }
 
-// See insertdict_init()
-static int
-dict_set_item_init(PyObject *op, PyObject *key, PyObject *value, int not_empty)
+// Similar to PyDict_SetItem but key must not be in op.
+int
+_PyDict_SetItem_NoDuplicate(PyObject *op, PyObject *key, PyObject *value)
 {
-    Py_hash_t hash;
     assert(PyDict_Check(op));
     assert(key);
     assert(value);
+
     PyDictObject *mp = (PyDictObject *)op;
+    Py_hash_t hash;
     if (!PyUnicode_CheckExact(key) ||
         (hash = ((PyASCIIObject *) key)->hash) == -1)
     {
@@ -1732,8 +1668,35 @@ dict_set_item_init(PyObject *op, PyObject *key, PyObject *value, int not_empty)
             return -1;
     }
 
-    return insertdict_init(mp, key, hash, value, not_empty);
+    if (mp->ma_keys->dk_usable == 0) {
+        if (insertion_resize(mp) < 0) {
+            return -1;
+        }
+    }
+
+    Py_INCREF(key);
+    Py_INCREF(value);
+    MAINTAIN_TRACKING(mp, key, value);
+
+    /* Insert into new slot. */
+    PyDictKeysObject *keys = mp->ma_keys;
+    const Py_ssize_t hashpos = find_empty_slot(keys, hash);
+    const Py_ssize_t dk_nentries = keys->dk_nentries;
+
+    dictkeys_set_index(keys, hashpos, dk_nentries);
+    PyDictKeyEntry *ep = &DK_ENTRIES(keys)[dk_nentries];
+    ep->me_key = key;
+    ep->me_hash = hash;
+    ep->me_value = value;
+    mp->ma_used++;
+    keys->dk_usable--;
+    keys->dk_nentries++;
+
+    mp->ma_version_tag = DICT_NEXT_VERSION();
+    ASSERT_CONSISTENT(mp);
+    return 0;
 }
+
 
 int
 _PyDict_SetItem_KnownHash(PyObject *op, PyObject *key, PyObject *value,
@@ -3625,14 +3588,22 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
             return NULL;
         }
 
-        for (Py_ssize_t i = 0; i < kw_size; i++) {
-            if (dict_set_item_init(self, PyTuple_GET_ITEM(kwnames, i), args[i], nargs) < 0) {
-                Py_DECREF(self);
-                return NULL;
+        if (nargs) {
+            for (Py_ssize_t i = 0; i < kw_size; i++) {
+                if (PyDict_SetItem(self, PyTuple_GET_ITEM(kwnames, i), args[i]) < 0) {
+                    Py_DECREF(self);
+                    return NULL;
+                }
             }
         }
-
-        mp->ma_version_tag = DICT_NEXT_VERSION();
+        else {
+            for (Py_ssize_t i = 0; i < kw_size; i++) {
+                if (_PyDict_SetItem_NoDuplicate(self, PyTuple_GET_ITEM(kwnames, i), args[i]) < 0) {
+                    Py_DECREF(self);
+                    return NULL;
+                }
+            }
+        }
     }
 
     return self;

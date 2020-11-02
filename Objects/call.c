@@ -921,8 +921,9 @@ _PyStack_AsDict(PyObject *const *values, PyObject *kwnames)
     for (i = 0; i < nkwargs; i++) {
         PyObject *key = PyTuple_GET_ITEM(kwnames, i);
         PyObject *value = *values++;
-        /* If key already exists, replace it with the new value */
-        if (PyDict_SetItem(kwdict, key, value)) {
+        // Assumes there are no duplicated keywords.
+        assert(!PyDict_Contains(kwdict, key));
+        if (_PyDict_SetItem_NoDuplicate(kwdict, key, value)) {
             Py_DECREF(kwdict);
             return NULL;
         }
