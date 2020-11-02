@@ -56,7 +56,7 @@ class Calltip:
 
     def open_calltip(self, evalfuncs):
         """Maybe close an existing calltip and maybe open a new calltip.
-        
+
         Called from (force_open|try_open|refresh)_calltip_event functions.
         """
         hp = HyperParser(self.editwin, "insert")
