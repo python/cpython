@@ -573,7 +573,7 @@ Implementations of array object methods.
 /*[clinic input]
 class array.array "arrayobject *" "ArrayType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ad43d37e942a8854]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a5c29edf59f176a3]*/
 
 static PyObject *
 newarrayobject(PyTypeObject *type, Py_ssize_t size, const struct arraydescr *descr)
@@ -2824,7 +2824,7 @@ static PyType_Spec array_spec = {
 /*[clinic input]
 class array.arrayiterator "arrayiterobject *" "get_array_state()->ArrayIterType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=5aefd2d74d8c8e30]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=91c83ed82b09b941]*/
 
 static PyObject *
 array_iter(arrayobject *ao)
