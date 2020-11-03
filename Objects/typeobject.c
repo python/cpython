@@ -3145,21 +3145,15 @@ PyType_GetSlot(PyTypeObject *type, int slot)
         return NULL;
     }
 
-    for (int i = 1; i < slots_len; i++) {
-        if (i != slot) {
-            continue;
-        }
-        parent_slot = *(void**)((char*)type + pyslot_offsets[i].slot_offset);
-        if (parent_slot == NULL) {
-            return NULL;
-        }
-        /* Return slot directly if there have no sub slot. */
-        if (pyslot_offsets[i].subslot_offset == -1) {
-            return parent_slot;
-        }
-        return *(void**)((char*)parent_slot + pyslot_offsets[i].subslot_offset);
+    parent_slot = *(void**)((char*)type + pyslot_offsets[slot].slot_offset);
+    if (parent_slot == NULL) {
+        return NULL;
     }
-    return NULL;
+    /* Return slot directly if we have no sub slot. */
+    if (pyslot_offsets[slot].subslot_offset == -1) {
+        return parent_slot;
+    }
+    return *(void**)((char*)parent_slot + pyslot_offsets[slot].subslot_offset);
 }
 
 PyObject *
