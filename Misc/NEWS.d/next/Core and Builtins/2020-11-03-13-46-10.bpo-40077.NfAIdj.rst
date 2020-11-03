@@ -1,2 +1,1 @@
-Convert :mod:`array` to use heap types, and establish a global state for
-these.
+Convert :mod:`array` to use heap types, and establish module state for these.
