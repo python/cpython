@@ -253,17 +253,27 @@ static PyObject*pattern_new_match(PatternObject*, SRE_STATE*, Py_ssize_t);
 static PyObject *pattern_scanner(PatternObject *, PyObject *, Py_ssize_t, Py_ssize_t);
 
 
+typedef struct {
+    PyTypeObject *Pattern_Type;
+    PyTypeObject *Match_Type;
+    PyTypeObject *Scanner_Type;
+} sre_module_state;
+
+sre_module_state sre_global_state;
+
+static sre_module_state *
+get_sre_module_state()
+{
+    return &sre_global_state;
+}
+
 /*[clinic input]
 module _sre
-class _sre.SRE_Pattern "PatternObject *" "Pattern_Type"
-class _sre.SRE_Match "MatchObject *" "Match_Type"
-class _sre.SRE_Scanner "ScannerObject *" "Scanner_Type"
+class _sre.SRE_Pattern "PatternObject *" "get_sre_module_state()->Pattern_Type"
+class _sre.SRE_Match "MatchObject *" "get_sre_module_state()->Match_Type"
+class _sre.SRE_Scanner "ScannerObject *" "get_sre_module_state()->Scanner_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=b0230ec19a0deac8]*/
-
-static PyTypeObject *Pattern_Type = NULL;
-static PyTypeObject *Match_Type = NULL;
-static PyTypeObject *Scanner_Type = NULL;
 
 /*[clinic input]
 _sre.getcodesize -> int
@@ -1346,7 +1356,7 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
 
     n = PyList_GET_SIZE(code);
     /* coverity[ampersand_in_size] */
-    self = PyObject_NewVar(PatternObject, Pattern_Type, n);
+    self = PyObject_NewVar(PatternObject, get_sre_module_state()->Pattern_Type, n);
     if (!self)
         return NULL;
     self->weakreflist = NULL;
@@ -2338,7 +2348,7 @@ pattern_new_match(PatternObject* pattern, SRE_STATE* state, Py_ssize_t status)
 
         /* create match object (with room for extra group marks) */
         /* coverity[ampersand_in_size] */
-        match = PyObject_NewVar(MatchObject, Match_Type,
+        match = PyObject_NewVar(MatchObject, get_sre_module_state()->Match_Type,
                                 2*(pattern->groups+1));
         if (!match)
             return NULL;
@@ -2482,7 +2492,7 @@ pattern_scanner(PatternObject *self, PyObject *string, Py_ssize_t pos, Py_ssize_
     ScannerObject* scanner;
 
     /* create scanner object */
-    scanner = PyObject_New(ScannerObject, Scanner_Type);
+    scanner = PyObject_New(ScannerObject, get_sre_module_state()->Scanner_Type);
     if (!scanner)
         return NULL;
     scanner->pattern = NULL;
@@ -2525,6 +2535,7 @@ pattern_hash(PatternObject *self)
 static PyObject*
 pattern_richcompare(PyObject *lefto, PyObject *righto, int op)
 {
+    sre_module_state *state = get_sre_module_state();
     PatternObject *left, *right;
     int cmp;
 
@@ -2532,7 +2543,9 @@ pattern_richcompare(PyObject *lefto, PyObject *righto, int op)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    if (!Py_IS_TYPE(lefto, Pattern_Type) || !Py_IS_TYPE(righto, Pattern_Type)) {
+    if (!Py_IS_TYPE(lefto, state->Pattern_Type) ||
+        !Py_IS_TYPE(righto, state->Pattern_Type))
+    {
         Py_RETURN_NOTIMPLEMENTED;
     }
 
@@ -2743,6 +2756,7 @@ do {                                                                \
 
 PyMODINIT_FUNC PyInit__sre(void)
 {
+    sre_module_state *state = get_sre_module_state();
     PyObject* m;
     PyObject* d;
     PyObject* x;
@@ -2752,9 +2766,9 @@ PyMODINIT_FUNC PyInit__sre(void)
         return NULL;
 
     /* Create heap types */
-    CREATE_TYPE(m, Pattern_Type, &pattern_spec);
-    CREATE_TYPE(m, Match_Type, &match_spec);
-    CREATE_TYPE(m, Scanner_Type, &scanner_spec);
+    CREATE_TYPE(m, state->Pattern_Type, &pattern_spec);
+    CREATE_TYPE(m, state->Match_Type, &match_spec);
+    CREATE_TYPE(m, state->Scanner_Type, &scanner_spec);
 
     d = PyModule_GetDict(m);
 
