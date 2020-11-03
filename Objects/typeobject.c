@@ -3046,12 +3046,13 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         }
         else {
             /* Copy other slots directly */
-            slot_offset = pyslot_offsets[slot->slot].slot_offset;
-            void *parent_slot = *(void**)((char*)res_start + slot_offset);
-            if (parent_slot == NULL) {
+            PySlot_Offset slotoffsets = pyslot_offsets[slot->slot];
+            slot_offset = slotoffsets.slot_offset;
+            if (slotoffsets.subslot_offset == -1) {
                 *(void**)((char*)res_start + slot_offset) = slot->pfunc;
             } else {
-                subslot_offset = pyslot_offsets[slot->slot].subslot_offset;
+                void *parent_slot = *(void**)((char*)res_start + slot_offset);
+                subslot_offset = slotoffsets.subslot_offset;
                 *(void**)((char*)parent_slot + subslot_offset) = slot->pfunc;
             }
         }
