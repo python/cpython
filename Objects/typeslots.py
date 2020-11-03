@@ -36,6 +36,8 @@ def generate_typeslots(out=sys.stdout):
     for i in range(1,M):
         if i in res:
             out.write("%s,\n" % res[i])
+        else:
+            out.write("{0, 0},\n")
 
 
 def main():
