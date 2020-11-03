@@ -4767,7 +4767,7 @@ fi
 
 AC_SUBST(EXT_SUFFIX)
 case $ac_sys_system in
-    Linux*|GNU*|Darwin|VxWorks)
+    Linux*|GNU*|Darwin|VxWorks|SunOS)
 	EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX};;
     *)
 	EXT_SUFFIX=${SHLIB_SUFFIX};;
