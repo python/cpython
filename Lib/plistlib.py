@@ -736,7 +736,7 @@ def _count_to_size(count):
     elif count < 1 << 16:
         return 2
 
-    elif count << 1 << 32:
+    elif count < 1 << 32:
         return 4
 
     else:
