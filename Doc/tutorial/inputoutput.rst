@@ -334,7 +334,7 @@ resources used by it. :meth:`__del__` of the returned :term:`file object` also c
 ..
    Source for the claim that the ``del(f)`` calls .close():
    Take a look at the source code of open() in _pyio.py and check the
-   returned type. It will always be one of these 5 classes: 
+   returned type. It will always be one of these 5 classes:
    FileIO
    TextIOWrapper
    BufferedRandom
