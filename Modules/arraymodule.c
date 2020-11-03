@@ -56,9 +56,9 @@ typedef struct {
     PyObject* (*getitem)(struct arrayobject *, Py_ssize_t);
 } arrayiterobject;
 
-static PyTypeObject PyArrayIter_Type;
+static PyTypeObject *PyArrayIter_Type = NULL;
 
-#define PyArrayIter_Check(op) PyObject_TypeCheck(op, &PyArrayIter_Type)
+#define PyArrayIter_Check(op) PyObject_TypeCheck(op, PyArrayIter_Type)
 
 enum machine_format_code {
     UNKNOWN_FORMAT = -1,
@@ -2808,7 +2808,7 @@ static PyType_Spec array_spec = {
 /*********************** Array Iterator **************************/
 
 /*[clinic input]
-class array.arrayiterator "arrayiterobject *" "&PyArrayIter_Type"
+class array.arrayiterator "arrayiterobject *" "PyArrayIter_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=5aefd2d74d8c8e30]*/
 
@@ -2822,7 +2822,7 @@ array_iter(arrayobject *ao)
         return NULL;
     }
 
-    it = PyObject_GC_New(arrayiterobject, &PyArrayIter_Type);
+    it = PyObject_GC_New(arrayiterobject, PyArrayIter_Type);
     if (it == NULL)
         return NULL;
 
@@ -2857,9 +2857,12 @@ arrayiter_next(arrayiterobject *it)
 static void
 arrayiter_dealloc(arrayiterobject *it)
 {
+    PyTypeObject *tp = Py_TYPE(it);
+
     PyObject_GC_UnTrack(it);
     Py_XDECREF(it->ao);
     PyObject_GC_Del(it);
+    Py_DECREF(tp);
 }
 
 static int
@@ -2917,36 +2920,21 @@ static PyMethodDef arrayiter_methods[] = {
     {NULL, NULL} /* sentinel */
 };
 
-static PyTypeObject PyArrayIter_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "arrayiterator",                        /* tp_name */
-    sizeof(arrayiterobject),                /* tp_basicsize */
-    0,                                      /* tp_itemsize */
-    /* methods */
-    (destructor)arrayiter_dealloc,              /* tp_dealloc */
-    0,                                      /* tp_vectorcall_offset */
-    0,                                      /* tp_getattr */
-    0,                                      /* tp_setattr */
-    0,                                      /* tp_as_async */
-    0,                                      /* tp_repr */
-    0,                                      /* tp_as_number */
-    0,                                      /* tp_as_sequence */
-    0,                                      /* tp_as_mapping */
-    0,                                      /* tp_hash */
-    0,                                      /* tp_call */
-    0,                                      /* tp_str */
-    PyObject_GenericGetAttr,                /* tp_getattro */
-    0,                                      /* tp_setattro */
-    0,                                      /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
-    0,                                      /* tp_doc */
-    (traverseproc)arrayiter_traverse,           /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                      /* tp_richcompare */
-    0,                                      /* tp_weaklistoffset */
-    PyObject_SelfIter,                          /* tp_iter */
-    (iternextfunc)arrayiter_next,               /* tp_iternext */
-    arrayiter_methods,                      /* tp_methods */
+static PyType_Slot arrayiter_slots[] = {
+    {Py_tp_dealloc, arrayiter_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_traverse, arrayiter_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, arrayiter_next},
+    {Py_tp_methods, arrayiter_methods},
+    {0, NULL},
+};
+
+static PyType_Spec arrayiter_spec = {
+    .name = "array.arrayiterator",
+    .basicsize = sizeof(arrayiterobject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .slots = arrayiter_slots,
 };
 
 
@@ -2968,7 +2956,12 @@ array_modexec(PyObject *m)
     Arraytype = (PyTypeObject *)PyType_FromModuleAndSpec(m, &array_spec, NULL);
     if (Arraytype == NULL)
         return -1;
-    Py_SET_TYPE(&PyArrayIter_Type, &PyType_Type);
+    PyArrayIter_Type = (PyTypeObject *)PyType_FromModuleAndSpec(m,
+                                                                &arrayiter_spec,
+                                                                NULL);
+    if (PyArrayIter_Type == NULL)
+        return -1;
+    Py_SET_TYPE(PyArrayIter_Type, &PyType_Type);
 
     Py_INCREF((PyObject *)Arraytype);
     if (PyModule_AddObject(m, "ArrayType", (PyObject *)Arraytype) < 0) {
