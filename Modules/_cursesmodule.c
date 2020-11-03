@@ -3972,7 +3972,7 @@ update_lines_cols(PyObject *module)
 
     PyObject *d = PyModule_GetDict(module);
     if (d == NULL) {
-        return NULL;
+        return 0;
     }
 
     if (!m)
@@ -4738,7 +4738,7 @@ static struct PyModuleDef _cursesmodule = {
     .m_name = "_curses",
     .m_doc = NULL,
     .m_size = -1,
-    .m_nethods = PyCurses_methods,
+    .m_methods = PyCurses_methods,
     .m_slots = NULL,
     .m_traverse = NULL,
     .m_clear = NULL,
