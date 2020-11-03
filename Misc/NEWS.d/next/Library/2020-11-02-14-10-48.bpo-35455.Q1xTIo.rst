@@ -1,3 +1,0 @@
-On Solaris, :func:`~time.thread_time` is now implemented with
-``gethrvtime()`` because ``clock_gettime(CLOCK_THREAD_CPUTIME_ID)`` is not
-always available. Patch by Jakub Kulik.

@@ -1,2 +1,0 @@
-If the ``nl_langinfo(CODESET)`` function returns an empty string, Python now
-uses UTF-8 as the filesystem encoding. Patch by Victor Stinner.
