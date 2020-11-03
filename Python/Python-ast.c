@@ -261,10 +261,10 @@ get_ast_state(void)
 #include "Python-ast.h"
 #include "structmember.h"
 
-void _PyAST_Fini(PyThreadState *tstate)
+void _PyAST_Fini(PyInterpreterState *interp)
 {
 #ifdef Py_BUILD_CORE
-    struct ast_state *state = &tstate->interp->ast;
+    struct ast_state *state = &interp->ast;
 #else
     struct ast_state *state = &global_ast_state;
 #endif
@@ -483,7 +483,11 @@ void _PyAST_Fini(PyThreadState *tstate)
     Py_CLEAR(state->vararg);
     Py_CLEAR(state->withitem_type);
 
+#if defined(Py_BUILD_CORE) && !defined(NDEBUG)
+    state->initialized = -1;
+#else
     state->initialized = 0;
+#endif
 }
 
 static int init_identifiers(struct ast_state *state)
@@ -1227,13 +1231,27 @@ static int add_ast_fields(struct ast_state *state)
 }
 
 
-static int init_types(struct ast_state *state)
+
+static int
+init_types(struct ast_state *state)
 {
-    if (state->initialized) return 1;
-    if (init_identifiers(state) < 0) return 0;
+    // init_types() must not be called after _PyAST_Fini()
+    // has been called
+    assert(state->initialized >= 0);
+
+    if (state->initialized) {
+        return 1;
+    }
+    if (init_identifiers(state) < 0) {
+        return 0;
+    }
     state->AST_type = PyType_FromSpec(&AST_type_spec);
-    if (!state->AST_type) return 0;
-    if (add_ast_fields(state) < 0) return 0;
+    if (!state->AST_type) {
+        return 0;
+    }
+    if (add_ast_fields(state) < 0) {
+        return 0;
+    }
     state->mod_type = make_type(state, "mod", state->AST_type, NULL, 0,
         "mod = Module(stmt* body, type_ignore* type_ignores)\n"
         "    | Interactive(stmt* body)\n"
@@ -1902,6 +1920,7 @@ static int init_types(struct ast_state *state)
                                        TypeIgnore_fields, 2,
         "TypeIgnore(int lineno, string tag)");
     if (!state->TypeIgnore_type) return 0;
+
     state->initialized = 1;
     return 1;
 }
