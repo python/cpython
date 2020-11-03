@@ -255,13 +255,13 @@ static PyObject *pattern_scanner(PatternObject *, PyObject *, Py_ssize_t, Py_ssi
 
 /*[clinic input]
 module _sre
-class _sre.SRE_Pattern "PatternObject *" "&Pattern_Type"
+class _sre.SRE_Pattern "PatternObject *" "Pattern_Type"
 class _sre.SRE_Match "MatchObject *" "&Match_Type"
 class _sre.SRE_Scanner "ScannerObject *" "&Scanner_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=b0230ec19a0deac8]*/
 
-static PyTypeObject Pattern_Type;
+static PyTypeObject *Pattern_Type = NULL;
 static PyTypeObject Match_Type;
 static PyTypeObject Scanner_Type;
 
@@ -550,12 +550,15 @@ pattern_error(Py_ssize_t status)
 static void
 pattern_dealloc(PatternObject* self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
+
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
     Py_XDECREF(self->pattern);
     Py_XDECREF(self->groupindex);
     Py_XDECREF(self->indexgroup);
     PyObject_DEL(self);
+    Py_DECREF(tp);
 }
 
 LOCAL(Py_ssize_t)
@@ -1343,7 +1346,7 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
 
     n = PyList_GET_SIZE(code);
     /* coverity[ampersand_in_size] */
-    self = PyObject_NewVar(PatternObject, &Pattern_Type, n);
+    self = PyObject_NewVar(PatternObject, Pattern_Type, n);
     if (!self)
         return NULL;
     self->weakreflist = NULL;
@@ -2523,7 +2526,7 @@ pattern_richcompare(PyObject *lefto, PyObject *righto, int op)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    if (!Py_IS_TYPE(lefto, &Pattern_Type) || !Py_IS_TYPE(righto, &Pattern_Type)) {
+    if (!Py_IS_TYPE(lefto, Pattern_Type) || !Py_IS_TYPE(righto, Pattern_Type)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
 
@@ -2592,39 +2595,28 @@ static PyMemberDef pattern_members[] = {
      "The regex matching flags."},
     {"groups",     T_PYSSIZET,  PAT_OFF(groups),        READONLY,
      "The number of capturing groups in the pattern."},
+    {"__weaklistoffset__", T_PYSSIZET, offsetof(PatternObject, weakreflist), READONLY},
     {NULL}  /* Sentinel */
 };
 
-static PyTypeObject Pattern_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "re.Pattern",
-    sizeof(PatternObject), sizeof(SRE_CODE),
-    (destructor)pattern_dealloc,        /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    (reprfunc)pattern_repr,             /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    (hashfunc)pattern_hash,             /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    0,                                  /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                 /* tp_flags */
-    pattern_doc,                        /* tp_doc */
-    0,                                  /* tp_traverse */
-    0,                                  /* tp_clear */
-    pattern_richcompare,                /* tp_richcompare */
-    offsetof(PatternObject, weakreflist),       /* tp_weaklistoffset */
-    0,                                  /* tp_iter */
-    0,                                  /* tp_iternext */
-    pattern_methods,                    /* tp_methods */
-    pattern_members,                    /* tp_members */
-    pattern_getset,                     /* tp_getset */
+static PyType_Slot pattern_slots[] = {
+    {Py_tp_dealloc, (destructor)pattern_dealloc},
+    {Py_tp_repr, (reprfunc)pattern_repr},
+    {Py_tp_hash, (hashfunc)pattern_hash},
+    {Py_tp_doc, (void *)pattern_doc},
+    {Py_tp_richcompare, pattern_richcompare},
+    {Py_tp_methods, pattern_methods},
+    {Py_tp_members, pattern_members},
+    {Py_tp_getset, pattern_getset},
+    {0, NULL},
+};
+
+static PyType_Spec pattern_spec = {
+    .name = "re.Pattern",
+    .basicsize = sizeof(PatternObject),
+    .itemsize = sizeof(SRE_CODE),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = pattern_slots,
 };
 
 /* Match objects do not support length or assignment, but do support
@@ -2762,15 +2754,10 @@ static PyMethodDef _functions[] = {
 };
 
 static struct PyModuleDef sremodule = {
-        PyModuleDef_HEAD_INIT,
-        "_" SRE_MODULE,
-        NULL,
-        -1,
-        _functions,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        .m_base = PyModuleDef_HEAD_INIT,
+        .m_name = "_" SRE_MODULE,
+        .m_size = -1,
+        .m_methods = _functions,
 };
 
 #define CREATE_TYPE(m, type, spec)                                  \
@@ -2788,13 +2775,17 @@ PyMODINIT_FUNC PyInit__sre(void)
     PyObject* x;
 
     /* Patch object types */
-    if (PyType_Ready(&Pattern_Type) || PyType_Ready(&Match_Type) ||
+    if (PyType_Ready(&Match_Type) ||
         PyType_Ready(&Scanner_Type))
         return NULL;
 
     m = PyModule_Create(&sremodule);
     if (m == NULL)
         return NULL;
+
+    /* Create heap types */
+    CREATE_TYPE(m, Pattern_Type, &pattern_spec);
+
     d = PyModule_GetDict(m);
 
     x = PyLong_FromLong(SRE_MAGIC);
