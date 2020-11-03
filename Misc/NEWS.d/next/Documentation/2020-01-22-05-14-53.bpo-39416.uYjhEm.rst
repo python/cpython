@@ -1,1 +1,0 @@
-Document some restrictions on the default string representations of numeric classes.

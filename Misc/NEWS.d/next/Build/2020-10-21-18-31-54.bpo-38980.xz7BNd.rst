@@ -1,3 +1,0 @@
-Add ``-fno-semantic-interposition`` to both the compile and link line when
-building with ``--enable-optimizations``. Patch by Victor Stinner and Pablo
-Galindo.
