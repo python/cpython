@@ -2796,12 +2796,35 @@ static PyMethodDef _functions[] = {
     {NULL, NULL}
 };
 
-static struct PyModuleDef sremodule = {
-        .m_base = PyModuleDef_HEAD_INIT,
-        .m_name = "_" SRE_MODULE,
-        .m_size = sizeof(sre_module_state),
-        .m_methods = _functions,
-};
+static int
+sre_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    sre_module_state *state = get_sre_module_state(module);
+
+    Py_VISIT(state->Pattern_Type);
+    Py_VISIT(state->Match_Type);
+    Py_VISIT(state->Scanner_Type);
+
+    return 0;
+}
+
+static int
+sre_clear(PyObject *module)
+{
+    sre_module_state *state = get_sre_module_state(module);
+
+    Py_CLEAR(state->Pattern_Type);
+    Py_CLEAR(state->Match_Type);
+    Py_CLEAR(state->Scanner_Type);
+
+    return 0;
+}
+
+static void
+sre_free(void *module)
+{
+    sre_clear((PyObject *)module);
+}
 
 #define CREATE_TYPE(m, type, spec)                                  \
 do {                                                                \
@@ -2811,16 +2834,12 @@ do {                                                                \
     }                                                               \
 } while (0)
 
-PyMODINIT_FUNC PyInit__sre(void)
+static int
+sre_exec(PyObject *m)
 {
     sre_module_state *state;
-    PyObject* m;
     PyObject* d;
     PyObject* x;
-
-    m = PyModule_Create(&sremodule);
-    if (m == NULL)
-        return NULL;
 
     /* Create heap types */
     state = get_sre_module_state(m);
@@ -2859,11 +2878,32 @@ PyMODINIT_FUNC PyInit__sre(void)
         PyDict_SetItemString(d, "copyright", x);
         Py_DECREF(x);
     }
-    return m;
+    return 0;
 
 error:
-    Py_XDECREF(m);
-    return NULL;
+    return -1;
+}
+
+static PyModuleDef_Slot sre_slots[] = {
+    {Py_mod_exec, sre_exec},
+    {0, NULL},
+};
+
+static struct PyModuleDef sremodule = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_" SRE_MODULE,
+    .m_size = sizeof(sre_module_state),
+    .m_methods = _functions,
+    .m_slots = sre_slots,
+    .m_traverse = sre_traverse,
+    .m_free = sre_free,
+    .m_clear = sre_clear,
+};
+
+PyMODINIT_FUNC
+PyInit__sre(void)
+{
+    return PyModuleDef_Init(&sremodule);
 }
 
 /* vim:ts=4:sw=4:et
