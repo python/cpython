@@ -257,13 +257,13 @@ static PyObject *pattern_scanner(PatternObject *, PyObject *, Py_ssize_t, Py_ssi
 module _sre
 class _sre.SRE_Pattern "PatternObject *" "Pattern_Type"
 class _sre.SRE_Match "MatchObject *" "Match_Type"
-class _sre.SRE_Scanner "ScannerObject *" "&Scanner_Type"
+class _sre.SRE_Scanner "ScannerObject *" "Scanner_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=b0230ec19a0deac8]*/
 
 static PyTypeObject *Pattern_Type = NULL;
 static PyTypeObject *Match_Type = NULL;
-static PyTypeObject Scanner_Type;
+static PyTypeObject *Scanner_Type = NULL;
 
 /*[clinic input]
 _sre.getcodesize -> int
@@ -2393,9 +2393,12 @@ pattern_new_match(PatternObject* pattern, SRE_STATE* state, Py_ssize_t status)
 static void
 scanner_dealloc(ScannerObject* self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
+
     state_fini(&self->state);
     Py_XDECREF(self->pattern);
     PyObject_DEL(self);
+    Py_DECREF(tp);
 }
 
 /*[clinic input]
@@ -2479,7 +2482,7 @@ pattern_scanner(PatternObject *self, PyObject *string, Py_ssize_t pos, Py_ssize_
     ScannerObject* scanner;
 
     /* create scanner object */
-    scanner = PyObject_New(ScannerObject, &Scanner_Type);
+    scanner = PyObject_New(ScannerObject, Scanner_Type);
     if (!scanner)
         return NULL;
     scanner->pattern = NULL;
@@ -2699,36 +2702,18 @@ static PyMemberDef scanner_members[] = {
     {NULL}  /* Sentinel */
 };
 
-static PyTypeObject Scanner_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_" SRE_MODULE ".SRE_Scanner",
-    sizeof(ScannerObject), 0,
-    (destructor)scanner_dealloc,/* tp_dealloc */
-    0,                          /* tp_vectorcall_offset */
-    0,                          /* tp_getattr */
-    0,                          /* tp_setattr */
-    0,                          /* tp_as_async */
-    0,                          /* tp_repr */
-    0,                          /* tp_as_number */
-    0,                          /* tp_as_sequence */
-    0,                          /* tp_as_mapping */
-    0,                          /* tp_hash */
-    0,                          /* tp_call */
-    0,                          /* tp_str */
-    0,                          /* tp_getattro */
-    0,                          /* tp_setattro */
-    0,                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,         /* tp_flags */
-    0,                          /* tp_doc */
-    0,                          /* tp_traverse */
-    0,                          /* tp_clear */
-    0,                          /* tp_richcompare */
-    0,                          /* tp_weaklistoffset */
-    0,                          /* tp_iter */
-    0,                          /* tp_iternext */
-    scanner_methods,            /* tp_methods */
-    scanner_members,            /* tp_members */
-    0,                          /* tp_getset */
+static PyType_Slot scanner_slots[] = {
+    {Py_tp_dealloc, scanner_dealloc},
+    {Py_tp_methods, scanner_methods},
+    {Py_tp_members, scanner_members},
+    {0, NULL},
+};
+
+static PyType_Spec scanner_spec = {
+    .name = "_" SRE_MODULE ".SRE_Scanner",
+    .basicsize = sizeof(ScannerObject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = scanner_slots,
 };
 
 static PyMethodDef _functions[] = {
@@ -2762,10 +2747,6 @@ PyMODINIT_FUNC PyInit__sre(void)
     PyObject* d;
     PyObject* x;
 
-    /* Patch object types */
-    if (PyType_Ready(&Scanner_Type))
-        return NULL;
-
     m = PyModule_Create(&sremodule);
     if (m == NULL)
         return NULL;
@@ -2773,6 +2754,7 @@ PyMODINIT_FUNC PyInit__sre(void)
     /* Create heap types */
     CREATE_TYPE(m, Pattern_Type, &pattern_spec);
     CREATE_TYPE(m, Match_Type, &match_spec);
+    CREATE_TYPE(m, Scanner_Type, &scanner_spec);
 
     d = PyModule_GetDict(m);
 
