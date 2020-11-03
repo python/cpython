@@ -121,9 +121,14 @@ jobs:
       downloadPath: $(Build.BinariesDirectory)
 
   - powershell: |
+      signtool sign /a /n "$(SigningCertificate)" /fd sha256 /d "$(SigningDescription)" (gi *.msix)
+    displayName: 'Sign MSIX'
+    workingDirectory: $(Build.BinariesDirectory)\unsigned_msix
+
+  - powershell: |
       $failed = $true
       foreach ($retry in 1..3) {
-          signtool sign /a /n "$(SigningCertificate)" /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d "$(SigningDescription)" (gi *.msix)
+          signtool timestamp /tr http://timestamp.digicert.com/ /td sha256 (gi *.msix)
           if ($?) {
               $failed = $false
               break
@@ -131,9 +136,9 @@ jobs:
           sleep 1
       }
       if ($failed) {
-          throw "Failed to sign MSIX"
+          throw "Failed to timestamp MSIX"
       }
-    displayName: 'Sign MSIX'
+    displayName: 'Timestamp MSIX'
     workingDirectory: $(Build.BinariesDirectory)\unsigned_msix
 
   - task: PublishBuildArtifacts@1
