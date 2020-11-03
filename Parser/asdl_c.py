@@ -1015,18 +1015,35 @@ static int add_ast_fields(struct ast_state *state)
 
 """, 0, reflow=False)
 
-        self.emit("static int init_types(struct ast_state *state)",0)
-        self.emit("{", 0)
-        self.emit("if (state->initialized) return 1;", 1)
-        self.emit("if (init_identifiers(state) < 0) return 0;", 1)
-        self.emit("state->AST_type = PyType_FromSpec(&AST_type_spec);", 1)
-        self.emit("if (!state->AST_type) return 0;", 1)
-        self.emit("if (add_ast_fields(state) < 0) return 0;", 1)
+        self.file.write(textwrap.dedent('''
+            static int
+            init_types(struct ast_state *state)
+            {
+                // init_types() must not be called after _PyAST_Fini()
+                // has been called
+                assert(state->initialized >= 0);
+
+                if (state->initialized) {
+                    return 1;
+                }
+                if (init_identifiers(state) < 0) {
+                    return 0;
+                }
+                state->AST_type = PyType_FromSpec(&AST_type_spec);
+                if (!state->AST_type) {
+                    return 0;
+                }
+                if (add_ast_fields(state) < 0) {
+                    return 0;
+                }
+        '''))
         for dfn in mod.dfns:
             self.visit(dfn)
-        self.emit("state->initialized = 1;", 1)
-        self.emit("return 1;", 1);
-        self.emit("}", 0)
+        self.file.write(textwrap.dedent('''
+                state->initialized = 1;
+                return 1;
+            }
+        '''))
 
     def visitProduct(self, prod, name):
         if prod.fields:
@@ -1353,23 +1370,27 @@ def generate_ast_state(module_state, f):
 
 
 def generate_ast_fini(module_state, f):
-    f.write("""
-void _PyAST_Fini(PyThreadState *tstate)
-{
-#ifdef Py_BUILD_CORE
-    struct ast_state *state = &tstate->interp->ast;
-#else
-    struct ast_state *state = &global_ast_state;
-#endif
+    f.write(textwrap.dedent("""
+            void _PyAST_Fini(PyInterpreterState *interp)
+            {
+            #ifdef Py_BUILD_CORE
+                struct ast_state *state = &interp->ast;
+            #else
+                struct ast_state *state = &global_ast_state;
+            #endif
 
-""")
+    """))
     for s in module_state:
         f.write("    Py_CLEAR(state->" + s + ');\n')
-    f.write("""
-    state->initialized = 0;
-}
+    f.write(textwrap.dedent("""
+            #if defined(Py_BUILD_CORE) && !defined(NDEBUG)
+                state->initialized = -1;
+            #else
+                state->initialized = 0;
+            #endif
+            }
 
-""")
+    """))
 
 
 def generate_module_def(mod, f, internal_h):
