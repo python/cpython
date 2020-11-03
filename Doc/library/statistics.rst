@@ -632,7 +632,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    regression describes relationship between *regressor* and
    *dependent variable* in terms of linear function:
 
-      *dependent_variable = intercept + slope * regressor + noise*
+      *dependent_variable = intercept + slope \* regressor + noise*
 
    where ``intercept`` and ``slope`` are the regression parameters that are
    estimated, and noise term is an unobserved random variable, for the
