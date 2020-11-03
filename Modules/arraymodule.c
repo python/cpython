@@ -116,7 +116,6 @@ enum machine_format_code {
 #include "clinic/arraymodule.c.h"
 
 #define array_Check(op) PyObject_TypeCheck(op, get_array_state()->Arraytype)
-#define array_CheckExact(op) Py_IS_TYPE(op, get_array_state()->Arraytype)
 
 static int
 array_resize(arrayobject *self, Py_ssize_t newsize)
