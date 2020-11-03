@@ -329,6 +329,55 @@ class ImportTest(unittest.TestCase):
             webbrowser = import_helper.import_fresh_module('webbrowser')
             self.assertEqual(webbrowser.get().name, sys.executable)
 
+if sys.platform == 'darwin':
+    class TestMacOSXOSAScript(unittest.TestCase):
+        browser_class = webbrowser.MacOSXOSAScript
+
+        def _test(self, name, meth, *, args=[URL], kw={}):
+            """
+            Runs the browser call with a mocked os.popen
+
+            Returns the script
+            """
+            popen = mock.Mock()
+            popen.return_value = mock.Mock()
+            support.patch(self, os, "popen", popen)
+            browser = self.browser_class(name=name)
+            self.assertEqual(browser.name, name)
+            self.assertEqual(browser._name, name)
+            getattr(browser, meth)(*args, **kw)
+
+            popen_args = os.popen.call_args[0]
+            self.assertEqual(popen_args,  ("osascript", "w"))
+
+            pipe_mock = os.popen.return_value
+            self.assertEqual(len(pipe_mock.mock_calls), 2)
+            first_call = tuple(pipe_mock.mock_calls[0])
+            self.assertEqual(first_call[0], 'write')
+            self.assertEqual(len(first_call[1]), 1)
+            self.assertEqual(first_call[2], {})
+
+            self.assertEqual(pipe_mock.mock_calls[-1], mock.call.close())
+
+            return first_call[1][0]
+
+
+        def test_open_default(self):
+            scriptlet = self._test("default", "open")
+            self.assertEqual(scriptlet, 'open location "%s"'%(URL,))
+
+            scriptlet = self._test("default", "open", args=[URL + 'foo"bar'])
+            self.assertEqual(scriptlet, 'open location "%sfoo%%22bar"'%(URL,))
+
+        def test_open_other(self):
+            scriptlet = self._test("other", "open")
+            self.assertIn('tell application "other"\n', scriptlet)
+            self.assertIn('open location "%s"'%(URL,), scriptlet)
+
+            scriptlet = self._test("other", "open", args=[URL + 'foo"bar'])
+            self.assertIn('tell application "other"\n', scriptlet)
+            self.assertIn('open location "%sfoo%%22bar"'%(URL,), scriptlet)
+
 
 if __name__=='__main__':
     unittest.main()

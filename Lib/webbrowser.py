@@ -663,10 +663,11 @@ if sys.platform == 'darwin':
 
     class MacOSXOSAScript(BaseBrowser):
         def __init__(self, name):
+            BaseBrowser.__init__(self, name)
             self._name = name
 
         def open(self, url, new=0, autoraise=True):
-            if self._name == 'default':
+            if self.name == 'default':
                 script = 'open location "%s"' % url.replace('"', '%22') # opens in default browser
             else:
                 script = '''
@@ -674,7 +675,7 @@ if sys.platform == 'darwin':
                        activate
                        open location "%s"
                    end
-                   '''%(self._name, url.replace('"', '%22'))
+                   '''%(self.name, url.replace('"', '%22'))
 
             osapipe = os.popen("osascript", "w")
             if osapipe is None:
