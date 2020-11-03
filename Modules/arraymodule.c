@@ -853,6 +853,7 @@ array_array___deepcopy__(arrayobject *self, PyObject *unused)
 static PyObject *
 array_concat(arrayobject *a, PyObject *bb)
 {
+    array_state *state = get_array_state();
     Py_ssize_t size;
     arrayobject *np;
     if (!array_Check(bb)) {
@@ -870,7 +871,7 @@ array_concat(arrayobject *a, PyObject *bb)
         return PyErr_NoMemory();
     }
     size = Py_SIZE(a) + Py_SIZE(b);
-    np = (arrayobject *) newarrayobject(get_array_state()->Arraytype, size, a->ob_descr);
+    np = (arrayobject *) newarrayobject(state->Arraytype, size, a->ob_descr);
     if (np == NULL) {
         return NULL;
     }
@@ -888,6 +889,7 @@ array_concat(arrayobject *a, PyObject *bb)
 static PyObject *
 array_repeat(arrayobject *a, Py_ssize_t n)
 {
+    array_state *state = get_array_state();
     Py_ssize_t size;
     arrayobject *np;
     Py_ssize_t oldbytes, newbytes;
@@ -897,7 +899,7 @@ array_repeat(arrayobject *a, Py_ssize_t n)
         return PyErr_NoMemory();
     }
     size = Py_SIZE(a) * n;
-    np = (arrayobject *) newarrayobject(get_array_state()->Arraytype, size, a->ob_descr);
+    np = (arrayobject *) newarrayobject(state->Arraytype, size, a->ob_descr);
     if (np == NULL)
         return NULL;
     if (size == 0)
@@ -1940,6 +1942,7 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
                                 PyObject *items)
 /*[clinic end generated code: output=e05263141ba28365 input=2464dc8f4c7736b5]*/
 {
+    array_state *state = get_array_state();
     PyObject *converted_items;
     PyObject *result;
     const struct arraydescr *descr;
@@ -1950,10 +1953,10 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
             Py_TYPE(arraytype)->tp_name);
         return NULL;
     }
-    if (!PyType_IsSubtype(arraytype, get_array_state()->Arraytype)) {
+    if (!PyType_IsSubtype(arraytype, state->Arraytype)) {
         PyErr_Format(PyExc_TypeError,
             "%.200s is not a subtype of %.200s",
-            arraytype->tp_name, get_array_state()->Arraytype->tp_name);
+            arraytype->tp_name, state->Arraytype->tp_name);
         return NULL;
     }
     for (descr = descriptors; descr->typecode != '\0'; descr++) {
@@ -2299,6 +2302,8 @@ array_repr(arrayobject *a)
 static PyObject*
 array_subscr(arrayobject* self, PyObject* item)
 {
+    array_state *state = get_array_state();
+
     if (PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i==-1 && PyErr_Occurred()) {
@@ -2322,10 +2327,10 @@ array_subscr(arrayobject* self, PyObject* item)
                                             step);
 
         if (slicelength <= 0) {
-            return newarrayobject(get_array_state()->Arraytype, 0, self->ob_descr);
+            return newarrayobject(state->Arraytype, 0, self->ob_descr);
         }
         else if (step == 1) {
-            PyObject *result = newarrayobject(get_array_state()->Arraytype,
+            PyObject *result = newarrayobject(state->Arraytype,
                                     slicelength, self->ob_descr);
             if (result == NULL)
                 return NULL;
@@ -2335,7 +2340,7 @@ array_subscr(arrayobject* self, PyObject* item)
             return result;
         }
         else {
-            result = newarrayobject(get_array_state()->Arraytype, slicelength, self->ob_descr);
+            result = newarrayobject(state->Arraytype, slicelength, self->ob_descr);
             if (!result) return NULL;
 
             ar = (arrayobject*)result;
@@ -2567,11 +2572,12 @@ array_buffer_relbuf(arrayobject *self, Py_buffer *view)
 static PyObject *
 array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    array_state *state = get_array_state();
     int c;
     PyObject *initial = NULL, *it = NULL;
     const struct arraydescr *descr;
 
-    if (type == get_array_state()->Arraytype && !_PyArg_NoKeywords("array.array", kwds))
+    if (type == state->Arraytype && !_PyArg_NoKeywords("array.array", kwds))
         return NULL;
 
     if (!PyArg_ParseTuple(args, "C|O:array", &c, &initial))
@@ -2823,6 +2829,7 @@ class array.arrayiterator "arrayiterobject *" "get_array_state()->PyArrayIter_Ty
 static PyObject *
 array_iter(arrayobject *ao)
 {
+    array_state *state = get_array_state();
     arrayiterobject *it;
 
     if (!array_Check(ao)) {
@@ -2830,7 +2837,7 @@ array_iter(arrayobject *ao)
         return NULL;
     }
 
-    it = PyObject_GC_New(arrayiterobject, get_array_state()->PyArrayIter_Type);
+    it = PyObject_GC_New(arrayiterobject, state->PyArrayIter_Type);
     if (it == NULL)
         return NULL;
 
