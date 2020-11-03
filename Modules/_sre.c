@@ -256,13 +256,13 @@ static PyObject *pattern_scanner(PatternObject *, PyObject *, Py_ssize_t, Py_ssi
 /*[clinic input]
 module _sre
 class _sre.SRE_Pattern "PatternObject *" "Pattern_Type"
-class _sre.SRE_Match "MatchObject *" "&Match_Type"
+class _sre.SRE_Match "MatchObject *" "Match_Type"
 class _sre.SRE_Scanner "ScannerObject *" "&Scanner_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=b0230ec19a0deac8]*/
 
 static PyTypeObject *Pattern_Type = NULL;
-static PyTypeObject Match_Type;
+static PyTypeObject *Match_Type = NULL;
 static PyTypeObject Scanner_Type;
 
 /*[clinic input]
@@ -1890,10 +1890,13 @@ _validate(PatternObject *self)
 static void
 match_dealloc(MatchObject* self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
+
     Py_XDECREF(self->regs);
     Py_XDECREF(self->string);
     Py_DECREF(self->pattern);
     PyObject_DEL(self);
+    Py_DECREF(tp);
 }
 
 static PyObject*
@@ -2335,7 +2338,7 @@ pattern_new_match(PatternObject* pattern, SRE_STATE* state, Py_ssize_t status)
 
         /* create match object (with room for extra group marks) */
         /* coverity[ampersand_in_size] */
-        match = PyObject_NewVar(MatchObject, &Match_Type,
+        match = PyObject_NewVar(MatchObject, Match_Type,
                                 2*(pattern->groups+1));
         if (!match)
             return NULL;
@@ -2619,14 +2622,6 @@ static PyType_Spec pattern_spec = {
     .slots = pattern_slots,
 };
 
-/* Match objects do not support length or assignment, but do support
-   __getitem__. */
-static PyMappingMethods match_as_mapping = {
-    NULL,
-    (binaryfunc)match_getitem,
-    NULL
-};
-
 static PyMethodDef match_methods[] = {
     {"group", (PyCFunction) match_group, METH_VARARGS, match_group_doc},
     _SRE_SRE_MATCH_START_METHODDEF
@@ -2666,37 +2661,30 @@ static PyMemberDef match_members[] = {
 
 /* FIXME: implement setattr("string", None) as a special case (to
    detach the associated string, if any */
+static PyType_Slot match_slots[] = {
+    {Py_tp_dealloc, match_dealloc},
+    {Py_tp_repr, match_repr},
+    {Py_tp_doc, (void *)match_doc},
+    {Py_tp_methods, match_methods},
+    {Py_tp_members, match_members},
+    {Py_tp_getset, match_getset},
 
-static PyTypeObject Match_Type = {
-    PyVarObject_HEAD_INIT(NULL,0)
-    "re.Match",
-    sizeof(MatchObject), sizeof(Py_ssize_t),
-    (destructor)match_dealloc,  /* tp_dealloc */
-    0,                          /* tp_vectorcall_offset */
-    0,                          /* tp_getattr */
-    0,                          /* tp_setattr */
-    0,                          /* tp_as_async */
-    (reprfunc)match_repr,       /* tp_repr */
-    0,                          /* tp_as_number */
-    0,                          /* tp_as_sequence */
-    &match_as_mapping,          /* tp_as_mapping */
-    0,                          /* tp_hash */
-    0,                          /* tp_call */
-    0,                          /* tp_str */
-    0,                          /* tp_getattro */
-    0,                          /* tp_setattro */
-    0,                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,         /* tp_flags */
-    match_doc,                  /* tp_doc */
-    0,                          /* tp_traverse */
-    0,                          /* tp_clear */
-    0,                          /* tp_richcompare */
-    0,                          /* tp_weaklistoffset */
-    0,                          /* tp_iter */
-    0,                          /* tp_iternext */
-    match_methods,              /* tp_methods */
-    match_members,              /* tp_members */
-    match_getset,               /* tp_getset */
+    /* As mapping.
+     *
+     * Match objects do not support length or assignment, but do support
+     * __getitem__.
+     */
+    {Py_mp_subscript, match_getitem},
+
+    {0, NULL},
+};
+
+static PyType_Spec match_spec = {
+    .name = "re.Match",
+    .basicsize = sizeof(MatchObject),
+    .itemsize = sizeof(Py_ssize_t),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = match_slots,
 };
 
 static PyMethodDef scanner_methods[] = {
@@ -2775,8 +2763,7 @@ PyMODINIT_FUNC PyInit__sre(void)
     PyObject* x;
 
     /* Patch object types */
-    if (PyType_Ready(&Match_Type) ||
-        PyType_Ready(&Scanner_Type))
+    if (PyType_Ready(&Scanner_Type))
         return NULL;
 
     m = PyModule_Create(&sremodule);
@@ -2785,6 +2772,7 @@ PyMODINIT_FUNC PyInit__sre(void)
 
     /* Create heap types */
     CREATE_TYPE(m, Pattern_Type, &pattern_spec);
+    CREATE_TYPE(m, Match_Type, &match_spec);
 
     d = PyModule_GetDict(m);
 
