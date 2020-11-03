@@ -26,7 +26,6 @@ from sysconfig import (
     _BASE_EXEC_PREFIX as BASE_EXEC_PREFIX,
     _PROJECT_BASE as project_base,
     _PYTHON_BUILD as python_build,
-    _CONFIG_VARS as _config_vars,
     _init_posix as sysconfig_init_posix,
     parse_config_h as sysconfig_parse_config_h,
     _parse_makefile as sysconfig_parse_makefile,
@@ -49,6 +48,12 @@ from sysconfig import (
     get_python_version,
     get_python_lib,
 )
+
+# This is better than
+# from sysconfig import _CONFIG_VARS as _config_vars
+# because it makes sure that the global dictionary is initialized
+# which might not be true in the time of import.
+_config_vars = get_config_vars()
 
 if os.name == "nt":
     from sysconfig import _fix_pcbuild
@@ -90,9 +95,7 @@ def customize_compiler(compiler):
             # that Python itself was built on.  Also the user OS
             # version and build tools may not support the same set
             # of CPU architectures for universal builds.
-            global _config_vars
-            # Use get_config_var() to ensure _config_vars is initialized.
-            if not get_config_var('CUSTOMIZED_OSX_COMPILER'):
+            if not _config_vars.get('CUSTOMIZED_OSX_COMPILER'):
                 import _osx_support
                 _osx_support.customize_compiler(_config_vars)
                 _config_vars['CUSTOMIZED_OSX_COMPILER'] = 'True'
