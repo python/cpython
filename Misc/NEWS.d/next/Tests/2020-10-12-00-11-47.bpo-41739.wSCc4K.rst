@@ -1,2 +1,0 @@
-Fix test_logging.test_race_between_set_target_and_flush(): the test now
-waits until all threads complete to avoid leaking running threads.
