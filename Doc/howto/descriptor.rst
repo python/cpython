@@ -768,7 +768,7 @@ to wrap access to the value attribute in a property data descriptor::
     class Cell:
         ...
 
-        @property
+        @Property
         def value(self):
             "Recalculate the cell before returning value"
             self.recalc()
