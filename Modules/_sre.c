@@ -2773,6 +2773,14 @@ static struct PyModuleDef sremodule = {
         NULL
 };
 
+#define CREATE_TYPE(m, type, spec)                                  \
+do {                                                                \
+    type = (PyTypeObject *)PyType_FromModuleAndSpec(m, spec, NULL); \
+    if (type == NULL) {                                             \
+        goto error;                                                 \
+    }                                                               \
+} while (0)
+
 PyMODINIT_FUNC PyInit__sre(void)
 {
     PyObject* m;
@@ -2819,6 +2827,10 @@ PyMODINIT_FUNC PyInit__sre(void)
         Py_DECREF(x);
     }
     return m;
+
+error:
+    Py_XDECREF(m);
+    return NULL;
 }
 
 /* vim:ts=4:sw=4:et
