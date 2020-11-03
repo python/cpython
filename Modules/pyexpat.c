@@ -1640,16 +1640,50 @@ add_submodule(PyObject *mod, const char *fullname)
         Py_DECREF(mod_name);
         return NULL;
     }
+    Py_DECREF(mod_name);
 
     /* gives away the reference to the submodule */
     if (PyModule_AddObject(mod, name, submodule) < 0) {
         Py_DECREF(submodule);
-        Py_DECREF(mod_name);
         return NULL;
     }
 
-    Py_DECREF(mod_name);
     return submodule;
+}
+
+static int
+add_error(PyObject *errors_module, PyObject *codes_dict,
+          PyObject *rev_codes_dict, const char *name, int value)
+{
+    const char *error_string = XML_ErrorString(value);
+    if (PyModule_AddStringConstant(errors_module, name, error_string) < 0) {
+        return -1;
+    }
+
+    PyObject *num = PyLong_FromLong(value);
+    if (num == NULL) {
+        return -1;
+    }
+
+    if (PyDict_SetItemString(codes_dict, error_string, num) < 0) {
+        Py_DECREF(num);
+        return -1;
+    }
+
+    PyObject *str = PyUnicode_FromString(error_string);
+    if (str == NULL) {
+        Py_DECREF(num);
+        return -1;
+    }
+
+    int res = PyDict_SetItem(rev_codes_dict, num, str);
+    Py_CLEAR(str);
+    Py_CLEAR(num);
+    if (res < 0) {
+        return -1;
+    }
+
+    return 0;
 }
 
 static int
@@ -1666,76 +1700,53 @@ add_errors_module(PyObject *mod)
         goto error;
     }
 
-    int res;
-    PyObject *tmpnum, *tmpstr;
-#define MYCONST(name) do {                                          \
-        if (PyModule_AddStringConstant(errors_module, #name,        \
-                                       XML_ErrorString(name)) < 0) {\
-            goto error;                                             \
-        }                                                           \
-        tmpnum = PyLong_FromLong(name);                             \
-        if (tmpnum == NULL) {                                       \
-            goto error;                                             \
-        }                                                           \
-        res = PyDict_SetItemString(codes_dict,                      \
-                                   XML_ErrorString(name), tmpnum);  \
-        if (res < 0) {                                              \
-            Py_DECREF(tmpnum);                                      \
-            goto error;                                             \
-        }                                                           \
-        tmpstr = PyUnicode_FromString(XML_ErrorString(name));       \
-        if (tmpstr == NULL) {                                       \
-            Py_DECREF(tmpnum);                                      \
-            goto error;                                             \
-        }                                                           \
-        res = PyDict_SetItem(rev_codes_dict, tmpnum, tmpstr);       \
-        Py_CLEAR(tmpstr);                                           \
-        Py_CLEAR(tmpnum);                                           \
-        if (res < 0) {                                              \
+#define ADD_CONST(name) do {                                        \
+        if (add_error(errors_module, codes_dict, rev_codes_dict,    \
+                      #name, name) < 0) {                           \
             goto error;                                             \
         }                                                           \
     } while(0)
 
-
-    MYCONST(XML_ERROR_NO_MEMORY);
-    MYCONST(XML_ERROR_SYNTAX);
-    MYCONST(XML_ERROR_NO_ELEMENTS);
-    MYCONST(XML_ERROR_INVALID_TOKEN);
-    MYCONST(XML_ERROR_UNCLOSED_TOKEN);
-    MYCONST(XML_ERROR_PARTIAL_CHAR);
-    MYCONST(XML_ERROR_TAG_MISMATCH);
-    MYCONST(XML_ERROR_DUPLICATE_ATTRIBUTE);
-    MYCONST(XML_ERROR_JUNK_AFTER_DOC_ELEMENT);
-    MYCONST(XML_ERROR_PARAM_ENTITY_REF);
-    MYCONST(XML_ERROR_UNDEFINED_ENTITY);
-    MYCONST(XML_ERROR_RECURSIVE_ENTITY_REF);
-    MYCONST(XML_ERROR_ASYNC_ENTITY);
-    MYCONST(XML_ERROR_BAD_CHAR_REF);
-    MYCONST(XML_ERROR_BINARY_ENTITY_REF);
-    MYCONST(XML_ERROR_ATTRIBUTE_EXTERNAL_ENTITY_REF);
-    MYCONST(XML_ERROR_MISPLACED_XML_PI);
-    MYCONST(XML_ERROR_UNKNOWN_ENCODING);
-    MYCONST(XML_ERROR_INCORRECT_ENCODING);
-    MYCONST(XML_ERROR_UNCLOSED_CDATA_SECTION);
-    MYCONST(XML_ERROR_EXTERNAL_ENTITY_HANDLING);
-    MYCONST(XML_ERROR_NOT_STANDALONE);
-    MYCONST(XML_ERROR_UNEXPECTED_STATE);
-    MYCONST(XML_ERROR_ENTITY_DECLARED_IN_PE);
-    MYCONST(XML_ERROR_FEATURE_REQUIRES_XML_DTD);
-    MYCONST(XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING);
+    ADD_CONST(XML_ERROR_NO_MEMORY);
+    ADD_CONST(XML_ERROR_SYNTAX);
+    ADD_CONST(XML_ERROR_NO_ELEMENTS);
+    ADD_CONST(XML_ERROR_INVALID_TOKEN);
+    ADD_CONST(XML_ERROR_UNCLOSED_TOKEN);
+    ADD_CONST(XML_ERROR_PARTIAL_CHAR);
+    ADD_CONST(XML_ERROR_TAG_MISMATCH);
+    ADD_CONST(XML_ERROR_DUPLICATE_ATTRIBUTE);
+    ADD_CONST(XML_ERROR_JUNK_AFTER_DOC_ELEMENT);
+    ADD_CONST(XML_ERROR_PARAM_ENTITY_REF);
+    ADD_CONST(XML_ERROR_UNDEFINED_ENTITY);
+    ADD_CONST(XML_ERROR_RECURSIVE_ENTITY_REF);
+    ADD_CONST(XML_ERROR_ASYNC_ENTITY);
+    ADD_CONST(XML_ERROR_BAD_CHAR_REF);
+    ADD_CONST(XML_ERROR_BINARY_ENTITY_REF);
+    ADD_CONST(XML_ERROR_ATTRIBUTE_EXTERNAL_ENTITY_REF);
+    ADD_CONST(XML_ERROR_MISPLACED_XML_PI);
+    ADD_CONST(XML_ERROR_UNKNOWN_ENCODING);
+    ADD_CONST(XML_ERROR_INCORRECT_ENCODING);
+    ADD_CONST(XML_ERROR_UNCLOSED_CDATA_SECTION);
+    ADD_CONST(XML_ERROR_EXTERNAL_ENTITY_HANDLING);
+    ADD_CONST(XML_ERROR_NOT_STANDALONE);
+    ADD_CONST(XML_ERROR_UNEXPECTED_STATE);
+    ADD_CONST(XML_ERROR_ENTITY_DECLARED_IN_PE);
+    ADD_CONST(XML_ERROR_FEATURE_REQUIRES_XML_DTD);
+    ADD_CONST(XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING);
     /* Added in Expat 1.95.7. */
-    MYCONST(XML_ERROR_UNBOUND_PREFIX);
+    ADD_CONST(XML_ERROR_UNBOUND_PREFIX);
     /* Added in Expat 1.95.8. */
-    MYCONST(XML_ERROR_UNDECLARING_PREFIX);
-    MYCONST(XML_ERROR_INCOMPLETE_PE);
-    MYCONST(XML_ERROR_XML_DECL);
-    MYCONST(XML_ERROR_TEXT_DECL);
-    MYCONST(XML_ERROR_PUBLICID);
-    MYCONST(XML_ERROR_SUSPENDED);
-    MYCONST(XML_ERROR_NOT_SUSPENDED);
-    MYCONST(XML_ERROR_ABORTED);
-    MYCONST(XML_ERROR_FINISHED);
-    MYCONST(XML_ERROR_SUSPEND_PE);
+    ADD_CONST(XML_ERROR_UNDECLARING_PREFIX);
+    ADD_CONST(XML_ERROR_INCOMPLETE_PE);
+    ADD_CONST(XML_ERROR_XML_DECL);
+    ADD_CONST(XML_ERROR_TEXT_DECL);
+    ADD_CONST(XML_ERROR_PUBLICID);
+    ADD_CONST(XML_ERROR_SUSPENDED);
+    ADD_CONST(XML_ERROR_NOT_SUSPENDED);
+    ADD_CONST(XML_ERROR_ABORTED);
+    ADD_CONST(XML_ERROR_FINISHED);
+    ADD_CONST(XML_ERROR_SUSPEND_PE);
+#undef ADD_CONST
 
     if (PyModule_AddStringConstant(errors_module, "__doc__",
                                    "Constants used to describe "
@@ -1743,17 +1754,23 @@ add_errors_module(PyObject *mod)
         goto error;
     }
 
+    Py_INCREF(codes_dict);
     if (PyModule_AddObject(errors_module, "codes", codes_dict) < 0) {
+        Py_DECREF(codes_dict);
         goto error;
     }
+    Py_CLEAR(codes_dict);
+
+    Py_INCREF(rev_codes_dict);
     if (PyModule_AddObject(errors_module, "messages", rev_codes_dict) < 0) {
+        Py_DECREF(rev_codes_dict);
         goto error;
     }
-    #undef MYCONST
+    Py_CLEAR(rev_codes_dict);
 
     return 0;
 
-    error:
+error:
     Py_XDECREF(codes_dict);
     Py_XDECREF(rev_codes_dict);
     return -1;
@@ -1794,8 +1811,9 @@ add_model_module(PyObject *mod)
     return 0;
 }
 
-static int add_features(PyObject *mod) {
-    #if XML_COMBINED_VERSION > 19505
+#if XML_COMBINED_VERSION > 19505
+static int
+add_features(PyObject *mod) {
     PyObject *list = PyList_New(0);
     if (list == NULL) {
         return -1;
@@ -1804,7 +1822,7 @@ static int add_features(PyObject *mod) {
     const XML_Feature *features = XML_GetFeatureList();
     for (size_t i = 0; features[i].feature != XML_FEATURE_END; ++i) {
         PyObject *item = Py_BuildValue("si", features[i].name,
-                                        features[i].value);
+                                       features[i].value);
         if (item == NULL) {
             goto error;
         }
@@ -1817,13 +1835,13 @@ static int add_features(PyObject *mod) {
     if (PyModule_AddObject(mod, "features", list) < 0) {
         goto error;
     }
-    
-#endif
+
     return 0;
 error:
     Py_DECREF(list);
     return -1;
 }
+#endif
 
 static int
 pyexpat_exec(PyObject *mod)
@@ -1893,9 +1911,11 @@ pyexpat_exec(PyObject *mod)
         return -1;
     }
 
+#if XML_COMBINED_VERSION > 19505
     if (add_features(mod) < 0) {
         return -1;
     }
+#endif
 
 #define MYCONST(c) do {                                 \
         if (PyModule_AddIntConstant(mod, #c, c) < 0) {  \
