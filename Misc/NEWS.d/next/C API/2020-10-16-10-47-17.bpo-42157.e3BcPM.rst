@@ -1,3 +1,0 @@
-The private ``_PyUnicode_Name_CAPI`` structure of the PyCapsule API
-``unicodedata.ucnhash_CAPI`` has been moved to the internal C API.
-Patch by Victor Stinner.

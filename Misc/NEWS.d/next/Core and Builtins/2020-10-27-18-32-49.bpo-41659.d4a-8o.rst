@@ -1,3 +1,0 @@
-Fix a bug in the parser, where a curly brace following a `primary` didn't fail immediately.
-This led to invalid expressions like `a {b}` to throw a :exc:`SyntaxError` with a wrong offset,
-or invalid expressions ending with a curly brace like `a {` to not fail immediately in the REPL.
