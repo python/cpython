@@ -300,13 +300,16 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->after_forkers_parent);
     Py_CLEAR(interp->after_forkers_child);
 #endif
-    if (_PyRuntimeState_GetFinalizing(runtime) == NULL) {
-        _PyWarnings_Fini(interp);
-    }
+
+    _PyAST_Fini(interp);
+    _PyWarnings_Fini(interp);
+
+    // All Python types must be destroyed before the last GC collection. Python
+    // types create a reference cycle to themselves in their in their
+    // PyTypeObject.tp_mro member (the tuple contains the type).
 
     /* Last garbage collection on this interpreter */
     _PyGC_CollectNoFail(tstate);
-
     _PyGC_Fini(tstate);
 
     /* We don't clear sysdict and builtins until the end of this function.
