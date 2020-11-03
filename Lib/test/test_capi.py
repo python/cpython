@@ -544,6 +544,10 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, pynumber_tobase, '123', 10)
         self.assertRaises(SystemError, pynumber_tobase, 123, 0)
 
+    def test_get_statictype_slots(self):
+        from _testcapi import test_get_statictype_slots
+        test_get_statictype_slots()
+
 
 class TestPendingCalls(unittest.TestCase):
 
