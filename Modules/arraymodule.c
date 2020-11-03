@@ -55,8 +55,8 @@ typedef struct {
 } arrayiterobject;
 
 typedef struct {
-    PyTypeObject *Arraytype;
-    PyTypeObject *PyArrayIter_Type;
+    PyTypeObject *ArrayType;
+    PyTypeObject *ArrayIterType;
 } array_state;
 
 static array_state global_array_state;
@@ -67,7 +67,7 @@ get_array_state()
     return &global_array_state;
 }
 
-#define PyArrayIter_Check(op) PyObject_TypeCheck(op, get_array_state()->PyArrayIter_Type)
+#define PyArrayIter_Check(op) PyObject_TypeCheck(op, get_array_state()->ArrayIterType)
 
 enum machine_format_code {
     UNKNOWN_FORMAT = -1,
@@ -115,7 +115,7 @@ enum machine_format_code {
  */
 #include "clinic/arraymodule.c.h"
 
-#define array_Check(op) PyObject_TypeCheck(op, get_array_state()->Arraytype)
+#define array_Check(op) PyObject_TypeCheck(op, get_array_state()->ArrayType)
 
 static int
 array_resize(arrayobject *self, Py_ssize_t newsize)
@@ -571,7 +571,7 @@ static const struct arraydescr descriptors[] = {
 Implementations of array object methods.
 ****************************************************************************/
 /*[clinic input]
-class array.array "arrayobject *" "Arraytype"
+class array.array "arrayobject *" "ArrayType"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ad43d37e942a8854]*/
 
@@ -810,7 +810,7 @@ array_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
         ihigh = ilow;
     else if (ihigh > Py_SIZE(a))
         ihigh = Py_SIZE(a);
-    np = (arrayobject *) newarrayobject(get_array_state()->Arraytype, ihigh - ilow, a->ob_descr);
+    np = (arrayobject *) newarrayobject(get_array_state()->ArrayType, ihigh - ilow, a->ob_descr);
     if (np == NULL)
         return NULL;
     if (ihigh > ilow) {
@@ -871,7 +871,7 @@ array_concat(arrayobject *a, PyObject *bb)
         return PyErr_NoMemory();
     }
     size = Py_SIZE(a) + Py_SIZE(b);
-    np = (arrayobject *) newarrayobject(state->Arraytype, size, a->ob_descr);
+    np = (arrayobject *) newarrayobject(state->ArrayType, size, a->ob_descr);
     if (np == NULL) {
         return NULL;
     }
@@ -899,7 +899,7 @@ array_repeat(arrayobject *a, Py_ssize_t n)
         return PyErr_NoMemory();
     }
     size = Py_SIZE(a) * n;
-    np = (arrayobject *) newarrayobject(state->Arraytype, size, a->ob_descr);
+    np = (arrayobject *) newarrayobject(state->ArrayType, size, a->ob_descr);
     if (np == NULL)
         return NULL;
     if (size == 0)
@@ -1953,10 +1953,10 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
             Py_TYPE(arraytype)->tp_name);
         return NULL;
     }
-    if (!PyType_IsSubtype(arraytype, state->Arraytype)) {
+    if (!PyType_IsSubtype(arraytype, state->ArrayType)) {
         PyErr_Format(PyExc_TypeError,
             "%.200s is not a subtype of %.200s",
-            arraytype->tp_name, state->Arraytype->tp_name);
+            arraytype->tp_name, state->ArrayType->tp_name);
         return NULL;
     }
     for (descr = descriptors; descr->typecode != '\0'; descr++) {
@@ -2327,10 +2327,10 @@ array_subscr(arrayobject* self, PyObject* item)
                                             step);
 
         if (slicelength <= 0) {
-            return newarrayobject(state->Arraytype, 0, self->ob_descr);
+            return newarrayobject(state->ArrayType, 0, self->ob_descr);
         }
         else if (step == 1) {
-            PyObject *result = newarrayobject(state->Arraytype,
+            PyObject *result = newarrayobject(state->ArrayType,
                                     slicelength, self->ob_descr);
             if (result == NULL)
                 return NULL;
@@ -2340,7 +2340,7 @@ array_subscr(arrayobject* self, PyObject* item)
             return result;
         }
         else {
-            result = newarrayobject(state->Arraytype, slicelength, self->ob_descr);
+            result = newarrayobject(state->ArrayType, slicelength, self->ob_descr);
             if (!result) return NULL;
 
             ar = (arrayobject*)result;
@@ -2577,7 +2577,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *initial = NULL, *it = NULL;
     const struct arraydescr *descr;
 
-    if (type == state->Arraytype && !_PyArg_NoKeywords("array.array", kwds))
+    if (type == state->ArrayType && !_PyArg_NoKeywords("array.array", kwds))
         return NULL;
 
     if (!PyArg_ParseTuple(args, "C|O:array", &c, &initial))
@@ -2822,7 +2822,7 @@ static PyType_Spec array_spec = {
 /*********************** Array Iterator **************************/
 
 /*[clinic input]
-class array.arrayiterator "arrayiterobject *" "get_array_state()->PyArrayIter_Type"
+class array.arrayiterator "arrayiterobject *" "get_array_state()->ArrayIterType"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=5aefd2d74d8c8e30]*/
 
@@ -2837,7 +2837,7 @@ array_iter(arrayobject *ao)
         return NULL;
     }
 
-    it = PyObject_GC_New(arrayiterobject, state->PyArrayIter_Type);
+    it = PyObject_GC_New(arrayiterobject, state->ArrayIterType);
     if (it == NULL)
         return NULL;
 
@@ -2969,45 +2969,45 @@ array_modexec(PyObject *m)
     PyObject *typecodes;
     const struct arraydescr *descr;
 
-    state->Arraytype = (PyTypeObject *)PyType_FromModuleAndSpec(m, &array_spec, NULL);
-    if (state->Arraytype == NULL)
+    state->ArrayType = (PyTypeObject *)PyType_FromModuleAndSpec(m, &array_spec, NULL);
+    if (state->ArrayType == NULL)
         return -1;
-    state->PyArrayIter_Type = (PyTypeObject *)PyType_FromModuleAndSpec(m,
-                                                                       &arrayiter_spec,
-                                                                       NULL);
-    if (state->PyArrayIter_Type == NULL)
+    state->ArrayIterType = (PyTypeObject *)PyType_FromModuleAndSpec(m,
+                                                                    &arrayiter_spec,
+                                                                    NULL);
+    if (state->ArrayIterType == NULL)
         return -1;
-    Py_SET_TYPE(state->PyArrayIter_Type, &PyType_Type);
+    Py_SET_TYPE(state->ArrayIterType, &PyType_Type);
 
-    Py_INCREF((PyObject *)state->Arraytype);
-    if (PyModule_AddObject(m, "ArrayType", (PyObject *)state->Arraytype) < 0) {
-        Py_DECREF((PyObject *)state->Arraytype);
+    Py_INCREF((PyObject *)state->ArrayType);
+    if (PyModule_AddObject(m, "ArrayType", (PyObject *)state->ArrayType) < 0) {
+        Py_DECREF((PyObject *)state->ArrayType);
         return -1;
     }
 
     PyObject *abc_mod = PyImport_ImportModule("collections.abc");
     if (!abc_mod) {
-        Py_DECREF((PyObject *)state->Arraytype);
+        Py_DECREF((PyObject *)state->ArrayType);
         return -1;
     }
     PyObject *mutablesequence = PyObject_GetAttrString(abc_mod, "MutableSequence");
     Py_DECREF(abc_mod);
     if (!mutablesequence) {
-        Py_DECREF((PyObject *)state->Arraytype);
+        Py_DECREF((PyObject *)state->ArrayType);
         return -1;
     }
     PyObject *res = PyObject_CallMethod(mutablesequence, "register", "O",
-                                        (PyObject *)state->Arraytype);
+                                        (PyObject *)state->ArrayType);
     Py_DECREF(mutablesequence);
     if (!res) {
-        Py_DECREF((PyObject *)state->Arraytype);
+        Py_DECREF((PyObject *)state->ArrayType);
         return -1;
     }
     Py_DECREF(res);
 
-    Py_INCREF((PyObject *)state->Arraytype);
-    if (PyModule_AddObject(m, "array", (PyObject *)state->Arraytype) < 0) {
-        Py_DECREF((PyObject *)state->Arraytype);
+    Py_INCREF((PyObject *)state->ArrayType);
+    if (PyModule_AddObject(m, "array", (PyObject *)state->ArrayType) < 0) {
+        Py_DECREF((PyObject *)state->ArrayType);
         return -1;
     }
 
