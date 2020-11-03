@@ -16,11 +16,11 @@ simplequeue_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
 
-    if ((type == &PySimpleQueueType) &&
+    if ((type == PySimpleQueueType) &&
         !_PyArg_NoPositional("SimpleQueue", args)) {
         goto exit;
     }
-    if ((type == &PySimpleQueueType) &&
+    if ((type == PySimpleQueueType) &&
         !_PyArg_NoKeywords("SimpleQueue", kwargs)) {
         goto exit;
     }
@@ -250,4 +250,4 @@ _queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b4717e2974cbc909 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=235448c1efb40678 input=a9049054013a1b77]*/

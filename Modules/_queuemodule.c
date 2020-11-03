@@ -1,13 +1,14 @@
 #include "Python.h"
+#include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
 /*[clinic input]
 module _queue
-class _queue.SimpleQueue "simplequeueobject *" "&PySimpleQueueType"
+class _queue.SimpleQueue "simplequeueobject *" "PySimpleQueueType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=cf49af81bcbbbea6]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ec6b5cf35d0220ff]*/
 
-static PyTypeObject PySimpleQueueType;  /* forward decl */
+static PyTypeObject *PySimpleQueueType = NULL;
 
 static PyObject *EmptyError;
 
@@ -25,6 +26,8 @@ typedef struct {
 static void
 simplequeue_dealloc(simplequeueobject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
+
     PyObject_GC_UnTrack(self);
     if (self->lock != NULL) {
         /* Unlock the lock so it's safe to free it */
@@ -36,6 +39,7 @@ simplequeue_dealloc(simplequeueobject *self)
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
     Py_TYPE(self)->tp_free(self);
+    Py_DECREF(tp);
 }
 
 static int
@@ -306,48 +310,26 @@ static PyMethodDef simplequeue_methods[] = {
     {NULL,           NULL}              /* sentinel */
 };
 
+static struct PyMemberDef simplequeue_members[] = {
+    {"__weaklistoffset__", T_PYSSIZET, offsetof(simplequeueobject, weakreflist), READONLY},
+    {NULL},
+};
 
-static PyTypeObject PySimpleQueueType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_queue.SimpleQueue",               /*tp_name*/
-    sizeof(simplequeueobject),          /*tp_basicsize*/
-    0,                                  /*tp_itemsize*/
-    /* methods */
-    (destructor)simplequeue_dealloc,    /*tp_dealloc*/
-    0,                                  /*tp_vectorcall_offset*/
-    0,                                  /*tp_getattr*/
-    0,                                  /*tp_setattr*/
-    0,                                  /*tp_as_async*/
-    0,                                  /*tp_repr*/
-    0,                                  /*tp_as_number*/
-    0,                                  /*tp_as_sequence*/
-    0,                                  /*tp_as_mapping*/
-    0,                                  /*tp_hash*/
-    0,                                  /*tp_call*/
-    0,                                  /*tp_str*/
-    0,                                  /*tp_getattro*/
-    0,                                  /*tp_setattro*/
-    0,                                  /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_HAVE_GC,           /* tp_flags */
-    simplequeue_new__doc__,             /*tp_doc*/
-    (traverseproc)simplequeue_traverse, /*tp_traverse*/
-    0,                                  /*tp_clear*/
-    0,                                  /*tp_richcompare*/
-    offsetof(simplequeueobject, weakreflist), /*tp_weaklistoffset*/
-    0,                                  /*tp_iter*/
-    0,                                  /*tp_iternext*/
-    simplequeue_methods,                /*tp_methods*/
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    simplequeue_new                     /* tp_new */
+static PyType_Slot simplequeue_slots[] = {
+    {Py_tp_dealloc, simplequeue_dealloc},
+    {Py_tp_doc, (void *)simplequeue_new__doc__},
+    {Py_tp_traverse, simplequeue_traverse},
+    {Py_tp_members, simplequeue_members},
+    {Py_tp_methods, simplequeue_methods},
+    {Py_tp_new, simplequeue_new},
+    {0, NULL},
+};
+
+static PyType_Spec simplequeue_spec = {
+    .name = "_queue.SimpleQueue",
+    .basicsize = sizeof(simplequeueobject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .slots = simplequeue_slots,
 };
 
 
@@ -385,15 +367,27 @@ PyInit__queue(void)
         "Exception raised by Queue.get(block=0)/get_nowait().",
         NULL, NULL);
     if (EmptyError == NULL)
-        return NULL;
+        goto error;
 
     Py_INCREF(EmptyError);
-    if (PyModule_AddObject(m, "Empty", EmptyError) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Empty", EmptyError) < 0) {
+        Py_DECREF(EmptyError);
+        goto error;
+    }
 
-    if (PyModule_AddType(m, &PySimpleQueueType) < 0) {
-        return NULL;
+    PySimpleQueueType = (PyTypeObject *)PyType_FromModuleAndSpec(m,
+                                                                 &simplequeue_spec,
+                                                                 NULL);
+    if (PySimpleQueueType == NULL) {
+        goto error;
+    }
+    if (PyModule_AddType(m, PySimpleQueueType) < 0) {
+        goto error;
     }
 
     return m;
+
+error:
+    Py_DECREF(m);
+    return NULL;
 }
