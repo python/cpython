@@ -1,4 +1,0 @@
-The :class:`logging.FileHandler` class now keeps a reference to the builtin
-:func:`open` function to be able to open or reopen the file during Python
-finalization. Fix errors like: ``NameError: name 'open' is not defined``. Patch
-by Victor Stinner.

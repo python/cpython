@@ -1,1 +1,0 @@
-``binhex.binhex()`` consisently writes macOS 9 line endings.

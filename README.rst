@@ -1,4 +1,4 @@
-This is Python version 3.10.0 alpha 1
+This is Python version 3.10.0 alpha 2
 =====================================
 
 .. image:: https://travis-ci.com/python/cpython.svg?branch=master
