@@ -3158,6 +3158,44 @@ PyType_GetModuleState(PyTypeObject *type)
     return PyModule_GetState(m);
 }
 
+
+/* Get the module of the first superclass where the module has the
+ * given PyModuleDef.
+ * Implemented by walking the MRO, is relatively slow.
+ *
+ * This is internal API for experimentation within stdlib. Discussion:
+ * https://mail.python.org/archives/list/capi-sig@python.org/thread/T3P2QNLNLBRFHWSKYSTPMVEIL2EEKFJU/
+ */
+PyObject *
+_PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
+{
+    assert(PyType_Check(type));
+    assert(type->tp_mro);
+    int i;
+    for (i = 0; i < PyTuple_GET_SIZE(type->tp_mro); i++) {
+        PyObject *super = PyTuple_GET_ITEM(type->tp_mro, i);
+        if (!PyType_HasFeature((PyTypeObject *)super, Py_TPFLAGS_HEAPTYPE)) {
+            /* Currently, there's no way for static types to inherit
+             * from heap types, but to allow that possibility,
+             * we `continue` rather than `break`.
+             * We'll just potentially loop a few more times before throwing
+             * the error.
+             */
+            continue;
+        }
+        PyHeapTypeObject *ht = (PyHeapTypeObject*)super;
+        if (ht->ht_module && PyModule_GetDef(ht->ht_module) == def) {
+            return ht->ht_module;
+        }
+    }
+    PyErr_Format(
+        PyExc_TypeError,
+        "_PyType_GetModuleByDef: No superclass of '%s' has the given module",
+        type->tp_name);
+    return NULL;
+}
+
+
 /* Internal API to look for a name through the MRO, bypassing the method cache.
    This returns a borrowed reference, and might set an exception.
    'error' is set to: -1: error with exception; 1: error without exception; 0: ok */
