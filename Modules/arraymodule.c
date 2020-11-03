@@ -3005,9 +3005,7 @@ array_modexec(PyObject *m)
     }
     Py_DECREF(res);
 
-    Py_INCREF((PyObject *)state->ArrayType);
-    if (PyModule_AddObject(m, "array", (PyObject *)state->ArrayType) < 0) {
-        Py_DECREF((PyObject *)state->ArrayType);
+    if (PyModule_AddType(m, state->ArrayType) < 0) {
         return -1;
     }
 
