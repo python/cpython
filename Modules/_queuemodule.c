@@ -2,16 +2,18 @@
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
-/*[clinic input]
-module _queue
-class _queue.SimpleQueue "simplequeueobject *" "PySimpleQueueType"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ec6b5cf35d0220ff]*/
+typedef struct {
+    PyTypeObject *SimpleQueueType;
+    PyObject *EmptyError;
+} simplequeue_state;
 
-static PyTypeObject *PySimpleQueueType = NULL;
+static simplequeue_state global_state;
 
-static PyObject *EmptyError;
-
+static simplequeue_state *
+simplequeue_get_state()
+{
+    return &global_state;
+}
 
 typedef struct {
     PyObject_HEAD
@@ -22,6 +24,11 @@ typedef struct {
     PyObject *weakreflist;
 } simplequeueobject;
 
+/*[clinic input]
+module _queue
+class _queue.SimpleQueue "simplequeueobject *" "simplequeue_get_state()->SimpleQueueType"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ffce1ca094e64f3a]*/
 
 static void
 simplequeue_dealloc(simplequeueobject *self)
@@ -230,7 +237,7 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, int block,
         }
         if (r == PY_LOCK_FAILURE) {
             /* Timed out */
-            PyErr_SetNone(EmptyError);
+            PyErr_SetNone(simplequeue_get_state()->EmptyError);
             return NULL;
         }
         self->locked = 1;
@@ -356,32 +363,33 @@ PyMODINIT_FUNC
 PyInit__queue(void)
 {
     PyObject *m;
+    simplequeue_state *state = simplequeue_get_state();
 
     /* Create the module */
     m = PyModule_Create(&queuemodule);
     if (m == NULL)
         return NULL;
 
-    EmptyError = PyErr_NewExceptionWithDoc(
+    state->EmptyError = PyErr_NewExceptionWithDoc(
         "_queue.Empty",
         "Exception raised by Queue.get(block=0)/get_nowait().",
         NULL, NULL);
-    if (EmptyError == NULL)
+    if (state->EmptyError == NULL)
         goto error;
 
-    Py_INCREF(EmptyError);
-    if (PyModule_AddObject(m, "Empty", EmptyError) < 0) {
-        Py_DECREF(EmptyError);
+    Py_INCREF(state->EmptyError);
+    if (PyModule_AddObject(m, "Empty", state->EmptyError) < 0) {
+        Py_DECREF(state->EmptyError);
         goto error;
     }
 
-    PySimpleQueueType = (PyTypeObject *)PyType_FromModuleAndSpec(m,
+    state->SimpleQueueType = (PyTypeObject *)PyType_FromModuleAndSpec(m,
                                                                  &simplequeue_spec,
                                                                  NULL);
-    if (PySimpleQueueType == NULL) {
+    if (state->SimpleQueueType == NULL) {
         goto error;
     }
-    if (PyModule_AddType(m, PySimpleQueueType) < 0) {
+    if (PyModule_AddType(m, state->SimpleQueueType) < 0) {
         goto error;
     }
 
