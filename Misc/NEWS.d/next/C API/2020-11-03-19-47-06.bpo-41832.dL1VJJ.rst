@@ -1,0 +1,1 @@
+:c:func:`PyType_FromModuleAndSpec` can accept tp_doc=NULL.

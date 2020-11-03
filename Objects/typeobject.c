@@ -3012,6 +3012,12 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         else if (slot->slot == Py_tp_doc) {
             /* For the docstring slot, which usually points to a static string
                literal, we need to make a copy */
+
+            /* bpo-41832: PyType_FromModuleAndSpec() can accept tp_doc=NULL. */
+            if (slot->pfunc == NULL) {
+                type->tp_doc = NULL;
+                continue;
+            }
             size_t len = strlen(slot->pfunc)+1;
             char *tp_doc = PyObject_MALLOC(len);
             if (tp_doc == NULL) {

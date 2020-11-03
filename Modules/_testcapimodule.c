@@ -3987,6 +3987,11 @@ test_structseq_newtype_doesnt_leak(PyObject *Py_UNUSED(self),
     assert(PyType_FastSubclass(structseq_type, Py_TPFLAGS_TUPLE_SUBCLASS));
     Py_DECREF(structseq_type);
 
+    descr.doc = NULL;
+    structseq_type = PyStructSequence_NewType(&descr);
+    assert(structseq_type != NULL);
+    Py_DECREF(structseq_type);
+
     Py_RETURN_NONE;
 }
 
