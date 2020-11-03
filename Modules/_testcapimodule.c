@@ -1039,6 +1039,11 @@ test_get_statictype_slots(PyObject *self, PyObject *Py_UNUSED(ignored))
     void *over_value = PyType_GetSlot(&PyLong_Type, Py_bf_releasebuffer + 1);
     assert(over_value == NULL);
 
+    tp_new = PyType_GetSlot(&PyLong_Type, 0);
+    assert(tp_new == NULL);
+    assert(PyErr_ExceptionMatches(PyExc_SystemError));
+    PyErr_Clear();
+
     Py_RETURN_NONE;
 }
 

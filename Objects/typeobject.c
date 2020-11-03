@@ -3129,7 +3129,7 @@ PyType_GetSlot(PyTypeObject *type, int slot)
     void *parent_slot;
     int slots_len = Py_ARRAY_LENGTH(pyslot_offsets);
 
-    if (slot < 0 || slot >= slots_len) {
+    if (slot <= 0 || slot >= slots_len) {
         PyErr_BadInternalCall();
         return NULL;
     }
