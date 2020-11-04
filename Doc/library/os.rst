@@ -113,6 +113,8 @@ of the UTF-8 encoding:
   :ref:`error handler <error-handlers>` being enabled for :data:`sys.stdin`
   and :data:`sys.stdout` (:data:`sys.stderr` continues to use
   ``backslashreplace`` as it does in the default locale-aware mode)
+* On Unix, :func:`os.device_encoding` returns ``'UTF-8'``. rather than the
+  device encoding.
 
 Note that the standard stream settings in UTF-8 mode can be overridden by
 :envvar:`PYTHONIOENCODING` (just as they can be in the default locale-aware
@@ -807,6 +809,12 @@ as internal buffering of data.
 
    Return a string describing the encoding of the device associated with *fd*
    if it is connected to a terminal; else return :const:`None`.
+
+   On Unix, if the :ref:`Python UTF-8 Mode <utf8-mode>` is enabled, return
+   ``'UTF-8'`` rather than the device encoding.
+
+   .. versionchanged:: 3.10
+      On Unix, the function now implements the Python UTF-8 Mode.
 
 
 .. function:: dup(fd)
