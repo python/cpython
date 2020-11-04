@@ -66,7 +66,7 @@ get_array_state(PyObject *module)
     return (array_state *)PyModule_GetState(module);
 }
 
-#define get_array_state_by_type(tp) \
+#define find_array_state_by_type(tp) \
     (get_array_state(_PyType_GetModuleByDef(tp, &arraymodule)))
 #define get_array_state_by_class(cls) \
     (get_array_state(PyType_GetModule(cls)))
@@ -673,7 +673,7 @@ array_dealloc(arrayobject *op)
 static PyObject *
 array_richcompare(PyObject *v, PyObject *w, int op)
 {
-    array_state *state = get_array_state_by_type(Py_TYPE(v));
+    array_state *state = find_array_state_by_type(Py_TYPE(v));
     arrayobject *va, *wa;
     PyObject *vi = NULL;
     PyObject *wi = NULL;
@@ -792,7 +792,7 @@ array_length(arrayobject *a)
 static PyObject *
 array_item(arrayobject *a, Py_ssize_t i)
 {
-    array_state *state = get_array_state_by_type(Py_TYPE(a));
+    array_state *state = find_array_state_by_type(Py_TYPE(a));
 
     if (i < 0 || i >= Py_SIZE(a)) {
         PyErr_SetString(PyExc_IndexError, "array index out of range");
@@ -804,7 +804,7 @@ array_item(arrayobject *a, Py_ssize_t i)
 static PyObject *
 array_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
 {
-    array_state *state = get_array_state_by_type(Py_TYPE(a));
+    array_state *state = find_array_state_by_type(Py_TYPE(a));
     arrayobject *np;
 
     if (ilow < 0)
@@ -860,7 +860,7 @@ array_array___deepcopy__(arrayobject *self, PyObject *unused)
 static PyObject *
 array_concat(arrayobject *a, PyObject *bb)
 {
-    array_state *state = get_array_state_by_type(Py_TYPE(a));
+    array_state *state = find_array_state_by_type(Py_TYPE(a));
     Py_ssize_t size;
     arrayobject *np;
     if (!array_Check(bb, state)) {
@@ -896,7 +896,7 @@ array_concat(arrayobject *a, PyObject *bb)
 static PyObject *
 array_repeat(arrayobject *a, Py_ssize_t n)
 {
-    array_state *state = get_array_state_by_type(Py_TYPE(a));
+    array_state *state = find_array_state_by_type(Py_TYPE(a));
     Py_ssize_t size;
     arrayobject *np;
     Py_ssize_t oldbytes, newbytes;
@@ -1042,7 +1042,7 @@ array_do_extend(array_state *state, arrayobject *self, PyObject *bb)
 static PyObject *
 array_inplace_concat(arrayobject *self, PyObject *bb)
 {
-    array_state *state = get_array_state_by_type(Py_TYPE(self));
+    array_state *state = find_array_state_by_type(Py_TYPE(self));
 
     if (!array_Check(bb, state)) {
         PyErr_Format(PyExc_TypeError,
@@ -1169,7 +1169,7 @@ array_array_index_impl(arrayobject *self, PyTypeObject *cls, PyObject *v)
 static int
 array_contains(arrayobject *self, PyObject *v)
 {
-    array_state *state = get_array_state_by_type(Py_TYPE(self));
+    array_state *state = find_array_state_by_type(Py_TYPE(self));
     Py_ssize_t i;
     int cmp;
 
@@ -1600,7 +1600,7 @@ static PyObject *
 array_array_tolist_impl(arrayobject *self)
 /*[clinic end generated code: output=00b60cc9eab8ef89 input=a8d7784a94f86b53]*/
 {
-    array_state *state = get_array_state_by_type(Py_TYPE(self));
+    array_state *state = find_array_state_by_type(Py_TYPE(self));
     PyObject *list = PyList_New(Py_SIZE(self));
     Py_ssize_t i;
 
@@ -2324,7 +2324,7 @@ array_repr(arrayobject *a)
 static PyObject*
 array_subscr(arrayobject* self, PyObject* item)
 {
-    array_state *state = get_array_state_by_type(Py_TYPE(self));
+    array_state *state = find_array_state_by_type(Py_TYPE(self));
 
     if (PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
@@ -2388,7 +2388,7 @@ static int
 array_ass_subscr(arrayobject* self, PyObject* item, PyObject* value)
 {
     Py_ssize_t start, stop, step, slicelength, needed;
-    array_state* state = get_array_state_by_type(Py_TYPE(self));
+    array_state* state = find_array_state_by_type(Py_TYPE(self));
     arrayobject* other;
     int itemsize;
 
@@ -2595,7 +2595,7 @@ array_buffer_relbuf(arrayobject *self, Py_buffer *view)
 static PyObject *
 array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    array_state *state = get_array_state_by_type(type);
+    array_state *state = find_array_state_by_type(type);
     int c;
     PyObject *initial = NULL, *it = NULL;
     const struct arraydescr *descr;
@@ -2845,14 +2845,14 @@ static PyType_Spec array_spec = {
 /*********************** Array Iterator **************************/
 
 /*[clinic input]
-class array.arrayiterator "arrayiterobject *" "get_array_state_by_type(type)->ArrayIterType"
+class array.arrayiterator "arrayiterobject *" "find_array_state_by_type(type)->ArrayIterType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c7271f8f61b69ef9]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=fb46d5ef98dd95ff]*/
 
 static PyObject *
 array_iter(arrayobject *ao)
 {
-    array_state *state = get_array_state_by_type(Py_TYPE(ao));
+    array_state *state = find_array_state_by_type(Py_TYPE(ao));
     arrayiterobject *it;
 
     if (!array_Check(ao, state)) {
@@ -2875,7 +2875,7 @@ array_iter(arrayobject *ao)
 static PyObject *
 arrayiter_next(arrayiterobject *it)
 {
-    array_state *state = get_array_state_by_type(Py_TYPE(it));
+    array_state *state = find_array_state_by_type(Py_TYPE(it));
     arrayobject *ao;
 
     assert(it != NULL);
