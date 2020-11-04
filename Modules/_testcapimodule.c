@@ -3990,21 +3990,6 @@ test_structseq_newtype_doesnt_leak(PyObject *Py_UNUSED(self),
     Py_RETURN_NONE;
 }
 
-static PyType_Spec HeapDocCType_spec;
-
-static PyObject *
-test_PyType_FromSpec(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
-{
-    void *tp_doc = HeapDocCType_spec.slots[0].pfunc;
-    HeapDocCType_spec.slots[0].pfunc = NULL;
-    PyObject *HeapDocCType = PyType_FromSpec(&HeapDocCType_spec);
-    assert(HeapDocCType != NULL);
-    HeapDocCType_spec.slots[0].pfunc = tp_doc;
-    Py_DECREF(HeapDocCType);
-
-    Py_RETURN_NONE;
-}
-
 static PyObject *
 test_incref_decref_API(PyObject *ob, PyObject *Py_UNUSED(ignored))
 {
@@ -5616,7 +5601,6 @@ static PyMethodDef TestMethods[] = {
     {"test_decref_doesnt_leak", test_decref_doesnt_leak,         METH_NOARGS},
     {"test_structseq_newtype_doesnt_leak",
         test_structseq_newtype_doesnt_leak, METH_NOARGS},
-    {"test_PyType_FromSpec", test_PyType_FromSpec, METH_NOARGS},
     {"test_incref_decref_API",  test_incref_decref_API,          METH_NOARGS},
     {"test_long_and_overflow",  test_long_and_overflow,          METH_NOARGS},
     {"test_long_as_double",     test_long_as_double,             METH_NOARGS},
@@ -6524,6 +6508,23 @@ static PyType_Spec HeapDocCType_spec = {
     HeapDocCType_slots
 };
 
+typedef struct {
+    PyObject_HEAD
+} NullTpDocTypeObject;
+
+static PyType_Slot NullTpDocType_slots[] = {
+    {Py_tp_doc, NULL},
+    {0, 0},
+};
+
+static PyType_Spec NullTpDocType_spec = {
+    "_testcapi.NullTpDocType",
+    sizeof(NullTpDocTypeObject),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    NullTpDocType_slots
+};
+
 
 PyDoc_STRVAR(heapgctype__doc__,
 "A heap type with GC, and with overridden dealloc.\n\n"
@@ -7198,6 +7199,12 @@ PyInit__testcapi(void)
         return NULL;
     }
     PyModule_AddObject(m, "HeapDocCType", HeapDocCType);
+
+    PyObject *NullTpDocType = PyType_FromSpec(&NullTpDocType_spec);
+    if (NullTpDocType == NULL) {
+        return NULL;
+    }
+    PyModule_AddObject(m, "NullTpDocType", NullTpDocType);
 
     PyObject *HeapGcCType = PyType_FromSpec(&HeapGcCType_spec);
     if (HeapGcCType == NULL) {
