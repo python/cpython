@@ -7093,7 +7093,7 @@ PyInit__testcapi(void)
     Py_INCREF(&awaitType);
     PyModule_AddObject(m, "awaitType", (PyObject *)&awaitType);
 
-    MyList_Type.tp_base = &PyList_Type;
+    PyType_SetBaseStatic(&MyList_Type, &PyList_Type);
     if (PyType_Ready(&MyList_Type) < 0)
         return NULL;
     Py_INCREF(&MyList_Type);
@@ -7104,19 +7104,19 @@ PyInit__testcapi(void)
     Py_INCREF(&MethodDescriptorBase_Type);
     PyModule_AddObject(m, "MethodDescriptorBase", (PyObject *)&MethodDescriptorBase_Type);
 
-    MethodDescriptorDerived_Type.tp_base = &MethodDescriptorBase_Type;
+    PyType_SetBaseStatic(&MethodDescriptorDerived_Type, &MethodDescriptorBase_Type);
     if (PyType_Ready(&MethodDescriptorDerived_Type) < 0)
         return NULL;
     Py_INCREF(&MethodDescriptorDerived_Type);
     PyModule_AddObject(m, "MethodDescriptorDerived", (PyObject *)&MethodDescriptorDerived_Type);
 
-    MethodDescriptorNopGet_Type.tp_base = &MethodDescriptorBase_Type;
+    PyType_SetBaseStatic(&MethodDescriptorNopGet_Type, &MethodDescriptorBase_Type);
     if (PyType_Ready(&MethodDescriptorNopGet_Type) < 0)
         return NULL;
     Py_INCREF(&MethodDescriptorNopGet_Type);
     PyModule_AddObject(m, "MethodDescriptorNopGet", (PyObject *)&MethodDescriptorNopGet_Type);
 
-    MethodDescriptor2_Type.tp_base = &MethodDescriptorBase_Type;
+    PyType_SetBaseStatic(&MethodDescriptor2_Type, &MethodDescriptorBase_Type);
     if (PyType_Ready(&MethodDescriptor2_Type) < 0)
         return NULL;
     Py_INCREF(&MethodDescriptor2_Type);
@@ -7147,7 +7147,7 @@ PyInit__testcapi(void)
     Py_INCREF(&MethStatic_Type);
     PyModule_AddObject(m, "MethStatic", (PyObject *)&MethStatic_Type);
 
-    PyRecursingInfinitelyError_Type.tp_base = (PyTypeObject *)PyExc_Exception;
+    PyType_SetBaseStatic(&PyRecursingInfinitelyError_Type, (PyTypeObject *)PyExc_Exception);
     if (PyType_Ready(&PyRecursingInfinitelyError_Type) < 0) {
         return NULL;
     }

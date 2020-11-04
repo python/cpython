@@ -691,43 +691,43 @@ PyInit__io(void)
 
     /* Implementation of concrete IO objects. */
     /* FileIO */
-    PyFileIO_Type.tp_base = &PyRawIOBase_Type;
+    PyType_SetBaseStatic(&PyFileIO_Type, &PyRawIOBase_Type);
     ADD_TYPE(&PyFileIO_Type);
 
     /* BytesIO */
-    PyBytesIO_Type.tp_base = &PyBufferedIOBase_Type;
+    PyType_SetBaseStatic(&PyBytesIO_Type, &PyBufferedIOBase_Type);
     ADD_TYPE(&PyBytesIO_Type);
     if (PyType_Ready(&_PyBytesIOBuffer_Type) < 0)
         goto fail;
 
     /* StringIO */
-    PyStringIO_Type.tp_base = &PyTextIOBase_Type;
+    PyType_SetBaseStatic(&PyStringIO_Type, &PyTextIOBase_Type);
     ADD_TYPE(&PyStringIO_Type);
 
 #ifdef MS_WINDOWS
     /* WindowsConsoleIO */
-    PyWindowsConsoleIO_Type.tp_base = &PyRawIOBase_Type;
+    PyType_SetBaseStatic(&PyWindowsConsoleIO_Type, &PyRawIOBase_Type);
     ADD_TYPE(&PyWindowsConsoleIO_Type);
 #endif
 
     /* BufferedReader */
-    PyBufferedReader_Type.tp_base = &PyBufferedIOBase_Type;
+    PyType_SetBaseStatic(&PyBufferedReader_Type, &PyBufferedIOBase_Type);
     ADD_TYPE(&PyBufferedReader_Type);
 
     /* BufferedWriter */
-    PyBufferedWriter_Type.tp_base = &PyBufferedIOBase_Type;
+    PyType_SetBaseStatic(&PyBufferedWriter_Type, &PyBufferedIOBase_Type);
     ADD_TYPE(&PyBufferedWriter_Type);
 
     /* BufferedRWPair */
-    PyBufferedRWPair_Type.tp_base = &PyBufferedIOBase_Type;
+    PyType_SetBaseStatic(&PyBufferedRWPair_Type, &PyBufferedIOBase_Type);
     ADD_TYPE(&PyBufferedRWPair_Type);
 
     /* BufferedRandom */
-    PyBufferedRandom_Type.tp_base = &PyBufferedIOBase_Type;
+    PyType_SetBaseStatic(&PyBufferedRandom_Type, &PyBufferedIOBase_Type);
     ADD_TYPE(&PyBufferedRandom_Type);
 
     /* TextIOWrapper */
-    PyTextIOWrapper_Type.tp_base = &PyTextIOBase_Type;
+    PyType_SetBaseStatic(&PyTextIOWrapper_Type, &PyTextIOBase_Type);
     ADD_TYPE(&PyTextIOWrapper_Type);
 
     /* IncrementalNewlineDecoder */

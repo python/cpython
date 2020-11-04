@@ -451,7 +451,7 @@ PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
     type->tp_dealloc = (destructor)structseq_dealloc;
     type->tp_repr = (reprfunc)structseq_repr;
     type->tp_doc = desc->doc;
-    type->tp_base = &PyTuple_Type;
+    PyType_SetBaseStatic(type, &PyTuple_Type);
     type->tp_methods = structseq_methods;
     type->tp_new = structseq_new;
     type->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC;

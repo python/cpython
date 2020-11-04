@@ -1,0 +1,2 @@
+Added :c:func:`PyType_SetBase` and :c:func:`PyType_SetBaseStatic` functions
+to set the base type of a type. Patch by Victor Stinner.

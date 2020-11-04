@@ -686,6 +686,9 @@ static inline int _PyType_CheckExact(PyObject *op) {
 }
 #define PyType_CheckExact(op) _PyType_CheckExact(_PyObject_CAST(op))
 
+PyAPI_FUNC(void) PyType_SetBase(PyTypeObject *type, PyTypeObject *base);
+PyAPI_FUNC(void) PyType_SetBaseStatic(PyTypeObject *type, PyTypeObject *base);
+
 #ifdef __cplusplus
 }
 #endif

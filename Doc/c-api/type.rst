@@ -140,6 +140,28 @@ Type Objects
 
    .. versionadded:: 3.9
 
+.. c:function:: void PyType_SetBase(PyTypeObject *type, PyTypeObject *base)
+
+   Set the base type of the given type. The *type* type stores a strong
+   reference to *base*.
+
+   If the *type* type already has a base type, decrement the reference count of
+   the old base type.
+
+   The *type* type must be a heap type.
+
+   .. versionadded:: 3.10
+
+.. c:function:: void PyType_SetBaseStatic(PyTypeObject *type, PyTypeObject *base)
+
+   Similar to :c:func:`PyType_SetBase`, but the *type* type stores a borrowed
+   reference to *base* and leaves the reference count of the old base type
+   unchanged.
+
+   The *type* type must be a static type.
+
+   .. versionadded:: 3.10
+
 
 Creating Heap-Allocated Types
 .............................

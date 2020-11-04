@@ -429,6 +429,10 @@ New Features
   slot.
   (Contributed by Hai Shi in :issue:`41832`.)
 
+* Added :c:func:`PyType_SetBase` and :c:func:`PyType_SetBaseStatic`
+  functions to set the base type of a type.
+  (Contributed by Victor Stinner in :issue:`40170`.)
+
 
 Porting to Python 3.10
 ----------------------

@@ -5867,10 +5867,10 @@ PyInit__decimal(void)
 
 
     /* Init types */
-    PyDec_Type.tp_base = &PyBaseObject_Type;
-    PyDecContext_Type.tp_base = &PyBaseObject_Type;
-    PyDecContextManager_Type.tp_base = &PyBaseObject_Type;
-    PyDecSignalDictMixin_Type.tp_base = &PyBaseObject_Type;
+    PyType_SetBaseStatic(&PyDec_Type, &PyBaseObject_Type);
+    PyType_SetBaseStatic(&PyDecContext_Type, &PyBaseObject_Type);
+    PyType_SetBaseStatic(&PyDecContextManager_Type, &PyBaseObject_Type);
+    PyType_SetBaseStatic(&PyDecSignalDictMixin_Type, &PyBaseObject_Type);
 
     CHECK_INT(PyType_Ready(&PyDec_Type));
     CHECK_INT(PyType_Ready(&PyDecContext_Type));

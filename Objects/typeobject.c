@@ -2633,11 +2633,10 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    /* Set tp_base and tp_bases */
+    /* Set tp_bases and tp_base */
     type->tp_bases = bases;
     bases = NULL;
-    Py_INCREF(base);
-    type->tp_base = base;
+    PyType_SetBase(type, base);
 
     /* Initialize tp_dict from passed-in dict */
     Py_INCREF(dict);
@@ -2990,11 +2989,10 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     type->tp_as_sequence = &res->as_sequence;
     type->tp_as_mapping = &res->as_mapping;
     type->tp_as_buffer = &res->as_buffer;
-    /* Set tp_base and tp_bases */
+    /* Set tp_bases and tp_base */
     type->tp_bases = bases;
     bases = NULL;
-    Py_INCREF(base);
-    type->tp_base = base;
+    PyType_SetBase(type, base);
 
     type->tp_basicsize = spec->basicsize;
     type->tp_itemsize = spec->itemsize;
@@ -3197,6 +3195,22 @@ _PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
         "_PyType_GetModuleByDef: No superclass of '%s' has the given module",
         type->tp_name);
     return NULL;
+}
+
+
+void
+PyType_SetBase(PyTypeObject *type, PyTypeObject *base)
+{
+    _PyObject_ASSERT((PyObject *)type, (type->tp_flags & Py_TPFLAGS_HEAPTYPE));
+    Py_INCREF(base);
+    Py_XSETREF(type->tp_base, base);
+}
+
+void
+PyType_SetBaseStatic(PyTypeObject *type, PyTypeObject *base)
+{
+    _PyObject_ASSERT((PyObject *)type, !(type->tp_flags & Py_TPFLAGS_HEAPTYPE));
+    type->tp_base = base;
 }
 
 
@@ -5448,8 +5462,13 @@ PyType_Ready(PyTypeObject *type)
     /* Initialize tp_base (defaults to BaseObject unless that's us) */
     base = type->tp_base;
     if (base == NULL && type != &PyBaseObject_Type) {
-        base = type->tp_base = &PyBaseObject_Type;
-        Py_INCREF(base);
+        base = &PyBaseObject_Type;
+        if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+            PyType_SetBase(type, base);
+        }
+        else {
+            PyType_SetBaseStatic(type, base);
+        }
     }
 
     /* Now the only way base can still be NULL is if type is

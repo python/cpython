@@ -2565,7 +2565,7 @@ collections_exec(PyObject *module) {
         &tuplegetter_type
     };
 
-    defdict_type.tp_base = &PyDict_Type;
+    PyType_SetBaseStatic(&defdict_type, &PyDict_Type);
 
     for (size_t i = 0; i < Py_ARRAY_LENGTH(typelist); i++) {
         if (PyModule_AddType(module, typelist[i]) < 0) {

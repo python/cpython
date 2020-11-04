@@ -50,7 +50,7 @@ PyMODINIT_FUNC
 PyInit_sublist(void)
 {
     PyObject *m;
-    SubListType.tp_base = &PyList_Type;
+    PyType_SetBaseStatic(&SubListType, &PyList_Type);
     if (PyType_Ready(&SubListType) < 0)
         return NULL;
 

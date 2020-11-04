@@ -264,11 +264,11 @@ xxsubtype_exec(PyObject* m)
        PyType_Ready() is called.  Note that PyType_Ready() automatically
        initializes the ob.ob_type field to &PyType_Type if it's NULL,
        so it's not necessary to fill in ob_type first. */
-    spamdict_type.tp_base = &PyDict_Type;
+    PyType_SetBaseStatic(&spamdict_type, &PyDict_Type);
     if (PyType_Ready(&spamdict_type) < 0)
         return -1;
 
-    spamlist_type.tp_base = &PyList_Type;
+    PyType_SetBaseStatic(&spamlist_type, &PyList_Type);
     if (PyType_Ready(&spamlist_type) < 0)
         return -1;
 

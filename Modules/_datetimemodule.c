@@ -6523,9 +6523,9 @@ PyInit__datetime(void)
     // `&...` is not a constant expression according to a strict reading
     // of C standards. Fill tp_base at run-time rather than statically.
     // See https://bugs.python.org/issue40777
-    PyDateTime_IsoCalendarDateType.tp_base = &PyTuple_Type;
-    PyDateTime_TimeZoneType.tp_base = &PyDateTime_TZInfoType;
-    PyDateTime_DateTimeType.tp_base = &PyDateTime_DateType;
+    PyType_SetBaseStatic(&PyDateTime_IsoCalendarDateType, &PyTuple_Type);
+    PyType_SetBaseStatic(&PyDateTime_TimeZoneType, &PyDateTime_TZInfoType);
+    PyType_SetBaseStatic(&PyDateTime_DateTimeType, &PyDateTime_DateType);
 
     PyTypeObject *types[] = {
         &PyDateTime_DateType,

@@ -353,8 +353,8 @@ xx_exec(PyObject *m)
        Both compilers are strictly standard conforming in this particular
        behavior.
     */
-    Null_Type.tp_base = &PyBaseObject_Type;
-    Str_Type.tp_base = &PyUnicode_Type;
+    PyType_SetBaseStatic(&Null_Type, &PyBaseObject_Type);
+    PyType_SetBaseStatic(&Str_Type, &PyUnicode_Type);
 
     /* Finalize the type object including setting type of the new type
      * object; doing it here is required for portability, too. */
