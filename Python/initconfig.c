@@ -242,8 +242,9 @@ PyStatus PyStatus_Ok(void)
 
 PyStatus PyStatus_Error(const char *err_msg)
 {
+    assert(err_msg != NULL);
     return (PyStatus){._type = _PyStatus_TYPE_ERROR,
-                          .err_msg = err_msg};
+                      .err_msg = err_msg};
 }
 
 PyStatus PyStatus_NoMemory(void)
@@ -261,6 +262,23 @@ int PyStatus_IsExit(PyStatus status)
 
 int PyStatus_Exception(PyStatus status)
 { return _PyStatus_EXCEPTION(status); }
+
+PyObject*
+_PyErr_SetFromPyStatus(PyStatus status)
+{
+    if (!_PyStatus_IS_ERROR(status)) {
+        PyErr_Format(PyExc_SystemError,
+                     "%s() expects an error PyStatus",
+                     _PyStatus_GET_FUNC());
+    }
+    else if (status.func) {
+        PyErr_Format(PyExc_ValueError, "%s: %s", status.func, status.err_msg);
+    }
+    else {
+        PyErr_Format(PyExc_ValueError, "%s", status.err_msg);
+    }
+    return NULL;
+}
 
 
 /* --- PyWideStringList ------------------------------------------------ */

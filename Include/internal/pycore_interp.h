@@ -263,13 +263,7 @@ struct _is {
     struct ast_state ast;
 };
 
-/* Used by _PyImport_Cleanup() */
 extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
-
-extern PyStatus _PyInterpreterState_SetConfig(
-    PyInterpreterState *interp,
-    const PyConfig *config);
-
 extern void _PyInterpreterState_Clear(PyThreadState *tstate);
 
 

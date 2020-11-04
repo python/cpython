@@ -44,6 +44,8 @@ struct pyruntimestate;
 #define _PyStatus_UPDATE_FUNC(err) \
     do { err.func = _PyStatus_GET_FUNC(); } while (0)
 
+PyObject* _PyErr_SetFromPyStatus(PyStatus status);
+
 /* --- PyWideStringList ------------------------------------------------ */
 
 #define _PyWideStringList_INIT (PyWideStringList){.length = 0, .items = NULL}
