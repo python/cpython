@@ -559,12 +559,14 @@ class HelpFormatter(object):
                 parts.extend(action.option_strings)
 
             # if the Optional takes a value, format is:
-            #    -s ARGS, --long ARGS
+            #    -s, --long ARGS
             else:
                 default = self._get_default_metavar_for_optional(action)
+                for option_string in action.option_strings[:-1]:
+                    parts.append('%s' % (option_string))
+
                 args_string = self._format_args(action, default)
-                for option_string in action.option_strings:
-                    parts.append('%s %s' % (option_string, args_string))
+                parts.append('%s %s' % (action.option_strings[-1], args_string))
 
             return ', '.join(parts)
 
