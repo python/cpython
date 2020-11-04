@@ -1,6 +1,7 @@
 import bdb
 import os
 import linecache
+import re
 
 from tkinter import *
 from tkinter import ttk
@@ -308,18 +309,21 @@ class Debugger:
             func = '.'
         try:
             selfval = frame.f_locals['self']
+        except KeyError:
+            selfval = None;
+        if selfval:
+            # this stackframe represents an object method; preface the method
+            # name with the name of the class
             if selfval.__class__.__name__ == 'str':
-                # we've probably got the string representation of the
-                # object sent from the remote debugger, see if we can
-                # parse it into something useful
-                match = re.match('^<(?:.*)\.([^\.]*) object at 0x[0-9a-f]+>$',
+                # we've got the string representation of the object sent from
+                # the remote debugger; parse out the name of the class, e.g.
+                # from "<random.Random object at 0x...>" extract "Random"
+                match = re.match(r'^<(?:.*)\.([^.]*) object at 0x[0-9a-f]+>$',
                                  selfval)
                 if match:
                     func = match.group(1) + '.' + func
             else:
                 func = selfval.__class__.__name__ + '.' + func
-        except Exception:
-            pass
         stmt = linecache.getline(frame.f_code.co_filename, lineno).strip()
         image = self.current_line_img if current else self.regular_line_img
         item = self.stack.insert('', 'end', text=func,
