@@ -1,0 +1,1 @@
+argparse: show choices once per argument
