@@ -128,6 +128,8 @@ PyStatus
 
       Initialization error with a message.
 
+      *err_msg* must not be ``NULL``.
+
    .. c:function:: PyStatus PyStatus_NoMemory(void)
 
       Memory allocation failure (out of memory).
