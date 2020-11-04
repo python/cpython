@@ -3,8 +3,8 @@ import os
 import linecache
 import re
 
-from tkinter import *
-from tkinter import ttk
+from tkinter import BooleanVar, Menu
+from tkinter.ttk import PanedWindow, Frame, Label, Treeview, Scrollbar
 from tkinter import PhotoImage
 from tkinter.font import Font
 
@@ -168,13 +168,13 @@ class Debugger:
 
         self.var_open_source_windows = BooleanVar(top, False)
 
-        self.pane = ttk.PanedWindow(self.top, orient='horizontal')
+        self.pane = PanedWindow(self.top, orient='horizontal')
         self.pane.grid(column=0, row=0, sticky='nwes')
         self.top.grid_columnconfigure(0, weight=1)
         self.top.grid_rowconfigure(0, weight=1)
-        self.left = left = ttk.Frame(self.pane, padding=5)
+        self.left = left = Frame(self.pane, padding=5)
         self.pane.add(left, weight=1)
-        controls = ttk.Frame(left)
+        controls = Frame(left)
         self.buttondata = {}
         self.buttons = ['go', 'step', 'over', 'out', 'stop', 'prefs']
         button_names = {'go':'Go', 'step':'Step', 'over':'Over',
@@ -185,7 +185,7 @@ class Debugger:
         for col, key in enumerate(self.buttons):
             normal = self.getimage('debug_'+key+'.gif')
             disabled = self.getimage('debug_'+key+'_disabled.gif')
-            b = ttk.Label(controls, image=normal, text=button_names[key],
+            b = Label(controls, image=normal, text=button_names[key],
                           compound='top', font='TkIconFont')
             b.grid(column=col, row=0, padx=[0,5])
             self.buttondata[key] = (b, normal, disabled)
@@ -193,14 +193,14 @@ class Debugger:
         self.status_normal_font = Font(root=self.root, name='TkDefaultFont', exists=True)
         self.status_error_font = self.status_normal_font.copy()
         self.status_error_font['slant'] = 'italic'
-        self.status = ttk.Label(controls, text=' ', font=self.status_normal_font)
+        self.status = Label(controls, text=' ', font=self.status_normal_font)
         self.status.grid(column=6, row=0, sticky='nw', padx=[25,0])
         controls.grid(column=0, row=0, sticky='new', pady=[0,6])
         controls.grid_columnconfigure(7, weight=1)
 
         self.current_line_img = self.getimage('debug_current.gif')
         self.regular_line_img = self.getimage('debug_line.gif')
-        self.stack = ttk.Treeview(left, columns=('statement', ),
+        self.stack = Treeview(left, columns=('statement', ),
                                   height=5, selectmode='browse')
         self.stack.column('#0', width=100)
         self.stack.column('#1', width=150)
@@ -214,16 +214,16 @@ class Debugger:
         else:
             self.stack.bind('<Button-3>', self.stack_contextmenu)
 
-        scroll = ttk.Scrollbar(left, command=self.stack.yview)
+        scroll = Scrollbar(left, command=self.stack.yview)
         self.stack['yscrollcommand'] = scroll.set
         self.stack.grid(column=0, row=2, sticky='nwes')
         scroll.grid(column=1, row=2, sticky='ns')
         left.grid_columnconfigure(0, weight=1)
         left.grid_rowconfigure(2, weight=1)
 
-        right = ttk.Frame(self.pane, padding=5)
+        right = Frame(self.pane, padding=5)
         self.pane.add(right, weight=1)
-        self.vars = ttk.Treeview(right, columns=('value',), height=5,
+        self.vars = Treeview(right, columns=('value',), height=5,
                                                 selectmode='none')
         self.locals = self.vars.insert('', 'end', text='Locals',
                                        open=True)
@@ -233,7 +233,7 @@ class Debugger:
         self.vars.column('#1', width=150)
         self.vars.bind('<Motion>', self.mouse_moved_vars)
         self.vars.bind('<Leave>', self.leave_vars)
-        scroll2 = ttk.Scrollbar(right, command=self.vars.yview)
+        scroll2 = Scrollbar(right, command=self.vars.yview)
         self.vars['yscrollcommand'] = scroll2.set
         self.vars.grid(column=0, row=0, sticky='nwes')
         scroll2.grid(column=1, row=0, sticky='ns')
