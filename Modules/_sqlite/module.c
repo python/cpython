@@ -265,14 +265,12 @@ pysqlite_adapt_impl(PyObject *module, PyObject *obj, PyObject *proto,
 
 static int converters_init(PyObject* module)
 {
-    int res;
-
     _pysqlite_converters = PyDict_New();
     if (!_pysqlite_converters) {
         return -1;
     }
 
-    res = PyModule_AddObjectRef(module, "converters", _pysqlite_converters);
+    int res = PyModule_AddObjectRef(module, "converters", _pysqlite_converters);
     Py_DECREF(_pysqlite_converters);
 
     return res;
@@ -374,7 +372,6 @@ do {                                                            \
 PyMODINIT_FUNC PyInit__sqlite3(void)
 {
     PyObject *module;
-    int res;
 
     if (sqlite3_libversion_number() < 3007003) {
         PyErr_SetString(PyExc_ImportError, MODULE_NAME ": SQLite 3.7.3 or higher required");
@@ -422,7 +419,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
        Now OptimizedUnicode is an alias for str, so it has no
        effect. */
     Py_INCREF((PyObject*)&PyUnicode_Type);
-    res = PyModule_AddObjectRef(module, "OptimizedUnicode", (PyObject*)&PyUnicode_Type);
+    int res = PyModule_AddObjectRef(module, "OptimizedUnicode", (PyObject*)&PyUnicode_Type);
     Py_DECREF((PyObject*)&PyUnicode_Type);
     if (res == -1) {
         goto error;
