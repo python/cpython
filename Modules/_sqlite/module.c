@@ -357,12 +357,11 @@ do {                                           \
 
 #define ADD_EXCEPTION(module, name, exc, base)                  \
 do {                                                            \
-    int res;                                                    \
     exc = PyErr_NewException(MODULE_NAME "." name, base, NULL); \
     if (!exc) {                                                 \
         goto error;                                             \
     }                                                           \
-    res = PyModule_AddObjectRef(module, name, exc);             \
+    int res = PyModule_AddObjectRef(module, name, exc);         \
     Py_DECREF(exc);                                             \
     if (res < 0) {                                              \
         goto error;                                             \
