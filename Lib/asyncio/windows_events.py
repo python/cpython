@@ -318,8 +318,12 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
             if self._self_reading_future is not None:
                 ov = self._self_reading_future._ov
                 self._self_reading_future.cancel()
-                # self_reading_future was just cancelled so it will never be signalled
-                # Unregister it otherwise IocpProactor.close will wait for it forever
+                # self_reading_future was just cancelled so if it hasn't been
+                # finished yet, it never will be (it's possible that it has
+                # already finished and its callback is waiting in the queue,
+                # where it could still happen if the event loop is restarted).
+                # Unregister it otherwise IocpProactor.close will wait for it
+                # forever
                 if ov is not None:
                     self._proactor._unregister(ov)
                 self._self_reading_future = None

@@ -1164,22 +1164,27 @@ class MemoryHandlerTest(BaseTest):
         class MockRaceConditionHandler:
             def __init__(self, mem_hdlr):
                 self.mem_hdlr = mem_hdlr
+                self.threads = []
 
             def removeTarget(self):
                 self.mem_hdlr.setTarget(None)
 
             def handle(self, msg):
-                t = threading.Thread(target=self.removeTarget)
-                t.daemon = True
-                t.start()
+                thread = threading.Thread(target=self.removeTarget)
+                self.threads.append(thread)
+                thread.start()
 
         target = MockRaceConditionHandler(self.mem_hdlr)
-        self.mem_hdlr.setTarget(target)
+        try:
+            self.mem_hdlr.setTarget(target)
 
-        for _ in range(10):
-            time.sleep(0.005)
-            self.mem_logger.info("not flushed")
-            self.mem_logger.warning("flushed")
+            for _ in range(10):
+                time.sleep(0.005)
+                self.mem_logger.info("not flushed")
+                self.mem_logger.warning("flushed")
+        finally:
+            for thread in target.threads:
+                threading_helper.join_thread(thread)
 
 
 class ExceptionFormatter(logging.Formatter):
@@ -3720,7 +3725,15 @@ class UTC(datetime.tzinfo):
 
 utc = UTC()
 
-class FormatterTest(unittest.TestCase):
+class AssertErrorMessage:
+
+    def assert_error_message(self, exception, message, *args, **kwargs):
+        try:
+            self.assertRaises((), *args, **kwargs)
+        except exception as e:
+            self.assertEqual(message, str(e))
+
+class FormatterTest(unittest.TestCase, AssertErrorMessage):
     def setUp(self):
         self.common = {
             'name': 'formatter.test',
@@ -3743,12 +3756,6 @@ class FormatterTest(unittest.TestCase):
         if name is not None:
             result.update(self.variants[name])
         return logging.makeLogRecord(result)
-
-    def assert_error_message(self, exception, message, *args, **kwargs):
-        try:
-            self.assertRaises(exception, *args, **kwargs)
-        except exception as e:
-            self.assertEqual(message, e.message)
 
     def test_percent(self):
         # Test %-formatting
@@ -3868,7 +3875,7 @@ class FormatterTest(unittest.TestCase):
         # Testing failure for '-' in field name
         self.assert_error_message(
             ValueError,
-            "invalid field name/expression: 'name-thing'",
+            "invalid format: invalid field name/expression: 'name-thing'",
             logging.Formatter, "{name-thing}", style="{"
         )
         # Testing failure for style mismatch
@@ -3891,7 +3898,7 @@ class FormatterTest(unittest.TestCase):
         # Testing failure for invalid spec
         self.assert_error_message(
             ValueError,
-            "bad specifier: '.2ff'",
+            "invalid format: bad specifier: '.2ff'",
             logging.Formatter, '{process:.2ff}', style='{'
         )
         self.assertRaises(ValueError, logging.Formatter, '{process:.2Z}', style='{')
@@ -3901,12 +3908,12 @@ class FormatterTest(unittest.TestCase):
         # Testing failure for mismatch braces
         self.assert_error_message(
             ValueError,
-            "invalid format: unmatched '{' in format spec",
+            "invalid format: expected '}' before end of string",
             logging.Formatter, '{process', style='{'
         )
         self.assert_error_message(
             ValueError,
-            "invalid format: unmatched '{' in format spec",
+            "invalid format: Single '}' encountered in format string",
             logging.Formatter, 'process}', style='{'
         )
         self.assertRaises(ValueError, logging.Formatter, '{{foo!r:4.2}', style='{')
@@ -4303,8 +4310,8 @@ class ModuleLevelMiscTest(BaseTest):
             logging.setLoggerClass(logging.Logger)
 
     def test_logging_at_shutdown(self):
-        # Issue #20037
-        code = """if 1:
+        # bpo-20037: Doing text I/O late at interpreter shutdown must not crash
+        code = textwrap.dedent("""
             import logging
 
             class A:
@@ -4314,22 +4321,55 @@ class ModuleLevelMiscTest(BaseTest):
                     except Exception:
                         logging.exception("exception in __del__")
 
-            a = A()"""
+            a = A()
+        """)
         rc, out, err = assert_python_ok("-c", code)
         err = err.decode()
         self.assertIn("exception in __del__", err)
         self.assertIn("ValueError: some error", err)
 
+    def test_logging_at_shutdown_open(self):
+        # bpo-26789: FileHandler keeps a reference to the builtin open()
+        # function to be able to open or reopen the file during Python
+        # finalization.
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+
+        code = textwrap.dedent(f"""
+            import builtins
+            import logging
+
+            class A:
+                def __del__(self):
+                    logging.error("log in __del__")
+
+            # basicConfig() opens the file, but logging.shutdown() closes
+            # it at Python exit. When A.__del__() is called,
+            # FileHandler._open() must be called again to re-open the file.
+            logging.basicConfig(filename={filename!r})
+
+            a = A()
+
+            # Simulate the Python finalization which removes the builtin
+            # open() function.
+            del builtins.open
+        """)
+        assert_python_ok("-c", code)
+
+        with open(filename) as fp:
+            self.assertEqual(fp.read().rstrip(), "ERROR:root:log in __del__")
+
     def test_recursion_error(self):
         # Issue 36272
-        code = """if 1:
+        code = textwrap.dedent("""
             import logging
 
             def rec():
                 logging.error("foo")
                 rec()
 
-            rec()"""
+            rec()
+        """)
         rc, out, err = assert_python_failure("-c", code)
         err = err.decode()
         self.assertNotIn("Cannot recover from stack overflow.", err)
@@ -4354,15 +4394,65 @@ class LogRecordTest(BaseTest):
         r.removeHandler(h)
         h.close()
 
-    def test_multiprocessing(self):
-        r = logging.makeLogRecord({})
-        self.assertEqual(r.processName, 'MainProcess')
+    @staticmethod # pickled as target of child process in the following test
+    def _extract_logrecord_process_name(key, logMultiprocessing, conn=None):
+        prev_logMultiprocessing = logging.logMultiprocessing
+        logging.logMultiprocessing = logMultiprocessing
         try:
             import multiprocessing as mp
+            name = mp.current_process().name
+
+            r1 = logging.makeLogRecord({'msg': f'msg1_{key}'})
+            del sys.modules['multiprocessing']
+            r2 = logging.makeLogRecord({'msg': f'msg2_{key}'})
+
+            results = {'processName'  : name,
+                       'r1.processName': r1.processName,
+                       'r2.processName': r2.processName,
+                      }
+        finally:
+            logging.logMultiprocessing = prev_logMultiprocessing
+        if conn:
+            conn.send(results)
+        else:
+            return results
+
+    def test_multiprocessing(self):
+        multiprocessing_imported = 'multiprocessing' in sys.modules
+        try:
+            # logMultiprocessing is True by default
+            self.assertEqual(logging.logMultiprocessing, True)
+
+            LOG_MULTI_PROCESSING = True
+            # When logMultiprocessing == True:
+            # In the main process processName = 'MainProcess'
             r = logging.makeLogRecord({})
-            self.assertEqual(r.processName, mp.current_process().name)
-        except ImportError:
-            pass
+            self.assertEqual(r.processName, 'MainProcess')
+
+            results = self._extract_logrecord_process_name(1, LOG_MULTI_PROCESSING)
+            self.assertEqual('MainProcess', results['processName'])
+            self.assertEqual('MainProcess', results['r1.processName'])
+            self.assertEqual('MainProcess', results['r2.processName'])
+
+            # In other processes, processName is correct when multiprocessing in imported,
+            # but it is (incorrectly) defaulted to 'MainProcess' otherwise (bpo-38762).
+            import multiprocessing
+            parent_conn, child_conn = multiprocessing.Pipe()
+            p = multiprocessing.Process(
+                target=self._extract_logrecord_process_name,
+                args=(2, LOG_MULTI_PROCESSING, child_conn,)
+            )
+            p.start()
+            results = parent_conn.recv()
+            self.assertNotEqual('MainProcess', results['processName'])
+            self.assertEqual(results['processName'], results['r1.processName'])
+            self.assertEqual('MainProcess', results['r2.processName'])
+            p.join()
+
+        finally:
+            if multiprocessing_imported:
+                import multiprocessing
+
 
     def test_optional(self):
         r = logging.makeLogRecord({})
@@ -4817,7 +4907,7 @@ class LoggerAdapterTest(unittest.TestCase):
         self.assertIs(self.logger.manager, orig_manager)
 
 
-class LoggerTest(BaseTest):
+class LoggerTest(BaseTest, AssertErrorMessage):
 
     def setUp(self):
         super(LoggerTest, self).setUp()
@@ -4829,7 +4919,12 @@ class LoggerTest(BaseTest):
         self.addCleanup(logging.shutdown)
 
     def test_set_invalid_level(self):
-        self.assertRaises(TypeError, self.logger.setLevel, object())
+        self.assert_error_message(
+            TypeError, 'Level not an integer or a valid string: None',
+            self.logger.setLevel, None)
+        self.assert_error_message(
+            TypeError, 'Level not an integer or a valid string: (0, 0)',
+            self.logger.setLevel, (0, 0))
 
     def test_exception(self):
         msg = 'testing exception: %r'

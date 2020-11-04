@@ -43,7 +43,7 @@ class PEGLexer(RegexLexer):
             (r"'\W+?'", Text),
             (r'"\W+?"', Text),
         ],
-        "variables": [(_name + _text_ws + "(=)", bygroups(None, None, None),),],
+        "variables": [(_name + _text_ws + r"(\[.*\])?" + _text_ws + "(=)", bygroups(None, None, None, None, None),),],
         "invalids": [
             (r"^(\s+\|\s+invalid_\w+\s*\n)", bygroups(None)),
             (r"^(\s+\|\s+incorrect_\w+\s*\n)", bygroups(None)),
@@ -59,7 +59,7 @@ class PEGLexer(RegexLexer):
             include("variables"),
             (r"\b(?!(NULL|EXTRA))([A-Z_]+)\b\s*(?!\()", Text,),
             (
-                r"^\s*" + _name + "\s*" + "(\[.*\])?" + "\s*" + "(\(.+\))?" + "\s*(:)",
+                r"^\s*" + _name + r"\s*" + r"(\[.*\])?" + r"\s*" + r"(\(.+\))?" + r"\s*(:)",
                 bygroups(Name.Function, None, None, Punctuation),
             ),
             (_name, Name.Function),

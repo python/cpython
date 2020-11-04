@@ -189,11 +189,7 @@ PyPreConfig
 
 .. c:type:: PyPreConfig
 
-   Structure used to preinitialize Python:
-
-   * Set the Python memory allocator
-   * Configure the LC_CTYPE locale
-   * Set the UTF-8 mode
+   Structure used to preinitialize Python.
 
    Function to initialize a preconfiguration:
 
@@ -211,7 +207,7 @@ PyPreConfig
 
    .. c:member:: int allocator
 
-      Name of the memory allocator:
+      Name of the Python memory allocators:
 
       * ``PYMEM_ALLOCATOR_NOT_SET`` (``0``): don't change memory allocators
         (use defaults)
@@ -231,35 +227,64 @@ PyPreConfig
 
       See :ref:`Memory Management <memory>`.
 
+      Default: ``PYMEM_ALLOCATOR_NOT_SET``.
+
    .. c:member:: int configure_locale
 
-      Set the LC_CTYPE locale to the user preferred locale? If equals to 0, set
-      :c:member:`coerce_c_locale` and :c:member:`coerce_c_locale_warn` to 0.
+      Set the LC_CTYPE locale to the user preferred locale?
+
+      If equals to 0, set :c:member:`~PyPreConfig.coerce_c_locale` and
+      :c:member:`~PyPreConfig.coerce_c_locale_warn` members to 0.
+
+      See the :term:`locale encoding`.
+
+      Default: ``1`` in Python config, ``0`` in isolated config.
 
    .. c:member:: int coerce_c_locale
 
-      If equals to 2, coerce the C locale; if equals to 1, read the LC_CTYPE
-      locale to decide if it should be coerced.
+      If equals to 2, coerce the C locale.
+
+      If equals to 1, read the LC_CTYPE locale to decide if it should be
+      coerced.
+
+      See the :term:`locale encoding`.
+
+      Default: ``-1`` in Python config, ``0`` in isolated config.
 
    .. c:member:: int coerce_c_locale_warn
 
       If non-zero, emit a warning if the C locale is coerced.
 
+      Default: ``-1`` in Python config, ``0`` in isolated config.
+
    .. c:member:: int dev_mode
 
-      See :c:member:`PyConfig.dev_mode`.
+      If non-zero, enables the :ref:`Python Development Mode <devmode>`:
+      see :c:member:`PyConfig.dev_mode`.
+
+      Default: ``-1`` in Python mode, ``0`` in isolated mode.
 
    .. c:member:: int isolated
 
-      See :c:member:`PyConfig.isolated`.
+      Isolated mode: see :c:member:`PyConfig.isolated`.
 
-   .. c:member:: int legacy_windows_fs_encoding (Windows only)
+      Default: ``0`` in Python mode, ``1`` in isolated mode.
 
-      If non-zero, disable UTF-8 Mode, set the Python filesystem encoding to
-      ``mbcs``, set the filesystem error handler to ``replace``.
+   .. c:member:: int legacy_windows_fs_encoding
+
+      If non-zero:
+
+      * Set :c:member:`PyPreConfig.utf8_mode` to ``0``,
+      * Set :c:member:`PyConfig.filesystem_encoding` to ``"mbcs"``,
+      * Set :c:member:`PyConfig.filesystem_errors` to ``"replace"``.
+
+      Initialized the from :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment
+      variable value.
 
       Only available on Windows. ``#ifdef MS_WINDOWS`` macro can be used for
       Windows specific code.
+
+      Default: ``0``.
 
    .. c:member:: int parse_argv
 
@@ -268,16 +293,36 @@ PyPreConfig
       same way the regular Python parses command line arguments: see
       :ref:`Command Line Arguments <using-on-cmdline>`.
 
+      Default: ``1`` in Python config, ``0`` in isolated config.
+
    .. c:member:: int use_environment
 
-      See :c:member:`PyConfig.use_environment`.
+      Use :ref:`environment variables <using-on-envvars>`? See
+      :c:member:`PyConfig.use_environment`.
+
+      Default: ``1`` in Python config and ``0`` in isolated config.
 
    .. c:member:: int utf8_mode
 
-      If non-zero, enable the UTF-8 mode.
+      If non-zero, enable the :ref:`Python UTF-8 Mode <utf8-mode>`.
 
-Preinitialization with PyPreConfig
-----------------------------------
+      Set by the :option:`-X utf8 <-X>` command line option and the
+      :envvar:`PYTHONUTF8` environment variable.
+
+      Default: ``-1`` in Python config and ``0`` in isolated config.
+
+
+.. _c-preinit:
+
+Preinitialize Python with PyPreConfig
+-------------------------------------
+
+The preinitialization of Python:
+
+* Set the Python memory allocators (:c:member:`PyPreConfig.allocator`)
+* Configure the LC_CTYPE locale (:term:`locale encoding`)
+* Set the :ref:`Python UTF-8 Mode <utf8-mode>`
+  (:c:member:`PyPreConfig.utf8_mode`)
 
 Functions to preinitialize Python:
 
@@ -287,13 +332,17 @@ Functions to preinitialize Python:
 
 .. c:function:: PyStatus Py_PreInitializeFromBytesArgs(const PyPreConfig *preconfig, int argc, char * const *argv)
 
-   Preinitialize Python from *preconfig* preconfiguration and command line
-   arguments (bytes strings).
+   Preinitialize Python from *preconfig* preconfiguration.
+
+   Parse *argv* command line arguments (bytes strings) if
+   :c:member:`~PyPreConfig.parse_argv` of *preconfig* is non-zero.
 
 .. c:function:: PyStatus Py_PreInitializeFromArgs(const PyPreConfig *preconfig, int argc, wchar_t * const * argv)
 
-   Preinitialize Python from *preconfig* preconfiguration and command line
-   arguments (wide strings).
+   Preinitialize Python from *preconfig* preconfiguration.
+
+   Parse *argv* command line arguments (wide strings) if
+   :c:member:`~PyPreConfig.parse_argv` of *preconfig* is non-zero.
 
 The caller is responsible to handle exceptions (error or exit) using
 :c:func:`PyStatus_Exception` and :c:func:`Py_ExitStatusException`.
@@ -303,7 +352,7 @@ For :ref:`Python Configuration <init-python-config>`
 command line arguments, the command line arguments must also be passed to
 preinitialize Python, since they have an effect on the pre-configuration
 like encodings. For example, the :option:`-X utf8 <-X>` command line option
-enables the UTF-8 Mode.
+enables the :ref:`Python UTF-8 Mode <utf8-mode>`.
 
 ``PyMem_SetAllocator()`` can be called after :c:func:`Py_PreInitialize` and
 before :c:func:`Py_InitializeFromConfig` to install a custom memory allocator.
@@ -311,11 +360,12 @@ It can be called before :c:func:`Py_PreInitialize` if
 :c:member:`PyPreConfig.allocator` is set to ``PYMEM_ALLOCATOR_NOT_SET``.
 
 Python memory allocation functions like :c:func:`PyMem_RawMalloc` must not be
-used before Python preinitialization, whereas calling directly ``malloc()`` and
-``free()`` is always safe. :c:func:`Py_DecodeLocale` must not be called before
-the preinitialization.
+used before the Python preinitialization, whereas calling directly ``malloc()``
+and ``free()`` is always safe. :c:func:`Py_DecodeLocale` must not be called
+before the Python preinitialization.
 
-Example using the preinitialization to enable the UTF-8 Mode::
+Example using the preinitialization to enable
+the :ref:`Python UTF-8 Mode <utf8-mode>`::
 
     PyStatus status;
     PyPreConfig preconfig;
@@ -328,7 +378,7 @@ Example using the preinitialization to enable the UTF-8 Mode::
         Py_ExitStatusException(status);
     }
 
-    /* at this point, Python will speak UTF-8 */
+    /* at this point, Python speaks UTF-8 */
 
     Py_Initialize();
     /* ... use Python API here ... */
@@ -342,47 +392,54 @@ PyConfig
 
    Structure containing most parameters to configure Python.
 
+   When done, the :c:func:`PyConfig_Clear` function must be used to release the
+   configuration memory.
+
    Structure methods:
 
    .. c:function:: void PyConfig_InitPythonConfig(PyConfig *config)
 
-      Initialize configuration with :ref:`Python Configuration
+      Initialize configuration with the :ref:`Python Configuration
       <init-python-config>`.
 
    .. c:function:: void PyConfig_InitIsolatedConfig(PyConfig *config)
 
-      Initialize configuration with :ref:`Isolated Configuration
+      Initialize configuration with the :ref:`Isolated Configuration
       <init-isolated-conf>`.
 
    .. c:function:: PyStatus PyConfig_SetString(PyConfig *config, wchar_t * const *config_str, const wchar_t *str)
 
       Copy the wide character string *str* into ``*config_str``.
 
-      Preinitialize Python if needed.
+      :ref:`Preinitialize Python <c-preinit>` if needed.
 
    .. c:function:: PyStatus PyConfig_SetBytesString(PyConfig *config, wchar_t * const *config_str, const char *str)
 
-      Decode *str* using ``Py_DecodeLocale()`` and set the result into ``*config_str``.
+      Decode *str* using :c:func:`Py_DecodeLocale` and set the result into
+      ``*config_str``.
 
-      Preinitialize Python if needed.
+      :ref:`Preinitialize Python <c-preinit>` if needed.
 
    .. c:function:: PyStatus PyConfig_SetArgv(PyConfig *config, int argc, wchar_t * const *argv)
 
-      Set command line arguments from wide character strings.
+      Set command line arguments (:c:member:`~PyConfig.argv` member of
+      *config*) from the *argv* list of wide character strings.
 
-      Preinitialize Python if needed.
+      :ref:`Preinitialize Python <c-preinit>` if needed.
 
    .. c:function:: PyStatus PyConfig_SetBytesArgv(PyConfig *config, int argc, char * const *argv)
 
-      Set command line arguments: decode bytes using :c:func:`Py_DecodeLocale`.
+      Set command line arguments (:c:member:`~PyConfig.argv` member of
+      *config*) from the *argv* list of bytes strings. Decode bytes using
+      :c:func:`Py_DecodeLocale`.
 
-      Preinitialize Python if needed.
+      :ref:`Preinitialize Python <c-preinit>` if needed.
 
    .. c:function:: PyStatus PyConfig_SetWideStringList(PyConfig *config, PyWideStringList *list, Py_ssize_t length, wchar_t **items)
 
       Set the list of wide strings *list* to *length* and *items*.
 
-      Preinitialize Python if needed.
+      :ref:`Preinitialize Python <c-preinit>` if needed.
 
    .. c:function:: PyStatus PyConfig_Read(PyConfig *config)
 
@@ -390,24 +447,25 @@ PyConfig
 
       Fields which are already initialized are left unchanged.
 
-      Preinitialize Python if needed.
+      :ref:`Preinitialize Python <c-preinit>` if needed.
 
    .. c:function:: void PyConfig_Clear(PyConfig *config)
 
       Release configuration memory.
 
-   Most ``PyConfig`` methods preinitialize Python if needed. In that case, the
-   Python preinitialization configuration in based on the :c:type:`PyConfig`.
-   If configuration fields which are in common with :c:type:`PyPreConfig` are
-   tuned, they must be set before calling a :c:type:`PyConfig` method:
+   Most ``PyConfig`` methods :ref:`preinitialize Python <c-preinit>` if needed.
+   In that case, the Python preinitialization configuration
+   (:c:type:`PyPreConfig`) in based on the :c:type:`PyConfig`. If configuration
+   fields which are in common with :c:type:`PyPreConfig` are tuned, they must
+   be set before calling a :c:type:`PyConfig` method:
 
-   * :c:member:`~PyConfig.dev_mode`
-   * :c:member:`~PyConfig.isolated`
-   * :c:member:`~PyConfig.parse_argv`
-   * :c:member:`~PyConfig.use_environment`
+   * :c:member:`PyConfig.dev_mode`
+   * :c:member:`PyConfig.isolated`
+   * :c:member:`PyConfig.parse_argv`
+   * :c:member:`PyConfig.use_environment`
 
    Moreover, if :c:func:`PyConfig_SetArgv` or :c:func:`PyConfig_SetBytesArgv`
-   is used, this method must be called first, before other methods, since the
+   is used, this method must be called before other methods, since the
    preinitialization configuration depends on command line arguments (if
    :c:member:`parse_argv` is non-zero).
 
@@ -418,11 +476,17 @@ PyConfig
 
    .. c:member:: PyWideStringList argv
 
-      Command line arguments, :data:`sys.argv`. See
-      :c:member:`~PyConfig.parse_argv` to parse :c:member:`~PyConfig.argv` the
-      same way the regular Python parses Python command line arguments. If
-      :c:member:`~PyConfig.argv` is empty, an empty string is added to ensure
-      that :data:`sys.argv` always exists and is never empty.
+      Command line arguments: :data:`sys.argv`.
+
+      Set :c:member:`~PyConfig.parse_argv` to ``1`` to parse
+      :c:member:`~PyConfig.argv` the same way the regular Python parses Python
+      command line arguments and then to strip Python arguments from
+      :c:member:`~PyConfig.argv`.
+
+      If :c:member:`~PyConfig.argv` is empty, an empty string is added to
+      ensure that :data:`sys.argv` always exists and is never empty.
+
+      Default: ``NULL``.
 
       See also the :c:member:`~PyConfig.orig_argv` member.
 
@@ -430,80 +494,177 @@ PyConfig
 
       :data:`sys.base_exec_prefix`.
 
+      Default: ``NULL``.
+
+      Part of the :ref:`Path Configuration <init-path-config>` output.
+
    .. c:member:: wchar_t* base_executable
 
-      :data:`sys._base_executable`: ``__PYVENV_LAUNCHER__`` environment
-      variable value, or copy of :c:member:`PyConfig.executable`.
+      Python base executable: :data:`sys._base_executable`.
+
+      Set by the :envvar:`__PYVENV_LAUNCHER__` environment variable.
+
+      Set from :c:member:`PyConfig.executable` if ``NULL``.
+
+      Default: ``NULL``.
+
+      Part of the :ref:`Path Configuration <init-path-config>` output.
 
    .. c:member:: wchar_t* base_prefix
 
       :data:`sys.base_prefix`.
 
-   .. c:member:: wchar_t* platlibdir
+      Default: ``NULL``.
 
-      :data:`sys.platlibdir`: platform library directory name, set at configure time
-      by ``--with-platlibdir``, overrideable by the ``PYTHONPLATLIBDIR``
-      environment variable.
-
-      .. versionadded:: 3.9
+      Part of the :ref:`Path Configuration <init-path-config>` output.
 
    .. c:member:: int buffered_stdio
 
-      If equals to 0, enable unbuffered mode, making the stdout and stderr
-      streams unbuffered.
+      If equals to 0 and :c:member:`~PyConfig.configure_c_stdio` is non-zero,
+      disable buffering on the C streams stdout and stderr.
+
+      Set to 0 by the :option:`-u` command line option and the
+      :envvar:`PYTHONUNBUFFERED` environment variable.
 
       stdin is always opened in buffered mode.
+
+      Default: ``1``.
 
    .. c:member:: int bytes_warning
 
       If equals to 1, issue a warning when comparing :class:`bytes` or
       :class:`bytearray` with :class:`str`, or comparing :class:`bytes` with
-      :class:`int`. If equal or greater to 2, raise a :exc:`BytesWarning`
-      exception.
+      :class:`int`.
+
+      If equal or greater to 2, raise a :exc:`BytesWarning` exception in these
+      cases.
+
+      Incremented by the :option:`-b` command line option.
+
+      Default: ``0``.
 
    .. c:member:: wchar_t* check_hash_pycs_mode
 
-      Control the validation behavior of hash-based ``.pyc`` files (see
-      :pep:`552`): :option:`--check-hash-based-pycs` command line option value.
+      Control the validation behavior of hash-based ``.pyc`` files:
+      value of the :option:`--check-hash-based-pycs` command line option.
 
-      Valid values: ``always``, ``never`` and ``default``.
+      Valid values:
 
-      The default value is: ``default``.
+      - ``L"always"``: Hash the source file for invalidation regardless of
+        value of the 'check_source' flag.
+      - ``L"never"``: Assume that hash-based pycs always are valid.
+      - ``L"default"``: The 'check_source' flag in hash-based pycs
+        determines invalidation.
+
+      Default: ``L"default"``.
+
+      See also :pep:`552` "Deterministic pycs".
 
    .. c:member:: int configure_c_stdio
 
-      If non-zero, configure C standard streams (``stdio``, ``stdout``,
-      ``stdout``). For example, set their mode to ``O_BINARY`` on Windows.
+      If non-zero, configure C standard streams:
+
+      * On Windows, set the binary mode (``O_BINARY``) on stdin, stdout and
+        stderr.
+      * If :c:member:`~PyConfig.buffered_stdio` equals zero, disable buffering
+        of stdin, stdout and stderr streams.
+      * If :c:member:`~PyConfig.interactive` is non-zero, enable stream
+        buffering on stdin and stdout (only stdout on Windows).
+
+      Default: ``1`` in Python config, ``0`` in isolated config.
 
    .. c:member:: int dev_mode
 
       If non-zero, enable the :ref:`Python Development Mode <devmode>`.
 
+      Default: ``-1`` in Python mode, ``0`` in isolated mode.
+
    .. c:member:: int dump_refs
+
+      Dump Python refererences?
 
       If non-zero, dump all objects which are still alive at exit.
 
-      ``Py_TRACE_REFS`` macro must be defined in build.
+      Set to ``1`` by the :envvar:`PYTHONDUMPREFS` environment variable.
+
+      Need a special build of Python with the ``Py_TRACE_REFS`` macro defined.
+
+      Default: ``0``.
 
    .. c:member:: wchar_t* exec_prefix
 
-      :data:`sys.exec_prefix`.
+      The site-specific directory prefix where the platform-dependent Python
+      files are installed: :data:`sys.exec_prefix`.
+
+      Default: ``NULL``.
+
+      Part of the :ref:`Path Configuration <init-path-config>` output.
 
    .. c:member:: wchar_t* executable
 
+      The absolute path of the executable binary for the Python interpreter:
       :data:`sys.executable`.
+
+      Default: ``NULL``.
+
+      Part of the :ref:`Path Configuration <init-path-config>` output.
 
    .. c:member:: int faulthandler
 
+      Enable faulthandler?
+
       If non-zero, call :func:`faulthandler.enable` at startup.
+
+      Set to ``1`` by :option:`-X faulthandler <-X>` and the
+      :envvar:`PYTHONFAULTHANDLER` environment variable.
+
+      Default: ``-1`` in Python mode, ``0`` in isolated mode.
 
    .. c:member:: wchar_t* filesystem_encoding
 
-      Filesystem encoding, :func:`sys.getfilesystemencoding`.
+      :term:`Filesystem encoding <filesystem encoding and error handler>`:
+      :func:`sys.getfilesystemencoding`.
+
+      On macOS, Android and VxWorks: use ``"utf-8"`` by default.
+
+      On Windows: use ``"utf-8"`` by default, or ``"mbcs"`` if
+      :c:member:`~PyPreConfig.legacy_windows_fs_encoding` of
+      :c:type:`PyPreConfig` is non-zero.
+
+      Default encoding on other platforms:
+
+      * ``"utf-8"`` if :c:member:`PyPreConfig.utf8_mode` is non-zero.
+      * ``"ascii"`` if Python detects that ``nl_langinfo(CODESET)`` announces
+        the ASCII encoding (or Roman8 encoding on HP-UX), whereas the
+        ``mbstowcs()`` function decodes from a different encoding (usually
+        Latin1).
+      * ``"utf-8"`` if ``nl_langinfo(CODESET)`` returns an empty string.
+      * Otherwise, use the :term:`locale encoding`:
+        ``nl_langinfo(CODESET)`` result.
+
+      At Python statup, the encoding name is normalized to the Python codec
+      name. For example, ``"ANSI_X3.4-1968"`` is replaced with ``"ascii"``.
+
+      See also the :c:member:`~PyConfig.filesystem_errors` member.
 
    .. c:member:: wchar_t* filesystem_errors
 
-      Filesystem encoding errors, :func:`sys.getfilesystemencodeerrors`.
+      :term:`Filesystem error handler <filesystem encoding and error handler>`:
+      :func:`sys.getfilesystemencodeerrors`.
+
+      On Windows: use ``"surrogatepass"`` by default, or ``"replace"``  if
+      :c:member:`~PyPreConfig.legacy_windows_fs_encoding` of
+      :c:type:`PyPreConfig` is non-zero.
+
+      On other platforms: use ``"surrogateescape"`` by default.
+
+      Supported error handlers:
+
+      * ``"strict"``
+      * ``"surrogateescape"``
+      * ``"surrogatepass"`` (only supported with the UTF-8 encoding)
+
+      See also the :c:member:`~PyConfig.filesystem_encoding` member.
 
    .. c:member:: unsigned long hash_seed
    .. c:member:: int use_hash_seed
@@ -511,30 +672,62 @@ PyConfig
       Randomized hash function seed.
 
       If :c:member:`~PyConfig.use_hash_seed` is zero, a seed is chosen randomly
-      at Pythonstartup, and :c:member:`~PyConfig.hash_seed` is ignored.
+      at Python startup, and :c:member:`~PyConfig.hash_seed` is ignored.
+
+      Set by the :envvar:`PYTHONHASHSEED` environment variable.
+
+      Default *use_hash_seed* value: ``-1`` in Python mode, ``0`` in isolated
+      mode.
 
    .. c:member:: wchar_t* home
 
       Python home directory.
 
-      Initialized from :envvar:`PYTHONHOME` environment variable value by
-      default.
+      If :c:func:`Py_SetPythonHome` has been called, use its argument if it is
+      not ``NULL``.
+
+      Set by the :envvar:`PYTHONHOME` environment variable.
+
+      Default: ``NULL``.
+
+      Part of the :ref:`Path Configuration <init-path-config>` input.
 
    .. c:member:: int import_time
 
       If non-zero, profile import time.
 
+      Set the ``1`` by the :option:`-X importtime <-X>` option and the
+      :envvar:`PYTHONPROFILEIMPORTTIME` environment variable.
+
+      Default: ``0``.
+
    .. c:member:: int inspect
 
       Enter interactive mode after executing a script or a command.
 
+      If greater than 0, enable inspect: when a script is passed as first
+      argument or the -c option is used, enter interactive mode after executing
+      the script or the command, even when :data:`sys.stdin` does not appear to
+      be a terminal.
+
+      Incremented by the :option:`-i` command line option. Set to ``1`` if the
+      :envvar:`PYTHONINSPECT` environment variable is non-empty.
+
+      Default: ``0``.
+
    .. c:member:: int install_signal_handlers
 
-      Install signal handlers?
+      Install Python signal handlers?
+
+      Default: ``1`` in Python mode, ``0`` in isolated mode.
 
    .. c:member:: int interactive
 
-      Interactive mode.
+      If greater than 0, enable the interactive mode (REPL).
+
+      Incremented by the :option:`-i` command line option.
+
+      Default: ``0``.
 
    .. c:member:: int isolated
 
@@ -548,50 +741,93 @@ PyConfig
       * Set :c:member:`~PyConfig.use_environment` and
         :c:member:`~PyConfig.user_site_directory` to 0.
 
+      Default: ``0`` in Python mode, ``1`` in isolated mode.
+
+      See also :c:member:`PyPreConfig.isolated`.
+
    .. c:member:: int legacy_windows_stdio
 
       If non-zero, use :class:`io.FileIO` instead of
       :class:`io.WindowsConsoleIO` for :data:`sys.stdin`, :data:`sys.stdout`
       and :data:`sys.stderr`.
 
+      Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSSTDIO` environment
+      variable is set to a non-empty string.
+
       Only available on Windows. ``#ifdef MS_WINDOWS`` macro can be used for
       Windows specific code.
+
+      Default: ``0``.
+
+      See also the :pep:`528` (Change Windows console encoding to UTF-8).
 
    .. c:member:: int malloc_stats
 
       If non-zero, dump statistics on :ref:`Python pymalloc memory allocator
       <pymalloc>` at exit.
 
+      Set to ``1`` by the :envvar:`PYTHONMALLOCSTATS` environment variable.
+
       The option is ignored if Python is built using ``--without-pymalloc``.
+
+      Default: ``0``.
+
+   .. c:member:: wchar_t* platlibdir
+
+      Platform library directory name: :data:`sys.platlibdir`.
+
+      Set by the :envvar:`PYTHONPLATLIBDIR` environment variable.
+
+      Default: value of the ``PLATLIBDIR`` macro which is set at configure time
+      by ``--with-platlibdir`` (default: ``"lib"``).
+
+      Part of the :ref:`Path Configuration <init-path-config>` input.
+
+      .. versionadded:: 3.9
 
    .. c:member:: wchar_t* pythonpath_env
 
-      Module search paths as a string separated by ``DELIM``
+      Module search paths (:data:`sys.path`) as a string separated by ``DELIM``
       (:data:`os.path.pathsep`).
 
-      Initialized from :envvar:`PYTHONPATH` environment variable value by
-      default.
+      Set by the :envvar:`PYTHONPATH` environment variable.
+
+      Default: ``NULL``.
+
+      Part of the :ref:`Path Configuration <init-path-config>` input.
 
    .. c:member:: PyWideStringList module_search_paths
    .. c:member:: int module_search_paths_set
 
-      :data:`sys.path`. If :c:member:`~PyConfig.module_search_paths_set` is
-      equal to 0, the :c:member:`~PyConfig.module_search_paths` is overridden
-      by the function calculating the :ref:`Path Configuration
-      <init-path-config>`.
+      Module search paths: :data:`sys.path`.
+
+      If :c:member:`~PyConfig.module_search_paths_set` is equal to 0, the
+      function calculating the :ref:`Path Configuration <init-path-config>`
+      overrides the :c:member:`~PyConfig.module_search_paths` and sets
+      :c:member:`~PyConfig.module_search_paths_set` to ``1``.
+
+      Default: empty list (``module_search_paths``) and ``0``
+      (``module_search_paths_set``).
+
+      Part of the :ref:`Path Configuration <init-path-config>` output.
 
    .. c:member:: int optimization_level
 
       Compilation optimization level:
 
-      * 0: Peephole optimizer (and ``__debug__`` is set to ``True``)
-      * 1: Remove assertions, set ``__debug__`` to ``False``
-      * 2: Strip docstrings
+      * ``0``: Peephole optimizer, set ``__debug__`` to ``True``.
+      * ``1``: Level 0, remove assertions, set ``__debug__`` to ``False``.
+      * ``2``: Level 1, strip docstrings.
+
+      Incremented by the :option:`-O` command line option. Set to the
+      :envvar:`PYTHONOPTIMIZE` environment variable value.
+
+      Default: ``0``.
 
    .. c:member:: PyWideStringList orig_argv
 
       The list of the original command line arguments passed to the Python
-      executable.
+      executable: :data:`sys.orig_argv`.
 
       If :c:member:`~PyConfig.orig_argv` list is empty and
       :c:member:`~PyConfig.argv` is not a list only containing an empty
@@ -603,57 +839,117 @@ PyConfig
       See also the :c:member:`~PyConfig.argv` member and the
       :c:func:`Py_GetArgcArgv` function.
 
+      Default: empty list.
+
       .. versionadded:: 3.10
 
    .. c:member:: int parse_argv
 
+      Parse command line arguments?
+
       If non-zero, parse :c:member:`~PyConfig.argv` the same way the regular
-      Python command line arguments, and strip Python arguments from
-      :c:member:`~PyConfig.argv`: see :ref:`Command Line Arguments
-      <using-on-cmdline>`.
+      Python parses :ref:`command line arguments <using-on-cmdline>`, and strip
+      Python arguments from :c:member:`~PyConfig.argv`.
+
+      Default: ``1`` in Python mode, ``0`` in isolated mode.
 
    .. c:member:: int parser_debug
 
-      If non-zero, turn on parser debugging output (for expert only, depending
+      Parser debug mode. If greater than 0, turn on parser debugging output (for expert only, depending
       on compilation options).
+
+      Incremented by the :option:`-d` command line option. Set to the
+      :envvar:`PYTHONDEBUG` environment variable value.
+
+      Default: ``0``.
 
    .. c:member:: int pathconfig_warnings
 
-      If equal to 0, suppress warnings when calculating the :ref:`Path
-      Configuration <init-path-config>` (Unix only, Windows does not log any
-      warning). Otherwise, warnings are written into ``stderr``.
+      On Unix, if non-zero, calculating the :ref:`Path Configuration
+      <init-path-config>` can log warnings into ``stderr``. If equals to 0,
+      suppress these warnings.
+
+      It has no effect on Windows.
+
+      Default: ``1`` in Python mode, ``0`` in isolated mode.
+
+      Part of the :ref:`Path Configuration <init-path-config>` input.
 
    .. c:member:: wchar_t* prefix
 
-      :data:`sys.prefix`.
+      The site-specific directory prefix where the platform independent Python
+      files are installed: :data:`sys.prefix`.
+
+      Default: ``NULL``.
+
+      Part of the :ref:`Path Configuration <init-path-config>` output.
 
    .. c:member:: wchar_t* program_name
 
-      Program name. Used to initialize :c:member:`~PyConfig.executable`, and in
-      early error messages.
+      Program name used to initialize :c:member:`~PyConfig.executable` and in
+      early error messages during Python initialization.
+
+      * If :func:`Py_SetProgramName` has been called, use its argument.
+      * On macOS, use :envvar:`PYTHONEXECUTABLE` environment variable if set.
+      * If the ``WITH_NEXT_FRAMEWORK`` macro is defined, use
+        :envvar:`__PYVENV_LAUNCHER__` environment variable if set.
+      * Use ``argv[0]`` of :c:member:`~PyConfig.argv` if available and
+        non-empty.
+      * Otherwise, use ``L"python"`` on Windows, or ``L"python3"`` on other
+        platforms.
+
+      Default: ``NULL``.
+
+      Part of the :ref:`Path Configuration <init-path-config>` input.
 
    .. c:member:: wchar_t* pycache_prefix
 
-      :data:`sys.pycache_prefix`: ``.pyc`` cache prefix.
+      Directory where cached ``.pyc`` files are written:
+      :data:`sys.pycache_prefix`.
+
+      Set by the :option:`-X pycache_prefix=PATH <-X>` command line option and
+      the :envvar:`PYTHONPYCACHEPREFIX` environment variable.
 
       If ``NULL``, :data:`sys.pycache_prefix` is set to ``None``.
 
+      Default: ``NULL``.
+
    .. c:member:: int quiet
 
-      Quiet mode. For example, don't display the copyright and version messages
-      in interactive mode.
+      Quiet mode. If greater than 0, don't display the copyright and version at
+      Python startup in interactive mode.
+
+      Incremented by the :option:`-q` command line option.
+
+      Default: ``0``.
 
    .. c:member:: wchar_t* run_command
 
-      ``python3 -c COMMAND`` argument. Used by :c:func:`Py_RunMain`.
+      Value of the :option:`-c` command line option.
+
+      Used by :c:func:`Py_RunMain`.
+
+      Default: ``NULL``.
 
    .. c:member:: wchar_t* run_filename
 
-      ``python3 FILENAME`` argument. Used by :c:func:`Py_RunMain`.
+      Filename passed on the command line: trailing command line argument
+      without :option:`-c` or :option:`-m`.
+
+      For example, it is set to ``script.py`` by the ``python3 script.py arg``
+      command.
+
+      Used by :c:func:`Py_RunMain`.
+
+      Default: ``NULL``.
 
    .. c:member:: wchar_t* run_module
 
-      ``python3 -m MODULE`` argument. Used by :c:func:`Py_RunMain`.
+      Value of the :option:`-m` command line option.
+
+      Used by :c:func:`Py_RunMain`.
+
+      Default: ``NULL``.
 
    .. c:member:: int show_ref_count
 
@@ -663,64 +959,146 @@ PyConfig
 
       Need a debug build of Python (``Py_REF_DEBUG`` macro must be defined).
 
+      Default: ``0``.
+
    .. c:member:: int site_import
 
       Import the :mod:`site` module at startup?
 
+      If equal to zero, disable the import of the module site and the
+      site-dependent manipulations of :data:`sys.path` that it entails.
+
+      Also disable these manipulations if the :mod:`site` module is explicitly
+      imported later (call :func:`site.main` if you want them to be triggered).
+
+      Set to ``0`` by the :option:`-S` command line option.
+
+      :data:`sys.flags.no_site` is set to the inverted value of
+      :c:member:`~PyConfig.site_import`.
+
+      Default: ``1``.
+
    .. c:member:: int skip_source_first_line
 
-      Skip the first line of the source?
+      If non-zero, skip the first line of the :c:member:`PyConfig.run_filename`
+      source.
+
+      It allows the usage of non-Unix forms of ``#!cmd``. This is intended for
+      a DOS specific hack only.
+
+      Set to ``1`` by the :option:`-x` command line option.
+
+      Default: ``0``.
 
    .. c:member:: wchar_t* stdio_encoding
    .. c:member:: wchar_t* stdio_errors
 
       Encoding and encoding errors of :data:`sys.stdin`, :data:`sys.stdout` and
-      :data:`sys.stderr`.
+      :data:`sys.stderr` (but :data:`sys.stderr` always uses
+      ``"backslashreplace"`` error handler).
+
+      If :c:func:`Py_SetStandardStreamEncoding` has been called, use its
+      *error* and *errors* arguments if they are not ``NULL``.
+
+      Use the :envvar:`PYTHONIOENCODING` environment variable if it is
+      non-empty.
+
+      Default encoding:
+
+      * ``"UTF-8"`` if :c:member:`PyPreConfig.utf8_mode` is non-zero.
+      * Otherwise, use the :term:`locale encoding`.
+
+      Default error handler:
+
+      * On Windows: use ``"surrogateescape"``.
+      * ``"surrogateescape"`` if :c:member:`PyPreConfig.utf8_mode` is non-zero,
+        or if the LC_CTYPE locale is "C" or "POSIX".
+      * ``"strict"`` otherwise.
 
    .. c:member:: int tracemalloc
 
+      Enable tracemalloc?
+
       If non-zero, call :func:`tracemalloc.start` at startup.
+
+      Set by :option:`-X tracemalloc=N <-X>` command line option and by the
+      :envvar:`PYTHONTRACEMALLOC` environment variable.
+
+      Default: ``-1`` in Python mode, ``0`` in isolated mode.
 
    .. c:member:: int use_environment
 
-      If greater than 0, use :ref:`environment variables <using-on-envvars>`.
+      Use :ref:`environment variables <using-on-envvars>`?
+
+      If equals to zero, ignore the :ref:`environment variables
+      <using-on-envvars>`.
+
+      Default: ``1`` in Python config and ``0`` in isolated config.
 
    .. c:member:: int user_site_directory
 
-      If non-zero, add user site directory to :data:`sys.path`.
+      If non-zero, add the user site directory to :data:`sys.path`.
+
+      Set to ``0`` by the :option:`-s` and :option:`-I` command line options.
+
+      Set to ``0`` by the :envvar:`PYTHONNOUSERSITE` environment variable.
+
+      Default: ``1`` in Python mode, ``0`` in isolated mode.
 
    .. c:member:: int verbose
 
-      If non-zero, enable verbose mode.
+      Verbose mode. If greater than 0, print a message each time a module is
+      imported, showing the place (filename or built-in module) from which
+      it is loaded.
+
+      If greater or equal to 2, print a message for each file that is checked
+      for when searching for a module. Also provides information on module
+      cleanup at exit.
+
+      Incremented by the :option:`-v` command line option.
+
+      Set to the :envvar:`PYTHONVERBOSE` environment variable value.
+
+      Default: ``0``.
 
    .. c:member:: PyWideStringList warnoptions
 
-      :data:`sys.warnoptions`: options of the :mod:`warnings` module to build
-      warnings filters: lowest to highest priority.
+      Options of the :mod:`warnings` module to build warnings filters, lowest
+      to highest priority: :data:`sys.warnoptions`.
 
       The :mod:`warnings` module adds :data:`sys.warnoptions` in the reverse
       order: the last :c:member:`PyConfig.warnoptions` item becomes the first
       item of :data:`warnings.filters` which is checked first (highest
       priority).
 
+      Default: empty list.
+
    .. c:member:: int write_bytecode
 
-      If non-zero, write ``.pyc`` files.
+      If equal to 0, Python won't try to write ``.pyc`` files on the import of
+      source modules.
+
+      Set to ``0`` by the :option:`-B` command line option and the
+      :envvar:`PYTHONDONTWRITEBYTECODE` environment variable.
 
       :data:`sys.dont_write_bytecode` is initialized to the inverted value of
       :c:member:`~PyConfig.write_bytecode`.
 
+      Default: ``1``.
+
    .. c:member:: PyWideStringList xoptions
 
-      :data:`sys._xoptions`.
+      Values of the :option:`-X` command line options: :data:`sys._xoptions`.
 
-If ``parse_argv`` is non-zero, ``argv`` arguments are parsed the same
-way the regular Python parses command line arguments, and Python
-arguments are stripped from ``argv``: see :ref:`Command Line Arguments
-<using-on-cmdline>`.
+      Default: empty list.
 
-The ``xoptions`` options are parsed to set other options: see :option:`-X`
-option.
+If :c:member:`~PyConfig.parse_argv` is non-zero, :c:member:`~PyConfig.argv`
+arguments are parsed the same way the regular Python parses :ref:`command line
+arguments <using-on-cmdline>`, and Python arguments are stripped from
+:c:member:`~PyConfig.argv`.
+
+The :c:member:`~PyConfig.xoptions` options are parsed to set other options: see
+the :option:`-X` command line option.
 
 .. versionchanged:: 3.9
 
@@ -739,9 +1117,9 @@ Function to initialize Python:
 The caller is responsible to handle exceptions (error or exit) using
 :c:func:`PyStatus_Exception` and :c:func:`Py_ExitStatusException`.
 
-If ``PyImport_FrozenModules``, ``PyImport_AppendInittab()`` or
-``PyImport_ExtendInittab()`` are used, they must be set or called after Python
-preinitialization and before the Python initialization.
+If :c:func:`PyImport_FrozenModules`, :c:func:`PyImport_AppendInittab` or
+:c:func:`PyImport_ExtendInittab` are used, they must be set or called after
+Python preinitialization and before the Python initialization.
 
 Example setting the program name::
 
@@ -786,7 +1164,7 @@ configuration, and then override some parameters::
 
            Implicitly preinitialize Python. */
         status = PyConfig_SetBytesString(&config, &config.program_name,
-                                      program_name);
+                                         program_name);
         if (PyStatus_Exception(status)) {
             goto done;
         }
@@ -852,7 +1230,8 @@ the regular Python.
 Environments variables and command line arguments are used to configure
 Python, whereas global configuration variables are ignored.
 
-This function enables C locale coercion (:pep:`538`) and UTF-8 Mode
+This function enables C locale coercion (:pep:`538`)
+and :ref:`Python UTF-8 Mode <utf8-mode>`
 (:pep:`540`) depending on the LC_CTYPE locale, :envvar:`PYTHONUTF8` and
 :envvar:`PYTHONCOERCECLOCALE` environment variables.
 

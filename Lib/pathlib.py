@@ -1264,14 +1264,14 @@ class Path(PurePath):
         with self.open(mode='wb') as f:
             return f.write(view)
 
-    def write_text(self, data, encoding=None, errors=None):
+    def write_text(self, data, encoding=None, errors=None, newline=None):
         """
         Open the file in text mode, write to it, and close the file.
         """
         if not isinstance(data, str):
             raise TypeError('data must be str, not %s' %
                             data.__class__.__name__)
-        with self.open(mode='w', encoding=encoding, errors=errors) as f:
+        with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
     def readlink(self):
@@ -1366,17 +1366,26 @@ class Path(PurePath):
 
     def rename(self, target):
         """
-        Rename this path to the given path,
-        and return a new Path instance pointing to the given path.
+        Rename this path to the target path.
+
+        The target path may be absolute or relative. Relative paths are
+        interpreted relative to the current working directory, *not* the
+        directory of the Path object.
+
+        Returns the new Path instance pointing to the target path.
         """
         self._accessor.rename(self, target)
         return self.__class__(target)
 
     def replace(self, target):
         """
-        Rename this path to the given path, clobbering the existing
-        destination if it exists, and return a new Path instance
-        pointing to the given path.
+        Rename this path to the target path, overwriting if that path exists.
+
+        The target path may be absolute or relative. Relative paths are
+        interpreted relative to the current working directory, *not* the
+        directory of the Path object.
+
+        Returns the new Path instance pointing to the target path.
         """
         self._accessor.replace(self, target)
         return self.__class__(target)

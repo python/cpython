@@ -1,2 +1,0 @@
-Fix decoding errors with audit when open files with non-ASCII names on non-UTF-8
-locale.

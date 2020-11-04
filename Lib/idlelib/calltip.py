@@ -55,18 +55,50 @@ class Calltip:
             self.open_calltip(False)
 
     def open_calltip(self, evalfuncs):
-        self.remove_calltip_window()
+        """Maybe close an existing calltip and maybe open a new calltip.
 
+        Called from (force_open|try_open|refresh)_calltip_event functions.
+        """
         hp = HyperParser(self.editwin, "insert")
         sur_paren = hp.get_surrounding_brackets('(')
+
+        # If not inside parentheses, no calltip.
         if not sur_paren:
+            self.remove_calltip_window()
             return
+
+        # If a calltip is shown for the current parentheses, do
+        # nothing.
+        if self.active_calltip:
+            opener_line, opener_col = map(int, sur_paren[0].split('.'))
+            if (
+                (opener_line, opener_col) ==
+                (self.active_calltip.parenline, self.active_calltip.parencol)
+            ):
+                return
+
         hp.set_index(sur_paren[0])
-        expression  = hp.get_expression()
+        try:
+            expression = hp.get_expression()
+        except ValueError:
+            expression = None
         if not expression:
+            # No expression before the opening parenthesis, e.g.
+            # because it's in a string or the opener for a tuple:
+            # Do nothing.
             return
+
+        # At this point, the current index is after an opening
+        # parenthesis, in a section of code, preceded by a valid
+        # expression. If there is a calltip shown, it's not for the
+        # same index and should be closed.
+        self.remove_calltip_window()
+
+        # Simple, fast heuristic: If the preceding expression includes
+        # an opening parenthesis, it likely includes a function call.
         if not evalfuncs and (expression.find('(') != -1):
             return
+
         argspec = self.fetch_tip(expression)
         if not argspec:
             return
@@ -118,7 +150,6 @@ _INDENT = ' '*4  # for wrapped signatures
 _first_param = re.compile(r'(?<=\()\w*\,?\s*')
 _default_callable_argspec = "See source or doc"
 _invalid_method = "invalid method signature"
-_argument_positional = "  # '/' marks preceding args as positional-only."
 
 def get_argspec(ob):
     '''Return a string describing the signature of a callable object, or ''.
@@ -146,9 +177,6 @@ def get_argspec(ob):
         else:
             argspec = ''
 
-    if '/' in argspec and len(argspec) < _MAX_COLS - len(_argument_positional):
-        # Add explanation TODO remove after 3.7, before 3.9.
-        argspec += _argument_positional
     if isinstance(fob, type) and argspec == '()':
         # If fob has no argument, use default callable argspec.
         argspec = _default_callable_argspec

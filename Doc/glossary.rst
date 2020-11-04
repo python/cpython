@@ -301,12 +301,19 @@ Glossary
       including functions, methods, properties, class methods, static methods,
       and reference to super classes.
 
-      For more information about descriptors' methods, see :ref:`descriptors`.
+      For more information about descriptors' methods, see :ref:`descriptors`
+      or the :ref:`Descriptor How To Guide <descriptorhowto>`.
 
    dictionary
       An associative array, where arbitrary keys are mapped to values.  The
       keys can be any object with :meth:`__hash__` and :meth:`__eq__` methods.
       Called a hash in Perl.
+
+   dictionary comprehension
+      A compact way to process all or part of the elements in an iterable and
+      return a dictionary with the results. ``results = {n: n ** 2 for n in
+      range(10)}`` generates a dictionary containing key ``n`` mapped to
+      value ``n ** 2``. See :ref:`comprehensions`.
 
    dictionary view
       The objects returned from :meth:`dict.keys`, :meth:`dict.values`, and
@@ -378,6 +385,25 @@ Glossary
 
    file-like object
       A synonym for :term:`file object`.
+
+   filesystem encoding and error handler
+      Encoding and error handler used by Python to decode bytes from the
+      operating system and encode Unicode to the operating system.
+
+      The filesystem encoding must guarantee to successfully decode all bytes
+      below 128. If the file system encoding fails to provide this guarantee,
+      API functions can raise :exc:`UnicodeError`.
+
+      The :func:`sys.getfilesystemencoding` and
+      :func:`sys.getfilesystemencodeerrors` functions can be used to get the
+      filesystem encoding and error handler.
+
+      The :term:`filesystem encoding and error handler` are configured at
+      Python startup by the :c:func:`PyConfig_Read` function: see
+      :c:member:`~PyConfig.filesystem_encoding` and
+      :c:member:`~PyConfig.filesystem_errors` members of :c:type:`PyConfig`.
+
+      See also the :term:`locale encoding`.
 
    finder
       An object that tries to find the :term:`loader` for a module that is
@@ -476,6 +502,13 @@ Glossary
       See also the :term:`single dispatch` glossary entry, the
       :func:`functools.singledispatch` decorator, and :pep:`443`.
 
+   generic type
+      A :term:`type` that can be parameterized; typically a container like
+      :class:`list`. Used for :term:`type hints <type hint>` and
+      :term:`annotations <annotation>`.
+
+      See :pep:`483` for more details, and :mod:`typing` or
+      :ref:`generic alias type <types-genericalias>` for its uses.
 
    GIL
       See :term:`global interpreter lock`.
@@ -658,6 +691,18 @@ Glossary
       code, ``if key in mapping: return mapping[key]`` can fail if another
       thread removes *key* from *mapping* after the test, but before the lookup.
       This issue can be solved with locks or by using the EAFP approach.
+
+   locale encoding
+      On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
+      ``locale.setlocale(locale.LC_CTYPE, new_locale)``.
+
+      On Windows, it is is the ANSI code page (ex: ``cp1252``).
+
+      ``locale.getpreferredencoding(False)`` can be used to get the locale
+      encoding.
+
+      Python uses the :term:`filesystem encoding and error handler` to convert
+      between Unicode filenames and bytes filenames.
 
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
@@ -1024,7 +1069,13 @@ Glossary
       :meth:`index`, :meth:`__contains__`, and
       :meth:`__reversed__`. Types that implement this expanded
       interface can be registered explicitly using
-      :func:`~abc.register`.
+      :func:`~abc.ABCMeta.register`.
+
+   set comprehension
+      A compact way to process all or part of the elements in an iterable and
+      return a set with the results. ``results = {c for c in 'abracadabra' if
+      c not in 'abc'}`` generates the set of strings ``{'r', 'd'}``.  See
+      :ref:`comprehensions`.
 
    single dispatch
       A form of :term:`generic function` dispatch where the implementation is
@@ -1084,19 +1135,15 @@ Glossary
       Type aliases are useful for simplifying :term:`type hints <type hint>`.
       For example::
 
-         from typing import List, Tuple
-
          def remove_gray_shades(
-                 colors: List[Tuple[int, int, int]]) -> List[Tuple[int, int, int]]:
+                 colors: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
              pass
 
       could be made more readable like this::
 
-         from typing import List, Tuple
+         Color = tuple[int, int, int]
 
-         Color = Tuple[int, int, int]
-
-         def remove_gray_shades(colors: List[Color]) -> List[Color]:
+         def remove_gray_shades(colors: list[Color]) -> list[Color]:
              pass
 
       See :mod:`typing` and :pep:`484`, which describe this functionality.

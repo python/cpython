@@ -61,8 +61,6 @@ class CollationTests(unittest.TestCase):
         self.assertEqual(result[0][0], 'b')
         self.assertEqual(result[1][0], 'a')
 
-    @unittest.skipIf(sqlite.sqlite_version_info < (3, 2, 1),
-                     'old SQLite versions crash on this test')
     def CheckCollationIsUsed(self):
         def mycoll(x, y):
             # reverse order
@@ -240,16 +238,12 @@ class TraceCallbackTests(unittest.TestCase):
             traced_statements.append(statement)
         con.set_trace_callback(trace)
         con.execute("create table foo(x)")
-        # Can't execute bound parameters as their values don't appear
-        # in traced statements before SQLite 3.6.21
-        # (cf. http://www.sqlite.org/draft/releaselog/3_6_21.html)
         con.execute('insert into foo(x) values ("%s")' % unicode_value)
         con.commit()
         self.assertTrue(any(unicode_value in stmt for stmt in traced_statements),
                         "Unicode data %s garbled in trace callback: %s"
                         % (ascii(unicode_value), ', '.join(map(ascii, traced_statements))))
 
-    @unittest.skipIf(sqlite.sqlite_version_info < (3, 3, 9), "sqlite3_prepare_v2 is not available")
     def CheckTraceCallbackContent(self):
         # set_trace_callback() shouldn't produce duplicate content (bpo-26187)
         traced_statements = []

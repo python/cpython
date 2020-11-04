@@ -6,8 +6,9 @@ import inspect
 import keyword
 import builtins
 import functools
+import abc
 import _thread
-from types import GenericAlias
+from types import FunctionType, GenericAlias
 
 
 __all__ = ['dataclass',
@@ -398,8 +399,10 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
 
     ns = {}
     exec(txt, globals, ns)
-    return ns['__create_fn__'](**locals)
-
+    func = ns['__create_fn__'](**locals)
+    for arg, annotation in func.__annotations__.copy().items():
+        func.__annotations__[arg] = locals[annotation]
+    return func
 
 def _field_assign(frozen, name, value, self_name):
     # If we're a frozen class, then assign to our fields in __init__
@@ -650,6 +653,11 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
     # a eval() penalty for every single field of every dataclass
     # that's defined.  It was judged not worth it.
 
+    # Strip away the extra quotes as a result of double-stringifying when the
+    # 'annotations' feature became default.
+    if annotation.startswith(("'", '"')) and annotation.endswith(("'", '"')):
+        annotation = annotation[1:-1]
+
     match = _MODULE_IDENTIFIER_RE.match(annotation)
     if match:
         ns = None
@@ -749,12 +757,19 @@ def _get_field(cls, a_name, a_type):
 
     return f
 
+def _set_qualname(cls, value):
+    # Ensure that the functions returned from _create_fn uses the proper
+    # __qualname__ (the class they belong to).
+    if isinstance(value, FunctionType):
+        value.__qualname__ = f"{cls.__qualname__}.{value.__name__}"
+    return value
 
 def _set_new_attribute(cls, name, value):
     # Never overwrites an existing attribute.  Returns True if the
     # attribute already exists.
     if name in cls.__dict__:
         return True
+    _set_qualname(cls, value)
     setattr(cls, name, value)
     return False
 
@@ -769,7 +784,7 @@ def _hash_set_none(cls, fields, globals):
 
 def _hash_add(cls, fields, globals):
     flds = [f for f in fields if (f.compare if f.hash is None else f.hash)]
-    return _hash_fn(flds, globals)
+    return _set_qualname(cls, _hash_fn(flds, globals))
 
 def _hash_exception(cls, fields, globals):
     # Raise an exception.
@@ -990,7 +1005,9 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
     if not getattr(cls, '__doc__'):
         # Create a class doc-string.
         cls.__doc__ = (cls.__name__ +
-                       str(inspect.signature(cls)).replace(' -> None', ''))
+                       str(inspect.signature(cls)).replace(' -> NoneType', ''))
+
+    abc.update_abstractmethods(cls)
 
     return cls
 

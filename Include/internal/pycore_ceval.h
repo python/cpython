@@ -63,8 +63,6 @@ extern void _PyEval_ReleaseLock(PyThreadState *tstate);
 
 /* --- _Py_EnterRecursiveCall() ----------------------------------------- */
 
-PyAPI_DATA(int) _Py_CheckRecursionLimit;
-
 #ifdef USE_STACKCHECK
 /* With USE_STACKCHECK macro defined, trigger stack checks in
    _Py_CheckRecursiveCall() on every 64th call to Py_EnterRecursiveCall. */

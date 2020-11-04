@@ -48,7 +48,7 @@ General notes on the underlying Mersenne Twister core generator:
 from warnings import warn as _warn
 from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
-from math import tau as TWOPI, floor as _floor
+from math import tau as TWOPI, floor as _floor, isfinite as _isfinite
 from os import urandom as _urandom
 from _collections_abc import Set as _Set, Sequence as _Sequence
 from itertools import accumulate as _accumulate, repeat as _repeat
@@ -492,6 +492,8 @@ class Random(_random.Random):
         total = cum_weights[-1] + 0.0   # convert to float
         if total <= 0.0:
             raise ValueError('Total of weights must be greater than zero')
+        if not _isfinite(total):
+            raise ValueError('Total of weights must be finite')
         bisect = _bisect
         hi = n - 1
         return [population[bisect(cum_weights, random() * total, 0, hi)]

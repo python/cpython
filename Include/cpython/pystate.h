@@ -56,8 +56,6 @@ struct _ts {
     int recursion_depth;
     char overflowed; /* The stack has overflowed. Allow 50 more calls
                         to handle the runtime error. */
-    char recursion_critical; /* The current calls must not cause
-                                a stack overflow. */
     int stackcheck_counter;
 
     /* 'tracing' keeps track of the execution depth when tracing/profiling.
@@ -168,6 +166,11 @@ PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
    thread id to that thread's current frame.
 */
 PyAPI_FUNC(PyObject *) _PyThread_CurrentFrames(void);
+
+/* The implementation of sys._current_exceptions()  Returns a dict mapping
+   thread id to that thread's current exception.
+*/
+PyAPI_FUNC(PyObject *) _PyThread_CurrentExceptions(void);
 
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */

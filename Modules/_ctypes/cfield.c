@@ -658,7 +658,11 @@ i_get_sw(void *ptr, Py_ssize_t size)
     return PyLong_FromLong(val);
 }
 
-#ifdef MS_WIN32
+#ifndef MS_WIN32
+/* http://msdn.microsoft.com/en-us/library/cc237864.aspx */
+#define VARIANT_FALSE 0x0000
+#define VARIANT_TRUE 0xFFFF
+#endif
 /* short BOOL - VARIANT_BOOL */
 static PyObject *
 vBOOL_set(void *ptr, PyObject *value, Py_ssize_t size)
@@ -680,7 +684,6 @@ vBOOL_get(void *ptr, Py_ssize_t size)
 {
     return PyBool_FromLong((long)*(short int *)ptr);
 }
-#endif
 
 static PyObject *
 bool_set(void *ptr, PyObject *value, Py_ssize_t size)
@@ -1511,8 +1514,8 @@ static struct fielddesc formattable[] = {
 #endif
 #ifdef MS_WIN32
     { 'X', BSTR_set, BSTR_get, &ffi_type_pointer},
-    { 'v', vBOOL_set, vBOOL_get, &ffi_type_sshort},
 #endif
+    { 'v', vBOOL_set, vBOOL_get, &ffi_type_sshort},
 #if SIZEOF__BOOL == 1
     { '?', bool_set, bool_get, &ffi_type_uchar}, /* Also fallback for no native _Bool support */
 #elif SIZEOF__BOOL == SIZEOF_SHORT
