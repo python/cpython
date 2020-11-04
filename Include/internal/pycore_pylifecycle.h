@@ -44,7 +44,7 @@ extern PyStatus _PySys_Create(
     PyObject **sysmod_p);
 extern PyStatus _PySys_ReadPreinitWarnOptions(PyWideStringList *options);
 extern PyStatus _PySys_ReadPreinitXOptions(PyConfig *config);
-extern int _PySys_InitMain(PyThreadState *tstate);
+extern int _PySys_UpdateConfig(PyThreadState *tstate);
 extern PyStatus _PyExc_Init(PyThreadState *tstate);
 extern PyStatus _PyErr_Init(void);
 extern PyStatus _PyBuiltins_AddExceptions(PyObject * bltinmod);
