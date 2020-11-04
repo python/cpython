@@ -185,7 +185,7 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
         x.destroy()
 
 
-    @unittest.skipIf("Ubuntu" in os.uname(), "Skipped")
+    @unittest.skipIf("Ubuntu" in os.uname().version, "Skipped")
     def test_resize(self):
         x = ttk.LabeledScale(self.root)
         x.pack(expand=True, fill='both')

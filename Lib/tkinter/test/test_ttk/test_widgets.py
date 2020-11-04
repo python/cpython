@@ -443,7 +443,7 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         self.combo.update_idletasks()
 
 
-    @unittest.skipIf("Ubuntu" in os.uname(), "Skipped")
+    @unittest.skipIf("Ubuntu" in os.uname().version, "Skipped")
     def test_virtual_event(self):
         success = []
 
