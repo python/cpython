@@ -260,4 +260,7 @@ The following functions and structs are used to create
       The desired value of the slot. In most cases, this is a pointer
       to a function.
 
-      May not be ``NULL``.
+     .. versionchanged:: 3.10
+
+        The ``Py_tp_doc`` slot now can accepts ``NULL`` value.
+        Previously, the slot may not be ``NULL``.
