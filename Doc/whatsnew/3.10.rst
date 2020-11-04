@@ -224,6 +224,14 @@ Add :data:`sys.orig_argv` attribute: the list of the original command line
 arguments passed to the Python executable.
 (Contributed by Victor Stinner in :issue:`23427`.)
 
+threading
+---------
+
+Added :func:`threading.gettrace` and :func:`threading.getprofile` to
+retrieve the functions set by :func:`threading.settrace` and
+:func:`threading.setprofile` respectively.
+(Contributed by Mario Corchero in :issue:`42251`.)
+
 types
 -----
 
