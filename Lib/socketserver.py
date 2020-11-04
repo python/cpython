@@ -128,7 +128,6 @@ import selectors
 import os
 import sys
 import threading
-import contextlib
 from io import BufferedIOBase
 from time import monotonic as time
 
@@ -647,11 +646,7 @@ class _Threads(list):
             thread.join()
 
     def reap(self):
-        dead = [thread for thread in self if not thread.is_alive()]
-        for thread in dead:
-            # should not happen, but safe to ignore
-            with contextlib.suppress(ValueError):
-                self.remove(thread)
+        self[:] = (thread for thread in self if thread.is_alive())
 
 
 class _NoThreads:
