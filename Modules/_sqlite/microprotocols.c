@@ -38,14 +38,12 @@ static PyObject *psyco_adapters = NULL;
 int
 pysqlite_microprotocols_init(PyObject *module)
 {
-    int res;
-
     /* create adapters dictionary and put it in module namespace */
     if ((psyco_adapters = PyDict_New()) == NULL) {
         return -1;
     }
 
-    res = PyModule_AddObjectRef(module, "adapters", psyco_adapters);
+    int res = PyModule_AddObjectRef(module, "adapters", psyco_adapters);
     Py_DECREF(psyco_adapters);
 
     return res;
