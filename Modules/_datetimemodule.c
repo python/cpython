@@ -6494,32 +6494,9 @@ static PyDateTime_CAPI CAPI = {
     new_time_ex2
 };
 
-
-
-static struct PyModuleDef datetimemodule = {
-    PyModuleDef_HEAD_INIT,
-    "_datetime",
-    "Fast implementation of the datetime type.",
-    -1,
-    module_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-PyMODINIT_FUNC
-PyInit__datetime(void)
+static int
+_datetime_exec(PyObject *module)
 {
-    PyObject *m;        /* a module object */
-    PyObject *d;        /* its dict */
-    PyObject *x;
-    PyObject *delta;
-
-    m = PyModule_Create(&datetimemodule);
-    if (m == NULL)
-        return NULL;
-
     // `&...` is not a constant expression according to a strict reading
     // of C standards. Fill tp_base at run-time rather than statically.
     // See https://bugs.python.org/issue40777
@@ -6537,136 +6514,131 @@ PyInit__datetime(void)
     };
 
     for (size_t i = 0; i < Py_ARRAY_LENGTH(types); i++) {
-        if (PyModule_AddType(m, types[i]) < 0) {
-            return NULL;
+        if (PyModule_AddType(module, types[i]) < 0) {
+            return -1;
         }
     }
 
     if (PyType_Ready(&PyDateTime_IsoCalendarDateType) < 0) {
-        return NULL;
+        return -1;
     }
     Py_INCREF(&PyDateTime_IsoCalendarDateType);
 
+
+    PyObject *x = NULL;
+
+#define DATETIME_ADD_MACRO(x, c)                    \
+    do {                                            \
+        if (x == NULL) {                            \
+            return -1;                              \
+        }                                           \
+        if (PyDict_SetItemString(d, c, x) < 0) {    \
+            Py_DECREF(x);                           \
+            return -1;                              \
+        }                                           \
+        Py_DECREF(x);                               \
+    } while(0)
+
     /* timedelta values */
-    d = PyDateTime_DeltaType.tp_dict;
-
+    PyObject *d = PyDateTime_DeltaType.tp_dict;
     x = new_delta(0, 0, 1, 0);
-    if (x == NULL || PyDict_SetItemString(d, "resolution", x) < 0)
-        return NULL;
-    Py_DECREF(x);
-
+    DATETIME_ADD_MACRO(x, "resolution");
     x = new_delta(-MAX_DELTA_DAYS, 0, 0, 0);
-    if (x == NULL || PyDict_SetItemString(d, "min", x) < 0)
-        return NULL;
-    Py_DECREF(x);
-
+    DATETIME_ADD_MACRO(x, "min");
     x = new_delta(MAX_DELTA_DAYS, 24*3600-1, 1000000-1, 0);
-    if (x == NULL || PyDict_SetItemString(d, "max", x) < 0)
-        return NULL;
-    Py_DECREF(x);
+    DATETIME_ADD_MACRO(x, "max");
 
     /* date values */
     d = PyDateTime_DateType.tp_dict;
-
     x = new_date(1, 1, 1);
-    if (x == NULL || PyDict_SetItemString(d, "min", x) < 0)
-        return NULL;
-    Py_DECREF(x);
-
+    DATETIME_ADD_MACRO(x, "min");
     x = new_date(MAXYEAR, 12, 31);
-    if (x == NULL || PyDict_SetItemString(d, "max", x) < 0)
-        return NULL;
-    Py_DECREF(x);
-
+    DATETIME_ADD_MACRO(x, "max");
     x = new_delta(1, 0, 0, 0);
-    if (x == NULL || PyDict_SetItemString(d, "resolution", x) < 0)
-        return NULL;
-    Py_DECREF(x);
+    DATETIME_ADD_MACRO(x, "resolution");
 
     /* time values */
     d = PyDateTime_TimeType.tp_dict;
-
     x = new_time(0, 0, 0, 0, Py_None, 0);
-    if (x == NULL || PyDict_SetItemString(d, "min", x) < 0)
-        return NULL;
-    Py_DECREF(x);
-
+    DATETIME_ADD_MACRO(x, "min");
     x = new_time(23, 59, 59, 999999, Py_None, 0);
-    if (x == NULL || PyDict_SetItemString(d, "max", x) < 0)
-        return NULL;
-    Py_DECREF(x);
-
+    DATETIME_ADD_MACRO(x, "max");
     x = new_delta(0, 0, 1, 0);
-    if (x == NULL || PyDict_SetItemString(d, "resolution", x) < 0)
-        return NULL;
-    Py_DECREF(x);
+    DATETIME_ADD_MACRO(x, "resolution");
 
     /* datetime values */
     d = PyDateTime_DateTimeType.tp_dict;
-
     x = new_datetime(1, 1, 1, 0, 0, 0, 0, Py_None, 0);
-    if (x == NULL || PyDict_SetItemString(d, "min", x) < 0)
-        return NULL;
-    Py_DECREF(x);
-
+    DATETIME_ADD_MACRO(x, "min");
     x = new_datetime(MAXYEAR, 12, 31, 23, 59, 59, 999999, Py_None, 0);
-    if (x == NULL || PyDict_SetItemString(d, "max", x) < 0)
-        return NULL;
-    Py_DECREF(x);
-
+    DATETIME_ADD_MACRO(x, "max");
     x = new_delta(0, 0, 1, 0);
-    if (x == NULL || PyDict_SetItemString(d, "resolution", x) < 0)
-        return NULL;
-    Py_DECREF(x);
+    DATETIME_ADD_MACRO(x, "resolution");
 
     /* timezone values */
     d = PyDateTime_TimeZoneType.tp_dict;
+    PyObject *delta = new_delta(0, 0, 0, 0);
+    if (delta == NULL) {
+        return -1;
+    }
 
-    delta = new_delta(0, 0, 0, 0);
-    if (delta == NULL)
-        return NULL;
     x = create_timezone(delta, NULL);
     Py_DECREF(delta);
-    if (x == NULL || PyDict_SetItemString(d, "utc", x) < 0)
-        return NULL;
+    if (x == NULL) {
+        return -1;
+    }
+    if (PyDict_SetItemString(d, "utc", x) < 0) {
+        Py_DECREF(x);
+        return -1;
+    }
+
     PyDateTime_TimeZone_UTC = x;
     CAPI.TimeZone_UTC = PyDateTime_TimeZone_UTC;
 
-    /* bpo-37642: These attributes are rounded to the nearest minute for backwards
-     * compatibility, even though the constructor will accept a wider range of
-     * values. This may change in the future.*/
+    /* bpo-37642: These attributes are rounded to the nearest minute for
+     * backwards compatibility, even though the constructor will accept a
+     * wider range of values. This may change in the future.
+     */
     delta = new_delta(-1, 60, 0, 1); /* -23:59 */
-    if (delta == NULL)
-        return NULL;
+    if (delta == NULL) {
+        return -1;
+    }
     x = create_timezone(delta, NULL);
     Py_DECREF(delta);
-    if (x == NULL || PyDict_SetItemString(d, "min", x) < 0)
-        return NULL;
-    Py_DECREF(x);
+    DATETIME_ADD_MACRO(x, "min");
 
     delta = new_delta(0, (23 * 60 + 59) * 60, 0, 0); /* +23:59 */
-    if (delta == NULL)
-        return NULL;
+    if (delta == NULL) {
+        return -1;
+    }
     x = create_timezone(delta, NULL);
     Py_DECREF(delta);
-    if (x == NULL || PyDict_SetItemString(d, "max", x) < 0)
-        return NULL;
-    Py_DECREF(x);
+    DATETIME_ADD_MACRO(x, "max");
 
     /* Epoch */
     PyDateTime_Epoch = new_datetime(1970, 1, 1, 0, 0, 0, 0,
                                     PyDateTime_TimeZone_UTC, 0);
-    if (PyDateTime_Epoch == NULL)
-      return NULL;
+    if (PyDateTime_Epoch == NULL) {
+      return -1;
+    }
 
     /* module initialization */
-    PyModule_AddIntMacro(m, MINYEAR);
-    PyModule_AddIntMacro(m, MAXYEAR);
+    if (PyModule_AddIntMacro(module, MINYEAR) < 0) {
+        return -1;
+    }
+    if (PyModule_AddIntMacro(module, MAXYEAR) < 0) {
+        return -1;
+    }
 
     x = PyCapsule_New(&CAPI, PyDateTime_CAPSULE_NAME, NULL);
-    if (x == NULL)
-        return NULL;
-    PyModule_AddObject(m, "datetime_CAPI", x);
+    if (x == NULL) {
+        return -1;
+    }
+
+    if (PyModule_AddObject(module, "datetime_CAPI", x) < 0) {
+        Py_DECREF(x);
+        return -1;
+    }
 
     /* A 4-year cycle has an extra leap day over what we'd get from
      * pasting together 4 single years.
@@ -6691,8 +6663,9 @@ PyInit__datetime(void)
     us_per_minute = PyLong_FromLong(60000000);
     seconds_per_day = PyLong_FromLong(24 * 3600);
     if (us_per_ms == NULL || us_per_second == NULL ||
-        us_per_minute == NULL || seconds_per_day == NULL)
-        return NULL;
+        us_per_minute == NULL || seconds_per_day == NULL) {
+        return -1;
+    }
 
     /* The rest are too big for 32-bit ints, but even
      * us_per_week fits in 40 bits, so doubles should be exact.
@@ -6700,9 +6673,33 @@ PyInit__datetime(void)
     us_per_hour = PyLong_FromDouble(3600000000.0);
     us_per_day = PyLong_FromDouble(86400000000.0);
     us_per_week = PyLong_FromDouble(604800000000.0);
-    if (us_per_hour == NULL || us_per_day == NULL || us_per_week == NULL)
+    if (us_per_hour == NULL || us_per_day == NULL || us_per_week == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
+static struct PyModuleDef datetimemodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_datetime",
+    .m_doc = "Fast implementation of the datetime type.",
+    .m_size = -1,
+    .m_methods = module_methods,
+};
+
+PyMODINIT_FUNC
+PyInit__datetime(void)
+{
+    PyObject *mod = PyModule_Create(&datetimemodule);
+    if (mod == NULL)
         return NULL;
-    return m;
+
+    if (_datetime_exec(mod) < 0) {
+        Py_DECREF(mod);
+        return NULL;
+    }
+
+    return mod;
 }
 
 /* ---------------------------------------------------------------------------
