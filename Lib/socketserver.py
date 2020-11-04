@@ -633,6 +633,7 @@ class _Threads(list):
     Joinable list of all non-daemon threads.
     """
     def append(self, thread):
+        self.reap()
         if thread.daemon:
             return
         super().append(thread)
@@ -657,9 +658,6 @@ class _NoThreads:
         pass
 
     def join(self):
-        pass
-
-    def reap(self):
         pass
 
 
@@ -692,7 +690,6 @@ class ThreadingMixIn:
         """Start a new thread to process the request."""
         if self.block_on_close:
             vars(self).setdefault('_threads', _Threads())
-        self._threads.reap()
         t = threading.Thread(target = self.process_request_thread,
                              args = (request, client_address))
         t.daemon = self.daemon_threads
