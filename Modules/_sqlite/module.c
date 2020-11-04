@@ -364,7 +364,7 @@ do {                                                            \
     }                                                           \
     res = PyModule_AddObjectRef(module, name, exc);             \
     Py_DECREF(exc);                                             \
-    if (res == -1) {                                            \
+    if (res < 0) {                                              \
         goto error;                                             \
     }                                                           \
 } while (0)
