@@ -2494,12 +2494,16 @@ set_flags_from_config(PyObject *flags, PyThreadState *tstate)
     const PyPreConfig *preconfig = &interp->runtime->preconfig;
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
 
+    // _PySys_UpdateConfig() modifies sys.flags in-place:
+    // Py_XDECREF() is needed in this case.
     Py_ssize_t pos = 0;
-#define SetFlagObj(value) \
+#define SetFlagObj(expr) \
     do { \
+        PyObject *value = (expr); \
         if (value == NULL) { \
             return -1; \
         } \
+        Py_XDECREF(PyStructSequence_GET_ITEM(flags, pos)); \
         PyStructSequence_SET_ITEM(flags, pos, value); \
         pos++; \
     } while (0)
