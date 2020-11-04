@@ -633,18 +633,13 @@ class _Threads(list):
     """
     Joinable list of all non-daemon threads.
     """
-    def __init__(self):
-        self._lock = threading.Lock()
-
     def append(self, thread):
         if thread.daemon:
             return
-        with self._lock:
-            super().append(thread)
+        super().append(thread)
 
     def pop_all(self):
-        with self._lock:
-            self[:], result = [], self[:]
+        self[:], result = [], self[:]
         return result
 
     def join(self):
@@ -652,12 +647,11 @@ class _Threads(list):
             thread.join()
 
     def reap(self):
-        with self._lock:
-            dead = [thread for thread in self if not thread.is_alive()]
-            for thread in dead:
-                # should not happen, but safe to ignore
-                with contextlib.suppress(ValueError):
-                    self.remove(thread)
+        dead = [thread for thread in self if not thread.is_alive()]
+        for thread in dead:
+            # should not happen, but safe to ignore
+            with contextlib.suppress(ValueError):
+                self.remove(thread)
 
 
 class _NoThreads:
