@@ -374,6 +374,11 @@ New Features
 * Added :c:func:`PyUnicode_AsUTF8AndSize` to the limited C API.
   (Contributed by Alex Gaynor in :issue:`41784`.)
 
+* Added :c:func:`PyModule_AddObjectRef` function: similar to
+  :c:func:`PyModule_AddObjectRef` but don't steal a reference to the value on
+  success.
+  (Contributed by Victor Stinner in :issue:`1635741`.)
+
 
 Porting to Python 3.10
 ----------------------
