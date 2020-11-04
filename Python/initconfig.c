@@ -1515,8 +1515,8 @@ config_init_stdio_encoding(PyConfig *config,
 {
     PyStatus status;
 
-    /* If Py_SetStandardStreamEncoding() have been called, use these
-        parameters. */
+    /* If Py_SetStandardStreamEncoding() has been called, use its
+        arguments if they are not NULL. */
     if (config->stdio_encoding == NULL && _Py_StandardStreamEncoding != NULL) {
         status = CONFIG_SET_BYTES_STR(config, &config->stdio_encoding,
                                       _Py_StandardStreamEncoding,
@@ -1535,6 +1535,7 @@ config_init_stdio_encoding(PyConfig *config,
         }
     }
 
+    // Exit if encoding and errors are defined
     if (config->stdio_encoding != NULL && config->stdio_errors != NULL) {
         return _PyStatus_OK();
     }
@@ -1634,12 +1635,12 @@ config_get_fs_encoding(PyConfig *config, const PyPreConfig *preconfig,
     if (preconfig->utf8_mode) {
         return PyConfig_SetString(config, fs_encoding, L"utf-8");
     }
-    else if (_Py_GetForceASCII()) {
+
+    if (_Py_GetForceASCII()) {
         return PyConfig_SetString(config, fs_encoding, L"ascii");
     }
-    else {
-        return config_get_locale_encoding(config, preconfig, fs_encoding);
-    }
+
+    return config_get_locale_encoding(config, preconfig, fs_encoding);
 #endif  // !MS_WINDOWS
 }
 
