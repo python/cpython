@@ -1115,10 +1115,9 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit('if (state == NULL) {', 1)
         self.emit('return -1;', 2)
         self.emit('}', 1)
-        self.emit('if (PyModule_AddObject(m, "AST", state->AST_type) < 0) {', 1)
+        self.emit('if (PyModule_AddObjectRef(m, "AST", state->AST_type) < 0) {', 1)
         self.emit('return -1;', 2)
         self.emit('}', 1)
-        self.emit('Py_INCREF(state->AST_type);', 1)
         self.emit('if (PyModule_AddIntMacro(m, PyCF_ALLOW_TOP_LEVEL_AWAIT) < 0) {', 1)
         self.emit("return -1;", 2)
         self.emit('}', 1)
@@ -1166,11 +1165,10 @@ PyInit__ast(void)
         self.addObj(cons.name)
 
     def addObj(self, name):
-        self.emit("if (PyModule_AddObject(m, \"%s\", "
+        self.emit("if (PyModule_AddObjectRef(m, \"%s\", "
                   "state->%s_type) < 0) {" % (name, name), 1)
         self.emit("return -1;", 2)
         self.emit('}', 1)
-        self.emit("Py_INCREF(state->%s_type);" % name, 1)
 
 
 class StaticVisitor(PickleVisitor):
