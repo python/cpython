@@ -78,9 +78,8 @@ def _compare_code_obj_values(value_a, value_b, error_location: str) -> bool:
             f'Unexpected dict in {error_location}:\n{value_a}\n !=\n{value_b}')
     elif isinstance(value_a, Iterable):  # usually a tuple
         if len(value_a) != len(value_b):
-            raise ComparisonError(
-                f'Lengths differ in {error_location}:\n'
-                f'{value_a}\n !=\n{value_b}')
+            raise ComparisonError(f'Lengths differ in {error_location}:\n'
+                                  f'{value_a}\n !=\n{value_b}')
         for a, b in zip(value_a, value_b):
             if isinstance(a, _Code) and isinstance(b, _Code):
                 _compare_code_obj_ignoring_line_numbers(
@@ -96,16 +95,18 @@ def _compare_code_obj_values(value_a, value_b, error_location: str) -> bool:
                         a, b, error_location=f'{error_location}.{type(a)}')
 
 
-def _compare_code_obj_ignoring_line_numbers(
-    a: _Code, b: _Code, *, error_location='code') -> None:
+def _compare_code_obj_ignoring_line_numbers(a: _Code,
+                                            b: _Code,
+                                            *,
+                                            error_location='code') -> None:
     """Compare two code objects recursively, ignoring line number information.
 
     Args:
         a: Code object to compare.
         b: Code object to compare.
         error_location: Dotted "path" the object being compared.  Do not supply
-            this yourself, it is used by our recursion to be able to indicate
-            where we found the problem in the exception message.
+          this yourself, it is used by our recursion to be able to indicate
+          where we found the problem in the exception message.
 
     Raises:
         ComparisonError: This exception contains the details of the first
@@ -115,7 +116,7 @@ def _compare_code_obj_ignoring_line_numbers(
         return
 
     # More in depth comparison required to find important differences.
-    attr_names = {name for name in dir(a)+dir(b) if name.startswith('co_')}
+    attr_names = {name for name in dir(a) + dir(b) if name.startswith('co_')}
     attr_names -= _ATTRS_OF_CODE_TO_IGNORE
 
     # Sorting keeps the error message consistent run after run.Putting `co_code`
@@ -139,7 +140,7 @@ def _compare_code_obj_ignoring_line_numbers(
 
 
 def compare_bytecode_ignoring_line_number_changes(
-    before_py_filename: str, after_py_filename: str) -> None:
+        before_py_filename: str, after_py_filename: str) -> None:
     """Compares the bytecode generated for two Python source files.
 
     Line number changes and the different filenames are ignored.
@@ -166,8 +167,8 @@ def main(argv: Sequence[str]):
     before_filename, after_filename = argv[:2]
 
     try:
-        compare_bytecode_ignoring_line_number_changes(
-            before_filename, after_filename)
+        compare_bytecode_ignoring_line_number_changes(before_filename,
+                                                      after_filename)
     except ComparisonError as err:
         print(err)
         return 1
