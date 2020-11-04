@@ -1,3 +1,4 @@
+import os
 import sys
 import unittest
 import tkinter
@@ -184,6 +185,7 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
         x.destroy()
 
 
+    @unittest.skipIf("Ubuntu" in os.uname(), "Skipped")
     def test_resize(self):
         x = ttk.LabeledScale(self.root)
         x.pack(expand=True, fill='both')

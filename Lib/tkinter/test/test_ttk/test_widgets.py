@@ -1,3 +1,4 @@
+import os
 import unittest
 import tkinter
 from tkinter import ttk, TclError
@@ -442,6 +443,7 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         self.combo.update_idletasks()
 
 
+    @unittest.skipIf("Ubuntu" in os.uname(), "Skipped")
     def test_virtual_event(self):
         success = []
 
