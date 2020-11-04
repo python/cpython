@@ -136,6 +136,21 @@ Py_DecRef(PyObject *o)
     Py_XDECREF(o);
 }
 
+#undef Py_NewRef
+#undef Py_XNewRef
+
+PyObject*
+Py_NewRef(PyObject *obj)
+{
+    return _Py_NewRef(obj);
+}
+
+PyObject*
+Py_XNewRef(PyObject *obj)
+{
+    return _Py_XNewRef(obj);
+}
+
 PyObject *
 PyObject_Init(PyObject *op, PyTypeObject *tp)
 {
