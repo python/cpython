@@ -1526,6 +1526,55 @@ static int test_init_warnoptions(void)
 }
 
 
+static int tune_config(void)
+{
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+    if (_PyInterpreterState_GetConfigCopy(&config) < 0) {
+        PyConfig_Clear(&config);
+        PyErr_Print();
+        return -1;
+    }
+
+    config.bytes_warning = 2;
+
+    if (_PyInterpreterState_SetConfig(&config) < 0) {
+        PyConfig_Clear(&config);
+        return -1;
+    }
+    PyConfig_Clear(&config);
+    return 0;
+}
+
+
+static int test_set_config(void)
+{
+    // Initialize core
+    PyConfig config;
+    PyConfig_InitIsolatedConfig(&config);
+    config_set_string(&config, &config.program_name, PROGRAM_NAME);
+    config._init_main = 0;
+    config.bytes_warning = 0;
+    init_from_config_clear(&config);
+
+    // Tune the configuration using _PyInterpreterState_SetConfig()
+    if (tune_config() < 0) {
+        PyErr_Print();
+        return 1;
+    }
+
+    // Finish initialization: main part
+    PyStatus status = _Py_InitializeMain();
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
 static void configure_init_main(PyConfig *config)
 {
     wchar_t* argv[] = {
@@ -1693,6 +1742,7 @@ static struct TestCase TestCases[] = {
     {"test_init_setpath_config", test_init_setpath_config},
     {"test_init_setpythonhome", test_init_setpythonhome},
     {"test_init_warnoptions", test_init_warnoptions},
+    {"test_init_set_config", test_set_config},
     {"test_run_main", test_run_main},
     {"test_get_argc_argv", test_get_argc_argv},
 
