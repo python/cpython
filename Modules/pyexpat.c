@@ -1677,8 +1677,8 @@ add_error(PyObject *errors_module, PyObject *codes_dict,
     }
 
     int res = PyDict_SetItem(rev_codes_dict, num, str);
-    Py_CLEAR(str);
-    Py_CLEAR(num);
+    Py_DECREF(str);
+    Py_DECREF(num);
     if (res < 0) {
         return -1;
     }
@@ -1813,7 +1813,8 @@ add_model_module(PyObject *mod)
 
 #if XML_COMBINED_VERSION > 19505
 static int
-add_features(PyObject *mod) {
+add_features(PyObject *mod)
+{
     PyObject *list = PyList_New(0);
     if (list == NULL) {
         return -1;
@@ -1835,8 +1836,8 @@ add_features(PyObject *mod) {
     if (PyModule_AddObject(mod, "features", list) < 0) {
         goto error;
     }
-
     return 0;
+
 error:
     Py_DECREF(list);
     return -1;
