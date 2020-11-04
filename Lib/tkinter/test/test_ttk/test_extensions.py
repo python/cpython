@@ -4,7 +4,7 @@ import unittest
 import tkinter
 from tkinter import ttk
 from test.support import requires, run_unittest, swap_attr
-from tkinter.test.support import AbstractTkTest, destroy_default_root
+from tkinter.test.support import AbstractTkTest, destroy_default_root, ubuntu
 
 requires('gui')
 
@@ -185,7 +185,7 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
         x.destroy()
 
 
-    @unittest.skipIf("Ubuntu" in os.uname().version, "Skipped")
+    @unittest.skipIf(ubuntu(), "Skipped")
     def test_resize(self):
         x = ttk.LabeledScale(self.root)
         x.pack(expand=True, fill='both')

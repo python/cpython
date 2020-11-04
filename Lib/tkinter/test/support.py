@@ -1,4 +1,5 @@
 import functools
+import os
 import re
 import tkinter
 import unittest
@@ -115,3 +116,9 @@ def widget_eq(actual, expected):
         if isinstance(expected, (str, tkinter.Widget)):
             return str(actual) == str(expected)
     return False
+
+def ubuntu():
+    try:
+        return "Ubuntu" in os.uname().version
+    except AttributeError:
+        return False

@@ -7,7 +7,7 @@ import sys
 
 from tkinter.test.test_ttk.test_functions import MockTclObj
 from tkinter.test.support import (AbstractTkTest, tcl_version, get_tk_patchlevel,
-                                  simulate_mouse_click)
+                                  simulate_mouse_click, ubuntu)
 from tkinter.test.widget_tests import (add_standard_options, noconv,
     AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests,
     setUpModule)
@@ -443,7 +443,7 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         self.combo.update_idletasks()
 
 
-    @unittest.skipIf("Ubuntu" in os.uname().version, "Skipped")
+    @unittest.skipIf(ubuntu(), "Skipped")
     def test_virtual_event(self):
         success = []
 
