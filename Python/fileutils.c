@@ -55,9 +55,6 @@ get_surrogateescape(_Py_error_handler errors, int *surrogateescape)
 PyObject *
 _Py_device_encoding(int fd)
 {
-#if defined(MS_WINDOWS)
-    UINT cp;
-#endif
     int valid;
     _Py_BEGIN_SUPPRESS_IPH
     valid = isatty(fd);
@@ -66,6 +63,7 @@ _Py_device_encoding(int fd)
         Py_RETURN_NONE;
 
 #if defined(MS_WINDOWS)
+    UINT cp;
     if (fd == 0)
         cp = GetConsoleCP();
     else if (fd == 1 || fd == 2)
@@ -74,16 +72,14 @@ _Py_device_encoding(int fd)
         cp = 0;
     /* GetConsoleCP() and GetConsoleOutputCP() return 0 if the application
        has no console */
-    if (cp != 0)
-        return PyUnicode_FromFormat("cp%u", (unsigned int)cp);
-#elif defined(CODESET)
-    {
-        char *codeset = nl_langinfo(CODESET);
-        if (codeset != NULL && codeset[0] != 0)
-            return PyUnicode_FromString(codeset);
+    if (cp == 0) {
+        Py_RETURN_NONE;
     }
+
+    return PyUnicode_FromFormat("cp%u", (unsigned int)cp);
+#else
+    return _Py_GetLocaleEncodingObject();
 #endif
-    Py_RETURN_NONE;
 }
 
 #if !defined(_Py_FORCE_UTF8_FS_ENCODING) && !defined(MS_WINDOWS)
