@@ -1,0 +1,3 @@
+When :c:func:`Py_Initialize` is called twice, the second call now updates
+more :mod:`sys` attributes for the configuration, rather than only
+:data:`sys.argv`. Patch by Victor Stinner.

@@ -949,19 +949,10 @@ done:
    configuration. Example of bpo-34008: Py_Main() called after
    Py_Initialize(). */
 static PyStatus
-_Py_ReconfigureMainInterpreter(PyThreadState *tstate)
+pyinit_main_reconfigure(PyThreadState *tstate)
 {
-    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
-
-    PyObject *argv = _PyWideStringList_AsList(&config->argv);
-    if (argv == NULL) {
-        return _PyStatus_NO_MEMORY(); \
-    }
-
-    int res = PyDict_SetItemString(tstate->interp->sysdict, "argv", argv);
-    Py_DECREF(argv);
-    if (res < 0) {
-        return _PyStatus_ERR("fail to set sys.argv");
+    if (_PySys_UpdateConfig(tstate) < 0) {
+        return _PyStatus_ERR("fail to update sys for the new conf");
     }
     return _PyStatus_OK();
 }
@@ -995,7 +986,7 @@ init_interp_main(PyThreadState *tstate)
         }
     }
 
-    if (_PySys_InitMain(tstate) < 0) {
+    if (_PySys_UpdateConfig(tstate) < 0) {
         return _PyStatus_ERR("can't finish initializing sys");
     }
 
@@ -1100,7 +1091,7 @@ pyinit_main(PyThreadState *tstate)
     }
 
     if (interp->runtime->initialized) {
-        return _Py_ReconfigureMainInterpreter(tstate);
+        return pyinit_main_reconfigure(tstate);
     }
 
     PyStatus status = init_interp_main(tstate);
@@ -1108,19 +1099,6 @@ pyinit_main(PyThreadState *tstate)
         return status;
     }
     return _PyStatus_OK();
-}
-
-
-PyStatus
-_Py_InitializeMain(void)
-{
-    PyStatus status = _PyRuntime_Initialize();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    return pyinit_main(tstate);
 }
 
 
@@ -1188,6 +1166,19 @@ void
 Py_Initialize(void)
 {
     Py_InitializeEx(1);
+}
+
+
+PyStatus
+_Py_InitializeMain(void)
+{
+    PyStatus status = _PyRuntime_Initialize();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+    _PyRuntimeState *runtime = &_PyRuntime;
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    return pyinit_main(tstate);
 }
 
 
