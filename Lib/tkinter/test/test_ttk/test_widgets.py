@@ -1,4 +1,3 @@
-import os
 import unittest
 import tkinter
 from tkinter import ttk, TclError
