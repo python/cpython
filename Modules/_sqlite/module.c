@@ -418,10 +418,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
        non-ASCII data and bytestrings to be returned for ASCII data.
        Now OptimizedUnicode is an alias for str, so it has no
        effect. */
-    Py_INCREF((PyObject*)&PyUnicode_Type);
-    int res = PyModule_AddObjectRef(module, "OptimizedUnicode", (PyObject*)&PyUnicode_Type);
-    Py_DECREF((PyObject*)&PyUnicode_Type);
-    if (res == -1) {
+    if (PyModule_AddObjectRef(module, "OptimizedUnicode", (PyObject*)&PyUnicode_Type) < 0) {
         goto error;
     }
 
