@@ -259,8 +259,10 @@ class TextFactoryTests(unittest.TestCase):
             self.con.text_factory = sqlite.OptimizedUnicode
         austria = "Österreich"
         germany = "Deutchland"
-        self.con.execute("select ?", (austria,)).fetchone()
-        self.con.execute("select ?", (germany,)).fetchone()
+        a_row = self.con.execute("select ?", (austria,)).fetchone()
+        d_row = self.con.execute("select ?", (germany,)).fetchone()
+        self.assertEqual(type(a_row[0]), str, "type of non-ASCII row must be str")
+        self.assertEqual(type(d_row[0]), str, "type of ASCII-only row must be str")
 
     def tearDown(self):
         self.con.close()
