@@ -255,8 +255,9 @@ class TextFactoryTests(unittest.TestCase):
 
     def CheckOptimizedUnicode(self):
         # OptimizedUnicode is deprecated as of Python 3.10
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarns(DeprecationWarning) as cm:
             self.con.text_factory = sqlite.OptimizedUnicode
+        self.assertIn("factory.py", cm.filename)
         austria = "Österreich"
         germany = "Deutchland"
         a_row = self.con.execute("select ?", (austria,)).fetchone()

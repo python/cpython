@@ -5,6 +5,6 @@ def __getattr__(name):
             OptimizedUnicode is obsolete. You can safely remove it from your
             code, as it defaults to 'str' anyway.
         """)
-        warnings.warn(msg, DeprecationWarning)
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
         return str
     raise AttributeError(f"module 'sqlite3' has no attribute '{name}'")
