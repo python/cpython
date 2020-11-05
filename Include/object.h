@@ -526,6 +526,31 @@ they can have object code that is not dependent on Python compilation flags.
 PyAPI_FUNC(void) Py_IncRef(PyObject *);
 PyAPI_FUNC(void) Py_DecRef(PyObject *);
 
+// Increment the reference count of the object and return the object.
+PyAPI_FUNC(PyObject*) Py_NewRef(PyObject *obj);
+
+// Similar to Py_NewRef() but the object can be NULL.
+PyAPI_FUNC(PyObject*) Py_XNewRef(PyObject *obj);
+
+static inline PyObject* _Py_NewRef(PyObject *obj)
+{
+    Py_INCREF(obj);
+    return obj;
+}
+
+static inline PyObject* _Py_XNewRef(PyObject *obj)
+{
+    Py_XINCREF(obj);
+    return obj;
+}
+
+// Py_NewRef() and Py_XNewRef() are exported as functions for the stable ABI.
+// Names overriden with macros by static inline functions for best
+// performances.
+#define Py_NewRef(obj) _Py_NewRef(obj)
+#define Py_XNewRef(obj) _Py_XNewRef(obj)
+
+
 /*
 _Py_NoneStruct is an object of undefined type which can be used in contexts
 where NULL (nil) is not suitable (since NULL often means 'error').
@@ -536,7 +561,7 @@ PyAPI_DATA(PyObject) _Py_NoneStruct; /* Don't use this directly */
 #define Py_None (&_Py_NoneStruct)
 
 /* Macro for returning Py_None from a function */
-#define Py_RETURN_NONE return Py_INCREF(Py_None), Py_None
+#define Py_RETURN_NONE return Py_NewRef(Py_None)
 
 /*
 Py_NotImplemented is a singleton used to signal that an operation is
@@ -546,8 +571,7 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 #define Py_NotImplemented (&_Py_NotImplementedStruct)
 
 /* Macro for returning Py_NotImplemented from a function */
-#define Py_RETURN_NOTIMPLEMENTED \
-    return Py_INCREF(Py_NotImplemented), Py_NotImplemented
+#define Py_RETURN_NOTIMPLEMENTED return Py_NewRef(Py_NotImplemented)
 
 /* Rich comparison opcodes */
 #define Py_LT 0
