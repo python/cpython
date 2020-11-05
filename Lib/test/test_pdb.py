@@ -330,6 +330,7 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...    'import test.test_pdb',
     ...    'break test.test_pdb.do_something',
+    ...    'break test.test_pdb.do_nothing',
     ...    'break',
     ...    'continue',
     ... ]):
@@ -338,9 +339,12 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     (Pdb) import test.test_pdb
     (Pdb) break test.test_pdb.do_something
     Breakpoint 1 at ...test_pdb.py:...
+    (Pdb) break test.test_pdb.do_nothing
+    Breakpoint 2 at ...test_pdb.py:...
     (Pdb) break
     Num Type         Disp Enb   Where
     1   breakpoint   keep yes   at ...test_pdb.py:...
+    2   breakpoint   keep yes   at ...test_pdb.py:...
     (Pdb) continue
 
     >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
@@ -348,7 +352,6 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     ...    'break pdb.find_function',
     ...    'break',
     ...    'clear 1',
-    ...    'clear 2',
     ...    'continue',
     ... ]):
     ...    pdb.run('print()')
@@ -356,16 +359,34 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     (Pdb) break
     Num Type         Disp Enb   Where
     1   breakpoint   keep yes   at ...test_pdb.py:...
+    2   breakpoint   keep yes   at ...test_pdb.py:...
     (Pdb) break pdb.find_function
-    Breakpoint 2 at ...pdb.py:94
+    Breakpoint 3 at ...pdb.py:94
     (Pdb) break
     Num Type         Disp Enb   Where
     1   breakpoint   keep yes   at ...test_pdb.py:...
-    2   breakpoint   keep yes   at ...pdb.py:...
+    2   breakpoint   keep yes   at ...test_pdb.py:...
+    3   breakpoint   keep yes   at ...pdb.py:...
     (Pdb) clear 1
     Deleted breakpoint 1 at ...test_pdb.py:...
+    (Pdb) continue
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...    'break',
+    ...    'clear 2',
+    ...    'clear 3',
+    ...    'continue',
+    ... ]):
+    ...    pdb.run('print()')
+    > <string>(1)<module>()
+    (Pdb) break
+    Num Type         Disp Enb   Where
+    2   breakpoint   keep yes   at ...test_pdb.py:...
+    3   breakpoint   keep yes   at ...pdb.py:...
     (Pdb) clear 2
-    Deleted breakpoint 2 at ...pdb.py:...
+    Deleted breakpoint 2 at ...test_pdb.py:...
+    (Pdb) clear 3
+    Deleted breakpoint 3 at ...pdb.py:...
     (Pdb) continue
     """
 
