@@ -253,14 +253,17 @@ test_set_config(PyObject *Py_UNUSED(self), PyObject *dict)
     PyConfig config;
     PyConfig_InitIsolatedConfig(&config);
     if (_PyConfig_FromDict(&config, dict) < 0) {
-        PyConfig_Clear(&config);
-        return NULL;
+        goto error;
     }
     if (_PyInterpreterState_SetConfig(&config) < 0) {
-        return NULL;
+        goto error;
     }
     PyConfig_Clear(&config);
     Py_RETURN_NONE;
+
+error:
+    PyConfig_Clear(&config);
+    return NULL;
 }
 
 

@@ -2145,6 +2145,11 @@ config_read(PyConfig *config)
         config->configure_c_stdio = 1;
     }
 
+    // Only parse arguments once.
+    if (config->parse_argv == 1) {
+        config->parse_argv = 2;
+    }
+
     return _PyStatus_OK();
 }
 
@@ -2635,7 +2640,7 @@ core_read_precmdline(PyConfig *config, _PyPreCmdline *precmdline)
 {
     PyStatus status;
 
-    if (config->parse_argv) {
+    if (config->parse_argv == 1) {
         if (_PyWideStringList_Copy(&precmdline->argv, &config->argv) < 0) {
             return _PyStatus_NO_MEMORY();
         }
@@ -2713,7 +2718,7 @@ config_read_cmdline(PyConfig *config)
         }
     }
 
-    if (config->parse_argv) {
+    if (config->parse_argv == 1) {
         Py_ssize_t opt_index;
         status = config_parse_cmdline(config, &cmdline_warnoptions, &opt_index);
         if (_PyStatus_EXCEPTION(status)) {
