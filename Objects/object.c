@@ -2208,6 +2208,22 @@ PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
 }
 
 
+#undef Py_NewRef
+#undef Py_XNewRef
+
+// Export Py_NewRef() and Py_XNewRef() as regular functions for the stable ABI.
+PyObject*
+Py_NewRef(PyObject *obj)
+{
+    return _Py_NewRef(obj);
+}
+
+PyObject*
+Py_XNewRef(PyObject *obj)
+{
+    return _Py_XNewRef(obj);
+}
+
 #ifdef __cplusplus
 }
 #endif

@@ -379,6 +379,10 @@ New Features
   success.
   (Contributed by Victor Stinner in :issue:`1635741`.)
 
+* Added :c:func:`Py_NewRef` and :c:func:`Py_XNewRef` functions to increment the
+  reference count of an object and return the object.
+  (Contributed by Victor Stinner in :issue:`42262`.)
+
 
 Porting to Python 3.10
 ----------------------
