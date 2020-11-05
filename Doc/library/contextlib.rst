@@ -409,11 +409,11 @@ Functions and classes provided:
    .. versionadded:: 3.2
 
 
-.. class:: AsyncContextManager
+.. class:: AsyncContextDecorator
 
-   Similar as ContextManger only for async
+   Similar to :class:`ContextDecorator` but only for asynchronous functions.
 
-   Example of ``ContextDecorator``::
+   Example of ``AsyncContextDecorator``::
 
       from asyncio import run
       from contextlib import AsyncContextDecorator
@@ -444,6 +444,8 @@ Functions and classes provided:
       Starting
       The bit in the middle
       Finishing
+
+   .. versionadded:: 3.10
 
 
 .. class:: ExitStack()
