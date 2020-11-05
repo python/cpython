@@ -278,6 +278,33 @@ class AsyncContextManagerTestCase(unittest.TestCase):
         async with woohoo(self=11, func=22, args=33, kwds=44) as target:
             self.assertEqual(target, (11, 22, 33, 44))
 
+    @_async_test
+    async def test_recursive(self):
+        depth = 0
+        ncols = 0
+
+        @asynccontextmanager
+        async def woohoo():
+            nonlocal ncols
+            ncols += 1
+
+            nonlocal depth
+            before = depth
+            depth += 1
+            yield
+            depth -= 1
+            self.assertEqual(depth, before)
+
+        @woohoo()
+        async def recursive():
+            if depth < 10:
+                await recursive()
+
+        await recursive()
+
+        self.assertEqual(ncols, 10)
+        self.assertEqual(depth, 0)
+
 
 class AclosingTestCase(unittest.TestCase):
 
