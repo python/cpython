@@ -299,6 +299,10 @@ Deprecated
   as appropriate to help identify code which needs updating during
   this transition.
 
+* ``sqlite3.OptimizedUnicode`` has been deprecated. It has been undocumented
+  and obsolete since Python 3.3.
+  (Contributed by Erlend E. Aasland in :issue:`42264`.)
+
 
 Removed
 =======

@@ -1,0 +1,1 @@
+Deprecate ``sqlite3.OptimizedUnicode``
