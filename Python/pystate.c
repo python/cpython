@@ -300,13 +300,16 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->after_forkers_parent);
     Py_CLEAR(interp->after_forkers_child);
 #endif
-    if (_PyRuntimeState_GetFinalizing(runtime) == NULL) {
-        _PyWarnings_Fini(interp);
-    }
+
+    _PyAST_Fini(interp);
+    _PyWarnings_Fini(interp);
+
+    // All Python types must be destroyed before the last GC collection. Python
+    // types create a reference cycle to themselves in their in their
+    // PyTypeObject.tp_mro member (the tuple contains the type).
 
     /* Last garbage collection on this interpreter */
     _PyGC_CollectNoFail(tstate);
-
     _PyGC_Fini(tstate);
 
     /* We don't clear sysdict and builtins until the end of this function.
@@ -775,7 +778,7 @@ PyState_RemoveModule(struct PyModuleDef* def)
     return PyList_SetItem(interp->modules_by_index, index, Py_None);
 }
 
-/* Used by PyImport_Cleanup() */
+// Used by finalize_modules()
 void
 _PyInterpreterState_ClearModules(PyInterpreterState *interp)
 {
@@ -1917,11 +1920,17 @@ _PyInterpreterState_GetConfig(PyInterpreterState *interp)
 }
 
 
-PyStatus
-_PyInterpreterState_SetConfig(PyInterpreterState *interp,
-                              const PyConfig *config)
+int
+_PyInterpreterState_GetConfigCopy(PyConfig *config)
 {
-    return _PyConfig_Copy(&interp->config, config);
+    PyInterpreterState *interp = PyInterpreterState_Get();
+
+    PyStatus status = _PyConfig_Copy(config, &interp->config);
+    if (PyStatus_Exception(status)) {
+        _PyErr_SetFromPyStatus(status);
+        return -1;
+    }
+    return 0;
 }
 
 
