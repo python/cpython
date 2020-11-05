@@ -7200,6 +7200,8 @@ PyInit__testcapi(void)
     }
     PyModule_AddObject(m, "HeapDocCType", HeapDocCType);
 
+    /* bpo-41832: Add a new type to test PyType_FromSpec()
+       now can accept a NULL tp_doc slot. */
     PyObject *NullTpDocType = PyType_FromSpec(&NullTpDocType_spec);
     if (NullTpDocType == NULL) {
         return NULL;
