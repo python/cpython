@@ -158,6 +158,9 @@ extern PyStatus _PyConfig_SetPyArgv(
     PyConfig *config,
     const _PyArgv *args);
 
+PyAPI_FUNC(PyObject*) _PyConfig_AsDict(const PyConfig *config);
+PyAPI_FUNC(int) _PyConfig_FromDict(PyConfig *config, PyObject *dict);
+
 
 /* --- Function used for testing ---------------------------------- */
 
