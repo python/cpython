@@ -369,9 +369,9 @@ class Bdb:
 
     def _add_to_breaks(self, filename, lineno):
         """Add breakpoint to breaks, if not already there."""
-        list = self.breaks.setdefault(filename, [])
-        if lineno not in list:
-            list.append(lineno)
+        bp_linenos = self.breaks.setdefault(filename, [])
+        if lineno not in bp_linenos:
+            bp_linenos.append(lineno)
 
     def set_break(self, filename, lineno, temporary=False, cond=None,
                   funcname=None):
