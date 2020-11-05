@@ -29,8 +29,8 @@ def __getattr__(name):
     if name == "OptimizedUnicode":
         import warnings
         msg = ("""
-            OptimizedUnicode is obsolete. You can safely remove it from your
-            code, as it defaults to 'str' anyway.
+            OptimizedUnicode is deprecated and will be removed in Python 3.12.
+            Since Python 3.3 it has simply been an alias for 'str'.
         """)
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
         return str
