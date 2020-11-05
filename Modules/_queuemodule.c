@@ -313,6 +313,29 @@ _queue_SimpleQueue_qsize_impl(simplequeueobject *self)
     return PyList_GET_SIZE(self->lst) - self->lst_pos;
 }
 
+static int
+queue_traverse(PyObject *m, visitproc visit, void *arg)
+{
+    simplequeue_state *state = simplequeue_get_state(m);
+    Py_VISIT(state->SimpleQueueType);
+    Py_VISIT(state->EmptyError);
+    return 0;
+}
+
+static int
+queue_clear(PyObject *m)
+{
+    simplequeue_state *state = simplequeue_get_state(m);
+    Py_CLEAR(state->SimpleQueueType);
+    Py_CLEAR(state->EmptyError);
+    return 0;
+}
+
+static void
+queue_free(void *m)
+{
+    queue_clear((PyObject *)m);
+}
 
 #include "clinic/_queuemodule.c.h"
 
@@ -363,6 +386,9 @@ static struct PyModuleDef queuemodule = {
     .m_name = "_queue",
     .m_doc = queue_module_doc,
     .m_size = sizeof(simplequeue_state),
+    .m_traverse = queue_traverse,
+    .m_clear = queue_clear,
+    .m_free = queue_free,
 };
 
 
