@@ -154,14 +154,19 @@ the disposition of the match.  Each entry is a tuple of the form (*action*,
   +---------------+----------------------------------------------+
 
 * *message* is a string containing a regular expression that the start of
-  the warning message must match.  The expression is compiled to always be
-  case-insensitive.
+  the warning message must match, case-insensitively.  In :option:`-W` and
+  :envvar:`PYTHONWARNINGS`, *message* is a literal string that the start of the
+  warning message must contain (case-insensitively), ignoring any whitespace at
+  the start or end of *message*.
 
 * *category* is a class (a subclass of :exc:`Warning`) of which the warning
   category must be a subclass in order to match.
 
-* *module* is a string containing a regular expression that the module name must
-  match.  The expression is compiled to be case-sensitive.
+* *module* is a string containing a regular expression that the start of the
+  fully-qualified module name must match, case-sensitively.  In :option:`-W` and
+  :envvar:`PYTHONWARNINGS`, *module* is a literal string that the
+  fully-qualified module name must be equal to (case-sensitively), ignoring any
+  whitespace at the start or end of *module*.
 
 * *lineno* is an integer that the line number where the warning occurred must
   match, or ``0`` to match all line numbers.
