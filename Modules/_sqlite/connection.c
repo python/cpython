@@ -88,11 +88,8 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     Py_CLEAR(self->statements);
     Py_CLEAR(self->cursors);
 
-    Py_INCREF(Py_None);
-    Py_XSETREF(self->row_factory, Py_None);
-
-    Py_INCREF(&PyUnicode_Type);
-    Py_XSETREF(self->text_factory, (PyObject*)&PyUnicode_Type);
+    self->row_factory = Py_NewRef(Py_None);
+    self->text_factory = Py_NewRef((PyObject*)&PyUnicode_Type);
 
 #ifdef SQLITE_OPEN_URI
     Py_BEGIN_ALLOW_THREADS
@@ -541,8 +538,7 @@ PyObject* _pysqlite_build_py_params(sqlite3_context *context, int argc, sqlite3_
                 /* TODO: have a way to show errors here */
                 if (!cur_py_value) {
                     PyErr_Clear();
-                    Py_INCREF(Py_None);
-                    cur_py_value = Py_None;
+                    cur_py_value = Py_NewRef(Py_None);
                 }
                 break;
             case SQLITE_BLOB:
@@ -552,8 +548,7 @@ PyObject* _pysqlite_build_py_params(sqlite3_context *context, int argc, sqlite3_
                 break;
             case SQLITE_NULL:
             default:
-                Py_INCREF(Py_None);
-                cur_py_value = Py_None;
+                cur_py_value = Py_NewRef(Py_None);
         }
 
         if (!cur_py_value) {
@@ -815,12 +810,11 @@ PyObject* pysqlite_connection_create_function(pysqlite_Connection* self, PyObjec
         flags |= SQLITE_DETERMINISTIC;
 #endif
     }
-    Py_INCREF(func);
     rc = sqlite3_create_function_v2(self->db,
                                     name,
                                     narg,
                                     flags,
-                                    (void*)func,
+                                    (void*)Py_NewRef(func),
                                     _pysqlite_func_callback,
                                     NULL,
                                     NULL,
@@ -851,12 +845,11 @@ PyObject* pysqlite_connection_create_aggregate(pysqlite_Connection* self, PyObje
                                       kwlist, &name, &n_arg, &aggregate_class)) {
         return NULL;
     }
-    Py_INCREF(aggregate_class);
     rc = sqlite3_create_function_v2(self->db,
                                     name,
                                     n_arg,
                                     SQLITE_UTF8,
-                                    (void*)aggregate_class,
+                                    (void*)Py_NewRef(aggregate_class),
                                     0,
                                     &_pysqlite_step_callback,
                                     &_pysqlite_final_callback,
@@ -1144,8 +1137,7 @@ int pysqlite_check_thread(pysqlite_Connection* self)
 
 static PyObject* pysqlite_connection_get_isolation_level(pysqlite_Connection* self, void* unused)
 {
-    Py_INCREF(self->isolation_level);
-    return self->isolation_level;
+    return Py_NewRef(self->isolation_level);
 }
 
 static PyObject* pysqlite_connection_get_total_changes(pysqlite_Connection* self, void* unused)
@@ -1432,8 +1424,7 @@ pysqlite_connection_interrupt(pysqlite_Connection* self, PyObject* args)
 
     sqlite3_interrupt(self->db);
 
-    Py_INCREF(Py_None);
-    retval = Py_None;
+    retval = Py_NewRef(Py_None);
 
 finally:
     return retval;
@@ -1643,7 +1634,6 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
     PyObject* callable;
     PyObject* uppercase_name = 0;
     PyObject* name;
-    PyObject* retval;
     Py_ssize_t i, len;
     _Py_IDENTIFIER(upper);
     const char *uppercase_name_str;
@@ -1716,13 +1706,10 @@ finally:
     Py_XDECREF(uppercase_name);
 
     if (PyErr_Occurred()) {
-        retval = NULL;
+        return NULL;
     } else {
-        Py_INCREF(Py_None);
-        retval = Py_None;
+        return Py_NewRef(Py_None);
     }
-
-    return retval;
 }
 
 /* Called when the connection is used as a context manager. Returns itself as a
@@ -1730,8 +1717,7 @@ finally:
 static PyObject *
 pysqlite_connection_enter(pysqlite_Connection* self, PyObject* args)
 {
-    Py_INCREF(self);
-    return (PyObject*)self;
+    return Py_NewRef((PyObject *)self);
 }
 
 /** Called when the connection is used as a context manager. If there was any
