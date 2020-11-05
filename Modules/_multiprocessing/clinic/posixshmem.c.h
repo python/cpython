@@ -113,6 +113,80 @@ exit:
 
 #endif /* defined(HAVE_SHM_UNLINK) */
 
+PyDoc_STRVAR(_posixshmem_shm_inc_refcount__doc__,
+"shm_inc_refcount($module, /, ptr)\n"
+"--\n"
+"\n"
+"Increment Reference Count of the memoryview object");
+
+#define _POSIXSHMEM_SHM_INC_REFCOUNT_METHODDEF    \
+    {"shm_inc_refcount", (PyCFunction)(void(*)(void))_posixshmem_shm_inc_refcount, METH_FASTCALL|METH_KEYWORDS, _posixshmem_shm_inc_refcount__doc__},
+
+static int
+_posixshmem_shm_inc_refcount_impl(PyObject *module, PyObject *ptr);
+
+static PyObject *
+_posixshmem_shm_inc_refcount(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"ptr", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "shm_inc_refcount", 0};
+    PyObject *argsbuf[1];
+    PyObject *ptr;
+    int _return_value;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    ptr = args[0];
+    _return_value = _posixshmem_shm_inc_refcount_impl(module, ptr);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_posixshmem_shm_dec_refcount__doc__,
+"shm_dec_refcount($module, /, ptr)\n"
+"--\n"
+"\n"
+"Decrement Reference Count of the memoryview object");
+
+#define _POSIXSHMEM_SHM_DEC_REFCOUNT_METHODDEF    \
+    {"shm_dec_refcount", (PyCFunction)(void(*)(void))_posixshmem_shm_dec_refcount, METH_FASTCALL|METH_KEYWORDS, _posixshmem_shm_dec_refcount__doc__},
+
+static int
+_posixshmem_shm_dec_refcount_impl(PyObject *module, PyObject *ptr);
+
+static PyObject *
+_posixshmem_shm_dec_refcount(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"ptr", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "shm_dec_refcount", 0};
+    PyObject *argsbuf[1];
+    PyObject *ptr;
+    int _return_value;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    ptr = args[0];
+    _return_value = _posixshmem_shm_dec_refcount_impl(module, ptr);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 #ifndef _POSIXSHMEM_SHM_OPEN_METHODDEF
     #define _POSIXSHMEM_SHM_OPEN_METHODDEF
 #endif /* !defined(_POSIXSHMEM_SHM_OPEN_METHODDEF) */
@@ -120,4 +194,4 @@ exit:
 #ifndef _POSIXSHMEM_SHM_UNLINK_METHODDEF
     #define _POSIXSHMEM_SHM_UNLINK_METHODDEF
 #endif /* !defined(_POSIXSHMEM_SHM_UNLINK_METHODDEF) */
-/*[clinic end generated code: output=bca8e78d0f43ef1a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cd4bd3692d1ce532 input=a9049054013a1b77]*/

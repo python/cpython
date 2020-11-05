@@ -1,0 +1,1 @@
+Fix shared_memory's resource tracking by using reference counting

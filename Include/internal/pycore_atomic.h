@@ -62,6 +62,12 @@ typedef struct _Py_atomic_int {
 #define _Py_atomic_load_explicit(ATOMIC_VAL, ORDER) \
     atomic_load_explicit(&((ATOMIC_VAL)->_value), ORDER)
 
+#define _Py_atomic_fetch_add_explicit(ATOMIC_VAL, VAL, ORDER) \
+    atomic_fetch_add_explicit(&((ATOMIC_VAL)->_value), VAL, ORDER)
+
+#define _Py_atomic_fetch_sub_explicit(ATOMIC_VAL, VAL, ORDER) \
+    atomic_fetch_sub_explicit(&((ATOMIC_VAL)->_value), VAL, ORDER)
+
 /* Use builtin atomic operations in GCC >= 4.7 */
 #elif defined(HAVE_BUILTIN_ATOMIC)
 
@@ -99,6 +105,20 @@ typedef struct _Py_atomic_int {
             || (ORDER) == __ATOMIC_ACQUIRE                    \
             || (ORDER) == __ATOMIC_CONSUME),                  \
      __atomic_load_n(&((ATOMIC_VAL)->_value), ORDER))
+
+#define _Py_atomic_fetch_add_explicit(ATOMIC_VAL, VAL, ORDER)           \
+    (assert((ORDER) == __ATOMIC_RELAXED                       \
+            || (ORDER) == __ATOMIC_SEQ_CST                    \
+            || (ORDER) == __ATOMIC_ACQUIRE                    \
+            || (ORDER) == __ATOMIC_CONSUME),                  \
+     __atomic_fetch_add(&((ATOMIC_VAL)->_value), VAL, ORDER))
+
+#define _Py_atomic_fetch_sub_explicit(ATOMIC_VAL, VAL, ORDER)           \
+    (assert((ORDER) == __ATOMIC_RELAXED                       \
+            || (ORDER) == __ATOMIC_SEQ_CST                    \
+            || (ORDER) == __ATOMIC_ACQUIRE                    \
+            || (ORDER) == __ATOMIC_CONSUME),                  \
+     __atomic_fetch_sub(&((ATOMIC_VAL)->_value), VAL, ORDER))
 
 /* Only support GCC (for expression statements) and x86 (for simple
  * atomic semantics) and MSVC x86/x64/ARM */
@@ -550,6 +570,12 @@ typedef struct _Py_atomic_int {
     _Py_atomic_store_explicit((ATOMIC_VAL), (NEW_VAL), _Py_memory_order_relaxed)
 #define _Py_atomic_load_relaxed(ATOMIC_VAL) \
     _Py_atomic_load_explicit((ATOMIC_VAL), _Py_memory_order_relaxed)
+
+#define _Py_atomic_fetch_add_relaxed(ATOMIC_VAL, VAL) \
+    _Py_atomic_fetch_add_explicit((ATOMIC_VAL), (VAL), _Py_memory_order_relaxed)
+
+#define _Py_atomic_fetch_sub_relaxed(ATOMIC_VAL, VAL) \
+    _Py_atomic_fetch_sub_explicit((ATOMIC_VAL), (VAL), _Py_memory_order_relaxed)
 
 #ifdef __cplusplus
 }

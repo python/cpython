@@ -36,10 +36,11 @@ _CLEANUP_FUNCS = {
 if os.name == 'posix':
     import _multiprocessing
     import _posixshmem
+    from multiprocessing.shared_memory import cleanup_shared_memory, shm_inc_refcount
 
     _CLEANUP_FUNCS.update({
         'semaphore': _multiprocessing.sem_unlink,
-        'shared_memory': _posixshmem.shm_unlink,
+        'shared_memory': cleanup_shared_memory,
     })
 
 
@@ -196,7 +197,9 @@ def main(fd):
                             f'unknown resource type {rtype}')
 
                     if cmd == 'REGISTER':
-                        cache[rtype].add(name)
+                        if rtype == "shared_memory" and name not in cache[rtype]:
+                            cache[rtype].add(name)
+                            shm_inc_refcount(name)
                     elif cmd == 'UNREGISTER':
                         cache[rtype].remove(name)
                     elif cmd == 'PROBE':

@@ -5,6 +5,8 @@ posixshmem - A Python extension that provides shm_open() and shm_unlink()
 #define PY_SSIZE_T_CLEAN
 
 #include <Python.h>
+#include <stdio.h>
+#include "pycore_atomic.h"
 
 // for shm_open() and shm_unlink()
 #ifdef HAVE_SYS_MMAN_H
@@ -101,11 +103,44 @@ _posixshmem_shm_unlink_impl(PyObject *module, PyObject *path)
 }
 #endif /* HAVE_SHM_UNLINK */
 
+/*[clinic input]
+_posixshmem.shm_inc_refcount -> int
+    ptr: object
+
+Increment Reference Count of the memoryview object
+
+[clinic start generated code]*/
+
+static int
+_posixshmem_shm_inc_refcount_impl(PyObject *module, PyObject *ptr)
+/*[clinic end generated code: output=9ed5b4d016975d06 input=b7c1fe6ce39b7bb4]*/
+{
+    Py_buffer *buf = PyMemoryView_GET_BUFFER(ptr);
+    return _Py_atomic_fetch_add_relaxed((_Py_atomic_int*)(buf->buf), 1) + 1;
+}
+/*[clinic input]
+_posixshmem.shm_dec_refcount -> int
+    ptr: object
+
+Decrement Reference Count of the memoryview object
+
+[clinic start generated code]*/
+
+static int
+_posixshmem_shm_dec_refcount_impl(PyObject *module, PyObject *ptr)
+/*[clinic end generated code: output=16ab284487281c72 input=0aab6ded127aa5c3]*/
+{
+    Py_buffer *buf = PyMemoryView_GET_BUFFER(ptr);
+    return _Py_atomic_fetch_sub_relaxed((_Py_atomic_int*)(buf->buf), 1) - 1;
+}
+
 #include "clinic/posixshmem.c.h"
 
 static PyMethodDef module_methods[ ] = {
     _POSIXSHMEM_SHM_OPEN_METHODDEF
     _POSIXSHMEM_SHM_UNLINK_METHODDEF
+    _POSIXSHMEM_SHM_INC_REFCOUNT_METHODDEF
+    _POSIXSHMEM_SHM_DEC_REFCOUNT_METHODDEF 
     {NULL} /* Sentinel */
 };
 
@@ -118,12 +153,18 @@ static struct PyModuleDef this_module = {
     module_methods,         // m_methods
 };
 
+const char *NAME_REFCOUNT_SIZE = "REFCOUNT_SIZE";
+
 /* Module init function */
 PyMODINIT_FUNC
 PyInit__posixshmem(void) {
     PyObject *module;
     module = PyModule_Create(&this_module);
     if (!module) {
+        return NULL;
+    }
+    if (PyModule_AddIntConstant(module, NAME_REFCOUNT_SIZE, sizeof(_Py_atomic_int))) {
+        Py_XDECREF(module);
         return NULL;
     }
     return module;

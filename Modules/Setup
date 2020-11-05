@@ -118,6 +118,7 @@ _signal -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal signalmodule.c
 _stat _stat.c				# stat.h interface
 time -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal timemodule.c	# -lm # time operations and variables
 _thread -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal _threadmodule.c	# low-level threading interface
+_posixshmem -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal _multiprocessing/posixshmem.c	# shared memory interface dependent on 'pycore_atomic.h'
 
 # access to ISO C locale support
 _locale -DPy_BUILD_CORE_BUILTIN _localemodule.c  # -lintl

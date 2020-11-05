@@ -150,6 +150,7 @@ Modules/_localemodule.c	Py_BUILD_CORE	1
 Modules/main.c	Py_BUILD_CORE	1
 Modules/posixmodule.c	Py_BUILD_CORE	1
 Modules/signalmodule.c	Py_BUILD_CORE	1
+Modules/_multiprocessing/posixshmem.c	Py_BUILD_CORE	1
 Modules/_threadmodule.c	Py_BUILD_CORE	1
 Modules/_tracemalloc.c	Py_BUILD_CORE	1
 Modules/_asynciomodule.c	Py_BUILD_CORE	1

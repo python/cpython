@@ -70,8 +70,9 @@ class SharedMemory:
     _flags = os.O_RDWR
     _mode = 0o600
     _prepend_leading_slash = True if _USE_POSIX else False
+    _track_resource = True
 
-    def __init__(self, name=None, create=False, size=0):
+    def __init__(self, name=None, create=False, size=0, track_resource=True):
         if not size >= 0:
             raise ValueError("'size' must be a positive integer")
         if create:
@@ -81,6 +82,7 @@ class SharedMemory:
         if name is None and not self._flags & os.O_EXCL:
             raise ValueError("'name' can only be None if create=True")
 
+        self._track_resource = track_resource
         if _USE_POSIX:
 
             # POSIX Shared Memory
@@ -108,6 +110,7 @@ class SharedMemory:
                 self._name = name
             try:
                 if create and size:
+                    size += _posixshmem.REFCOUNT_SIZE
                     os.ftruncate(self._fd, size)
                 stats = os.fstat(self._fd)
                 size = stats.st_size
@@ -116,8 +119,13 @@ class SharedMemory:
                 self.unlink()
                 raise
 
-            from .resource_tracker import register
-            register(self._name, "shared_memory")
+            self._size = size
+            self._refcount = memoryview(self._mmap)[0:_posixshmem.REFCOUNT_SIZE]
+            self._buf = memoryview(self._mmap)[_posixshmem.REFCOUNT_SIZE:]
+
+            if self._track_resource:
+                from .resource_tracker import register
+                register(self.name, "shared_memory")
 
         else:
 
@@ -176,8 +184,9 @@ class SharedMemory:
                 size = _winapi.VirtualQuerySize(p_buf)
                 self._mmap = mmap.mmap(-1, size, tagname=name)
 
-        self._size = size
-        self._buf = memoryview(self._mmap)
+            self._size = size
+            self._buf = memoryview(self._mmap)
+            self._refcount = None
 
     def __del__(self):
         try:
@@ -215,11 +224,17 @@ class SharedMemory:
     @property
     def size(self):
         "Size in bytes."
-        return self._size
+        if _USE_POSIX:
+            return self._size - _posixshmem.REFCOUNT_SIZE
+        else:
+            return self._size
 
     def close(self):
         """Closes access to the shared memory from this instance but does
         not destroy the shared memory block."""
+        if self._refcount is not None:
+            self._refcount.release()
+            self._refcount = None
         if self._buf is not None:
             self._buf.release()
             self._buf = None
@@ -237,10 +252,25 @@ class SharedMemory:
         called once (and only once) across all processes which have access
         to the shared memory block."""
         if _USE_POSIX and self._name:
-            from .resource_tracker import unregister
             _posixshmem.shm_unlink(self._name)
-            unregister(self._name, "shared_memory")
+            if self._track_resource:
+                from .resource_tracker import unregister
+                unregister(self.name, "shared_memory")
 
+def cleanup_shared_memory(name):
+    try:
+        shm = SharedMemory(name, track_resource=False)
+        refcount = _posixshmem.shm_dec_refcount(shm._refcount)
+        if refcount == 0: shm.unlink()
+    except FileNotFoundError:  # Segment with name has already been unlinked
+        pass
+
+def shm_inc_refcount(name):
+    try:
+        shm = SharedMemory(name, track_resource=False)
+        _posixshmem.shm_inc_refcount(shm._refcount)
+    except FileNotFoundError:  # Segment with name has already been unlinked
+        pass
 
 _encoding = "utf8"
 
