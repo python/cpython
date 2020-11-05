@@ -35,7 +35,7 @@ try:
 except ImportError:
     lzma = None
 
-__all__ = ["BadZipFile", "BadZipfile", "error",
+__all__ = ["BadZipFile",
            "ZIP_STORED", "ZIP_DEFLATED", "ZIP_BZIP2", "ZIP_LZMA",
            "is_zipfile", "ZipInfo", "ZipFile", "PyZipFile", "LargeZipFile",
            "Path"]
@@ -49,8 +49,6 @@ class LargeZipFile(Exception):
     Raised when writing a zipfile, the zipfile requires ZIP64 extensions
     and those extensions are disabled.
     """
-
-error = BadZipfile = BadZipFile      # Pre-3.2 compatibility names
 
 
 ZIP64_LIMIT = (1 << 31) - 1
