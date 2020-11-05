@@ -459,15 +459,17 @@ AdvancedNamespace(the=0,
         exp = """\
 {'names with spaces': 'should be presented using repr()',
  others.should.not.be: like.this}"""
-        self.assertEqual(DottedPrettyPrinter().pformat(o), exp)
+
+        dotted_printer = DottedPrettyPrinter()
+        self.assertEqual(dotted_printer.pformat(o), exp)
 
         # length(repr(obj)) < width
         o1 = ['with space']
         exp1 = "['with space']"
-        self.assertEqual(DottedPrettyPrinter().pformat(o1), exp1)
+        self.assertEqual(dotted_printer.pformat(o1), exp1)
         o2 = ['without.space']
         exp2 = "[without.space]"
-        self.assertEqual(DottedPrettyPrinter().pformat(o2), exp2)
+        self.assertEqual(dotted_printer.pformat(o2), exp2)
 
     def test_set_reprs(self):
         self.assertEqual(pprint.pformat(set()), 'set()')

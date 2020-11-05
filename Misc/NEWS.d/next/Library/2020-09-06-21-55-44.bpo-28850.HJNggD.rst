@@ -1,1 +1,1 @@
-Fix PrettyPrinter.format overrides being ignored for contents of small containers.
+Fix :meth:`pprint.PrettyPrinter.format` overrides being ignored for contents of small containers.
