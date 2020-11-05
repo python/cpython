@@ -136,21 +136,6 @@ Py_DecRef(PyObject *o)
     Py_XDECREF(o);
 }
 
-#undef Py_NewRef
-#undef Py_XNewRef
-
-PyObject*
-Py_NewRef(PyObject *obj)
-{
-    return _Py_NewRef(obj);
-}
-
-PyObject*
-Py_XNewRef(PyObject *obj)
-{
-    return _Py_XNewRef(obj);
-}
-
 PyObject *
 PyObject_Init(PyObject *op, PyTypeObject *tp)
 {
@@ -2222,6 +2207,22 @@ PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
     return _PyObject_GET_WEAKREFS_LISTPTR(op);
 }
 
+
+#undef Py_NewRef
+#undef Py_XNewRef
+
+// Export Py_NewRef() and Py_XNewRef() as regular functions for the stable ABI.
+PyObject*
+Py_NewRef(PyObject *obj)
+{
+    return _Py_NewRef(obj);
+}
+
+PyObject*
+Py_XNewRef(PyObject *obj)
+{
+    return _Py_XNewRef(obj);
+}
 
 #ifdef __cplusplus
 }
