@@ -1598,14 +1598,23 @@ class MockTest(unittest.TestCase):
     #Issue21238
     def test_mock_unsafe(self):
         m = Mock()
-        msg = "Attributes cannot start with 'assert' or 'assret'"
+        msg = "Attributes cannot start with 'assert' or its misspellings"
         with self.assertRaisesRegex(AttributeError, msg):
             m.assert_foo_call()
         with self.assertRaisesRegex(AttributeError, msg):
             m.assret_foo_call()
+        with self.assertRaisesRegex(AttributeError, msg):
+            m.asert_foo_call()
+        with self.assertRaisesRegex(AttributeError, msg):
+            m.aseert_foo_call()
+        with self.assertRaisesRegex(AttributeError, msg):
+            m.assrt_foo_call()
         m = Mock(unsafe=True)
         m.assert_foo_call()
         m.assret_foo_call()
+        m.asert_foo_call()
+        m.aseert_foo_call()
+        m.assrt_foo_call()
 
     #Issue21262
     def test_assert_not_called(self):
