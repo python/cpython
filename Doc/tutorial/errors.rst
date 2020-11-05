@@ -297,11 +297,11 @@ This can be useful when you are transforming exceptions. For example::
     <BLANKLINE>
     Traceback (most recent call last):
       File "<stdin>", line 4, in <module>
-    RuntimeError
+    RuntimeError: Failed to open database
 
 Exception chaining happens automatically when an exception is raised inside an
-:keyword:`except` section or :keyword:`finally` section. Exception chaining can
-be disabled by using ``from None`` idiom:
+:keyword:`except` or :keyword:`finally` section. Exception chaining can be
+disabled by using ``from None`` idiom:
 
     >>> try:
     ...     open('database.sqlite')
