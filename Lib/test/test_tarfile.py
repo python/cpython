@@ -1417,11 +1417,14 @@ class WriteTest(WriteTestBase, unittest.TestCase):
                                    pax_headers={'non': 'empty'})
             self.assertFalse(f.closed)
 
+
 class GzipWriteTest(GzipTest, WriteTest):
     pass
 
+
 class Bz2WriteTest(Bz2Test, WriteTest):
     pass
+
 
 class LzmaWriteTest(LzmaTest, WriteTest):
     pass
@@ -1465,8 +1468,17 @@ class StreamWriteTest(WriteTestBase, unittest.TestCase):
         finally:
             os.umask(original_umask)
 
+
 class GzipStreamWriteTest(GzipTest, StreamWriteTest):
-    pass
+    def test_source_directory_not_leaked(self):
+        """
+        Ensure the source directory is not included in the tar header
+        per bpo-41316.
+        """
+        tarfile.open(tmpname, self.mode).close()
+        payload = pathlib.Path(tmpname).read_text(encoding='latin-1')
+        assert os.path.dirname(tmpname) not in payload
+
 
 class Bz2StreamWriteTest(Bz2Test, StreamWriteTest):
     decompressor = bz2.BZ2Decompressor if bz2 else None
@@ -2257,22 +2269,19 @@ class MiscTest(unittest.TestCase):
             tarfile.itn(0x10000000000, 6, tarfile.GNU_FORMAT)
 
     def test__all__(self):
-        blacklist = {'version', 'grp', 'pwd', 'symlink_exception',
-                     'NUL', 'BLOCKSIZE', 'RECORDSIZE', 'GNU_MAGIC',
-                     'POSIX_MAGIC', 'LENGTH_NAME', 'LENGTH_LINK',
-                     'LENGTH_PREFIX', 'REGTYPE', 'AREGTYPE', 'LNKTYPE',
-                     'SYMTYPE', 'CHRTYPE', 'BLKTYPE', 'DIRTYPE', 'FIFOTYPE',
-                     'CONTTYPE', 'GNUTYPE_LONGNAME', 'GNUTYPE_LONGLINK',
-                     'GNUTYPE_SPARSE', 'XHDTYPE', 'XGLTYPE', 'SOLARIS_XHDTYPE',
-                     'SUPPORTED_TYPES', 'REGULAR_TYPES', 'GNU_TYPES',
-                     'PAX_FIELDS', 'PAX_NAME_FIELDS', 'PAX_NUMBER_FIELDS',
-                     'stn', 'nts', 'nti', 'itn', 'calc_chksums', 'copyfileobj',
-                     'filemode',
-                     'EmptyHeaderError', 'TruncatedHeaderError',
-                     'EOFHeaderError', 'InvalidHeaderError',
-                     'SubsequentHeaderError', 'ExFileObject',
-                     'main'}
-        support.check__all__(self, tarfile, blacklist=blacklist)
+        not_exported = {
+            'version', 'grp', 'pwd', 'symlink_exception', 'NUL', 'BLOCKSIZE',
+            'RECORDSIZE', 'GNU_MAGIC', 'POSIX_MAGIC', 'LENGTH_NAME',
+            'LENGTH_LINK', 'LENGTH_PREFIX', 'REGTYPE', 'AREGTYPE', 'LNKTYPE',
+            'SYMTYPE', 'CHRTYPE', 'BLKTYPE', 'DIRTYPE', 'FIFOTYPE', 'CONTTYPE',
+            'GNUTYPE_LONGNAME', 'GNUTYPE_LONGLINK', 'GNUTYPE_SPARSE',
+            'XHDTYPE', 'XGLTYPE', 'SOLARIS_XHDTYPE', 'SUPPORTED_TYPES',
+            'REGULAR_TYPES', 'GNU_TYPES', 'PAX_FIELDS', 'PAX_NAME_FIELDS',
+            'PAX_NUMBER_FIELDS', 'stn', 'nts', 'nti', 'itn', 'calc_chksums',
+            'copyfileobj', 'filemode', 'EmptyHeaderError',
+            'TruncatedHeaderError', 'EOFHeaderError', 'InvalidHeaderError',
+            'SubsequentHeaderError', 'ExFileObject', 'main'}
+        support.check__all__(self, tarfile, not_exported=not_exported)
 
 
 class CommandLineTest(unittest.TestCase):

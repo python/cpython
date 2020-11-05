@@ -228,7 +228,7 @@ class PyCompileCLITestCase(unittest.TestCase):
             file.write('x = 123\n')
 
     def tearDown(self):
-        support.rmtree(self.directory)
+        os_helper.rmtree(self.directory)
 
     def pycompilecmd(self, *args, **kwargs):
         # assert_python_* helpers don't return proc object. We'll just use

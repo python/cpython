@@ -1189,9 +1189,9 @@ class SimpleHTTPRequestHandlerTestCase(unittest.TestCase):
 class MiscTestCase(unittest.TestCase):
     def test_all(self):
         expected = []
-        blacklist = {'executable', 'nobody_uid', 'test'}
+        denylist = {'executable', 'nobody_uid', 'test'}
         for name in dir(server):
-            if name.startswith('_') or name in blacklist:
+            if name.startswith('_') or name in denylist:
                 continue
             module_object = getattr(server, name)
             if getattr(module_object, '__module__', None) == 'http.server':

@@ -1003,12 +1003,11 @@ class SMTPDChannelTestWithEnableSMTPUTF8True(unittest.TestCase):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {
+        not_exported = {
             "program", "Devnull", "DEBUGSTREAM", "NEWLINE", "COMMASPACE",
             "DATA_SIZE_DEFAULT", "usage", "Options", "parseargs",
-
         }
-        support.check__all__(self, smtpd, blacklist=blacklist)
+        support.check__all__(self, smtpd, not_exported=not_exported)
 
 
 if __name__ == "__main__":

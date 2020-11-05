@@ -19,6 +19,7 @@
 
 #include "Python.h"
 #include "datetime.h"
+#include "pydecimal.h"
 #include "marshal.h"
 #include "structmember.h"         // PyMemberDef
 #include <float.h>
@@ -2676,8 +2677,9 @@ test_PyDateTime_DATE_GET(PyObject *self, PyObject *obj)
     minute = PyDateTime_DATE_GET_MINUTE(obj);
     second = PyDateTime_DATE_GET_SECOND(obj);
     microsecond = PyDateTime_DATE_GET_MICROSECOND(obj);
+    PyObject *tzinfo = PyDateTime_DATE_GET_TZINFO(obj);
 
-    return Py_BuildValue("(llll)", hour, minute, second, microsecond);
+    return Py_BuildValue("(llllO)", hour, minute, second, microsecond, tzinfo);
 }
 
 static PyObject *
@@ -2689,8 +2691,9 @@ test_PyDateTime_TIME_GET(PyObject *self, PyObject *obj)
     minute = PyDateTime_TIME_GET_MINUTE(obj);
     second = PyDateTime_TIME_GET_SECOND(obj);
     microsecond = PyDateTime_TIME_GET_MICROSECOND(obj);
+    PyObject *tzinfo = PyDateTime_TIME_GET_TZINFO(obj);
 
-    return Py_BuildValue("(llll)", hour, minute, second, microsecond);
+    return Py_BuildValue("(llllO)", hour, minute, second, microsecond, tzinfo);
 }
 
 static PyObject *
@@ -2703,6 +2706,252 @@ test_PyDateTime_DELTA_GET(PyObject *self, PyObject *obj)
     microseconds = PyDateTime_DELTA_GET_MICROSECONDS(obj);
 
     return Py_BuildValue("(lll)", days, seconds, microseconds);
+}
+
+/* Test decimal API */
+static int decimal_initialized = 0;
+static PyObject *
+decimal_is_special(PyObject *module, PyObject *dec)
+{
+    int is_special;
+
+    (void)module;
+    if (!decimal_initialized) {
+       if (import_decimal() < 0) {
+            return NULL;
+       }
+
+       decimal_initialized = 1;
+    }
+
+    is_special = PyDec_IsSpecial(dec);
+    if (is_special < 0) {
+        return NULL;
+    }
+
+    return PyBool_FromLong(is_special);
+}
+
+static PyObject *
+decimal_is_nan(PyObject *module, PyObject *dec)
+{
+    int is_nan;
+
+    (void)module;
+    if (!decimal_initialized) {
+       if (import_decimal() < 0) {
+            return NULL;
+       }
+
+       decimal_initialized = 1;
+    }
+
+    is_nan = PyDec_IsNaN(dec);
+    if (is_nan < 0) {
+        return NULL;
+    }
+
+    return PyBool_FromLong(is_nan);
+}
+
+static PyObject *
+decimal_is_infinite(PyObject *module, PyObject *dec)
+{
+    int is_infinite;
+
+    (void)module;
+    if (!decimal_initialized) {
+       if (import_decimal() < 0) {
+            return NULL;
+       }
+
+       decimal_initialized = 1;
+    }
+
+    is_infinite = PyDec_IsInfinite(dec);
+    if (is_infinite < 0) {
+        return NULL;
+    }
+
+    return PyBool_FromLong(is_infinite);
+}
+
+static PyObject *
+decimal_get_digits(PyObject *module, PyObject *dec)
+{
+    int64_t digits;
+
+    (void)module;
+    if (!decimal_initialized) {
+       if (import_decimal() < 0) {
+            return NULL;
+       }
+
+       decimal_initialized = 1;
+    }
+
+    digits = PyDec_GetDigits(dec);
+    if (digits < 0) {
+        return NULL;
+    }
+
+    return PyLong_FromLongLong(digits);
+}
+
+static PyObject *
+decimal_as_triple(PyObject *module, PyObject *dec)
+{
+    PyObject *tuple = NULL;
+    PyObject *sign, *hi, *lo;
+    mpd_uint128_triple_t triple;
+
+    (void)module;
+    if (!decimal_initialized) {
+       if (import_decimal() < 0) {
+            return NULL;
+       }
+
+       decimal_initialized = 1;
+    }
+
+    triple = PyDec_AsUint128Triple(dec);
+    if (triple.tag == MPD_TRIPLE_ERROR && PyErr_Occurred()) {
+        return NULL;
+    }
+
+    sign = PyLong_FromUnsignedLong(triple.sign);
+    if (sign == NULL) {
+        return NULL;
+    }
+
+    hi = PyLong_FromUnsignedLongLong(triple.hi);
+    if (hi == NULL) {
+        Py_DECREF(sign);
+        return NULL;
+    }
+
+    lo = PyLong_FromUnsignedLongLong(triple.lo);
+    if (lo == NULL) {
+        Py_DECREF(hi);
+        Py_DECREF(sign);
+        return NULL;
+    }
+
+    switch (triple.tag) {
+    case MPD_TRIPLE_QNAN:
+        assert(triple.exp == 0);
+        tuple = Py_BuildValue("(OOOs)", sign, hi, lo, "n");
+        break;
+
+    case MPD_TRIPLE_SNAN:
+        assert(triple.exp == 0);
+        tuple = Py_BuildValue("(OOOs)", sign, hi, lo, "N");
+        break;
+
+    case MPD_TRIPLE_INF:
+        assert(triple.hi == 0);
+        assert(triple.lo == 0);
+        assert(triple.exp == 0);
+        tuple = Py_BuildValue("(OOOs)", sign, hi, lo, "F");
+        break;
+
+    case MPD_TRIPLE_NORMAL:
+        tuple = Py_BuildValue("(OOOL)", sign, hi, lo, triple.exp);
+        break;
+
+    case MPD_TRIPLE_ERROR:
+        PyErr_SetString(PyExc_ValueError,
+            "value out of bounds for a uint128 triple");
+        break;
+
+    default:
+        PyErr_SetString(PyExc_RuntimeError,
+            "decimal_as_triple: internal error: unexpected tag");
+        break;
+    }
+
+    Py_DECREF(lo);
+    Py_DECREF(hi);
+    Py_DECREF(sign);
+
+    return tuple;
+}
+
+static PyObject *
+decimal_from_triple(PyObject *module, PyObject *tuple)
+{
+    mpd_uint128_triple_t triple = { MPD_TRIPLE_ERROR, 0, 0, 0, 0 };
+    PyObject *exp;
+    unsigned long sign;
+
+    (void)module;
+    if (!decimal_initialized) {
+       if (import_decimal() < 0) {
+            return NULL;
+       }
+
+       decimal_initialized = 1;
+    }
+
+    if (!PyTuple_Check(tuple)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a tuple");
+        return NULL;
+    }
+
+    if (PyTuple_GET_SIZE(tuple) != 4) {
+        PyErr_SetString(PyExc_ValueError, "tuple size must be 4");
+        return NULL;
+    }
+
+    sign = PyLong_AsUnsignedLong(PyTuple_GET_ITEM(tuple, 0));
+    if (sign == (unsigned long)-1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    if (sign > UINT8_MAX) {
+        PyErr_SetString(PyExc_ValueError, "sign must be 0 or 1");
+        return NULL;
+    }
+    triple.sign = (uint8_t)sign;
+
+    triple.hi = PyLong_AsUnsignedLongLong(PyTuple_GET_ITEM(tuple, 1));
+    if (triple.hi == (unsigned long long)-1 && PyErr_Occurred()) {
+        return NULL;
+    }
+
+    triple.lo = PyLong_AsUnsignedLongLong(PyTuple_GET_ITEM(tuple, 2));
+    if (triple.lo == (unsigned long long)-1 && PyErr_Occurred()) {
+        return NULL;
+    }
+
+    exp = PyTuple_GET_ITEM(tuple, 3);
+    if (PyLong_Check(exp)) {
+        triple.tag = MPD_TRIPLE_NORMAL;
+        triple.exp = PyLong_AsLongLong(exp);
+        if (triple.exp == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
+    }
+    else if (PyUnicode_Check(exp)) {
+        if (PyUnicode_CompareWithASCIIString(exp, "F") == 0) {
+            triple.tag = MPD_TRIPLE_INF;
+        }
+        else if (PyUnicode_CompareWithASCIIString(exp, "n") == 0) {
+            triple.tag = MPD_TRIPLE_QNAN;
+        }
+        else if (PyUnicode_CompareWithASCIIString(exp, "N") == 0) {
+            triple.tag = MPD_TRIPLE_SNAN;
+        }
+        else {
+            PyErr_SetString(PyExc_ValueError, "not a valid exponent");
+            return NULL;
+        }
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError, "exponent must be int or string");
+        return NULL;
+    }
+
+    return PyDec_FromUint128Triple(&triple);
 }
 
 /* test_thread_state spawns a thread of its own, and that thread releases
@@ -3635,6 +3884,25 @@ with_tp_del(PyObject *self, PyObject *args)
         return NULL;
     }
     tp->tp_del = slot_tp_del;
+    Py_INCREF(obj);
+    return obj;
+}
+
+static PyObject *
+without_gc(PyObject *Py_UNUSED(self), PyObject *obj)
+{
+    PyTypeObject *tp = (PyTypeObject*)obj;
+    if (!PyType_Check(obj) || !PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE)) {
+        return PyErr_Format(PyExc_TypeError, "heap type expected, got %R", obj);
+    }
+    if (PyType_IS_GC(tp)) {
+        // Don't try this at home, kids:
+        tp->tp_flags -= Py_TPFLAGS_HAVE_GC;
+        tp->tp_free = PyObject_Del;
+        tp->tp_traverse = NULL;
+        tp->tp_clear = NULL;
+    }
+    assert(!PyType_IS_GC(tp));
     Py_INCREF(obj);
     return obj;
 }
@@ -4779,6 +5047,7 @@ dict_get_version(PyObject *self, PyObject *args)
 static PyObject *
 raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
 {
+    _Py_IDENTIFIER(send);
     PyGenObject *gen;
 
     if (!PyArg_ParseTuple(args, "O!", &PyGen_Type, &gen))
@@ -4795,7 +5064,7 @@ raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
          because we check for signals before every bytecode operation.
      */
     raise(SIGINT);
-    return _PyGen_Send(gen, Py_None);
+    return _PyObject_CallMethodIdOneArg((PyObject *)gen, &PyId_send, Py_None);
 }
 
 
@@ -5314,6 +5583,12 @@ static PyMethodDef TestMethods[] = {
     {"PyDateTime_DATE_GET",        test_PyDateTime_DATE_GET,      METH_O},
     {"PyDateTime_TIME_GET",        test_PyDateTime_TIME_GET,      METH_O},
     {"PyDateTime_DELTA_GET",       test_PyDateTime_DELTA_GET,     METH_O},
+    {"decimal_is_special",      decimal_is_special,              METH_O},
+    {"decimal_is_nan",          decimal_is_nan,                  METH_O},
+    {"decimal_is_infinite",     decimal_is_infinite,             METH_O},
+    {"decimal_get_digits",      decimal_get_digits,              METH_O},
+    {"decimal_as_triple",       decimal_as_triple,               METH_O},
+    {"decimal_from_triple",     decimal_from_triple,             METH_O},
     {"test_list_api",           test_list_api,                   METH_NOARGS},
     {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
@@ -5549,6 +5824,7 @@ static PyMethodDef TestMethods[] = {
     {"meth_fastcall", (PyCFunction)(void(*)(void))meth_fastcall, METH_FASTCALL},
     {"meth_fastcall_keywords", (PyCFunction)(void(*)(void))meth_fastcall_keywords, METH_FASTCALL|METH_KEYWORDS},
     {"pynumber_tobase", pynumber_tobase, METH_VARARGS},
+    {"without_gc", without_gc, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
@@ -6208,6 +6484,30 @@ static PyTypeObject MethodDescriptor2_Type = {
     .tp_vectorcall_offset = offsetof(MethodDescriptor2Object, vectorcall),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_VECTORCALL,
 };
+
+PyDoc_STRVAR(heapdocctype__doc__,
+"HeapDocCType(arg1, arg2)\n"
+"--\n"
+"\n"
+"somedoc");
+
+typedef struct {
+    PyObject_HEAD
+} HeapDocCTypeObject;
+
+static PyType_Slot HeapDocCType_slots[] = {
+    {Py_tp_doc, (char*)heapdocctype__doc__},
+    {0},
+};
+
+static PyType_Spec HeapDocCType_spec = {
+    "_testcapi.HeapDocCType",
+    sizeof(HeapDocCTypeObject),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    HeapDocCType_slots
+};
+
 
 PyDoc_STRVAR(heapgctype__doc__,
 "A heap type with GC, and with overridden dealloc.\n\n"
@@ -6876,6 +7176,12 @@ PyInit__testcapi(void)
     TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
     Py_INCREF(TestError);
     PyModule_AddObject(m, "error", TestError);
+
+    PyObject *HeapDocCType = PyType_FromSpec(&HeapDocCType_spec);
+    if (HeapDocCType == NULL) {
+        return NULL;
+    }
+    PyModule_AddObject(m, "HeapDocCType", HeapDocCType);
 
     PyObject *HeapGcCType = PyType_FromSpec(&HeapGcCType_spec);
     if (HeapGcCType == NULL) {

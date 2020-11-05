@@ -296,6 +296,8 @@ PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, _Py_Identifier *);
 PyAPI_FUNC(PyTypeObject *) _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *, const char *);
 PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
+struct PyModuleDef;
+PyAPI_FUNC(PyObject *) _PyType_GetModuleByDef(PyTypeObject *, struct PyModuleDef *);
 
 struct _Py_Identifier;
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
@@ -306,7 +308,6 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 PyAPI_FUNC(int) _PyObject_IsAbstract(PyObject *);
 PyAPI_FUNC(PyObject *) _PyObject_GetAttrId(PyObject *, struct _Py_Identifier *);
 PyAPI_FUNC(int) _PyObject_SetAttrId(PyObject *, struct _Py_Identifier *, PyObject *);
-PyAPI_FUNC(int) _PyObject_HasAttrId(PyObject *, struct _Py_Identifier *);
 /* Replacements of PyObject_GetAttr() and _PyObject_GetAttrId() which
    don't raise AttributeError.
 

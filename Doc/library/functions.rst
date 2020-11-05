@@ -164,8 +164,8 @@ are always available.  They are listed here in alphabetical order.
    * If it is an *integer*, the array will have that size and will be
      initialized with null bytes.
 
-   * If it is an object conforming to the *buffer* interface, a read-only buffer
-     of the object will be used to initialize the bytes array.
+   * If it is an object conforming to the :ref:`buffer interface <bufferobjects>`,
+     a read-only buffer of the object will be used to initialize the bytes array.
 
    * If it is an *iterable*, it must be an iterable of integers in the range
      ``0 <= x < 256``, which are used as the initial contents of the array.
@@ -259,26 +259,24 @@ are always available.  They are listed here in alphabetical order.
    interactive statement (in the latter case, expression statements that
    evaluate to something other than ``None`` will be printed).
 
-   The optional arguments *flags* and *dont_inherit* control which :ref:`future
-   statements <future>` affect the compilation of *source*.  If neither
-   is present (or both are zero) the code is compiled with those future
-   statements that are in effect in the code that is calling :func:`compile`.  If the
-   *flags* argument is given and *dont_inherit* is not (or is zero) then the
-   future statements specified by the *flags* argument are used in addition to
-   those that would be used anyway. If *dont_inherit* is a non-zero integer then
-   the *flags* argument is it -- the future statements in effect around the call
-   to compile are ignored.
+   The optional arguments *flags* and *dont_inherit* control which
+   :ref:`compiler options <ast-compiler-flags>` should be activated
+   and which :ref:`future features <future>` should be allowed. If neither
+   is present (or both are zero) the code is compiled with the same flags that
+   affect the code that is calling :func:`compile`. If the *flags*
+   argument is given and *dont_inherit* is not (or is zero) then the compiler
+   options and the future statements specified by the *flags* argument are used
+   in addition to those that would be used anyway. If *dont_inherit* is a
+   non-zero integer then the *flags* argument is it -- the flags (future
+   features and compiler options) in the surrounding code are ignored.
 
-   Future statements are specified by bits which can be bitwise ORed together to
-   specify multiple statements.  The bitfield required to specify a given feature
-   can be found as the :attr:`~__future__._Feature.compiler_flag` attribute on
-   the :class:`~__future__._Feature` instance in the :mod:`__future__` module.
-
-   The optional argument *flags* also controls whether the compiled source is
-   allowed to contain top-level ``await``, ``async for`` and ``async with``.
-   When the bit ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` is set, the return code
-   object has ``CO_COROUTINE`` set in ``co_code``, and can be interactively
-   executed via ``await eval(code_object)``.
+   Compiler options and future statements are specified by bits which can be
+   bitwise ORed together to specify multiple options. The bitfield required to
+   specify a given future feature can be found as the
+   :attr:`~__future__._Feature.compiler_flag` attribute on the
+   :class:`~__future__._Feature` instance in the :mod:`__future__` module.
+   :ref:`Compiler flags <ast-compiler-flags>` can be found in :mod:`ast`
+   module, with ``PyCF_`` prefix.
 
    The argument *optimize* specifies the optimization level of the compiler; the
    default value of ``-1`` selects the optimization level of the interpreter as
@@ -506,6 +504,9 @@ are always available.  They are listed here in alphabetical order.
    returns the current global and local dictionary, respectively, which may be
    useful to pass around for use by :func:`eval` or :func:`exec`.
 
+   If the given source is a string, then leading and trailing spaces and tabs
+   are stripped.
+
    See :func:`ast.literal_eval` for a function that can safely evaluate strings
    with expressions containing only literals.
 
@@ -596,7 +597,7 @@ are always available.  They are listed here in alphabetical order.
    input must conform to the following grammar after leading and trailing
    whitespace characters are removed:
 
-   .. productionlist::
+   .. productionlist:: float
       sign: "+" | "-"
       infinity: "Infinity" | "inf"
       nan: "nan"
@@ -781,6 +782,8 @@ are always available.  They are listed here in alphabetical order.
    value.
 
    .. impl-detail:: This is the address of the object in memory.
+
+   .. audit-event:: builtins.id id id
 
 
 .. function:: input([prompt])
@@ -1055,7 +1058,8 @@ are always available.  They are listed here in alphabetical order.
 .. function:: open(file, mode='r', buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None)
 
    Open *file* and return a corresponding :term:`file object`.  If the file
-   cannot be opened, an :exc:`OSError` is raised.
+   cannot be opened, an :exc:`OSError` is raised. See
+   :ref:`tut-files` for more examples of how to use this function.
 
    *file* is a :term:`path-like object` giving the pathname (absolute or
    relative to the current working directory) of the file to be opened or an
@@ -1511,14 +1515,12 @@ are always available.  They are listed here in alphabetical order.
 .. class:: slice(stop)
            slice(start, stop[, step])
 
-   .. index:: single: Numerical Python
-
    Return a :term:`slice` object representing the set of indices specified by
    ``range(start, stop, step)``.  The *start* and *step* arguments default to
    ``None``.  Slice objects have read-only data attributes :attr:`~slice.start`,
    :attr:`~slice.stop` and :attr:`~slice.step` which merely return the argument
    values (or their default).  They have no other explicit functionality;
-   however they are used by Numerical Python and other third party extensions.
+   however they are used by NumPy and other third party packages.
    Slice objects are also generated when extended indexing syntax is used.  For
    example: ``a[start:stop:step]`` or ``a[start:stop, i]``.  See
    :func:`itertools.islice` for an alternate version that returns an iterator.
@@ -1733,6 +1735,9 @@ are always available.  They are listed here in alphabetical order.
    locals dictionary is only useful for reads since updates to the locals
    dictionary are ignored.
 
+   A :exc:`TypeError` exception is raised if an object is specified but
+   it doesn't have a :attr:`~object.__dict__` attribute (for example, if
+   its class defines the :attr:`~object.__slots__` attribute).
 
 .. function:: zip(*iterables, strict=False)
 

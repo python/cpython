@@ -17,6 +17,7 @@ import unittest
 
 import test.support
 from test.support import import_helper
+from test.support import warnings_helper
 import test.string_tests
 import test.list_tests
 from test.support import bigaddrspacetest, MAX_Py_ssize_t
@@ -27,7 +28,7 @@ if sys.flags.bytes_warning:
     def check_bytes_warnings(func):
         @functools.wraps(func)
         def wrapper(*args, **kw):
-            with test.support.check_warnings(('', BytesWarning)):
+            with warnings_helper.check_warnings(('', BytesWarning)):
                 return func(*args, **kw)
         return wrapper
 else:
@@ -1769,7 +1770,7 @@ class AssortedBytesTest(unittest.TestCase):
                          "BytesWarning is needed for this test: use -bb option")
     def test_compare(self):
         def bytes_warning():
-            return test.support.check_warnings(('', BytesWarning))
+            return warnings_helper.check_warnings(('', BytesWarning))
         with bytes_warning():
             b'' == ''
         with bytes_warning():

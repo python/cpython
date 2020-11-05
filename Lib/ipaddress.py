@@ -1214,7 +1214,7 @@ class _BaseV4:
         """
         if not octet_str:
             raise ValueError("Empty octet not permitted")
-        # Whitelist the characters, since int() allows a lot of bizarre stuff.
+        # Reject non-ASCII digits.
         if not (octet_str.isascii() and octet_str.isdigit()):
             msg = "Only decimal digits permitted in %r"
             raise ValueError(msg % octet_str)
@@ -1719,7 +1719,7 @@ class _BaseV6:
               [0..FFFF].
 
         """
-        # Whitelist the characters, since int() allows a lot of bizarre stuff.
+        # Reject non-ASCII digits.
         if not cls._HEX_DIGITS.issuperset(hextet_str):
             raise ValueError("Only hex digits permitted in %r" % hextet_str)
         # We do the length check second, since the invalid character error

@@ -199,7 +199,7 @@ access internal read-only data of Unicode objects:
    .. versionadded:: 3.3
 
 
-.. c:function:: PyUnicode_MAX_CHAR_VALUE(PyObject *o)
+.. c:macro:: PyUnicode_MAX_CHAR_VALUE(o)
 
    Return the maximum code point that is suitable for creating another string
    based on *o*, which must be in the "canonical" representation.  This is
@@ -783,7 +783,7 @@ system.
    :c:data:`Py_FileSystemDefaultEncoding` (the locale encoding read at
    Python startup).
 
-   This function ignores the Python UTF-8 mode.
+   This function ignores the :ref:`Python UTF-8 Mode <utf8-mode>`.
 
    .. seealso::
 
@@ -819,7 +819,7 @@ system.
    :c:data:`Py_FileSystemDefaultEncoding` (the locale encoding read at
    Python startup).
 
-   This function ignores the Python UTF-8 mode.
+   This function ignores the :ref:`Python UTF-8 Mode <utf8-mode>`.
 
    .. seealso::
 
@@ -878,8 +878,7 @@ conversion function:
 
 .. c:function:: PyObject* PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 
-   Decode a string using :c:data:`Py_FileSystemDefaultEncoding` and the
-   :c:data:`Py_FileSystemDefaultEncodeErrors` error handler.
+   Decode a string from the :term:`filesystem encoding and error handler`.
 
    If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to the
    locale encoding.
@@ -899,8 +898,8 @@ conversion function:
 
 .. c:function:: PyObject* PyUnicode_DecodeFSDefault(const char *s)
 
-   Decode a null-terminated string using :c:data:`Py_FileSystemDefaultEncoding`
-   and the :c:data:`Py_FileSystemDefaultEncodeErrors` error handler.
+   Decode a null-terminated string from the :term:`filesystem encoding and
+   error handler`.
 
    If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to the
    locale encoding.
@@ -1097,6 +1096,9 @@ These are the UTF-8 codec APIs:
 
    .. versionchanged:: 3.7
       The return type is now ``const char *`` rather of ``char *``.
+
+   .. versionchanged:: 3.10
+      This function is a part of the :ref:`limited API <stable>`.
 
 
 .. c:function:: const char* PyUnicode_AsUTF8(PyObject *unicode)
@@ -1487,17 +1489,21 @@ These are the mapping codec APIs:
 
 The following codec API is special in that maps Unicode to Unicode.
 
-.. c:function:: PyObject* PyUnicode_Translate(PyObject *unicode, \
-                              PyObject *mapping, const char *errors)
+.. c:function:: PyObject* PyUnicode_Translate(PyObject *str, PyObject *table, const char *errors)
 
-   Translate a Unicode object using the given *mapping* object and return the
-   resulting Unicode object.  Return ``NULL`` if an exception was raised by the
+   Translate a string by applying a character mapping table to it and return the
+   resulting Unicode object. Return ``NULL`` if an exception was raised by the
    codec.
 
-   The *mapping* object must map Unicode ordinal integers to Unicode strings,
-   integers (which are then interpreted as Unicode ordinals) or ``None``
-   (causing deletion of the character).  Unmapped character ordinals (ones
-   which cause a :exc:`LookupError`) are left untouched and are copied as-is.
+   The mapping table must map Unicode ordinal integers to Unicode ordinal integers
+   or ``None`` (causing deletion of the character).
+
+   Mapping tables need only provide the :meth:`__getitem__` interface; dictionaries
+   and sequences work well.  Unmapped character ordinals (ones which cause a
+   :exc:`LookupError`) are left untouched and are copied as-is.
+
+   *errors* has the usual meaning for codecs. It may be ``NULL`` which indicates to
+   use the default error handling.
 
 
 .. c:function:: PyObject* PyUnicode_TranslateCharmap(const Py_UNICODE *s, Py_ssize_t size, \
@@ -1598,23 +1604,6 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    Split a Unicode string at line breaks, returning a list of Unicode strings.
    CRLF is considered to be one line break.  If *keepend* is ``0``, the Line break
    characters are not included in the resulting strings.
-
-
-.. c:function:: PyObject* PyUnicode_Translate(PyObject *str, PyObject *table, \
-                              const char *errors)
-
-   Translate a string by applying a character mapping table to it and return the
-   resulting Unicode object.
-
-   The mapping table must map Unicode ordinal integers to Unicode ordinal integers
-   or ``None`` (causing deletion of the character).
-
-   Mapping tables need only provide the :meth:`__getitem__` interface; dictionaries
-   and sequences work well.  Unmapped character ordinals (ones which cause a
-   :exc:`LookupError`) are left untouched and are copied as-is.
-
-   *errors* has the usual meaning for codecs. It may be ``NULL`` which indicates to
-   use the default error handling.
 
 
 .. c:function:: PyObject* PyUnicode_Join(PyObject *separator, PyObject *seq)

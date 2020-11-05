@@ -161,7 +161,7 @@ type.
 .. c:type:: PyStructSequence_Field
 
    Describes a field of a struct sequence. As a struct sequence is modeled as a
-   tuple, all fields are typed as :c:type:`PyObject\*`.  The index in the
+   tuple, all fields are typed as :c:type:`PyObject*`.  The index in the
    :attr:`fields` array of the :c:type:`PyStructSequence_Desc` determines which
    field of the struct sequence is described.
 

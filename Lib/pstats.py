@@ -45,9 +45,9 @@ class SortKey(str, Enum):
     TIME = 'time', 'tottime'
 
     def __new__(cls, *values):
-        obj = str.__new__(cls)
-
-        obj._value_ = values[0]
+        value = values[0]
+        obj = str.__new__(cls, value)
+        obj._value_ = value
         for other_value in values[1:]:
             cls._value2member_map_[other_value] = obj
         obj._all_values = values

@@ -1652,8 +1652,8 @@ class TestParseNumber(BaseTest):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {'check_builtin', 'AmbiguousOptionError', 'NO_DEFAULT'}
-        support.check__all__(self, optparse, blacklist=blacklist)
+        not_exported = {'check_builtin', 'AmbiguousOptionError', 'NO_DEFAULT'}
+        support.check__all__(self, optparse, not_exported=not_exported)
 
 
 def test_main():

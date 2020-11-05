@@ -717,7 +717,7 @@ the following methods and attributes:
             window.addch(y, x, ch[, attr])
 
    Paint character *ch* at ``(y, x)`` with attributes *attr*, overwriting any
-   character previously painter at that location.  By default, the character
+   character previously painted at that location.  By default, the character
    position and attributes are the current settings for the window object.
 
    .. note::

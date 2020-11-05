@@ -3103,6 +3103,19 @@ class size_t_converter(CConverter):
         return super().parse_arg(argname, displayname)
 
 
+class fildes_converter(CConverter):
+    type = 'int'
+    converter = '_PyLong_FileDescriptor_Converter'
+
+    def _parse_arg(self, argname, displayname):
+        return """
+            {paramname} = PyObject_AsFileDescriptor({argname});
+            if ({paramname} == -1) {{{{
+                goto exit;
+            }}}}
+            """.format(argname=argname, paramname=self.name)
+
+
 class float_converter(CConverter):
     type = 'float'
     default_type = float
@@ -4433,7 +4446,7 @@ class DSLParser:
 
                 if 'c_default' not in kwargs:
                     # we can only represent very simple data values in C.
-                    # detect whether default is okay, via a blacklist
+                    # detect whether default is okay, via a denylist
                     # of disallowed ast nodes.
                     class DetectBadNodes(ast.NodeVisitor):
                         bad = False
@@ -4456,9 +4469,9 @@ class DSLParser:
                         # "starred": "a = [1, 2, 3]; *a"
                         visit_Starred = bad_node
 
-                    blacklist = DetectBadNodes()
-                    blacklist.visit(module)
-                    bad = blacklist.bad
+                    denylist = DetectBadNodes()
+                    denylist.visit(module)
+                    bad = denylist.bad
                 else:
                     # if they specify a c_default, we can be more lenient about the default value.
                     # but at least make an attempt at ensuring it's a valid expression.

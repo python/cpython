@@ -221,7 +221,8 @@ ProcessPoolExecutor
 The :class:`ProcessPoolExecutor` class is an :class:`Executor` subclass that
 uses a pool of processes to execute calls asynchronously.
 :class:`ProcessPoolExecutor` uses the :mod:`multiprocessing` module, which
-allows it to side-step the :term:`Global Interpreter Lock` but also means that
+allows it to side-step the :term:`Global Interpreter Lock
+<global interpreter lock>` but also means that
 only picklable objects can be executed and returned.
 
 The ``__main__`` module must be importable by worker subprocesses. This means

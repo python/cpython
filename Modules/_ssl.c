@@ -805,10 +805,11 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
                         errno = err.c;
                         return PyErr_SetFromErrno(PyExc_OSError);
                     }
-                    Py_INCREF(s);
-                    s->errorhandler();
-                    Py_DECREF(s);
-                    return NULL;
+                    else {
+                        p = PY_SSL_ERROR_EOF;
+                        type = PySSLEOFErrorObject;
+                        errstr = "EOF occurred in violation of protocol";
+                    }
                 } else { /* possible? */
                     p = PY_SSL_ERROR_SYSCALL;
                     type = PySSLSyscallErrorObject;
@@ -898,6 +899,7 @@ _ssl_configure_hostname(PySSLSocket *self, const char* server_hostname)
     if (ip == NULL) {
         if (!SSL_set_tlsext_host_name(self->ssl, server_hostname)) {
             _setSSLError(NULL, 0, __FILE__, __LINE__);
+            goto error;
         }
     }
     if (self->ctx->check_hostname) {

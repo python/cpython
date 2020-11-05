@@ -855,17 +855,6 @@ _PyObject_GetAttrId(PyObject *v, _Py_Identifier *name)
 }
 
 int
-_PyObject_HasAttrId(PyObject *v, _Py_Identifier *name)
-{
-    int result;
-    PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
-    if (!oname)
-        return -1;
-    result = PyObject_HasAttr(v, oname);
-    return result;
-}
-
-int
 _PyObject_SetAttrId(PyObject *v, _Py_Identifier *name, PyObject *w)
 {
     int result;
@@ -1387,7 +1376,7 @@ PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
 }
 
 
-/* Test a value used as condition, e.g., in a for or if statement.
+/* Test a value used as condition, e.g., in a while or if statement.
    Return -1 if an error occurred */
 
 int
@@ -2218,6 +2207,22 @@ PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
     return _PyObject_GET_WEAKREFS_LISTPTR(op);
 }
 
+
+#undef Py_NewRef
+#undef Py_XNewRef
+
+// Export Py_NewRef() and Py_XNewRef() as regular functions for the stable ABI.
+PyObject*
+Py_NewRef(PyObject *obj)
+{
+    return _Py_NewRef(obj);
+}
+
+PyObject*
+Py_XNewRef(PyObject *obj)
+{
+    return _Py_XNewRef(obj);
+}
 
 #ifdef __cplusplus
 }

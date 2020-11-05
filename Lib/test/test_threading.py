@@ -20,6 +20,7 @@ import subprocess
 import signal
 import textwrap
 
+from unittest import mock
 from test import lock_tests
 from test import support
 
@@ -85,6 +86,33 @@ class BaseTestCase(unittest.TestCase):
 
 
 class ThreadTests(BaseTestCase):
+
+    @cpython_only
+    def test_name(self):
+        def func(): pass
+
+        thread = threading.Thread(name="myname1")
+        self.assertEqual(thread.name, "myname1")
+
+        # Convert int name to str
+        thread = threading.Thread(name=123)
+        self.assertEqual(thread.name, "123")
+
+        # target name is ignored if name is specified
+        thread = threading.Thread(target=func, name="myname2")
+        self.assertEqual(thread.name, "myname2")
+
+        with mock.patch.object(threading, '_counter', return_value=2):
+            thread = threading.Thread(name="")
+            self.assertEqual(thread.name, "Thread-2")
+
+        with mock.patch.object(threading, '_counter', return_value=3):
+            thread = threading.Thread()
+            self.assertEqual(thread.name, "Thread-3")
+
+        with mock.patch.object(threading, '_counter', return_value=5):
+            thread = threading.Thread(target=func)
+            self.assertEqual(thread.name, "Thread-5 (func)")
 
     # Create a bunch of threads, let each do some work, wait until all are
     # done.
@@ -531,7 +559,7 @@ class ThreadTests(BaseTestCase):
             import os, threading, sys
             from test import support
 
-            def f():
+            def func():
                 pid = os.fork()
                 if pid == 0:
                     main = threading.main_thread()
@@ -544,14 +572,14 @@ class ThreadTests(BaseTestCase):
                 else:
                     support.wait_process(pid, exitcode=0)
 
-            th = threading.Thread(target=f)
+            th = threading.Thread(target=func)
             th.start()
             th.join()
         """
         _, out, err = assert_python_ok("-c", code)
         data = out.decode().replace('\r', '')
         self.assertEqual(err, b"")
-        self.assertEqual(data, "Thread-1\nTrue\nTrue\n")
+        self.assertEqual(data, "Thread-1 (func)\nTrue\nTrue\n")
 
     def test_main_thread_during_shutdown(self):
         # bpo-31516: current_thread() should still point to the main thread
@@ -736,6 +764,27 @@ class ThreadTests(BaseTestCase):
                 callback()
         finally:
             sys.settrace(old_trace)
+
+    def test_gettrace(self):
+        def noop_trace(frame, event, arg):
+            # no operation
+            return noop_trace
+        old_trace = threading.gettrace()
+        try:
+            threading.settrace(noop_trace)
+            trace_func = threading.gettrace()
+            self.assertEqual(noop_trace,trace_func)
+        finally:
+            threading.settrace(old_trace)
+
+    def test_getprofile(self):
+        def fn(*args): pass
+        old_profile = threading.getprofile()
+        try:
+            threading.setprofile(fn)
+            self.assertEqual(fn, threading.getprofile())
+        finally:
+            threading.setprofile(old_profile)
 
     @cpython_only
     def test_shutdown_locks(self):
@@ -1365,9 +1414,9 @@ class BarrierTests(lock_tests.BarrierTests):
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         extra = {"ThreadError"}
-        blacklist = {'currentThread', 'activeCount'}
+        not_exported = {'currentThread', 'activeCount'}
         support.check__all__(self, threading, ('threading', '_thread'),
-                             extra=extra, blacklist=blacklist)
+                             extra=extra, not_exported=not_exported)
 
 
 class InterruptMainTests(unittest.TestCase):

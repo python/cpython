@@ -111,7 +111,7 @@ EXTERNAL_ENTITY_XML = """\
 def checkwarnings(*filters, quiet=False):
     def decorator(test):
         def newtest(*args, **kwargs):
-            with support.check_warnings(*filters, quiet=quiet):
+            with warnings_helper.check_warnings(*filters, quiet=quiet):
                 test(*args, **kwargs)
         functools.update_wrapper(newtest, test)
         return newtest
@@ -128,7 +128,7 @@ class ModuleTest(unittest.TestCase):
 
     def test_all(self):
         names = ("xml.etree.ElementTree", "_elementtree")
-        support.check__all__(self, ET, names, blacklist=("HTML_EMPTY",))
+        support.check__all__(self, ET, names, not_exported=("HTML_EMPTY",))
 
 
 def serialize(elem, to_string=True, encoding='unicode', **options):
@@ -3898,6 +3898,14 @@ class C14NTest(unittest.TestCase):
         # fragments from PJ's tests
         #self.assertEqual(c14n_roundtrip("<doc xmlns:x='http://example.com/x' xmlns='http://example.com/default'><b y:a1='1' xmlns='http://example.com/default' a3='3' xmlns:y='http://example.com/y' y:a2='2'/></doc>"),
         #'<doc xmlns:x="http://example.com/x"><b xmlns:y="http://example.com/y" a3="3" y:a1="1" y:a2="2"></b></doc>')
+
+        # Namespace issues
+        xml = '<X xmlns="http://nps/a"><Y targets="abc,xyz"></Y></X>'
+        self.assertEqual(c14n_roundtrip(xml), xml)
+        xml = '<X xmlns="http://nps/a"><Y xmlns="http://nsp/b" targets="abc,xyz"></Y></X>'
+        self.assertEqual(c14n_roundtrip(xml), xml)
+        xml = '<X xmlns="http://nps/a"><Y xmlns:b="http://nsp/b" b:targets="abc,xyz"></Y></X>'
+        self.assertEqual(c14n_roundtrip(xml), xml)
 
     def test_c14n_exclusion(self):
         xml = textwrap.dedent("""\

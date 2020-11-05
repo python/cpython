@@ -107,9 +107,7 @@ Select Customize to review current options.</String>
   <String Id="SuccessRestartButton">&amp;Restart</String>
   <String Id="SuccessInstallMessage">New to Python? Start with the &lt;a href="https://docs.python.org/[ShortVersion]/tutorial/index.html"&gt;online tutorial&lt;/a&gt; and &lt;a href="https://docs.python.org/[ShortVersion]/index.html"&gt;documentation&lt;/a&gt;. At your terminal, type "py" to launch Python, or search for Python in your Start menu.
 
-See &lt;a href="https://docs.python.org/[ShortVersion]/whatsnew/[ShortVersion].html"&gt;what's new&lt;/a&gt; in this release, or find more info about &lt;a href="https://docs.python.org/[ShortVersion]/using/windows.html"&gt;using Python on Windows&lt;/a&gt;.
-
-Special thanks to Mark Hammond, without whose years of freely shared Windows expertise, Python for Windows would still be Python for DOS.</String>
+See &lt;a href="https://docs.python.org/[ShortVersion]/whatsnew/[ShortVersion].html"&gt;what's new&lt;/a&gt; in this release, or find more info about &lt;a href="https://docs.python.org/[ShortVersion]/using/windows.html"&gt;using Python on Windows&lt;/a&gt;.</String>
   <String Id="SuccessModifyMessage">Thank you for using [WixBundleName].</String>
   <String Id="SuccessRepairMessage">Thank you for using [WixBundleName].
 

@@ -64,7 +64,7 @@
 
 #if defined(_MSC_VER)
   #define ALWAYS_INLINE __forceinline
-#elif defined(LEGACY_COMPILER)
+#elif defined(__IBMC__) || defined(LEGACY_COMPILER)
   #define ALWAYS_INLINE
   #undef inline
   #define inline
