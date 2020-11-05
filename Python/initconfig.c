@@ -1325,8 +1325,6 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_UINT(_init_main);
     GET_UINT(_isolated_interpreter);
 
-    assert(config_check_consistency(config));
-
 #undef CHECK_VALUE
 #undef GET_UINT
 #undef GET_WSTR

@@ -234,6 +234,12 @@ class SetConfigTests(unittest.TestCase):
         self.assertEqual(sys.argv, ['python_program', 'args'])
         self.assertEqual(sys.orig_argv, ['orig', 'orig_args'])
 
+        self.set_config(parse_argv=0,
+                        argv=[],
+                        orig_argv=[])
+        self.assertEqual(sys.argv, [''])
+        self.assertEqual(sys.orig_argv, [])
+
     def test_pycache_prefix(self):
         self.check(pycache_prefix=None)
         self.check(pycache_prefix="pycache_prefix")
