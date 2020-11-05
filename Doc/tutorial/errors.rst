@@ -303,9 +303,9 @@ The expression following the :keyword:`from` must be either an exception or
 ``None``. Exception chaining happens automatically when an exception is raised
 inside an exception handler or :keyword:`finally` section, however in this case
 ``__context__`` attribute of the exception is used. Chaining with
-``__context__`` works similarly, but when formatting exception traceback
-``__cause__`` takes priority. For more information about chaining mechanics
-see :ref:`bltin-exceptions`.
+``__context__`` works similarly to chaining wit ``__cause__``,
+but when formatting exception traceback ``__cause__`` takes priority.
+For more information about chaining mechanics see :ref:`bltin-exceptions`.
 
 Exception chaining can be disabled by using ``from None`` idiom:
 
