@@ -1,1 +1,2 @@
-Deprecate ``sqlite3.OptimizedUnicode``
+``sqlite3.OptimizedUnicode`` has been deprecated. It has been undocumented
+and obsolete since Python 3.3.
