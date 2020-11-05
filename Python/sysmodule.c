@@ -2922,7 +2922,9 @@ _PySys_UpdateConfig(PyThreadState *tstate)
 #define SET_SYS_FROM_WSTR(KEY, VALUE) \
         SET_SYS(KEY, PyUnicode_FromWideChar(VALUE, -1));
 
-    COPY_LIST("path", config->module_search_paths);
+    if (config->module_search_paths_set) {
+        COPY_LIST("path", config->module_search_paths);
+    }
 
     SET_SYS_FROM_WSTR("executable", config->executable);
     SET_SYS_FROM_WSTR("_base_executable", config->base_executable);
