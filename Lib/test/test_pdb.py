@@ -1453,9 +1453,9 @@ def bœr():
             quit
         """
         stdout, stderr = self.run_pdb_script(script, commands)
-        output = ';'.join([x.strip() for x in stdout.splitlines()])
-        self.assertIn("Restarting main.py with arguments:;a b c", output)
-        self.assertIn("Restarting main.py with arguments:;d e f", output)
+        output = '\n'.join([x.strip() for x in stdout.splitlines()])
+        self.assertIn("Restarting main.py with arguments:\na b c", output)
+        self.assertIn("Restarting main.py with arguments:\nd e f", output)
 
     def test_readrc_kwarg(self):
         script = textwrap.dedent("""
