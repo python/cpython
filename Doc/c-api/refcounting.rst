@@ -38,7 +38,7 @@ objects.
        Py_INCREF(obj);
        self->attr = obj;
 
-    can be written as::
+   can be written as::
 
        self->attr = Py_NewRef(obj);
 
