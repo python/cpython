@@ -275,13 +275,13 @@ Exception Chaining
 The :keyword:`raise` statement allows an optional :keyword:`from` which enables
 chaining exceptions. For example::
 
-    # exc must be ether exception instance or None.
+    # exc must be exception instance or None.
     raise RuntimeError from exc
 
 This can be useful when you are transforming exceptions. For example::
 
     >>> def func():
-    ...    raise IOError
+    ...     raise IOError
     ...
     >>> try:
     ...     func()
@@ -300,8 +300,8 @@ This can be useful when you are transforming exceptions. For example::
     RuntimeError
 
 Exception chaining happens automatically when an exception is raised inside an
-exception handler or :keyword:`finally` section. Exception chaining can be
-disabled by using ``from None`` idiom:
+:keyword:`except` section or :keyword:`finally` section. Exception chaining can
+be disabled by using ``from None`` idiom:
 
     >>> try:
     ...     open('database.sqlite')
