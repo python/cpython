@@ -346,7 +346,7 @@ resources used by it. :meth:`__del__` of the returned :term:`file object` also c
 
 .. warning::
    Calling ``f.write()`` without using the :keyword:`!with` keyword or calling
-   ``f.close()``, ``f.flush()`` or ``del(f)`` **might** result in the arguments
+   ``f.close()``, ``f.flush()`` or ``del f`` **might** result in the arguments
    of ``f.write()`` not being completely written to the disk, even if the
    program exists successfully. This is because Python does not guarantee that
    :meth:`__del__` is called when the interpreter exists.
