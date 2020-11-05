@@ -43,12 +43,10 @@ pysqlite_microprotocols_init(PyObject *module)
         return -1;
     }
 
-    if (PyModule_AddObject(module, "adapters", psyco_adapters) < 0) {
-        Py_DECREF(psyco_adapters);
-        return -1;
-    }
+    int res = PyModule_AddObjectRef(module, "adapters", psyco_adapters);
+    Py_DECREF(psyco_adapters);
 
-    return 0;
+    return res;
 }
 
 

@@ -11,11 +11,7 @@
 
 #include "osdefs.h"               // DELIM
 #include <locale.h>               // setlocale()
-#ifdef HAVE_LANGINFO_H
-#  include <langinfo.h>           // nl_langinfo(CODESET)
-#endif
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
-#  include <windows.h>            // GetACP()
 #  ifdef HAVE_IO_H
 #    include <io.h>
 #  endif
@@ -246,8 +242,9 @@ PyStatus PyStatus_Ok(void)
 
 PyStatus PyStatus_Error(const char *err_msg)
 {
+    assert(err_msg != NULL);
     return (PyStatus){._type = _PyStatus_TYPE_ERROR,
-                          .err_msg = err_msg};
+                      .err_msg = err_msg};
 }
 
 PyStatus PyStatus_NoMemory(void)
@@ -265,6 +262,23 @@ int PyStatus_IsExit(PyStatus status)
 
 int PyStatus_Exception(PyStatus status)
 { return _PyStatus_EXCEPTION(status); }
+
+PyObject*
+_PyErr_SetFromPyStatus(PyStatus status)
+{
+    if (!_PyStatus_IS_ERROR(status)) {
+        PyErr_Format(PyExc_SystemError,
+                     "%s() expects an error PyStatus",
+                     _PyStatus_GET_FUNC());
+    }
+    else if (status.func) {
+        PyErr_Format(PyExc_ValueError, "%s: %s", status.func, status.err_msg);
+    }
+    else {
+        PyErr_Format(PyExc_ValueError, "%s", status.err_msg);
+    }
+    return NULL;
+}
 
 
 /* --- PyWideStringList ------------------------------------------------ */
@@ -547,6 +561,7 @@ _Py_SetArgcArgv(Py_ssize_t argc, wchar_t * const *argv)
 }
 
 
+// _PyConfig_Write() calls _Py_SetArgcArgv() with PyConfig.orig_argv.
 void
 Py_GetArgcArgv(int *argc, wchar_t ***argv)
 {
@@ -1322,7 +1337,7 @@ config_read_env_vars(PyConfig *config)
 
 #ifdef MS_WINDOWS
     _Py_get_env_flag(use_env, &config->legacy_windows_stdio,
-                 "PYTHONLEGACYWINDOWSSTDIO");
+                     "PYTHONLEGACYWINDOWSSTDIO");
 #endif
 
     if (config_get_env(config, "PYTHONDUMPREFS")) {
@@ -1497,41 +1512,18 @@ config_get_stdio_errors(const PyPreConfig *preconfig)
 }
 
 
-// See also _Py_GetLocaleEncoding() and config_get_fs_encoding()
+// See also config_get_fs_encoding()
 static PyStatus
 config_get_locale_encoding(PyConfig *config, const PyPreConfig *preconfig,
                            wchar_t **locale_encoding)
 {
-#ifdef _Py_FORCE_UTF8_LOCALE
-    return PyConfig_SetString(config, locale_encoding, L"utf-8");
-#else
-    if (preconfig->utf8_mode) {
-        return PyConfig_SetString(config, locale_encoding, L"utf-8");
+    wchar_t *encoding = _Py_GetLocaleEncoding();
+    if (encoding == NULL) {
+        return _PyStatus_NO_MEMORY();
     }
-
-#ifdef MS_WINDOWS
-    char encoding[20];
-    PyOS_snprintf(encoding, sizeof(encoding), "cp%u", GetACP());
-    return PyConfig_SetBytesString(config, locale_encoding, encoding);
-#else
-    const char *encoding = nl_langinfo(CODESET);
-    if (!encoding || encoding[0] == '\0') {
-#ifdef _Py_FORCE_UTF8_FS_ENCODING
-        // nl_langinfo() can return an empty string when the LC_CTYPE locale is
-        // not supported. Default to UTF-8 in that case, because UTF-8 is the
-        // default charset on macOS.
-        encoding = "UTF-8";
-#else
-        return _PyStatus_ERR("failed to get the locale encoding: "
-                             "nl_langinfo(CODESET) returns an empty string");
-#endif
-    }
-    /* nl_langinfo(CODESET) is decoded by Py_DecodeLocale() */
-    return CONFIG_SET_BYTES_STR(config,
-                                locale_encoding, encoding,
-                                "nl_langinfo(CODESET)");
-#endif  // !MS_WINDOWS
-#endif  // !_Py_FORCE_UTF8_LOCALE
+    PyStatus status = PyConfig_SetString(config, locale_encoding, encoding);
+    PyMem_RawFree(encoding);
+    return status;
 }
 
 
@@ -1541,8 +1533,8 @@ config_init_stdio_encoding(PyConfig *config,
 {
     PyStatus status;
 
-    /* If Py_SetStandardStreamEncoding() have been called, use these
-        parameters. */
+    /* If Py_SetStandardStreamEncoding() has been called, use its
+        arguments if they are not NULL. */
     if (config->stdio_encoding == NULL && _Py_StandardStreamEncoding != NULL) {
         status = CONFIG_SET_BYTES_STR(config, &config->stdio_encoding,
                                       _Py_StandardStreamEncoding,
@@ -1561,6 +1553,7 @@ config_init_stdio_encoding(PyConfig *config,
         }
     }
 
+    // Exit if encoding and errors are defined
     if (config->stdio_encoding != NULL && config->stdio_errors != NULL) {
         return _PyStatus_OK();
     }
@@ -1660,12 +1653,12 @@ config_get_fs_encoding(PyConfig *config, const PyPreConfig *preconfig,
     if (preconfig->utf8_mode) {
         return PyConfig_SetString(config, fs_encoding, L"utf-8");
     }
-    else if (_Py_GetForceASCII()) {
+
+    if (_Py_GetForceASCII()) {
         return PyConfig_SetString(config, fs_encoding, L"ascii");
     }
-    else {
-        return config_get_locale_encoding(config, preconfig, fs_encoding);
-    }
+
+    return config_get_locale_encoding(config, preconfig, fs_encoding);
 #endif  // !MS_WINDOWS
 }
 

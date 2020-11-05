@@ -87,8 +87,8 @@ get_posixsubprocess_state(PyObject *module)
 
 #define _posixsubprocessstate_global get_posixsubprocess_state(PyState_FindModule(&_posixsubprocessmodule))
 
-/* If gc was disabled, call gc.enable().  Return 0 on success. */
-static int
+/* If gc was disabled, call gc.enable(). Ignore errors. */
+static void
 _enable_gc(int need_to_reenable_gc, PyObject *gc_module)
 {
     PyObject *result;
@@ -98,15 +98,17 @@ _enable_gc(int need_to_reenable_gc, PyObject *gc_module)
         PyErr_Fetch(&exctype, &val, &tb);
         result = PyObject_CallMethodNoArgs(
             gc_module, _posixsubprocessstate_global->enable);
+        if (result == NULL) {
+            /* We might have created a child process at this point, we
+             * we have no good way to handle a failure to reenable GC
+             * and return information about the child process. */
+            PyErr_Print();
+        }
+        Py_XDECREF(result);
         if (exctype != NULL) {
             PyErr_Restore(exctype, val, tb);
         }
-        if (result == NULL) {
-            return 1;
-        }
-        Py_DECREF(result);
     }
-    return 0;
 }
 
 
@@ -774,7 +776,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     int child_umask;
     PyObject *cwd_obj, *cwd_obj2 = NULL;
     const char *cwd;
-    pid_t pid;
+    pid_t pid = -1;
     int need_to_reenable_gc = 0;
     char *const *exec_array, *const *argv = NULL, *const *envp = NULL;
     Py_ssize_t arg_num, num_groups = 0;
@@ -1010,8 +1012,6 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         sigset_t all_sigs;
         sigfillset(&all_sigs);
         if ((saved_errno = pthread_sigmask(SIG_BLOCK, &all_sigs, &old_sigs))) {
-            errno = saved_errno;
-            PyErr_SetFromErrno(PyExc_OSError);
             goto cleanup;
         }
         old_sigmask = &old_sigs;
@@ -1050,50 +1050,33 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     }
 #endif
 
-    Py_XDECREF(cwd_obj2);
-
     if (need_after_fork)
         PyOS_AfterFork_Parent();
-    if (envp)
-        _Py_FreeCharPArray(envp);
-    if (argv)
-        _Py_FreeCharPArray(argv);
-    _Py_FreeCharPArray(exec_array);
 
-    /* Reenable gc in the parent process (or if fork failed). */
-    if (_enable_gc(need_to_reenable_gc, gc_module)) {
-        pid = -1;
-    }
-    PyMem_RawFree(groups);
-    Py_XDECREF(preexec_fn_args_tuple);
-    Py_XDECREF(gc_module);
-
-    if (pid == -1) {
+cleanup:
+    if (saved_errno != 0) {
         errno = saved_errno;
         /* We can't call this above as PyOS_AfterFork_Parent() calls back
          * into Python code which would see the unreturned error. */
         PyErr_SetFromErrno(PyExc_OSError);
-        return NULL;  /* fork() failed. */
     }
 
-    return PyLong_FromPid(pid);
-
-cleanup:
+    Py_XDECREF(preexec_fn_args_tuple);
+    PyMem_RawFree(groups);
     Py_XDECREF(cwd_obj2);
     if (envp)
         _Py_FreeCharPArray(envp);
+    Py_XDECREF(converted_args);
+    Py_XDECREF(fast_args);
     if (argv)
         _Py_FreeCharPArray(argv);
     if (exec_array)
         _Py_FreeCharPArray(exec_array);
 
-    PyMem_RawFree(groups);
-    Py_XDECREF(converted_args);
-    Py_XDECREF(fast_args);
-    Py_XDECREF(preexec_fn_args_tuple);
     _enable_gc(need_to_reenable_gc, gc_module);
     Py_XDECREF(gc_module);
-    return NULL;
+
+    return pid == -1 ? NULL : PyLong_FromPid(pid);
 }
 
 

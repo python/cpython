@@ -134,7 +134,7 @@ arguments of multiple types, :data:`typing.Union` was used::
        return number ** 2
 
 
-Now, type hints can be written in a more succinct manner::
+Type hints can now be written in a more succinct manner::
 
    def square(number: int | float) -> int | float:
        return number ** 2
@@ -223,6 +223,14 @@ sys
 Add :data:`sys.orig_argv` attribute: the list of the original command line
 arguments passed to the Python executable.
 (Contributed by Victor Stinner in :issue:`23427`.)
+
+threading
+---------
+
+Added :func:`threading.gettrace` and :func:`threading.getprofile` to
+retrieve the functions set by :func:`threading.settrace` and
+:func:`threading.setprofile` respectively.
+(Contributed by Mario Corchero in :issue:`42251`.)
 
 traceback
 ---------
@@ -383,6 +391,11 @@ New Features
 
 * Added :c:func:`PyUnicode_AsUTF8AndSize` to the limited C API.
   (Contributed by Alex Gaynor in :issue:`41784`.)
+
+* Added :c:func:`PyModule_AddObjectRef` function: similar to
+  :c:func:`PyModule_AddObjectRef` but don't steal a reference to the value on
+  success.
+  (Contributed by Victor Stinner in :issue:`1635741`.)
 
 
 Porting to Python 3.10
