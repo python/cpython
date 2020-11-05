@@ -133,13 +133,9 @@ _USER_BASE = None
 
 # Regexes needed for parsing Makefile (and similar syntaxes,
 # like old-style Setup files).
-try:
-    import re
-    _variable_rx = re.compile(r"([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)")
-    _findvar1_rx = re.compile(r"\$\(([A-Za-z][A-Za-z0-9_]*)\)")
-    _findvar2_rx = re.compile(r"\${([A-Za-z][A-Za-z0-9_]*)}")
-except ImportError:
-    pass
+_variable_rx = r"([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)"
+_findvar1_rx = r"\$\(([A-Za-z][A-Za-z0-9_]*)\)"
+_findvar2_rx = r"\${([A-Za-z][A-Za-z0-9_]*)}"
 
 
 def _safe_realpath(path):
@@ -233,6 +229,8 @@ def _parse_makefile(filename, vars=None, keep_unresolved=True):
     optional dictionary is passed in as the second argument, it is
     used instead of a new dictionary.
     """
+    import re
+
     if vars is None:
         vars = {}
     done = {}
@@ -245,7 +243,7 @@ def _parse_makefile(filename, vars=None, keep_unresolved=True):
     for line in lines:
         if line.startswith('#') or line.strip() == '':
             continue
-        m = _variable_rx.match(line)
+        m = re.match(_variable_rx, line)
         if m:
             n, v = m.group(1, 2)
             v = v.strip()
@@ -278,8 +276,8 @@ def _parse_makefile(filename, vars=None, keep_unresolved=True):
     while len(variables) > 0:
         for name in tuple(variables):
             value = notdone[name]
-            m1 = _findvar1_rx.search(value)
-            m2 = _findvar2_rx.search(value)
+            m1 = re.search(_findvar1_rx, value)
+            m2 = re.search(_findvar2_rx, value)
             if m1 and m2:
                 m = m1 if m1.start() < m2.start() else m2
             else:
@@ -812,6 +810,7 @@ def expand_makefile_vars(s, vars):
     variable expansions; if 'vars' is the output of 'parse_makefile()',
     you're fine.  Returns a variable-expanded version of 's'.
     """
+    import re
 
     # This algorithm does multiple expansion, so if vars['foo'] contains
     # "${bar}", it will expand ${foo} to ${bar}, and then expand
@@ -820,7 +819,7 @@ def expand_makefile_vars(s, vars):
     # according to make's variable expansion semantics.
 
     while True:
-        m = _findvar1_rx.search(s) or _findvar2_rx.search(s)
+        m = re.search(_findvar1_rx, s) or re.search(_findvar2_rx, s)
         if m:
             (beg, end) = m.span()
             s = s[0:beg] + vars.get(m.group(1)) + s[end:]
