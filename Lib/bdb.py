@@ -698,6 +698,12 @@ class Breakpoint:
         else:
             self.bplist[file, line] = [self]
 
+    @staticmethod
+    def clearBreakpoints():
+        Breakpoint.next = 1
+        Breakpoint.bplist = {}
+        Breakpoint.bpbynumber = [None]
+
     def deleteMe(self):
         """Delete the breakpoint from the list associated to a file:line.
 

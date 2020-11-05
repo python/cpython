@@ -74,9 +74,7 @@ class BdbNotExpectedError(BdbException): """Unexpected result."""
 dry_run = 0
 
 def reset_Breakpoint():
-    _bdb.Breakpoint.next = 1
-    _bdb.Breakpoint.bplist = {}
-    _bdb.Breakpoint.bpbynumber = [None]
+    _bdb.Breakpoint.clearBreakpoints()
 
 def info_breakpoints():
     bp_list = [bp for  bp in _bdb.Breakpoint.bpbynumber if bp]

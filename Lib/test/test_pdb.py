@@ -213,11 +213,9 @@ def test_pdb_basic_commands():
     BAZ
     """
 
-def reset_Breakpoint_state():
+def reset_Breakpoint():
     import bdb
-    bdb.Breakpoint.next = 1
-    bdb.Breakpoint.bplist = {}
-    bdb.Breakpoint.bpbynumber = [None]
+    bdb.Breakpoint.clearBreakpoints()
 
 def test_pdb_breakpoint_commands():
     """Test basic commands related to breakpoints.
@@ -232,7 +230,7 @@ def test_pdb_breakpoint_commands():
     First, need to clear bdb state that might be left over from previous tests.
     Otherwise, the new breakpoints might get assigned different numbers.
 
-    >>> reset_Breakpoint_state()
+    >>> reset_Breakpoint()
 
     Now test the breakpoint commands.  NORMALIZE_WHITESPACE is needed because
     the breakpoint list outputs a tab for the "stop only" and "ignore next"
@@ -328,7 +326,7 @@ def test_pdb_breakpoint_commands():
 def test_pdb_breakpoints_preserved_across_interactive_sessions():
     """Breakpoints are remembered between interactive sessions
 
-    >>> reset_Breakpoint_state()
+    >>> reset_Breakpoint()
     >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...    'import test.test_pdb',
     ...    'break test.test_pdb.do_something',
@@ -746,7 +744,7 @@ def test_next_until_return_at_return_event():
     ...     test_function_2()
     ...     end = 1
 
-    >>> reset_Breakpoint_state()
+    >>> reset_Breakpoint()
     >>> with PdbTestInput(['break test_function_2',
     ...                    'continue',
     ...                    'return',
@@ -1259,7 +1257,7 @@ def test_pdb_issue_20766():
     ...         print('pdb %d: %s' % (i, sess._previous_sigint_handler))
     ...         i += 1
 
-    >>> reset_Breakpoint_state()
+    >>> reset_Breakpoint()
     >>> with PdbTestInput(['continue',
     ...                    'continue']):
     ...     test_function()
