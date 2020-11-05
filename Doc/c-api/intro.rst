@@ -711,7 +711,7 @@ The embedding application can steer the search by calling
 inserted in front of the standard path.  An application that requires total
 control has to provide its own implementation of :c:func:`Py_GetPath`,
 :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`, and
-:c:func:`Py_GetProgramFullPath` (all defined in :file:`Modules/getpath.c`).
+:c:func:`Py_GetProgramFullPath` (all defined in :file:`Python/pathconfig.c`).
 
 .. index:: single: Py_IsInitialized()
 

@@ -48,9 +48,12 @@ PyAPI_DATA(wchar_t*) _Py_dll_path;
 
 extern void _PyPathConfig_ClearGlobal(void);
 
+#ifdef MS_WINDOWS
 extern PyStatus _PyPathConfig_Calculate(
     _PyPathConfig *pathconfig,
     const PyConfig *config);
+#endif
+
 extern int _PyPathConfig_ComputeSysPath0(
     const PyWideStringList *argv,
     PyObject **path0);

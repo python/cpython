@@ -150,7 +150,7 @@ int Py_InspectFlag = 0; /* Needed to determine whether to exit at SystemExit */
 int Py_OptimizeFlag = 0; /* Needed by compile.c */
 int Py_NoSiteFlag = 0; /* Suppress 'import site' */
 int Py_BytesWarningFlag = 0; /* Warn on str(bytes) and str(buffer) */
-int Py_FrozenFlag = 0; /* Needed by getpath.c */
+int Py_FrozenFlag = 0; /* Needed by _getpath.py */
 int Py_IgnoreEnvironmentFlag = 0; /* e.g. PYTHONPATH, PYTHONHOME */
 int Py_DontWriteBytecodeFlag = 0; /* Suppress writing bytecode files (*.pyc) */
 int Py_NoUserSiteDirectory = 0; /* for -s and site.py */
@@ -266,16 +266,21 @@ int PyStatus_Exception(PyStatus status)
 PyObject*
 _PyErr_SetFromPyStatus(PyStatus status)
 {
-    if (!_PyStatus_IS_ERROR(status)) {
-        PyErr_Format(PyExc_SystemError,
-                     "%s() expects an error PyStatus",
-                     _PyStatus_GET_FUNC());
-    }
-    else if (status.func) {
-        PyErr_Format(PyExc_ValueError, "%s: %s", status.func, status.err_msg);
+    if (_PyStatus_IS_EXIT(status)) {
+        PyObject *arg = PyLong_FromLong(status.exitcode);
+        if (arg == NULL) {
+            return NULL;
+        }
+        PyErr_SetObject(PyExc_SystemExit, arg);
     }
     else {
-        PyErr_Format(PyExc_ValueError, "%s", status.err_msg);
+        assert(_PyStatus_IS_ERROR(status));
+        if (status.func) {
+            PyErr_Format(PyExc_ValueError, "%s: %s", status.func, status.err_msg);
+        }
+        else {
+            PyErr_Format(PyExc_ValueError, "%s", status.err_msg);
+        }
     }
     return NULL;
 }

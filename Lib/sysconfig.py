@@ -409,7 +409,7 @@ def _generate_posix_vars():
         f.write('build_time_vars = ')
         pprint.pprint(vars, stream=f)
 
-    # Create file used for sys.path fixup -- see Modules/getpath.c
+    # Create file used for sys.path fixup -- see Lib/_getpath.py
     with open('pybuilddir.txt', 'w', encoding='utf8') as f:
         f.write(pybuilddir)
 

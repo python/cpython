@@ -997,6 +997,35 @@ pyinit_main_reconfigure(PyThreadState *tstate)
 }
 
 
+#ifndef MS_WINDOWS
+// Run _getpath.main() to compute the Python path configuration.
+static int
+pyinit_run__getpath(void)
+{
+    PyObject *mod = PyImport_ImportModule("_getpath");
+    if (mod == NULL) {
+        return -1;
+    }
+
+    PyObject *func = PyObject_GetAttrString(mod, "main");
+    if (func == NULL) {
+        Py_DECREF(mod);
+        return -1;
+    }
+
+    PyObject *res = PyObject_CallNoArgs(func);
+    Py_DECREF(func);
+    if (res == NULL) {
+        Py_DECREF(mod);
+        return -1;
+    }
+
+    Py_DECREF(mod);
+    return 0;
+}
+#endif   // !MS_WINDOWS
+
+
 static PyStatus
 init_interp_main(PyThreadState *tstate)
 {
@@ -1019,11 +1048,17 @@ init_interp_main(PyThreadState *tstate)
         return _PyStatus_OK();
     }
 
+#ifdef MS_WINDOWS
     // Compute the path configuration
     status = _PyConfig_InitPathConfig(&interp->config, 1);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+#else
+    if (pyinit_run__getpath() < 0) {
+        return _PyStatus_ERR("_getpath failed");
+    }
+#endif
 
     if (interpreter_update_config(tstate, 1) < 0) {
         return _PyStatus_ERR("failed to update the Python config");

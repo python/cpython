@@ -41,7 +41,7 @@ Py_FrozenMain(int argc, char **argv)
 
     PyConfig config;
     PyConfig_InitPythonConfig(&config);
-    config.pathconfig_warnings = 0;   /* Suppress errors from getpath.c */
+    config.pathconfig_warnings = 0;   /* Suppress errors from _getpath.py */
 
     if ((p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')
         inspect = 1;

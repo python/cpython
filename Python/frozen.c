@@ -2,6 +2,7 @@
 /* Dummy frozen modules initializer */
 
 #include "Python.h"
+#include "getpath.h"
 #include "importlib.h"
 #include "importlib_external.h"
 #include "importlib_zipimport.h"
@@ -36,6 +37,7 @@ static const struct _frozen _PyImport_FrozenModules[] = {
         (int)sizeof(_Py_M__importlib_bootstrap_external)},
     {"zipimport", _Py_M__zipimport,
         (int)sizeof(_Py_M__zipimport)},
+    {"_getpath", _Py_M__getpath, (int)sizeof(_Py_M__getpath)},
     /* Test module */
     {"__hello__", M___hello__, SIZE},
     /* Test package (negative size indicates package-ness) */

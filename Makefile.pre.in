@@ -281,7 +281,7 @@ COVERAGE_REPORT_OPTIONS=--no-branch-coverage --title "CPython lcov report"
 # Modules
 MODULE_OBJS=	\
 		Modules/config.o \
-		Modules/getpath.o \
+		Modules/_cgetpath.o \
 		Modules/main.o \
 		Modules/gcmodule.o
 
@@ -584,7 +584,7 @@ platform: $(BUILDPYTHON) pybuilddir.txt
 
 # Create build directory and generate the sysconfig build-time data there.
 # pybuilddir.txt contains the name of the build dir and is used for
-# sys.path fixup -- see Modules/getpath.c.
+# sys.path fixup -- see Lib/_getpath.py.
 # Since this step runs before shared modules are built, try to avoid bootstrap
 # problems by creating a dummy pybuilddir.txt just to allow interpreter
 # initialization to succeed.  It will be overwritten by generate-posix-vars
@@ -742,6 +742,12 @@ regen-importlib: Programs/_freeze_importlib
 	    $(srcdir)/Lib/zipimport.py \
 	    $(srcdir)/Python/importlib_zipimport.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/importlib_zipimport.h $(srcdir)/Python/importlib_zipimport.h.new
+	# Regenerate Python/getpath.h from Lib/_getpath.py
+	# using _freeze_importlib
+	./Programs/_freeze_importlib getpath \
+	    $(srcdir)/Lib/_getpath.py \
+	    $(srcdir)/Python/getpath.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/getpath.h $(srcdir)/Python/getpath.h.new
 
 
 ############################################################################
@@ -767,13 +773,13 @@ Modules/getbuildinfo.o: $(PARSER_OBJS) \
 	      -DGITBRANCH="\"`LC_ALL=C $(GITBRANCH)`\"" \
 	      -o $@ $(srcdir)/Modules/getbuildinfo.c
 
-Modules/getpath.o: $(srcdir)/Modules/getpath.c Makefile
+Modules/_cgetpath.o: $(srcdir)/Modules/_cgetpath.c Makefile
 	$(CC) -c $(PY_CORE_CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
 		-DPREFIX='"$(prefix)"' \
 		-DEXEC_PREFIX='"$(exec_prefix)"' \
 		-DVERSION='"$(VERSION)"' \
 		-DVPATH='"$(VPATH)"' \
-		-o $@ $(srcdir)/Modules/getpath.c
+		-o $@ $(srcdir)/Modules/_cgetpath.c
 
 Programs/python.o: $(srcdir)/Programs/python.c
 	$(MAINCC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/python.c
@@ -950,7 +956,8 @@ regen-opcode-targets:
 Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/ceval_gil.h \
 		$(srcdir)/Python/condvar.h
 
-Python/frozen.o: $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib_external.h \
+Python/frozen.o: $(srcdir)/Python/getpath.h $(srcdir)/Python/importlib.h \
+		$(srcdir)/Python/importlib_external.h \
 		$(srcdir)/Python/importlib_zipimport.h
 
 # Generate DTrace probe macros, then rename them (PYTHON_ -> PyDTrace_) to

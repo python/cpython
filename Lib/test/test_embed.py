@@ -1008,6 +1008,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_init_read_set(self):
         config = {
             'program_name': './init_read_set',
+            'base_executable': 'my_executable',
             'executable': 'my_executable',
         }
         def modify_path(path):

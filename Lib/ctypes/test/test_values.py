@@ -64,6 +64,7 @@ class PythonValuesTestCase(unittest.TestCase):
         bootstrap_expected = [
                 b'_frozen_importlib',
                 b'_frozen_importlib_external',
+                b'_getpath',
                 b'zipimport',
                 ]
         for entry in ft:

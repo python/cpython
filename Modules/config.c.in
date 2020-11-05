@@ -30,6 +30,7 @@ extern PyObject* PyInit_gc(void);
 extern PyObject* PyInit__ast(void);
 extern PyObject* _PyWarnings_Init(void);
 extern PyObject* PyInit__string(void);
+extern PyObject* PyInit__cgetpath(void);
 
 struct _inittab _PyImport_Inittab[] = {
 
@@ -56,6 +57,9 @@ struct _inittab _PyImport_Inittab[] = {
 
     /* This lives in Objects/unicodeobject.c */
     {"_string", PyInit__string},
+
+    /* This lives in Modules/_cgetpath.c */
+    {"_cgetpath", PyInit__cgetpath},
 
     /* Sentinel */
     {0, 0}

@@ -350,9 +350,11 @@ pathconfig_init(_PyPathConfig *pathconfig, const PyConfig *config,
         goto done;
     }
 
+#ifdef MS_WINDOWS
     if (compute_path_config) {
         status = _PyPathConfig_Calculate(pathconfig, config);
     }
+#endif
 
 done:
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);

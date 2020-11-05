@@ -151,7 +151,7 @@ static int test_pre_initialization_api(void)
     /* the test doesn't support custom memory allocators */
     putenv("PYTHONMALLOC=");
 
-    /* Leading "./" ensures getpath.c can still find the standard library */
+    /* Leading "./" ensures _getpath can still find the standard library */
     _Py_EMBED_PREINIT_CHECK("Checking Py_DecodeLocale\n");
     wchar_t *program = Py_DecodeLocale("./spam", NULL);
     if (program == NULL) {

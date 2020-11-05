@@ -108,7 +108,7 @@
  * Py_GetPath() tries to return a sensible Python module search path.
  *
  * The approach is an adaptation for Windows of the strategy used in
- * ../Modules/getpath.c; it uses the Windows Registry as one of its
+ * ../Lib/_getpath.py; it uses the Windows Registry as one of its
  * information sources.
  *
  * Py_SetPath() can be used to override this mechanism.  Call Py_SetPath
