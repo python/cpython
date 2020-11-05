@@ -422,7 +422,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     CONFIG_PYTHON = dict(CONFIG_COMPAT,
         _config_init=API_PYTHON,
         configure_c_stdio=1,
-        parse_argv=1,
+        parse_argv=2,
     )
     CONFIG_ISOLATED = dict(CONFIG_COMPAT,
         _config_init=API_ISOLATED,
@@ -800,7 +800,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                           '-X', 'cmdline_xoption',
                           '-c', 'pass',
                           'arg2'],
-            'parse_argv': 1,
+            'parse_argv': 2,
             'xoptions': [
                 'config_xoption1=3',
                 'config_xoption2=',
@@ -1045,7 +1045,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'orig_argv': ['python3', '-c', code, 'arg2'],
             'program_name': './python3',
             'run_command': code + '\n',
-            'parse_argv': 1,
+            'parse_argv': 2,
         }
         self.check_all_configs("test_init_run_main", config, api=API_PYTHON)
 
@@ -1059,7 +1059,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                           'arg2'],
             'program_name': './python3',
             'run_command': code + '\n',
-            'parse_argv': 1,
+            'parse_argv': 2,
             '_init_main': 0,
         }
         self.check_all_configs("test_init_main", config,
@@ -1068,7 +1068,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_init_parse_argv(self):
         config = {
-            'parse_argv': 1,
+            'parse_argv': 2,
             'argv': ['-c', 'arg1', '-v', 'arg3'],
             'orig_argv': ['./argv0', '-E', '-c', 'pass', 'arg1', '-v', 'arg3'],
             'program_name': './argv0',

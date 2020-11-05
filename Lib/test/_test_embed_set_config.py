@@ -20,7 +20,7 @@ class SetConfigTests(unittest.TestCase):
         self.sys_copy = dict(sys.__dict__)
 
     def tearDown(self):
-        self.set_config(parse_argv=0)
+        _testinternalcapi.set_config(self.old_config)
         sys.__dict__.clear()
         sys.__dict__.update(self.sys_copy)
 
@@ -233,6 +233,12 @@ class SetConfigTests(unittest.TestCase):
                         orig_argv=['orig', 'orig_args'])
         self.assertEqual(sys.argv, ['python_program', 'args'])
         self.assertEqual(sys.orig_argv, ['orig', 'orig_args'])
+
+        self.set_config(parse_argv=0,
+                        argv=[],
+                        orig_argv=[])
+        self.assertEqual(sys.argv, [''])
+        self.assertEqual(sys.orig_argv, [])
 
     def test_pycache_prefix(self):
         self.check(pycache_prefix=None)
