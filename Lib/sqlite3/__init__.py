@@ -21,4 +21,17 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 from .dbapi2 import *
-from .deprecated import __getattr__
+
+
+# OptimizedUnicode was deprecated in Python 3.10.  It's scheduled for removal
+# in Python 3.12.
+def __getattr__(name):
+    if name == "OptimizedUnicode":
+        import warnings
+        msg = ("""
+            OptimizedUnicode is obsolete. You can safely remove it from your
+            code, as it defaults to 'str' anyway.
+        """)
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+        return str
+    raise AttributeError(f"module 'sqlite3' has no attribute '{name}'")
