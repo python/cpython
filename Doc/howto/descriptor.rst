@@ -614,8 +614,8 @@ Sometimes it is desirable for a descriptor to know what class variable name it
 was assigned to.  When a new class is created, the :class:`type` metaclass
 scans the dictionary of the new class.  If any of the entries are descriptors
 and if they define :meth:`__set_name__`, that method is called with two
-arguments.  The *owner* is the class where the descriptor is used, the *name*
-is class variable the descriptor was assigned to.
+arguments.  The *owner* is the class where the descriptor is used, and the
+*name* is the class variable the descriptor was assigned to.
 
 The implementation details are in :c:func:`type_new()` and
 :c:func:`set_names()` in :source:`Objects/typeobject.c`.
