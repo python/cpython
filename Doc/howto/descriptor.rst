@@ -112,7 +112,7 @@ different, updated answers each time::
 Besides showing how descriptors can run computations, this example also
 reveals the purpose of the parameters to :meth:`__get__`.  The *self*
 parameter is *size*, an instance of *DirectorySize*.  The *obj* parameter is
-either *g* or *s*, an instance of *Directory*.  It is *obj* parameter that
+either *g* or *s*, an instance of *Directory*.  It is the *obj* parameter that
 lets the :meth:`__get__` method learn the target directory.  The *objtype*
 parameter is the class *Directory*.
 
