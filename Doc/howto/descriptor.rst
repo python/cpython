@@ -112,7 +112,7 @@ different, updated answers each time::
 Besides showing how descriptors can run computations, this example also
 reveals the purpose of the parameters to :meth:`__get__`.  The *self*
 parameter is *size*, an instance of *DirectorySize*.  The *obj* parameter is
-either *g* or *s*, an instance of *Directory*.  It is *obj* parameter that
+either *g* or *s*, an instance of *Directory*.  It is the *obj* parameter that
 lets the :meth:`__get__` method learn the target directory.  The *objtype*
 parameter is the class *Directory*.
 
@@ -183,7 +183,7 @@ logged, but that the regular attribute *name* is not logged::
     INFO:root:Accessing 'age' giving 40
     40
 
-One major issue with this example is the private name *_age* is hardwired in
+One major issue with this example is that the private name *_age* is hardwired in
 the *LoggedAgeAccess* class.  That means that each instance can only have one
 logged attribute and that its name is unchangeable.  In the next example,
 we'll fix that problem.
@@ -192,7 +192,7 @@ we'll fix that problem.
 Customized names
 ----------------
 
-When a class uses descriptors, it can inform each descriptor about what
+When a class uses descriptors, it can inform each descriptor about which
 variable name was used.
 
 In this example, the :class:`Person` class has two descriptor instances,
@@ -233,7 +233,7 @@ be recorded, giving each descriptor its own *public_name* and *private_name*::
 
 An interactive session shows that the :class:`Person` class has called
 :meth:`__set_name__` so that the field names would be recorded.  Here
-we call :func:`vars` to lookup the descriptor without triggering it::
+we call :func:`vars` to look up the descriptor without triggering it::
 
     >>> vars(vars(Person)['name'])
     {'public_name': 'name', 'private_name': '_name'}
@@ -614,8 +614,8 @@ Sometimes it is desirable for a descriptor to know what class variable name it
 was assigned to.  When a new class is created, the :class:`type` metaclass
 scans the dictionary of the new class.  If any of the entries are descriptors
 and if they define :meth:`__set_name__`, that method is called with two
-arguments.  The *owner* is the class where the descriptor is used, the *name*
-is class variable the descriptor was assigned to.
+arguments.  The *owner* is the class where the descriptor is used, and the
+*name* is the class variable the descriptor was assigned to.
 
 The implementation details are in :c:func:`type_new()` and
 :c:func:`set_names()` in :source:`Objects/typeobject.c`.
@@ -703,7 +703,7 @@ Properties
 ----------
 
 Calling :func:`property` is a succinct way of building a data descriptor that
-triggers function calls upon access to an attribute.  Its signature is::
+triggers a function call upon access to an attribute.  Its signature is::
 
     property(fget=None, fset=None, fdel=None, doc=None) -> property
 
@@ -803,7 +803,7 @@ roughly equivalent to::
 
 To support automatic creation of methods, functions include the
 :meth:`__get__` method for binding methods during attribute access.  This
-means that functions are non-data descriptors which return bound methods
+means that functions are non-data descriptors that return bound methods
 during dotted lookup from an instance.  Here's how it works::
 
     class Function:
@@ -1016,7 +1016,7 @@ attributes stored in ``__slots__``::
 
     class Immutable:
 
-        __slots__ = ('_dept', '_name')          # Replace instance dictionary
+        __slots__ = ('_dept', '_name')          # Replace the instance dictionary
 
         def __init__(self, dept, name):
             self._dept = dept                   # Store to private attribute
@@ -1086,7 +1086,7 @@ by member descriptors::
 
 The :meth:`type.__new__` method takes care of adding member objects to class
 variables.  The :meth:`object.__new__` method takes care of creating instances
-that have slots instead of a instance dictionary.  Here is a rough equivalent
+that have slots instead of an instance dictionary.  Here is a rough equivalent
 in pure Python::
 
     class Type(type):
