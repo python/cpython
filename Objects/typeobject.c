@@ -3015,6 +3015,10 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         else if (slot->slot == Py_tp_doc) {
             /* For the docstring slot, which usually points to a static string
                literal, we need to make a copy */
+            if (slot->pfunc == NULL) {
+                type->tp_doc = NULL;
+                continue;
+            }
             const char *old_doc = _PyType_DocWithoutSignature(type->tp_name, slot->pfunc);
             size_t len = strlen(old_doc)+1;
             char *tp_doc = PyObject_MALLOC(len);
