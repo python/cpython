@@ -1,4 +1,4 @@
-Using suggestion ""For example, you can modify the sub-pattern \w+\d+ to ([A-Za-z_]*\d)+"" and converted to ([A-za-z_]+\d+)
+Using suggestion ""For example, you can modify the sub-pattern \w+\d+ to ([A-Za-z_]*\d)+"" and converted to "([A-za-z_]+\d+)"
 which should Fix the issue of vulnerable regex. ""can be exploited with the following string "1.1.1"+"1" * 5000 + "!" ""
 
 Test Result : Working as intended
