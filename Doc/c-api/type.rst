@@ -171,8 +171,7 @@ The following functions and structs are used to create
 
    .. versionchanged:: 3.10
 
-      The ``Py_tp_doc`` slot now can accepts ``NULL`` value.
-      Previously, the slot may not be ``NULL``.
+      The function now accepts NULL ``tp_doc`` slot.
 
 .. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
