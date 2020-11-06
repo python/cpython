@@ -5,7 +5,7 @@ c-api/sequence,,:i2,o[i1:i2]
 c-api/tuple,,:high,p[low:high]
 c-api/unicode,,:end,str[start:end]
 c-api/unicode,,:start,unicode[start:start+length]
-distutils/examples,267,`,This is the description of the ``foobar`` package.
+distutils/examples,,`,This is the description of the ``foobar`` package.
 distutils/setupscript,,::,
 extending/embedding,,:numargs,"if(!PyArg_ParseTuple(args, "":numargs""))"
 extending/extending,,:myfunction,"PyArg_ParseTuple(args, ""D:myfunction"", &c);"
@@ -147,8 +147,10 @@ library/ipaddress,,:db8,IPv6Address('2001:db8::')
 library/ipaddress,,::,IPv6Address('2001:db8::')
 library/ipaddress,,:db8,>>> ipaddress.IPv6Address('2001:db8::1000')
 library/ipaddress,,::,>>> ipaddress.IPv6Address('2001:db8::1000')
-library/ipaddress,,:db8,IPv6Address('2001:db8::1000')
-library/ipaddress,,::,IPv6Address('2001:db8::1000')
+library/ipaddress,,:db8,'2001:db8::1000'
+library/ipaddress,,::,'2001:db8::1000'
+library/ipaddress,231,:db8,">>> f'{ipaddress.IPv6Address(""2001:db8::1000""):s}'"
+library/ipaddress,231,::,">>> f'{ipaddress.IPv6Address(""2001:db8::1000""):s}'"
 library/ipaddress,,::,IPv6Address('ff02::5678%1')
 library/ipaddress,,::,fe80::1234
 library/ipaddress,,:db8,">>> ipaddress.ip_address(""2001:db8::1"").reverse_pointer"

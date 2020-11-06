@@ -134,7 +134,7 @@ arguments of multiple types, :data:`typing.Union` was used::
        return number ** 2
 
 
-Now, type hints can be written in a more succinct manner::
+Type hints can now be written in a more succinct manner::
 
    def square(number: int | float) -> int | float:
        return number ** 2
@@ -228,6 +228,13 @@ py_compile
 Added ``--quiet`` option to command-line interface of :mod:`py_compile`.
 (Contributed by Gregory Schevchenko in :issue:`38731`.)
 
+shelve
+------
+
+The :mod:`shelve` module now uses :data:`pickle.DEFAULT_PROTOCOL` by default
+instead of :mod:`pickle` protocol ``3`` when creating shelves.
+(Contributed by Zackery Spytz in :issue:`34204`.)
+
 site
 ----
 
@@ -240,6 +247,23 @@ sys
 Add :data:`sys.orig_argv` attribute: the list of the original command line
 arguments passed to the Python executable.
 (Contributed by Victor Stinner in :issue:`23427`.)
+
+threading
+---------
+
+Added :func:`threading.gettrace` and :func:`threading.getprofile` to
+retrieve the functions set by :func:`threading.settrace` and
+:func:`threading.setprofile` respectively.
+(Contributed by Mario Corchero in :issue:`42251`.)
+
+traceback
+---------
+
+The :func:`~traceback.format_exception`,
+:func:`~traceback.format_exception_only`, and
+:func:`~traceback.print_exception` functions can now take an exception object
+as a positional-only argument.
+(Contributed by Zackery Spytz and Matthias Bussonnier in :issue:`26389`.)
 
 types
 -----
@@ -278,7 +302,7 @@ Optimizations
 
 * The ``LOAD_ATTR`` instruction now uses new "per opcode cache" mechanism.
   It is about 36% faster now.  (Contributed by Pablo Galindo and Yury Selivanov
-  in :issue:`42093`.)
+  in :issue:`42093`, based on ideas implemented originally in PyPy and MicroPython.)
 
 * When building Python with ``--enable-optimizations`` now
   ``-fno-semantic-interposition`` is added to both the compile and link line.
@@ -290,6 +314,23 @@ Optimizations
 
 Deprecated
 ==========
+
+* Starting in this release, there will be a concerted effort to begin
+  cleaning up old import semantics that were kept for Python 2.7
+  compatibility. Specifically,
+  :meth:`~importlib.abc.PathEntryFinder.find_loader`/:meth:`~importlib.abc.Finder.find_module`
+  (superseded by :meth:`~importlib.abc.Finder.find_spec`),
+  :meth:`~importlib.abc.Loader.load_module`
+  (superseded by :meth:`~importlib.abc.Loader.exec_module`),
+  :meth:`~importlib.abc.Loader.module_repr` (which the import system
+  takes care of for you), the ``__package__`` attribute
+  (superseded by ``__spec__.parent``), the ``__loader__`` attribute
+  (superseded by ``__spec__.loader``), and the ``__cached__`` attribute
+  (superseded by ``__spec__.cached``) will slowly be removed (as well
+  as other classes and methods in :mod:`importlib`).
+  :exc:`ImportWarning` and/or :exc:`DeprecationWarning` will be raised
+  as appropriate to help identify code which needs updating during
+  this transition.
 
 
 Removed
@@ -307,6 +348,11 @@ Removed
   Python 3.5.
   (Contributed by Berker Peksag in :issue:`31844`.)
 
+* Removed the ``unicodedata.ucnhash_CAPI`` attribute which was an internal
+  PyCapsule object. The related private ``_PyUnicode_Name_CAPI`` structure was
+  moved to the internal C API.
+  (Contributed by Victor Stinner in :issue:`42157`.)
+
 
 Porting to Python 3.10
 ======================
@@ -314,6 +360,15 @@ Porting to Python 3.10
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
+
+Changes in the Python API
+-------------------------
+
+* The *etype* parameters of the :func:`~traceback.format_exception`,
+  :func:`~traceback.format_exception_only`, and
+  :func:`~traceback.print_exception` functions in the :mod:`traceback` module
+  have been renamed to *exc*.
+  (Contributed by Zackery Spytz and Matthias Bussonnier in :issue:`26389`.)
 
 
 Build Changes
@@ -360,6 +415,19 @@ New Features
 
 * Added :c:func:`PyUnicode_AsUTF8AndSize` to the limited C API.
   (Contributed by Alex Gaynor in :issue:`41784`.)
+
+* Added :c:func:`PyModule_AddObjectRef` function: similar to
+  :c:func:`PyModule_AddObjectRef` but don't steal a reference to the value on
+  success.
+  (Contributed by Victor Stinner in :issue:`1635741`.)
+
+* Added :c:func:`Py_NewRef` and :c:func:`Py_XNewRef` functions to increment the
+  reference count of an object and return the object.
+  (Contributed by Victor Stinner in :issue:`42262`.)
+
+* The :c:func:`PyType_FromModuleAndSpec` function now accepts NULL ``tp_doc``
+  slot.
+  (Contributed by Hai Shi in :issue:`41832`.)
 
 
 Porting to Python 3.10
@@ -413,6 +481,10 @@ Porting to Python 3.10
   raise ``DeprecationWarning`` now.  Use :c:func:`PyUnicode_New` to allocate
   Unicode object without initial data.
   (Contributed by Inada Naoki in :issue:`36346`.)
+
+* The private ``_PyUnicode_Name_CAPI`` structure of the PyCapsule API
+  ``unicodedata.ucnhash_CAPI`` has been moved to the internal C API.
+  (Contributed by Victor Stinner in :issue:`42157`.)
 
 Deprecated
 ----------

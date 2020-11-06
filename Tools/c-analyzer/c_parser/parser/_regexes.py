@@ -137,7 +137,8 @@ COMPOUND_TYPE_KIND = r'(?: \b (?: struct | union | enum ) \b )'
 #######################################
 # variable declarations
 
-STORAGE_CLASS = r'(?: \b (?: auto | register | static | extern ) \b )'
+_STORAGE = 'auto register static extern'.split()
+STORAGE_CLASS = rf'(?: \b (?: {" | ".join(_STORAGE)} ) \b )'
 TYPE_QUALIFIER = r'(?: \b (?: const | volatile ) \b )'
 PTR_QUALIFIER = rf'(?: [*] (?: \s* {TYPE_QUALIFIER} )? )'
 

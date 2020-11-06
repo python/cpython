@@ -73,6 +73,7 @@ typedef struct {
     growable_comment_array type_ignore_comments;
     Token *known_err_token;
     int level;
+    int call_invalid_rules;
 } Parser;
 
 typedef struct {
@@ -262,7 +263,7 @@ expr_ty _PyPegen_collect_call_seqs(Parser *, asdl_expr_seq *, asdl_seq *,
                      int end_col_offset, PyArena *arena);
 expr_ty _PyPegen_concatenate_strings(Parser *p, asdl_seq *);
 asdl_seq *_PyPegen_join_sequences(Parser *, asdl_seq *, asdl_seq *);
-int _PyPegen_check_barry_as_flufl(Parser *);
+int _PyPegen_check_barry_as_flufl(Parser *, Token *);
 mod_ty _PyPegen_make_module(Parser *, asdl_stmt_seq *);
 
 // Error reporting helpers

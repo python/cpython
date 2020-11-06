@@ -856,7 +856,8 @@ class PyBuildExt(build_ext):
                            libraries=['m'],
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # zoneinfo module
-        self.add(Extension('_zoneinfo', ['_zoneinfo.c'])),
+        self.add(Extension('_zoneinfo', ['_zoneinfo.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # random number generator implemented in C
         self.add(Extension("_random", ["_randommodule.c"],
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
@@ -878,7 +879,8 @@ class PyBuildExt(build_ext):
         self.add(Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']))
         # static Unicode character database
         self.add(Extension('unicodedata', ['unicodedata.c'],
-                           depends=['unicodedata_db.h', 'unicodename_db.h']))
+                           depends=['unicodedata_db.h', 'unicodename_db.h'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # _opcode module
         self.add(Extension('_opcode', ['_opcode.c']))
         # asyncio speedups
@@ -1093,6 +1095,7 @@ class PyBuildExt(build_ext):
         if curses_library.startswith('ncurses'):
             curses_libs = [curses_library]
             self.add(Extension('_curses', ['_cursesmodule.c'],
+                               extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
                                include_dirs=curses_includes,
                                define_macros=curses_defines,
                                libraries=curses_libs))
@@ -1107,6 +1110,7 @@ class PyBuildExt(build_ext):
                 curses_libs = ['curses']
 
             self.add(Extension('_curses', ['_cursesmodule.c'],
+                               extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
                                define_macros=curses_defines,
                                libraries=curses_libs))
         else:

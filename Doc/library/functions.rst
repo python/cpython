@@ -164,8 +164,8 @@ are always available.  They are listed here in alphabetical order.
    * If it is an *integer*, the array will have that size and will be
      initialized with null bytes.
 
-   * If it is an object conforming to the *buffer* interface, a read-only buffer
-     of the object will be used to initialize the bytes array.
+   * If it is an object conforming to the :ref:`buffer interface <bufferobjects>`,
+     a read-only buffer of the object will be used to initialize the bytes array.
 
    * If it is an *iterable*, it must be an iterable of integers in the range
      ``0 <= x < 256``, which are used as the initial contents of the array.
@@ -259,7 +259,7 @@ are always available.  They are listed here in alphabetical order.
    interactive statement (in the latter case, expression statements that
    evaluate to something other than ``None`` will be printed).
 
-   The optional argument *flags* and *dont_inherit* controls which
+   The optional arguments *flags* and *dont_inherit* control which
    :ref:`compiler options <ast-compiler-flags>` should be activated
    and which :ref:`future features <future>` should be allowed. If neither
    is present (or both are zero) the code is compiled with the same flags that

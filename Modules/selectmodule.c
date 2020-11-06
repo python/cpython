@@ -499,11 +499,14 @@ select_poll_modify_impl(pollObject *self, int fd, unsigned short eventmask)
     key = PyLong_FromLong(fd);
     if (key == NULL)
         return NULL;
-    if (PyDict_GetItemWithError(self->dict, key) == NULL) {
-        if (!PyErr_Occurred()) {
-            errno = ENOENT;
-            PyErr_SetFromErrno(PyExc_OSError);
-        }
+    err = PyDict_Contains(self->dict, key);
+    if (err < 0) {
+        Py_DECREF(key);
+        return NULL;
+    }
+    if (err == 0) {
+        errno = ENOENT;
+        PyErr_SetFromErrno(PyExc_OSError);
         Py_DECREF(key);
         return NULL;
     }

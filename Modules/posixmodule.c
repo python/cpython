@@ -1526,13 +1526,11 @@ convertenviron(void)
             Py_DECREF(d);
             return NULL;
         }
-        if (PyDict_GetItemWithError(d, k) == NULL) {
-            if (PyErr_Occurred() || PyDict_SetItem(d, k, v) != 0) {
-                Py_DECREF(v);
-                Py_DECREF(k);
-                Py_DECREF(d);
-                return NULL;
-            }
+        if (PyDict_SetDefault(d, k, v) == NULL) {
+            Py_DECREF(v);
+            Py_DECREF(k);
+            Py_DECREF(d);
+            return NULL;
         }
         Py_DECREF(k);
         Py_DECREF(v);
@@ -6765,12 +6763,11 @@ error:
 
 
 /* AIX uses /dev/ptc but is otherwise the same as /dev/ptmx */
-/* IRIX has both /dev/ptc and /dev/ptmx, use ptmx */
 #if defined(HAVE_DEV_PTC) && !defined(HAVE_DEV_PTMX)
-#define DEV_PTY_FILE "/dev/ptc"
-#define HAVE_DEV_PTMX
+#  define DEV_PTY_FILE "/dev/ptc"
+#  define HAVE_DEV_PTMX
 #else
-#define DEV_PTY_FILE "/dev/ptmx"
+#  define DEV_PTY_FILE "/dev/ptmx"
 #endif
 
 #if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_DEV_PTMX)
