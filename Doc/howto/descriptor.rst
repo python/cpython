@@ -703,7 +703,7 @@ Properties
 ----------
 
 Calling :func:`property` is a succinct way of building a data descriptor that
-triggers function calls upon access to an attribute.  Its signature is::
+triggers a function call upon access to an attribute.  Its signature is::
 
     property(fget=None, fset=None, fdel=None, doc=None) -> property
 
