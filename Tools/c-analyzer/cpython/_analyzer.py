@@ -11,9 +11,14 @@ from c_parser.info import (
     Struct,
     Member,
     FIXED_TYPE,
+)
+from c_parser.match import (
     is_type_decl,
     is_pots,
     is_funcptr,
+)
+from c_analyzer.match import (
+    is_system_type,
     is_process_global,
     is_fixed_type,
     is_immutable,
@@ -246,7 +251,7 @@ def _check_typespec(decl, typedecl, types, knowntypes):
     # Fall back to default known types.
     if is_pots(typespec):
         return None
-    elif _info.is_system_type(typespec):
+    elif is_system_type(typespec):
         return None
     elif is_funcptr(decl.vartype):
         return None
