@@ -137,6 +137,8 @@
     </None>
     <None Include="..\Include\opcode.h">
     </None>
+    <None Include="..\Include\internal\pycore_ast.h">
+    </None>
     <None Include="..\Include\Python-ast.h">
     </None>
     <None Include="..\Python\Python-ast.c">
@@ -161,15 +163,18 @@
     <Warning Text="Pegen updated. You will need to rebuild pythoncore to see the changes." Condition="'@(_UpdatedParse)' != ''" />
   </Target>
   <Target Name="_RegenAST_H" AfterTargets="_RegenGrammar">
-    <!-- Regenerate Include/Python-ast.h and Python/Python-ast.c using Parser/asdl_c.py -h -->
-    <Exec Command="&quot;$(PythonExe)&quot; &quot;$(PySourcePath)Parser\asdl_c.py&quot; &quot;$(PySourcePath)Parser\Python.asdl&quot; -H &quot;$(IntDir)Python-ast.h&quot; -C &quot;$(IntDir)Python-ast.c&quot;" />
+    <!-- Regenerate Include/Python-ast.h, Python/Python-ast.c and Include/internal/pycore_ast.h using Parser/asdl_c.py -h -->
+    <Exec Command="&quot;$(PythonExe)&quot; &quot;$(PySourcePath)Parser\asdl_c.py&quot; &quot;$(PySourcePath)Parser\Python.asdl&quot; -H &quot;$(IntDir)Python-ast.h&quot; -C &quot;$(IntDir)Python-ast.c&quot; -I &quot;$(IntDir)pycore_ast.h&quot;" />
     <Copy SourceFiles="$(IntDir)Python-ast.h" DestinationFiles="$(PySourcePath)Include\Python-ast.h">
       <Output TaskParameter="CopiedFiles" ItemName="_UpdatedH" />
     </Copy>
     <Copy SourceFiles="$(IntDir)Python-ast.c" DestinationFiles="$(PySourcePath)Python\Python-ast.c">
       <Output TaskParameter="CopiedFiles" ItemName="_UpdatedC" />
     </Copy>
-    <Warning Text="ASDL is updated. You will need to rebuild pythoncore to see the changes." Condition="'@(_UpdatedH)' != '' and '@(_UpdatedC)' != ''" />
+    <Copy SourceFiles="$(IntDir)pycore_ast.h" DestinationFiles="$(PySourcePath)Include\internal\pycore_ast.h">
+      <Output TaskParameter="CopiedFiles" ItemName="_UpdatedInternalH" />
+    </Copy>
+    <Warning Text="ASDL is updated. You will need to rebuild pythoncore to see the changes." Condition="'@(_UpdatedH)' != '' != '' and '@(_UpdatedC)' != '' and @(_UpdatedInternalH)'" />
   </Target>
   <Target Name="_RegenOpcodes" AfterTargets="_RegenAST_C">
     <!-- Regenerate Include/opcode.h from Lib/opcode.py using Tools/scripts/generate_opcode_h.py-->
@@ -204,6 +209,7 @@
       <Clean Include="$(IntDir)opcode.h" />
       <Clean Include="$(IntDir)Python-ast.c" />
       <Clean Include="$(IntDir)Python-ast.h" />
+      <Clean Include="$(IntDir)pycore_ast.h" />
     </ItemGroup>
   </Target>
 </Project>

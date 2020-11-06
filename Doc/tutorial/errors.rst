@@ -273,41 +273,35 @@ Exception Chaining
 ==================
 
 The :keyword:`raise` statement allows an optional :keyword:`from` which enables
-chaining exceptions by setting the ``__cause__`` attribute of the raised
-exception. For example::
+chaining exceptions. For example::
 
-    raise RuntimeError from OSError
+    # exc must be exception instance or None.
+    raise RuntimeError from exc
 
 This can be useful when you are transforming exceptions. For example::
 
     >>> def func():
-    ...    raise IOError
+    ...     raise ConnectionError
     ...
     >>> try:
     ...     func()
-    ... except IOError as exc:
+    ... except ConnectionError as exc:
     ...     raise RuntimeError('Failed to open database') from exc
     ...
     Traceback (most recent call last):
       File "<stdin>", line 2, in <module>
       File "<stdin>", line 2, in func
-    OSError
+    ConnectionError
     <BLANKLINE>
     The above exception was the direct cause of the following exception:
     <BLANKLINE>
     Traceback (most recent call last):
       File "<stdin>", line 4, in <module>
-    RuntimeError
+    RuntimeError: Failed to open database
 
-The expression following the :keyword:`from` must be either an exception or
-``None``. Exception chaining happens automatically when an exception is raised
-inside an exception handler or :keyword:`finally` section, however in this case
-``__context__`` attribute of the exception is used. Chaining with
-``__context__`` works similarly to chaining with ``__cause__``,
-but when formatting exception traceback ``__cause__`` takes priority.
-For more information about chaining mechanics see :ref:`bltin-exceptions`.
-
-Exception chaining can be disabled by using ``from None`` idiom:
+Exception chaining happens automatically when an exception is raised inside an
+:keyword:`except` or :keyword:`finally` section. This can be
+disabled by using ``from None`` idiom:
 
     >>> try:
     ...     open('database.sqlite')
@@ -317,6 +311,15 @@ Exception chaining can be disabled by using ``from None`` idiom:
     Traceback (most recent call last):
       File "<stdin>", line 4, in <module>
     RuntimeError
+
+There are two special attributes that enable chaining mechanics in
+exceptions: ``__context__`` and ``__cause__``. When you raise an exception
+inside :keyword:`except` or :keyword:`finally`, Pyhton automatically fills
+``__context__`` attribute of the new exception with the caught one. When you
+use ``from exc`` syntax, Pyhon fills ``__cause__`` attribute with
+the ``exc``. You can use both attributes for introspection purposes, however
+when formatting exception traceback message, ``__cause__`` takes priority.
+For more information about chaining mechanics, see :ref:`bltin-exceptions`.
 
 
 .. _tut-userexceptions:

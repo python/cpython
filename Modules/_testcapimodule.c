@@ -6508,6 +6508,23 @@ static PyType_Spec HeapDocCType_spec = {
     HeapDocCType_slots
 };
 
+typedef struct {
+    PyObject_HEAD
+} NullTpDocTypeObject;
+
+static PyType_Slot NullTpDocType_slots[] = {
+    {Py_tp_doc, NULL},
+    {0, 0},
+};
+
+static PyType_Spec NullTpDocType_spec = {
+    "_testcapi.NullTpDocType",
+    sizeof(NullTpDocTypeObject),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    NullTpDocType_slots
+};
+
 
 PyDoc_STRVAR(heapgctype__doc__,
 "A heap type with GC, and with overridden dealloc.\n\n"
@@ -7182,6 +7199,14 @@ PyInit__testcapi(void)
         return NULL;
     }
     PyModule_AddObject(m, "HeapDocCType", HeapDocCType);
+
+    /* bpo-41832: Add a new type to test PyType_FromSpec()
+       now can accept a NULL tp_doc slot. */
+    PyObject *NullTpDocType = PyType_FromSpec(&NullTpDocType_spec);
+    if (NullTpDocType == NULL) {
+        return NULL;
+    }
+    PyModule_AddObject(m, "NullTpDocType", NullTpDocType);
 
     PyObject *HeapGcCType = PyType_FromSpec(&HeapGcCType_spec);
     if (HeapGcCType == NULL) {

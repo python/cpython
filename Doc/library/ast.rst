@@ -80,12 +80,13 @@ Node classes
                   end_col_offset
 
       Instances of :class:`ast.expr` and :class:`ast.stmt` subclasses have
-      :attr:`lineno`, :attr:`col_offset`, :attr:`lineno`, and :attr:`col_offset`
-      attributes.  The :attr:`lineno` and :attr:`end_lineno` are the first and
-      last line numbers of source text span (1-indexed so the first line is line 1)
-      and the :attr:`col_offset` and :attr:`end_col_offset` are the corresponding
-      UTF-8 byte offsets of the first and last tokens that generated the node.
-      The UTF-8 offset is recorded because the parser uses UTF-8 internally.
+      :attr:`lineno`, :attr:`col_offset`, :attr:`end_lineno`, and
+      :attr:`end_col_offset` attributes.  The :attr:`lineno` and :attr:`end_lineno`
+      are the first and last line numbers of source text span (1-indexed so the
+      first line is line 1) and the :attr:`col_offset` and :attr:`end_col_offset`
+      are the corresponding UTF-8 byte offsets of the first and last tokens that
+      generated the node. The UTF-8 offset is recorded because the parser uses
+      UTF-8 internally.
 
       Note that the end positions are not required by the compiler and are
       therefore optional. The end offset is *after* the last symbol, for example

@@ -765,6 +765,27 @@ class ThreadTests(BaseTestCase):
         finally:
             sys.settrace(old_trace)
 
+    def test_gettrace(self):
+        def noop_trace(frame, event, arg):
+            # no operation
+            return noop_trace
+        old_trace = threading.gettrace()
+        try:
+            threading.settrace(noop_trace)
+            trace_func = threading.gettrace()
+            self.assertEqual(noop_trace,trace_func)
+        finally:
+            threading.settrace(old_trace)
+
+    def test_getprofile(self):
+        def fn(*args): pass
+        old_profile = threading.getprofile()
+        try:
+            threading.setprofile(fn)
+            self.assertEqual(fn, threading.getprofile())
+        finally:
+            threading.setprofile(old_profile)
+
     @cpython_only
     def test_shutdown_locks(self):
         for daemon in (False, True):
