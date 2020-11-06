@@ -183,7 +183,7 @@ logged, but that the regular attribute *name* is not logged::
     INFO:root:Accessing 'age' giving 40
     40
 
-One major issue with this example is the private name *_age* is hardwired in
+One major issue with this example is that the private name *_age* is hardwired in
 the *LoggedAgeAccess* class.  That means that each instance can only have one
 logged attribute and that its name is unchangeable.  In the next example,
 we'll fix that problem.
