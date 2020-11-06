@@ -84,7 +84,19 @@ _context_message = (
     "another exception occurred:\n\n")
 
 
-def print_exception(etype, value, tb, limit=None, file=None, chain=True):
+_sentinel = object()
+
+
+def _parse_value_tb(exc, value, tb):
+    if (value is _sentinel) != (tb is _sentinel):
+        raise ValueError("Both or neither of value and tb must be given")
+    if value is tb is _sentinel:
+        return exc, exc.__traceback__
+    return value, tb
+
+
+def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
+                    file=None, chain=True):
     """Print exception up to 'limit' stack trace entries from 'tb' to 'file'.
 
     This differs from print_tb() in the following ways: (1) if
@@ -95,9 +107,7 @@ def print_exception(etype, value, tb, limit=None, file=None, chain=True):
     occurred with a caret on the next line indicating the approximate
     position of the error.
     """
-    # format_exception has ignored etype for some time, and code such as cgitb
-    # passes in bogus values as a result. For compatibility with such code we
-    # ignore it here (rather than in the new TracebackException API).
+    value, tb = _parse_value_tb(exc, value, tb)
     if file is None:
         file = sys.stderr
     for line in TracebackException(
@@ -105,7 +115,8 @@ def print_exception(etype, value, tb, limit=None, file=None, chain=True):
         print(line, file=file, end="")
 
 
-def format_exception(etype, value, tb, limit=None, chain=True):
+def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
+                     chain=True):
     """Format a stack trace and the exception information.
 
     The arguments have the same meaning as the corresponding arguments
@@ -114,19 +125,15 @@ def format_exception(etype, value, tb, limit=None, chain=True):
     these lines are concatenated and printed, exactly the same text is
     printed as does print_exception().
     """
-    # format_exception has ignored etype for some time, and code such as cgitb
-    # passes in bogus values as a result. For compatibility with such code we
-    # ignore it here (rather than in the new TracebackException API).
+    value, tb = _parse_value_tb(exc, value, tb)
     return list(TracebackException(
         type(value), value, tb, limit=limit).format(chain=chain))
 
 
-def format_exception_only(etype, value):
+def format_exception_only(exc, /, value=_sentinel):
     """Format the exception part of a traceback.
 
-    The arguments are the exception type and value such as given by
-    sys.last_type and sys.last_value. The return value is a list of
-    strings, each ending in a newline.
+    The return value is a list of strings, each ending in a newline.
 
     Normally, the list contains a single string; however, for
     SyntaxError exceptions, it contains several lines that (when
@@ -137,7 +144,10 @@ def format_exception_only(etype, value):
     string in the list.
 
     """
-    return list(TracebackException(etype, value, None).format_exception_only())
+    if value is _sentinel:
+        value = exc
+    return list(TracebackException(
+        type(value), value, None).format_exception_only())
 
 
 # -- not official API but folk probably use these two functions.

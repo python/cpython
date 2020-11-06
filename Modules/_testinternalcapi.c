@@ -13,9 +13,10 @@
 
 #include "Python.h"
 #include "pycore_bitutils.h"     // _Py_bswap32()
-#include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
-#include "pycore_hashtable.h"    // _Py_hashtable_new()
 #include "pycore_gc.h"           // PyGC_Head
+#include "pycore_hashtable.h"    // _Py_hashtable_new()
+#include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
+#include "pycore_interp.h"       // _PyInterpreterState_GetConfigCopy()
 
 
 static PyObject *
@@ -231,6 +232,41 @@ test_hashtable(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *
+test_get_config(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
+{
+    PyConfig config;
+    PyConfig_InitIsolatedConfig(&config);
+    if (_PyInterpreterState_GetConfigCopy(&config) < 0) {
+        PyConfig_Clear(&config);
+        return NULL;
+    }
+    PyObject *dict = _PyConfig_AsDict(&config);
+    PyConfig_Clear(&config);
+    return dict;
+}
+
+
+static PyObject *
+test_set_config(PyObject *Py_UNUSED(self), PyObject *dict)
+{
+    PyConfig config;
+    PyConfig_InitIsolatedConfig(&config);
+    if (_PyConfig_FromDict(&config, dict) < 0) {
+        goto error;
+    }
+    if (_PyInterpreterState_SetConfig(&config) < 0) {
+        goto error;
+    }
+    PyConfig_Clear(&config);
+    Py_RETURN_NONE;
+
+error:
+    PyConfig_Clear(&config);
+    return NULL;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -238,6 +274,8 @@ static PyMethodDef TestMethods[] = {
     {"test_popcount", test_popcount, METH_NOARGS},
     {"test_bit_length", test_bit_length, METH_NOARGS},
     {"test_hashtable", test_hashtable, METH_NOARGS},
+    {"get_config", test_get_config, METH_NOARGS},
+    {"set_config", test_set_config, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
