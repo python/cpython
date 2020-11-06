@@ -1,0 +1,1 @@
+On Solaris, C extension file names are now ABI version tagged as per PEP 3149.
