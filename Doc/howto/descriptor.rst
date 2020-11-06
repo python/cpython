@@ -233,7 +233,7 @@ be recorded, giving each descriptor its own *public_name* and *private_name*::
 
 An interactive session shows that the :class:`Person` class has called
 :meth:`__set_name__` so that the field names would be recorded.  Here
-we call :func:`vars` to lookup the descriptor without triggering it::
+we call :func:`vars` to look up the descriptor without triggering it::
 
     >>> vars(vars(Person)['name'])
     {'public_name': 'name', 'private_name': '_name'}
