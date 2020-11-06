@@ -86,22 +86,25 @@ IGNORED_COLUMNS = [
 IGNORED_HEADER = '\t'.join(IGNORED_COLUMNS)
 
 
-def read_ignored(infile):
-    return dict(_iter_ignored(infile))
+def read_ignored(infile, relroot=None):
+    return dict(_iter_ignored(infile, relroot))
 
 
-def _iter_ignored(infile):
+def _iter_ignored(infile, relroot):
     for row in _tables.read_table(infile, IGNORED_HEADER, sep='\t'):
         *varidinfo, reason = row
-        varid = _info.DeclID.from_row(varidinfo)
+        varid = _info.DeclID.from_row(varidinfo, relroot=relroot)
         yield varid, reason
 
 
-def write_ignored(variables, outfile):
+def write_ignored(variables, outfile, relroot=None):
     raise NotImplementedError
     reason = '???'
     #if not isinstance(varid, DeclID):
     #    varid = getattr(varid, 'parsed', varid).id
+    if relroot:
+        # XXX
+        raise NotImplementedError
     _tables.write_table(
         outfile,
         IGNORED_HEADER,
