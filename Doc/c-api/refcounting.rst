@@ -16,11 +16,42 @@ objects.
    Increment the reference count for object *o*.  The object must not be ``NULL``; if
    you aren't sure that it isn't ``NULL``, use :c:func:`Py_XINCREF`.
 
+   See also :c:func:`Py_NewRef`.
+
 
 .. c:function:: void Py_XINCREF(PyObject *o)
 
    Increment the reference count for object *o*.  The object may be ``NULL``, in
    which case the macro has no effect.
+
+   See also :c:func:`Py_XNewRef`.
+
+
+.. c:function:: PyObject* Py_NewRef(PyObject *o)
+
+   Increment the reference count of the object *o* and return the object *o*.
+
+   The object *o* must not be ``NULL``.
+
+   For example::
+
+       Py_INCREF(obj);
+       self->attr = obj;
+
+   can be written as::
+
+       self->attr = Py_NewRef(obj);
+
+   .. versionadded:: 3.10
+
+
+.. c:function:: PyObject* Py_XNewRef(PyObject *o)
+
+   Similar to :c:func:`Py_NewRef`, but the object *o* can be NULL.
+
+   If the object *o* is ``NULL``, the function just returns ``NULL``.
+
+   .. versionadded:: 3.10
 
 
 .. c:function:: void Py_DECREF(PyObject *o)

@@ -276,7 +276,6 @@ class IBMTestCases(unittest.TestCase):
                                  'is_snan',
                                  'is_subnormal',
                                  'is_zero',
-                                 'is_integer',
                                  'same_quantum')
 
     def read_unlimited(self, v, context):
@@ -2727,7 +2726,6 @@ class PythonAPItests(unittest.TestCase):
             self.assertRaises(TypeError, D(1).is_snan, context=xc)
             self.assertRaises(TypeError, D(1).is_signed, context=xc)
             self.assertRaises(TypeError, D(1).is_zero, context=xc)
-            self.assertRaises(TypeError, D(1).is_integer, context=xc)
 
             self.assertFalse(D("0.01").is_normal(context=xc))
             self.assertTrue(D("0.01").is_subnormal(context=xc))
@@ -3198,15 +3196,6 @@ class ContextAPItests(unittest.TestCase):
         d = c.is_zero(Decimal(10))
         self.assertEqual(c.is_zero(10), d)
         self.assertRaises(TypeError, c.is_zero, '10')
-
-    def test_is_integer(self):
-        Decimal = self.decimal.Decimal
-        Context = self.decimal.Context
-
-        c = Context()
-        b = c.is_integer(Decimal(10))
-        self.assertEqual(c.is_integer(10), b)
-        self.assertRaises(TypeError, c.is_integer, '10')
 
     def test_ln(self):
         Decimal = self.decimal.Decimal
@@ -4371,19 +4360,6 @@ class Coverage(unittest.TestCase):
             self.assertTrue(Decimal("-1").is_signed())
             self.assertTrue(Decimal("0").is_zero())
             self.assertTrue(Decimal("0").is_zero())
-            self.assertTrue(Decimal("-1").is_integer())
-            self.assertTrue(Decimal("0").is_integer())
-            self.assertTrue(Decimal("1").is_integer())
-            self.assertTrue(Decimal("42").is_integer())
-            self.assertTrue(Decimal("1e2").is_integer())
-            self.assertFalse(Decimal("1.5").is_integer())
-            self.assertFalse(Decimal("1e-2").is_integer())
-            self.assertFalse(Decimal("NaN").is_integer())
-            self.assertFalse(Decimal("-NaN").is_integer())
-            self.assertFalse(Decimal("sNaN").is_integer())
-            self.assertFalse(Decimal("-sNaN").is_integer())
-            self.assertFalse(Decimal("Inf").is_integer())
-            self.assertFalse(Decimal("-Inf").is_integer())
 
         # Copy
         with localcontext() as c:

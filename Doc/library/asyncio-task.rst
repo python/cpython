@@ -504,10 +504,10 @@ Waiting Primitives
                             return_when=ALL_COMPLETED)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   set concurrently and block until the condition specified
+   iterable concurrently and block until the condition specified
    by *return_when*.
 
-   The *aws* set must not be empty.
+   The *aws* iterable must not be empty.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
 
@@ -592,7 +592,7 @@ Waiting Primitives
 
 .. function:: as_completed(aws, \*, loop=None, timeout=None)
 
-   Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws* set
+   Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws* iterable
    concurrently. Returns an :term:`asynchronous iterator` of the next-completed
    Tasks or Futures. If Tasks or Futures are supplied, those same objects are
    yielded on completion. Other awaitables are scheduled and their implicitly

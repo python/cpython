@@ -522,6 +522,12 @@ class TestBuglets(unittest.TestCase):
         with self.assertRaises(ValueError):
             f()
 
+    def test_bpo_42057(self):
+        for i in range(10):
+            try:
+                raise Exception
+            except Exception or Exception:
+                pass
 
 if __name__ == "__main__":
     unittest.main()

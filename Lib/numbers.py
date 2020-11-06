@@ -148,7 +148,7 @@ class Real(Complex):
     """To Complex, Real adds the operations that work on real numbers.
 
     In short, those are: a conversion to float, trunc(), divmod,
-    is_integer, %, <, <=, >, and >=.
+    %, <, <=, >, and >=.
 
     Real also provides defaults for the derived operations.
     """
@@ -242,17 +242,6 @@ class Real(Complex):
         """self <= other"""
         raise NotImplementedError
 
-    def is_integer(self):
-        """Return True if the Real is integral; otherwise return False.
-
-        This default implementation can be overridden in subclasses
-        for performance reasons or to deal with values such as NaN,
-        which would otherwise cause an exception to be raised.
-        """
-        # Although __int__ is not defined at this level, the int
-        # constructor falls back to __trunc__, which we do have.
-        return self == int(self)
-
     # Concrete implementations of Complex abstract methods.
     def __complex__(self):
         """complex(self) == complex(float(self), 0)"""
@@ -300,10 +289,6 @@ class Rational(Real):
 
         """
         return self.numerator / self.denominator
-
-    def is_integer(self):
-        """Return True if the Rational is integral; otherwise return False."""
-        return self.denominator == 1
 
 
 class Integral(Rational):
@@ -400,9 +385,5 @@ class Integral(Rational):
     def denominator(self):
         """Integers have a denominator of 1."""
         return 1
-
-    def is_integer(self):
-        """Return True; all Integrals represent an integral value."""
-        return True
 
 Integral.register(int)

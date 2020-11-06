@@ -374,7 +374,7 @@ ALL_COMPLETED = concurrent.futures.ALL_COMPLETED
 async def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
     """Wait for the Futures and coroutines given by fs to complete.
 
-    The sequence futures must not be empty.
+    The fs iterable must not be empty.
 
     Coroutines will be wrapped in Tasks.
 
