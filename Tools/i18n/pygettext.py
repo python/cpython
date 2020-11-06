@@ -363,12 +363,36 @@ class TokenEater:
 
                     if func_name not in opts.keywords:
                         continue
-                    if len(call.args) != 1 or call.keywords:
-                        # what warning should I print when this happens?
+                    if len(call.args) != 1:
+                        print(_(
+                            '*** %(file)s:%(lineno)s: Seen unexpected amount of'
+                            ' positional arguments in gettext call: %(tstring)s'
+                            ) % {
+                            'tstring': tstring,
+                            'file': self.__curfile,
+                            'lineno': lineno
+                            }, file=sys.stderr)
+                        continue
+                    if call.keywords:
+                        print(_(
+                            '*** %(file)s:%(lineno)s: Seen unexpected keyword arguments'
+                            ' in gettext call: %(tstring)s'
+                            ) % {
+                            'tstring': tstring,
+                            'file': self.__curfile,
+                            'lineno': lineno
+                            }, file=sys.stderr)
                         continue
                     arg = call.args[0]
                     if not isinstance(arg, ast.Constant):
-                        # what warning should I print when this happens?
+                        print(_(
+                            '*** %(file)s:%(lineno)s: Seen unexpected argument type'
+                            ' in gettext call: %(tstring)s'
+                            ) % {
+                            'tstring': tstring,
+                            'file': self.__curfile,
+                            'lineno': lineno
+                            }, file=sys.stderr)
                         continue
                     if isinstance(arg.value, str):
                         self.__addentry(arg.value, lineno)
