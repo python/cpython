@@ -1016,7 +1016,7 @@ attributes stored in ``__slots__``::
 
     class Immutable:
 
-        __slots__ = ('_dept', '_name')          # Replace instance dictionary
+        __slots__ = ('_dept', '_name')          # Replace the instance dictionary
 
         def __init__(self, dept, name):
             self._dept = dept                   # Store to private attribute
