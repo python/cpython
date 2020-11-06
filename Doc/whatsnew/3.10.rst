@@ -401,6 +401,10 @@ New Features
   reference count of an object and return the object.
   (Contributed by Victor Stinner in :issue:`42262`.)
 
+* The :c:func:`PyType_FromModuleAndSpec` function now accepts NULL ``tp_doc``
+  slot.
+  (Contributed by Hai Shi in :issue:`41832`.)
+
 
 Porting to Python 3.10
 ----------------------
