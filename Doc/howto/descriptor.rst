@@ -1086,7 +1086,7 @@ by member descriptors::
 
 The :meth:`type.__new__` method takes care of adding member objects to class
 variables.  The :meth:`object.__new__` method takes care of creating instances
-that have slots instead of a instance dictionary.  Here is a rough equivalent
+that have slots instead of an instance dictionary.  Here is a rough equivalent
 in pure Python::
 
     class Type(type):
