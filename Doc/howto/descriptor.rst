@@ -192,7 +192,7 @@ we'll fix that problem.
 Customized names
 ----------------
 
-When a class uses descriptors, it can inform each descriptor about what
+When a class uses descriptors, it can inform each descriptor about which
 variable name was used.
 
 In this example, the :class:`Person` class has two descriptor instances,
