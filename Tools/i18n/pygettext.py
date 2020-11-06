@@ -366,9 +366,9 @@ class TokenEater:
                     if len(call.args) != 1:
                         print(_(
                             '*** %(file)s:%(lineno)s: Seen unexpected amount of'
-                            ' positional arguments in gettext call: %(tstring)s'
+                            ' positional arguments in gettext call: %(source_segment)s'
                             ) % {
-                            'tstring': tstring,
+                            'source_segment': ast.get_source_segment(tstring, call) or tstring,
                             'file': self.__curfile,
                             'lineno': lineno
                             }, file=sys.stderr)
@@ -376,9 +376,9 @@ class TokenEater:
                     if call.keywords:
                         print(_(
                             '*** %(file)s:%(lineno)s: Seen unexpected keyword arguments'
-                            ' in gettext call: %(tstring)s'
+                            ' in gettext call: %(source_segment)s'
                             ) % {
-                            'tstring': tstring,
+                            'source_segment': ast.get_source_segment(tstring, call) or tstring,
                             'file': self.__curfile,
                             'lineno': lineno
                             }, file=sys.stderr)
@@ -387,9 +387,9 @@ class TokenEater:
                     if not isinstance(arg, ast.Constant):
                         print(_(
                             '*** %(file)s:%(lineno)s: Seen unexpected argument type'
-                            ' in gettext call: %(tstring)s'
+                            ' in gettext call: %(source_segment)s'
                             ) % {
-                            'tstring': tstring,
+                            'source_segment': ast.get_source_segment(tstring, call) or tstring,
                             'file': self.__curfile,
                             'lineno': lineno
                             }, file=sys.stderr)
