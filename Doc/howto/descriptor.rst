@@ -803,7 +803,7 @@ roughly equivalent to::
 
 To support automatic creation of methods, functions include the
 :meth:`__get__` method for binding methods during attribute access.  This
-means that functions are non-data descriptors which return bound methods
+means that functions are non-data descriptors that return bound methods
 during dotted lookup from an instance.  Here's how it works::
 
     class Function:
