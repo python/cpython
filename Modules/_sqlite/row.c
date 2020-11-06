@@ -71,7 +71,8 @@ pysqlite_row_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 
 PyObject* pysqlite_row_item(pysqlite_Row* self, Py_ssize_t idx)
 {
-   return Py_XNewRef(PyTuple_GetItem(self->data, idx));
+   PyObject *item = PyTuple_GetItem(self->data, idx);
+   return Py_XNewRef(item);
 }
 
 static int
@@ -113,7 +114,9 @@ PyObject* pysqlite_row_subscript(pysqlite_Row* self, PyObject* idx)
             return NULL;
         if (_idx < 0)
            _idx += PyTuple_GET_SIZE(self->data);
-        return Py_XNewRef(PyTuple_GetItem(self->data, _idx));
+
+        PyObject *item = PyTuple_GetItem(self->data, _idx);
+        return Py_XNewRef(item);
     } else if (PyUnicode_Check(idx)) {
         nitems = PyTuple_Size(self->description);
 
@@ -127,7 +130,8 @@ PyObject* pysqlite_row_subscript(pysqlite_Row* self, PyObject* idx)
             }
             if (eq) {
                 /* found item */
-                return Py_XNewRef(PyTuple_GetItem(self->data, i));
+                PyObject *item = PyTuple_GetItem(self->data, i);
+                return Py_XNewRef(item);
             }
         }
 

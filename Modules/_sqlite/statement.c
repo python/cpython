@@ -239,9 +239,11 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
         }
         for (i = 0; i < num_params; i++) {
             if (PyTuple_CheckExact(parameters)) {
-                current_param = Py_NewRef(PyTuple_GET_ITEM(parameters, i));
+                PyObject *item = PyTuple_GET_ITEM(parameters, i);
+                current_param = Py_NewRef(item);
             } else if (PyList_CheckExact(parameters)) {
-                current_param = Py_XNewRef(PyList_GetItem(parameters, i));
+                PyObject *item = PyList_GetItem(parameters, i);
+                current_param = Py_XNewRef(item);
             } else {
                 current_param = PySequence_GetItem(parameters, i);
             }
@@ -287,7 +289,8 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
                 return;
             }
             if (PyDict_CheckExact(parameters)) {
-                current_param = Py_XNewRef(PyDict_GetItemWithError(parameters, binding_name_obj));
+                PyObject *item = PyDict_GetItemWithError(parameters, binding_name_obj);
+                current_param = Py_XNewRef(item);
             } else {
                 current_param = PyObject_GetItem(parameters, binding_name_obj);
             }
