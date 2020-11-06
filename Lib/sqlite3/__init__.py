@@ -23,8 +23,8 @@
 from sqlite3.dbapi2 import *
 
 
-# OptimizedUnicode was deprecated in Python 3.10.  It's scheduled for removal
-# in Python 3.12.
+# bpo-42264: OptimizedUnicode was deprecated in Python 3.10.  It's scheduled
+# for removal in Python 3.12.
 def __getattr__(name):
     if name == "OptimizedUnicode":
         import warnings
