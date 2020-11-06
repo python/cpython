@@ -248,7 +248,7 @@ class Test_pygettext(unittest.TestCase):
         msgids = self.extract_docstrings_from_str(dedent('''\
         f"{type(str)('foo bar')}"
         '''))
-        self.assertFalse([msgid for msgid in msgids if 'foo bar' in msgid])
+        self.assertNotIn('foo bar', msgids)
 
     def test_calls_in_fstrings_with_format(self):
         msgids = self.extract_docstrings_from_str(dedent('''\
