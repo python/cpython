@@ -63,8 +63,8 @@ fold_unaryop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
             case NotIn:
                 op = In;
                 break;
-            default:
-                op = 0;
+            // No default case, so the compiler will emit a warning if new
+            // unary operators are added without being handled here
             }
             if (op) {
                 asdl_seq_SET(arg->v.Compare.ops, 0, op);
@@ -224,7 +224,7 @@ fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 
     PyObject *lv = lhs->v.Constant.value;
     PyObject *rv = rhs->v.Constant.value;
-    PyObject *newval;
+    PyObject *newval = NULL;
 
     switch (node->v.BinOp.op) {
     case Add:
@@ -263,7 +263,15 @@ fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
     case BitAnd:
         newval = PyNumber_And(lv, rv);
         break;
-    default: // Unknown operator
+    // No builtin constants implement the following operators
+    case MatMult:
+        break;
+    // No default case, so the compiler will emit a warning if new binary
+    // operators are added without being handled here
+    }
+
+    // If no new value was calculated, there's nothing to do
+    if (newval == NULL) {
         return 1;
     }
 
@@ -457,8 +465,11 @@ astfold_mod(mod_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case Expression_kind:
         CALL(astfold_expr, expr_ty, node_->v.Expression.body);
         break;
-    default:
+    // The following top level nodes don't participate in constant folding
+    case FunctionType_kind:
         break;
+    // No default case, so the compiler will emit a warning if new top level
+    // compilation nodes are added without being handled here
     }
     return 1;
 }
@@ -567,8 +578,14 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
             return make_const(node_, PyBool_FromLong(!state->optimize), ctx_);
         }
         break;
-    default:
+    case NamedExpr_kind:
+        CALL(astfold_expr, expr_ty, node_->v.NamedExpr.value);
         break;
+    case Constant_kind:
+        // Already a constant, nothing further to do
+        break;
+    // No default case, so the compiler will emit a warning if new expression
+    // kinds are added without being handled here
     }
     return 1;
 }
@@ -686,8 +703,17 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case Expr_kind:
         CALL(astfold_expr, expr_ty, node_->v.Expr.value);
         break;
-    default:
+    // The following statements don't contain any subexpressions to be folded
+    case Import_kind:
+    case ImportFrom_kind:
+    case Global_kind:
+    case Nonlocal_kind:
+    case Pass_kind:
+    case Break_kind:
+    case Continue_kind:
         break;
+    // No default case, so the compiler will emit a warning if new statement
+    // kinds are added without being handled here
     }
     return 1;
 }
@@ -700,8 +726,8 @@ astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, _PyASTOptimizeState
         CALL_OPT(astfold_expr, expr_ty, node_->v.ExceptHandler.type);
         CALL_SEQ(astfold_stmt, stmt, node_->v.ExceptHandler.body);
         break;
-    default:
-        break;
+    // No default case, so the compiler will emit a warning if new handler
+    // kinds are added without being handled here
     }
     return 1;
 }
