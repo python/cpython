@@ -1,0 +1,2 @@
+Update various modules in the stdlib to fall back on `__spec__.loader` when
+`__loader__` isn't defined on a module.

@@ -707,10 +707,13 @@ def getsourcefile(object):
     if os.path.exists(filename):
         return filename
     # only return a non-existent filename if the module has a PEP 302 loader
-    if getattr(getmodule(object, filename), '__loader__', None) is not None:
+    module = getmodule(object, filename)
+    if getattr(module, '__loader__', None) is not None:
+        return filename
+    elif getattr(getattr(module, "__spec__", None), "loader", None) is not None:
         return filename
     # or it is in the linecache
-    if filename in linecache.cache:
+    elif filename in linecache.cache:
         return filename
 
 def getabsfile(object, _filename=None):

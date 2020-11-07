@@ -186,6 +186,12 @@ by :func:`curses.color_content`, :func:`curses.init_color`,
 support is provided by the underlying ncurses library.
 (Contributed by Jeffrey Kintscher and Hans Petter Jansson in :issue:`36982`.)
 
+doctest
+-------
+
+When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
+(Contributed by Brett Cannon in :issue:`42133`.)
+
 encodings
 ---------
 :func:`encodings.normalize_encoding` now ignores non-ASCII characters.
@@ -197,6 +203,18 @@ glob
 Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
 :func:`~glob.iglob` which allow to specify the root directory for searching.
 (Contributed by Serhiy Storchaka in :issue:`38144`.)
+
+inspect
+-------
+
+When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
+(Contributed by Brett Cannon in :issue:`42133`.)
+
+linecache
+---------
+
+When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
+(Contributed by Brett Cannon in :issue:`42133`.)
 
 os
 --
@@ -216,6 +234,12 @@ shelve
 The :mod:`shelve` module now uses :data:`pickle.DEFAULT_PROTOCOL` by default
 instead of :mod:`pickle` protocol ``3`` when creating shelves.
 (Contributed by Zackery Spytz in :issue:`34204`.)
+
+site
+----
+
+When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
+(Contributed by Brett Cannon in :issue:`42133`.)
 
 sys
 ---
