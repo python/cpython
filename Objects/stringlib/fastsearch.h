@@ -592,7 +592,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
     mask = 0;
 
     if (mode != FAST_RSEARCH) {
-        if (w >= 2000 && m >= 20) {
+        if (m >= 100 && n - m >= 5000) {
             // For larger problems, use a worst-case-linear algorithm.
             if (mode == FAST_SEARCH) {
                 return STRINGLIB(_two_way_find)(s, n, p, m);
