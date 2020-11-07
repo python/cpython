@@ -3965,8 +3965,6 @@ _curses_qiflush_impl(PyObject *module, int flag)
 static int
 update_lines_cols(PyObject *module)
 {
-    PyObject *o;
-    PyObject *m = PyImport_ImportModuleNoBlock("curses");
     _Py_IDENTIFIER(LINES);
     _Py_IDENTIFIER(COLS);
 
@@ -3975,43 +3973,33 @@ update_lines_cols(PyObject *module)
         return 0;
     }
 
-    if (!m)
-        return 0;
-
-    o = PyLong_FromLong(LINES);
+    PyObject *o = PyLong_FromLong(LINES);
     if (!o) {
-        Py_DECREF(m);
         return 0;
     }
-    if (_PyObject_SetAttrId(m, &PyId_LINES, o)) {
-        Py_DECREF(m);
+    if (_PyObject_SetAttrId(module, &PyId_LINES, o)) {
         Py_DECREF(o);
         return 0;
     }
     /* PyId_LINES.object will be initialized here. */
     if (PyDict_SetItem(d, _PyUnicode_FromId(&PyId_LINES), o)) {
-        Py_DECREF(m);
         Py_DECREF(o);
         return 0;
     }
     Py_DECREF(o);
     o = PyLong_FromLong(COLS);
     if (!o) {
-        Py_DECREF(m);
         return 0;
     }
-    if (_PyObject_SetAttrId(m, &PyId_COLS, o)) {
-        Py_DECREF(m);
+    if (_PyObject_SetAttrId(module, &PyId_COLS, o)) {
         Py_DECREF(o);
         return 0;
     }
     if (PyDict_SetItem(d, _PyUnicode_FromId(&PyId_COLS), o)) {
-        Py_DECREF(m);
         Py_DECREF(o);
         return 0;
     }
     Py_DECREF(o);
-    Py_DECREF(m);
     return 1;
 }
 
