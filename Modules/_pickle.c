@@ -5063,14 +5063,12 @@ static PyType_Slot pickle_pickler_type_slots[] = {
     {Py_tp_clear, Pickler_clear},
     {Py_tp_doc, (char*)_pickle_Pickler___init____doc__},
     {Py_tp_traverse, Pickler_traverse},
+    {Py_tp_init, _pickle_Pickler___init__},
+    {Py_tp_new, PyType_GenericNew},
+    {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_free, PyObject_GC_Del},
     {0, 0}
 };
-
-//TODO - how to handle this??
-// Calling PyType_GetModuleState() on a subclass is not safe.
-// bz2_compressor_type_spec does not have Py_TPFLAGS_BASETYPE flag
-// which prevents to create a subclass.
-// So calling PyType_GetModuleState() in this file is always safe.
 
 static PyType_Spec pickle_pickler_type_spec = {
     .name = "_pickle.Pickler",
@@ -7555,6 +7553,10 @@ static PyType_Slot pickle_unpickler_type_slots[] = {
     {Py_tp_clear, Unpickler_clear},
     {Py_tp_methods, Unpickler_methods},
     {Py_tp_getset, Unpickler_getsets},
+    {Py_tp_init, _pickle_Unpickler___init__},
+    {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_new, PyType_GenericNew},
+    {Py_tp_free, PyObject_GC_Del},
     {0,0}
 };
 
