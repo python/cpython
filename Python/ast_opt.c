@@ -279,10 +279,8 @@ fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
     // operators are added without being handled here
     }
 
-    // If no new value was calculated, there's nothing to do
-    if (newval == NULL) {
-        return 1;
-    }
+    // Even if no new value was calculated, make_const may still
+    // need to clear an error (e.g. for division by zero)
 
     return make_const(node, newval, arena);
 }
