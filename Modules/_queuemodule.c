@@ -1,16 +1,22 @@
 #include "Python.h"
+#include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
-/*[clinic input]
-module _queue
-class _queue.SimpleQueue "simplequeueobject *" "&PySimpleQueueType"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=cf49af81bcbbbea6]*/
+typedef struct {
+    PyTypeObject *SimpleQueueType;
+    PyObject *EmptyError;
+} simplequeue_state;
 
-static PyTypeObject PySimpleQueueType;  /* forward decl */
-
-static PyObject *EmptyError;
-
+static simplequeue_state *
+simplequeue_get_state(PyObject *module)
+{
+    simplequeue_state *state = PyModule_GetState(module);
+    assert(state);
+    return state;
+}
+static struct PyModuleDef queuemodule;
+#define simplequeue_get_state_by_type(tp) \
+    (simplequeue_get_state(_PyType_GetModuleByDef(type, &queuemodule)))
 
 typedef struct {
     PyObject_HEAD
@@ -21,10 +27,17 @@ typedef struct {
     PyObject *weakreflist;
 } simplequeueobject;
 
+/*[clinic input]
+module _queue
+class _queue.SimpleQueue "simplequeueobject *" "simplequeue_get_state_by_type(type)->SimpleQueueType"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=0a4023fe4d198c8d]*/
 
 static void
 simplequeue_dealloc(simplequeueobject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
+
     PyObject_GC_UnTrack(self);
     if (self->lock != NULL) {
         /* Unlock the lock so it's safe to free it */
@@ -36,6 +49,7 @@ simplequeue_dealloc(simplequeueobject *self)
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
     Py_TYPE(self)->tp_free(self);
+    Py_DECREF(tp);
 }
 
 static int
@@ -155,6 +169,9 @@ simplequeue_pop_item(simplequeueobject *self)
 
 /*[clinic input]
 _queue.SimpleQueue.get
+
+    cls: defining_class
+    /
     block: bool = True
     timeout: object = None
 
@@ -171,9 +188,9 @@ in that case).
 [clinic start generated code]*/
 
 static PyObject *
-_queue_SimpleQueue_get_impl(simplequeueobject *self, int block,
-                            PyObject *timeout)
-/*[clinic end generated code: output=ec82a7157dcccd1a input=4bf691f9f01fa297]*/
+_queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
+                            int block, PyObject *timeout)
+/*[clinic end generated code: output=1969aefa7db63666 input=5fc4d56b9a54757e]*/
 {
     _PyTime_t endtime = 0;
     _PyTime_t timeout_val;
@@ -225,8 +242,10 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, int block,
             return NULL;
         }
         if (r == PY_LOCK_FAILURE) {
+            PyObject *module = PyType_GetModule(cls);
+            simplequeue_state *state = simplequeue_get_state(module);
             /* Timed out */
-            PyErr_SetNone(EmptyError);
+            PyErr_SetNone(state->EmptyError);
             return NULL;
         }
         self->locked = 1;
@@ -251,6 +270,9 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, int block,
 /*[clinic input]
 _queue.SimpleQueue.get_nowait
 
+    cls: defining_class
+    /
+
 Remove and return an item from the queue without blocking.
 
 Only get an item if one is immediately available. Otherwise
@@ -258,10 +280,11 @@ raise the Empty exception.
 [clinic start generated code]*/
 
 static PyObject *
-_queue_SimpleQueue_get_nowait_impl(simplequeueobject *self)
-/*[clinic end generated code: output=a89731a75dbe4937 input=6fe5102db540a1b9]*/
+_queue_SimpleQueue_get_nowait_impl(simplequeueobject *self,
+                                   PyTypeObject *cls)
+/*[clinic end generated code: output=620c58e2750f8b8a input=842f732bf04216d3]*/
 {
-    return _queue_SimpleQueue_get_impl(self, 0, Py_None);
+    return _queue_SimpleQueue_get_impl(self, cls, 0, Py_None);
 }
 
 /*[clinic input]
@@ -290,6 +313,29 @@ _queue_SimpleQueue_qsize_impl(simplequeueobject *self)
     return PyList_GET_SIZE(self->lst) - self->lst_pos;
 }
 
+static int
+queue_traverse(PyObject *m, visitproc visit, void *arg)
+{
+    simplequeue_state *state = simplequeue_get_state(m);
+    Py_VISIT(state->SimpleQueueType);
+    Py_VISIT(state->EmptyError);
+    return 0;
+}
+
+static int
+queue_clear(PyObject *m)
+{
+    simplequeue_state *state = simplequeue_get_state(m);
+    Py_CLEAR(state->SimpleQueueType);
+    Py_CLEAR(state->EmptyError);
+    return 0;
+}
+
+static void
+queue_free(void *m)
+{
+    queue_clear((PyObject *)m);
+}
 
 #include "clinic/_queuemodule.c.h"
 
@@ -306,48 +352,26 @@ static PyMethodDef simplequeue_methods[] = {
     {NULL,           NULL}              /* sentinel */
 };
 
+static struct PyMemberDef simplequeue_members[] = {
+    {"__weaklistoffset__", T_PYSSIZET, offsetof(simplequeueobject, weakreflist), READONLY},
+    {NULL},
+};
 
-static PyTypeObject PySimpleQueueType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_queue.SimpleQueue",               /*tp_name*/
-    sizeof(simplequeueobject),          /*tp_basicsize*/
-    0,                                  /*tp_itemsize*/
-    /* methods */
-    (destructor)simplequeue_dealloc,    /*tp_dealloc*/
-    0,                                  /*tp_vectorcall_offset*/
-    0,                                  /*tp_getattr*/
-    0,                                  /*tp_setattr*/
-    0,                                  /*tp_as_async*/
-    0,                                  /*tp_repr*/
-    0,                                  /*tp_as_number*/
-    0,                                  /*tp_as_sequence*/
-    0,                                  /*tp_as_mapping*/
-    0,                                  /*tp_hash*/
-    0,                                  /*tp_call*/
-    0,                                  /*tp_str*/
-    0,                                  /*tp_getattro*/
-    0,                                  /*tp_setattro*/
-    0,                                  /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_HAVE_GC,           /* tp_flags */
-    simplequeue_new__doc__,             /*tp_doc*/
-    (traverseproc)simplequeue_traverse, /*tp_traverse*/
-    0,                                  /*tp_clear*/
-    0,                                  /*tp_richcompare*/
-    offsetof(simplequeueobject, weakreflist), /*tp_weaklistoffset*/
-    0,                                  /*tp_iter*/
-    0,                                  /*tp_iternext*/
-    simplequeue_methods,                /*tp_methods*/
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    simplequeue_new                     /* tp_new */
+static PyType_Slot simplequeue_slots[] = {
+    {Py_tp_dealloc, simplequeue_dealloc},
+    {Py_tp_doc, (void *)simplequeue_new__doc__},
+    {Py_tp_traverse, simplequeue_traverse},
+    {Py_tp_members, simplequeue_members},
+    {Py_tp_methods, simplequeue_methods},
+    {Py_tp_new, simplequeue_new},
+    {0, NULL},
+};
+
+static PyType_Spec simplequeue_spec = {
+    .name = "_queue.SimpleQueue",
+    .basicsize = sizeof(simplequeueobject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .slots = simplequeue_slots,
 };
 
 
@@ -358,15 +382,13 @@ PyDoc_STRVAR(queue_module_doc,
 This module is an implementation detail, please do not use it directly.");
 
 static struct PyModuleDef queuemodule = {
-    PyModuleDef_HEAD_INIT,
-    "_queue",
-    queue_module_doc,
-    -1,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_queue",
+    .m_doc = queue_module_doc,
+    .m_size = sizeof(simplequeue_state),
+    .m_traverse = queue_traverse,
+    .m_clear = queue_clear,
+    .m_free = queue_free,
 };
 
 
@@ -374,26 +396,40 @@ PyMODINIT_FUNC
 PyInit__queue(void)
 {
     PyObject *m;
+    simplequeue_state *state;
 
     /* Create the module */
     m = PyModule_Create(&queuemodule);
     if (m == NULL)
         return NULL;
 
-    EmptyError = PyErr_NewExceptionWithDoc(
+    state = simplequeue_get_state(m);
+    state->EmptyError = PyErr_NewExceptionWithDoc(
         "_queue.Empty",
         "Exception raised by Queue.get(block=0)/get_nowait().",
         NULL, NULL);
-    if (EmptyError == NULL)
-        return NULL;
+    if (state->EmptyError == NULL)
+        goto error;
 
-    Py_INCREF(EmptyError);
-    if (PyModule_AddObject(m, "Empty", EmptyError) < 0)
-        return NULL;
+    Py_INCREF(state->EmptyError);
+    if (PyModule_AddObject(m, "Empty", state->EmptyError) < 0) {
+        Py_DECREF(state->EmptyError);
+        goto error;
+    }
 
-    if (PyModule_AddType(m, &PySimpleQueueType) < 0) {
-        return NULL;
+    state->SimpleQueueType = (PyTypeObject *)PyType_FromModuleAndSpec(m,
+                                                                 &simplequeue_spec,
+                                                                 NULL);
+    if (state->SimpleQueueType == NULL) {
+        goto error;
+    }
+    if (PyModule_AddType(m, state->SimpleQueueType) < 0) {
+        goto error;
     }
 
     return m;
+
+error:
+    Py_DECREF(m);
+    return NULL;
 }
