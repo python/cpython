@@ -7,6 +7,8 @@
 static int
 make_const(expr_ty node, PyObject *val, PyArena *arena)
 {
+    // Even if no new value was calculated, make_const may still
+    // need to clear an error (e.g. for division by zero)
     if (val == NULL) {
         if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
             return 0;
@@ -274,13 +276,10 @@ fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
         break;
     // No builtin constants implement the following operators
     case MatMult:
-        break;
+        return 1;
     // No default case, so the compiler will emit a warning if new binary
     // operators are added without being handled here
     }
-
-    // Even if no new value was calculated, make_const may still
-    // need to clear an error (e.g. for division by zero)
 
     return make_const(node, newval, arena);
 }
