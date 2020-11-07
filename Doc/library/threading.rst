@@ -97,7 +97,7 @@ This module defines the following functions:
 
 .. function:: enumerate()
 
-   Return a list of all :class:`Thread` objects currently alive.  The list
+   Return a list of all :class:`Thread` objects currently active.  The list
    includes daemonic threads, dummy thread objects created by
    :func:`current_thread`, and the main thread.  It excludes terminated threads
    and threads that have not yet been started.
