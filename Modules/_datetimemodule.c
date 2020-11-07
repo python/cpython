@@ -6595,10 +6595,9 @@ _datetime_exec(PyObject *module)
     PyDateTime_TimeZone_UTC = x;
     CAPI.TimeZone_UTC = PyDateTime_TimeZone_UTC;
 
-    /* bpo-37642: These attributes are rounded to the nearest minute for
-     * backwards compatibility, even though the constructor will accept a
-     * wider range of values. This may change in the future.
-     */
+    /* bpo-37642: These attributes are rounded to the nearest minute for backwards
+     * compatibility, even though the constructor will accept a wider range of
+     * values. This may change in the future.*/
     delta = new_delta(-1, 60, 0, 1); /* -23:59 */
     if (delta == NULL) {
         return -1;
@@ -6636,7 +6635,7 @@ _datetime_exec(PyObject *module)
     }
 
     if (PyModule_AddObject(module, "datetime_CAPI", x) < 0) {
-        Py_DECREF(x);
+        Py_XDECREF(x);
         return -1;
     }
 
