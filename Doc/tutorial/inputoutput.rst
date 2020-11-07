@@ -329,27 +329,13 @@ equivalent :keyword:`try`\ -\ :keyword:`finally` blocks::
 
 If you're not using the :keyword:`with` keyword, then you should call
 ``f.close()`` to close the file and immediately free up any system
-resources used by it. :meth:`__del__` of the returned :term:`file object` also calls ``f.close()``.
-
-..
-   Source for the claim that the ``del(f)`` calls .close():
-   Take a look at the source code of open() in _pyio.py and check the
-   returned type. It will always be one of these 5 classes:
-   FileIO
-   TextIOWrapper
-   BufferedRandom
-   BufferedWriter
-   BufferedReader
-   FileIO defines the __del__ method that calls .close().
-   The other 4 classes inherit indirectly (without overwriting __del__) from
-   IOBase which defines the __del__ method that calls .close().
+resources used by it.
 
 .. warning::
    Calling ``f.write()`` without using the :keyword:`!with` keyword or calling
    ``f.close()``, ``f.flush()`` or ``del(f)`` **might** result in the arguments
    of ``f.write()`` not being completely written to the disk, even if the
-   program exists successfully. This is because Python does not guarantee that
-   :meth:`__del__` is called when the interpreter exists.
+   program exits successfully.
 
 ..
    See also https://bugs.python.org/issue17852
