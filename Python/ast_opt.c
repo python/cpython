@@ -73,7 +73,7 @@ fold_unaryop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
                 op = 0; // The AST enums leave "0" free as an "unused" marker
                 break;
             // No default case, so the compiler will emit a warning if new
-            // unary operators are added without being handled here
+            // comparison operators are added without being handled here
             }
             if (op) {
                 asdl_seq_SET(arg->v.Compare.ops, 0, op);
