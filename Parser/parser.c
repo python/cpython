@@ -3461,6 +3461,8 @@ dotted_name_rule(Parser *p)
         }
         p->mark = _mark;
         void *_raw = dotted_name_raw(p);
+        if (p->error_indicator)
+            return NULL;
         if (_raw == NULL || p->mark <= _resmark)
             break;
         _resmark = p->mark;
@@ -9045,6 +9047,8 @@ bitwise_or_rule(Parser *p)
         }
         p->mark = _mark;
         void *_raw = bitwise_or_raw(p);
+        if (p->error_indicator)
+            return NULL;
         if (_raw == NULL || p->mark <= _resmark)
             break;
         _resmark = p->mark;
@@ -9159,6 +9163,8 @@ bitwise_xor_rule(Parser *p)
         }
         p->mark = _mark;
         void *_raw = bitwise_xor_raw(p);
+        if (p->error_indicator)
+            return NULL;
         if (_raw == NULL || p->mark <= _resmark)
             break;
         _resmark = p->mark;
@@ -9273,6 +9279,8 @@ bitwise_and_rule(Parser *p)
         }
         p->mark = _mark;
         void *_raw = bitwise_and_raw(p);
+        if (p->error_indicator)
+            return NULL;
         if (_raw == NULL || p->mark <= _resmark)
             break;
         _resmark = p->mark;
@@ -9387,6 +9395,8 @@ shift_expr_rule(Parser *p)
         }
         p->mark = _mark;
         void *_raw = shift_expr_raw(p);
+        if (p->error_indicator)
+            return NULL;
         if (_raw == NULL || p->mark <= _resmark)
             break;
         _resmark = p->mark;
@@ -9540,6 +9550,8 @@ sum_rule(Parser *p)
         }
         p->mark = _mark;
         void *_raw = sum_raw(p);
+        if (p->error_indicator)
+            return NULL;
         if (_raw == NULL || p->mark <= _resmark)
             break;
         _resmark = p->mark;
@@ -9699,6 +9711,8 @@ term_rule(Parser *p)
         }
         p->mark = _mark;
         void *_raw = term_raw(p);
+        if (p->error_indicator)
+            return NULL;
         if (_raw == NULL || p->mark <= _resmark)
             break;
         _resmark = p->mark;
@@ -10303,6 +10317,8 @@ primary_rule(Parser *p)
         }
         p->mark = _mark;
         void *_raw = primary_raw(p);
+        if (p->error_indicator)
+            return NULL;
         if (_raw == NULL || p->mark <= _resmark)
             break;
         _resmark = p->mark;
@@ -13943,6 +13959,8 @@ t_primary_rule(Parser *p)
         }
         p->mark = _mark;
         void *_raw = t_primary_raw(p);
+        if (p->error_indicator)
+            return NULL;
         if (_raw == NULL || p->mark <= _resmark)
             break;
         _resmark = p->mark;
@@ -21288,7 +21306,7 @@ _tmp_93_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_93[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'!='"));
-            _res = _PyPegen_check_barry_as_flufl ( p ) ? NULL : tok;
+            _res = _PyPegen_check_barry_as_flufl ( p , tok ) ? NULL : tok;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);

@@ -852,7 +852,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     }
 
     if (f == NULL) {
-        globals = _PyInterpreterState_GET()->sysdict;
+        globals = tstate->interp->sysdict;
         *filename = PyUnicode_FromString("sys");
         *lineno = 1;
     }
@@ -1395,18 +1395,13 @@ _PyWarnings_Init(void)
         goto error;
     }
 
-    Py_INCREF(st->filters);
-    if (PyModule_AddObject(m, "filters", st->filters) < 0) {
+    if (PyModule_AddObjectRef(m, "filters", st->filters) < 0) {
         goto error;
     }
-
-    Py_INCREF(st->once_registry);
-    if (PyModule_AddObject(m, "_onceregistry", st->once_registry) < 0) {
+    if (PyModule_AddObjectRef(m, "_onceregistry", st->once_registry) < 0) {
         goto error;
     }
-
-    Py_INCREF(st->default_action);
-    if (PyModule_AddObject(m, "_defaultaction", st->default_action) < 0) {
+    if (PyModule_AddObjectRef(m, "_defaultaction", st->default_action) < 0) {
         goto error;
     }
 

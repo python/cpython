@@ -768,9 +768,24 @@ _locale_bind_textdomain_codeset_impl(PyObject *module, const char *domain,
     }
     Py_RETURN_NONE;
 }
-#endif
+#endif  // HAVE_BIND_TEXTDOMAIN_CODESET
 
-#endif
+#endif  // HAVE_LIBINTL_H
+
+
+/*[clinic input]
+_locale._get_locale_encoding
+
+Get the current locale encoding.
+[clinic start generated code]*/
+
+static PyObject *
+_locale__get_locale_encoding_impl(PyObject *module)
+/*[clinic end generated code: output=e8e2f6f6f184591a input=513d9961d2f45c76]*/
+{
+    return _Py_GetLocaleEncodingObject();
+}
+
 
 static struct PyMethodDef PyLocale_Methods[] = {
     _LOCALE_SETLOCALE_METHODDEF
@@ -797,6 +812,7 @@ static struct PyMethodDef PyLocale_Methods[] = {
     _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
 #endif
 #endif
+    _LOCALE__GET_LOCALE_ENCODING_METHODDEF
   {NULL, NULL}
 };
 
