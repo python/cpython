@@ -189,7 +189,7 @@ support is provided by the underlying ncurses library.
 doctest
 -------
 
-When a module does not define ``__loader__``, fall back to ``__spec__.parent``.
+When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
 (Contributed by Brett Cannon in :issue:`42133`.)
 
 encodings
@@ -207,13 +207,13 @@ Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
 inspect
 -------
 
-When a module does not define ``__loader__``, fall back to ``__spec__.parent``.
+When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
 (Contributed by Brett Cannon in :issue:`42133`.)
 
 linecache
 ---------
 
-When a module does not define ``__loader__``, fall back to ``__spec__.parent``.
+When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
 (Contributed by Brett Cannon in :issue:`42133`.)
 
 os
@@ -238,7 +238,7 @@ instead of :mod:`pickle` protocol ``3`` when creating shelves.
 site
 ----
 
-When a module does not define ``__loader__``, fall back to ``__spec__.parent``.
+When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
 (Contributed by Brett Cannon in :issue:`42133`.)
 
 sys
