@@ -49,7 +49,7 @@ fold_unaryop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
                of !=. Detecting such cases doesn't seem worthwhile.
                Python uses </> for 'is subset'/'is superset' operations on sets.
                They don't satisfy not folding laws. */
-            int op = asdl_seq_GET(arg->v.Compare.ops, 0);
+            cmpop_ty op = asdl_seq_GET(arg->v.Compare.ops, 0);
             switch (op) {
             case Is:
                 op = IsNot;
@@ -62,6 +62,15 @@ fold_unaryop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
                 break;
             case NotIn:
                 op = In;
+                break;
+            // The remaining comparison operators can't be safely inverted
+            case Eq:
+            case NotEq:
+            case Lt:
+            case LtE:
+            case Gt:
+            case GtE:
+                op = 0; // The AST enums leave "0" free as an "unused" marker
                 break;
             // No default case, so the compiler will emit a warning if new
             // unary operators are added without being handled here
