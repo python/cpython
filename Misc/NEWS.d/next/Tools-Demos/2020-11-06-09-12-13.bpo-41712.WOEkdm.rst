@@ -1,1 +1,1 @@
-A regex pattern in the purge script (which is only used internally for creating Windows installers) was vulnerable to regex denial of service.The pattern was changed to fix this.
+A regex pattern in the purge script (which is only used internally for creating Windows installers) was vulnerable to regex denial of service.  The pattern was changed to fix this.
