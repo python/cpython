@@ -333,7 +333,7 @@ resources used by it.
 
 .. warning::
    Calling ``f.write()`` without using the :keyword:`!with` keyword or calling
-   ``f.close()``, ``f.flush()`` or ``del(f)`` **might** result in the arguments
+   ``f.close()``, ``f.flush()`` or ``del f`` **might** result in the arguments
    of ``f.write()`` not being completely written to the disk, even if the
    program exits successfully.
 
