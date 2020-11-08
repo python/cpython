@@ -110,7 +110,7 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
         # extra, and invalid, kwargs
         self.assertRaises(tkinter.TclError, ttk.LabeledScale, master, a='b')
 
-
+    @unittest.skipIf(ubuntu(), "Skipped")
     def test_horizontal_range(self):
         lscale = ttk.LabeledScale(self.root, from_=0, to=10)
         lscale.pack()
@@ -140,7 +140,7 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
 
         lscale.destroy()
 
-
+    @unittest.skipIf(ubuntu(), "Skipped")
     def test_variable_change(self):
         x = ttk.LabeledScale(self.root)
         x.pack()
@@ -239,7 +239,7 @@ class OptionMenuTest(AbstractTkTest, unittest.TestCase):
 
         optmenu.destroy()
 
-
+    @unittest.skipIf(ubuntu(), "Skipped")
     def test_menu(self):
         items = ('a', 'b', 'c')
         default = 'a'
@@ -292,6 +292,7 @@ class OptionMenuTest(AbstractTkTest, unittest.TestCase):
 
         optmenu.destroy()
 
+    @unittest.skipIf(ubuntu(), "Skipped")
     def test_unique_radiobuttons(self):
         # check that radiobuttons are unique across instances (bpo25684)
         items = ('a', 'b', 'c')
