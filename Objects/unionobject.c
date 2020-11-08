@@ -237,33 +237,25 @@ dedup_and_flatten_args(PyObject* args)
         PyObject* i_element = PyTuple_GET_ITEM(args, i);
         for (Py_ssize_t j = i + 1; j < arg_length; j++) {
             PyObject* j_element = PyTuple_GET_ITEM(args, j);
+            int is_ga = Py_TYPE(i_element) == &Py_GenericAliasType &&
+                        Py_TYPE(j_element) == &Py_GenericAliasType;
             // RichCompare to also deduplicate GenericAlias types (slower)
-            if (Py_TYPE(i_element) == &Py_GenericAliasType &&
-                Py_TYPE(j_element) == &Py_GenericAliasType) 
-            { 
-                int same = PyObject_RichCompareBool(i_element, j_element, 
-                    Py_EQ);
-                if (same == 1) {
-                    is_duplicate = 1;
-                }
-                else if (same == -1) {
-                    PyErr_Format(PyExc_TypeError, 
-                        "Could not compare objects of type '%s' and '%s'"
-                        " at indexes %d and %d respectively."
-                        " Their __eq__ methods may be invalid. ",
-                        Py_TYPE(i_element)->tp_name, 
-                        Py_TYPE(j_element)->tp_name,
-                        i, j);
-                    Py_DECREF(args);
-                    return NULL;
-                }
+            int is_same = is_ga ? PyObject_RichCompareBool(i_element, j_element, Py_EQ)
+                : i_element == j_element;
+            // Should only happen if RichCompare fails
+            if (is_same < 0) {
+                PyErr_Format(PyExc_TypeError, 
+                    "Could not compare objects of type '%s' and '%s'"
+                    " at indexes %d and %d respectively."
+                    " Their __eq__ methods may be invalid. ",
+                    Py_TYPE(i_element)->tp_name, Py_TYPE(j_element)->tp_name,
+                    i, j);
+                Py_DECREF(args);
+                return NULL;
             }
-            else {
-                if (i_element == j_element) {
-                    is_duplicate = 1;
-                }
-            }
-            
+            is_duplicate = is_same;
+            if (is_duplicate)
+                break;
         }
         if (!is_duplicate) {
             Py_INCREF(i_element);
