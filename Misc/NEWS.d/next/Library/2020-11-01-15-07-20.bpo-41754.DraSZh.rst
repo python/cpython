@@ -1,0 +1,1 @@
+webbrowser: Ignore *NotADirectoryError* when calling ``xdg-settings``.
