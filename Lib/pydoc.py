@@ -1620,7 +1620,7 @@ def tempfilepager(text, cmd):
     """Page through text by invoking a program on a temporary file."""
     import tempfile
     try:
-        with tempfile.NamedTemporaryFile('w', delete=False) as file:
+        with tempfile.NamedTemporaryFile('w', delete=False, errors='backslashreplace') as file:
             file.write(text)
             file.close()
             subprocess.run([cmd, file.name])
