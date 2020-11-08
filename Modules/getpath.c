@@ -923,11 +923,7 @@ static PyStatus
 calculate_program_macos(wchar_t **abs_path_p)
 {
     char execpath[MAXPATHLEN + 1];
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_4
     uint32_t nsexeclength = Py_ARRAY_LENGTH(execpath) - 1;
-#else
-    unsigned long nsexeclength = Py_ARRAY_LENGTH(execpath) - 1;
-#endif
 
     /* On Mac OS X, if a script uses an interpreter of the form
        "#!/opt/python2.3/bin/python", the kernel only passes "python"
