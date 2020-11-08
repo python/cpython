@@ -1,0 +1,8 @@
+Add support for macOS 11 and Apple Silicon systems.
+
+It is now possible to build "Universal 2" binaries using
+"--enable-universalsdk --with-universal-archs=universal2".
+
+Binaries build on later macOS versions can be deployed back to older
+versions (tested up to macOS 10.9), when using the correct deployment
+target. This is tested using Xcode 11 and later.
