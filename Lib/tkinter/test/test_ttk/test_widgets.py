@@ -60,7 +60,8 @@ class WidgetTest(AbstractTkTest, unittest.TestCase):
         super().setUp()
         self.widget = ttk.Button(self.root, width=0, text="Text")
         self.widget.pack()
-        #self.widget.wait_visibility()
+        if not ubuntu():
+            self.widget.wait_visibility()
 
 
     def test_identify(self):
