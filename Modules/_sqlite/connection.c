@@ -88,8 +88,11 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     Py_CLEAR(self->statements);
     Py_CLEAR(self->cursors);
 
-    self->row_factory = Py_NewRef(Py_None);
-    self->text_factory = Py_NewRef((PyObject*)&PyUnicode_Type);
+    Py_INCREF(Py_None);
+    Py_XSETREF(self->row_factory, Py_None);
+
+    Py_INCREF(&PyUnicode_Type);
+    Py_XSETREF(self->text_factory, (PyObject*)&PyUnicode_Type);
 
 #ifdef SQLITE_OPEN_URI
     Py_BEGIN_ALLOW_THREADS
