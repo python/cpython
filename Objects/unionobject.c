@@ -240,10 +240,10 @@ dedup_and_flatten_args(PyObject* args)
             int is_ga = Py_TYPE(i_element) == &Py_GenericAliasType &&
                         Py_TYPE(j_element) == &Py_GenericAliasType;
             // RichCompare to also deduplicate GenericAlias types (slower)
-            int is_same = is_ga ? PyObject_RichCompareBool(i_element, j_element, Py_EQ)
+            is_duplicate = is_ga ? PyObject_RichCompareBool(i_element, j_element, Py_EQ)
                 : i_element == j_element;
             // Should only happen if RichCompare fails
-            if (is_same < 0) {
+            if (is_duplicate < 0) {
                 PyErr_Format(PyExc_TypeError, 
                     "Could not compare objects of type '%s' and '%s'"
                     " at indexes %d and %d respectively."
@@ -253,7 +253,6 @@ dedup_and_flatten_args(PyObject* args)
                 Py_DECREF(args);
                 return NULL;
             }
-            is_duplicate = is_same;
             if (is_duplicate)
                 break;
         }
