@@ -240,9 +240,22 @@ dedup_and_flatten_args(PyObject* args)
             // RichCompare to also deduplicate GenericAlias types (slower)
             if (Py_TYPE(i_element) == &Py_GenericAliasType &&
                 Py_TYPE(j_element) == &Py_GenericAliasType) 
-            {
-                if (PyObject_RichCompareBool(i_element, j_element, Py_EQ) == 1) {
+            { 
+                int same = PyObject_RichCompareBool(i_element, j_element, 
+                    Py_EQ);
+                if (same == 1) {
                     is_duplicate = 1;
+                }
+                else if (same == -1) {
+                    PyErr_Format(PyExc_TypeError, 
+                        "Could not compare objects of type '%s' and '%s'"
+                        " at indexes %d and %d respectively."
+                        " Their __eq__ methods may be invalid. ",
+                        Py_TYPE(i_element)->tp_name, 
+                        Py_TYPE(j_element)->tp_name,
+                        i, j);
+                    Py_DECREF(args);
+                    return NULL;
                 }
             }
             else {
