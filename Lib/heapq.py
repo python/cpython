@@ -125,7 +125,7 @@ From all times, sorting has always been a Great Art! :-)
 """
 
 __all__ = ['heappush', 'heappop', 'heapify', 'heapreplace', 'merge',
-           'nlargest', 'nsmallest', 'heappushpop']
+           'nlargest', 'nsmallest', 'heappushpop', 'heapIndex']
 
 def heappush(heap, item):
     """Push item onto heap, maintaining the heap invariant."""
@@ -575,7 +575,45 @@ def nlargest(n, iterable, key=None):
             order -= 1
     result.sort(reverse=True)
     return [elem for (k, order, elem) in result]
+  
+def _heapIndexHelper(h, x, checkIdx):
+    """A helper function for heapIndex. Giving the heap h, 
+    an element to be found x and the index to start looking of this heap checkIdx,
+    return the index of the element if found, return -1 if element not found.
+    """
+    if h[checkIdx] == x: 
+        return checkIdx
+    ans = -1
+    if 2*checkIdx + 1 < len(h):    
+        ans = _heapIndexHelper(h, x, 2*checkIdx + 1)
+    if ans >= 0: return ans
+    if 2*checkIdx + 2 < len(h):
+        ans = _heapIndexHelper(h, x, 2*checkIdx + 2)
+    return ans
 
+def heapIndex(h, x):
+    """
+    Given a heap h and an element x, return the index of x in this heap.
+    Raise value error if this element does not exist in this heap. 
+    Expected time complexity lg(n). 
+    
+    For this function helper is needed because ans will constantly be -1
+    during recursion. And you don't konw if this is finally -1 or in the
+    process still finding get some -1.
+    
+    Testing sample:
+    lst = [1, 3, 5, 7, 9, 2, 4, 6, 8, 0]
+    heapify(lst)
+    print(lst)
+    for i in range(10):
+        print(i, "found at:", heapIndex(lst, i))
+    print(heapFind(lst, 10))
+    """
+    if len(h) == 0: return -1 # User may actually trying to check an empty heap.
+    ans = _heapIndexHelper(h, x, 0)
+    if ans != -1: return ans
+    raise ValueError("Element not found!")
+  
 # If available, use C implementation
 try:
     from _heapq import *
