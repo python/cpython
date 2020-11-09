@@ -6,7 +6,7 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_unionobject.h"   // _Py_Union()
+#include "pycore_unionobject.h"   // _Py_Union(), _Py_union_type_or
 #include "frameobject.h"
 #include "structmember.h"         // PyMemberDef
 
@@ -3789,19 +3789,9 @@ type_is_gc(PyTypeObject *type)
     return type->tp_flags & Py_TPFLAGS_HEAPTYPE;
 }
 
-static PyObject *
-type_or(PyTypeObject* self, PyObject* param) {
-    PyObject *tuple = PyTuple_Pack(2, self, param);
-    if (tuple == NULL) {
-        return NULL;
-    }
-    PyObject *new_union = _Py_Union(tuple);
-    Py_DECREF(tuple);
-    return new_union;
-}
 
 static PyNumberMethods type_as_number = {
-        .nb_or = (binaryfunc)type_or, // Add __or__ function
+        .nb_or = _Py_union_type_or, // Add __or__ function
 };
 
 PyTypeObject PyType_Type = {
