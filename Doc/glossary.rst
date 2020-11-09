@@ -158,6 +158,18 @@ Glossary
       See also :term:`text file` for a file object able to read and write
       :class:`str` objects.
 
+   borrowed reference
+      In the Python's C API, a borrowed reference is a reference to an object.
+      It does not modify the object reference count. It becomes a dangling
+      pointer if the object is destroyed. For example, a garbage collection can
+      remove the last :term:`strong reference` to the object and so destroy it.
+
+      Calling :c:func:`Py_INCREF` on the :term:`borrowed reference` is
+      recommended to convert it to a :term:`strong reference` in-place, except
+      if the object cannot be destroyed before the last usage of the borrowed
+      reference. The :c:func:`Py_NewRef` function can be used to create a new
+      :term:`strong reference`.
+
    bytes-like object
       An object that supports the :ref:`bufferobjects` and can
       export a C-:term:`contiguous` buffer. This includes all :class:`bytes`,
@@ -1099,6 +1111,18 @@ Glossary
       A statement is part of a suite (a "block" of code).  A statement is either
       an :term:`expression` or one of several constructs with a keyword, such
       as :keyword:`if`, :keyword:`while` or :keyword:`for`.
+
+   strong reference
+      In the Python's C API, a strong reference is a reference to an object
+      which increments object reference count when it is created and
+      decrements the object reference count when it is deleted.
+
+      The :c:func:`Py_NewRef` function can be used to create a strong reference
+      to an object. Usually, the :c:func:`Py_DECREF` function must be called on
+      the strong reference before exiting the scope of the strong reference, to
+      avoid leaking one reference.
+
+      See also :term:`borrowed reference`.
 
    text encoding
       A codec which encodes Unicode strings to bytes.
