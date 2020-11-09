@@ -1,5 +1,7 @@
 import asyncio
-from contextlib import aclosing, asynccontextmanager, AbstractAsyncContextManager, AsyncExitStack
+from contextlib import (
+    asynccontextmanager, AbstractAsyncContextManager,
+    AsyncExitStack, nullcontext, aclosing)
 import functools
 from test import support
 import unittest
@@ -535,6 +537,16 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
         inner_exc = saved_details[1]
         self.assertIsInstance(inner_exc, ValueError)
         self.assertIsInstance(inner_exc.__context__, ZeroDivisionError)
+
+
+class TestAsyncNullcontext(unittest.TestCase):
+    @_async_test
+    async def test_async_nullcontext(self):
+        class C:
+            pass
+        c = C()
+        async with nullcontext(c) as c_in:
+            self.assertIs(c_in, c)
 
 
 if __name__ == '__main__':
