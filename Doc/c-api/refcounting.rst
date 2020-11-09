@@ -25,7 +25,7 @@ objects.
 
 .. c:function:: void Py_XINCREF(PyObject *o)
 
-   Increment the reference count for object *o*.  The object may be ``NULL``, in
+   Increment the reference count for object *o*.  The object can be ``NULL``, in
    which case the macro has no effect.
 
    See also :c:func:`Py_XNewRef`.
@@ -78,6 +78,9 @@ objects.
    The object must not be ``NULL``; if you aren't sure that it isn't ``NULL``,
    use :c:func:`Py_XDECREF`.
 
+   Use :c:func:`Py_CLEAR` to set a variable to ``NULL``. See also
+   :c:func:`Py_SetRef`.
+
    .. warning::
 
       The deallocation function can cause arbitrary Python code to be invoked (e.g.
@@ -92,19 +95,61 @@ objects.
 
 .. c:function:: void Py_XDECREF(PyObject *o)
 
-   Decrement the reference count for object *o*.  The object may be ``NULL``, in
+   Decrement the reference count for object *o*.  The object can be ``NULL``, in
    which case the macro has no effect; otherwise the effect is the same as for
    :c:func:`Py_DECREF`, and the same warning applies.
 
+   Use :c:func:`Py_CLEAR` to set a variable to ``NULL``. See also
+   :c:func:`Py_XSetRef`.
 
-.. c:function:: void Py_CLEAR(PyObject *o)
 
-   Decrement the reference count for object *o*.  The object may be ``NULL``, in
-   which case the macro has no effect; otherwise the effect is the same as for
-   :c:func:`Py_DECREF`, except that the argument is also set to ``NULL``.  The warning
-   for :c:func:`Py_DECREF` does not apply with respect to the object passed because
-   the macro carefully uses a temporary variable and sets the argument to ``NULL``
-   before decrementing its reference count.
+.. c:function:: void Py_SetRef(PyObject **ref, PyObject *new_obj)
+
+   Set the :term:`strong reference` ``*ref`` to *new_obj* object (without
+   increasing its reference count), and then decrement the reference count of
+   the object previously pointed by ``*ref``.
+
+   *ref* and ``*ref`` must not be ``NULL``.
+
+   This function avoids creating a temporary dangling pointer. Example::
+
+       Py_DECREF(global_var);   // unsafe
+       global_var = new_obj;
+
+   If the :c:func:`Py_DECREF` call destroys the object previously pointed by
+   *global_var*, the object finalizer can run arbitrary code which can use the
+   *global_var* variable. Since the *global_var* became a dangling pointer,
+   using it crashs Python. The example can be fixed by using
+   :c:func:`Py_SetRef`:
+
+       Py_SetRef(&global_var, new_obj);   // safe
+
+   See also the :c:func:`Py_CLEAR` macro.
+
+   .. versionadded:: 3.10
+
+
+.. c:function:: void Py_XSetRef(PyObject **ref, PyObject *new_obj)
+
+   Similar to :c:func:`Py_SetRef`, but ``*ref`` can be ``NULL``.
+
+   If ``*ref`` is ``NULL``, do nothing.
+
+   See also :c:func:`Py_CLEAR` macro.
+
+   .. versionadded:: 3.10
+
+
+.. c:function:: void Py_CLEAR(PyObject *op)
+
+   Clear a :term:`strong reference`: decrement the reference count for object
+   *op* and set *op* to ``NULL`.
+
+   If *op* is ``NULL``, do nothing.
+
+   The ``Py_CLEAR(var)`` macro is implemented with the :c:func:`Py_XSetRef`
+   function as ``Py_XSetRef(&var, NULL)`` to avoid creating a temporary
+   dangling pointer.
 
    It is a good idea to use this macro whenever decrementing the reference
    count of an object that might be traversed during garbage collection.

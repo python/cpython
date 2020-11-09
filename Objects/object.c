@@ -2224,6 +2224,23 @@ Py_XNewRef(PyObject *obj)
     return _Py_XNewRef(obj);
 }
 
+
+#undef Py_SetRef
+#undef Py_XSetRef
+
+// Export Py_SetRef() and Py_XSetRef() as regular functions for the stable ABI.
+void
+Py_SetRef(PyObject **ref, PyObject *new_obj)
+{
+    return _Py_SetRef(ref, new_obj);
+}
+
+void
+Py_XSetRef(PyObject **ref, PyObject *new_obj)
+{
+    return _Py_XSetRef(ref, new_obj);
+}
+
 #ifdef __cplusplus
 }
 #endif

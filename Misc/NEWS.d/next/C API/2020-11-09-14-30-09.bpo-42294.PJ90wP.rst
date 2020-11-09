@@ -1,0 +1,3 @@
+Add :c:func:`Py_SetRef` and :c:func:`Py_XSetRef` functions to set a
+:term:`strong reference` to a new reference without creating a temporary
+dangling pointer. Patch by Victor Stinner.

@@ -429,6 +429,11 @@ New Features
   slot.
   (Contributed by Hai Shi in :issue:`41832`.)
 
+* Added :c:func:`Py_SetRef` and :c:func:`Py_XSetRef` functions to set a
+  :term:`strong reference` to a new object without a creating temporary
+  dangling pointer.
+  (Contributed by Victor Stinner in :issue:`42294`.)
+
 
 Porting to Python 3.10
 ----------------------

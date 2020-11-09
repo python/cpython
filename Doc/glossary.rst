@@ -1118,9 +1118,12 @@ Glossary
       decrements the object reference count when it is deleted.
 
       The :c:func:`Py_NewRef` function can be used to create a strong reference
-      to an object. Usually, the :c:func:`Py_DECREF` function must be called on
-      the strong reference before exiting the scope of the strong reference, to
-      avoid leaking one reference.
+      to an object. Usually, the :c:func:`Py_CLEAR` or :c:func:`Py_DECREF`
+      function must be called on the strong reference before exiting the scope
+      of the strong reference, to avoid leaking a reference.
+
+      The :c:func:`Py_SetRef` function can be used to set a strong reference to
+      a new object without creating a temporary dangling pointer.
 
       See also :term:`borrowed reference`.
 

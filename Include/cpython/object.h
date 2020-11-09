@@ -337,38 +337,15 @@ _PyObject_GenericSetAttrWithDict(PyObject *, PyObject *,
 
 PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 
-/* Safely decref `op` and set `op` to `op2`.
- *
- * As in case of Py_CLEAR "the obvious" code can be deadly:
- *
- *     Py_DECREF(op);
- *     op = op2;
- *
- * The safe way is:
- *
- *      Py_SETREF(op, op2);
- *
- * That arranges to set `op` to `op2` _before_ decref'ing, so that any code
- * triggered as a side-effect of `op` getting torn down no longer believes
- * `op` points to a valid object.
- *
- * Py_XSETREF is a variant of Py_SETREF that uses Py_XDECREF instead of
- * Py_DECREF.
- */
+// Set op to new_obj without creating a temporary dangling pointer (op).
+// See also the Py_SetRef() function and the Py_CLEAR() macro.
+#define Py_SETREF(op, new_obj) \
+    Py_SetRef(_PyObjectPtr_CAST(&(op)), _PyObject_CAST(new_obj))
 
-#define Py_SETREF(op, op2)                      \
-    do {                                        \
-        PyObject *_py_tmp = _PyObject_CAST(op); \
-        (op) = (op2);                           \
-        Py_DECREF(_py_tmp);                     \
-    } while (0)
-
-#define Py_XSETREF(op, op2)                     \
-    do {                                        \
-        PyObject *_py_tmp = _PyObject_CAST(op); \
-        (op) = (op2);                           \
-        Py_XDECREF(_py_tmp);                    \
-    } while (0)
+// Similar to Py_SETREF() but op can be NULL.
+// See also the Py_XSetRef() function and the Py_CLEAR() macro.
+#define Py_XSETREF(op, new_obj) \
+    Py_XSetRef(_PyObjectPtr_CAST(&(op)), _PyObject_CAST(new_obj))
 
 
 PyAPI_DATA(PyTypeObject) _PyNone_Type;

@@ -112,6 +112,9 @@ typedef struct _object {
 #define _PyObject_CAST(op) ((PyObject*)(op))
 #define _PyObject_CAST_CONST(op) ((const PyObject*)(op))
 
+/* Cast argument to PyObject** type. */
+#define _PyObjectPtr_CAST(op) ((PyObject**)(op))
+
 typedef struct {
     PyObject ob_base;
     Py_ssize_t ob_size; /* Number of items in variable part */
@@ -491,14 +494,7 @@ static inline void _Py_DECREF(
  * Python integers aren't currently weakly referencable.  Best practice is
  * to use Py_CLEAR() even if you can't think of a reason for why you need to.
  */
-#define Py_CLEAR(op)                            \
-    do {                                        \
-        PyObject *_py_tmp = _PyObject_CAST(op); \
-        if (_py_tmp != NULL) {                  \
-            (op) = NULL;                        \
-            Py_DECREF(_py_tmp);                 \
-        }                                       \
-    } while (0)
+#define Py_CLEAR(op) Py_XSetRef(_PyObjectPtr_CAST(&(op)), NULL)
 
 /* Function to use in case the object pointer can be NULL: */
 static inline void _Py_XINCREF(PyObject *op)
@@ -550,6 +546,35 @@ static inline PyObject* _Py_XNewRef(PyObject *obj)
 // performances.
 #define Py_NewRef(obj) _Py_NewRef(obj)
 #define Py_XNewRef(obj) _Py_XNewRef(obj)
+
+// Set a strong reference *ref to obj and then decrement the reference count
+// of the object previously pointed by *ref.
+// See also the Py_SETREF() macro.
+PyAPI_FUNC(void) Py_SetRef(PyObject **ref, PyObject *new_obj);
+
+// Similar to Py_SetRef(), but *ref can be NULL.
+// See also the Py_XSETREF() macros.
+PyAPI_FUNC(void) Py_XSetRef(PyObject **ref, PyObject *new_obj);
+
+static inline void _Py_SetRef(PyObject **ref, PyObject *new_obj)
+{
+    PyObject *old = *ref;
+    *ref = new_obj;
+    Py_DECREF(old);
+}
+
+static inline void _Py_XSetRef(PyObject **ref, PyObject *new_obj)
+{
+    PyObject *old = *ref;
+    *ref = new_obj;
+    Py_XDECREF(old);
+}
+
+// Py_SetRef() and Py_XSetRef() are exported as functions for the stable ABI.
+// Names overriden with macros by static inline functions for best
+// performances.
+#define Py_SetRef(ref, new_obj) _Py_SetRef(ref, new_obj)
+#define Py_XSetRef(ref, new_obj) _Py_XSetRef(ref, new_obj)
 
 
 /*
