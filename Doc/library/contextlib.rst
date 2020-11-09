@@ -234,6 +234,10 @@ Functions and classes provided:
 
    .. versionadded:: 3.7
 
+   .. versionchanged:: 3.10
+      :term:`asynchronous context manager` support was added.
+
+
 
 .. function:: suppress(*exceptions)
 
