@@ -526,10 +526,11 @@ they can have object code that is not dependent on Python compilation flags.
 PyAPI_FUNC(void) Py_IncRef(PyObject *);
 PyAPI_FUNC(void) Py_DecRef(PyObject *);
 
-// Increment the reference count of the object and return the object.
+// Create a new strong reference to an object:
+// increment the reference count of the object and return the object.
 PyAPI_FUNC(PyObject*) Py_NewRef(PyObject *obj);
 
-// Similar to Py_NewRef() but the object can be NULL.
+// Similar to Py_NewRef(), but the object can be NULL.
 PyAPI_FUNC(PyObject*) Py_XNewRef(PyObject *obj);
 
 static inline PyObject* _Py_NewRef(PyObject *obj)
