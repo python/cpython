@@ -3749,7 +3749,7 @@ type_is_gc(PyTypeObject *type)
 
 
 static PyNumberMethods type_as_number = {
-        .nb_or = (binaryfunc)_Py_union_type_or, // Add __or__ function
+        .nb_or = _Py_union_type_or, // Add __or__ function
 };
 
 PyTypeObject PyType_Type = {

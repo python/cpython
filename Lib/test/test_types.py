@@ -726,6 +726,15 @@ class TypesTests(unittest.TestCase):
         self.assertEqual(repr(a | b | c),
                          "list[int] | list[str] | dict[float, str]")
 
+        class BadType(type):
+            def __eq__(self, other):
+                return 1 / 0
+
+        bt = BadType('bt', (), {})
+        # Comparison should fail and errors should propagate out for bad types.
+        with self.assertRaises(ZeroDivisionError):
+            list[int] | list[bt]
+
     def test_ellipsis_type(self):
         self.assertIsInstance(Ellipsis, types.EllipsisType)
 

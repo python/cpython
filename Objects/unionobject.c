@@ -245,6 +245,7 @@ dedup_and_flatten_args(PyObject* args)
             // Should only happen if RichCompare fails
             if (is_duplicate < 0) {
                 Py_DECREF(args);
+                Py_DECREF(new_args);
                 return NULL;
             }
             if (is_duplicate)
@@ -300,7 +301,7 @@ is_unionable(PyObject *obj)
 }
 
 PyObject *
-_Py_union_type_or(PyTypeObject* self, PyObject* param)
+_Py_union_type_or(PyObject* self, PyObject* param)
 {
     PyObject *tuple = PyTuple_Pack(2, self, param);
     if (tuple == NULL) {
@@ -413,7 +414,7 @@ static PyMethodDef union_methods[] = {
         {0}};
 
 static PyNumberMethods union_as_number = {
-        .nb_or = (binaryfunc)_Py_union_type_or, // Add __or__ function
+        .nb_or = _Py_union_type_or, // Add __or__ function
 };
 
 PyTypeObject _Py_UnionType = {
