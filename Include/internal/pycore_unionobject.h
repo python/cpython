@@ -10,7 +10,7 @@ extern "C" {
 
 PyAPI_FUNC(PyObject *) _Py_Union(PyObject *args);
 PyAPI_DATA(PyTypeObject) _Py_UnionType;
-PyAPI_FUNC(PyObject *) _Py_union_type_or(PyTypeObject* self, PyObject* param);
+PyAPI_FUNC(PyObject *) _Py_union_type_or(PyObject* self, PyObject* param);
 
 #ifdef __cplusplus
 }
