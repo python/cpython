@@ -143,7 +143,7 @@ objects.
 .. c:function:: void Py_CLEAR(PyObject *op)
 
    Clear a :term:`strong reference`: decrement the reference count for object
-   *op* and set *op* to ``NULL`.
+   *op* and set *op* to ``NULL``.
 
    If *op* is ``NULL``, do nothing.
 
