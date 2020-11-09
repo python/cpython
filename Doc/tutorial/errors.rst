@@ -312,13 +312,6 @@ disabled by using ``from None`` idiom:
       File "<stdin>", line 4, in <module>
     RuntimeError
 
-There are two special attributes that enable chaining mechanics in
-exceptions: ``__context__`` and ``__cause__``. When you raise an exception
-inside :keyword:`except` or :keyword:`finally`, Pyhton automatically fills
-``__context__`` attribute of the new exception with the caught one. When you
-use ``from exc`` syntax, Pyhon fills ``__cause__`` attribute with
-the ``exc``. You can use both attributes for introspection purposes, however
-when formatting exception traceback message, ``__cause__`` takes priority.
 For more information about chaining mechanics, see :ref:`bltin-exceptions`.
 
 
