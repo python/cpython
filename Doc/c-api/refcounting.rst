@@ -16,12 +16,11 @@ objects.
    Increment the reference count for object *o*.
 
    This function is usually used to convert a :term:`borrowed reference` to a
-   :term:`strong reference`.
+   :term:`strong reference` in-place. The :c:func:`Py_NewRef` function can be
+   used to create a new :term:`strong reference`.
 
    The object must not be ``NULL``; if you aren't sure that it isn't
    ``NULL``, use :c:func:`Py_XINCREF`.
-
-   See also :c:func:`Py_NewRef`.
 
 
 .. c:function:: void Py_XINCREF(PyObject *o)

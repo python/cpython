@@ -165,11 +165,10 @@ Glossary
       remove the last :term:`strong reference` to the object and so destroy it.
 
       Calling :c:func:`Py_INCREF` on the :term:`borrowed reference` is
-      recommended to convert it to a :term:`strong reference`, except if the
-      object cannot be destroyed before the last usage of the borrowed
-      reference.
-
-      See also :term:`strong reference` and the :c:func:`Py_NewRef` function.
+      recommended to convert it to a :term:`strong reference` in-place, except
+      if the object cannot be destroyed before the last usage of the borrowed
+      reference. The :c:func:`Py_NewRef` function can be used to create a new
+      :term:`strong reference`.
 
    bytes-like object
       An object that supports the :ref:`bufferobjects` and can
