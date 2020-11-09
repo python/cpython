@@ -1,0 +1,5 @@
+Allow ``GenericAlias`` objects to use :ref:`union type expressions <types-union>`.
+This allows expressions like ``list[int] | dict[float, str]`` where previously a
+``TypeError`` would have been thrown.  This also fixes union type expressions 
+not de-duplicating ``GenericAlias`` objects.  (Contributed by Ken Jin in 
+:issue:`42233`.)

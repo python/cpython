@@ -713,6 +713,28 @@ class TypesTests(unittest.TestCase):
         assert repr(int | None) == "int | None"
         assert repr(int | typing.GenericAlias(list, int)) == "int | list[int]"
 
+    def test_or_type_operator_with_genericalias(self):
+        a = list[int]
+        b = list[str]
+        c = dict[float, str]
+        # equivalence with typing.Union
+        self.assertEqual(a | b | c, typing.Union[a, b, c])
+        # de-duplicate
+        self.assertEqual(a | c | b | b | a | c, a | b | c)
+        # order shouldn't matter
+        self.assertEqual(a | b, b | a)
+        self.assertEqual(repr(a | b | c),
+                         "list[int] | list[str] | dict[float, str]")
+
+        class BadType(type):
+            def __eq__(self, other):
+                return 1 / 0
+
+        bt = BadType('bt', (), {})
+        # Comparison should fail and errors should propagate out for bad types.
+        with self.assertRaises(ZeroDivisionError):
+            list[int] | list[bt]
+
     def test_ellipsis_type(self):
         self.assertIsInstance(Ellipsis, types.EllipsisType)
 
