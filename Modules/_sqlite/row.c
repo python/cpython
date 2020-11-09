@@ -74,9 +74,7 @@ pysqlite_row_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 
 PyObject* pysqlite_row_item(pysqlite_Row* self, Py_ssize_t idx)
 {
-   PyObject* item = PyTuple_GetItem(self->data, idx);
-   Py_XINCREF(item);
-   return item;
+   return PyTuple_GetItemRef(self->data, idx);
 }
 
 static int
@@ -111,7 +109,6 @@ PyObject* pysqlite_row_subscript(pysqlite_Row* self, PyObject* idx)
 {
     Py_ssize_t _idx;
     Py_ssize_t nitems, i;
-    PyObject* item;
 
     if (PyLong_Check(idx)) {
         _idx = PyNumber_AsSsize_t(idx, PyExc_IndexError);
@@ -119,10 +116,9 @@ PyObject* pysqlite_row_subscript(pysqlite_Row* self, PyObject* idx)
             return NULL;
         if (_idx < 0)
            _idx += PyTuple_GET_SIZE(self->data);
-        item = PyTuple_GetItem(self->data, _idx);
-        Py_XINCREF(item);
-        return item;
-    } else if (PyUnicode_Check(idx)) {
+        return PyTuple_GetItemRef(self->data, _idx);
+    }
+    else if (PyUnicode_Check(idx)) {
         nitems = PyTuple_Size(self->description);
 
         for (i = 0; i < nitems; i++) {
@@ -135,9 +131,7 @@ PyObject* pysqlite_row_subscript(pysqlite_Row* self, PyObject* idx)
             }
             if (eq) {
                 /* found item */
-                item = PyTuple_GetItem(self->data, i);
-                Py_INCREF(item);
-                return item;
+                return PyTuple_GetItemRef(self->data, i);
             }
         }
 

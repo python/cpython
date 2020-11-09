@@ -2251,6 +2251,10 @@ PyTuple_GetItem:PyObject*::0:
 PyTuple_GetItem:PyObject*:p:0:
 PyTuple_GetItem:Py_ssize_t:pos::
 
+PyTuple_GetItemRef:PyObject*::+1:
+PyTuple_GetItemRef:PyObject*:p:0:
+PyTuple_GetItemRef:Py_ssize_t:pos::
+
 PyTuple_GET_SIZE:Py_ssize_t:::
 PyTuple_GET_SIZE:PyObject*:p:0:
 

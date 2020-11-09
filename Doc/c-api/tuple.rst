@@ -54,10 +54,19 @@ Tuple Objects
    no error checking is performed.
 
 
+.. c:function:: PyObject* PyTuple_GetItemRef(PyObject *p, Py_ssize_t pos)
+
+   Return a :term:`strong reference` to the object at position *pos* in the
+   tuple pointed to by *p*.  If *pos* is out of bounds, return ``NULL`` and set
+   an :exc:`IndexError` exception.
+
+   .. versionadded:: 3.10
+
+
 .. c:function:: PyObject* PyTuple_GetItem(PyObject *p, Py_ssize_t pos)
 
-   Return the object at position *pos* in the tuple pointed to by *p*.  If *pos* is
-   out of bounds, return ``NULL`` and set an :exc:`IndexError` exception.
+   Similar to :c:func:`PyTuple_GetItemRef`, but return a :term:`borrowed
+   reference`.
 
 
 .. c:function:: PyObject* PyTuple_GET_ITEM(PyObject *p, Py_ssize_t pos)

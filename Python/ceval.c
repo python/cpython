@@ -1091,9 +1091,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 /* Tuple access macros */
 
 #ifndef Py_DEBUG
-#define GETITEM(v, i) PyTuple_GET_ITEM((PyTupleObject *)(v), (i))
+#  define GETITEM(v, i) PyTuple_GET_ITEM((PyTupleObject *)(v), (i))
 #else
-#define GETITEM(v, i) PyTuple_GetItem((v), (i))
+#  define GETITEM(v, i) PyTuple_GetItem((v), (i))
 #endif
 
 /* Code access macros */

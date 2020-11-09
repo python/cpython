@@ -1,0 +1,3 @@
+Added :c:func:`PyTuple_GetItemRef` function: similar to
+:c:func:`PyTuple_GetItem`, but return a :term:`strong reference`.
+Patch by Victor Stinner.

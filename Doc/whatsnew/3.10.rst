@@ -429,6 +429,10 @@ New Features
   slot.
   (Contributed by Hai Shi in :issue:`41832`.)
 
+* Added :c:func:`PyTuple_GetItemRef` function: similar to
+  :c:func:`PyTuple_GetItem`, but return a :term:`strong reference`.
+  (Contributed by Victor Stinner in :issue:`42262`.)
+
 
 Porting to Python 3.10
 ----------------------

@@ -3264,34 +3264,19 @@ iso_calendar_date_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 iso_calendar_date_year(PyDateTime_IsoCalendarDate *self, void *unused)
 {
-    PyObject *year = PyTuple_GetItem((PyObject *)self, 0);
-    if (year == NULL) {
-        return NULL;
-    }
-    Py_INCREF(year);
-    return year;
+    return PyTuple_GetItemRef((PyObject *)self, 0);
 }
 
 static PyObject *
 iso_calendar_date_week(PyDateTime_IsoCalendarDate *self, void *unused)
 {
-    PyObject *week = PyTuple_GetItem((PyObject *)self, 1);
-    if (week == NULL) {
-        return NULL;
-    }
-    Py_INCREF(week);
-    return week;
+    return PyTuple_GetItemRef((PyObject *)self, 1);
 }
 
 static PyObject *
 iso_calendar_date_weekday(PyDateTime_IsoCalendarDate *self, void *unused)
 {
-    PyObject *weekday = PyTuple_GetItem((PyObject *)self, 2);
-    if (weekday == NULL) {
-        return NULL;
-    }
-    Py_INCREF(weekday);
-    return weekday;
+    return PyTuple_GetItem((PyObject *)self, 2);
 }
 
 static PyGetSetDef iso_calendar_date_getset[] = {
