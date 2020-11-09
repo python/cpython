@@ -244,12 +244,6 @@ dedup_and_flatten_args(PyObject* args)
                 : i_element == j_element;
             // Should only happen if RichCompare fails
             if (is_duplicate < 0) {
-                PyErr_Format(PyExc_TypeError, 
-                    "Could not compare objects of type '%s' and '%s'"
-                    " at indexes %d and %d respectively."
-                    " Their __eq__ methods may be invalid. ",
-                    Py_TYPE(i_element)->tp_name, Py_TYPE(j_element)->tp_name,
-                    i, j);
                 Py_DECREF(args);
                 return NULL;
             }
