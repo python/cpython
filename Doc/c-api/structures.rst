@@ -66,7 +66,7 @@ the definition of all other Python objects.
 
    Get the type of the Python object *o*.
 
-   Return a borrowed reference.
+   Return a :term:`borrowed reference`.
 
    .. versionchanged:: 3.10
       :c:func:`Py_TYPE()` is changed to the inline static function.

@@ -1213,8 +1213,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    :func:`~gc.get_referents` function will include it.
 
    .. warning::
-       When implementing :c:member:`~PyTypeObject.tp_traverse`, only the members
-       that the instance *owns* (by having strong references to them) must be
+       When implementing :c:member:`~PyTypeObject.tp_traverse`, only the
+       members that the instance *owns* (by having :term:`strong references
+       <strong reference>` to them) must be
        visited. For instance, if an object supports weak references via the
        :c:member:`~PyTypeObject.tp_weaklist` slot, the pointer supporting
        the linked list (what *tp_weaklist* points to) must **not** be
