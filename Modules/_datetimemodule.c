@@ -3276,7 +3276,7 @@ iso_calendar_date_week(PyDateTime_IsoCalendarDate *self, void *unused)
 static PyObject *
 iso_calendar_date_weekday(PyDateTime_IsoCalendarDate *self, void *unused)
 {
-    return PyTuple_GetItem((PyObject *)self, 2);
+    return PyTuple_GetItemRef((PyObject *)self, 2);
 }
 
 static PyGetSetDef iso_calendar_date_getset[] = {

@@ -195,8 +195,7 @@ PyTuple_GetItemRef(PyObject *op, Py_ssize_t i)
 {
     PyObject *item = PyTuple_GetItem(op, i);
     // On a newly created tuple, an item can still be NULL
-    Py_XINCREF(item);
-    return item;
+    return Py_XNewRef(item);
 }
 
 int
