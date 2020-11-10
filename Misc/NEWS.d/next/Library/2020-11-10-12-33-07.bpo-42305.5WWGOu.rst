@@ -72,7 +72,7 @@ You can pass additional arguments to ``build``:
    at once. This value directly corresponds to the listbox widget's
    ``height`` attribute. Defaults to ``5``.
 
--  ``case_sensitive`` (boolean): If ``True``, only autocomplete entries
+*  ``case_sensitive`` (boolean): If ``True``, only autocomplete entries
    that enforce the same capitalization as the current entry will be
    displayed. If ``False``, all autocomplete entries that match with the
    current entry will be displayed. Defaults to ``False``.
