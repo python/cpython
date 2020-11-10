@@ -1,243 +1,165 @@
-This is auto complete drop box suggestion wiget for tkinter
-===========================================================
-
-Tkinter Autocomplete
-====================
-
-Text autocompletion provides relevant real-time results to users.
-Because tkinter does not provide a widget for adding autocompletion to
-GUIs out of the box, I decided to make one myself. This utility is
-compatible with and has been tested on Python 2.7.1 and Python 3.6.0.
-
-Structure
-~~~~~~~~~
-
-NOTE: The ``Tkinter`` library for Python 2 and ``tkinter`` library for Python 3 will from now on be referred to as ``tk``.
-                                                                                                                          
-
-The ``AutocompleteEntry`` class (which can be found
-`here <https://github.com/RajvirSingh1313/Tkinter_Autocomplete_DropBox/blob/master/main.py>`__)
-derives from ``tk.Frame`` and is a container used to group a
-``tk.Entry`` and ``tk.Listbox`` widget. Should you need to modify the
-widgets, they can be accessed as (respectively) ``AutocompleteEntry`` s
-``entry`` and ``listbox`` attributes.
-
-The entry widget acts like a normal textbox. When activated, it binds
-``<KeyRelease>`` to a private method which will update the list of
-suggestions. The listbox widget contains the suggestions themselves.
-When activated, it binds ``<<ListboxSelect>>`` to a private method which
-sets the entry widget to whatever value was selected.
-
-Since an instance of ``AutocompleteEntry`` is a ``tk.Frame`` instance
-too, you can place it by calling its ``pack`` or ``grid`` methods with
-their respective arguments.
-
-Quickstart
-~~~~~~~~~~
-
-NOTE: These examples will only run under Python 3. To make them Python 2-compatible, replace ``tkinter`` with ``Tkinter``.
-                                                                                                                          
-
-To add a new autocompletion frame to our interface, first initialize
-one:
-
-.. code:: python
-
+try:
     import tkinter as tk
+    from tkinter import ttk
+except ImportError:
+    # Python 2
+    import Tkinter as tk
+    import ttk
 
-    from tkinter import auto_complete
+__all__ = ["AutocompleteEntry"]
 
-    root = tk.Tk()
-
-    frame = tk.Frame(root)
-    frame.pack()
-
-    entry = auto_complete.AutocompleteEntry(frame)
-    # You can pass additional parameters to further customize the window;
-    # all parameters that you can pass to tk.Frame, are valid here too.
-
-Now you need to configure the instance by passing it an iterable
-containing all autocompletion entries. Do this by calling its ``build``
-method:
-
-.. code:: python
-
-    ENTRIES = (
-        "Foo",
-        "Bar"
-    )
-
-    entry.build(ENTRIES)
-
-You can pass additional arguments to ``build``:
-
--  ``max_entries`` (integer): The maximum number of entries to display
-   at once. This value directly corresponds to the listbox widget's
-   ``height`` attribute. Defaults to ``5``.
-
--  ``case_sensitive`` (boolean): If ``True``, only autocomplete entries
-   that enforce the same capitalization as the current entry will be
-   displayed. If ``False``, all autocomplete entries that match with the
-   current entry will be displayed. Defaults to ``False``.
-
--  ``no_results_message`` (string or ``None``): The message to display
-   if no suggestions could be found for the current entry. This argument
-   may include a formatting identifier (``{}``) which, at runtime, gets
-   formatted as the current entry. If ``None`` is specified, the listbox
-   will instead be hidden until the next ``<KeyRelease>`` event.
-
-Let's play around with these arguments:
-
-.. code:: python
-
-    entry.build(
-        entries=ENTRIES,
-        no_results_message="< No results found for '{}' >"
-        # Note that this is formatted at runtime
-    )
-
-NOTE: You may call the ``build`` method multiple times on an instance of ``AutocompleteEntry``, to dynamically change the available suggestions.
-                                                                                                                                                
-
-With that out of the way, you can display ``entry``:
-
-.. code:: python
-
-    entry.pack()
-
-Now, each time a user presses a key while the entry widget has focus, a
-list of suggestions will display below it.
-
---------------
-
-Additional options
-~~~~~~~~~~~~~~~~~~
-
-By default, the ``tk.Listbox`` widget has a width of ``25`` pixels and a
-height of ``5`` (items). The ``tk.Entry`` widget also has a default
-width of ``25`` pixels. These settings can be modified through the
-following class attributes:
-
--  ``auto_complete.AutocompleteEntry.LISTBOX_HEIGHT``: The height to
-   specify when creating the ``tk.Listbox`` widget. There's no need to
-   modify this, since the maximum number of entries to be displayed can
-   be passed as an argument to ``build``.
-
--  ``auto_complete.AutocompleteEntry.LISTBOX_WIDTH``: The width to
-   specify when creating the ``tk.Listbox`` widget. Any positive integer
-   is valid.
-
--  ``auto_complete.AutocompleteEntry.ENTRY_WIDTH``: The width to specify
-   when creating the ``tk.Entry`` widget. Any positive integer is valid.
-
-NOTE: You almost always want to keep the 1:1 ``LISTBOX_WIDTH``:``ENTRY_WIDTH`` ratio.
-                                                                                     
-
-You can retrieve the current entry by accessing the instance's ``text``
-attribute (which is a ``tk.StringVar`` instance):
-
-.. code:: python
-
-    text = entry.text.get()
-
-To further customize the entry widget, you may set its font options, for
-example:
-
-.. code:: python
-
-    entry.entry["font"] = (<FONT NAME>, <FONT SIZE>, <FONT WEIGHT>)
-
-Or to change the background color for the listbox widget:
-
-.. code:: python
-
-    entry.listbox["background"] = "#cfeff9"
-    # Light blue
-
-This the demo
--------------
-
-.. code:: python
-
-        try:
-            import tkinter as tk
-            from tkinter import ttk
-            from tkinter import auto_complete
-        except ImportError:
-            # Python 2
-            import Tkinter as tk
-            import ttk
-            from Tkinter import auto_complete
-
-        COUNTRIES = ['Australia','Switzerland','India','Canada','Japan','Germany','United Kingdom','United States','Sweden','Netherlands','Norway']
+NO_RESULTS_MESSAGE = "No results found for '{}'"
 
 
-        class Application(tk.Frame, object):
-            def __init__(self, *args, **kwargs):
-                super(Application, self).__init__(*args, **kwargs)
+class AutocompleteEntry(tk.Frame, object):
+    """A container for `tk.Entry` and `tk.Listbox` widgets.
 
-                label = tk.Label(self, text="Select a country: ")
-                label.pack()
+    An instance of AutocompleteEntry is actually a `tk.Frame`,
+    containing the `tk.Entry` and `tk.Listbox` widgets needed
+    to display autocompletion entries. Thus, you can initialize
+    it with the usual arguments to `tk.Frame`.
 
-                self.entry = auto_complete.AutocompleteEntry(self)
-                self.build(case_sensitive=False,
-                        no_results_message=auto_complete.NO_RESULTS_MESSAGE)
-                self.entry.pack(after=label)
+    Constants:
+    LISTBOX_HEIGHT -- Default height for the `tk.Listbox` widget
+    LISTBOX_WIDTH -- Default width for the `tk.Listbox` widget
+    ENTRY_WIDTH -- Default width for the `tk.Entry` widget
 
-                self.nr = tk.StringVar()
-                tk.Label(
-                    self,
-                    text="\n\nAlternative message (<Return> to set): "
-                ).pack()
-                nr = tk.Entry(self, textvariable=self.nr)
-                nr.pack()
-                nr.bind("<Return>", self._update)
+    Methods:
+    __init__ -- Set up the `tk.Listbox` and `tk.Entry` widgets
+    build -- Build a list of autocompletion entries
+    _update_autocomplete -- Internal method
+    _select_entry -- Internal method
+    _cycle_up -- Internal method
+    _cycle_down -- Internal method
 
-                self.cs = tk.StringVar()
-                cb = tk.Checkbutton(
-                    self,
-                    text="Case sensitive",
-                    variable=self.cs,
-                    state="normal",
-                    command=self._update
-                )
-                cb.deselect()
-                cb.pack()
+    Other attributes:
+    text -- StringVar object associated with the `tk.Entry` widget
+    entry -- The `tk.Entry` widget (access this directly if you
+             need to change styling)
+    listbox -- The `tk.Listbox` widget (access this directly if
+             you need to change styling)
+    """
+    LISTBOX_HEIGHT = 5
+    LISTBOX_WIDTH = 25
+    ENTRY_WIDTH = 25
 
-            def _update(self, *args):
-                case_sensitive = False
-                if self.cs.get() == "1":
-                    case_sensitive = True
-                no_results_message = self.nr.get()
-                self.build(
-                    case_sensitive=case_sensitive,
-                    no_results_message=no_results_message
-                )
+    def __init__(self, master, *args, **kwargs):
+        """Constructor.
 
-            def build(self, *args, **kwargs):
-                self.entry.build(
-                    COUNTRIES,
-                    kwargs["case_sensitive"],
-                    kwargs["no_results_message"]
-                )
+        Create the `self.entry` and `self.listbox` widgets.
+        Note that these widgets are not yet displayed and will only
+        be visible when you call `self.build`.
 
+        Arguments:
+        master -- The master tkinter widget
 
-        if __name__ == "__main__":
-            root = tk.Tk()
-            root.title("DEMO")
-            root.resizable(False, False)
-            root.tk_setPalette("white")
+        Returns:
+        None
+        """
+        super(AutocompleteEntry, self).__init__(*args, **kwargs)
+        self.text = tk.StringVar()
+        self.entry = tk.Entry(
+            self,
+            textvariable=self.text,
+            width=self.ENTRY_WIDTH
+        )
+        self.listbox = tk.Listbox(
+            self,
+            height=self.LISTBOX_HEIGHT,
+            width=self.LISTBOX_WIDTH
+        )
 
-            application = Application(root)
-            application.pack()
+    def build(
+              self,
+              entries,
+              max_entries=5,
+              case_sensitive=False,
+              no_results_message=NO_RESULTS_MESSAGE
+            ):
+        """Set up the autocompletion settings.
 
-            root.mainloop()
+        Binds <KeyRelease>, <<ListboxSelect>>, <Down> and <Up> for
+        smooth cycling between autocompletion entries.
 
-This the repo `here <https://github.com/RajvirSingh1313/Tkinter_Autocomplete_DropBox>`__
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        Arguments:
+        entries -- An iterable containg autocompletion entries (strings)
+        max_entries -- [int] The maximum number of entries to display
+        case_sensitive -- [bool] Set to `True` to make autocompletion
+                          case-sensitive
+        no_results_message -- [str] Message to display when no entries
+                              match the current entry; you can use a
+                              formatting identifier '{}' which will be
+                              replaced with the entry at runtime
 
-.. raw:: html
+        Returns:
+        None
+        """
+        if not case_sensitive:
+            entries = [entry.lower() for entry in entries]
 
-   <!-- issue-number: [bpo-42305](https://bugs.python.org/issue42305) -->
+        self._case_sensitive = case_sensitive
+        self._entries = entries
+        self._no_results_message = no_results_message
+        self._listbox_height = max_entries
 
-https://bugs.python.org/issue42305
+        self.entry.bind("<KeyRelease>", self._update_autocomplete)
+        self.entry.focus()
+        self.entry.grid(column=0, row=0)
+
+        self.listbox.bind("<<ListboxSelect>>", self._select_entry)
+        self.listbox.grid(column=0, row=1)
+        self.listbox.grid_forget()
+        # Initially, the listbox widget doesn't show up.
+
+    def _update_autocomplete(self, event):
+        """Internal method.
+        Update `self.listbox` to display new matches.
+        """
+        self.listbox.delete(0, tk.END)
+        self.listbox["height"] = self._listbox_height
+
+        text = self.text.get()
+        if not self._case_sensitive:
+            text = text.lower()
+        if not text:
+            self.listbox.grid_forget()
+        else:
+            for entry in self._entries:
+                if text in entry.strip():
+                    self.listbox.insert(tk.END, entry)
+
+        listbox_size = self.listbox.size()
+        if not listbox_size:
+            if self._no_results_message is None:
+                self.listbox.grid_forget()
+            else:
+                try:
+                    self.listbox.insert(
+                        tk.END,
+                        self._no_results_message.format(text)
+                    )
+                except UnicodeEncodeError:
+                    self.listbox.insert(
+                        tk.END,
+                        self._no_results_message.format(
+                            text.encode("utf-8")
+                        )
+                    )
+                if listbox_size <= self.listbox["height"]:
+                    # In case there's less entries than the maximum
+                    # amount of entries allowed, resize the listbox.
+                    self.listbox["height"] = listbox_size
+                self.listbox.grid()
+        else:
+            if listbox_size <= self.listbox["height"]:
+                self.listbox["height"] = listbox_size
+            self.listbox.grid()
+
+    def _select_entry(self, event):
+        """Internal method.
+        Set the textvariable corresponding to `self.entry`
+        to the value currently selected.
+        """
+        widget = event.widget
+        value = widget.get(int(widget.curselection()[0]))
+        self.text.set(value)
