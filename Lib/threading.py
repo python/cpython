@@ -1200,6 +1200,7 @@ except ImportError:
         stderr.flush()
 
 
+# Original value of threading.excepthook
 __excepthook__ = excepthook
 
 
