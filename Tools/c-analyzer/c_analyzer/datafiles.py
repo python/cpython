@@ -1,5 +1,6 @@
 import c_common.tables as _tables
 import c_parser.info as _info
+import c_parser.match as _match
 import c_parser.datafiles as _parser
 from . import analyze as _analyze
 
@@ -17,7 +18,7 @@ def analyze_known(known, *,
                   handle_unresolved=True,
                   ):
     knowntypes = knowntypespecs = {}
-    collated = _info.collate_by_kind_group(known)
+    collated = _match.group_by_kinds(known)
     types = {decl: None for decl in collated['type']}
     typespecs = _analyze.get_typespecs(types)
     def analyze_decl(decl):

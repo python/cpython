@@ -7,85 +7,12 @@ from c_common.clsutil import classonly
 import c_common.misc as _misc
 import c_common.strutil as _strutil
 import c_common.tables as _tables
-from .parser._regexes import SIMPLE_TYPE
+from .parser._regexes import SIMPLE_TYPE, _STORAGE
 
 
 FIXED_TYPE = _misc.Labeled('FIXED_TYPE')
 
-POTS_REGEX = re.compile(rf'^{SIMPLE_TYPE}$', re.VERBOSE)
-
-
-def is_pots(typespec):
-    if not typespec:
-        return None
-    if type(typespec) is not str:
-        _, _, _, typespec, _ = get_parsed_vartype(typespec)
-    return POTS_REGEX.match(typespec) is not None
-
-
-def is_funcptr(vartype):
-    if not vartype:
-        return None
-    _, _, _, _, abstract = get_parsed_vartype(vartype)
-    return _is_funcptr(abstract)
-
-
-def _is_funcptr(declstr):
-    if not declstr:
-        return None
-    # XXX Support "(<name>*)(".
-    return '(*)(' in declstr.replace(' ', '')
-
-
-def is_exported_symbol(decl):
-    _, storage, _, _, _ = get_parsed_vartype(decl)
-    raise NotImplementedError
-
-
-def is_process_global(vardecl):
-    kind, storage, _, _, _ = get_parsed_vartype(vardecl)
-    if kind is not KIND.VARIABLE:
-        raise NotImplementedError(vardecl)
-    if 'static' in (storage or ''):
-        return True
-
-    if hasattr(vardecl, 'parent'):
-        parent = vardecl.parent
-    else:
-        parent = vardecl.get('parent')
-    return not parent
-
-
-def is_fixed_type(vardecl):
-    if not vardecl:
-        return None
-    _, _, _, typespec, abstract = get_parsed_vartype(vardecl)
-    if 'typeof' in typespec:
-        raise NotImplementedError(vardecl)
-    elif not abstract:
-        return True
-
-    if '*' not in abstract:
-        # XXX What about []?
-        return True
-    elif _is_funcptr(abstract):
-        return True
-    else:
-        for after in abstract.split('*')[1:]:
-            if not after.lstrip().startswith('const'):
-                return False
-        else:
-            return True
-
-
-def is_immutable(vardecl):
-    if not vardecl:
-        return None
-    if not is_fixed_type(vardecl):
-        return False
-    _, _, typequal, _, _ = get_parsed_vartype(vardecl)
-    # If there, it can only be "const" or "volatile".
-    return typequal == 'const'
+STORAGE = frozenset(_STORAGE)
 
 
 #############################
@@ -214,58 +141,8 @@ KIND._GROUPS = {
 KIND._GROUPS.update((k.value, {k}) for k in KIND)
 
 
-# The module-level kind-related helpers (below) deal with <item>.kind:
-
-def is_type_decl(kind):
-    # Handle ParsedItem, Declaration, etc..
-    kind = getattr(kind, 'kind', kind)
-    return KIND.is_type_decl(kind)
-
-
-def is_decl(kind):
-    # Handle ParsedItem, Declaration, etc..
-    kind = getattr(kind, 'kind', kind)
-    return KIND.is_decl(kind)
-
-
-def filter_by_kind(items, kind):
-    if kind == 'type':
-        kinds = KIND._TYPE_DECLS
-    elif kind == 'decl':
-        kinds = KIND._TYPE_DECLS
-    try:
-        okay = kind in KIND
-    except TypeError:
-        kinds = set(kind)
-    else:
-        kinds = {kind} if okay else set(kind)
-    for item in items:
-        if item.kind in kinds:
-            yield item
-
-
-def collate_by_kind(items):
-    collated = {kind: [] for kind in KIND}
-    for item in items:
-        try:
-            collated[item.kind].append(item)
-        except KeyError:
-            raise ValueError(f'unsupported kind in {item!r}')
-    return collated
-
-
-def get_kind_group(kind):
-    # Handle ParsedItem, Declaration, etc..
-    kind = getattr(kind, 'kind', kind)
-    return KIND.get_group(kind)
-
-
-def collate_by_kind_group(items):
-    collated = {KIND.get_group(k): [] for k in KIND}
-    for item in items:
-        group = KIND.get_group(item.kind)
-        collated[group].append(item)
-    return collated
+def get_kind_group(item):
+    return KIND.get_group(item.kind)
 
 
 #############################
@@ -482,6 +359,27 @@ def get_parsed_vartype(decl):
     else:
         raise NotImplementedError(decl)
     return kind, storage, typequal, typespec, abstract
+
+
+def get_default_storage(decl):
+    if decl.kind not in (KIND.VARIABLE, KIND.FUNCTION):
+        return None
+    return 'extern' if decl.parent is None else 'auto'
+
+
+def get_effective_storage(decl, *, default=None):
+    # Note that "static" limits access to just that C module
+    # and "extern" (the default for module-level) allows access
+    # outside the C module.
+    if default is None:
+        default = get_default_storage(decl)
+        if default is None:
+            return None
+    try:
+        storage = decl.storage
+    except AttributeError:
+        storage, _ = _get_vartype(decl.data)
+    return storage or default
 
 
 #############################
@@ -997,7 +895,7 @@ class Variable(Declaration):
 
     def __init__(self, file, name, data, parent=None, storage=None):
         super().__init__(file, name, data, parent,
-                         _extra={'storage': storage},
+                         _extra={'storage': storage or None},
                          _shortkey=f'({parent.name}).{name}' if parent else name,
                          _key=(str(file),
                                # Tilde comes after all other ascii characters.
@@ -1005,6 +903,11 @@ class Variable(Declaration):
                                name,
                                ),
                          )
+        if storage:
+            if storage not in STORAGE:
+                # The parser must need an update.
+                raise NotImplementedError(storage)
+            # Otherwise we trust the compiler to have validated it.
 
     @property
     def vartype(self):
@@ -1411,6 +1314,13 @@ def resolve_parsed(parsed):
     except KeyError:
         raise ValueError(f'unsupported kind in {parsed!r}')
     return cls.from_parsed(parsed)
+
+
+def set_flag(item, name, value):
+    try:
+        setattr(item, name, value)
+    except AttributeError:
+        object.__setattr__(item, name, value)
 
 
 #############################

@@ -1,0 +1,3 @@
+On Unix, the :func:`os.device_encoding` function now returns ``'UTF-8'`` rather
+than the device encoding if the :ref:`Python UTF-8 Mode <utf8-mode>` is
+enabled.

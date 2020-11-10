@@ -273,15 +273,15 @@ Exception Chaining
 ==================
 
 The :keyword:`raise` statement allows an optional :keyword:`from` which enables
-chaining exceptions by setting the ``__cause__`` attribute of the raised
-exception. For example::
+chaining exceptions. For example::
 
-    raise RuntimeError from OSError
+    # exc must be exception instance or None.
+    raise RuntimeError from exc
 
 This can be useful when you are transforming exceptions. For example::
 
     >>> def func():
-    ...    raise IOError
+    ...     raise IOError
     ...
     >>> try:
     ...     func()
@@ -297,12 +297,11 @@ This can be useful when you are transforming exceptions. For example::
     <BLANKLINE>
     Traceback (most recent call last):
       File "<stdin>", line 4, in <module>
-    RuntimeError
+    RuntimeError: Failed to open database
 
-The expression following the :keyword:`from` must be either an exception or
-``None``. Exception chaining happens automatically when an exception is raised
-inside an exception handler or :keyword:`finally` section. Exception chaining
-can be disabled by using ``from None`` idiom:
+Exception chaining happens automatically when an exception is raised inside an
+:keyword:`except` or :keyword:`finally` section. Exception chaining can be
+disabled by using ``from None`` idiom:
 
     >>> try:
     ...     open('database.sqlite')
@@ -312,6 +311,8 @@ can be disabled by using ``from None`` idiom:
     Traceback (most recent call last):
       File "<stdin>", line 4, in <module>
     RuntimeError
+
+For more information about chaining mechanics, see :ref:`bltin-exceptions`.
 
 
 .. _tut-userexceptions:

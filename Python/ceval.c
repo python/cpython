@@ -1446,11 +1446,18 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     }
 
 #ifdef LLTRACE
-    lltrace = _PyDict_GetItemId(f->f_globals, &PyId___ltrace__) != NULL;
+    {
+        int r = _PyDict_ContainsId(f->f_globals, &PyId___ltrace__);
+        if (r < 0) {
+            goto exit_eval_frame;
+        }
+        lltrace = r;
+    }
 #endif
 
-    if (throwflag) /* support for generator.throw() */
+    if (throwflag) { /* support for generator.throw() */
         goto error;
+    }
 
 #ifdef Py_DEBUG
     /* _PyEval_EvalFrameDefault() must not be called with an exception set,
@@ -3172,7 +3179,6 @@ main_loop:
                 if (co_opcache != NULL && /* co_opcache can be NULL after a DEOPT() call. */
                     type->tp_getattro == PyObject_GenericGetAttr)
                 {
-                    PyObject *descr;
                     Py_ssize_t ret;
 
                     if (type->tp_dictoffset > 0) {
@@ -3183,12 +3189,7 @@ main_loop:
                                 goto error;
                             }
                         }
-
-                        descr = _PyType_Lookup(type, name);
-                        if (descr == NULL ||
-                            descr->ob_type->tp_descr_get == NULL ||
-                            !PyDescr_IsData(descr))
-                        {
+                        if (_PyType_Lookup(type, name) == NULL) {
                             dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
                             dict = *dictptr;
 

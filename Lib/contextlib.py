@@ -80,6 +80,22 @@ class ContextDecorator(object):
         return inner
 
 
+class AsyncContextDecorator(object):
+    "A base class or mixin that enables async context managers to work as decorators."
+
+    def _recreate_cm(self):
+        """Return a recreated instance of self.
+        """
+        return self
+
+    def __call__(self, func):
+        @wraps(func)
+        async def inner(*args, **kwds):
+            async with self._recreate_cm():
+                return await func(*args, **kwds)
+        return inner
+
+
 class _GeneratorContextManagerBase:
     """Shared functionality for @contextmanager and @asynccontextmanager."""
 
@@ -167,8 +183,15 @@ class _GeneratorContextManager(_GeneratorContextManagerBase,
 
 
 class _AsyncGeneratorContextManager(_GeneratorContextManagerBase,
-                                    AbstractAsyncContextManager):
+                                    AbstractAsyncContextManager,
+                                    AsyncContextDecorator):
     """Helper for @asynccontextmanager."""
+
+    def _recreate_cm(self):
+        # _AGCM instances are one-shot context managers, so the
+        # ACM must be recreated each time a decorated function is
+        # called
+        return self.__class__(self.func, self.args, self.kwds)
 
     async def __aenter__(self):
         try:
@@ -301,6 +324,32 @@ class closing(AbstractContextManager):
         return self.thing
     def __exit__(self, *exc_info):
         self.thing.close()
+
+
+class aclosing(AbstractAsyncContextManager):
+    """Async context manager for safely finalizing an asynchronously cleaned-up
+    resource such as an async generator, calling its ``aclose()`` method.
+
+    Code like this:
+
+        async with aclosing(<module>.fetch(<arguments>)) as agen:
+            <block>
+
+    is equivalent to this:
+
+        agen = <module>.fetch(<arguments>)
+        try:
+            <block>
+        finally:
+            await agen.aclose()
+
+    """
+    def __init__(self, thing):
+        self.thing = thing
+    async def __aenter__(self):
+        return self.thing
+    async def __aexit__(self, *exc_info):
+        await self.thing.aclose()
 
 
 class _RedirectStream(AbstractContextManager):
@@ -655,7 +704,7 @@ class AsyncExitStack(_BaseExitStack, AbstractAsyncContextManager):
         return received_exc and suppressed_exc
 
 
-class nullcontext(AbstractContextManager):
+class nullcontext(AbstractContextManager, AbstractAsyncContextManager):
     """Context manager that does no additional processing.
 
     Used as a stand-in for a normal context manager, when a particular
@@ -673,4 +722,10 @@ class nullcontext(AbstractContextManager):
         return self.enter_result
 
     def __exit__(self, *excinfo):
+        pass
+
+    async def __aenter__(self):
+        return self.enter_result
+
+    async def __aexit__(self, *excinfo):
         pass

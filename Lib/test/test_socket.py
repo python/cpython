@@ -4129,7 +4129,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
 
     @requireAttrs(socket, "CMSG_SPACE", "IPV6_RECVHOPLIMIT", "IPV6_HOPLIMIT",
                   "IPV6_RECVTCLASS", "IPV6_TCLASS")
-    def testSecomdCmsgTruncInData(self):
+    def testSecondCmsgTruncInData(self):
         # Test truncation of the second of two control messages inside
         # its associated data.
         self.serv_sock.setsockopt(socket.IPPROTO_IPV6,
@@ -4164,8 +4164,8 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
 
         self.assertEqual(ancdata, [])
 
-    @testSecomdCmsgTruncInData.client_skip
-    def _testSecomdCmsgTruncInData(self):
+    @testSecondCmsgTruncInData.client_skip
+    def _testSecondCmsgTruncInData(self):
         self.assertTrue(self.misc_event.wait(timeout=self.fail_timeout))
         self.sendToServer(MSG)
 

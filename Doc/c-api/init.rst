@@ -151,8 +151,9 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
 .. c:var:: int Py_LegacyWindowsFSEncodingFlag
 
-   If the flag is non-zero, use the ``mbcs`` encoding instead of the UTF-8
-   encoding for the filesystem encoding.
+   If the flag is non-zero, use the ``mbcs`` encoding with ``replace`` error
+   handler, instead of the UTF-8 encoding with ``surrogatepass`` error handler,
+   for the :term:`filesystem encoding and error handler`.
 
    Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment
    variable is set to a non-empty string.
@@ -1076,7 +1077,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    Get the current frame of the Python thread state *tstate*.
 
-   Return a strong reference. Return ``NULL`` if no frame is currently
+   Return a :term:`strong reference`. Return ``NULL`` if no frame is currently
    executing.
 
    See also :c:func:`PyEval_GetFrame`.

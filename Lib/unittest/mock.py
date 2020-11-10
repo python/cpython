@@ -631,9 +631,9 @@ class NonCallableMock(Base):
         elif _is_magic(name):
             raise AttributeError(name)
         if not self._mock_unsafe:
-            if name.startswith(('assert', 'assret')):
+            if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')):
                 raise AttributeError("Attributes cannot start with 'assert' "
-                                     "or 'assret'")
+                                     "or its misspellings")
 
         result = self._mock_children.get(name)
         if result is _deleted:
