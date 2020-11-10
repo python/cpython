@@ -68,7 +68,7 @@ method:
 
 You can pass additional arguments to ``build``:
 
--  ``max_entries`` (integer): The maximum number of entries to display
+*  ``max_entries`` (integer): The maximum number of entries to display
    at once. This value directly corresponds to the listbox widget's
    ``height`` attribute. Defaults to ``5``.
 
