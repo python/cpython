@@ -24,10 +24,14 @@ There are two kinds of configuration:
   environments variables are ignored, the LC_CTYPE locale is left unchanged and
   no signal handler is registred.
 
+The :c:func:`Py_RunMain` function can be used to write a customized Python
+program.
+
 See also :ref:`Initialization, Finalization, and Threads <initialization>`.
 
 .. seealso::
    :pep:`587` "Python Initialization Configuration".
+
 
 Example
 =======
@@ -532,7 +536,7 @@ PyConfig
 
       Default: ``NULL``.
 
-      Part of the :ref:`Path Configuration <init-path-config>` output.
+      Part of the :ref:`Python Path Configuration <init-path-config>` output.
 
    .. c:member:: wchar_t* base_executable
 
@@ -544,7 +548,7 @@ PyConfig
 
       Default: ``NULL``.
 
-      Part of the :ref:`Path Configuration <init-path-config>` output.
+      Part of the :ref:`Python Path Configuration <init-path-config>` output.
 
    .. c:member:: wchar_t* base_prefix
 
@@ -552,7 +556,7 @@ PyConfig
 
       Default: ``NULL``.
 
-      Part of the :ref:`Path Configuration <init-path-config>` output.
+      Part of the :ref:`Python Path Configuration <init-path-config>` output.
 
    .. c:member:: int buffered_stdio
 
@@ -634,7 +638,7 @@ PyConfig
 
       Default: ``NULL``.
 
-      Part of the :ref:`Path Configuration <init-path-config>` output.
+      Part of the :ref:`Python Path Configuration <init-path-config>` output.
 
    .. c:member:: wchar_t* executable
 
@@ -643,7 +647,7 @@ PyConfig
 
       Default: ``NULL``.
 
-      Part of the :ref:`Path Configuration <init-path-config>` output.
+      Part of the :ref:`Python Path Configuration <init-path-config>` output.
 
    .. c:member:: int faulthandler
 
@@ -726,7 +730,7 @@ PyConfig
 
       Default: ``NULL``.
 
-      Part of the :ref:`Path Configuration <init-path-config>` input.
+      Part of the :ref:`Python Path Configuration <init-path-config>` input.
 
    .. c:member:: int import_time
 
@@ -817,7 +821,7 @@ PyConfig
       Default: value of the ``PLATLIBDIR`` macro which is set at configure time
       by ``--with-platlibdir`` (default: ``"lib"``).
 
-      Part of the :ref:`Path Configuration <init-path-config>` input.
+      Part of the :ref:`Python Path Configuration <init-path-config>` input.
 
       .. versionadded:: 3.9
 
@@ -830,7 +834,7 @@ PyConfig
 
       Default: ``NULL``.
 
-      Part of the :ref:`Path Configuration <init-path-config>` input.
+      Part of the :ref:`Python Path Configuration <init-path-config>` input.
 
    .. c:member:: PyWideStringList module_search_paths
    .. c:member:: int module_search_paths_set
@@ -838,14 +842,14 @@ PyConfig
       Module search paths: :data:`sys.path`.
 
       If :c:member:`~PyConfig.module_search_paths_set` is equal to 0, the
-      function calculating the :ref:`Path Configuration <init-path-config>`
+      function calculating the :ref:`Python Path Configuration <init-path-config>`
       overrides the :c:member:`~PyConfig.module_search_paths` and sets
       :c:member:`~PyConfig.module_search_paths_set` to ``1``.
 
       Default: empty list (``module_search_paths``) and ``0``
       (``module_search_paths_set``).
 
-      Part of the :ref:`Path Configuration <init-path-config>` output.
+      Part of the :ref:`Python Path Configuration <init-path-config>` output.
 
    .. c:member:: int optimization_level
 
@@ -911,7 +915,7 @@ PyConfig
 
    .. c:member:: int pathconfig_warnings
 
-      On Unix, if non-zero, calculating the :ref:`Path Configuration
+      On Unix, if non-zero, calculating the :ref:`Python Path Configuration
       <init-path-config>` can log warnings into ``stderr``. If equals to 0,
       suppress these warnings.
 
@@ -919,7 +923,7 @@ PyConfig
 
       Default: ``1`` in Python mode, ``0`` in isolated mode.
 
-      Part of the :ref:`Path Configuration <init-path-config>` input.
+      Part of the :ref:`Python Path Configuration <init-path-config>` input.
 
    .. c:member:: wchar_t* prefix
 
@@ -928,7 +932,7 @@ PyConfig
 
       Default: ``NULL``.
 
-      Part of the :ref:`Path Configuration <init-path-config>` output.
+      Part of the :ref:`Python Path Configuration <init-path-config>` output.
 
    .. c:member:: wchar_t* program_name
 
@@ -946,7 +950,7 @@ PyConfig
 
       Default: ``NULL``.
 
-      Part of the :ref:`Path Configuration <init-path-config>` input.
+      Part of the :ref:`Python Path Configuration <init-path-config>` input.
 
    .. c:member:: wchar_t* pycache_prefix
 
@@ -1262,7 +1266,7 @@ and user site directory. The C standard streams (ex: ``stdout``) and the
 LC_CTYPE locale are left unchanged. Signal handlers are not installed.
 
 Configuration files are still used with this configuration. Set the
-:ref:`Path Configuration <init-path-config>` ("output fields") to ignore these
+:ref:`Python Path Configuration <init-path-config>` ("output fields") to ignore these
 configuration files and avoid the function computing the default path
 configuration.
 
@@ -1287,8 +1291,8 @@ and :ref:`Python UTF-8 Mode <utf8-mode>`
 
 .. _init-path-config:
 
-Path Configuration
-==================
+Python Path Configuration
+=========================
 
 :c:type:`PyConfig` contains multiple fields for the path configuration:
 
