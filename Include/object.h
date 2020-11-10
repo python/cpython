@@ -356,6 +356,11 @@ given type object has a specified feature.
 /* Type is abstract and cannot be instantiated */
 #define Py_TPFLAGS_IS_ABSTRACT (1UL << 20)
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+/* Type has am_send entry in tp_as_async slot */
+#define Py_TPFLAGS_HAVE_AM_SEND (1UL << 21)
+#endif
+
 /* These flags are used to determine if a type is a subclass. */
 #define Py_TPFLAGS_LONG_SUBCLASS        (1UL << 24)
 #define Py_TPFLAGS_LIST_SUBCLASS        (1UL << 25)
@@ -581,6 +586,15 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 #define Py_NE 3
 #define Py_GT 4
 #define Py_GE 5
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+/* Result of calling PyIter_Send */
+typedef enum {
+    PYGEN_RETURN = 0,
+    PYGEN_ERROR = -1,
+    PYGEN_NEXT = 1,
+} PySendResult;
+#endif
 
 /*
  * Macro for implementing rich comparisons
