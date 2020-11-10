@@ -15,15 +15,14 @@ storage, and deletion.
 
 This guide has four major sections:
 
-1) The "primer" gives a basic overview, moving gently from simple examples,
-   adding one feature at a time.  It is a great place to start.
+1) The "primer" gives a basic overview, moving from simple examples,
+   adding one feature at a time.  Start here if you're new to descriptors.
 
 2) The second section shows a complete, practical descriptor example.  If you
    already know the basics, start there.
 
 3) The third section provides a more technical tutorial that goes into the
-   detailed mechanics of how descriptors work.  Most people don't need this
-   level of detail.
+   detailed mechanics of how descriptors work.  You can probably put this off.
 
 4) The last section has pure Python equivalents for built-in descriptors that
    are written in C.  Read this if you're curious about how functions turn
@@ -42,7 +41,8 @@ add new capabilities one by one.
 Simple example: A descriptor that returns a constant
 ----------------------------------------------------
 
-The :class:`Ten` class is a descriptor that always returns the constant ``10``::
+The :class:`Ten` class is a descriptor that always returns the constant ``10``
+from its magic method ``__get__``::
 
 
     class Ten:
@@ -65,21 +65,21 @@ and descriptor lookup::
     10
 
 In the ``a.x`` attribute lookup, the dot operator finds the value ``5`` stored
-in the class dictionary.  In the ``a.y`` descriptor lookup, the dot operator
+under key ``x``in the class dictionary.  In the ``a.y`` lookup, under ``y`` the
+lookup finds a descriptor instance, recognized by its ``__get__`` method, and
 calls the descriptor's :meth:`__get__()` method.  That method returns ``10``.
 Note that the value ``10`` is not stored in either the class dictionary or the
 instance dictionary.  Instead, the value ``10`` is computed on demand.
 
 This example shows how a simple descriptor works, but it isn't very useful.
-For retrieving constants, normal attribute lookup would be better.
-
 In the next section, we'll create something more useful, a dynamic lookup.
 
 
 Dynamic lookups
 ---------------
 
-Interesting descriptors typically run computations instead of doing lookups::
+Interesting descriptors typically run computations instead of returning
+constants::
 
     import os
 
@@ -102,12 +102,12 @@ different, updated answers each time::
     >>> s = Directory('songs')
     >>> g.size                              # The games directory has three files
     3
-    >>> os.system('touch games/newfile')    # Add a fourth file to the directory
-    0
-    >>> g.size                              # Automatically updated
-    4
     >>> s.size                              # The songs directory has twenty files
     20
+
+    >>> open('games/newfile', 'w').close()  # Add a fourth file to the directory
+    >>> g.size                              # Automatically updated
+    4
 
 Besides showing how descriptors can run computations, this example also
 reveals the purpose of the parameters to :meth:`__get__`.  The *self*
@@ -208,7 +208,7 @@ be recorded, giving each descriptor its own *public_name* and *private_name*::
 
         def __set_name__(self, owner, name):
             self.public_name = name
-            self.private_name = f'_{name}'
+            self.private_name = '_' + name
 
         def __get__(self, obj, objtype=None):
             value = getattr(obj, self.private_name)
@@ -230,6 +230,9 @@ be recorded, giving each descriptor its own *public_name* and *private_name*::
 
         def birthday(self):
             self.age += 1
+
+(If the descriptor class doesn't define ``__set_name__``, nothing happens
+in this stage.)
 
 An interactive session shows that the :class:`Person` class has called
 :meth:`__set_name__` so that the field names would be recorded.  Here
@@ -266,8 +269,9 @@ A :term:`descriptor` is what we call any object that defines :meth:`__get__`,
 Optionally, descriptors can have a :meth:`__set_name__` method.  This is only
 used in cases where a descriptor needs to know either the class where it was
 created or the name of class variable it was assigned to.
+(This method, if present, is called even if the class is not a descriptor.)
 
-Descriptors get invoked by the dot operator during attribute lookup.  If a
+Descriptors get invoked by the dot "operator" during attribute lookup.  If a
 descriptor is accessed indirectly with ``vars(some_class)[descriptor_name]``,
 the descriptor instance is returned without invoking it.
 
@@ -275,7 +279,7 @@ Descriptors only work when used as class variables.  When put in instances,
 they have no effect.
 
 The main motivation for descriptors is to provide a hook allowing objects
-stored in class variables to control what happens during dotted lookup.
+stored in class variables to control what happens during attribute lookup.
 
 Traditionally, the calling class controls what happens during lookup.
 Descriptors invert that relationship and allow the data being looked-up to
@@ -435,12 +439,19 @@ Defines descriptors, summarizes the protocol, and shows how descriptors are
 called.  Provides an example showing how object relational mappings work.
 
 Learning about descriptors not only provides access to a larger toolset, it
-creates a deeper understanding of how Python works and an appreciation for the
-elegance of its design.
+creates a deeper understanding of how Python works.
 
 
 Definition and introduction
 ---------------------------
+
+..
+    This first sentence feels awkward -- is the descriptor the class (e.g. Ten),
+    the instance (e.g. Ten()), or the attribute of the class containing it
+    (e.g. A)?  Clearly it's A (or its instance) whose access has been overridden,
+    but only for a specific attribute (e.g. y).  (I wonder if it would make sense
+    to compare this feature to the simpler, older attribute overriding mechanism
+    of __getattr__/__setattr__.)
 
 In general, a descriptor is an object attribute with "binding behavior", one
 whose attribute access has been overridden by methods in the descriptor
@@ -450,8 +461,8 @@ said to be a :term:`descriptor`.
 
 The default behavior for attribute access is to get, set, or delete the
 attribute from an object's dictionary.  For instance, ``a.x`` has a lookup chain
-starting with ``a.__dict__['x']``, then ``type(a).__dict__['x']``, and
-continuing through the base classes of ``type(a)``. If the
+starting with ``a.__dict__['x']``, then ``type(a).__dict__['x']``, and then
+continuing through the method resolution order of ``type(a)``. If the
 looked-up value is an object defining one of the descriptor methods, then Python
 may override the default behavior and invoke the descriptor method instead.
 Where this occurs in the precedence chain depends on which descriptor methods
@@ -479,12 +490,12 @@ as an attribute.
 
 If an object defines :meth:`__set__` or :meth:`__delete__`, it is considered
 a data descriptor.  Descriptors that only define :meth:`__get__` are called
-non-data descriptors (they are typically used for methods but other uses are
+non-data descriptors (they are often used for methods but other uses are
 possible).
 
 Data and non-data descriptors differ in how overrides are calculated with
 respect to entries in an instance's dictionary.  If an instance's dictionary
-has an entry with the same name as a data descriptor, the data descriptor
+has an entry with the same name as a data descriptor, the descriptor
 takes precedence.  If an instance's dictionary has an entry with the same
 name as a non-data descriptor, the dictionary entry takes precedence.
 
@@ -504,7 +515,8 @@ But it is more common for a descriptor to be invoked automatically from
 attribute access.
 
 The expression ``obj.x`` looks up the attribute ``x`` in the chain of
-namespaces for ``obj``.  If the search finds a descriptor, its :meth:`__get__`
+namespaces for ``obj``.  If the search finds a descriptor
+outside the instance `__dict__``, its :meth:`__get__`
 method is invoked according to the precedence rules listed below.
 
 The details of invocation depend on whether ``obj`` is an object, class, or
@@ -579,6 +591,10 @@ The full C implementation can be found in :c:func:`super_getattro()` in
 :source:`Objects/typeobject.c`.  A pure Python equivalent can be found in
 `Guido's Tutorial
 <https://www.python.org/download/releases/2.2.3/descrintro/#cooperation>`_.
+
+..
+    That tutorial is pretty dated.
+    I recommend dropping that link and just copying that code here.
 
 
 Summary of invocation logic
