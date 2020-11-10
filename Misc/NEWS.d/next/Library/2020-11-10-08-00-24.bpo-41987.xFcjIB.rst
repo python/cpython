@@ -1,0 +1,2 @@
+Fixed a bug where `singledispatch` and `singledispatchmethod` would trigger
+evaluating forward declarations of the return type unnecessarily.

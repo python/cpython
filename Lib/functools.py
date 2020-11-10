@@ -856,9 +856,19 @@ def singledispatch(func):
                 )
             func = cls
 
+            # bpo-41987 seems to only affect 3.9+
+            from sys import version_info
+
+            if version_info >= (3, 9) and isinstance(ann.get("return", None), str):
+                _dummy = (lambda: None)
+                _dummy.__annotations__ = {**ann, "return": None}
+                hints = _dummy
+            else:
+                hints = func
+
             # only import typing if annotation parsing is necessary
             from typing import get_type_hints
-            argname, cls = next(iter(get_type_hints(func).items()))
+            argname, cls = next(iter(get_type_hints(hints).items()))
             if not isinstance(cls, type):
                 raise TypeError(
                     f"Invalid annotation for {argname!r}. "

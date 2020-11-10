@@ -2441,6 +2441,20 @@ class TestSingleDispatch(unittest.TestCase):
             'typing.Iterable[str] is not a class.'
         ))
 
+    def test_ignore_return_type(self):
+        @functools.singledispatch
+        def _(_) -> "BlahBlah":
+            pass
+
+        class BlahBlah:
+            @functools.singledispatchmethod
+            def f(self, _):
+                pass
+
+            @f.register
+            def _(self, _: int) -> "BlahBlah":
+                return self
+
     def test_invalid_positional_argument(self):
         @functools.singledispatch
         def f(*args):
