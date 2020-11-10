@@ -279,30 +279,23 @@ class TestBase_Mapping(unittest.TestCase):
             self._test_mapping_file_plain()
 
     def _test_mapping_file_plain(self):
-        _unichr = lambda c: eval("u'\\U%08x'" % int(c, 16))
-        unichrs = lambda s: u''.join(_unichr(c) for c in s.split('+'))
+        def unichrs(s):
+            return ''.join(unichr(int(x, 16)) for x in s.split('+'))
+
         urt_wa = {}
 
         with self.open_mapping_file() as f:
             for line in f:
                 if not line:
                     break
-                data = line.split('#')[0].strip().split()
+                data = line.split('#')[0].split()
                 if len(data) != 2:
                     continue
 
-                csetval = eval(data[0])
-                if csetval <= 0x7F:
-                    csetch = chr(csetval & 0xff)
-                elif csetval >= 0x1000000:
-                    csetch = chr(csetval >> 24) + chr((csetval >> 16) & 0xff) + \
-                             chr((csetval >> 8) & 0xff) + chr(csetval & 0xff)
-                elif csetval >= 0x10000:
-                    csetch = chr(csetval >> 16) + \
-                             chr((csetval >> 8) & 0xff) + chr(csetval & 0xff)
-                elif csetval >= 0x100:
-                    csetch = chr(csetval >> 8) + chr(csetval & 0xff)
-                else:
+                if len(data[0]) < 3 or data[0][:2] != '0x':
+                    self.fail("Invalid line: {line!r}".format(line=line))
+                csetch = data[0][2:].decode('hex')
+                if 0x80 <= ord(csetch[0]):
                     continue
 
                 unich = unichrs(data[1])
