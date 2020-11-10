@@ -105,9 +105,11 @@ Type Objects
 
    See :c:member:`PyType_Slot.slot` for possible values of the *slot* argument.
 
-   An exception is raised if *type* is not a heap type.
-
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.10
+      :c:func:`PyType_GetSlot` can now accept all types.
+      Previously, it was limited to heap types.
 
 .. c:function:: PyObject* PyType_GetModule(PyTypeObject *type)
 

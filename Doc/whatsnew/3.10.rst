@@ -436,6 +436,9 @@ New Features
   slot.
   (Contributed by Hai Shi in :issue:`41832`.)
 
+* The :c:func:`PyType_GetSlot` function can accept static types.
+  (Contributed by Hai Shi and Petr Viktorin in :issue:`41073`.)
+
 
 Porting to Python 3.10
 ----------------------
