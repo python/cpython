@@ -27,70 +27,70 @@ Macro for access to the UTC singleton:
 Type-check macros:
 
 .. c:function:: int PyDate_Check(PyObject *ob)
-   :stableabi:		
+   :stableabi:
 
    Return true if *ob* is of type :c:data:`PyDateTime_DateType` or a subtype of
    :c:data:`PyDateTime_DateType`.  *ob* must not be ``NULL``.
 
 
 .. c:function:: int PyDate_CheckExact(PyObject *ob)
-   :stableabi:		
+   :stableabi:
 
    Return true if *ob* is of type :c:data:`PyDateTime_DateType`. *ob* must not be
    ``NULL``.
 
 
 .. c:function:: int PyDateTime_Check(PyObject *ob)
-   :stableabi:		
+   :stableabi:
 
    Return true if *ob* is of type :c:data:`PyDateTime_DateTimeType` or a subtype of
    :c:data:`PyDateTime_DateTimeType`.  *ob* must not be ``NULL``.
 
 
 .. c:function:: int PyDateTime_CheckExact(PyObject *ob)
-   :stableabi:		
+   :stableabi:
 
    Return true if *ob* is of type :c:data:`PyDateTime_DateTimeType`. *ob* must not
    be ``NULL``.
 
 
 .. c:function:: int PyTime_Check(PyObject *ob)
-   :stableabi:		
+   :stableabi:
 
    Return true if *ob* is of type :c:data:`PyDateTime_TimeType` or a subtype of
    :c:data:`PyDateTime_TimeType`.  *ob* must not be ``NULL``.
 
 
 .. c:function:: int PyTime_CheckExact(PyObject *ob)
-   :stableabi:		
+   :stableabi:
 
    Return true if *ob* is of type :c:data:`PyDateTime_TimeType`. *ob* must not be
    ``NULL``.
 
 
 .. c:function:: int PyDelta_Check(PyObject *ob)
-   :stableabi:		
+   :stableabi:
 
    Return true if *ob* is of type :c:data:`PyDateTime_DeltaType` or a subtype of
    :c:data:`PyDateTime_DeltaType`.  *ob* must not be ``NULL``.
 
 
 .. c:function:: int PyDelta_CheckExact(PyObject *ob)
-   :stableabi:		
+   :stableabi:
 
    Return true if *ob* is of type :c:data:`PyDateTime_DeltaType`. *ob* must not be
    ``NULL``.
 
 
 .. c:function:: int PyTZInfo_Check(PyObject *ob)
-   :stableabi:		
+   :stableabi:
 
    Return true if *ob* is of type :c:data:`PyDateTime_TZInfoType` or a subtype of
    :c:data:`PyDateTime_TZInfoType`.  *ob* must not be ``NULL``.
 
 
 .. c:function:: int PyTZInfo_CheckExact(PyObject *ob)
-   :stableabi:		
+   :stableabi:
 
    Return true if *ob* is of type :c:data:`PyDateTime_TZInfoType`. *ob* must not be
    ``NULL``.
@@ -99,20 +99,20 @@ Type-check macros:
 Macros to create objects:
 
 .. c:function:: PyObject* PyDate_FromDate(int year, int month, int day)
-   :stableabi:		
+   :stableabi:
 
    Return a :class:`datetime.date` object with the specified year, month and day.
 
 
 .. c:function:: PyObject* PyDateTime_FromDateAndTime(int year, int month, int day, int hour, int minute, int second, int usecond)
-   :stableabi:		
+   :stableabi:
 
    Return a :class:`datetime.datetime` object with the specified year, month, day, hour,
    minute, second and microsecond.
 
 
 .. c:function:: PyObject* PyDateTime_FromDateAndTimeAndFold(int year, int month, int day, int hour, int minute, int second, int usecond, int fold)
-   :stableabi:		
+   :stableabi:
 
    Return a :class:`datetime.datetime` object with the specified year, month, day, hour,
    minute, second, microsecond and fold.
@@ -121,14 +121,14 @@ Macros to create objects:
 
 
 .. c:function:: PyObject* PyTime_FromTime(int hour, int minute, int second, int usecond)
-   :stableabi:		
+   :stableabi:
 
    Return a :class:`datetime.time` object with the specified hour, minute, second and
    microsecond.
 
 
 .. c:function:: PyObject* PyTime_FromTimeAndFold(int hour, int minute, int second, int usecond, int fold)
-   :stableabi:		
+   :stableabi:
 
    Return a :class:`datetime.time` object with the specified hour, minute, second,
    microsecond and fold.
@@ -137,7 +137,7 @@ Macros to create objects:
 
 
 .. c:function:: PyObject* PyDelta_FromDSU(int days, int seconds, int useconds)
-   :stableabi:		
+   :stableabi:
 
    Return a :class:`datetime.timedelta` object representing the given number
    of days, seconds and microseconds.  Normalization is performed so that the
@@ -145,7 +145,7 @@ Macros to create objects:
    :class:`datetime.timedelta` objects.
 
 .. c:function:: PyObject* PyTimeZone_FromOffset(PyDateTime_DeltaType* offset)
-   :stableabi:		
+   :stableabi:
 
    Return a :class:`datetime.timezone` object with an unnamed fixed offset
    represented by the *offset* argument.
@@ -153,7 +153,7 @@ Macros to create objects:
    .. versionadded:: 3.7
 
 .. c:function:: PyObject* PyTimeZone_FromOffsetAndName(PyDateTime_DeltaType* offset, PyUnicode* name)
-   :stableabi:		
+   :stableabi:
 
    Return a :class:`datetime.timezone` object with a fixed offset represented
    by the *offset* argument and with tzname *name*.
@@ -167,19 +167,19 @@ Macros to extract fields from date objects.  The argument must be an instance of
 not checked:
 
 .. c:function:: int PyDateTime_GET_YEAR(PyDateTime_Date *o)
-   :stableabi:		
+   :stableabi:
 
    Return the year, as a positive int.
 
 
 .. c:function:: int PyDateTime_GET_MONTH(PyDateTime_Date *o)
-   :stableabi:		
+   :stableabi:
 
    Return the month, as an int from 1 through 12.
 
 
 .. c:function:: int PyDateTime_GET_DAY(PyDateTime_Date *o)
-   :stableabi:		
+   :stableabi:
 
    Return the day, as an int from 1 through 31.
 
@@ -189,30 +189,30 @@ instance of :c:data:`PyDateTime_DateTime`, including subclasses. The argument
 must not be ``NULL``, and the type is not checked:
 
 .. c:function:: int PyDateTime_DATE_GET_HOUR(PyDateTime_DateTime *o)
-   :stableabi:		
+   :stableabi:
 
    Return the hour, as an int from 0 through 23.
 
 
 .. c:function:: int PyDateTime_DATE_GET_MINUTE(PyDateTime_DateTime *o)
-   :stableabi:		
+   :stableabi:
 
    Return the minute, as an int from 0 through 59.
 
 
 .. c:function:: int PyDateTime_DATE_GET_SECOND(PyDateTime_DateTime *o)
-   :stableabi:		
+   :stableabi:
 
    Return the second, as an int from 0 through 59.
 
 
 .. c:function:: int PyDateTime_DATE_GET_MICROSECOND(PyDateTime_DateTime *o)
-   :stableabi:		
+   :stableabi:
 
    Return the microsecond, as an int from 0 through 999999.
 
 .. c:function:: PyObject* PyDateTime_DATE_GET_TZINFO(PyDateTime_DateTime *o)
-   :stableabi:		
+   :stableabi:
 
    Return the tzinfo (which may be ``None``).
 
@@ -223,30 +223,30 @@ Macros to extract fields from time objects.  The argument must be an instance of
 and the type is not checked:
 
 .. c:function:: int PyDateTime_TIME_GET_HOUR(PyDateTime_Time *o)
-   :stableabi:		
+   :stableabi:
 
    Return the hour, as an int from 0 through 23.
 
 
 .. c:function:: int PyDateTime_TIME_GET_MINUTE(PyDateTime_Time *o)
-   :stableabi:		
+   :stableabi:
 
    Return the minute, as an int from 0 through 59.
 
 
 .. c:function:: int PyDateTime_TIME_GET_SECOND(PyDateTime_Time *o)
-   :stableabi:		
+   :stableabi:
 
    Return the second, as an int from 0 through 59.
 
 
 .. c:function:: int PyDateTime_TIME_GET_MICROSECOND(PyDateTime_Time *o)
-   :stableabi:		
+   :stableabi:
 
    Return the microsecond, as an int from 0 through 999999.
 
 .. c:function:: PyObject* PyDateTime_TIME_GET_TZINFO(PyDateTime_Time *o)
-   :stableabi:		
+   :stableabi:
 
    Return the tzinfo (which may be ``None``).
 
@@ -258,7 +258,7 @@ instance of :c:data:`PyDateTime_Delta`, including subclasses. The argument must
 not be ``NULL``, and the type is not checked:
 
 .. c:function:: int PyDateTime_DELTA_GET_DAYS(PyDateTime_Delta *o)
-   :stableabi:		
+   :stableabi:
 
    Return the number of days, as an int from -999999999 to 999999999.
 
@@ -266,7 +266,7 @@ not be ``NULL``, and the type is not checked:
 
 
 .. c:function:: int PyDateTime_DELTA_GET_SECONDS(PyDateTime_Delta *o)
-   :stableabi:		
+   :stableabi:
 
    Return the number of seconds, as an int from 0 through 86399.
 
@@ -274,7 +274,7 @@ not be ``NULL``, and the type is not checked:
 
 
 .. c:function:: int PyDateTime_DELTA_GET_MICROSECONDS(PyDateTime_Delta *o)
-   :stableabi:		
+   :stableabi:
 
    Return the number of microseconds, as an int from 0 through 999999.
 
@@ -284,14 +284,14 @@ not be ``NULL``, and the type is not checked:
 Macros for the convenience of modules implementing the DB API:
 
 .. c:function:: PyObject* PyDateTime_FromTimestamp(PyObject *args)
-   :stableabi:		
+   :stableabi:
 
    Create and return a new :class:`datetime.datetime` object given an argument
    tuple suitable for passing to :meth:`datetime.datetime.fromtimestamp()`.
 
 
 .. c:function:: PyObject* PyDate_FromTimestamp(PyObject *args)
-   :stableabi:		
+   :stableabi:
 
    Create and return a new :class:`datetime.date` object given an argument
    tuple suitable for passing to :meth:`datetime.date.fromtimestamp()`.
