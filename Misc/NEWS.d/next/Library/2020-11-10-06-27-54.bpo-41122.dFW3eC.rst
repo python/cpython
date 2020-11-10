@@ -1,0 +1,3 @@
+singledispatchmethod decorated methods now raise TypeError with an appropriate
+message when called without the required positional argument, previously a
+confusing IndexError was propagated to the user.

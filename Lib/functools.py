@@ -911,6 +911,16 @@ class singledispatchmethod:
 
     def __get__(self, obj, cls=None):
         def _method(*args, **kwargs):
+            funcname = getattr(
+                self.func,
+                '__name__',
+                'singledispatchmethod'
+            )
+
+            if not args:
+                raise TypeError(f'{funcname!r} requires'
+                                ' at least 1 positional argument')
+
             method = self.dispatcher.dispatch(args[0].__class__)
             return method.__get__(obj, cls)(*args, **kwargs)
 

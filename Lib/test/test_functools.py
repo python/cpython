@@ -2449,6 +2449,15 @@ class TestSingleDispatch(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, msg):
             f()
 
+        class _:
+            @functools.singledispatchmethod
+            def f(self, *args):
+                pass
+
+        msg = '\'f\' requires at least 1 positional argument'
+        with self.assertRaisesRegex(TypeError, msg):
+            _().f()
+
 
 class CachedCostItem:
     _cost = 1
