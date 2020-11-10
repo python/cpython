@@ -207,7 +207,7 @@ class _ModuleBrowser(ast.NodeVisitor):
         self.generic_visit(node)
         self.stack.pop()
 
-    def visit_FunctionDef(self, node, *, is_async=True):
+    def visit_FunctionDef(self, node, *, is_async=False):
         parent = self.stack[-1] if self.stack else None
         function = Function(
             self.module, node.name, self.file, node.lineno, parent, is_async
