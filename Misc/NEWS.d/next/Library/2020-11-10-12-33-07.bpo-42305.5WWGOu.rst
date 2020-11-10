@@ -77,7 +77,7 @@ You can pass additional arguments to ``build``:
    displayed. If ``False``, all autocomplete entries that match with the
    current entry will be displayed. Defaults to ``False``.
 
--  ``no_results_message`` (string or ``None``): The message to display
+*  ``no_results_message`` (string or ``None``): The message to display
    if no suggestions could be found for the current entry. This argument
    may include a formatting identifier (``{}``) which, at runtime, gets
    formatted as the current entry. If ``None`` is specified, the listbox
