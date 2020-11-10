@@ -2922,17 +2922,22 @@ _PySys_UpdateConfig(PyThreadState *tstate)
 #define SET_SYS_FROM_WSTR(KEY, VALUE) \
         SET_SYS(KEY, PyUnicode_FromWideChar(VALUE, -1));
 
+#define COPY_WSTR(SYS_ATTR, WSTR) \
+    if (WSTR != NULL) { \
+        SET_SYS_FROM_WSTR(SYS_ATTR, WSTR); \
+    }
+
     if (config->module_search_paths_set) {
         COPY_LIST("path", config->module_search_paths);
     }
 
-    SET_SYS_FROM_WSTR("executable", config->executable);
-    SET_SYS_FROM_WSTR("_base_executable", config->base_executable);
-    SET_SYS_FROM_WSTR("prefix", config->prefix);
-    SET_SYS_FROM_WSTR("base_prefix", config->base_prefix);
-    SET_SYS_FROM_WSTR("exec_prefix", config->exec_prefix);
-    SET_SYS_FROM_WSTR("base_exec_prefix", config->base_exec_prefix);
-    SET_SYS_FROM_WSTR("platlibdir", config->platlibdir);
+    COPY_WSTR("executable", config->executable);
+    COPY_WSTR("_base_executable", config->base_executable);
+    COPY_WSTR("prefix", config->prefix);
+    COPY_WSTR("base_prefix", config->base_prefix);
+    COPY_WSTR("exec_prefix", config->exec_prefix);
+    COPY_WSTR("base_exec_prefix", config->base_exec_prefix);
+    COPY_WSTR("platlibdir", config->platlibdir);
 
     if (config->pycache_prefix != NULL) {
         SET_SYS_FROM_WSTR("pycache_prefix", config->pycache_prefix);
@@ -2946,8 +2951,9 @@ _PySys_UpdateConfig(PyThreadState *tstate)
 
     SET_SYS("_xoptions", sys_create_xoptions_dict(config));
 
-#undef COPY_LIST
 #undef SET_SYS_FROM_WSTR
+#undef COPY_LIST
+#undef COPY_WSTR
 
     // sys.flags
     PyObject *flags = _PySys_GetObject(tstate, "flags");  // borrowed ref

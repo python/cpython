@@ -100,19 +100,19 @@ class SetConfigTests(unittest.TestCase):
             'check_hash_pycs_mode',
             'program_name',
             'platlibdir',
-            'executable',
-            'base_executable',
-            'prefix',
-            'base_prefix',
-            'exec_prefix',
-            'base_exec_prefix',
             # optional wstr:
             # 'pythonpath_env'
-            # 'home',
+            # 'home'
             # 'pycache_prefix'
             # 'run_command'
             # 'run_module'
             # 'run_filename'
+            # 'executable'
+            # 'prefix'
+            # 'exec_prefix'
+            # 'base_executable'
+            # 'base_prefix'
+            # 'base_exec_prefix'
         ):
             value_tests.append((key, invalid_wstr))
             type_tests.append((key, b'bytes'))
@@ -216,6 +216,18 @@ class SetConfigTests(unittest.TestCase):
 
         self.set_config(base_executable="base_executable")
         self.assertEqual(sys._base_executable, "base_executable")
+
+        # When base_xxx is NULL, value is copied from xxxx
+        self.set_config(
+            executable='executable',
+            prefix="prefix",
+            exec_prefix="exec_prefix",
+            base_executable=None,
+            base_prefix=None,
+            base_exec_prefix=None)
+        self.assertEqual(sys._base_executable, "executable")
+        self.assertEqual(sys.base_prefix, "prefix")
+        self.assertEqual(sys.base_exec_prefix, "exec_prefix")
 
     def test_path(self):
         self.set_config(module_search_paths_set=1,
