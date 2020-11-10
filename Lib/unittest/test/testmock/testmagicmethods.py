@@ -482,20 +482,20 @@ class TestMockingMagicMethods(unittest.TestCase):
         # returned from both of these methods by default. The previous
         # behaviour was to return a single MagicMock instance.
 
+        def _assert_is_2_tuple(obj, klass):
+            self.assertIsInstance(obj, tuple)
+            self.assertEqual(len(obj), 2)
+            for elem in obj:
+                self.assertIsInstance(elem, klass)
+
         # Test divmod
         m = MagicMock()
         foo = divmod(m, 2)
-        self.assertIsInstance(foo, tuple)
-        self.assertEqual(len(foo), 2)
-        for elem in foo:
-            self.assertIsInstance(elem, MagicMock)
+        _assert_is_2_tuple(foo, MagicMock)
 
         # Test __divmod__ directly
         foo_direct = m.__divmod__(2)
-        self.assertIsInstance(foo_direct, tuple)
-        self.assertEqual(len(foo_direct), 2)
-        for elem in foo_direct:
-            self.assertIsInstance(elem, MagicMock)
+        _assert_is_2_tuple(foo_direct, MagicMock)
 
         # Test changing the return value of divmod
         m.__divmod__.return_value = (2, 1)
@@ -505,17 +505,11 @@ class TestMockingMagicMethods(unittest.TestCase):
         # Test rdivmod
         m = MagicMock()
         bar = divmod(2, m)
-        self.assertIsInstance(bar, tuple)
-        self.assertEqual(len(bar), 2)
-        for elem in bar:
-            self.assertIsInstance(elem, MagicMock)
+        _assert_is_2_tuple(bar, MagicMock)
 
         # Test __rdivmod__ directly
         bar_direct = m.__rdivmod__(2)
-        self.assertIsInstance(bar_direct, tuple)
-        self.assertEqual(len(bar_direct), 2)
-        for elem in bar_direct:
-            self.assertIsInstance(elem, MagicMock)
+        _assert_is_2_tuple(bar_direct, MagicMock)
 
         # Test changing the return value of rdivmod
         m.__rdivmod__.return_value = (2, 1)
@@ -526,20 +520,31 @@ class TestMockingMagicMethods(unittest.TestCase):
         a = MagicMock()
         b = MagicMock()
         baz = divmod(a, b)
-        self.assertIsInstance(baz, tuple)
-        self.assertEqual(len(baz), 2)
-        for elem in baz:
-            self.assertIsInstance(elem, MagicMock)
+        _assert_is_2_tuple(baz, MagicMock)
 
         # Test the behaviour of divmod with two MagicMock instances when one
-        # has a return value set for __divmod__
+        # has a return value set for __divmod__.
+        # __divmod__ on the first operand takes precendence over __rdivmod__ on
+        # the second operand, so setting a return value for __divmod__ on the
+        # first operand is expected to change what is returned from
+        # divmod(first, second)
         a.__divmod__.return_value = (2, 1)
         self.assertEqual(divmod(a, b), (2,1))
         qux = divmod(b, a)
-        self.assertIsInstance(qux, tuple)
-        self.assertEqual(len(qux), 2)
-        for elem in qux:
-            self.assertIsInstance(elem, MagicMock)
+        _assert_is_2_tuple(qux, MagicMock)
+
+        # Test that if MagicMock is subclassed, divmod and rdivmod return a
+        # tuple of the subclass instances, rather than of MagicMock instances
+        class MagicMockSubClass(MagicMock):
+            pass
+
+        sub_a = MagicMockSubClass()
+        foo = divmod(sub_a, 2)
+        _assert_is_2_tuple(foo, MagicMockSubClass)
+
+        sub_a = MagicMockSubClass()
+        bar = divmod(2, sub_a)
+        _assert_is_2_tuple(bar, MagicMockSubClass)
 
 
     # http://bugs.python.org/issue23310
