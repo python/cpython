@@ -73,7 +73,7 @@ This module defines the following functions:
 
 .. data:: __excepthook__
 
-   Holds the original value of :func:`excepthook`. It is saved so that the
+   Holds the original value of :func:`threading.excepthook`. It is saved so that the
    original value can be restored in case they happen to get replaced with
    broken or alternative objects.
 
