@@ -1,0 +1,2 @@
+The ``make install`` command no longer installs the ``python.o`` file. Patch
+by Victor Stinner.
