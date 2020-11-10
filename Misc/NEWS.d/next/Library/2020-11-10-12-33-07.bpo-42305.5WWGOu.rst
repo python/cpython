@@ -98,6 +98,6 @@ NOTE: You may call the ``build`` method multiple times on an instance of ``Autoc
 
 With that out of the way, you can display ``entry``:
 
-.. code:: python
+::
 
     entry.pack()
