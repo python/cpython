@@ -1894,7 +1894,7 @@ _PyUnicode_Ready(PyObject *unicode)
         _PyUnicode_WSTR_LENGTH(unicode) = 0;
 #endif
     }
-    /* maxchar exeeds 16 bit, wee need 4 bytes for unicode characters */
+    /* maxchar exceeds 16 bit, wee need 4 bytes for unicode characters */
     else {
 #if SIZEOF_WCHAR_T == 2
         /* in case the native representation is 2-bytes, we need to allocate a
