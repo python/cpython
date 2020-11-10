@@ -1572,11 +1572,6 @@ class BaseTaskTests:
         self.assertEqual(res, 42)
         self.assertAlmostEqual(0.15, loop.time())
 
-        # Doing it again should take no time and exercise a different path.
-        res = loop.run_until_complete(self.new_task(loop, foo()))
-        self.assertAlmostEqual(0.15, loop.time())
-        self.assertEqual(res, 42)
-
     def test_as_completed(self):
 
         def gen():
