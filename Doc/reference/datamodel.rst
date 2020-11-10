@@ -2618,14 +2618,20 @@ are awaitable.
 
    .. note::
 
-      The language doesn't place any restriction on the type or value of the objects
-      yielded by the iterator returned by :meth:`__await__`, as this is specific to
-      the implementation of the event loop that will be managing the :term:`awaitable`
-      object. In the case of :mod:`asyncio`, user code should always be using other
-      :term:`coroutines <coroutine>`, :mod:`asyncio` Tasks, Futures, and other
-      :mod:`asyncio` objects to implement :meth:`__await__`, yielding objects from
-      these, and never yielding objects directly—as the kind of objects that the event
-      loop expects are considered a private implementation detail of :mod:`asyncio`.
+      The language doesn't place any restrictions on the type or value of the
+      objects yielded by the iterator returned by `__await__`, as this is
+      specific to the implementation of the async framework that will be
+      managing the :term:`awaitable` object.
+      
+      In the case of :mod:`asyncio`, user code should generally be using
+      :term:`coroutines <coroutine>`, instances of :class:`asyncio.Task`,
+      :class:`asyncio.Future`, and other :mod:`asyncio` objects to implement
+      `__await__`; yielding objects from these (e.g.
+      `return (yield from future)`), rather than yielding objects directly.
+      An exception to this is a bare `yield` within an `__await__`, which can
+      be used to suspend execution until the next iteration of the event loop.
+      The type of objects that the event loop expects are considered a
+      private implementation detail of :mod:`asyncio`.
 
 .. versionadded:: 3.5
 
