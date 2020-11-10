@@ -2,7 +2,7 @@
   What's New In Python 3.9
 ****************************
 
-:Release: |release|
+:Release: 3.9.0
 :Date: |today|
 :Editor: Łukasz Langa
 
