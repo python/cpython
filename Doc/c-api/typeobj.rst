@@ -199,6 +199,8 @@ sub-slots
    +---------------------------------------------------------+-----------------------------------+--------------+
    | :c:member:`~PyAsyncMethods.am_anext`                    | :c:type:`unaryfunc`               | __anext__    |
    +---------------------------------------------------------+-----------------------------------+--------------+
+   | :c:member:`~PyAsyncMethods.am_send`                     | :c:type:`sendfunc`                |              |
+   +---------------------------------------------------------+-----------------------------------+--------------+
    |                                                                                                            |
    +---------------------------------------------------------+-----------------------------------+--------------+
    | :c:member:`~PyNumberMethods.nb_add`                     | :c:type:`binaryfunc`              | __add__      |
@@ -2304,6 +2306,7 @@ Async Object Structures
             unaryfunc am_await;
             unaryfunc am_aiter;
             unaryfunc am_anext;
+            sendfunc am_send;
         } PyAsyncMethods;
 
 .. c:member:: unaryfunc PyAsyncMethods.am_await
@@ -2335,6 +2338,15 @@ Async Object Structures
       PyObject *am_anext(PyObject *self);
 
    Must return an :term:`awaitable` object.  See :meth:`__anext__` for details.
+   This slot may be set to ``NULL``.
+
+.. c:member:: sendfunc PyAsyncMethods.am_send
+
+   The signature of this function is::
+
+      PySendResult am_send(PyObject *self, PyObject *arg, PyObject **result);
+
+   See :c:func:`PyIter_Send` for details.
    This slot may be set to ``NULL``.
 
 
@@ -2431,6 +2443,10 @@ Slot Type typedefs
 .. c:type:: PyObject *(*unaryfunc)(PyObject *)
 
 .. c:type:: PyObject *(*binaryfunc)(PyObject *, PyObject *)
+
+.. c:type:: PySendResult (*sendfunc)(PyObject *, PyObject *, PyObject **)
+
+   See :c:member:`~PyAsyncMethods.am_send`.
 
 .. c:type:: PyObject *(*ternaryfunc)(PyObject *, PyObject *, PyObject *)
 
