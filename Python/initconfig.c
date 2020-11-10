@@ -2069,8 +2069,8 @@ config_read(PyConfig *config, int compute_path_config)
         }
     }
 
-    if (compute_path_config && config->_install_importlib) {
-        status = _PyConfig_InitPathConfig(config);
+    if (config->_install_importlib) {
+        status = _PyConfig_InitPathConfig(config, compute_path_config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }

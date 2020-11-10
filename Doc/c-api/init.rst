@@ -376,6 +376,12 @@ Process-wide parameters
    The returned string points into static storage; the caller should not modify its
    value.
 
+   This function should not be called before :c:func:`Py_Initialize`, otherwise
+   it returns ``NULL``.
+
+   .. versionchanged:: 3.10
+      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
+
 
 .. c:function:: wchar_t* Py_GetPrefix()
 
@@ -388,6 +394,12 @@ Process-wide parameters
    :file:`Makefile` and the ``--prefix`` argument to the :program:`configure`
    script at build time.  The value is available to Python code as ``sys.prefix``.
    It is only useful on Unix.  See also the next function.
+
+   This function should not be called before :c:func:`Py_Initialize`, otherwise
+   it returns ``NULL``.
+
+   .. versionchanged:: 3.10
+      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
 
 .. c:function:: wchar_t* Py_GetExecPrefix()
@@ -424,6 +436,12 @@ Process-wide parameters
    while having :file:`/usr/local/plat` be a different filesystem for each
    platform.
 
+   This function should not be called before :c:func:`Py_Initialize`, otherwise
+   it returns ``NULL``.
+
+   .. versionchanged:: 3.10
+      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
+
 
 .. c:function:: wchar_t* Py_GetProgramFullPath()
 
@@ -436,6 +454,12 @@ Process-wide parameters
    (set by :c:func:`Py_SetProgramName` above). The returned string points into
    static storage; the caller should not modify its value.  The value is available
    to Python code as ``sys.executable``.
+
+   This function should not be called before :c:func:`Py_Initialize`, otherwise
+   it returns ``NULL``.
+
+   .. versionchanged:: 3.10
+      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
 
 .. c:function:: wchar_t* Py_GetPath()
@@ -455,7 +479,13 @@ Process-wide parameters
    can be (and usually is) modified later to change the search path for loading
    modules.
 
+   This function should not be called before :c:func:`Py_Initialize`, otherwise
+   it returns ``NULL``.
+
    .. XXX should give the exact rules
+
+   .. versionchanged:: 3.10
+      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
 
 .. c:function::  void Py_SetPath(const wchar_t *)
@@ -637,6 +667,12 @@ Process-wide parameters
    Return the default "home", that is, the value set by a previous call to
    :c:func:`Py_SetPythonHome`, or the value of the :envvar:`PYTHONHOME`
    environment variable if it is set.
+
+   This function should not be called before :c:func:`Py_Initialize`, otherwise
+   it returns ``NULL``.
+
+   .. versionchanged:: 3.10
+      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
 
 .. _threads:
