@@ -6,7 +6,7 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_unionobject.h"   // _Py_Union()
+#include "pycore_unionobject.h"   // _Py_Union(), _Py_union_type_or
 #include "frameobject.h"
 #include "structmember.h"         // PyMemberDef
 
@@ -3821,19 +3821,9 @@ type_is_gc(PyTypeObject *type)
     return type->tp_flags & Py_TPFLAGS_HEAPTYPE;
 }
 
-static PyObject *
-type_or(PyTypeObject* self, PyObject* param) {
-    PyObject *tuple = PyTuple_Pack(2, self, param);
-    if (tuple == NULL) {
-        return NULL;
-    }
-    PyObject *new_union = _Py_Union(tuple);
-    Py_DECREF(tuple);
-    return new_union;
-}
 
 static PyNumberMethods type_as_number = {
-        .nb_or = (binaryfunc)type_or, // Add __or__ function
+        .nb_or = _Py_union_type_or, // Add __or__ function
 };
 
 PyTypeObject PyType_Type = {
@@ -5468,6 +5458,13 @@ PyType_Ready(PyTypeObject *type)
     if (type->tp_flags & Py_TPFLAGS_HAVE_VECTORCALL) {
         _PyObject_ASSERT((PyObject *)type, type->tp_vectorcall_offset > 0);
         _PyObject_ASSERT((PyObject *)type, type->tp_call != NULL);
+    }
+    /* Consistency check for Py_TPFLAGS_HAVE_AM_SEND - flag requires
+     * type->tp_as_async->am_send to be present.
+     */
+    if (type->tp_flags & Py_TPFLAGS_HAVE_AM_SEND) {
+        _PyObject_ASSERT((PyObject *)type, type->tp_as_async != NULL);
+        _PyObject_ASSERT((PyObject *)type, type->tp_as_async->am_send != NULL);
     }
 
     type->tp_flags |= Py_TPFLAGS_READYING;
