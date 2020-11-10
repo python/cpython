@@ -1039,7 +1039,7 @@ init_interp_main(PyThreadState *tstate)
     }
 
     // Compute the path configuration
-    status = _PyConfig_InitPathConfig(&interp->config);
+    status = _PyConfig_InitPathConfig(&interp->config, 1);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
