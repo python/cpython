@@ -167,10 +167,13 @@ typedef struct {
     objobjargproc mp_ass_subscript;
 } PyMappingMethods;
 
+typedef PySendResult (*sendfunc)(PyObject *iter, PyObject *value, PyObject **result);
+
 typedef struct {
     unaryfunc am_await;
     unaryfunc am_aiter;
     unaryfunc am_anext;
+    sendfunc am_send;
 } PyAsyncMethods;
 
 typedef struct {

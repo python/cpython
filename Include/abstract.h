@@ -339,11 +339,6 @@ PyAPI_FUNC(int) PyIter_Check(PyObject *);
 PyAPI_FUNC(PyObject *) PyIter_Next(PyObject *);
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
-typedef enum {
-    PYGEN_RETURN = 0,
-    PYGEN_ERROR = -1,
-    PYGEN_NEXT = 1,
-} PySendResult;
 
 /* Takes generator, coroutine or iterator object and sends the value into it.
    Returns:
