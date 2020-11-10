@@ -1,0 +1,3 @@
+Fix an assertion error in :func:`format` in debug build for floating point
+formatting with "n" format, zero padding and small width. Release build is
+not impacted. Patch by Karthikeyan Singaravelan.
