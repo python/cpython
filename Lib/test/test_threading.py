@@ -1352,6 +1352,27 @@ class ExceptHookTests(BaseTestCase):
                          'Exception in threading.excepthook:\n')
         self.assertEqual(err_str, 'threading_hook failed')
 
+    def test_original_excepthook(self):
+        def run_thread():
+            with support.captured_output("stderr") as output:
+                thread = ThreadRunFail(name="excepthook thread")
+                thread.start()
+                thread.join()
+            return output.getvalue()
+
+        def threading_hook(args):
+            print("Running a thread failed", file=sys.stderr)
+
+        default_output = run_thread()
+        with support.swap_attr(threading, 'excepthook', threading_hook):
+            custom_hook_output = run_thread()
+            threading.excepthook = threading.__excepthook__
+            recovered_output = run_thread()
+
+        self.assertEqual(default_output, recovered_output)
+        self.assertNotEqual(default_output, custom_hook_output)
+        self.assertEqual(custom_hook_output, "Running a thread failed\n")
+
 
 class TimerTests(BaseTestCase):
 

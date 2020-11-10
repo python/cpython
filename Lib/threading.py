@@ -1200,6 +1200,9 @@ except ImportError:
         stderr.flush()
 
 
+__excepthook__ = excepthook
+
+
 def _make_invoke_excepthook():
     # Create a local namespace to ensure that variables remain alive
     # when _invoke_excepthook() is called, even if it is called late during
