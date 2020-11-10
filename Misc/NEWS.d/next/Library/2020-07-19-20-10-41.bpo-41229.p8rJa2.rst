@@ -1,3 +1,0 @@
-Add ``contextlib.aclosing`` for deterministic cleanup of async generators
-which is analogous to ``contextlib.closing`` for non-async generators.
-Patch by Joongi Kim and John Belmonte.

@@ -428,6 +428,69 @@ _Py_SetLocaleFromEnv(int category)
 }
 
 
+static int
+interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
+{
+    const PyConfig *config = &tstate->interp->config;
+
+    if (!only_update_path_config) {
+        PyStatus status = _PyConfig_Write(config, tstate->interp->runtime);
+        if (_PyStatus_EXCEPTION(status)) {
+            _PyErr_SetFromPyStatus(status);
+            return -1;
+        }
+    }
+
+    if (_Py_IsMainInterpreter(tstate)) {
+        PyStatus status = _PyConfig_WritePathConfig(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            _PyErr_SetFromPyStatus(status);
+            return -1;
+        }
+    }
+
+    // Update the sys module for the new configuration
+    if (_PySys_UpdateConfig(tstate) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+
+int
+_PyInterpreterState_SetConfig(const PyConfig *src_config)
+{
+    PyThreadState *tstate = PyThreadState_Get();
+    int res = -1;
+
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+    PyStatus status = _PyConfig_Copy(&config, src_config);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyErr_SetFromPyStatus(status);
+        goto done;
+    }
+
+    status = PyConfig_Read(&config);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyErr_SetFromPyStatus(status);
+        goto done;
+    }
+
+    status = _PyConfig_Copy(&tstate->interp->config, &config);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyErr_SetFromPyStatus(status);
+        goto done;
+    }
+
+    res = interpreter_update_config(tstate, 0);
+
+done:
+    PyConfig_Clear(&config);
+    return res;
+}
+
+
 /* Global initializations.  Can be undone by Py_Finalize().  Don't
    call this twice without an intervening Py_Finalize() call.
 
@@ -462,7 +525,7 @@ pyinit_core_reconfigure(_PyRuntimeState *runtime,
         return status;
     }
 
-    status = _PyInterpreterState_SetConfig(interp, config);
+    status = _PyConfig_Copy(&interp->config, config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -550,7 +613,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return _PyStatus_ERR("can't make main interpreter");
     }
 
-    PyStatus status = _PyInterpreterState_SetConfig(interp, config);
+    PyStatus status = _PyConfig_Copy(&interp->config, config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -702,13 +765,6 @@ pycore_init_import_warnings(PyThreadState *tstate, PyObject *sysmod)
 
     const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
     if (config->_install_importlib) {
-        if (_Py_IsMainInterpreter(tstate)) {
-            status = _PyConfig_WritePathConfig(config);
-            if (_PyStatus_EXCEPTION(status)) {
-                return status;
-            }
-        }
-
         /* This call sets up builtin and frozen import support */
         status = init_importlib(tstate, sysmod);
         if (_PyStatus_EXCEPTION(status)) {
@@ -917,14 +973,16 @@ pyinit_core(_PyRuntimeState *runtime,
     }
 
     PyConfig config;
-    _PyConfig_InitCompatConfig(&config);
+    PyConfig_InitPythonConfig(&config);
 
     status = _PyConfig_Copy(&config, src_config);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }
 
-    status = PyConfig_Read(&config);
+    // Read the configuration, but don't compute the path configuration
+    // (it is computed in the main init).
+    status = _PyConfig_Read(&config, 0);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }
@@ -949,19 +1007,10 @@ done:
    configuration. Example of bpo-34008: Py_Main() called after
    Py_Initialize(). */
 static PyStatus
-_Py_ReconfigureMainInterpreter(PyThreadState *tstate)
+pyinit_main_reconfigure(PyThreadState *tstate)
 {
-    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
-
-    PyObject *argv = _PyWideStringList_AsList(&config->argv);
-    if (argv == NULL) {
-        return _PyStatus_NO_MEMORY(); \
-    }
-
-    int res = PyDict_SetItemString(tstate->interp->sysdict, "argv", argv);
-    Py_DECREF(argv);
-    if (res < 0) {
-        return _PyStatus_ERR("fail to set sys.argv");
+    if (interpreter_update_config(tstate, 0) < 0) {
+        return _PyStatus_ERR("fail to reconfigure Python");
     }
     return _PyStatus_OK();
 }
@@ -989,14 +1038,20 @@ init_interp_main(PyThreadState *tstate)
         return _PyStatus_OK();
     }
 
+    // Compute the path configuration
+    status = _PyConfig_InitPathConfig(&interp->config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     if (is_main_interp) {
         if (_PyTime_Init() < 0) {
             return _PyStatus_ERR("can't initialize time");
         }
     }
 
-    if (_PySys_InitMain(tstate) < 0) {
-        return _PyStatus_ERR("can't finish initializing sys");
+    if (interpreter_update_config(tstate, 1) < 0) {
+        return _PyStatus_ERR("failed to update the Python config");
     }
 
     status = init_importlib_external(tstate);
@@ -1100,7 +1155,7 @@ pyinit_main(PyThreadState *tstate)
     }
 
     if (interp->runtime->initialized) {
-        return _Py_ReconfigureMainInterpreter(tstate);
+        return pyinit_main_reconfigure(tstate);
     }
 
     PyStatus status = init_interp_main(tstate);
@@ -1108,19 +1163,6 @@ pyinit_main(PyThreadState *tstate)
         return status;
     }
     return _PyStatus_OK();
-}
-
-
-PyStatus
-_Py_InitializeMain(void)
-{
-    PyStatus status = _PyRuntime_Initialize();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    return pyinit_main(tstate);
 }
 
 
@@ -1188,6 +1230,19 @@ void
 Py_Initialize(void)
 {
     Py_InitializeEx(1);
+}
+
+
+PyStatus
+_Py_InitializeMain(void)
+{
+    PyStatus status = _PyRuntime_Initialize();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+    _PyRuntimeState *runtime = &_PyRuntime;
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    return pyinit_main(tstate);
 }
 
 
@@ -1545,12 +1600,6 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyThreadState *tstate)
 {
-    // The _ast module state is shared by all interpreters.
-    // The state must only be cleared by the main interpreter.
-    if (_Py_IsMainInterpreter(tstate)) {
-        _PyAST_Fini(tstate);
-    }
-
     _PyExc_Fini(tstate);
     _PyFrame_Fini(tstate);
     _PyAsyncGen_Fini(tstate);
@@ -1590,8 +1639,6 @@ finalize_interp_clear(PyThreadState *tstate)
         _PyArg_Fini();
         _Py_ClearFileSystemEncoding();
     }
-
-    _PyWarnings_Fini(tstate->interp);
 
     finalize_interp_types(tstate);
 }
@@ -1852,7 +1899,8 @@ new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
         config = _PyInterpreterState_GetConfig(main_interp);
     }
 
-    status = _PyInterpreterState_SetConfig(interp, config);
+
+    status = _PyConfig_Copy(&interp->config, config);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }

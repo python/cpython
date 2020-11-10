@@ -1,2 +1,0 @@
-Propagate and raise the errors caused by :c:func:`PyAST_Validate` in the
-parser.

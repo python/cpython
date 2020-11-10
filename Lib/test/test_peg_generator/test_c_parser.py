@@ -1,3 +1,4 @@
+import sysconfig
 import textwrap
 import unittest
 from distutils.tests.support import TempdirManager
@@ -7,6 +8,11 @@ from test import test_tools
 from test import support
 from test.support import os_helper
 from test.support.script_helper import assert_python_ok
+
+_py_cflags_nodist = sysconfig.get_config_var('PY_CFLAGS_NODIST')
+_pgo_flag = sysconfig.get_config_var('PGO_PROF_USE_FLAG')
+if _pgo_flag and _py_cflags_nodist and _pgo_flag in _py_cflags_nodist:
+    raise unittest.SkipTest("peg_generator test disabled under PGO build")
 
 test_tools.skip_if_missing("peg_generator")
 with test_tools.imports_under_tool("peg_generator"):

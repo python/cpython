@@ -176,6 +176,13 @@ codecs
 Add a :func:`codecs.unregister` function to unregister a codec search function.
 (Contributed by Hai Shi in :issue:`41842`.)
 
+contextlib
+----------
+
+Add a :func:`contextlib.aclosing` context manager to safely close async generators
+and objects representing asynchronously released resources.
+(Contributed by Joongi Kim and John Belmonte in :issue:`41229`.)
+
 curses
 ------
 
@@ -185,6 +192,12 @@ by :func:`curses.color_content`, :func:`curses.init_color`,
 :func:`curses.has_extended_color_support`, indicates whether extended color
 support is provided by the underlying ncurses library.
 (Contributed by Jeffrey Kintscher and Hans Petter Jansson in :issue:`36982`.)
+
+doctest
+-------
+
+When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
+(Contributed by Brett Cannon in :issue:`42133`.)
 
 encodings
 ---------
@@ -197,6 +210,18 @@ glob
 Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
 :func:`~glob.iglob` which allow to specify the root directory for searching.
 (Contributed by Serhiy Storchaka in :issue:`38144`.)
+
+inspect
+-------
+
+When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
+(Contributed by Brett Cannon in :issue:`42133`.)
+
+linecache
+---------
+
+When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
+(Contributed by Brett Cannon in :issue:`42133`.)
 
 os
 --
@@ -225,12 +250,35 @@ Added :func:`~statistics.covariance`, Pearson's
 :func:`~statistics.linear_regression` functions.
 (Contributed by Tymoteusz Wołodźko in :issue:`38490`.)
 
+site
+----
+
+When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
+(Contributed by Brett Cannon in :issue:`42133`.)
+
 sys
 ---
 
 Add :data:`sys.orig_argv` attribute: the list of the original command line
 arguments passed to the Python executable.
 (Contributed by Victor Stinner in :issue:`23427`.)
+
+threading
+---------
+
+Added :func:`threading.gettrace` and :func:`threading.getprofile` to
+retrieve the functions set by :func:`threading.settrace` and
+:func:`threading.setprofile` respectively.
+(Contributed by Mario Corchero in :issue:`42251`.)
+
+traceback
+---------
+
+The :func:`~traceback.format_exception`,
+:func:`~traceback.format_exception_only`, and
+:func:`~traceback.print_exception` functions can now take an exception object
+as a positional-only argument.
+(Contributed by Zackery Spytz and Matthias Bussonnier in :issue:`26389`.)
 
 types
 -----
@@ -328,6 +376,15 @@ This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
 
+Changes in the Python API
+-------------------------
+
+* The *etype* parameters of the :func:`~traceback.format_exception`,
+  :func:`~traceback.format_exception_only`, and
+  :func:`~traceback.print_exception` functions in the :mod:`traceback` module
+  have been renamed to *exc*.
+  (Contributed by Zackery Spytz and Matthias Bussonnier in :issue:`26389`.)
+
 
 Build Changes
 =============
@@ -373,6 +430,19 @@ New Features
 
 * Added :c:func:`PyUnicode_AsUTF8AndSize` to the limited C API.
   (Contributed by Alex Gaynor in :issue:`41784`.)
+
+* Added :c:func:`PyModule_AddObjectRef` function: similar to
+  :c:func:`PyModule_AddObjectRef` but don't steal a reference to the value on
+  success.
+  (Contributed by Victor Stinner in :issue:`1635741`.)
+
+* Added :c:func:`Py_NewRef` and :c:func:`Py_XNewRef` functions to increment the
+  reference count of an object and return the object.
+  (Contributed by Victor Stinner in :issue:`42262`.)
+
+* The :c:func:`PyType_FromModuleAndSpec` function now accepts NULL ``tp_doc``
+  slot.
+  (Contributed by Hai Shi in :issue:`41832`.)
 
 
 Porting to Python 3.10
