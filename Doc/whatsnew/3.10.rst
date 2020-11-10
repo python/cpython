@@ -176,6 +176,13 @@ codecs
 Add a :func:`codecs.unregister` function to unregister a codec search function.
 (Contributed by Hai Shi in :issue:`41842`.)
 
+contextlib
+----------
+
+Add a :func:`contextlib.aclosing` context manager to safely close async generators
+and objects representing asynchronously released resources.
+(Contributed by Joongi Kim and John Belmonte in :issue:`41229`.)
+
 curses
 ------
 
