@@ -57,7 +57,7 @@ Now you need to configure the instance by passing it an iterable
 containing all autocompletion entries. Do this by calling its ``build``
 method:
 
-.. code:: python
+::
 
     ENTRIES = (
         "Foo",
