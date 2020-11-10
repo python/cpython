@@ -3,5 +3,5 @@
 :c:func:`Py_GetProgramName` functions now return ``NULL`` if called before
 :c:func:`Py_Initialize` (before Python is initialized). Use the new
 :ref:`Python Initialization Configuration API <init-config>` to get the
-:ref:`Python Path Configuration.  <init-path-config>`_. Patch by Victor
+:ref:`Python Path Configuration.  <init-path-config>`. Patch by Victor
 Stinner.
