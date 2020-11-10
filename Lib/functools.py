@@ -901,6 +901,7 @@ class singledispatchmethod:
 
         self.dispatcher = singledispatch(func)
         self.func = func
+        self.attrname = None
 
     def register(self, cls, method=None):
         """generic_method.register(cls, func) -> func
@@ -908,6 +909,9 @@ class singledispatchmethod:
         Registers a new implementation for the given *cls* on a *generic_method*.
         """
         return self.dispatcher.register(cls, func=method)
+
+    def __set_name__(self, _, name):
+        self.attrname = name
 
     def __get__(self, obj, cls=None):
         def _method(*args, **kwargs):
@@ -917,6 +921,15 @@ class singledispatchmethod:
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method.register = self.register
         update_wrapper(_method, self.func)
+
+        if self.attrname is not None:
+            attrname = self.attrname
+
+            try:
+                obj.__dict__[attrname] = _method
+            except AttributeError:
+                pass  # not all objects have __dict__ (e.g. class defines slots)
+
         return _method
 
     @property

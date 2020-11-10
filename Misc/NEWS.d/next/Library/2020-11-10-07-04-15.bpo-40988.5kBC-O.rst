@@ -1,0 +1,2 @@
+Applied a cached_propery type optimization suggested by federico to
+singledispatchmethod yielding approximately a 3.5 speedup in access times.
