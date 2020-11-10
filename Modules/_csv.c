@@ -1654,34 +1654,22 @@ csv_exec(PyObject *module) {
     _csvstate *m_state = get_csv_state(module);
 
     temp = PyType_FromModuleAndSpec(module, &Dialect_Type_spec, NULL);
-    if (temp == NULL) {
-        return -1;
-    }
-    if (PyModule_AddObject(module, "Dialect", temp)) {
-        return -1;
-    }
-    Py_INCREF(temp);
     m_state->dialect_type = (PyTypeObject *)temp;
+    if (PyModule_AddObjectRef(module, "Dialect", temp) < 0) {
+        return -1;
+    }
 
     temp = PyType_FromModuleAndSpec(module, &Reader_Type_spec, NULL);
-    if (temp == NULL) {
-        return -1;
-    }
-    if (PyModule_AddObject(module, "Reader", temp)) {
-        return -1;
-    }
-    Py_INCREF(temp);
     m_state->reader_type = (PyTypeObject *)temp;
+    if (PyModule_AddObjectRef(module, "Reader", temp) < 0) {
+        return -1;
+    }
 
     temp = PyType_FromModuleAndSpec(module, &Writer_Type_spec, NULL);
-    if (temp == NULL) {
-        return -1;
-    }
-    if (PyModule_AddObject(module, "Writer", temp)) {
-        return -1;
-    }
-    Py_INCREF(temp);
     m_state->writer_type = (PyTypeObject *)temp;
+    if (PyModule_AddObjectRef(module, "Writer", temp) < 0) {
+        return -1;
+    }
 
     /* Add version to the module. */
     if (PyModule_AddStringConstant(module, "__version__",
@@ -1694,11 +1682,7 @@ csv_exec(PyObject *module) {
 
     /* Add _dialects dictionary */
     m_state->dialects = PyDict_New();
-    if (m_state->dialects == NULL) {
-        return -1;
-    }
-    Py_INCREF(m_state->dialects);
-    if (PyModule_AddObject(module, "_dialects", m_state->dialects)) {
+    if (PyModule_AddObjectRef(module, "_dialects", m_state->dialects) < 0) {
         return -1;
     }
 
@@ -1710,11 +1694,10 @@ csv_exec(PyObject *module) {
     }
 
     /* Add the CSV exception object to the module. */
-    PyObject *bases = PyTuple_New(1);
+    PyObject *bases = PyTuple_Pack(1, PyExc_Exception);
     if (bases == NULL) {
         return -1;
     }
-    PyTuple_SET_ITEM(bases, 0, PyExc_Exception);
     m_state->error_obj = PyType_FromModuleAndSpec(module, &error_spec, bases);
     Py_DECREF(bases);
     if (m_state->error_obj == NULL) {
