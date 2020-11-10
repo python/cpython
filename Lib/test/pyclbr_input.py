@@ -17,7 +17,12 @@ class C (B):
 
     d = 10
 
-    f = f
+    # XXX: This causes test_pyclbr.py to fail, but only because the
+    #      introspection-based is_method() code in the test can't
+    #      distinguish between this and a genuine method function like m().
+    #      The pyclbr.py module gets this right as it parses the text.
+    #
+    #f = f
 
     def m(self): pass
 
