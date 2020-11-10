@@ -85,7 +85,7 @@ You can pass additional arguments to ``build``:
 
 Let's play around with these arguments:
 
-.. code:: python
+::
 
     entry.build(
         entries=ENTRIES,
