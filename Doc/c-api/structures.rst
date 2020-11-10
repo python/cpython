@@ -263,9 +263,11 @@ There are these calling conventions:
    of :c:type:`PyObject*` values indicating the arguments and the third
    parameter is the number of arguments (the length of the array).
 
-   This is not part of the :ref:`limited API <stable>`.
-
    .. versionadded:: 3.7
+
+   .. versionchanged:: 3.10
+
+      ``METH_FASTCALL`` is now part of the stable ABI.
 
 
 .. data:: METH_FASTCALL | METH_KEYWORDS
