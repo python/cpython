@@ -611,7 +611,7 @@ class TraceTestCase(unittest.TestCase):
              (1, 'line'),
              (2, 'line'),
              (2, 'return')])
-             
+
     def test_loop_in_try_except(self):
         # https://bugs.python.org/issue41670
 

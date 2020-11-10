@@ -547,7 +547,6 @@ class DisTests(unittest.TestCase):
         self.do_disassembly_test(dis_module, dis_module_expected_results)
 
     def test_big_offsets(self):
-        self.maxDiff = None
         def func(count):
             namespace = {}
             func = "def foo(x):\n " + ";".join(["x = x + 1"] * count) + "\n return x"
