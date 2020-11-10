@@ -38,7 +38,7 @@ NOTE: These examples will only run under Python 3. To make them Python 2-compati
 To add a new autocompletion frame to our interface, first initialize
 one:
 
-.. code:: python
+::
 
     import tkinter as tk
 
@@ -101,4 +101,3 @@ With that out of the way, you can display ``entry``:
 .. code:: python
 
     entry.pack()
-
