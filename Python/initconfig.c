@@ -619,15 +619,6 @@ config_check_consistency(const PyConfig *config)
     assert(_PyWideStringList_CheckConsistency(&config->warnoptions));
     assert(_PyWideStringList_CheckConsistency(&config->module_search_paths));
     assert(config->module_search_paths_set >= 0);
-    if (config->_install_importlib) {
-        /* don't check config->module_search_paths */
-        assert(config->executable != NULL);
-        assert(config->base_executable != NULL);
-        assert(config->prefix != NULL);
-        assert(config->base_prefix != NULL);
-        assert(config->exec_prefix != NULL);
-        assert(config->base_exec_prefix != NULL);
-    }
     assert(config->platlibdir != NULL);
     assert(config->filesystem_encoding != NULL);
     assert(config->filesystem_errors != NULL);
@@ -1297,24 +1288,15 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_WSTR_OPT(home);
     GET_WSTR(platlibdir);
 
+    // Path configuration output
     GET_UINT(module_search_paths_set);
     GET_WSTRLIST(module_search_paths);
-    if (config->_install_importlib) {
-        GET_WSTR(executable);
-        GET_WSTR(base_executable);
-        GET_WSTR(prefix);
-        GET_WSTR(base_prefix);
-        GET_WSTR(exec_prefix);
-        GET_WSTR(base_exec_prefix);
-    }
-    else {
-        GET_WSTR_OPT(executable);
-        GET_WSTR_OPT(base_executable);
-        GET_WSTR_OPT(prefix);
-        GET_WSTR_OPT(base_prefix);
-        GET_WSTR_OPT(exec_prefix);
-        GET_WSTR_OPT(base_exec_prefix);
-    }
+    GET_WSTR_OPT(executable);
+    GET_WSTR_OPT(base_executable);
+    GET_WSTR_OPT(prefix);
+    GET_WSTR_OPT(base_prefix);
+    GET_WSTR_OPT(exec_prefix);
+    GET_WSTR_OPT(base_exec_prefix);
 
     GET_UINT(skip_source_first_line);
     GET_WSTR_OPT(run_command);
@@ -2043,7 +2025,7 @@ config_init_fs_encoding(PyConfig *config, const PyPreConfig *preconfig)
 
 
 static PyStatus
-config_read(PyConfig *config)
+config_read(PyConfig *config, int compute_path_config)
 {
     PyStatus status;
     const PyPreConfig *preconfig = &_PyRuntime.preconfig;
@@ -2088,7 +2070,7 @@ config_read(PyConfig *config)
     }
 
     if (config->_install_importlib) {
-        status = _PyConfig_InitPathConfig(config);
+        status = _PyConfig_InitPathConfig(config, compute_path_config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -2834,7 +2816,7 @@ PyConfig_SetWideStringList(PyConfig *config, PyWideStringList *list,
 
    The only side effects are to modify config and to call _Py_SetArgcArgv(). */
 PyStatus
-PyConfig_Read(PyConfig *config)
+_PyConfig_Read(PyConfig *config, int compute_path_config)
 {
     PyStatus status;
 
@@ -2877,7 +2859,7 @@ PyConfig_Read(PyConfig *config)
         goto done;
     }
 
-    status = config_read(config);
+    status = config_read(config, compute_path_config);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }
@@ -2889,6 +2871,13 @@ PyConfig_Read(PyConfig *config)
 done:
     _PyPreCmdline_Clear(&precmdline);
     return status;
+}
+
+
+PyStatus
+PyConfig_Read(PyConfig *config)
+{
+    return _PyConfig_Read(config, 1);
 }
 
 

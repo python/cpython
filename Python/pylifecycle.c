@@ -429,25 +429,20 @@ _Py_SetLocaleFromEnv(int category)
 
 
 static int
-interpreter_set_config(const PyConfig *config)
+interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
 {
-    PyThreadState *tstate = PyThreadState_Get();
+    const PyConfig *config = &tstate->interp->config;
 
-    PyStatus status = _PyConfig_Write(config, tstate->interp->runtime);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyErr_SetFromPyStatus(status);
-        return -1;
+    if (!only_update_path_config) {
+        PyStatus status = _PyConfig_Write(config, tstate->interp->runtime);
+        if (_PyStatus_EXCEPTION(status)) {
+            _PyErr_SetFromPyStatus(status);
+            return -1;
+        }
     }
 
-    status = _PyConfig_Copy(&tstate->interp->config, config);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyErr_SetFromPyStatus(status);
-        return -1;
-    }
-    config = &tstate->interp->config;
-
-    if (config->_install_importlib && _Py_IsMainInterpreter(tstate)) {
-        status = _PyConfig_WritePathConfig(config);
+    if (_Py_IsMainInterpreter(tstate)) {
+        PyStatus status = _PyConfig_WritePathConfig(config);
         if (_PyStatus_EXCEPTION(status)) {
             _PyErr_SetFromPyStatus(status);
             return -1;
@@ -465,6 +460,7 @@ interpreter_set_config(const PyConfig *config)
 int
 _PyInterpreterState_SetConfig(const PyConfig *src_config)
 {
+    PyThreadState *tstate = PyThreadState_Get();
     int res = -1;
 
     PyConfig config;
@@ -481,7 +477,13 @@ _PyInterpreterState_SetConfig(const PyConfig *src_config)
         goto done;
     }
 
-    res = interpreter_set_config(&config);
+    status = _PyConfig_Copy(&tstate->interp->config, &config);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyErr_SetFromPyStatus(status);
+        goto done;
+    }
+
+    res = interpreter_update_config(tstate, 0);
 
 done:
     PyConfig_Clear(&config);
@@ -763,13 +765,6 @@ pycore_init_import_warnings(PyThreadState *tstate, PyObject *sysmod)
 
     const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
     if (config->_install_importlib) {
-        if (_Py_IsMainInterpreter(tstate)) {
-            status = _PyConfig_WritePathConfig(config);
-            if (_PyStatus_EXCEPTION(status)) {
-                return status;
-            }
-        }
-
         /* This call sets up builtin and frozen import support */
         status = init_importlib(tstate, sysmod);
         if (_PyStatus_EXCEPTION(status)) {
@@ -985,7 +980,9 @@ pyinit_core(_PyRuntimeState *runtime,
         goto done;
     }
 
-    status = PyConfig_Read(&config);
+    // Read the configuration, but don't compute the path configuration
+    // (it is computed in the main init).
+    status = _PyConfig_Read(&config, 0);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }
@@ -1012,8 +1009,8 @@ done:
 static PyStatus
 pyinit_main_reconfigure(PyThreadState *tstate)
 {
-    if (_PySys_UpdateConfig(tstate) < 0) {
-        return _PyStatus_ERR("fail to update sys for the new conf");
+    if (interpreter_update_config(tstate, 0) < 0) {
+        return _PyStatus_ERR("fail to reconfigure Python");
     }
     return _PyStatus_OK();
 }
@@ -1041,14 +1038,20 @@ init_interp_main(PyThreadState *tstate)
         return _PyStatus_OK();
     }
 
+    // Compute the path configuration
+    status = _PyConfig_InitPathConfig(&interp->config, 1);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     if (is_main_interp) {
         if (_PyTime_Init() < 0) {
             return _PyStatus_ERR("can't initialize time");
         }
     }
 
-    if (_PySys_UpdateConfig(tstate) < 0) {
-        return _PyStatus_ERR("can't finish initializing sys");
+    if (interpreter_update_config(tstate, 1) < 0) {
+        return _PyStatus_ERR("failed to update the Python config");
     }
 
     status = init_importlib_external(tstate);
