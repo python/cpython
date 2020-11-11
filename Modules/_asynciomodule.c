@@ -1628,6 +1628,7 @@ FutureIter_am_send(futureiterobject *it,
     it->future = NULL;
     res = _asyncio_Future_result_impl(fut);
     if (res != NULL) {
+        Py_DECREF(fut);
         *result = res;
         return PYGEN_RETURN;
     }
