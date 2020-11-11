@@ -5487,8 +5487,13 @@ PyType_Ready(PyTypeObject *type)
     /* Initialize tp_base (defaults to BaseObject unless that's us) */
     base = type->tp_base;
     if (base == NULL && type != &PyBaseObject_Type) {
-        base = type->tp_base = &PyBaseObject_Type;
-        Py_INCREF(base);
+        base = &PyBaseObject_Type;
+        if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+            type->tp_base = (PyTypeObject*)Py_NewRef((PyObject*)base);
+        }
+        else {
+            type->tp_base = base;
+        }
     }
 
     /* Now the only way base can still be NULL is if type is
