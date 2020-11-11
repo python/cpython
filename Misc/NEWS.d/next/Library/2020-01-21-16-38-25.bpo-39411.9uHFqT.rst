@@ -1,0 +1,2 @@
+Add an ``is_async`` identifier to :mod:`pyclbr`'s ``Function`` objects.
+Patch by Batuhan Taskaya
