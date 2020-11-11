@@ -856,10 +856,7 @@ def singledispatch(func):
                 )
             func = cls
 
-            # bpo-41987 seems to only affect 3.9+
-            from sys import version_info
-
-            if version_info >= (3, 9) and isinstance(ann.get("return", None), str):
+            if isinstance(ann.get("return", None), str):  # bpo-41987
                 _dummy = (lambda: None)
                 _dummy.__annotations__ = {**ann, "return": None}
                 hints = _dummy
