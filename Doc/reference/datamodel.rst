@@ -2620,8 +2620,8 @@ are awaitable.
 
       The language doesn't place any restrictions on the type or value of the
       objects yielded by the iterator returned by `__await__`, as this is
-      specific to the implementation of the async framework that will be
-      managing the :term:`awaitable` object.
+      specific to the implementation of the asynchronous execution framework
+      (e.g. :mod:`asyncio`) that will be managing the :term:`awaitable` object.
       
       In the case of :mod:`asyncio`, user code should generally be using
       :term:`coroutines <coroutine>`, instances of :class:`asyncio.Task`,
