@@ -244,6 +244,7 @@ struct _typeobject {
     struct PyMethodDef *tp_methods;
     struct PyMemberDef *tp_members;
     struct PyGetSetDef *tp_getset;
+    // Strong reference on a heap type, borrowed reference on a static type
     struct _typeobject *tp_base;
     PyObject *tp_dict;
     descrgetfunc tp_descr_get;
