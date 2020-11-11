@@ -538,7 +538,7 @@ PyAPI_FUNC(void) _PyTrash_end(struct _ts *tstate);
 
 #define Py_TRASHCAN_BEGIN(op, dealloc) \
     Py_TRASHCAN_BEGIN_CONDITION(op, \
-        Py_TYPE(op)->tp_dealloc == (destructor)(dealloc))
+        PyType_GetSlot(Py_TYPE(op), Py_tp_dealloc) == (destructor)(dealloc))
 
 /* For backwards compatibility, these macros enable the trashcan
  * unconditionally */
