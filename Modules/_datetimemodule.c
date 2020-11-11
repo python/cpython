@@ -6663,10 +6663,10 @@ PyInit__datetime(void)
     PyModule_AddIntMacro(m, MINYEAR);
     PyModule_AddIntMacro(m, MAXYEAR);
 
-    x = PyCapsule_New(&CAPI, PyDateTime_CAPSULE_NAME, NULL);
-    if (x == NULL)
+    if (PyModule_Add(m, "datetime_CAPI",
+                     PyCapsule_New(&CAPI, PyDateTime_CAPSULE_NAME, NULL)) < 0) {
         return NULL;
-    PyModule_AddObject(m, "datetime_CAPI", x);
+    };
 
     /* A 4-year cycle has an extra leap day over what we'd get from
      * pasting together 4 single years.

@@ -2371,12 +2371,11 @@ PyInit__struct(void)
         return NULL;
 
     PyObject *PyStructType = PyType_FromSpec(&PyStructType_spec);
-    if (PyStructType == NULL) {
+    get_struct_state(m)->PyStructType = PyStructType;
+    Py_XINCREF(PyStructType);
+    if (PyModule_Add(m, "Struct", PyStructType) < 0) {
         return NULL;
     }
-    Py_INCREF(PyStructType);
-    PyModule_AddObject(m, "Struct", PyStructType);
-    get_struct_state(m)->PyStructType = PyStructType;
 
     PyObject *unpackiter_type = PyType_FromSpec(&unpackiter_type_spec);
     if (unpackiter_type == NULL) {
@@ -2428,11 +2427,11 @@ PyInit__struct(void)
 
     /* Add some symbolic constants to the module */
     PyObject *StructError = PyErr_NewException("struct.error", NULL, NULL);
-    if (StructError == NULL)
-        return NULL;
-    Py_INCREF(StructError);
-    PyModule_AddObject(m, "error", StructError);
     get_struct_state(m)->StructError = StructError;
+    Py_XINCREF(StructError);
+    if (PyModule_AddObject(m, "error", StructError) < 0) {
+        return NULL;
+    }
 
     return m;
 }

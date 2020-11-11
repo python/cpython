@@ -361,10 +361,10 @@ PyInit_pwd(void)
 
     pwdmodulestate *state = PyModule_GetState(m);
     state->StructPwdType = PyStructSequence_NewType(&struct_pwd_type_desc);
-    if (state->StructPwdType == NULL) {
+    Py_XINCREF(state->StructPwdType);
+    if (PyModule_Add(m, "struct_passwd", (PyObject *) state->StructPwdType) < 0) {
+        Py_DECREF(m);
         return NULL;
     }
-    Py_INCREF(state->StructPwdType);
-    PyModule_AddObject(m, "struct_passwd", (PyObject *) state->StructPwdType);
     return m;
 }

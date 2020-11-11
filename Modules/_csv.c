@@ -1650,10 +1650,8 @@ PyInit__csv(void)
 
     /* Add _dialects dictionary */
     get_csv_state(module)->dialects = PyDict_New();
-    if (get_csv_state(module)->dialects == NULL)
-        return NULL;
-    Py_INCREF(get_csv_state(module)->dialects);
-    if (PyModule_AddObject(module, "_dialects", get_csv_state(module)->dialects))
+    Py_XINCREF(get_csv_state(module)->dialects);
+    if (PyModule_Add(module, "_dialects", get_csv_state(module)->dialects))
         return NULL;
 
     /* Add quote styles into dictionary */
@@ -1669,9 +1667,9 @@ PyInit__csv(void)
 
     /* Add the CSV exception object to the module. */
     get_csv_state(module)->error_obj = PyErr_NewException("_csv.Error", NULL, NULL);
-    if (get_csv_state(module)->error_obj == NULL)
+    Py_XINCREF(get_csv_state(module)->error_obj);
+    if (PyModule_Add(module, "Error", get_csv_state(module)->error_obj) < 0) {
         return NULL;
-    Py_INCREF(get_csv_state(module)->error_obj);
-    PyModule_AddObject(module, "Error", get_csv_state(module)->error_obj);
+    }
     return module;
 }

@@ -7110,33 +7110,33 @@ PyInit__socket(void)
     Py_INCREF(PyExc_OSError);
     PySocketModuleAPI.error = PyExc_OSError;
     Py_INCREF(PyExc_OSError);
-    PyModule_AddObject(m, "error", PyExc_OSError);
+    if (PyModule_Add(m, "error", PyExc_OSError) < 0) {
+        return NULL;
+    }
     socket_herror = PyErr_NewException("socket.herror",
                                        PyExc_OSError, NULL);
-    if (socket_herror == NULL)
+    Py_XINCREF(socket_herror);
+    if (PyModule_Add(m, "herror", socket_herror) < 0) {
         return NULL;
-    Py_INCREF(socket_herror);
-    PyModule_AddObject(m, "herror", socket_herror);
+    }
     socket_gaierror = PyErr_NewException("socket.gaierror", PyExc_OSError,
         NULL);
-    if (socket_gaierror == NULL)
+    Py_XINCREF(socket_gaierror);
+    if (PyModule_Add(m, "gaierror", socket_gaierror) < 0) {
         return NULL;
-    Py_INCREF(socket_gaierror);
-    PyModule_AddObject(m, "gaierror", socket_gaierror);
+    }
     socket_timeout = PyErr_NewException("socket.timeout",
                                         PyExc_OSError, NULL);
-    if (socket_timeout == NULL)
-        return NULL;
     PySocketModuleAPI.timeout_error = socket_timeout;
-    Py_INCREF(socket_timeout);
-    PyModule_AddObject(m, "timeout", socket_timeout);
+    Py_XINCREF(socket_timeout);
+    if (PyModule_Add(m, "timeout", socket_timeout) < 0) {
+        return NULL;
+    }
     Py_INCREF((PyObject *)&sock_type);
-    if (PyModule_AddObject(m, "SocketType",
-                           (PyObject *)&sock_type) != 0)
+    if (PyModule_Add(m, "SocketType", (PyObject *)&sock_type) < 0)
         return NULL;
     Py_INCREF((PyObject *)&sock_type);
-    if (PyModule_AddObject(m, "socket",
-                           (PyObject *)&sock_type) != 0)
+    if (PyModule_Add(m, "socket", (PyObject *)&sock_type) < 0)
         return NULL;
 
 #ifdef ENABLE_IPV6
@@ -7145,10 +7145,12 @@ PyInit__socket(void)
     has_ipv6 = Py_False;
 #endif
     Py_INCREF(has_ipv6);
-    PyModule_AddObject(m, "has_ipv6", has_ipv6);
+    if (PyModule_Add(m, "has_ipv6", has_ipv6) < 0) {
+        return NULL;
+    }
 
     /* Export C API */
-    if (PyModule_AddObject(m, PySocket_CAPI_NAME,
+    if (PyModule_Add(m, PySocket_CAPI_NAME,
            PyCapsule_New(&PySocketModuleAPI, PySocket_CAPSULE_NAME, NULL)
                              ) != 0)
         return NULL;
@@ -8357,11 +8359,9 @@ PyInit__socket(void)
         };
         int i;
         for(i = 0; i<Py_ARRAY_LENGTH(codes); ++i) {
-            PyObject *tmp;
-            tmp = PyLong_FromUnsignedLong(codes[i]);
-            if (tmp == NULL)
+            if (PyModule_Add(m, names[i], PyLong_FromUnsignedLong(codes[i])) < 0) {
                 return NULL;
-            PyModule_AddObject(m, names[i], tmp);
+            }
         }
     }
     PyModule_AddIntMacro(m, RCVALL_OFF);

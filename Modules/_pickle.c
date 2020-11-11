@@ -7986,25 +7986,20 @@ PyInit__pickle(void)
 
     /* Initialize the exceptions. */
     st->PickleError = PyErr_NewException("_pickle.PickleError", NULL, NULL);
-    if (st->PickleError == NULL)
-        return NULL;
-    st->PicklingError = \
-        PyErr_NewException("_pickle.PicklingError", st->PickleError, NULL);
-    if (st->PicklingError == NULL)
-        return NULL;
-    st->UnpicklingError = \
-        PyErr_NewException("_pickle.UnpicklingError", st->PickleError, NULL);
-    if (st->UnpicklingError == NULL)
+    Py_XINCREF(st->PickleError);
+    if (PyModule_Add(m, "PickleError", st->PickleError) < 0)
         return NULL;
 
-    Py_INCREF(st->PickleError);
-    if (PyModule_AddObject(m, "PickleError", st->PickleError) < 0)
+    st->PicklingError = \
+        PyErr_NewException("_pickle.PicklingError", st->PickleError, NULL);
+    Py_XINCREF(st->PicklingError);
+    if (PyModule_Add(m, "PicklingError", st->PicklingError) < 0)
         return NULL;
-    Py_INCREF(st->PicklingError);
-    if (PyModule_AddObject(m, "PicklingError", st->PicklingError) < 0)
-        return NULL;
-    Py_INCREF(st->UnpicklingError);
-    if (PyModule_AddObject(m, "UnpicklingError", st->UnpicklingError) < 0)
+
+    st->UnpicklingError = \
+        PyErr_NewException("_pickle.UnpicklingError", st->PickleError, NULL);
+    Py_XINCREF(st->UnpicklingError);
+    if (PyModule_Add(m, "UnpicklingError", st->UnpicklingError) < 0)
         return NULL;
 
     if (_Pickle_InitState(st) < 0)

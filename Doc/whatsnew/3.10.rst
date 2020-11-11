@@ -428,6 +428,10 @@ New Features
   success.
   (Contributed by Victor Stinner in :issue:`1635741`.)
 
+* Added :c:func:`PyModule_Add` function: similar to
+  :c:func:`PyModule_AddObject` but always steals a reference to the value.
+  (Contributed by Serhiy Storchaka in :issue:`42327`.)
+
 * Added :c:func:`Py_NewRef` and :c:func:`Py_XNewRef` functions to increment the
   reference count of an object and return the object.
   (Contributed by Victor Stinner in :issue:`42262`.)

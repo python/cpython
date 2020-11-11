@@ -1126,8 +1126,12 @@ PyInit_ossaudiodev(void)
         /* Each call to PyModule_AddObject decrefs it; compensate: */
         Py_INCREF(OSSAudioError);
         Py_INCREF(OSSAudioError);
-        PyModule_AddObject(m, "error", OSSAudioError);
-        PyModule_AddObject(m, "OSSAudioError", OSSAudioError);
+        if (PyModule_Add(m, "error", OSSAudioError) < 0) {
+            return NULL;
+        }
+        if (PyModule_Add(m, "OSSAudioError", OSSAudioError) < 0) {
+            return NULL;
+        }
     }
 
     /* Build 'control_labels' and 'control_names' lists and add them

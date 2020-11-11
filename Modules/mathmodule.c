@@ -3511,21 +3511,21 @@ math_ulp_impl(PyObject *module, double x)
 static int
 math_exec(PyObject *module)
 {
-    if (PyModule_AddObject(module, "pi", PyFloat_FromDouble(Py_MATH_PI)) < 0) {
+    if (PyModule_Add(module, "pi", PyFloat_FromDouble(Py_MATH_PI)) < 0) {
         return -1;
     }
-    if (PyModule_AddObject(module, "e", PyFloat_FromDouble(Py_MATH_E)) < 0) {
+    if (PyModule_Add(module, "e", PyFloat_FromDouble(Py_MATH_E)) < 0) {
         return -1;
     }
     // 2pi
-    if (PyModule_AddObject(module, "tau", PyFloat_FromDouble(Py_MATH_TAU)) < 0) {
+    if (PyModule_Add(module, "tau", PyFloat_FromDouble(Py_MATH_TAU)) < 0) {
         return -1;
     }
-    if (PyModule_AddObject(module, "inf", PyFloat_FromDouble(m_inf())) < 0) {
+    if (PyModule_Add(module, "inf", PyFloat_FromDouble(m_inf())) < 0) {
         return -1;
     }
 #if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
-    if (PyModule_AddObject(module, "nan", PyFloat_FromDouble(m_nan())) < 0) {
+    if (PyModule_Add(module, "nan", PyFloat_FromDouble(m_nan())) < 0) {
         return -1;
     }
 #endif

@@ -618,7 +618,10 @@ PyInit__random(void)
     get_random_state(m)->Random_Type = Random_Type;
 
     Py_INCREF(Random_Type);
-    PyModule_AddObject(m, "Random", Random_Type);
+    if (PyModule_Add(m, "Random", Random_Type) < 0) {
+        Py_DECREF(m);
+        return NULL;
+    }
 
     /* Look up and save int.__abs__, which is needed in random_seed(). */
     PyObject *longval = NULL, *longtype = NULL;

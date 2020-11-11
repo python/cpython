@@ -5703,25 +5703,24 @@ PyInit__ctypes(void)
         return NULL;
 
     _ctypes_ptrtype_cache = PyDict_New();
-    if (_ctypes_ptrtype_cache == NULL)
-        return NULL;
-
-    PyModule_AddObject(m, "_pointer_type_cache", (PyObject *)_ctypes_ptrtype_cache);
+    if (PyModule_Add(m, "_pointer_type_cache", (PyObject *)_ctypes_ptrtype_cache) < 0) {
+        goto error;
+    }
 
     _unpickle = PyObject_GetAttrString(m, "_unpickle");
     if (_unpickle == NULL)
-        return NULL;
+        goto error;
 
     if (PyType_Ready(&PyCArg_Type) < 0)
-        return NULL;
+        goto error;
 
     if (PyType_Ready(&PyCThunk_Type) < 0)
-        return NULL;
+        goto error;
 
     /* StgDict is derived from PyDict_Type */
     PyCStgDict_Type.tp_base = &PyDict_Type;
     if (PyType_Ready(&PyCStgDict_Type) < 0)
-        return NULL;
+        goto error;
 
     /*************************************************
      *
@@ -5730,27 +5729,27 @@ PyInit__ctypes(void)
 
     PyCStructType_Type.tp_base = &PyType_Type;
     if (PyType_Ready(&PyCStructType_Type) < 0)
-        return NULL;
+        goto error;
 
     UnionType_Type.tp_base = &PyType_Type;
     if (PyType_Ready(&UnionType_Type) < 0)
-        return NULL;
+        goto error;
 
     PyCPointerType_Type.tp_base = &PyType_Type;
     if (PyType_Ready(&PyCPointerType_Type) < 0)
-        return NULL;
+        goto error;
 
     PyCArrayType_Type.tp_base = &PyType_Type;
     if (PyType_Ready(&PyCArrayType_Type) < 0)
-        return NULL;
+        goto error;
 
     PyCSimpleType_Type.tp_base = &PyType_Type;
     if (PyType_Ready(&PyCSimpleType_Type) < 0)
-        return NULL;
+        goto error;
 
     PyCFuncPtrType_Type.tp_base = &PyType_Type;
     if (PyType_Ready(&PyCFuncPtrType_Type) < 0)
-        return NULL;
+        goto error;
 
     /*************************************************
      *
@@ -5758,49 +5757,61 @@ PyInit__ctypes(void)
      */
 
     if (PyType_Ready(&PyCData_Type) < 0)
-        return NULL;
+        goto error;
 
     Py_SET_TYPE(&Struct_Type, &PyCStructType_Type);
     Struct_Type.tp_base = &PyCData_Type;
     if (PyType_Ready(&Struct_Type) < 0)
-        return NULL;
+        goto error;
     Py_INCREF(&Struct_Type);
-    PyModule_AddObject(m, "Structure", (PyObject *)&Struct_Type);
+    if (PyModule_Add(m, "Structure", (PyObject *)&Struct_Type) < 0) {
+        goto error;
+    }
 
     Py_SET_TYPE(&Union_Type, &UnionType_Type);
     Union_Type.tp_base = &PyCData_Type;
     if (PyType_Ready(&Union_Type) < 0)
-        return NULL;
+        goto error;
     Py_INCREF(&Union_Type);
-    PyModule_AddObject(m, "Union", (PyObject *)&Union_Type);
+    if (PyModule_Add(m, "Union", (PyObject *)&Union_Type) < 0) {
+        goto error;
+    }
 
     Py_SET_TYPE(&PyCPointer_Type, &PyCPointerType_Type);
     PyCPointer_Type.tp_base = &PyCData_Type;
     if (PyType_Ready(&PyCPointer_Type) < 0)
-        return NULL;
+        goto error;
     Py_INCREF(&PyCPointer_Type);
-    PyModule_AddObject(m, "_Pointer", (PyObject *)&PyCPointer_Type);
+    if (PyModule_Add(m, "_Pointer", (PyObject *)&PyCPointer_Type) < 0) {
+        goto error;
+    }
 
     Py_SET_TYPE(&PyCArray_Type, &PyCArrayType_Type);
     PyCArray_Type.tp_base = &PyCData_Type;
     if (PyType_Ready(&PyCArray_Type) < 0)
-        return NULL;
+        goto error;
     Py_INCREF(&PyCArray_Type);
-    PyModule_AddObject(m, "Array", (PyObject *)&PyCArray_Type);
+    if (PyModule_Add(m, "Array", (PyObject *)&PyCArray_Type) < 0) {
+        goto error;
+    }
 
     Py_SET_TYPE(&Simple_Type, &PyCSimpleType_Type);
     Simple_Type.tp_base = &PyCData_Type;
     if (PyType_Ready(&Simple_Type) < 0)
-        return NULL;
+        goto error;
     Py_INCREF(&Simple_Type);
-    PyModule_AddObject(m, "_SimpleCData", (PyObject *)&Simple_Type);
+    if (PyModule_Add(m, "_SimpleCData", (PyObject *)&Simple_Type) < 0) {
+        goto error;
+    }
 
     Py_SET_TYPE(&PyCFuncPtr_Type, &PyCFuncPtrType_Type);
     PyCFuncPtr_Type.tp_base = &PyCData_Type;
     if (PyType_Ready(&PyCFuncPtr_Type) < 0)
-        return NULL;
+        goto error;
     Py_INCREF(&PyCFuncPtr_Type);
-    PyModule_AddObject(m, "CFuncPtr", (PyObject *)&PyCFuncPtr_Type);
+    if (PyModule_Add(m, "CFuncPtr", (PyObject *)&PyCFuncPtr_Type) < 0) {
+        goto error;
+    }
 
     /*************************************************
      *
@@ -5809,7 +5820,7 @@ PyInit__ctypes(void)
 
     /* PyCField_Type is derived from PyBaseObject_Type */
     if (PyType_Ready(&PyCField_Type) < 0)
-        return NULL;
+        goto error;
 
     /*************************************************
      *
@@ -5818,32 +5829,58 @@ PyInit__ctypes(void)
 
     DictRemover_Type.tp_new = PyType_GenericNew;
     if (PyType_Ready(&DictRemover_Type) < 0)
-        return NULL;
+        goto error;
 
     if (PyType_Ready(&StructParam_Type) < 0) {
-        return NULL;
+        goto error;
     }
 
 #ifdef MS_WIN32
     if (create_comerror() < 0)
-        return NULL;
-    PyModule_AddObject(m, "COMError", ComError);
+        goto error;
+    if PyModule_Add(m, "COMError", ComError) < 0) {
+        goto error;
+    }
 
-    PyModule_AddObject(m, "FUNCFLAG_HRESULT", PyLong_FromLong(FUNCFLAG_HRESULT));
-    PyModule_AddObject(m, "FUNCFLAG_STDCALL", PyLong_FromLong(FUNCFLAG_STDCALL));
+    if (PyModule_AddIntMacro(m, FUNCFLAG_HRESULT) < 0) {
+        goto error;
+    }
+    if (PyModule_AddIntMacro(m, FUNCFLAG_STDCALL) < 0) {
+        goto error;
+    }
 #endif
-    PyModule_AddObject(m, "FUNCFLAG_CDECL", PyLong_FromLong(FUNCFLAG_CDECL));
-    PyModule_AddObject(m, "FUNCFLAG_USE_ERRNO", PyLong_FromLong(FUNCFLAG_USE_ERRNO));
-    PyModule_AddObject(m, "FUNCFLAG_USE_LASTERROR", PyLong_FromLong(FUNCFLAG_USE_LASTERROR));
-    PyModule_AddObject(m, "FUNCFLAG_PYTHONAPI", PyLong_FromLong(FUNCFLAG_PYTHONAPI));
-    PyModule_AddStringConstant(m, "__version__", "1.1.0");
+    if (PyModule_AddIntMacro(m, FUNCFLAG_CDECL) < 0) {
+        goto error;
+    }
+    if (PyModule_AddIntMacro(m, FUNCFLAG_USE_ERRNO) < 0) {
+        goto error;
+    }
+    if (PyModule_AddIntMacro(m, FUNCFLAG_USE_LASTERROR) < 0) {
+        goto error;
+    }
+    if (PyModule_AddIntMacro(m, FUNCFLAG_PYTHONAPI) < 0) {
+        goto error;
+    }
+    if (PyModule_AddStringConstant(m, "__version__", "1.1.0") < 0) {
+        goto error;
+    }
 
-    PyModule_AddObject(m, "_memmove_addr", PyLong_FromVoidPtr(memmove));
-    PyModule_AddObject(m, "_memset_addr", PyLong_FromVoidPtr(memset));
-    PyModule_AddObject(m, "_string_at_addr", PyLong_FromVoidPtr(string_at));
-    PyModule_AddObject(m, "_cast_addr", PyLong_FromVoidPtr(cast));
+    if (PyModule_Add(m, "_memmove_addr", PyLong_FromVoidPtr(memmove)) < 0) {
+        goto error;
+    }
+    if (PyModule_Add(m, "_memset_addr", PyLong_FromVoidPtr(memset)) < 0) {
+        goto error;
+    }
+    if (PyModule_Add(m, "_string_at_addr", PyLong_FromVoidPtr(string_at)) < 0) {
+        goto error;
+    }
+    if (PyModule_Add(m, "_cast_addr", PyLong_FromVoidPtr(cast)) < 0) {
+        goto error;
+    }
 #ifdef CTYPES_UNICODE
-    PyModule_AddObject(m, "_wstring_at_addr", PyLong_FromVoidPtr(wstring_at));
+    if (PyModule_Add(m, "_wstring_at_addr", PyLong_FromVoidPtr(wstring_at)) < 0) {
+        goto error;
+    }
 #endif
 
 /* If RTLD_LOCAL is not defined (Windows!), set it to zero. */
@@ -5858,15 +5895,23 @@ PyInit__ctypes(void)
 #define RTLD_GLOBAL RTLD_LOCAL
 #endif
 
-    PyModule_AddObject(m, "RTLD_LOCAL", PyLong_FromLong(RTLD_LOCAL));
-    PyModule_AddObject(m, "RTLD_GLOBAL", PyLong_FromLong(RTLD_GLOBAL));
+    if (PyModule_AddIntMacro(m, RTLD_LOCAL) < 0) {
+        goto error;
+    }
+    if (PyModule_AddIntMacro(m, RTLD_GLOBAL) < 0) {
+        goto error;
+    }
 
     PyExc_ArgError = PyErr_NewException("ctypes.ArgumentError", NULL, NULL);
-    if (PyExc_ArgError) {
-        Py_INCREF(PyExc_ArgError);
-        PyModule_AddObject(m, "ArgumentError", PyExc_ArgError);
+    Py_XINCREF(PyExc_ArgError);
+    if (PyModule_Add(m, "ArgumentError", PyExc_ArgError) < 0) {
+        goto error;
     }
     return m;
+
+error:
+    Py_DECREF(m);
+    return NULL;
 }
 
 /*

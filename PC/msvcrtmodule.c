@@ -648,7 +648,7 @@ PyInit_msvcrt(void)
                                                   _VC_CRT_MINOR_VERSION,
                                                   _VC_CRT_BUILD_VERSION,
                                                   _VC_CRT_RBUILD_VERSION);
-    st = PyModule_AddObject(m, "CRT_ASSEMBLY_VERSION", version);
+    st = PyModule_Add(m, "CRT_ASSEMBLY_VERSION", version);
     if (st < 0) return NULL;
 #endif
     /* make compiler warning quiet if st is unused */

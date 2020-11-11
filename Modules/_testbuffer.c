@@ -2837,11 +2837,15 @@ PyInit__testbuffer(void)
 
     Py_SET_TYPE(&NDArray_Type, &PyType_Type);
     Py_INCREF(&NDArray_Type);
-    PyModule_AddObject(m, "ndarray", (PyObject *)&NDArray_Type);
+    if (PyModule_Add(m, "ndarray", (PyObject *)&NDArray_Type) < 0) {
+        return NULL;
+    }
 
     Py_SET_TYPE(&StaticArray_Type, &PyType_Type);
     Py_INCREF(&StaticArray_Type);
-    PyModule_AddObject(m, "staticarray", (PyObject *)&StaticArray_Type);
+    if (PyModule_Add(m, "staticarray", (PyObject *)&StaticArray_Type) < 0) {
+        return NULL;
+    }
 
     structmodule = PyImport_ImportModule("struct");
     if (structmodule == NULL)

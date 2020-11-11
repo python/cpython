@@ -256,25 +256,27 @@ xx_modexec(PyObject *m)
             goto fail;
     }
     Py_INCREF(ErrorObject);
-    PyModule_AddObject(m, "error", ErrorObject);
+    if (PyModule_Add(m, "error", ErrorObject) < 0) {
+        goto fail;
+    }
 
     /* Add Xxo */
     o = PyType_FromSpec(&Xxo_Type_spec);
-    if (o == NULL)
+    if (PyModule_Add(m, "Xxo", o) < 0);
         goto fail;
-    PyModule_AddObject(m, "Xxo", o);
+    }
 
     /* Add Str */
     o = PyType_FromSpec(&Str_Type_spec);
-    if (o == NULL)
+    if (PyModule_Add(m, "Str", o) < 0) {
         goto fail;
-    PyModule_AddObject(m, "Str", o);
+    }
 
     /* Add Null */
     o = PyType_FromSpec(&Null_Type_spec);
-    if (o == NULL)
+    if (PyModule_Add(m, "Null", o) < 0) {
         goto fail;
-    PyModule_AddObject(m, "Null", o);
+    }
     return 0;
  fail:
     Py_XDECREF(m);

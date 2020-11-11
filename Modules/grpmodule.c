@@ -352,11 +352,10 @@ PyInit_grp(void)
 
     grpmodulestate *state = PyModule_GetState(m);
     state->StructGrpType = PyStructSequence_NewType(&struct_group_type_desc);
-    if (state->StructGrpType == NULL) {
+    Py_XINCREF(state->StructGrpType);
+    if (PyModule_Add(m, "struct_group", (PyObject *) state->StructGrpType) < 0) {
+        Py_DECREF(m);
         return NULL;
     }
-
-    Py_INCREF(state->StructGrpType);
-    PyModule_AddObject(m, "struct_group", (PyObject *) state->StructGrpType);
     return m;
 }

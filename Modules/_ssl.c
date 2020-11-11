@@ -6312,7 +6312,9 @@ PyInit__ssl(void)
     do { \
         PyObject *bool_obj = (value) ? Py_True : Py_False; \
         Py_INCREF(bool_obj); \
-        PyModule_AddObject((m), (key), bool_obj); \
+        if (PyModule_Add((m), (key), bool_obj) < 0) { \
+            return NULL; \
+        } \
     } while (0)
 
 #if HAVE_SNI
@@ -6397,9 +6399,9 @@ PyInit__ssl(void)
         Py_DECREF(mnemo);
         errcode++;
     }
-    if (PyModule_AddObject(m, "err_codes_to_names", err_codes_to_names))
+    if (PyModule_Add(m, "err_codes_to_names", err_codes_to_names))
         return NULL;
-    if (PyModule_AddObject(m, "err_names_to_codes", err_names_to_codes))
+    if (PyModule_Add(m, "err_names_to_codes", err_names_to_codes))
         return NULL;
 
     lib_codes_to_names = PyDict_New();
@@ -6418,7 +6420,7 @@ PyInit__ssl(void)
         Py_DECREF(mnemo);
         libcode++;
     }
-    if (PyModule_AddObject(m, "lib_codes_to_names", lib_codes_to_names))
+    if (PyModule_Add(m, "lib_codes_to_names", lib_codes_to_names))
         return NULL;
 
     /* OpenSSL version */
@@ -6427,22 +6429,20 @@ PyInit__ssl(void)
     */
     libver = OpenSSL_version_num();
     r = PyLong_FromUnsignedLong(libver);
-    if (r == NULL)
-        return NULL;
-    if (PyModule_AddObject(m, "OPENSSL_VERSION_NUMBER", r))
+    if (PyModule_Add(m, "OPENSSL_VERSION_NUMBER", r) < 0)
         return NULL;
     parse_openssl_version(libver, &major, &minor, &fix, &patch, &status);
     r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
-    if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION_INFO", r))
+    if (PyModule_Add(m, "OPENSSL_VERSION_INFO", r) < 0)
         return NULL;
-    r = PyUnicode_FromString(OpenSSL_version(OPENSSL_VERSION));
-    if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION", r))
+    if (PyModule_AddStringConstant(m, "OPENSSL_VERSION",
+                                   OpenSSL_version(OPENSSL_VERSION)) < 0)
         return NULL;
 
     libver = OPENSSL_VERSION_NUMBER;
     parse_openssl_version(libver, &major, &minor, &fix, &patch, &status);
     r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
-    if (r == NULL || PyModule_AddObject(m, "_OPENSSL_API_VERSION", r))
+    if (PyModule_Add(m, "_OPENSSL_API_VERSION", r))
         return NULL;
 
     return m;

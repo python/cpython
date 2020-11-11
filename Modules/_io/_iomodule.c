@@ -668,17 +668,15 @@ PyInit__io(void)
     state->unsupported_operation = PyObject_CallFunction(
         (PyObject *)&PyType_Type, "s(OO){}",
         "UnsupportedOperation", PyExc_OSError, PyExc_ValueError);
-    if (state->unsupported_operation == NULL)
-        goto fail;
-    Py_INCREF(state->unsupported_operation);
-    if (PyModule_AddObject(m, "UnsupportedOperation",
-                           state->unsupported_operation) < 0)
+    Py_XINCREF(state->unsupported_operation);
+    if (PyModule_Add(m, "UnsupportedOperation",
+                     state->unsupported_operation) < 0)
         goto fail;
 
     /* BlockingIOError, for compatibility */
     Py_INCREF(PyExc_BlockingIOError);
-    if (PyModule_AddObject(m, "BlockingIOError",
-                           (PyObject *) PyExc_BlockingIOError) < 0)
+    if (PyModule_Add(m, "BlockingIOError",
+                     (PyObject *) PyExc_BlockingIOError) < 0)
         goto fail;
 
     /* Concrete base types of the IO ABCs.

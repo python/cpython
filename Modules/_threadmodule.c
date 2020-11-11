@@ -1595,9 +1595,7 @@ PyInit__thread(void)
     timeout_max = floor(timeout_max);
 
     v = PyFloat_FromDouble(timeout_max);
-    if (!v)
-        return NULL;
-    if (PyModule_AddObject(m, "TIMEOUT_MAX", v) < 0)
+    if (PyModule_Add(m, "TIMEOUT_MAX", v) < 0)
         return NULL;
 
     /* Add a symbolic constant */
@@ -1611,16 +1609,16 @@ PyInit__thread(void)
     PyDict_SetItemString(d, "LockType", (PyObject *)&Locktype);
 
     Py_INCREF(&RLocktype);
-    if (PyModule_AddObject(m, "RLock", (PyObject *)&RLocktype) < 0)
+    if (PyModule_Add(m, "RLock", (PyObject *)&RLocktype) < 0)
         return NULL;
 
     Py_INCREF(&localtype);
-    if (PyModule_AddObject(m, "_local", (PyObject *)&localtype) < 0)
+    if (PyModule_Add(m, "_local", (PyObject *)&localtype) < 0)
         return NULL;
 
     Py_INCREF(&ExceptHookArgsType);
-    if (PyModule_AddObject(m, "_ExceptHookArgs",
-                           (PyObject *)&ExceptHookArgsType) < 0)
+    if (PyModule_Add(m, "_ExceptHookArgs",
+                     (PyObject *)&ExceptHookArgsType) < 0)
         return NULL;
 
     interp->num_threads = 0;

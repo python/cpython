@@ -2022,7 +2022,7 @@ PyInit_gc(void)
         }
     }
     Py_INCREF(gcstate->garbage);
-    if (PyModule_AddObject(m, "garbage", gcstate->garbage) < 0) {
+    if (PyModule_Add(m, "garbage", gcstate->garbage) < 0) {
         return NULL;
     }
 
@@ -2033,7 +2033,7 @@ PyInit_gc(void)
         }
     }
     Py_INCREF(gcstate->callbacks);
-    if (PyModule_AddObject(m, "callbacks", gcstate->callbacks) < 0) {
+    if (PyModule_Add(m, "callbacks", gcstate->callbacks) < 0) {
         return NULL;
     }
 

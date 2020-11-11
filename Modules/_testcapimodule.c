@@ -7136,83 +7136,114 @@ PyInit__testcapi(void)
     Py_INCREF(&test_structmembersType);
     /* don't use a name starting with "test", since we don't want
        test_capi to automatically call this */
-    PyModule_AddObject(m, "_test_structmembersType", (PyObject *)&test_structmembersType);
+    if (PyModule_Add(m, "_test_structmembersType",
+                     (PyObject *)&test_structmembersType) < 0) {
+        return NULL;
+    }
     if (PyType_Ready(&matmulType) < 0)
         return NULL;
     Py_INCREF(&matmulType);
-    PyModule_AddObject(m, "matmulType", (PyObject *)&matmulType);
+    if (PyModule_Add(m, "matmulType", (PyObject *)&matmulType) < 0) {
+        return NULL;
+    }
     if (PyType_Ready(&ipowType) < 0) {
         return NULL;
     }
     Py_INCREF(&ipowType);
-    PyModule_AddObject(m, "ipowType", (PyObject *)&ipowType);
+    if (PyModule_Add(m, "ipowType", (PyObject *)&ipowType) < 0) {
+        return NULL;
+    }
 
     if (PyType_Ready(&awaitType) < 0)
         return NULL;
     Py_INCREF(&awaitType);
-    PyModule_AddObject(m, "awaitType", (PyObject *)&awaitType);
+    if (PyModule_Add(m, "awaitType", (PyObject *)&awaitType) < 0) {
+        return NULL;
+    }
 
     MyList_Type.tp_base = &PyList_Type;
     if (PyType_Ready(&MyList_Type) < 0)
         return NULL;
     Py_INCREF(&MyList_Type);
-    PyModule_AddObject(m, "MyList", (PyObject *)&MyList_Type);
+    if (PyModule_Add(m, "MyList", (PyObject *)&MyList_Type) < 0) {
+        return NULL;
+    }
 
     if (PyType_Ready(&MethodDescriptorBase_Type) < 0)
         return NULL;
     Py_INCREF(&MethodDescriptorBase_Type);
-    PyModule_AddObject(m, "MethodDescriptorBase", (PyObject *)&MethodDescriptorBase_Type);
+    if (PyModule_Add(m, "MethodDescriptorBase", (PyObject *)&MethodDescriptorBase_Type) < 0) {
+        return NULL;
+    }
 
     MethodDescriptorDerived_Type.tp_base = &MethodDescriptorBase_Type;
     if (PyType_Ready(&MethodDescriptorDerived_Type) < 0)
         return NULL;
     Py_INCREF(&MethodDescriptorDerived_Type);
-    PyModule_AddObject(m, "MethodDescriptorDerived", (PyObject *)&MethodDescriptorDerived_Type);
+    if (PyModule_Add(m, "MethodDescriptorDerived", (PyObject *)&MethodDescriptorDerived_Type) < 0) {
+        return NULL;
+    }
 
     MethodDescriptorNopGet_Type.tp_base = &MethodDescriptorBase_Type;
     if (PyType_Ready(&MethodDescriptorNopGet_Type) < 0)
         return NULL;
     Py_INCREF(&MethodDescriptorNopGet_Type);
-    PyModule_AddObject(m, "MethodDescriptorNopGet", (PyObject *)&MethodDescriptorNopGet_Type);
+    if (PyModule_Add(m, "MethodDescriptorNopGet", (PyObject *)&MethodDescriptorNopGet_Type) < 0) {
+        return NULL;
+    }
 
     MethodDescriptor2_Type.tp_base = &MethodDescriptorBase_Type;
     if (PyType_Ready(&MethodDescriptor2_Type) < 0)
         return NULL;
     Py_INCREF(&MethodDescriptor2_Type);
-    PyModule_AddObject(m, "MethodDescriptor2", (PyObject *)&MethodDescriptor2_Type);
+    if (PyModule_Add(m, "MethodDescriptor2", (PyObject *)&MethodDescriptor2_Type) < 0) {
+        return NULL;
+    }
 
     if (PyType_Ready(&GenericAlias_Type) < 0)
         return NULL;
     Py_INCREF(&GenericAlias_Type);
-    PyModule_AddObject(m, "GenericAlias", (PyObject *)&GenericAlias_Type);
+    if (PyModule_Add(m, "GenericAlias", (PyObject *)&GenericAlias_Type) < 0) {
+        return NULL;
+    }
 
     if (PyType_Ready(&Generic_Type) < 0)
         return NULL;
     Py_INCREF(&Generic_Type);
-    PyModule_AddObject(m, "Generic", (PyObject *)&Generic_Type);
+    if (PyModule_Add(m, "Generic", (PyObject *)&Generic_Type) < 0) {
+        return NULL;
+    }
 
     if (PyType_Ready(&MethInstance_Type) < 0)
         return NULL;
     Py_INCREF(&MethInstance_Type);
-    PyModule_AddObject(m, "MethInstance", (PyObject *)&MethInstance_Type);
+    if (PyModule_Add(m, "MethInstance", (PyObject *)&MethInstance_Type) < 0) {
+        return NULL;
+    }
 
     if (PyType_Ready(&MethClass_Type) < 0)
         return NULL;
     Py_INCREF(&MethClass_Type);
-    PyModule_AddObject(m, "MethClass", (PyObject *)&MethClass_Type);
+    if (PyModule_Add(m, "MethClass", (PyObject *)&MethClass_Type) < 0) {
+        return NULL;
+    }
 
     if (PyType_Ready(&MethStatic_Type) < 0)
         return NULL;
     Py_INCREF(&MethStatic_Type);
-    PyModule_AddObject(m, "MethStatic", (PyObject *)&MethStatic_Type);
+    if (PyModule_Add(m, "MethStatic", (PyObject *)&MethStatic_Type) < 0) {
+        return NULL;
+    }
 
     PyRecursingInfinitelyError_Type.tp_base = (PyTypeObject *)PyExc_Exception;
     if (PyType_Ready(&PyRecursingInfinitelyError_Type) < 0) {
         return NULL;
     }
     Py_INCREF(&PyRecursingInfinitelyError_Type);
-    PyModule_AddObject(m, "RecursingInfinitelyError",
-                       (PyObject *)&PyRecursingInfinitelyError_Type);
+    if (PyModule_Add(m, "RecursingInfinitelyError",
+                       (PyObject *)&PyRecursingInfinitelyError_Type) < 0) {
+        return NULL;
+    }
 
     PyModule_AddObject(m, "CHAR_MAX", PyLong_FromLong(CHAR_MAX));
     PyModule_AddObject(m, "CHAR_MIN", PyLong_FromLong(CHAR_MIN));

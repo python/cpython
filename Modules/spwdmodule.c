@@ -220,11 +220,16 @@ PyInit_spwd(void)
         return NULL;
     if (!initialized) {
         if (PyStructSequence_InitType2(&StructSpwdType,
-                                       &struct_spwd_type_desc) < 0)
+                                       &struct_spwd_type_desc) < 0) {
+            Py_DECREF(m);
             return NULL;
+        }
     }
     Py_INCREF((PyObject *) &StructSpwdType);
-    PyModule_AddObject(m, "struct_spwd", (PyObject *) &StructSpwdType);
+    if (PyModule_Add(m, "struct_spwd", (PyObject *) &StructSpwdType) < 0) {
+        Py_DECREF(m);
+        return NULL;
+    }
     initialized = 1;
     return m;
 }

@@ -2442,7 +2442,9 @@ PyInit_select(void)
     get_select_state(m)->close = PyUnicode_InternFromString("close");
 
     Py_INCREF(PyExc_OSError);
-    PyModule_AddObject(m, "error", PyExc_OSError);
+    if (PyModule_Add(m, "error", PyExc_OSError) < 0) {
+        goto error;
+    }
 
 #ifdef PIPE_BUF
 #ifdef HAVE_BROKEN_PIPE_BUF
@@ -2505,11 +2507,11 @@ PyInit_select(void)
 
 #ifdef HAVE_EPOLL
     PyObject *pyEpoll_Type = PyType_FromSpec(&pyEpoll_Type_spec);
-    if (pyEpoll_Type == NULL)
-        return NULL;
     get_select_state(m)->pyEpoll_Type = (PyTypeObject *)pyEpoll_Type;
-    Py_INCREF(pyEpoll_Type);
-    PyModule_AddObject(m, "epoll", (PyObject *)get_select_state(m)->pyEpoll_Type);
+    Py_XINCREF(pyEpoll_Type);
+    if (PyModule_Add(m, "epoll", pyEpoll_Type) < 0) {
+        goto error;
+    }
 
     PyModule_AddIntMacro(m, EPOLLIN);
     PyModule_AddIntMacro(m, EPOLLOUT);
@@ -2552,18 +2554,18 @@ PyInit_select(void)
 
 #ifdef HAVE_KQUEUE
     PyObject *kqueue_event_Type = PyType_FromSpec(&kqueue_event_Type_spec);
-    if (kqueue_event_Type == NULL)
-        return NULL;
     get_select_state(m)->kqueue_event_Type = (PyTypeObject *)kqueue_event_Type;
-    Py_INCREF(get_select_state(m)->kqueue_event_Type);
-    PyModule_AddObject(m, "kevent", kqueue_event_Type);
+    Py_XINCREF(kqueue_event_Type);
+    if (PyModule_Add(m, "kevent", kqueue_event_Type) < 0) {
+        goto error;
+    }
 
     PyObject *kqueue_queue_Type = PyType_FromSpec(&kqueue_queue_Type_spec);
-    if (kqueue_queue_Type == NULL)
-        return NULL;
     get_select_state(m)->kqueue_queue_Type = (PyTypeObject *)kqueue_queue_Type;
-    Py_INCREF(get_select_state(m)->kqueue_queue_Type);
-    PyModule_AddObject(m, "kqueue", kqueue_queue_Type);
+    Py_XINCREF(kqueue_queue_Type);
+    if (PyModule_Add(m, "kqueue", kqueue_queue_Type) < 0) {
+        goto error;
+    }
 
     /* event filters */
     PyModule_AddIntConstant(m, "KQ_FILTER_READ", EVFILT_READ);
@@ -2641,4 +2643,8 @@ PyInit_select(void)
 
 #endif /* HAVE_KQUEUE */
     return m;
+
+error:
+    Py_DECREF(m);
+    return NULL;
 }

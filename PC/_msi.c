@@ -1316,8 +1316,10 @@ PyInit__msi(void)
     PyModule_AddIntMacro(m, PID_SECURITY);
 
     MSIError = PyErr_NewException ("_msi.MSIError", NULL, NULL);
-    if (!MSIError)
+    Py_XINCREF(m);
+    if (PyModule_Add(m, "MSIError", MSIError) < 0) {
+        Py_DECREF(m);
         return NULL;
-    PyModule_AddObject(m, "MSIError", MSIError);
+    }
     return m;
 }
