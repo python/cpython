@@ -525,29 +525,43 @@ If a descriptor is found for ``a.x``, then it is invoked with:
 The logic for a dotted lookup is in :meth:`object.__getattribute__`.  Here is
 a pure Python equivalent::
 
+    null = object()
+
     def object_getattribute(obj, name):
         "Emulate PyObject_GenericGetAttr() in Objects/object.c"
-        null = object()
         objtype = type(obj)
-        value = getattr(objtype, name, null)
-        if value is not null and hasattr(value, '__get__'):
-            if hasattr(value, '__set__') or hasattr(value, '__delete__'):
-                return value.__get__(obj, objtype)  # data descriptor
-        try:
-            return vars(obj)[name]                  # instance variable
-        except (KeyError, TypeError):
-            pass
-        if hasattr(value, '__get__'):
-            return value.__get__(obj, objtype)      # non-data descriptor
-        if value is not null:
-            return value                            # class variable
-        # Emulate slot_tp_getattr_hook() in Objects/typeobject.c
-        if hasattr(objtype, '__getattr__'):
-            return objtype.__getattr__(obj, name)   # __getattr__ hook
+        cls_var = getattr(objtype, name, null)
+        descr_get = getattr(type(cls_var), '__get__', null)
+        if descr_get is not null:
+            if (hasattr(type(cls_var), '__set__')
+                or hasattr(type(cls_var), '__delete__')):
+                return descr_get(cls_var, obj, objtype)     # data descriptor
+        if hasattr(obj, '__dict__') and name in vars(obj):
+            return vars(obj)[name]                          # instance variable
+        if descr_get is not null:
+            return descr_get(cls_var, obj, objtype)         # non-data descriptor
+        if cls_var is not null:
+            return cls_var                                  # class variable
         raise AttributeError(name)
 
-The :exc:`TypeError` exception handler is needed because the instance dictionary
-doesn't exist when its class defines :term:`__slots__`.
+Interestingly, attribute lookup doesn't call :meth:`object.__getattribute__`
+directly.  Instead, both the dot operator and the :func:`getattr` function
+perform attribute lookup by way of a helper function::
+
+    def getattr_hook(obj, name):
+        "Emulate slot_tp_getattr_hook() in Objects/typeobject.c"
+        try:
+            return object_getattribute(obj, name)
+        except AttributeError:
+            if not hasattr(type(obj), '__getattr__'):
+                raise
+        return type(obj).__getattr__(obj, name)             # __getattr__
+
+So if :meth:`__getattr__` exists, it is called whenever :meth:`__getattribute__`
+raises :exc:`AttributeError` (either directly or in one of the descriptor calls).
+
+Also, if a user calls :meth:`object.__getattribute__` directly, the
+:meth:`__getattr__` hook is bypassed entirely.
 
 
 Invocation from a class
@@ -689,6 +703,7 @@ it can be updated::
     >>> Movie('Star Wars').director = 'J.J. Abrams'
     >>> Movie('Star Wars').director
     'J.J. Abrams'
+
 
 Pure Python Equivalents
 ^^^^^^^^^^^^^^^^^^^^^^^
