@@ -2134,6 +2134,15 @@ _PyTrash_end(PyThreadState *tstate)
 }
 
 
+int
+_PyTrash_cond(void *op_raw, void *dealloc)
+{
+    PyObject *op = _PyObject_CAST(op_raw);
+    PyTypeObject *tp = Py_TYPE(op);
+    return tp->tp_dealloc == (destructor)dealloc;
+}
+
+
 void _Py_NO_RETURN
 _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
                        const char *file, int line, const char *function)
