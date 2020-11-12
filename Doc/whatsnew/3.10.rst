@@ -263,6 +263,11 @@ retrieve the functions set by :func:`threading.settrace` and
 :func:`threading.setprofile` respectively.
 (Contributed by Mario Corchero in :issue:`42251`.)
 
+Add :data:`threading.__excepthook__` to allow retrieving the original value
+of :func:`threading.excepthook` in case it is set to a broken or a different
+value.
+(Contributed by Mario Corchero in :issue:`42308`.)
+
 traceback
 ---------
 
