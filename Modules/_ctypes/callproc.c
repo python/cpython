@@ -254,8 +254,6 @@ set_last_error(PyObject *self, PyObject *args)
     return set_error_internal(self, args, 1);
 }
 
-PyObject *ComError;
-
 static WCHAR *FormatError(DWORD code)
 {
     WCHAR *lpMsgBuf;
@@ -1471,14 +1469,14 @@ static PyObject *py_dyld_shared_cache_contains_path(PyObject *self, PyObject *ar
 
          if (!PyArg_ParseTuple(args, "O", &name))
              return NULL;
-    
+
          if (name == Py_None)
              Py_RETURN_FALSE;
-    
+
          if (PyUnicode_FSConverter(name, &name2) == 0)
              return NULL;
          name_str = PyBytes_AS_STRING(name2);
-    
+
          r = _dyld_shared_cache_contains_path(name_str);
          Py_DECREF(name2);
 
