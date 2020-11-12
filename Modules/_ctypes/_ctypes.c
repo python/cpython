@@ -1358,7 +1358,6 @@ static PyGetSetDef CharArray_getsets[] = {
     { NULL, NULL }
 };
 
-#ifdef CTYPES_UNICODE
 static PyObject *
 WCharArray_get_value(CDataObject *self, void *Py_UNUSED(ignored))
 {
@@ -1408,7 +1407,6 @@ static PyGetSetDef WCharArray_getsets[] = {
       "string value"},
     { NULL, NULL }
 };
-#endif
 
 /*
   The next three functions copied from Python's typeobject.c.
@@ -1615,11 +1613,10 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (itemdict->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
         if (-1 == add_getset(result, CharArray_getsets))
             goto error;
-#ifdef CTYPES_UNICODE
-    } else if (itemdict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
+    }
+    else if (itemdict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
         if (-1 == add_getset(result, WCharArray_getsets))
             goto error;
-#endif
     }
 
     return (PyObject *)result;
@@ -4654,7 +4651,6 @@ Array_subscript(PyObject *myself, PyObject *item)
             PyMem_Free(dest);
             return np;
         }
-#ifdef CTYPES_UNICODE
         if (itemdict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
             wchar_t *ptr = (wchar_t *)self->b_ptr;
             wchar_t *dest;
@@ -4681,7 +4677,6 @@ Array_subscript(PyObject *myself, PyObject *item)
             PyMem_Free(dest);
             return np;
         }
-#endif
 
         np = PyList_New(slicelen);
         if (np == NULL)
@@ -5350,7 +5345,6 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             PyMem_Free(dest);
             return np;
         }
-#ifdef CTYPES_UNICODE
         if (itemdict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
             wchar_t *ptr = *(wchar_t **)self->b_ptr;
             wchar_t *dest;
@@ -5371,7 +5365,6 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             PyMem_Free(dest);
             return np;
         }
-#endif
 
         np = PyList_New(len);
         if (np == NULL)
@@ -5653,7 +5646,7 @@ cast(void *ptr, PyObject *src, PyObject *ctype)
     return NULL;
 }
 
-#ifdef CTYPES_UNICODE
+
 static PyObject *
 wstring_at(const wchar_t *ptr, int size)
 {
@@ -5665,7 +5658,6 @@ wstring_at(const wchar_t *ptr, int size)
         ssize = wcslen(ptr);
     return PyUnicode_FromWideChar(ptr, ssize);
 }
-#endif
 
 
 static struct PyModuleDef _ctypesmodule = {
@@ -5796,9 +5788,7 @@ _ctypes_add_objects(PyObject *mod)
     MOD_ADD("_memset_addr", PyLong_FromVoidPtr(memset));
     MOD_ADD("_string_at_addr", PyLong_FromVoidPtr(string_at));
     MOD_ADD("_cast_addr", PyLong_FromVoidPtr(cast));
-#ifdef CTYPES_UNICODE
     MOD_ADD("_wstring_at_addr", PyLong_FromVoidPtr(wstring_at));
-#endif
 
 /* If RTLD_LOCAL is not defined (Windows!), set it to zero. */
 #if !HAVE_DECL_RTLD_LOCAL
