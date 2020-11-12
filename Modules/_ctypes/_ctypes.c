@@ -5838,7 +5838,7 @@ PyInit__ctypes(void)
 #ifdef MS_WIN32
     if (create_comerror() < 0)
         goto error;
-    if PyModule_Add(m, "COMError", ComError) < 0) {
+    if (PyModule_Add(m, "COMError", ComError) < 0) {
         goto error;
     }
 
