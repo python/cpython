@@ -7973,13 +7973,13 @@ PyInit__pickle(void)
 
     /* Add types */
     if (PyModule_AddType(m, &Pickler_Type) < 0) {
-        return NULL;
+        goto error;
     }
     if (PyModule_AddType(m, &Unpickler_Type) < 0) {
-        return NULL;
+        goto error;
     }
     if (PyModule_AddType(m, &PyPickleBuffer_Type) < 0) {
-        return NULL;
+        goto error;
     }
 
     st = _Pickle_GetState(m);
@@ -7988,22 +7988,26 @@ PyInit__pickle(void)
     st->PickleError = PyErr_NewException("_pickle.PickleError", NULL, NULL);
     Py_XINCREF(st->PickleError);
     if (PyModule_Add(m, "PickleError", st->PickleError) < 0)
-        return NULL;
+        goto error;
 
     st->PicklingError = \
         PyErr_NewException("_pickle.PicklingError", st->PickleError, NULL);
     Py_XINCREF(st->PicklingError);
     if (PyModule_Add(m, "PicklingError", st->PicklingError) < 0)
-        return NULL;
+        goto error;
 
     st->UnpicklingError = \
         PyErr_NewException("_pickle.UnpicklingError", st->PickleError, NULL);
     Py_XINCREF(st->UnpicklingError);
     if (PyModule_Add(m, "UnpicklingError", st->UnpicklingError) < 0)
-        return NULL;
+        goto error;
 
     if (_Pickle_InitState(st) < 0)
-        return NULL;
+        goto error;
 
     return m;
+
+error:
+    Py_DECREF(m);
+    return NULL;
 }

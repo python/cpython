@@ -1642,7 +1642,7 @@ PyInit__csv(void)
     /* Add version to the module. */
     if (PyModule_AddStringConstant(module, "__version__",
                                    MODULE_VERSION) == -1)
-        return NULL;
+        goto error;
 
     /* Set the field limit */
     get_csv_state(module)->field_limit = 128 * 1024;
@@ -1652,24 +1652,28 @@ PyInit__csv(void)
     get_csv_state(module)->dialects = PyDict_New();
     Py_XINCREF(get_csv_state(module)->dialects);
     if (PyModule_Add(module, "_dialects", get_csv_state(module)->dialects))
-        return NULL;
+        goto error;
 
     /* Add quote styles into dictionary */
     for (style = quote_styles; style->name; style++) {
         if (PyModule_AddIntConstant(module, style->name,
                                     style->style) == -1)
-            return NULL;
+            goto error;
     }
 
     if (PyModule_AddType(module, &Dialect_Type)) {
-        return NULL;
+        goto error;
     }
 
     /* Add the CSV exception object to the module. */
     get_csv_state(module)->error_obj = PyErr_NewException("_csv.Error", NULL, NULL);
     Py_XINCREF(get_csv_state(module)->error_obj);
     if (PyModule_Add(module, "Error", get_csv_state(module)->error_obj) < 0) {
-        return NULL;
+        goto error;
     }
     return module;
+
+error:
+    Py_DECREF(module);
+    return NULL;
 }

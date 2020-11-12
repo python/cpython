@@ -15487,10 +15487,15 @@ posixmodule_exec(PyObject *m)
         PyObject *unicode;
         if (trace->probe && !trace->probe()) continue;
         unicode = PyUnicode_DecodeASCII(trace->label, strlen(trace->label), NULL);
-        if (!unicode)
+        if (!unicode) {
+            Py_DECREF(list);
             return -1;
-        if (PyList_Append(list, unicode))
+        }
+        if (PyList_Append(list, unicode)) {
+            Py_DECREF(unicode);
+            Py_DECREF(list);
             return -1;
+        }
         Py_DECREF(unicode);
     }
 

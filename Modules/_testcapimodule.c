@@ -7130,147 +7130,120 @@ PyInit__testcapi(void)
     if (m == NULL)
         return NULL;
 
+#define ADD(name, value) if (PyModule_Add(m, name, value) < 0) goto error;
+
     Py_SET_TYPE(&_HashInheritanceTester_Type, &PyType_Type);
 
     Py_SET_TYPE(&test_structmembersType, &PyType_Type);
     Py_INCREF(&test_structmembersType);
     /* don't use a name starting with "test", since we don't want
        test_capi to automatically call this */
-    if (PyModule_Add(m, "_test_structmembersType",
-                     (PyObject *)&test_structmembersType) < 0) {
-        return NULL;
-    }
+    ADD("_test_structmembersType", (PyObject *)&test_structmembersType);
     if (PyType_Ready(&matmulType) < 0)
-        return NULL;
+        goto error;
     Py_INCREF(&matmulType);
-    if (PyModule_Add(m, "matmulType", (PyObject *)&matmulType) < 0) {
-        return NULL;
-    }
+    ADD("matmulType", (PyObject *)&matmulType);
     if (PyType_Ready(&ipowType) < 0) {
-        return NULL;
+        goto error;
     }
     Py_INCREF(&ipowType);
-    if (PyModule_Add(m, "ipowType", (PyObject *)&ipowType) < 0) {
-        return NULL;
-    }
+    ADD("ipowType", (PyObject *)&ipowType);
 
     if (PyType_Ready(&awaitType) < 0)
-        return NULL;
+        goto error;
     Py_INCREF(&awaitType);
-    if (PyModule_Add(m, "awaitType", (PyObject *)&awaitType) < 0) {
-        return NULL;
-    }
+    ADD("awaitType", (PyObject *)&awaitType);
 
     MyList_Type.tp_base = &PyList_Type;
     if (PyType_Ready(&MyList_Type) < 0)
-        return NULL;
+        goto error;
     Py_INCREF(&MyList_Type);
-    if (PyModule_Add(m, "MyList", (PyObject *)&MyList_Type) < 0) {
-        return NULL;
-    }
+    ADD("MyList", (PyObject *)&MyList_Type);
 
     if (PyType_Ready(&MethodDescriptorBase_Type) < 0)
-        return NULL;
+        goto error;
     Py_INCREF(&MethodDescriptorBase_Type);
-    if (PyModule_Add(m, "MethodDescriptorBase", (PyObject *)&MethodDescriptorBase_Type) < 0) {
-        return NULL;
-    }
+    ADD("MethodDescriptorBase", (PyObject *)&MethodDescriptorBase_Type);
 
     MethodDescriptorDerived_Type.tp_base = &MethodDescriptorBase_Type;
     if (PyType_Ready(&MethodDescriptorDerived_Type) < 0)
-        return NULL;
+        goto error;
     Py_INCREF(&MethodDescriptorDerived_Type);
-    if (PyModule_Add(m, "MethodDescriptorDerived", (PyObject *)&MethodDescriptorDerived_Type) < 0) {
-        return NULL;
-    }
+    ADD("MethodDescriptorDerived", (PyObject *)&MethodDescriptorDerived_Type);
 
     MethodDescriptorNopGet_Type.tp_base = &MethodDescriptorBase_Type;
     if (PyType_Ready(&MethodDescriptorNopGet_Type) < 0)
-        return NULL;
+        goto error;
     Py_INCREF(&MethodDescriptorNopGet_Type);
-    if (PyModule_Add(m, "MethodDescriptorNopGet", (PyObject *)&MethodDescriptorNopGet_Type) < 0) {
-        return NULL;
-    }
+    ADD("MethodDescriptorNopGet", (PyObject *)&MethodDescriptorNopGet_Type);
 
     MethodDescriptor2_Type.tp_base = &MethodDescriptorBase_Type;
     if (PyType_Ready(&MethodDescriptor2_Type) < 0)
-        return NULL;
+        goto error;
     Py_INCREF(&MethodDescriptor2_Type);
-    if (PyModule_Add(m, "MethodDescriptor2", (PyObject *)&MethodDescriptor2_Type) < 0) {
-        return NULL;
-    }
+    ADD("MethodDescriptor2", (PyObject *)&MethodDescriptor2_Type);
 
     if (PyType_Ready(&GenericAlias_Type) < 0)
-        return NULL;
+        goto error;
     Py_INCREF(&GenericAlias_Type);
-    if (PyModule_Add(m, "GenericAlias", (PyObject *)&GenericAlias_Type) < 0) {
-        return NULL;
-    }
+    ADD("GenericAlias", (PyObject *)&GenericAlias_Type);
 
     if (PyType_Ready(&Generic_Type) < 0)
-        return NULL;
+        goto error;
     Py_INCREF(&Generic_Type);
-    if (PyModule_Add(m, "Generic", (PyObject *)&Generic_Type) < 0) {
-        return NULL;
-    }
+    ADD("Generic", (PyObject *)&Generic_Type);
 
     if (PyType_Ready(&MethInstance_Type) < 0)
-        return NULL;
+        goto error;
     Py_INCREF(&MethInstance_Type);
-    if (PyModule_Add(m, "MethInstance", (PyObject *)&MethInstance_Type) < 0) {
-        return NULL;
-    }
+    ADD("MethInstance", (PyObject *)&MethInstance_Type);
 
     if (PyType_Ready(&MethClass_Type) < 0)
-        return NULL;
+        goto error;
     Py_INCREF(&MethClass_Type);
-    if (PyModule_Add(m, "MethClass", (PyObject *)&MethClass_Type) < 0) {
-        return NULL;
-    }
+    ADD("MethClass", (PyObject *)&MethClass_Type);
 
     if (PyType_Ready(&MethStatic_Type) < 0)
-        return NULL;
+        goto error;
     Py_INCREF(&MethStatic_Type);
-    if (PyModule_Add(m, "MethStatic", (PyObject *)&MethStatic_Type) < 0) {
-        return NULL;
-    }
+    ADD("MethStatic", (PyObject *)&MethStatic_Type);
 
     PyRecursingInfinitelyError_Type.tp_base = (PyTypeObject *)PyExc_Exception;
     if (PyType_Ready(&PyRecursingInfinitelyError_Type) < 0) {
-        return NULL;
+        goto error;
     }
     Py_INCREF(&PyRecursingInfinitelyError_Type);
-    if (PyModule_Add(m, "RecursingInfinitelyError",
-                       (PyObject *)&PyRecursingInfinitelyError_Type) < 0) {
-        return NULL;
-    }
+    ADD("RecursingInfinitelyError",
+        (PyObject *)&PyRecursingInfinitelyError_Type);
 
-    PyModule_AddObject(m, "CHAR_MAX", PyLong_FromLong(CHAR_MAX));
-    PyModule_AddObject(m, "CHAR_MIN", PyLong_FromLong(CHAR_MIN));
-    PyModule_AddObject(m, "UCHAR_MAX", PyLong_FromLong(UCHAR_MAX));
-    PyModule_AddObject(m, "SHRT_MAX", PyLong_FromLong(SHRT_MAX));
-    PyModule_AddObject(m, "SHRT_MIN", PyLong_FromLong(SHRT_MIN));
-    PyModule_AddObject(m, "USHRT_MAX", PyLong_FromLong(USHRT_MAX));
-    PyModule_AddObject(m, "INT_MAX",  PyLong_FromLong(INT_MAX));
-    PyModule_AddObject(m, "INT_MIN",  PyLong_FromLong(INT_MIN));
-    PyModule_AddObject(m, "UINT_MAX",  PyLong_FromUnsignedLong(UINT_MAX));
-    PyModule_AddObject(m, "LONG_MAX", PyLong_FromLong(LONG_MAX));
-    PyModule_AddObject(m, "LONG_MIN", PyLong_FromLong(LONG_MIN));
-    PyModule_AddObject(m, "ULONG_MAX", PyLong_FromUnsignedLong(ULONG_MAX));
-    PyModule_AddObject(m, "FLT_MAX", PyFloat_FromDouble(FLT_MAX));
-    PyModule_AddObject(m, "FLT_MIN", PyFloat_FromDouble(FLT_MIN));
-    PyModule_AddObject(m, "DBL_MAX", PyFloat_FromDouble(DBL_MAX));
-    PyModule_AddObject(m, "DBL_MIN", PyFloat_FromDouble(DBL_MIN));
-    PyModule_AddObject(m, "LLONG_MAX", PyLong_FromLongLong(LLONG_MAX));
-    PyModule_AddObject(m, "LLONG_MIN", PyLong_FromLongLong(LLONG_MIN));
-    PyModule_AddObject(m, "ULLONG_MAX", PyLong_FromUnsignedLongLong(ULLONG_MAX));
-    PyModule_AddObject(m, "PY_SSIZE_T_MAX", PyLong_FromSsize_t(PY_SSIZE_T_MAX));
-    PyModule_AddObject(m, "PY_SSIZE_T_MIN", PyLong_FromSsize_t(PY_SSIZE_T_MIN));
-    PyModule_AddObject(m, "SIZEOF_TIME_T", PyLong_FromSsize_t(sizeof(time_t)));
+    ADD("CHAR_MAX", PyLong_FromLong(CHAR_MAX));
+    ADD("CHAR_MIN", PyLong_FromLong(CHAR_MIN));
+    ADD("UCHAR_MAX", PyLong_FromLong(UCHAR_MAX));
+    ADD("SHRT_MAX", PyLong_FromLong(SHRT_MAX));
+    ADD("SHRT_MIN", PyLong_FromLong(SHRT_MIN));
+    ADD("USHRT_MAX", PyLong_FromLong(USHRT_MAX));
+    ADD("INT_MAX",  PyLong_FromLong(INT_MAX));
+    ADD("INT_MIN",  PyLong_FromLong(INT_MIN));
+    ADD("UINT_MAX",  PyLong_FromUnsignedLong(UINT_MAX));
+    ADD("LONG_MAX", PyLong_FromLong(LONG_MAX));
+    ADD("LONG_MIN", PyLong_FromLong(LONG_MIN));
+    ADD("ULONG_MAX", PyLong_FromUnsignedLong(ULONG_MAX));
+    ADD("FLT_MAX", PyFloat_FromDouble(FLT_MAX));
+    ADD("FLT_MIN", PyFloat_FromDouble(FLT_MIN));
+    ADD("DBL_MAX", PyFloat_FromDouble(DBL_MAX));
+    ADD("DBL_MIN", PyFloat_FromDouble(DBL_MIN));
+    ADD("LLONG_MAX", PyLong_FromLongLong(LLONG_MAX));
+    ADD("LLONG_MIN", PyLong_FromLongLong(LLONG_MIN));
+    ADD("ULLONG_MAX", PyLong_FromUnsignedLongLong(ULLONG_MAX));
+    ADD("PY_SSIZE_T_MAX", PyLong_FromSsize_t(PY_SSIZE_T_MAX));
+    ADD("PY_SSIZE_T_MIN", PyLong_FromSsize_t(PY_SSIZE_T_MIN));
+    ADD("SIZEOF_TIME_T", PyLong_FromSsize_t(sizeof(time_t)));
     Py_INCREF(&PyInstanceMethod_Type);
-    PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
+    ADD("instancemethod", (PyObject *)&PyInstanceMethod_Type);
 
-    PyModule_AddIntConstant(m, "the_number_three", 3);
+    if (PyModule_AddIntConstant(m, "the_number_three", 3) < 0) {
+        goto error;
+    }
     PyObject *v;
 #ifdef WITH_PYMALLOC
     v = Py_True;
@@ -7278,99 +7251,64 @@ PyInit__testcapi(void)
     v = Py_False;
 #endif
     Py_INCREF(v);
-    PyModule_AddObject(m, "WITH_PYMALLOC", v);
+    ADD("WITH_PYMALLOC", v);
 
     TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
-    Py_INCREF(TestError);
-    PyModule_AddObject(m, "error", TestError);
+    Py_XINCREF(TestError);
+    ADD("error", TestError);
 
-    PyObject *HeapDocCType = PyType_FromSpec(&HeapDocCType_spec);
-    if (HeapDocCType == NULL) {
-        return NULL;
-    }
-    PyModule_AddObject(m, "HeapDocCType", HeapDocCType);
+    ADD("HeapDocCType", PyType_FromSpec(&HeapDocCType_spec));
 
     /* bpo-41832: Add a new type to test PyType_FromSpec()
        now can accept a NULL tp_doc slot. */
-    PyObject *NullTpDocType = PyType_FromSpec(&NullTpDocType_spec);
-    if (NullTpDocType == NULL) {
-        return NULL;
-    }
-    PyModule_AddObject(m, "NullTpDocType", NullTpDocType);
+    ADD("NullTpDocType", PyType_FromSpec(&NullTpDocType_spec));
 
-    PyObject *HeapGcCType = PyType_FromSpec(&HeapGcCType_spec);
-    if (HeapGcCType == NULL) {
-        return NULL;
-    }
-    PyModule_AddObject(m, "HeapGcCType", HeapGcCType);
+    ADD("HeapGcCType", PyType_FromSpec(&HeapGcCType_spec));
 
     PyObject *HeapCType = PyType_FromSpec(&HeapCType_spec);
     if (HeapCType == NULL) {
-        return NULL;
+        goto error;
     }
     PyObject *subclass_bases = PyTuple_Pack(1, HeapCType);
     if (subclass_bases == NULL) {
-        return NULL;
+        Py_DECREF(HeapCType);
+        goto error;
     }
     PyObject *HeapCTypeSubclass = PyType_FromSpecWithBases(&HeapCTypeSubclass_spec, subclass_bases);
-    if (HeapCTypeSubclass == NULL) {
-        return NULL;
-    }
     Py_DECREF(subclass_bases);
-    PyModule_AddObject(m, "HeapCTypeSubclass", HeapCTypeSubclass);
+    ADD("HeapCTypeSubclass", HeapCTypeSubclass);
 
-    PyObject *HeapCTypeWithDict = PyType_FromSpec(&HeapCTypeWithDict_spec);
-    if (HeapCTypeWithDict == NULL) {
-        return NULL;
-    }
-    PyModule_AddObject(m, "HeapCTypeWithDict", HeapCTypeWithDict);
+    ADD("HeapCTypeWithDict", PyType_FromSpec(&HeapCTypeWithDict_spec));
 
-    PyObject *HeapCTypeWithNegativeDict = PyType_FromSpec(&HeapCTypeWithNegativeDict_spec);
-    if (HeapCTypeWithNegativeDict == NULL) {
-        return NULL;
-    }
-    PyModule_AddObject(m, "HeapCTypeWithNegativeDict", HeapCTypeWithNegativeDict);
+    ADD("HeapCTypeWithNegativeDict", PyType_FromSpec(&HeapCTypeWithNegativeDict_spec));
 
-    PyObject *HeapCTypeWithWeakref = PyType_FromSpec(&HeapCTypeWithWeakref_spec);
-    if (HeapCTypeWithWeakref == NULL) {
-        return NULL;
-    }
-    PyModule_AddObject(m, "HeapCTypeWithWeakref", HeapCTypeWithWeakref);
+    ADD("HeapCTypeWithWeakref", PyType_FromSpec(&HeapCTypeWithWeakref_spec));
 
-    PyObject *HeapCTypeWithBuffer = PyType_FromSpec(&HeapCTypeWithBuffer_spec);
-    if (HeapCTypeWithBuffer == NULL) {
-        return NULL;
-    }
-    PyModule_AddObject(m, "HeapCTypeWithBuffer", HeapCTypeWithBuffer);
+    ADD("HeapCTypeWithBuffer", PyType_FromSpec(&HeapCTypeWithBuffer_spec));
 
-    PyObject *HeapCTypeSetattr = PyType_FromSpec(&HeapCTypeSetattr_spec);
-    if (HeapCTypeSetattr == NULL) {
-        return NULL;
-    }
-    PyModule_AddObject(m, "HeapCTypeSetattr", HeapCTypeSetattr);
+    ADD("HeapCTypeSetattr", PyType_FromSpec(&HeapCTypeSetattr_spec));
 
     PyObject *subclass_with_finalizer_bases = PyTuple_Pack(1, HeapCTypeSubclass);
     if (subclass_with_finalizer_bases == NULL) {
-        return NULL;
+        goto error;
     }
     PyObject *HeapCTypeSubclassWithFinalizer = PyType_FromSpecWithBases(
         &HeapCTypeSubclassWithFinalizer_spec, subclass_with_finalizer_bases);
-    if (HeapCTypeSubclassWithFinalizer == NULL) {
-        return NULL;
-    }
     Py_DECREF(subclass_with_finalizer_bases);
-    PyModule_AddObject(m, "HeapCTypeSubclassWithFinalizer", HeapCTypeSubclassWithFinalizer);
+    ADD("HeapCTypeSubclassWithFinalizer", HeapCTypeSubclassWithFinalizer);
 
     if (PyType_Ready(&ContainerNoGC_type) < 0) {
-        return NULL;
+        goto error;
     }
     Py_INCREF(&ContainerNoGC_type);
-    if (PyModule_AddObject(m, "ContainerNoGC",
-                           (PyObject *) &ContainerNoGC_type) < 0)
-        return NULL;
+    ADD("ContainerNoGC", (PyObject *) &ContainerNoGC_type);
 
     PyState_AddModule(m, &_testcapimodule);
     return m;
+
+error:
+    Py_DECREF(m);
+    return NULL;
 }
 
 

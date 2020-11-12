@@ -2017,27 +2017,21 @@ PyInit_gc(void)
 
     if (gcstate->garbage == NULL) {
         gcstate->garbage = PyList_New(0);
-        if (gcstate->garbage == NULL) {
-            return NULL;
-        }
     }
-    Py_INCREF(gcstate->garbage);
+    Py_XINCREF(gcstate->garbage);
     if (PyModule_Add(m, "garbage", gcstate->garbage) < 0) {
-        return NULL;
+        goto error;
     }
 
     if (gcstate->callbacks == NULL) {
         gcstate->callbacks = PyList_New(0);
-        if (gcstate->callbacks == NULL) {
-            return NULL;
-        }
     }
-    Py_INCREF(gcstate->callbacks);
+    Py_XINCREF(gcstate->callbacks);
     if (PyModule_Add(m, "callbacks", gcstate->callbacks) < 0) {
-        return NULL;
+        goto error;
     }
 
-#define ADD_INT(NAME) if (PyModule_AddIntConstant(m, #NAME, NAME) < 0) { return NULL; }
+#define ADD_INT(NAME) if (PyModule_AddIntConstant(m, #NAME, NAME) < 0) { goto error; }
     ADD_INT(DEBUG_STATS);
     ADD_INT(DEBUG_COLLECTABLE);
     ADD_INT(DEBUG_UNCOLLECTABLE);
@@ -2045,6 +2039,10 @@ PyInit_gc(void)
     ADD_INT(DEBUG_LEAK);
 #undef ADD_INT
     return m;
+
+error:
+    Py_DECREF(m);
+    return NULL;
 }
 
 /* Public API to invoke gc.collect() from C */

@@ -564,82 +564,62 @@ static struct PyModuleDef msvcrtmodule = {
     NULL
 };
 
-static void
-insertint(PyObject *d, char *name, int value)
-{
-    PyObject *v = PyLong_FromLong((long) value);
-    if (v == NULL) {
-        /* Don't bother reporting this error */
-        PyErr_Clear();
-    }
-    else {
-        PyDict_SetItemString(d, name, v);
-        Py_DECREF(v);
-    }
-}
-
-static void
-insertptr(PyObject *d, char *name, void *value)
-{
-    PyObject *v = PyLong_FromVoidPtr(value);
-    if (v == NULL) {
-        /* Don't bother reporting this error */
-        PyErr_Clear();
-    }
-    else {
-        PyDict_SetItemString(d, name, v);
-        Py_DECREF(v);
-    }
-}
-
 PyMODINIT_FUNC
 PyInit_msvcrt(void)
 {
-    int st;
-    PyObject *d, *version;
+    PyObject *version;
     PyObject *m = PyModule_Create(&msvcrtmodule);
     if (m == NULL)
         return NULL;
-    d = PyModule_GetDict(m);
+
+#define ADD_INT(name, value) \
+    if (PyModule_AddIntConstant(m, name, value) < 0) { \
+        Py_DECREF(m); \
+        return NULL; \
+    }
+#define ADD_STR(name, value) \
+    if (PyModule_AddStringConstant(m, name, value) < 0) { \
+        Py_DECREF(m); \
+        return NULL; \
+    }
+#define ADD_PTR(name, value) \
+    if (PyModule_Add(m, name, PyLong_FromVoidPtr(value)) < 0) { \
+        Py_DECREF(m); \
+        return NULL; \
+    }
 
     /* constants for the locking() function's mode argument */
-    insertint(d, "LK_LOCK", _LK_LOCK);
-    insertint(d, "LK_NBLCK", _LK_NBLCK);
-    insertint(d, "LK_NBRLCK", _LK_NBRLCK);
-    insertint(d, "LK_RLCK", _LK_RLCK);
-    insertint(d, "LK_UNLCK", _LK_UNLCK);
-    insertint(d, "SEM_FAILCRITICALERRORS", SEM_FAILCRITICALERRORS);
-    insertint(d, "SEM_NOALIGNMENTFAULTEXCEPT", SEM_NOALIGNMENTFAULTEXCEPT);
-    insertint(d, "SEM_NOGPFAULTERRORBOX", SEM_NOGPFAULTERRORBOX);
-    insertint(d, "SEM_NOOPENFILEERRORBOX", SEM_NOOPENFILEERRORBOX);
+    ADD_INT("LK_LOCK", _LK_LOCK);
+    ADD_INT("LK_NBLCK", _LK_NBLCK);
+    ADD_INT("LK_NBRLCK", _LK_NBRLCK);
+    ADD_INT("LK_RLCK", _LK_RLCK);
+    ADD_INT("LK_UNLCK", _LK_UNLCK);
+    ADD_INT("SEM_FAILCRITICALERRORS", SEM_FAILCRITICALERRORS);
+    ADD_INT("SEM_NOALIGNMENTFAULTEXCEPT", SEM_NOALIGNMENTFAULTEXCEPT);
+    ADD_INT("SEM_NOGPFAULTERRORBOX", SEM_NOGPFAULTERRORBOX);
+    ADD_INT("SEM_NOOPENFILEERRORBOX", SEM_NOOPENFILEERRORBOX);
 #ifdef _DEBUG
-    insertint(d, "CRT_WARN", _CRT_WARN);
-    insertint(d, "CRT_ERROR", _CRT_ERROR);
-    insertint(d, "CRT_ASSERT", _CRT_ASSERT);
-    insertint(d, "CRTDBG_MODE_DEBUG", _CRTDBG_MODE_DEBUG);
-    insertint(d, "CRTDBG_MODE_FILE", _CRTDBG_MODE_FILE);
-    insertint(d, "CRTDBG_MODE_WNDW", _CRTDBG_MODE_WNDW);
-    insertint(d, "CRTDBG_REPORT_MODE", _CRTDBG_REPORT_MODE);
-    insertptr(d, "CRTDBG_FILE_STDERR", _CRTDBG_FILE_STDERR);
-    insertptr(d, "CRTDBG_FILE_STDOUT", _CRTDBG_FILE_STDOUT);
-    insertptr(d, "CRTDBG_REPORT_FILE", _CRTDBG_REPORT_FILE);
+    ADD_INT("CRT_WARN", _CRT_WARN);
+    ADD_INT("CRT_ERROR", _CRT_ERROR);
+    ADD_INT("CRT_ASSERT", _CRT_ASSERT);
+    ADD_INT("CRTDBG_MODE_DEBUG", _CRTDBG_MODE_DEBUG);
+    ADD_INT("CRTDBG_MODE_FILE", _CRTDBG_MODE_FILE);
+    ADD_INT("CRTDBG_MODE_WNDW", _CRTDBG_MODE_WNDW);
+    ADD_INT("CRTDBG_REPORT_MODE", _CRTDBG_REPORT_MODE);
+    ADD_PTR("CRTDBG_FILE_STDERR", _CRTDBG_FILE_STDERR);
+    ADD_PTR("CRTDBG_FILE_STDOUT", _CRTDBG_FILE_STDOUT);
+    ADD_PTR("CRTDBG_REPORT_FILE", _CRTDBG_REPORT_FILE);
 #endif
 
     /* constants for the crt versions */
 #ifdef _VC_ASSEMBLY_PUBLICKEYTOKEN
-    st = PyModule_AddStringConstant(m, "VC_ASSEMBLY_PUBLICKEYTOKEN",
-                                    _VC_ASSEMBLY_PUBLICKEYTOKEN);
-    if (st < 0) return NULL;
+    ADD_STR("VC_ASSEMBLY_PUBLICKEYTOKEN", _VC_ASSEMBLY_PUBLICKEYTOKEN);
 #endif
 #ifdef _CRT_ASSEMBLY_VERSION
-    st = PyModule_AddStringConstant(m, "CRT_ASSEMBLY_VERSION",
-                                    _CRT_ASSEMBLY_VERSION);
-    if (st < 0) return NULL;
+    ADD_STR("CRT_ASSEMBLY_VERSION", _CRT_ASSEMBLY_VERSION);
 #endif
 #ifdef __LIBRARIES_ASSEMBLY_NAME_PREFIX
-    st = PyModule_AddStringConstant(m, "LIBRARIES_ASSEMBLY_NAME_PREFIX",
-                                    __LIBRARIES_ASSEMBLY_NAME_PREFIX);
-    if (st < 0) return NULL;
+    ADD_STR("LIBRARIES_ASSEMBLY_NAME_PREFIX", __LIBRARIES_ASSEMBLY_NAME_PREFIX);
 #endif
 
     /* constants for the 2010 crt versions */
@@ -648,11 +628,11 @@ PyInit_msvcrt(void)
                                                   _VC_CRT_MINOR_VERSION,
                                                   _VC_CRT_BUILD_VERSION,
                                                   _VC_CRT_RBUILD_VERSION);
-    st = PyModule_Add(m, "CRT_ASSEMBLY_VERSION", version);
-    if (st < 0) return NULL;
+    if (PyModule_Add(m, "CRT_ASSEMBLY_VERSION", version) < 0) {
+        Py_DECREF(m);
+        return NULL;
+    }
 #endif
-    /* make compiler warning quiet if st is unused */
-    (void)st;
 
     return m;
 }

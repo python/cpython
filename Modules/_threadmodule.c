@@ -1562,7 +1562,7 @@ static struct PyModuleDef threadmodule = {
 PyMODINIT_FUNC
 PyInit__thread(void)
 {
-    PyObject *m, *d, *v;
+    PyObject *m, *v;
     double time_max;
     double timeout_max;
     PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -1596,38 +1596,46 @@ PyInit__thread(void)
 
     v = PyFloat_FromDouble(timeout_max);
     if (PyModule_Add(m, "TIMEOUT_MAX", v) < 0)
-        return NULL;
+        goto error;
 
     /* Add a symbolic constant */
-    d = PyModule_GetDict(m);
     ThreadError = PyExc_RuntimeError;
     Py_INCREF(ThreadError);
 
-    PyDict_SetItemString(d, "error", ThreadError);
+    Py_INCREF(ThreadError);
+    if (PyModule_Add(m, "error", ThreadError) < 0) {
+        goto error;
+    }
     Locktype.tp_doc = lock_doc;
     Py_INCREF(&Locktype);
-    PyDict_SetItemString(d, "LockType", (PyObject *)&Locktype);
+    if (PyModule_Add(m, "LockType", (PyObject *)&Locktype) < 0) {
+        goto error;
+    }
 
     Py_INCREF(&RLocktype);
     if (PyModule_Add(m, "RLock", (PyObject *)&RLocktype) < 0)
-        return NULL;
+        goto error;
 
     Py_INCREF(&localtype);
     if (PyModule_Add(m, "_local", (PyObject *)&localtype) < 0)
-        return NULL;
+        goto error;
 
     Py_INCREF(&ExceptHookArgsType);
     if (PyModule_Add(m, "_ExceptHookArgs",
                      (PyObject *)&ExceptHookArgsType) < 0)
-        return NULL;
+        goto error;
 
     interp->num_threads = 0;
 
     str_dict = PyUnicode_InternFromString("__dict__");
     if (str_dict == NULL)
-        return NULL;
+        goto error;
 
     /* Initialize the C thread library */
     PyThread_init_thread();
     return m;
+
+error:
+    Py_DECREF(m);
+    return NULL;
 }

@@ -1273,50 +1273,57 @@ PyInit__msi(void)
     if (m == NULL)
         return NULL;
 
-    PyModule_AddIntConstant(m, "MSIDBOPEN_CREATEDIRECT", (long)(SIZE_T)MSIDBOPEN_CREATEDIRECT);
-    PyModule_AddIntConstant(m, "MSIDBOPEN_CREATE", (long)(SIZE_T)MSIDBOPEN_CREATE);
-    PyModule_AddIntConstant(m, "MSIDBOPEN_DIRECT", (long)(SIZE_T)MSIDBOPEN_DIRECT);
-    PyModule_AddIntConstant(m, "MSIDBOPEN_READONLY", (long)(SIZE_T)MSIDBOPEN_READONLY);
-    PyModule_AddIntConstant(m, "MSIDBOPEN_TRANSACT", (long)(SIZE_T)MSIDBOPEN_TRANSACT);
-    PyModule_AddIntConstant(m, "MSIDBOPEN_PATCHFILE", (long)(SIZE_T)MSIDBOPEN_PATCHFILE);
+#define ADD_INT(name, value) \
+    if (PyModule_AddIntConstant(m, name, value) < 0) { \
+        Py_DECREF(m); \
+        return NULL; \
+    }
+#define ADD_INT_MACRO(c) ADD_INT(#c, c)
 
-    PyModule_AddIntMacro(m, MSICOLINFO_NAMES);
-    PyModule_AddIntMacro(m, MSICOLINFO_TYPES);
+    ADD_INT("MSIDBOPEN_CREATEDIRECT", (long)(SIZE_T)MSIDBOPEN_CREATEDIRECT);
+    ADD_INT("MSIDBOPEN_CREATE", (long)(SIZE_T)MSIDBOPEN_CREATE);
+    ADD_INT("MSIDBOPEN_DIRECT", (long)(SIZE_T)MSIDBOPEN_DIRECT);
+    ADD_INT("MSIDBOPEN_READONLY", (long)(SIZE_T)MSIDBOPEN_READONLY);
+    ADD_INT("MSIDBOPEN_TRANSACT", (long)(SIZE_T)MSIDBOPEN_TRANSACT);
+    ADD_INT("MSIDBOPEN_PATCHFILE", (long)(SIZE_T)MSIDBOPEN_PATCHFILE);
 
-    PyModule_AddIntMacro(m, MSIMODIFY_SEEK);
-    PyModule_AddIntMacro(m, MSIMODIFY_REFRESH);
-    PyModule_AddIntMacro(m, MSIMODIFY_INSERT);
-    PyModule_AddIntMacro(m, MSIMODIFY_UPDATE);
-    PyModule_AddIntMacro(m, MSIMODIFY_ASSIGN);
-    PyModule_AddIntMacro(m, MSIMODIFY_REPLACE);
-    PyModule_AddIntMacro(m, MSIMODIFY_MERGE);
-    PyModule_AddIntMacro(m, MSIMODIFY_DELETE);
-    PyModule_AddIntMacro(m, MSIMODIFY_INSERT_TEMPORARY);
-    PyModule_AddIntMacro(m, MSIMODIFY_VALIDATE);
-    PyModule_AddIntMacro(m, MSIMODIFY_VALIDATE_NEW);
-    PyModule_AddIntMacro(m, MSIMODIFY_VALIDATE_FIELD);
-    PyModule_AddIntMacro(m, MSIMODIFY_VALIDATE_DELETE);
+    ADD_INT_MACRO(MSICOLINFO_NAMES);
+    ADD_INT_MACRO(MSICOLINFO_TYPES);
 
-    PyModule_AddIntMacro(m, PID_CODEPAGE);
-    PyModule_AddIntMacro(m, PID_TITLE);
-    PyModule_AddIntMacro(m, PID_SUBJECT);
-    PyModule_AddIntMacro(m, PID_AUTHOR);
-    PyModule_AddIntMacro(m, PID_KEYWORDS);
-    PyModule_AddIntMacro(m, PID_COMMENTS);
-    PyModule_AddIntMacro(m, PID_TEMPLATE);
-    PyModule_AddIntMacro(m, PID_LASTAUTHOR);
-    PyModule_AddIntMacro(m, PID_REVNUMBER);
-    PyModule_AddIntMacro(m, PID_LASTPRINTED);
-    PyModule_AddIntMacro(m, PID_CREATE_DTM);
-    PyModule_AddIntMacro(m, PID_LASTSAVE_DTM);
-    PyModule_AddIntMacro(m, PID_PAGECOUNT);
-    PyModule_AddIntMacro(m, PID_WORDCOUNT);
-    PyModule_AddIntMacro(m, PID_CHARCOUNT);
-    PyModule_AddIntMacro(m, PID_APPNAME);
-    PyModule_AddIntMacro(m, PID_SECURITY);
+    ADD_INT_MACRO(MSIMODIFY_SEEK);
+    ADD_INT_MACRO(MSIMODIFY_REFRESH);
+    ADD_INT_MACRO(MSIMODIFY_INSERT);
+    ADD_INT_MACRO(MSIMODIFY_UPDATE);
+    ADD_INT_MACRO(MSIMODIFY_ASSIGN);
+    ADD_INT_MACRO(MSIMODIFY_REPLACE);
+    ADD_INT_MACRO(MSIMODIFY_MERGE);
+    ADD_INT_MACRO(MSIMODIFY_DELETE);
+    ADD_INT_MACRO(MSIMODIFY_INSERT_TEMPORARY);
+    ADD_INT_MACRO(MSIMODIFY_VALIDATE);
+    ADD_INT_MACRO(MSIMODIFY_VALIDATE_NEW);
+    ADD_INT_MACRO(MSIMODIFY_VALIDATE_FIELD);
+    ADD_INT_MACRO(MSIMODIFY_VALIDATE_DELETE);
+
+    ADD_INT_MACRO(PID_CODEPAGE);
+    ADD_INT_MACRO(PID_TITLE);
+    ADD_INT_MACRO(PID_SUBJECT);
+    ADD_INT_MACRO(PID_AUTHOR);
+    ADD_INT_MACRO(PID_KEYWORDS);
+    ADD_INT_MACRO(PID_COMMENTS);
+    ADD_INT_MACRO(PID_TEMPLATE);
+    ADD_INT_MACRO(PID_LASTAUTHOR);
+    ADD_INT_MACRO(PID_REVNUMBER);
+    ADD_INT_MACRO(PID_LASTPRINTED);
+    ADD_INT_MACRO(PID_CREATE_DTM);
+    ADD_INT_MACRO(PID_LASTSAVE_DTM);
+    ADD_INT_MACRO(PID_PAGECOUNT);
+    ADD_INT_MACRO(PID_WORDCOUNT);
+    ADD_INT_MACRO(PID_CHARCOUNT);
+    ADD_INT_MACRO(PID_APPNAME);
+    ADD_INT_MACRO(PID_SECURITY);
 
     MSIError = PyErr_NewException ("_msi.MSIError", NULL, NULL);
-    Py_XINCREF(m);
+    Py_XINCREF(MSIError);
     if (PyModule_Add(m, "MSIError", MSIError) < 0) {
         Py_DECREF(m);
         return NULL;
