@@ -6024,6 +6024,20 @@ do {                                                                      \
 }
 
 static int
+sslmodule_init_socketapi(PyObject *module)
+{
+    PySocketModule_APIObject *socket_api;
+
+    /* Load _socket module and its C API */
+    socket_api = PySocketModule_ImportModuleAndAPI();
+    if (socket_api == NULL)
+        return -1;
+    PySocketModule = *socket_api;
+
+    return 0;
+}
+
+static int
 sslmodule_init_errorcodes(PyObject *module)
 {
     struct py_ssl_error_code *errcode;
@@ -6414,7 +6428,6 @@ PyMODINIT_FUNC
 PyInit__ssl(void)
 {
     PyObject *m;
-    PySocketModule_APIObject *socket_api;
 
     m = PyModule_Create(&_sslmodule);
     if (m == NULL)
@@ -6424,18 +6437,14 @@ PyInit__ssl(void)
         return NULL;
     if (sslmodule_init_exceptions(m) != 0)
         return NULL;
+    if (sslmodule_init_socketapi(m) != 0)
+        return NULL;
     if (sslmodule_init_errorcodes(m) != 0)
         return NULL;
     if (sslmodule_init_constants(m) != 0)
         return NULL;
     if (sslmodule_init_versioninfo(m) != 0)
         return NULL;
-
-    /* Load _socket module and its C API */
-    socket_api = PySocketModule_ImportModuleAndAPI();
-    if (!socket_api)
-        return NULL;
-    PySocketModule = *socket_api;
 
 #ifndef OPENSSL_VERSION_1_1
     /* Load all algorithms and initialize cpuid */
