@@ -125,9 +125,13 @@ PyObject *_ctypes_ptrtype_cache = NULL;
 
 static PyTypeObject Simple_Type;
 
-/* a callable object used for unpickling */
+/* a callable object used for unpickling:
+   strong reference to _ctypes._unpickle() function */
 static PyObject *_unpickle;
 
+#ifdef MS_WIN32
+PyObject *ComError;  // Borrowed reference to: &PyComError_Type
+#endif
 
 
 /****************************************************************/
@@ -1354,7 +1358,6 @@ static PyGetSetDef CharArray_getsets[] = {
     { NULL, NULL }
 };
 
-#ifdef CTYPES_UNICODE
 static PyObject *
 WCharArray_get_value(CDataObject *self, void *Py_UNUSED(ignored))
 {
@@ -1404,7 +1407,6 @@ static PyGetSetDef WCharArray_getsets[] = {
       "string value"},
     { NULL, NULL }
 };
-#endif
 
 /*
   The next three functions copied from Python's typeobject.c.
@@ -1611,11 +1613,10 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (itemdict->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
         if (-1 == add_getset(result, CharArray_getsets))
             goto error;
-#ifdef CTYPES_UNICODE
-    } else if (itemdict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
+    }
+    else if (itemdict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
         if (-1 == add_getset(result, WCharArray_getsets))
             goto error;
-#endif
     }
 
     return (PyObject *)result;
@@ -4307,7 +4308,7 @@ static PyNumberMethods PyCFuncPtr_as_number = {
 
 PyTypeObject PyCFuncPtr_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes.PyCFuncPtr",
+    "_ctypes.CFuncPtr",
     sizeof(PyCFuncPtrObject),                           /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)PyCFuncPtr_dealloc,             /* tp_dealloc */
@@ -4650,7 +4651,6 @@ Array_subscript(PyObject *myself, PyObject *item)
             PyMem_Free(dest);
             return np;
         }
-#ifdef CTYPES_UNICODE
         if (itemdict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
             wchar_t *ptr = (wchar_t *)self->b_ptr;
             wchar_t *dest;
@@ -4677,7 +4677,6 @@ Array_subscript(PyObject *myself, PyObject *item)
             PyMem_Free(dest);
             return np;
         }
-#endif
 
         np = PyList_New(slicelen);
         if (np == NULL)
@@ -5346,7 +5345,6 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             PyMem_Free(dest);
             return np;
         }
-#ifdef CTYPES_UNICODE
         if (itemdict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
             wchar_t *ptr = *(wchar_t **)self->b_ptr;
             wchar_t *dest;
@@ -5367,7 +5365,6 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             PyMem_Free(dest);
             return np;
         }
-#endif
 
         np = PyList_New(len);
         if (np == NULL)
@@ -5555,20 +5552,7 @@ static PyTypeObject PyComError_Type = {
     0,                          /* tp_alloc */
     0,                          /* tp_new */
 };
-
-
-static int
-create_comerror(void)
-{
-    PyComError_Type.tp_base = (PyTypeObject*)PyExc_Exception;
-    if (PyType_Ready(&PyComError_Type) < 0)
-        return -1;
-    Py_INCREF(&PyComError_Type);
-    ComError = (PyObject*)&PyComError_Type;
-    return 0;
-}
-
-#endif
+#endif  // MS_WIN32
 
 static PyObject *
 string_at(const char *ptr, int size)
@@ -5662,7 +5646,7 @@ cast(void *ptr, PyObject *src, PyObject *ctype)
     return NULL;
 }
 
-#ifdef CTYPES_UNICODE
+
 static PyObject *
 wstring_at(const wchar_t *ptr, int size)
 {
@@ -5674,133 +5658,74 @@ wstring_at(const wchar_t *ptr, int size)
         ssize = wcslen(ptr);
     return PyUnicode_FromWideChar(ptr, ssize);
 }
-#endif
 
 
 static struct PyModuleDef _ctypesmodule = {
     PyModuleDef_HEAD_INIT,
-    "_ctypes",
-    module_docs,
-    -1,
-    _ctypes_module_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "_ctypes",
+    .m_doc = module_docs,
+    .m_size = -1,
+    .m_methods = _ctypes_module_methods,
 };
 
-PyMODINIT_FUNC
-PyInit__ctypes(void)
+
+static int
+_ctypes_add_types(PyObject *mod)
 {
-    PyObject *m;
+#define TYPE_READY(TYPE) \
+    if (PyType_Ready(TYPE) < 0) { \
+        return -1; \
+    }
 
-/* Note:
-   ob_type is the metatype (the 'type'), defaults to PyType_Type,
-   tp_base is the base type, defaults to 'object' aka PyBaseObject_Type.
-*/
-    m = PyModule_Create(&_ctypesmodule);
-    if (!m)
-        return NULL;
+#define TYPE_READY_BASE(TYPE_EXPR, TP_BASE) \
+    do { \
+        PyTypeObject *type = (TYPE_EXPR); \
+        type->tp_base = (TP_BASE); \
+        TYPE_READY(type); \
+    } while (0)
 
-    _ctypes_ptrtype_cache = PyDict_New();
-    if (_ctypes_ptrtype_cache == NULL)
-        return NULL;
+#define MOD_ADD_TYPE(TYPE_EXPR, TP_TYPE, TP_BASE) \
+    do { \
+        PyTypeObject *type = (TYPE_EXPR); \
+        Py_SET_TYPE(type, TP_TYPE); \
+        type->tp_base = TP_BASE; \
+        if (PyModule_AddType(mod, type) < 0) { \
+            return -1; \
+        } \
+    } while (0)
 
-    PyModule_AddObject(m, "_pointer_type_cache", (PyObject *)_ctypes_ptrtype_cache);
-
-    _unpickle = PyObject_GetAttrString(m, "_unpickle");
-    if (_unpickle == NULL)
-        return NULL;
-
-    if (PyType_Ready(&PyCArg_Type) < 0)
-        return NULL;
-
-    if (PyType_Ready(&PyCThunk_Type) < 0)
-        return NULL;
-
+    /* Note:
+       ob_type is the metatype (the 'type'), defaults to PyType_Type,
+       tp_base is the base type, defaults to 'object' aka PyBaseObject_Type.
+    */
+    TYPE_READY(&PyCArg_Type);
+    TYPE_READY(&PyCThunk_Type);
+    TYPE_READY(&PyCData_Type);
     /* StgDict is derived from PyDict_Type */
-    PyCStgDict_Type.tp_base = &PyDict_Type;
-    if (PyType_Ready(&PyCStgDict_Type) < 0)
-        return NULL;
+    TYPE_READY_BASE(&PyCStgDict_Type, &PyDict_Type);
 
     /*************************************************
      *
      * Metaclasses
      */
-
-    PyCStructType_Type.tp_base = &PyType_Type;
-    if (PyType_Ready(&PyCStructType_Type) < 0)
-        return NULL;
-
-    UnionType_Type.tp_base = &PyType_Type;
-    if (PyType_Ready(&UnionType_Type) < 0)
-        return NULL;
-
-    PyCPointerType_Type.tp_base = &PyType_Type;
-    if (PyType_Ready(&PyCPointerType_Type) < 0)
-        return NULL;
-
-    PyCArrayType_Type.tp_base = &PyType_Type;
-    if (PyType_Ready(&PyCArrayType_Type) < 0)
-        return NULL;
-
-    PyCSimpleType_Type.tp_base = &PyType_Type;
-    if (PyType_Ready(&PyCSimpleType_Type) < 0)
-        return NULL;
-
-    PyCFuncPtrType_Type.tp_base = &PyType_Type;
-    if (PyType_Ready(&PyCFuncPtrType_Type) < 0)
-        return NULL;
+    TYPE_READY_BASE(&PyCStructType_Type, &PyType_Type);
+    TYPE_READY_BASE(&UnionType_Type, &PyType_Type);
+    TYPE_READY_BASE(&PyCPointerType_Type, &PyType_Type);
+    TYPE_READY_BASE(&PyCArrayType_Type, &PyType_Type);
+    TYPE_READY_BASE(&PyCSimpleType_Type, &PyType_Type);
+    TYPE_READY_BASE(&PyCFuncPtrType_Type, &PyType_Type);
 
     /*************************************************
      *
      * Classes using a custom metaclass
      */
 
-    if (PyType_Ready(&PyCData_Type) < 0)
-        return NULL;
-
-    Py_SET_TYPE(&Struct_Type, &PyCStructType_Type);
-    Struct_Type.tp_base = &PyCData_Type;
-    if (PyType_Ready(&Struct_Type) < 0)
-        return NULL;
-    Py_INCREF(&Struct_Type);
-    PyModule_AddObject(m, "Structure", (PyObject *)&Struct_Type);
-
-    Py_SET_TYPE(&Union_Type, &UnionType_Type);
-    Union_Type.tp_base = &PyCData_Type;
-    if (PyType_Ready(&Union_Type) < 0)
-        return NULL;
-    Py_INCREF(&Union_Type);
-    PyModule_AddObject(m, "Union", (PyObject *)&Union_Type);
-
-    Py_SET_TYPE(&PyCPointer_Type, &PyCPointerType_Type);
-    PyCPointer_Type.tp_base = &PyCData_Type;
-    if (PyType_Ready(&PyCPointer_Type) < 0)
-        return NULL;
-    Py_INCREF(&PyCPointer_Type);
-    PyModule_AddObject(m, "_Pointer", (PyObject *)&PyCPointer_Type);
-
-    Py_SET_TYPE(&PyCArray_Type, &PyCArrayType_Type);
-    PyCArray_Type.tp_base = &PyCData_Type;
-    if (PyType_Ready(&PyCArray_Type) < 0)
-        return NULL;
-    Py_INCREF(&PyCArray_Type);
-    PyModule_AddObject(m, "Array", (PyObject *)&PyCArray_Type);
-
-    Py_SET_TYPE(&Simple_Type, &PyCSimpleType_Type);
-    Simple_Type.tp_base = &PyCData_Type;
-    if (PyType_Ready(&Simple_Type) < 0)
-        return NULL;
-    Py_INCREF(&Simple_Type);
-    PyModule_AddObject(m, "_SimpleCData", (PyObject *)&Simple_Type);
-
-    Py_SET_TYPE(&PyCFuncPtr_Type, &PyCFuncPtrType_Type);
-    PyCFuncPtr_Type.tp_base = &PyCData_Type;
-    if (PyType_Ready(&PyCFuncPtr_Type) < 0)
-        return NULL;
-    Py_INCREF(&PyCFuncPtr_Type);
-    PyModule_AddObject(m, "CFuncPtr", (PyObject *)&PyCFuncPtr_Type);
+    MOD_ADD_TYPE(&Struct_Type, &PyCStructType_Type, &PyCData_Type);
+    MOD_ADD_TYPE(&Union_Type, &UnionType_Type, &PyCData_Type);
+    MOD_ADD_TYPE(&PyCPointer_Type, &PyCPointerType_Type, &PyCData_Type);
+    MOD_ADD_TYPE(&PyCArray_Type, &PyCArrayType_Type, &PyCData_Type);
+    MOD_ADD_TYPE(&Simple_Type, &PyCSimpleType_Type, &PyCData_Type);
+    MOD_ADD_TYPE(&PyCFuncPtr_Type, &PyCFuncPtrType_Type, &PyCData_Type);
 
     /*************************************************
      *
@@ -5808,8 +5733,7 @@ PyInit__ctypes(void)
      */
 
     /* PyCField_Type is derived from PyBaseObject_Type */
-    if (PyType_Ready(&PyCField_Type) < 0)
-        return NULL;
+    TYPE_READY(&PyCField_Type);
 
     /*************************************************
      *
@@ -5817,56 +5741,118 @@ PyInit__ctypes(void)
      */
 
     DictRemover_Type.tp_new = PyType_GenericNew;
-    if (PyType_Ready(&DictRemover_Type) < 0)
-        return NULL;
-
-    if (PyType_Ready(&StructParam_Type) < 0) {
-        return NULL;
-    }
+    TYPE_READY(&DictRemover_Type);
+    TYPE_READY(&StructParam_Type);
 
 #ifdef MS_WIN32
-    if (create_comerror() < 0)
-        return NULL;
-    PyModule_AddObject(m, "COMError", ComError);
-
-    PyModule_AddObject(m, "FUNCFLAG_HRESULT", PyLong_FromLong(FUNCFLAG_HRESULT));
-    PyModule_AddObject(m, "FUNCFLAG_STDCALL", PyLong_FromLong(FUNCFLAG_STDCALL));
+    TYPE_READY_BASE(&PyComError_Type, PyExc_Exception);
 #endif
-    PyModule_AddObject(m, "FUNCFLAG_CDECL", PyLong_FromLong(FUNCFLAG_CDECL));
-    PyModule_AddObject(m, "FUNCFLAG_USE_ERRNO", PyLong_FromLong(FUNCFLAG_USE_ERRNO));
-    PyModule_AddObject(m, "FUNCFLAG_USE_LASTERROR", PyLong_FromLong(FUNCFLAG_USE_LASTERROR));
-    PyModule_AddObject(m, "FUNCFLAG_PYTHONAPI", PyLong_FromLong(FUNCFLAG_PYTHONAPI));
-    PyModule_AddStringConstant(m, "__version__", "1.1.0");
 
-    PyModule_AddObject(m, "_memmove_addr", PyLong_FromVoidPtr(memmove));
-    PyModule_AddObject(m, "_memset_addr", PyLong_FromVoidPtr(memset));
-    PyModule_AddObject(m, "_string_at_addr", PyLong_FromVoidPtr(string_at));
-    PyModule_AddObject(m, "_cast_addr", PyLong_FromVoidPtr(cast));
-#ifdef CTYPES_UNICODE
-    PyModule_AddObject(m, "_wstring_at_addr", PyLong_FromVoidPtr(wstring_at));
+#undef TYPE_READY
+#undef TYPE_READY_BASE
+#undef MOD_ADD_TYPE
+    return 0;
+}
+
+
+static int
+_ctypes_add_objects(PyObject *mod)
+{
+#define MOD_ADD(name, expr) \
+    do { \
+        PyObject *obj = (expr); \
+        if (obj == NULL) { \
+            return -1; \
+        } \
+        if (PyModule_AddObjectRef(mod, name, obj) < 0) { \
+            Py_DECREF(obj); \
+            return -1; \
+        } \
+        Py_DECREF(obj); \
+    } while (0)
+
+    MOD_ADD("_pointer_type_cache", Py_NewRef(_ctypes_ptrtype_cache));
+
+#ifdef MS_WIN32
+    MOD_ADD("COMError", Py_NewRef(ComError));
+    MOD_ADD("FUNCFLAG_HRESULT", PyLong_FromLong(FUNCFLAG_HRESULT));
+    MOD_ADD("FUNCFLAG_STDCALL", PyLong_FromLong(FUNCFLAG_STDCALL));
 #endif
+    MOD_ADD("FUNCFLAG_CDECL", PyLong_FromLong(FUNCFLAG_CDECL));
+    MOD_ADD("FUNCFLAG_USE_ERRNO", PyLong_FromLong(FUNCFLAG_USE_ERRNO));
+    MOD_ADD("FUNCFLAG_USE_LASTERROR", PyLong_FromLong(FUNCFLAG_USE_LASTERROR));
+    MOD_ADD("FUNCFLAG_PYTHONAPI", PyLong_FromLong(FUNCFLAG_PYTHONAPI));
+    MOD_ADD("__version__", PyUnicode_FromString("1.1.0"));
+
+    MOD_ADD("_memmove_addr", PyLong_FromVoidPtr(memmove));
+    MOD_ADD("_memset_addr", PyLong_FromVoidPtr(memset));
+    MOD_ADD("_string_at_addr", PyLong_FromVoidPtr(string_at));
+    MOD_ADD("_cast_addr", PyLong_FromVoidPtr(cast));
+    MOD_ADD("_wstring_at_addr", PyLong_FromVoidPtr(wstring_at));
 
 /* If RTLD_LOCAL is not defined (Windows!), set it to zero. */
 #if !HAVE_DECL_RTLD_LOCAL
-#define RTLD_LOCAL 0
+#  define RTLD_LOCAL 0
 #endif
 
 /* If RTLD_GLOBAL is not defined (cygwin), set it to the same value as
-   RTLD_LOCAL.
-*/
+   RTLD_LOCAL. */
 #if !HAVE_DECL_RTLD_GLOBAL
-#define RTLD_GLOBAL RTLD_LOCAL
+#  define RTLD_GLOBAL RTLD_LOCAL
 #endif
+    MOD_ADD("RTLD_LOCAL", PyLong_FromLong(RTLD_LOCAL));
+    MOD_ADD("RTLD_GLOBAL", PyLong_FromLong(RTLD_GLOBAL));
+    MOD_ADD("ArgumentError", Py_NewRef(PyExc_ArgError));
+    return 0;
+#undef MOD_ADD
+}
 
-    PyModule_AddObject(m, "RTLD_LOCAL", PyLong_FromLong(RTLD_LOCAL));
-    PyModule_AddObject(m, "RTLD_GLOBAL", PyLong_FromLong(RTLD_GLOBAL));
+
+static int
+_ctypes_mod_exec(PyObject *mod)
+{
+    _unpickle = PyObject_GetAttrString(mod, "_unpickle");
+    if (_unpickle == NULL) {
+        return -1;
+    }
+
+    _ctypes_ptrtype_cache = PyDict_New();
+    if (_ctypes_ptrtype_cache == NULL) {
+        return -1;
+    }
 
     PyExc_ArgError = PyErr_NewException("ctypes.ArgumentError", NULL, NULL);
-    if (PyExc_ArgError) {
-        Py_INCREF(PyExc_ArgError);
-        PyModule_AddObject(m, "ArgumentError", PyExc_ArgError);
+    if (!PyExc_ArgError) {
+        return -1;
     }
-    return m;
+
+    if (_ctypes_add_types(mod) < 0) {
+        return -1;
+    }
+#ifdef MS_WIN32
+    ComError = (PyObject*)&PyComError_Type;
+#endif
+
+    if (_ctypes_add_objects(mod) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+
+PyMODINIT_FUNC
+PyInit__ctypes(void)
+{
+    PyObject *mod = PyModule_Create(&_ctypesmodule);
+    if (!mod) {
+        return NULL;
+    }
+
+    if (_ctypes_mod_exec(mod) < 0) {
+        Py_DECREF(mod);
+        return NULL;
+    }
+    return mod;
 }
 
 /*
