@@ -249,36 +249,22 @@ explain_incompatible_block_stack(int64_t to_stack)
 static int *
 marklines(PyCodeObject *code, int len)
 {
+    PyCodeAddressRange bounds;
+    _PyCode_InitAddressRange(code, &bounds);
+    assert (bounds.ar_end == 0);
+
     int *linestarts = PyMem_New(int, len);
     if (linestarts == NULL) {
         return NULL;
     }
-    Py_ssize_t size = PyBytes_GET_SIZE(code->co_lnotab) / 2;
-    unsigned char *p = (unsigned char*)PyBytes_AS_STRING(code->co_lnotab);
-    int line = code->co_firstlineno;
-    int addr = 0;
-    int index = 0;
-    while (--size >= 0) {
-        addr += *p++;
-        if (index*2 < addr) {
-            linestarts[index++] = line;
-        }
-        while (index*2 < addr) {
-            linestarts[index++] = -1;
-            if (index >= len) {
-                break;
-            }
-        }
-        line += (signed char)*p;
-        p++;
+    for (int i = 0; i < len; i++) {
+        linestarts[i] = -1;
     }
-    if (index < len) {
-        linestarts[index++] = line;
+
+    while (PyLineTable_NextAddressRange(&bounds)) {
+        assert(bounds.ar_start/2 < len);
+        linestarts[bounds.ar_start/2] = bounds.ar_line;
     }
-    while (index < len) {
-        linestarts[index++] = -1;
-    }
-    assert(index == len);
     return linestarts;
 }
 
@@ -925,7 +911,7 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
     }
 
     f->f_lasti = -1;
-    f->f_lineno = code->co_firstlineno;
+    f->f_lineno = 0;
     f->f_iblock = 0;
     f->f_state = FRAME_CREATED;
     f->f_gen = NULL;

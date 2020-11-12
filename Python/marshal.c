@@ -524,7 +524,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_filename, p);
         w_object(co->co_name, p);
         w_long(co->co_firstlineno, p);
-        w_object(co->co_lnotab, p);
+        w_object(co->co_linetable, p);
     }
     else if (PyObject_CheckBuffer(v)) {
         /* Write unknown bytes-like objects as a bytes object */
@@ -1312,7 +1312,7 @@ r_object(RFILE *p)
             PyObject *filename = NULL;
             PyObject *name = NULL;
             int firstlineno;
-            PyObject *lnotab = NULL;
+            PyObject *linetable = NULL;
 
             idx = r_ref_reserve(flag, p);
             if (idx < 0)
@@ -1367,8 +1367,8 @@ r_object(RFILE *p)
             firstlineno = (int)r_long(p);
             if (firstlineno == -1 && PyErr_Occurred())
                 break;
-            lnotab = r_object(p);
-            if (lnotab == NULL)
+            linetable = r_object(p);
+            if (linetable == NULL)
                 goto code_error;
 
             if (PySys_Audit("code.__new__", "OOOiiiiii",
@@ -1382,7 +1382,7 @@ r_object(RFILE *p)
                             nlocals, stacksize, flags,
                             code, consts, names, varnames,
                             freevars, cellvars, filename, name,
-                            firstlineno, lnotab);
+                            firstlineno, linetable);
             v = r_ref_insert(v, idx, flag, p);
 
           code_error:
@@ -1394,7 +1394,7 @@ r_object(RFILE *p)
             Py_XDECREF(cellvars);
             Py_XDECREF(filename);
             Py_XDECREF(name);
-            Py_XDECREF(lnotab);
+            Py_XDECREF(linetable);
         }
         retval = v;
         break;
