@@ -587,7 +587,6 @@ SSLError_str(PyOSErrorObject *self)
 }
 
 static PyType_Slot sslerror_type_slots[] = {
-    {Py_tp_base, NULL},  /* Filled out in module init as it's not a constant */
     {Py_tp_doc, (void*)SSLError_doc},
     {Py_tp_str, SSLError_str},
     {0, 0},
@@ -5944,6 +5943,85 @@ sslmodule_init_types(PyObject *module)
     return 0;
 }
 
+static int
+sslmodule_init_exceptions(PyObject *module)
+{
+    PyObject *bases = NULL;
+
+#define add_exception(exc, name, doc, base)                               \
+do {                                                                      \
+    (exc) = PyErr_NewExceptionWithDoc("ssl." name, (doc), (base), NULL);  \
+    if ((exc) == NULL) goto error;                                        \
+    if (PyModule_AddObjectRef(module, name, exc) < 0) goto error;         \
+} while(0)
+
+    bases = PyTuple_Pack(1, PyExc_OSError);
+    if (bases == NULL) {
+        goto error;
+    }
+    PySSLErrorObject = PyType_FromSpecWithBases(&sslerror_type_spec, bases);
+    Py_CLEAR(bases);
+    if (PySSLErrorObject == NULL) {
+        goto error;
+    }
+    if (PyModule_AddObjectRef(module, "SSLError", PySSLErrorObject) < 0) {
+        goto error;
+    }
+
+    /* ssl.CertificateError used to be a subclass of ValueError */
+    bases = PyTuple_Pack(2, PySSLErrorObject, PyExc_ValueError);
+    if (bases == NULL) {
+        goto error;
+    }
+    add_exception(
+        PySSLCertVerificationErrorObject,
+        "SSLCertVerificationError",
+        SSLCertVerificationError_doc,
+        bases
+    );
+    Py_CLEAR(bases);
+
+    add_exception(
+        PySSLZeroReturnErrorObject,
+        "SSLZeroReturnError",
+        SSLZeroReturnError_doc,
+        PySSLErrorObject
+    );
+
+    add_exception(
+        PySSLWantWriteErrorObject,
+        "SSLWantWriteError",
+        SSLWantWriteError_doc,
+        PySSLErrorObject
+    );
+
+    add_exception(
+        PySSLWantReadErrorObject,
+        "SSLWantReadError",
+        SSLWantReadError_doc,
+        PySSLErrorObject
+    );
+
+    add_exception(
+        PySSLSyscallErrorObject,
+        "SSLSyscallError",
+        SSLSyscallError_doc,
+        PySSLErrorObject
+    );
+
+    add_exception(
+        PySSLEOFErrorObject,
+        "SSLEOFError",
+        SSLEOFError_doc,
+        PySSLErrorObject
+    );
+#undef add_exception
+
+    return 0;
+  error:
+    Py_XDECREF(bases);
+    return -1;
+}
 
 PyDoc_STRVAR(module_doc,
 "Implementation module for SSL socket operations.  See the socket module\n\
@@ -5983,7 +6061,7 @@ parse_openssl_version(unsigned long libver,
 PyMODINIT_FUNC
 PyInit__ssl(void)
 {
-    PyObject *m, *d, *r, *bases;
+    PyObject *m, *r;
     unsigned long libver;
     unsigned int major, minor, fix, patch, status;
     PySocketModule_APIObject *socket_api;
@@ -5993,9 +6071,10 @@ PyInit__ssl(void)
     m = PyModule_Create(&_sslmodule);
     if (m == NULL)
         return NULL;
-    d = PyModule_GetDict(m);
 
     if (sslmodule_init_types(m) != 0)
+        return NULL;
+    if (sslmodule_init_exceptions(m) != 0)
         return NULL;
 
     /* Load _socket module and its C API */
@@ -6021,52 +6100,6 @@ PyInit__ssl(void)
     /* OpenSSL 1.1.0 builtin thread support is enabled */
     _ssl_locks_count++;
 #endif
-
-    /* Add symbols to module dict */
-    sslerror_type_slots[0].pfunc = PyExc_OSError;
-    PySSLErrorObject = PyType_FromSpec(&sslerror_type_spec);
-    if (PySSLErrorObject == NULL)
-        return NULL;
-
-    /* ssl.CertificateError used to be a subclass of ValueError */
-    bases = Py_BuildValue("OO", PySSLErrorObject, PyExc_ValueError);
-    if (bases == NULL)
-        return NULL;
-    PySSLCertVerificationErrorObject = PyErr_NewExceptionWithDoc(
-        "ssl.SSLCertVerificationError", SSLCertVerificationError_doc,
-        bases, NULL);
-    Py_DECREF(bases);
-    PySSLZeroReturnErrorObject = PyErr_NewExceptionWithDoc(
-        "ssl.SSLZeroReturnError", SSLZeroReturnError_doc,
-        PySSLErrorObject, NULL);
-    PySSLWantReadErrorObject = PyErr_NewExceptionWithDoc(
-        "ssl.SSLWantReadError", SSLWantReadError_doc,
-        PySSLErrorObject, NULL);
-    PySSLWantWriteErrorObject = PyErr_NewExceptionWithDoc(
-        "ssl.SSLWantWriteError", SSLWantWriteError_doc,
-        PySSLErrorObject, NULL);
-    PySSLSyscallErrorObject = PyErr_NewExceptionWithDoc(
-        "ssl.SSLSyscallError", SSLSyscallError_doc,
-        PySSLErrorObject, NULL);
-    PySSLEOFErrorObject = PyErr_NewExceptionWithDoc(
-        "ssl.SSLEOFError", SSLEOFError_doc,
-        PySSLErrorObject, NULL);
-    if (PySSLCertVerificationErrorObject == NULL
-        || PySSLZeroReturnErrorObject == NULL
-        || PySSLWantReadErrorObject == NULL
-        || PySSLWantWriteErrorObject == NULL
-        || PySSLSyscallErrorObject == NULL
-        || PySSLEOFErrorObject == NULL)
-        return NULL;
-    if (PyDict_SetItemString(d, "SSLError", PySSLErrorObject) != 0
-        || PyDict_SetItemString(d, "SSLCertVerificationError",
-                                PySSLCertVerificationErrorObject) != 0
-        || PyDict_SetItemString(d, "SSLZeroReturnError", PySSLZeroReturnErrorObject) != 0
-        || PyDict_SetItemString(d, "SSLWantReadError", PySSLWantReadErrorObject) != 0
-        || PyDict_SetItemString(d, "SSLWantWriteError", PySSLWantWriteErrorObject) != 0
-        || PyDict_SetItemString(d, "SSLSyscallError", PySSLSyscallErrorObject) != 0
-        || PyDict_SetItemString(d, "SSLEOFError", PySSLEOFErrorObject) != 0)
-        return NULL;
 
     PyModule_AddStringConstant(m, "_DEFAULT_CIPHERS",
                                PY_SSL_DEFAULT_CIPHER_STRING);
