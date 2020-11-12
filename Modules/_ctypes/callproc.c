@@ -713,7 +713,6 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
         return 0;
     }
 
-#ifdef CTYPES_UNICODE
     if (PyUnicode_Check(obj)) {
         pa->ffi_type = &ffi_type_pointer;
         pa->value.p = PyUnicode_AsWideCharString(obj, NULL);
@@ -726,7 +725,6 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
         }
         return 0;
     }
-#endif
 
     {
         _Py_IDENTIFIER(_as_parameter_);
