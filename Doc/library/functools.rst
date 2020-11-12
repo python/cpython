@@ -549,12 +549,12 @@ The :mod:`functools` module defines the following functions:
         def neg(cls, arg):
             raise NotImplementedError("Cannot negate a")
 
-        @neg.register
+        @neg.register(int)
         @classmethod
         def _(cls, arg: int):
             return -arg
 
-        @neg.register
+        @neg.register(bool)
         @classmethod
         def _(cls, arg: bool):
             return not arg
