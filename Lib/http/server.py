@@ -1164,9 +1164,8 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                 while select.select([self.rfile], [], [], 0)[0]:
                     if not self.rfile.read(1):
                         break
-                exitcode = os.waitstatus_to_exitcode(sts)
-                if exitcode:
-                    self.log_error(f"CGI script exit code {exitcode}")
+                if sts:
+                    self.log_error("CGI script exit status %#x", sts)
                 return
             # Child
             try:
