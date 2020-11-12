@@ -6407,6 +6407,29 @@ sslmodule_init_constants(PyObject *m)
     return 0;
 }
 
+static int
+sslmodule_legacy(PyObject *module)
+{
+#ifndef OPENSSL_VERSION_1_1
+    /* Load all algorithms and initialize cpuid */
+    OPENSSL_add_all_algorithms_noconf();
+    /* Init OpenSSL */
+    SSL_load_error_strings();
+    SSL_library_init();
+#endif
+
+#ifdef HAVE_OPENSSL_CRYPTO_LOCK
+    /* note that this will start threading if not already started */
+    if (!_setup_ssl_threads()) {
+        return NULL;
+    }
+#elif OPENSSL_VERSION_1_1
+    /* OpenSSL 1.1.0 builtin thread support is enabled */
+    _ssl_locks_count++;
+#endif
+    return 0;
+}
+
 PyDoc_STRVAR(module_doc,
 "Implementation module for SSL socket operations.  See the socket module\n\
 for documentation.");
@@ -6445,24 +6468,8 @@ PyInit__ssl(void)
         return NULL;
     if (sslmodule_init_versioninfo(m) != 0)
         return NULL;
-
-#ifndef OPENSSL_VERSION_1_1
-    /* Load all algorithms and initialize cpuid */
-    OPENSSL_add_all_algorithms_noconf();
-    /* Init OpenSSL */
-    SSL_load_error_strings();
-    SSL_library_init();
-#endif
-
-#ifdef HAVE_OPENSSL_CRYPTO_LOCK
-    /* note that this will start threading if not already started */
-    if (!_setup_ssl_threads()) {
+    if (sslmodule_legacy(m) != 0)
         return NULL;
-    }
-#elif OPENSSL_VERSION_1_1
-    /* OpenSSL 1.1.0 builtin thread support is enabled */
-    _ssl_locks_count++;
-#endif
 
     return m;
 }
