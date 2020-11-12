@@ -190,10 +190,14 @@ struct _is {
     struct _ceval_state ceval;
     struct _gc_runtime_state gc;
 
+    // sys.modules dictionary
     PyObject *modules;
     PyObject *modules_by_index;
+    // Dictionary of the sys module
     PyObject *sysdict;
+    // Dictionary of the builtins module
     PyObject *builtins;
+    // importlib module
     PyObject *importlib;
 
     /* Used in Modules/_threadmodule.c. */
@@ -218,7 +222,7 @@ struct _is {
 
     PyObject *builtins_copy;
     PyObject *import_func;
-    /* Initialized to PyEval_EvalFrameDefault(). */
+    // Initialized to _PyEval_EvalFrameDefault().
     _PyFrameEvalFunction eval_frame;
 
     Py_ssize_t co_extra_user_count;
