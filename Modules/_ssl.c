@@ -6023,6 +6023,63 @@ do {                                                                      \
     return -1;
 }
 
+static int
+sslmodule_init_errorcodes(PyObject *module)
+{
+    struct py_ssl_error_code *errcode;
+    struct py_ssl_library_code *libcode;
+
+    /* Mappings for error codes */
+    err_codes_to_names = PyDict_New();
+    if (err_codes_to_names == NULL)
+        return -1;
+    err_names_to_codes = PyDict_New();
+    if (err_names_to_codes == NULL)
+        return -1;
+    lib_codes_to_names = PyDict_New();
+    if (lib_codes_to_names == NULL)
+        return -1;
+
+    errcode = error_codes;
+    while (errcode->mnemonic != NULL) {
+        PyObject *mnemo, *key;
+        mnemo = PyUnicode_FromString(errcode->mnemonic);
+        key = Py_BuildValue("ii", errcode->library, errcode->reason);
+        if (mnemo == NULL || key == NULL)
+            return -1;
+        if (PyDict_SetItem(err_codes_to_names, key, mnemo))
+            return -1;
+        if (PyDict_SetItem(err_names_to_codes, mnemo, key))
+            return -1;
+        Py_DECREF(key);
+        Py_DECREF(mnemo);
+        errcode++;
+    }
+
+    libcode = library_codes;
+    while (libcode->library != NULL) {
+        PyObject *mnemo, *key;
+        key = PyLong_FromLong(libcode->code);
+        mnemo = PyUnicode_FromString(libcode->library);
+        if (key == NULL || mnemo == NULL)
+            return -1;
+        if (PyDict_SetItem(lib_codes_to_names, key, mnemo))
+            return -1;
+        Py_DECREF(key);
+        Py_DECREF(mnemo);
+        libcode++;
+    }
+
+    if (PyModule_AddObject(module, "err_codes_to_names", err_codes_to_names))
+        return -1;
+    if (PyModule_AddObject(module, "err_names_to_codes", err_names_to_codes))
+        return -1;
+    if (PyModule_AddObject(module, "lib_codes_to_names", lib_codes_to_names))
+        return -1;
+
+    return 0;
+}
+
 PyDoc_STRVAR(module_doc,
 "Implementation module for SSL socket operations.  See the socket module\n\
 for documentation.");
@@ -6065,8 +6122,6 @@ PyInit__ssl(void)
     unsigned long libver;
     unsigned int major, minor, fix, patch, status;
     PySocketModule_APIObject *socket_api;
-    struct py_ssl_error_code *errcode;
-    struct py_ssl_library_code *libcode;
 
     m = PyModule_Create(&_sslmodule);
     if (m == NULL)
@@ -6075,6 +6130,8 @@ PyInit__ssl(void)
     if (sslmodule_init_types(m) != 0)
         return NULL;
     if (sslmodule_init_exceptions(m) != 0)
+        return NULL;
+    if (sslmodule_init_errorcodes(m) != 0)
         return NULL;
 
     /* Load _socket module and its C API */
@@ -6356,50 +6413,6 @@ PyInit__ssl(void)
 #else
     addbool(m, "HAS_TLSv1_3", 0);
 #endif
-
-    /* Mappings for error codes */
-    err_codes_to_names = PyDict_New();
-    err_names_to_codes = PyDict_New();
-    if (err_codes_to_names == NULL || err_names_to_codes == NULL)
-        return NULL;
-    errcode = error_codes;
-    while (errcode->mnemonic != NULL) {
-        PyObject *mnemo, *key;
-        mnemo = PyUnicode_FromString(errcode->mnemonic);
-        key = Py_BuildValue("ii", errcode->library, errcode->reason);
-        if (mnemo == NULL || key == NULL)
-            return NULL;
-        if (PyDict_SetItem(err_codes_to_names, key, mnemo))
-            return NULL;
-        if (PyDict_SetItem(err_names_to_codes, mnemo, key))
-            return NULL;
-        Py_DECREF(key);
-        Py_DECREF(mnemo);
-        errcode++;
-    }
-    if (PyModule_AddObject(m, "err_codes_to_names", err_codes_to_names))
-        return NULL;
-    if (PyModule_AddObject(m, "err_names_to_codes", err_names_to_codes))
-        return NULL;
-
-    lib_codes_to_names = PyDict_New();
-    if (lib_codes_to_names == NULL)
-        return NULL;
-    libcode = library_codes;
-    while (libcode->library != NULL) {
-        PyObject *mnemo, *key;
-        key = PyLong_FromLong(libcode->code);
-        mnemo = PyUnicode_FromString(libcode->library);
-        if (key == NULL || mnemo == NULL)
-            return NULL;
-        if (PyDict_SetItem(lib_codes_to_names, key, mnemo))
-            return NULL;
-        Py_DECREF(key);
-        Py_DECREF(mnemo);
-        libcode++;
-    }
-    if (PyModule_AddObject(m, "lib_codes_to_names", lib_codes_to_names))
-        return NULL;
 
     /* OpenSSL version */
     /* SSLeay() gives us the version of the library linked against,
