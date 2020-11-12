@@ -96,6 +96,10 @@ typedef struct basicblock_ {
     /* b_return is true if a RETURN_VALUE opcode is inserted. */
     unsigned b_return : 1;
     unsigned b_reachable : 1;
+    /* Basic block has no fall through (it ends with a return, raise or jump) */
+    unsigned b_nofallthrough : 1;
+    /* Basic block exits scope (it ends with a return or raise) */
+    unsigned b_exit : 1;
     /* depth of stack upon entry of block, computed by stackdepth() */
     int b_startdepth;
     /* instruction offset for block, computed by assemble_jump_offsets() */
@@ -6262,51 +6266,62 @@ error:
 
 static void
 clean_basic_block(basicblock *bb) {
-    /* Remove NOPs and any code following a return or re-raise. */
+    /* Remove NOPs. */
     int dest = 0;
     int prev_lineno = -1;
     for (int src = 0; src < bb->b_iused; src++) {
         int lineno = bb->b_instr[src].i_lineno;
-        switch(bb->b_instr[src].i_opcode) {
-            case RETURN_VALUE:
-            case RERAISE:
-                bb->b_next = NULL;
-                bb->b_instr[dest] = bb->b_instr[src];
-                dest++;
-                goto end;
-            case NOP:
-            {
-                /* Eliminate no-op if it doesn't have a line number, or
-                 * if the next instruction has same line number or no line number, or
-                 * if the previous instruction had the same line number. */
-                if (lineno < 0) {
-                    break;
-                }
-                if (prev_lineno == lineno) {
-                    break;
-                }
-                if (src < bb->b_iused - 1) {
-                    int next_lineno = bb->b_instr[src+1].i_lineno;
-                    if (next_lineno < 0 || next_lineno == lineno) {
-                        bb->b_instr[src+1].i_lineno = lineno;
-                        break;
-                    }
+        if (bb->b_instr[src].i_opcode == NOP) {
+            /* Eliminate no-op if it doesn't have a line number, or
+                * if the next instruction has same line number or no line number, or
+                * if the previous instruction had the same line number. */
+            if (lineno < 0) {
+                continue;
+            }
+            if (prev_lineno == lineno) {
+                continue;
+            }
+            if (src < bb->b_iused - 1) {
+                int next_lineno = bb->b_instr[src+1].i_lineno;
+                if (next_lineno < 0 || next_lineno == lineno) {
+                    bb->b_instr[src+1].i_lineno = lineno;
+                    continue;
                 }
             }
-            /* fallthrough */
-            default:
-                if (dest != src) {
-                    bb->b_instr[dest] = bb->b_instr[src];
-                }
-                dest++;
-                prev_lineno = lineno;
-                break;
         }
+        if (dest != src) {
+            bb->b_instr[dest] = bb->b_instr[src];
+        }
+        dest++;
+        prev_lineno = lineno;
     }
-end:
     assert(dest <= bb->b_iused);
     bb->b_iused = dest;
 }
+
+static void
+normalise_basic_block(basicblock *bb) {
+    /* Remove any code following a return or re-raise,
+     and mark those blocks as exit and/or nofallthrough. */
+    for (int i = 0; i < bb->b_iused; i++) {
+        switch(bb->b_instr[i].i_opcode) {
+            case RETURN_VALUE:
+            case RAISE_VARARGS:
+            case RERAISE:
+                bb->b_iused = i+1;
+                bb->b_exit = 1;
+                bb->b_nofallthrough = 1;
+                return;
+            case JUMP_ABSOLUTE:
+            case JUMP_FORWARD:
+                bb->b_iused = i+1;
+                bb->b_nofallthrough = 1;
+                return;
+        }
+    }
+}
+
+
 
 static int
 mark_reachable(struct assembler *a) {
@@ -6320,7 +6335,7 @@ mark_reachable(struct assembler *a) {
     *sp++ = entry;
     while (sp > stack) {
         basicblock *b = *(--sp);
-        if (b->b_next && b->b_next->b_reachable == 0) {
+        if (b->b_next && !b->b_nofallthrough && b->b_next->b_reachable == 0) {
             b->b_next->b_reachable = 1;
             *sp++ = b->b_next;
         }
@@ -6352,6 +6367,9 @@ mark_reachable(struct assembler *a) {
 static int
 optimize_cfg(struct assembler *a, PyObject *consts)
 {
+    for (int i = 0; i < a->a_nblocks; i++) {
+        normalise_basic_block(a->a_reverse_postorder[i]);
+    }
     for (int i = 0; i < a->a_nblocks; i++) {
         if (optimize_basic_block(a->a_reverse_postorder[i], consts)) {
             return -1;
