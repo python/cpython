@@ -135,58 +135,60 @@ Py_IsInitialized(void)
    having the lock, but you cannot use multiple threads.)
 
 */
-
-static PyStatus
+static int
 init_importlib(PyThreadState *tstate, PyObject *sysmod)
 {
-    PyObject *importlib;
-    PyObject *impmod;
-    PyObject *value;
+    assert(!_PyErr_Occurred(tstate));
+
     PyInterpreterState *interp = tstate->interp;
     int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
 
-    /* Import _importlib through its frozen version, _frozen_importlib. */
-    if (PyImport_ImportFrozenModule("_frozen_importlib") <= 0) {
-        return _PyStatus_ERR("can't import _frozen_importlib");
-    }
-    else if (verbose) {
+    // Import _importlib through its frozen version, _frozen_importlib.
+    if (verbose) {
         PySys_FormatStderr("import _frozen_importlib # frozen\n");
     }
-    importlib = PyImport_AddModule("_frozen_importlib");
+    if (PyImport_ImportFrozenModule("_frozen_importlib") <= 0) {
+        return -1;
+    }
+    PyObject *importlib = PyImport_AddModule("_frozen_importlib"); // borrowed
     if (importlib == NULL) {
-        return _PyStatus_ERR("couldn't get _frozen_importlib from sys.modules");
+        return -1;
     }
-    interp->importlib = importlib;
-    Py_INCREF(interp->importlib);
+    interp->importlib = Py_NewRef(importlib);
 
-    interp->import_func = _PyDict_GetItemStringWithError(interp->builtins, "__import__");
-    if (interp->import_func == NULL)
-        return _PyStatus_ERR("__import__ not found");
-    Py_INCREF(interp->import_func);
-
-    /* Import the _imp module */
-    impmod = PyInit__imp();
-    if (impmod == NULL) {
-        return _PyStatus_ERR("can't import _imp");
+    PyObject *import_func = _PyDict_GetItemStringWithError(interp->builtins,
+                                                           "__import__");
+    if (import_func == NULL) {
+        return -1;
     }
-    else if (verbose) {
+    interp->import_func = Py_NewRef(import_func);
+
+    // Import the _imp module
+    if (verbose) {
         PySys_FormatStderr("import _imp # builtin\n");
     }
-    if (_PyImport_SetModuleString("_imp", impmod) < 0) {
-        return _PyStatus_ERR("can't save _imp to sys.modules");
+    PyObject *imp_mod = PyInit__imp();
+    if (imp_mod == NULL) {
+        return -1;
+    }
+    if (_PyImport_SetModuleString("_imp", imp_mod) < 0) {
+        Py_DECREF(imp_mod);
+        return -1;
     }
 
-    /* Install importlib as the implementation of import */
-    value = PyObject_CallMethod(importlib, "_install", "OO", sysmod, impmod);
+    // Install importlib as the implementation of import
+    PyObject *value = PyObject_CallMethod(importlib, "_install",
+                                          "OO", sysmod, imp_mod);
+    Py_DECREF(imp_mod);
     if (value == NULL) {
-        _PyErr_Print(tstate);
-        return _PyStatus_ERR("importlib install failed");
+        return -1;
     }
     Py_DECREF(value);
-    Py_DECREF(impmod);
 
-    return _PyStatus_OK();
+    assert(!_PyErr_Occurred(tstate));
+    return 0;
 }
+
 
 static PyStatus
 init_importlib_external(PyThreadState *tstate)
@@ -700,6 +702,9 @@ pycore_init_types(PyThreadState *tstate)
         }
     }
 
+    if (_PyWarnings_InitState(tstate) < 0) {
+        return _PyStatus_ERR("can't initialize warnings");
+    }
     return _PyStatus_OK();
 }
 
@@ -748,37 +753,6 @@ error:
 
 
 static PyStatus
-pycore_init_import_warnings(PyThreadState *tstate, PyObject *sysmod)
-{
-    assert(!_PyErr_Occurred(tstate));
-
-    PyStatus status = _PyImportHooks_Init(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    /* Initialize _warnings. */
-    status = _PyWarnings_InitState(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
-    if (config->_install_importlib) {
-        /* This call sets up builtin and frozen import support */
-        status = init_importlib(tstate, sysmod);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-    }
-
-    assert(!_PyErr_Occurred(tstate));
-
-    return _PyStatus_OK();
-}
-
-
-static PyStatus
 pycore_interp_init(PyThreadState *tstate)
 {
     PyStatus status;
@@ -787,6 +761,12 @@ pycore_interp_init(PyThreadState *tstate)
     status = pycore_init_types(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
+    }
+
+    if (_Py_IsMainInterpreter(tstate)) {
+        if (_PyTime_Init() < 0) {
+            return _PyStatus_ERR("can't initialize time");
+        }
     }
 
     status = _PySys_Create(tstate, &sysmod);
@@ -799,7 +779,13 @@ pycore_interp_init(PyThreadState *tstate)
         goto done;
     }
 
-    status = pycore_init_import_warnings(tstate, sysmod);
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->_install_importlib) {
+        /* This call sets up builtin and frozen import support */
+        if (init_importlib(tstate, sysmod) < 0) {
+            return _PyStatus_ERR("failed to initialize importlib");
+        }
+    }
 
 done:
     /* sys.modules['sys'] contains a strong reference to the module */
@@ -1042,12 +1028,6 @@ init_interp_main(PyThreadState *tstate)
     status = _PyConfig_InitPathConfig(&interp->config, 1);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
-    }
-
-    if (is_main_interp) {
-        if (_PyTime_Init() < 0) {
-            return _PyStatus_ERR("can't initialize time");
-        }
     }
 
     if (interpreter_update_config(tstate, 1) < 0) {
