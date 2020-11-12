@@ -6079,6 +6079,8 @@ fold_tuple_on_constants(struct instr *inst,
     return 0;
 }
 
+/* Maximum size of basic block that should be copied in optimizer */
+#define MAX_COPY_SIZE 4
 
 /* Optimization */
 static int
@@ -6220,18 +6222,28 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
 
             case JUMP_ABSOLUTE:
             case JUMP_FORWARD:
+                assert (i == bb->b_iused-1);
                 switch(target->i_opcode) {
                     case JUMP_FORWARD:
                         inst->i_target = target->i_target;
                         break;
                     case JUMP_ABSOLUTE:
-                    case RETURN_VALUE:
-                    case RERAISE:
-                    case RAISE_VARARGS:
                         lineno = inst->i_lineno;
                         *inst = *target;
                         inst->i_lineno = lineno;
                         break;
+                }
+                if (inst->i_target->b_exit && inst->i_target->b_iused <= MAX_COPY_SIZE) {
+                    basicblock *to_copy = inst->i_target;
+                    *inst = to_copy->b_instr[0];
+                    for (i = 1; i < to_copy->b_iused; i++) {
+                        int index = compiler_next_instr(bb);
+                        if (index < 0) {
+                            return -1;
+                        }
+                        bb->b_instr[index] = to_copy->b_instr[i];
+                    }
+                    bb->b_exit = 1;
                 }
                 break;
         }
