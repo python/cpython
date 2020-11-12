@@ -6080,24 +6080,6 @@ sslmodule_init_errorcodes(PyObject *module)
     return 0;
 }
 
-PyDoc_STRVAR(module_doc,
-"Implementation module for SSL socket operations.  See the socket module\n\
-for documentation.");
-
-
-static struct PyModuleDef _sslmodule = {
-    PyModuleDef_HEAD_INIT,
-    "_ssl",
-    module_doc,
-    -1,
-    PySSL_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-
 static void
 parse_openssl_version(unsigned long libver,
                       unsigned int *major, unsigned int *minor,
@@ -6115,49 +6097,43 @@ parse_openssl_version(unsigned long libver,
     *major = libver & 0xFF;
 }
 
-PyMODINIT_FUNC
-PyInit__ssl(void)
+static int
+sslmodule_init_versioninfo(PyObject *m)
 {
-    PyObject *m, *r;
+    PyObject *r;
     unsigned long libver;
     unsigned int major, minor, fix, patch, status;
-    PySocketModule_APIObject *socket_api;
 
-    m = PyModule_Create(&_sslmodule);
-    if (m == NULL)
-        return NULL;
+    /* OpenSSL version */
+    /* SSLeay() gives us the version of the library linked against,
+       which could be different from the headers version.
+    */
+    libver = OpenSSL_version_num();
+    r = PyLong_FromUnsignedLong(libver);
+    if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION_NUMBER", r))
+        return -1;
 
-    if (sslmodule_init_types(m) != 0)
-        return NULL;
-    if (sslmodule_init_exceptions(m) != 0)
-        return NULL;
-    if (sslmodule_init_errorcodes(m) != 0)
-        return NULL;
+    parse_openssl_version(libver, &major, &minor, &fix, &patch, &status);
+    r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
+    if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION_INFO", r))
+        return -1;
 
-    /* Load _socket module and its C API */
-    socket_api = PySocketModule_ImportModuleAndAPI();
-    if (!socket_api)
-        return NULL;
-    PySocketModule = *socket_api;
+    r = PyUnicode_FromString(OpenSSL_version(OPENSSL_VERSION));
+    if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION", r))
+        return -1;
 
-#ifndef OPENSSL_VERSION_1_1
-    /* Load all algorithms and initialize cpuid */
-    OPENSSL_add_all_algorithms_noconf();
-    /* Init OpenSSL */
-    SSL_load_error_strings();
-    SSL_library_init();
-#endif
+    libver = OPENSSL_VERSION_NUMBER;
+    parse_openssl_version(libver, &major, &minor, &fix, &patch, &status);
+    r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
+    if (r == NULL || PyModule_AddObject(m, "_OPENSSL_API_VERSION", r))
+        return -1;
 
-#ifdef HAVE_OPENSSL_CRYPTO_LOCK
-    /* note that this will start threading if not already started */
-    if (!_setup_ssl_threads()) {
-        return NULL;
-    }
-#elif OPENSSL_VERSION_1_1
-    /* OpenSSL 1.1.0 builtin thread support is enabled */
-    _ssl_locks_count++;
-#endif
+    return 0;
+}
 
+static int
+sslmodule_init_constants(PyObject *m)
+{
     PyModule_AddStringConstant(m, "_DEFAULT_CIPHERS",
                                PY_SSL_DEFAULT_CIPHER_STRING);
 
@@ -6414,29 +6390,70 @@ PyInit__ssl(void)
     addbool(m, "HAS_TLSv1_3", 0);
 #endif
 
-    /* OpenSSL version */
-    /* SSLeay() gives us the version of the library linked against,
-       which could be different from the headers version.
-    */
-    libver = OpenSSL_version_num();
-    r = PyLong_FromUnsignedLong(libver);
-    if (r == NULL)
-        return NULL;
-    if (PyModule_AddObject(m, "OPENSSL_VERSION_NUMBER", r))
-        return NULL;
-    parse_openssl_version(libver, &major, &minor, &fix, &patch, &status);
-    r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
-    if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION_INFO", r))
-        return NULL;
-    r = PyUnicode_FromString(OpenSSL_version(OPENSSL_VERSION));
-    if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION", r))
+    return 0;
+}
+
+PyDoc_STRVAR(module_doc,
+"Implementation module for SSL socket operations.  See the socket module\n\
+for documentation.");
+
+
+static struct PyModuleDef _sslmodule = {
+    PyModuleDef_HEAD_INIT,
+    "_ssl",
+    module_doc,
+    -1,
+    PySSL_methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+
+PyMODINIT_FUNC
+PyInit__ssl(void)
+{
+    PyObject *m;
+    PySocketModule_APIObject *socket_api;
+
+    m = PyModule_Create(&_sslmodule);
+    if (m == NULL)
         return NULL;
 
-    libver = OPENSSL_VERSION_NUMBER;
-    parse_openssl_version(libver, &major, &minor, &fix, &patch, &status);
-    r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
-    if (r == NULL || PyModule_AddObject(m, "_OPENSSL_API_VERSION", r))
+    if (sslmodule_init_types(m) != 0)
         return NULL;
+    if (sslmodule_init_exceptions(m) != 0)
+        return NULL;
+    if (sslmodule_init_errorcodes(m) != 0)
+        return NULL;
+    if (sslmodule_init_constants(m) != 0)
+        return NULL;
+    if (sslmodule_init_versioninfo(m) != 0)
+        return NULL;
+
+    /* Load _socket module and its C API */
+    socket_api = PySocketModule_ImportModuleAndAPI();
+    if (!socket_api)
+        return NULL;
+    PySocketModule = *socket_api;
+
+#ifndef OPENSSL_VERSION_1_1
+    /* Load all algorithms and initialize cpuid */
+    OPENSSL_add_all_algorithms_noconf();
+    /* Init OpenSSL */
+    SSL_load_error_strings();
+    SSL_library_init();
+#endif
+
+#ifdef HAVE_OPENSSL_CRYPTO_LOCK
+    /* note that this will start threading if not already started */
+    if (!_setup_ssl_threads()) {
+        return NULL;
+    }
+#elif OPENSSL_VERSION_1_1
+    /* OpenSSL 1.1.0 builtin thread support is enabled */
+    _ssl_locks_count++;
+#endif
 
     return m;
 }
