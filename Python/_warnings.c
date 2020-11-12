@@ -114,37 +114,34 @@ init_filters(void)
 }
 
 /* Initialize the given warnings module state. */
-static int
-warnings_init_state(WarningsState *st)
+int
+_PyWarnings_InitState(PyThreadState *tstate)
 {
+    WarningsState *st = &tstate->interp->warnings;
+
     if (st->filters == NULL) {
         st->filters = init_filters();
         if (st->filters == NULL) {
-            goto error;
+            return -1;
         }
     }
 
     if (st->once_registry == NULL) {
         st->once_registry = PyDict_New();
         if (st->once_registry == NULL) {
-            goto error;
+            return -1;
         }
     }
 
     if (st->default_action == NULL) {
         st->default_action = PyUnicode_FromString("default");
         if (st->default_action == NULL) {
-            goto error;
+            return -1;
         }
     }
 
     st->filters_version = 0;
-
     return 0;
-
-error:
-    warnings_clear_state(st);
-    return -1;
 }
 
 
@@ -1367,16 +1364,6 @@ static struct PyModuleDef warningsmodule = {
 };
 
 
-PyStatus
-_PyWarnings_InitState(PyThreadState *tstate)
-{
-    if (warnings_init_state(&tstate->interp->warnings) < 0) {
-        return _PyStatus_ERR("can't initialize warnings");
-    }
-    return _PyStatus_OK();
-}
-
-
 PyMODINIT_FUNC
 _PyWarnings_Init(void)
 {
@@ -1389,9 +1376,6 @@ _PyWarnings_Init(void)
 
     WarningsState *st = warnings_get_state();
     if (st == NULL) {
-        goto error;
-    }
-    if (warnings_init_state(st) < 0) {
         goto error;
     }
 

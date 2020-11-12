@@ -48,7 +48,6 @@ extern int _PySys_UpdateConfig(PyThreadState *tstate);
 extern PyStatus _PyExc_Init(PyThreadState *tstate);
 extern PyStatus _PyErr_Init(void);
 extern PyStatus _PyBuiltins_AddExceptions(PyObject * bltinmod);
-extern PyStatus _PyImportHooks_Init(PyThreadState *tstate);
 extern int _PyFloat_Init(void);
 extern PyStatus _Py_HashRandomization_Init(const PyConfig *);
 
