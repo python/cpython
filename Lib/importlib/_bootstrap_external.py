@@ -278,7 +278,8 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.9a2  3424 (simplify bytecodes for *value unpacking)
 #     Python 3.9a2  3425 (simplify bytecodes for **value unpacking)
 #     Python 3.10a1 3430 (Make 'annotations' future by default)
-#     Python 3.10a2 3431 (PEP 634: Structural Pattern Matching)
+#     Python 3.10a1 3431 (New line number table format -- PEP 626)
+#     Python 3.10a2 3432 (PEP 634: Structural Pattern Matching)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -288,7 +289,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3431).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3432).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
