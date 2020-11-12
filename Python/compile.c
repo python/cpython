@@ -5438,27 +5438,13 @@ struct assembler {
     PyObject *a_bytecode;  /* string containing bytecode */
     int a_offset;              /* offset into bytecode */
     int a_nblocks;             /* number of reachable blocks */
-    basicblock **a_reverse_postorder; /* list of blocks in dfs postorder */
     PyObject *a_lnotab;    /* string containing lnotab */
     int a_lnotab_off;      /* offset into lnotab */
     int a_prevlineno;     /* lineno of last emitted line in line table */
     int a_lineno;          /* lineno of last emitted instruction */
     int a_lineno_start;    /* bytecode start offset of current lineno */
+    basicblock *a_entry;
 };
-
-static void
-dfs(struct compiler *c, basicblock *b, struct assembler *a, int end)
-{
-
-    /* There is no real depth-first-search to do here because all the
-     * blocks are emitted in topological order already, so we just need to
-     * follow the b_next pointers and place them in a->a_reverse_postorder in
-     * reverse order and make sure that the first one starts at 0. */
-
-    for (a->a_nblocks = 0; b != NULL; b = b->b_next) {
-        a->a_reverse_postorder[a->a_nblocks++] = b;
-    }
-}
 
 Py_LOCAL_INLINE(void)
 stackdepth_push(basicblock ***sp, basicblock *b, int depth)
@@ -5557,12 +5543,7 @@ assemble_init(struct assembler *a, int nblocks, int firstlineno)
         PyErr_NoMemory();
         return 0;
     }
-    a->a_reverse_postorder = (basicblock **)PyObject_Malloc(
-                                        sizeof(basicblock *) * nblocks);
-    if (!a->a_reverse_postorder) {
-        PyErr_NoMemory();
-        return 0;
-    }
+
     return 1;
 }
 
@@ -5571,8 +5552,6 @@ assemble_free(struct assembler *a)
 {
     Py_XDECREF(a->a_bytecode);
     Py_XDECREF(a->a_lnotab);
-    if (a->a_reverse_postorder)
-        PyObject_Free(a->a_reverse_postorder);
 }
 
 static int
@@ -5701,8 +5680,7 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
        Replace block pointer with position in bytecode. */
     do {
         totsize = 0;
-        for (i = 0; i < a->a_nblocks; i++) {
-            b = a->a_reverse_postorder[i];
+        for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
             bsize = blocksize(b);
             b->b_offset = totsize;
             totsize += bsize;
@@ -5970,7 +5948,7 @@ assemble(struct compiler *c, int addNone)
 {
     basicblock *b, *entryblock;
     struct assembler a;
-    int i, j, nblocks;
+    int j, nblocks;
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
 
@@ -6001,7 +5979,8 @@ assemble(struct compiler *c, int addNone)
     }
     if (!assemble_init(&a, nblocks, c->u->u_firstlineno))
         goto error;
-    dfs(c, entryblock, &a, nblocks);
+    a.a_entry = entryblock;
+    a.a_nblocks = nblocks;
 
     consts = consts_dict_keys_inorder(c->u->u_consts);
     if (consts == NULL) {
@@ -6014,9 +5993,8 @@ assemble(struct compiler *c, int addNone)
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);
 
-    /* Emit code in reverse postorder from dfs. */
-    for (i = 0; i < a.a_nblocks; i++) {
-        b = a.a_reverse_postorder[i];
+    /* Emit code. */
+    for(b = entryblock; b != NULL; b = b->b_next) {
         for (j = 0; j < b->b_iused; j++)
             if (!assemble_emit(&a, &b->b_instr[j]))
                 goto error;
@@ -6330,9 +6308,8 @@ mark_reachable(struct assembler *a) {
     if (stack == NULL) {
         return -1;
     }
-    basicblock *entry = a->a_reverse_postorder[0];
-    entry->b_reachable = 1;
-    *sp++ = entry;
+    a->a_entry->b_reachable = 1;
+    *sp++ = a->a_entry;
     while (sp > stack) {
         basicblock *b = *(--sp);
         if (b->b_next && !b->b_nofallthrough && b->b_next->b_reachable == 0) {
@@ -6367,23 +6344,23 @@ mark_reachable(struct assembler *a) {
 static int
 optimize_cfg(struct assembler *a, PyObject *consts)
 {
-    for (int i = 0; i < a->a_nblocks; i++) {
-        normalise_basic_block(a->a_reverse_postorder[i]);
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        normalise_basic_block(b);
     }
-    for (int i = 0; i < a->a_nblocks; i++) {
-        if (optimize_basic_block(a->a_reverse_postorder[i], consts)) {
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        if (optimize_basic_block(b, consts)) {
             return -1;
         }
-        clean_basic_block(a->a_reverse_postorder[i]);
-        assert(a->a_reverse_postorder[i]->b_reachable == 0);
+        clean_basic_block(b);
+        assert(b->b_reachable == 0);
     }
     if (mark_reachable(a)) {
         return -1;
     }
     /* Delete unreachable instructions */
-    for (int i = 0; i < a->a_nblocks; i++) {
-       if (a->a_reverse_postorder[i]->b_reachable == 0) {
-            a->a_reverse_postorder[i]->b_iused = 0;
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+       if (b->b_reachable == 0) {
+            b->b_iused = 0;
        }
     }
     return 0;
