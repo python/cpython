@@ -348,6 +348,9 @@ class InternalFunctionsTest(unittest.TestCase):
 
         test_it(('a', 'b', 'c'), MockTclObj('val'), 'val', ('a', 'b', 'c'))
 
+        spec = (MockStateSpec('a'), '#fff', MockStateSpec(''), '#ccc')
+        self.assertEqual(ttk._list_from_statespec(spec),
+                         [('a', '#fff'), ('', '#ccc')])
 
     def test_list_from_layouttuple(self):
         tk = MockTkApp()

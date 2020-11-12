@@ -1,0 +1,2 @@
+Ammend the ttk._list_from_statespec function to correctly return the state
+specification for the ttk map when a default state is given.

@@ -251,7 +251,7 @@ def _list_from_statespec(stuple):
         else: # this is a Tcl object
             val = str(val)
             if typename == 'StateSpec':
-                val = val.split()
+                val = val.split() if val else ''
             nval.append(val)
 
     it = iter(nval)
