@@ -214,9 +214,12 @@ The following exceptions are the exceptions that are usually raised.
 
    .. note::
 
-      Because it can be raised at unpredictable points, a KeyboardInterrupt
-      may, in some circumstances, leave the running program in an inconsistent
-      state. See :ref:`handlers-and-exceptions`.
+      Catching a :exc:`KeyboardInterrupt` requires special consideration.
+      Because it can be raised at unpredictable points, it may may, in some
+      circumstances, leave the running program in an inconsistent state. It is
+      generally best to allow :exc:`KeyboardInterrupt` to end the program as
+      quickly as possible or avoid raising it entirely. (See
+      :ref:`handlers-and-exceptions`.)
 
 
 .. exception:: MemoryError
