@@ -1407,6 +1407,9 @@ else:
             self.cert_file = cert_file
             if context is None:
                 context = ssl._create_default_https_context()
+                # send ALPN extension to indicate HTTP/1.1 protocol
+                if self._http_vsn == 11:
+                    context.set_alpn_protocols(['http/1.1'])
                 # enable PHA for TLS 1.3 connections if available
                 if context.post_handshake_auth is not None:
                     context.post_handshake_auth = True

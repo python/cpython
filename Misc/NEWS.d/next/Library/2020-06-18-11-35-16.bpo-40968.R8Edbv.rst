@@ -1,0 +1,2 @@
+:mod:`urllib.request` and :mod:`http.client` now send ``http/1.1`` ALPN
+extension during TLS handshake when no custom context is supplied.
