@@ -340,6 +340,22 @@ static char *dialect_kws[] = {
     NULL
 };
 
+static _csvstate *
+_csv_state_from_type(PyTypeObject *type, const char *name)
+{
+    PyObject *module = _PyType_GetModuleByDef(type, &_csvmodule);
+    if (module == NULL) {
+        return NULL;
+    }
+    _csvstate *module_state = PyModule_GetState(module);
+    if (module_state == NULL) {
+        PyErr_Format(PyExc_SystemError,
+                     "%s: No _csv module state found", name);
+        return NULL;
+    }
+    return module_state;
+}
+
 static PyObject *
 dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
@@ -368,16 +384,7 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
                                      &strict))
         return NULL;
 
-    PyObject *module = _PyType_GetModuleByDef(type, &_csvmodule);
-    if (module == NULL) {
-        return NULL;
-    }
-    _csvstate *module_state = PyModule_GetState(module);
-    if (module_state == NULL) {
-        return PyErr_Format(PyExc_SystemError,
-                            "dialect_new: No _csv module state found");
-    }
-
+    _csvstate *module_state = _csv_state_from_type(type, "dialect_new");
 
     if (dialect != NULL) {
         if (PyUnicode_Check(dialect)) {
@@ -810,14 +817,10 @@ Reader_iternext(ReaderObj *self)
     const void *data;
     PyObject *lineobj;
 
-    PyObject *module = _PyType_GetModuleByDef(Py_TYPE(self), &_csvmodule);
-    if (module == NULL) {
-        return NULL;
-    }
-    _csvstate *module_state = PyModule_GetState(module);
+    _csvstate *module_state = _csv_state_from_type(Py_TYPE(self),
+                                                   "Reader.__next__");
     if (module_state == NULL) {
-        return PyErr_Format(PyExc_SystemError,
-                            "dialect_new: No _csv module state found");
+        return NULL;
     }
 
     if (parse_reset(self) < 0)
