@@ -1512,6 +1512,9 @@ for other parts of the :mod:`distutils` package.
    meaning for other platforms will vary.  The file is a platform-specific text
    file, if it exists. This function is only useful on POSIX platforms.
 
+The following functions are deprecated together with this module and they
+have no direct replacement.
+
 
 .. function:: get_python_inc([plat_specific[, prefix]])
 

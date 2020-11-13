@@ -224,29 +224,6 @@ Other functions
 
    Return the path of :file:`Makefile`.
 
-The following functions have been moved here from :mod:`distutils.sysconfig`
-when this module has been deprecated.
-
-.. function:: get_python_inc([plat_specific[, prefix]])
-
-   Return the directory for either the general or platform-dependent C include
-   files.  If *plat_specific* is true, the platform-dependent include directory is
-   returned; if false or omitted, the platform-independent directory is returned.
-   If *prefix* is given, it is used as either the prefix instead of
-   :const:`PREFIX`, or as the exec-prefix instead of :const:`EXEC_PREFIX` if
-   *plat_specific* is true.
-
-
-.. function:: get_python_lib([plat_specific[, standard_lib[, prefix]]])
-
-   Return the directory for either the general or platform-dependent library
-   installation.  If *plat_specific* is true, the platform-dependent include
-   directory is returned; if false or omitted, the platform-independent directory
-   is returned.  If *prefix* is given, it is used as either the prefix instead of
-   :const:`PREFIX`, or as the exec-prefix instead of :const:`EXEC_PREFIX` if
-   *plat_specific* is true.  If *standard_lib* is true, the directory for the
-   standard library is returned rather than the directory for the installation of
-   third-party extensions.
 
 Using :mod:`sysconfig` as a script
 ----------------------------------

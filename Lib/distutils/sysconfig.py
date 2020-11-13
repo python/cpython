@@ -44,9 +44,7 @@ from sysconfig import (
     get_config_var,
     get_config_vars,
     get_makefile_filename,
-    get_python_inc,
     get_python_version,
-    get_python_lib,
 )
 
 # This is better than
@@ -78,7 +76,9 @@ _init_posix = partial(sysconfig_init_posix, _config_vars)
 _init_nt = partial(_init_non_posix, _config_vars)
 
 
-# customize_compiler is deprecated and won't be moved to another module
+# Following functions are deprecated together with this module and they
+# have no direct replacement
+
 def customize_compiler(compiler):
     """Do any platform-specific customization of a CCompiler instance.
 
@@ -148,3 +148,88 @@ def customize_compiler(compiler):
             archiver=archiver)
 
         compiler.shared_lib_extension = shlib_suffix
+
+
+def get_python_inc(plat_specific=0, prefix=None):
+    """Return the directory containing installed Python header files.
+
+    If 'plat_specific' is false (the default), this is the path to the
+    non-platform-specific header files, i.e. Python.h and so on;
+    otherwise, this is the path to platform-specific header files
+    (namely pyconfig.h).
+
+    If 'prefix' is supplied, use it instead of sys.base_prefix or
+    sys.base_exec_prefix -- i.e., ignore 'plat_specific'.
+    """
+    if prefix is None:
+        prefix = plat_specific and BASE_EXEC_PREFIX or BASE_PREFIX
+    if os.name == "posix":
+        if python_build:
+            # Assume the executable is in the build directory.  The
+            # pyconfig.h file should be in the same directory.  Since
+            # the build directory may not be the source directory, we
+            # must use "srcdir" from the makefile to find the "Include"
+            # directory.
+            if plat_specific:
+                return _sys_home or project_base
+            else:
+                incdir = os.path.join(get_config_var('srcdir'), 'Include')
+                return os.path.normpath(incdir)
+        python_dir = 'python' + get_python_version() + build_flags
+        return os.path.join(prefix, "include", python_dir)
+    elif os.name == "nt":
+        if python_build:
+            # Include both the include and PC dir to ensure we can find
+            # pyconfig.h
+            return (os.path.join(prefix, "include") + os.path.pathsep +
+                    os.path.join(prefix, "PC"))
+        return os.path.join(prefix, "include")
+    else:
+        raise DistutilsPlatformError(
+            "I don't know where Python installs its C header files "
+            "on platform '%s'" % os.name)
+
+
+def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
+    """Return the directory containing the Python library (standard or
+    site additions).
+
+    If 'plat_specific' is true, return the directory containing
+    platform-specific modules, i.e. any module from a non-pure-Python
+    module distribution; otherwise, return the platform-shared library
+    directory.  If 'standard_lib' is true, return the directory
+    containing standard Python library modules; otherwise, return the
+    directory for site-specific modules.
+
+    If 'prefix' is supplied, use it instead of sys.base_prefix or
+    sys.base_exec_prefix -- i.e., ignore 'plat_specific'.
+    """
+    if prefix is None:
+        if standard_lib:
+            prefix = plat_specific and BASE_EXEC_PREFIX or BASE_PREFIX
+        else:
+            prefix = plat_specific and EXEC_PREFIX or PREFIX
+
+    if os.name == "posix":
+        if plat_specific or standard_lib:
+            # Platform-specific modules (any module from a non-pure-Python
+            # module distribution) or standard Python library modules.
+            libdir = sys.platlibdir
+        else:
+            # Pure Python
+            libdir = "lib"
+        libpython = os.path.join(prefix, libdir,
+                                 "python" + get_python_version())
+        if standard_lib:
+            return libpython
+        else:
+            return os.path.join(libpython, "site-packages")
+    elif os.name == "nt":
+        if standard_lib:
+            return os.path.join(prefix, "Lib")
+        else:
+            return os.path.join(prefix, "Lib", "site-packages")
+    else:
+        raise DistutilsPlatformError(
+            "I don't know where Python installs its library "
+            "on platform '%s'" % os.name)

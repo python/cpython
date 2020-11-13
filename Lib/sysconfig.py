@@ -3,7 +3,6 @@
 import os
 import sys
 from os.path import pardir, realpath
-from distutils.errors import DistutilsPlatformError
 
 __all__ = [
     'get_config_h_filename',
@@ -715,91 +714,6 @@ def get_platform():
 
 def get_python_version():
     return _PY_VERSION_SHORT
-
-
-def get_python_inc(plat_specific=0, prefix=None):
-    """Return the directory containing installed Python header files.
-
-    If 'plat_specific' is false (the default), this is the path to the
-    non-platform-specific header files, i.e. Python.h and so on;
-    otherwise, this is the path to platform-specific header files
-    (namely pyconfig.h).
-
-    If 'prefix' is supplied, use it instead of sys.base_prefix or
-    sys.base_exec_prefix -- i.e., ignore 'plat_specific'.
-    """
-    if prefix is None:
-        prefix = plat_specific and _BASE_EXEC_PREFIX or _BASE_PREFIX
-    if os.name == "posix":
-        if _PYTHON_BUILD:
-            # Assume the executable is in the build directory.  The
-            # pyconfig.h file should be in the same directory.  Since
-            # the build directory may not be the source directory, we
-            # must use "srcdir" from the makefile to find the "Include"
-            # directory.
-            if plat_specific:
-                return _sys_home or _PROJECT_BASE
-            else:
-                incdir = os.path.join(get_config_var('srcdir'), 'Include')
-                return os.path.normpath(incdir)
-        python_dir = 'python' + get_python_version() + build_flags
-        return os.path.join(prefix, "include", python_dir)
-    elif os.name == "nt":
-        if _PYTHON_BUILD:
-            # Include both the include and PC dir to ensure we can find
-            # pyconfig.h
-            return (os.path.join(prefix, "include") + os.path.pathsep +
-                    os.path.join(prefix, "PC"))
-        return os.path.join(prefix, "include")
-    else:
-        raise DistutilsPlatformError(
-            "I don't know where Python installs its C header files "
-            "on platform '%s'" % os.name)
-
-
-def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
-    """Return the directory containing the Python library (standard or
-    site additions).
-
-    If 'plat_specific' is true, return the directory containing
-    platform-specific modules, i.e. any module from a non-pure-Python
-    module distribution; otherwise, return the platform-shared library
-    directory.  If 'standard_lib' is true, return the directory
-    containing standard Python library modules; otherwise, return the
-    directory for site-specific modules.
-
-    If 'prefix' is supplied, use it instead of sys.base_prefix or
-    sys.base_exec_prefix -- i.e., ignore 'plat_specific'.
-    """
-    if prefix is None:
-        if standard_lib:
-            prefix = plat_specific and _BASE_EXEC_PREFIX or _BASE_PREFIX
-        else:
-            prefix = plat_specific and _EXEC_PREFIX or _PREFIX
-
-    if os.name == "posix":
-        if plat_specific or standard_lib:
-            # Platform-specific modules (any module from a non-pure-Python
-            # module distribution) or standard Python library modules.
-            libdir = sys.platlibdir
-        else:
-            # Pure Python
-            libdir = "lib"
-        libpython = os.path.join(prefix, libdir,
-                                 "python" + get_python_version())
-        if standard_lib:
-            return libpython
-        else:
-            return os.path.join(libpython, "site-packages")
-    elif os.name == "nt":
-        if standard_lib:
-            return os.path.join(prefix, "Lib")
-        else:
-            return os.path.join(prefix, "Lib", "site-packages")
-    else:
-        raise DistutilsPlatformError(
-            "I don't know where Python installs its library "
-            "on platform '%s'" % os.name)
 
 
 def expand_makefile_vars(s, vars):
