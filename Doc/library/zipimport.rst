@@ -73,7 +73,7 @@ zipimporter Objects
    .. method:: create_module(spec)
 
       Implementation of :meth:`importlib.abc.Loader.create_module` that returns
-      :const:`None` for default semantics.
+      :const:`None` to explicitly request the default semantics.
 
       .. versionadded:: 3.10
 
