@@ -2276,7 +2276,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     c->u->u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
     c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
     for (i = docstring ? 1 : 0; i < asdl_seq_LEN(body); i++) {
-        VISIT(c, stmt, (stmt_ty)asdl_seq_GET(body, i));
+        VISIT_IN_SCOPE(c, stmt, (stmt_ty)asdl_seq_GET(body, i));
     }
     co = assemble(c, 1);
     qualname = c->u->u_qualname;
@@ -5533,18 +5533,24 @@ assemble_init(struct assembler *a, int nblocks, int firstlineno)
 {
     memset(a, 0, sizeof(struct assembler));
     a->a_prevlineno = a->a_lineno = firstlineno;
+    a->a_lnotab = NULL;
     a->a_bytecode = PyBytes_FromStringAndSize(NULL, DEFAULT_CODE_SIZE);
-    if (!a->a_bytecode)
-        return 0;
+    if (a->a_bytecode == NULL) {
+        goto error;
+    }
     a->a_lnotab = PyBytes_FromStringAndSize(NULL, DEFAULT_LNOTAB_SIZE);
-    if (!a->a_lnotab)
-        return 0;
+    if (a->a_lnotab == NULL) {
+        goto error;
+    }
     if ((size_t)nblocks > SIZE_MAX / sizeof(basicblock *)) {
         PyErr_NoMemory();
-        return 0;
+        goto error;
     }
-
     return 1;
+error:
+    Py_XDECREF(a->a_bytecode);
+    Py_XDECREF(a->a_lnotab);
+    return 0;
 }
 
 static void
