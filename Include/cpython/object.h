@@ -515,8 +515,8 @@ struct _ts;
 /* Python 3.9 private API, invoked by the macros below. */
 PyAPI_FUNC(int) _PyTrash_begin(struct _ts *tstate, PyObject *op);
 PyAPI_FUNC(void) _PyTrash_end(struct _ts *tstate);
-/* Python 3.10 private API, invoked by the macros below. */
-PyAPI_FUNC(int) _PyTrash_cond(void *op_raw, void *dealloc);
+/* Python 3.10 private API, invoked by the Py_TRASHCAN_BEGIN(). */
+PyAPI_FUNC(int) _PyTrash_cond(PyObject *op, void *dealloc);
 
 #define PyTrash_UNWIND_LEVEL 50
 
@@ -539,7 +539,7 @@ PyAPI_FUNC(int) _PyTrash_cond(void *op_raw, void *dealloc);
     } while (0);
 
 #define Py_TRASHCAN_BEGIN(op, dealloc) \
-    Py_TRASHCAN_BEGIN_CONDITION(op, _PyTrash_cond(op, dealloc));
+    Py_TRASHCAN_BEGIN_CONDITION(op, _PyTrash_cond(_PyObject_CAST(op), dealloc))
 
 /* For backwards compatibility, these macros enable the trashcan
  * unconditionally */

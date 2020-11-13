@@ -439,11 +439,6 @@ New Features
 * The :c:func:`PyType_GetSlot` function can accept static types.
   (Contributed by Hai Shi and Petr Viktorin in :issue:`41073`.)
 
-* The ``Py_TRASHCAN_BEGIN`` macro no longer accesses PyTypeObject attributes,
-  but now can get the condition by calling the new private
-  :c:func:`_PyTrash_cond()` function which hides implementation details.
-  (Contributed by Hai Shi in :issue:`40170`.)
-
 
 Porting to Python 3.10
 ----------------------

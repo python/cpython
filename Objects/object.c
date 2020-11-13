@@ -2135,9 +2135,8 @@ _PyTrash_end(PyThreadState *tstate)
 
 
 int
-_PyTrash_cond(void *op_raw, void *dealloc)
+_PyTrash_cond(PyObject *op, void *dealloc)
 {
-    PyObject *op = _PyObject_CAST(op_raw);
     PyTypeObject *tp = Py_TYPE(op);
     return tp->tp_dealloc == (destructor)dealloc;
 }
