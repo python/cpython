@@ -409,7 +409,7 @@ Additional Utility Classes and Functions
                return "{}({})".format(type(self).__name__, ", ".join(items))
 
            def __eq__(self, other):
-               if isinstance(other, SimpleNamespace):
+               if isinstance(self, SimpleNamespace) and isinstance(other, SimpleNamespace):
                   return self.__dict__ == other.__dict__
                return NotImplemented
 
