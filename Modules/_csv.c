@@ -891,8 +891,10 @@ Reader_dealloc(ReaderObj *self)
     Py_CLEAR(self->dialect);
     Py_CLEAR(self->input_iter);
     Py_CLEAR(self->fields);
-    if (self->field != NULL)
+    if (self->field != NULL) {
         PyMem_Free(self->field);
+        self->field = NULL;
+    }
     PyObject_GC_Del(self);
     Py_DECREF(tp);
 }
@@ -905,6 +907,7 @@ Reader_finalize(ReaderObj *self)
     Py_CLEAR(self->fields);
     if (self->field != NULL) {
         PyMem_Free(self->field);
+        self->field = NULL;
     }
 }
 
