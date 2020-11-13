@@ -65,7 +65,6 @@ import os
 import pkgutil
 import platform
 import re
-import subprocess
 import sys
 import sysconfig
 import time
@@ -1619,13 +1618,10 @@ def pipepager(text, cmd):
 def tempfilepager(text, cmd):
     """Page through text by invoking a program on a temporary file."""
     import tempfile
-    try:
-        with tempfile.NamedTemporaryFile('w', delete=False, errors='backslashreplace') as file:
-            file.write(text)
-            file.close()
-            subprocess.run([cmd, file.name])
-    finally:
-        os.unlink(file.name)
+    with tempfile.NamedTemporaryFile('w', errors='backslashreplace') as file:
+        file.write(text)
+        file.flush()
+        os.system(cmd + ' "' + file.name + '"')
 
 def _escape_stdout(text):
     # Escape non-encodable characters to avoid encoding errors later
