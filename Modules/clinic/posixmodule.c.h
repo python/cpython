@@ -7620,6 +7620,53 @@ exit:
 
 #endif /* defined(HAVE_MEMFD_CREATE) */
 
+#if defined(HAVE_EVENTFD)
+
+PyDoc_STRVAR(os_eventfd__doc__,
+"eventfd($module, /, initval, flags=EFD_CLOEXEC)\n"
+"--\n"
+"\n");
+
+#define OS_EVENTFD_METHODDEF    \
+    {"eventfd", (PyCFunction)(void(*)(void))os_eventfd, METH_FASTCALL|METH_KEYWORDS, os_eventfd__doc__},
+
+static PyObject *
+os_eventfd_impl(PyObject *module, unsigned int initval, int flags);
+
+static PyObject *
+os_eventfd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"initval", "flags", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "eventfd", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    unsigned int initval;
+    int flags = EFD_CLOEXEC;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!_PyLong_UnsignedInt_Converter(args[0], &initval)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    flags = _PyLong_AsInt(args[1]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = os_eventfd_impl(module, initval, flags);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_EVENTFD) */
+
 #if (defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL))
 
 PyDoc_STRVAR(os_get_terminal_size__doc__,
@@ -8884,6 +8931,10 @@ exit:
     #define OS_MEMFD_CREATE_METHODDEF
 #endif /* !defined(OS_MEMFD_CREATE_METHODDEF) */
 
+#ifndef OS_EVENTFD_METHODDEF
+    #define OS_EVENTFD_METHODDEF
+#endif /* !defined(OS_EVENTFD_METHODDEF) */
+
 #ifndef OS_GET_TERMINAL_SIZE_METHODDEF
     #define OS_GET_TERMINAL_SIZE_METHODDEF
 #endif /* !defined(OS_GET_TERMINAL_SIZE_METHODDEF) */
@@ -8919,4 +8970,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=936f33448cd66ccb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d807dbad9890d0ef input=a9049054013a1b77]*/

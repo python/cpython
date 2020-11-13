@@ -19,6 +19,7 @@ import shutil
 import signal
 import socket
 import stat
+import struct
 import subprocess
 import sys
 import sysconfig
@@ -3526,6 +3527,48 @@ class MemfdCreateTests(unittest.TestCase):
         fd2 = os.memfd_create("Hi")
         self.addCleanup(os.close, fd2)
         self.assertFalse(os.get_inheritable(fd2))
+
+
+@unittest.skipUnless(hasattr(os, 'eventfd'), 'requires os.eventfd')
+@support.requires_linux_version(2, 30)
+class EventfdTests(unittest.TestCase):
+    fmt = "@Q"  # native uint64_t
+    size = 8  # read/write 8 bytes
+
+    def pack(self, value):
+        return struct.pack(self.fmt, value)
+
+    def test_eventfd_initval(self):
+        initval = 42
+        fd = os.eventfd(initval)
+        self.assertNotEqual(fd, -1)
+        self.addCleanup(os.close, fd)
+        self.assertFalse(os.get_inheritable(fd))
+
+        res = os.read(fd, self.size)
+        self.assertEqual(res, self.pack(initval))
+
+        os.write(fd, struct.pack(self.fmt, 23))
+        res = os.read(fd, self.size)
+        self.assertEqual(res, self.pack(23))
+
+    def test_eventfd_semaphore(self):
+        initval = 2
+        one = self.pack(1)
+
+        flags = os.EFD_CLOEXEC | os.EFD_SEMAPHORE | os.EFD_NONBLOCK
+        fd = os.eventfd(initval, flags)
+        self.assertNotEqual(fd, -1)
+        self.addCleanup(os.close, fd)
+
+        # semaphore starts has initval 2, two reads return '1'
+        res = os.read(fd, self.size)
+        self.assertEqual(res, one)
+        res = os.read(fd, self.size)
+        self.assertEqual(res, one)
+        # third read would block
+        with self.assertRaises(BlockingIOError):
+            os.read(fd, self.size)
 
 
 class OSErrorTests(unittest.TestCase):

@@ -3276,6 +3276,58 @@ features:
    .. versionadded:: 3.8
 
 
+.. function:: eventfd(initval[, flags=os.EFD_CLOEXEC])
+
+   Create and return a file descriptor for event notification. An eventfd can
+   be used to implement an event wait/notify mechanisum.  See man page
+   :manpage:`eventfd(2)` for more information.  By default, the new file
+   descriptor is :ref:`non-inheritable <fd_inheritance>`.
+
+   The *initval* is limited to an unsigned 32-bit integer. The Kernel object
+   holds an unsigned 64-bit integer with a maximum value of 2**64 - 2.  The
+   input value to :func:`~os.write` and output value of :func:~os.read` are
+   are unsigned 64-bit integers (8 bytes) in native byte order.  Eventfds
+   support waiting for I/O completion with :mod:`select` module.
+
+   Example::
+
+       import os
+       import struct
+
+       format = "@Q"  # native uint64_t
+       size = struct.calcsize(format)  # 8 bytes
+
+       # semaphore with start value '1'
+       fd = os.eventfd(1, os.EFD_SEMAPHORE | os.EFC_CLOEXEC)
+       try:
+           # acquire semaphore
+           v = os.read(fd, size)
+           try:
+               assert v == struct.pack(format, 1)
+               do_work()
+           finally:
+               # release semaphore
+               os.write(fd, v)
+       finally:
+           os.close(fd)
+
+   .. availability:: Linux 2.27 or newer with glibc 2.8 or newer.
+
+   .. versionadded:: 3.10
+
+
+.. data:: EFD_CLOEXEC
+          EFD_NONBLOCK
+          EFD_SEMAPHORE
+
+   These flags can be passed to :func:`eventfd`.
+
+   .. availability:: Linux 2.27 or newer with glibc 2.8 or newer.  The
+      ``EFD_SEMAPHORE`` flag is available since Linux 2.30.
+
+   .. versionadded:: 3.10
+
+
 Linux extended attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
