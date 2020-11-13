@@ -5745,7 +5745,7 @@ _ctypes_add_types(PyObject *mod)
     TYPE_READY(&StructParam_Type);
 
 #ifdef MS_WIN32
-    TYPE_READY_BASE(&PyComError_Type, PyExc_Exception);
+    TYPE_READY_BASE(&PyComError_Type, (PyTypeObject*)PyExc_Exception);
 #endif
 
 #undef TYPE_READY
