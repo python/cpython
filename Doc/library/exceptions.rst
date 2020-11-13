@@ -212,6 +212,12 @@ The following exceptions are the exceptions that are usually raised.
    accidentally caught by code that catches :exc:`Exception` and thus prevent
    the interpreter from exiting.
 
+   .. note::
+
+      Because it can be raised at unpredictable points, a KeyboardInterrupt
+      may, in some circumstances, leave the running program in an inconsistent
+      state. See :ref:`handlers-and-exceptions`.
+
 
 .. exception:: MemoryError
 
