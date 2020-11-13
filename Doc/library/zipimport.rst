@@ -44,6 +44,10 @@ doesn't contain :file:`.pyc` files, importing may be rather slow.
       follows the specification in :pep:`273`, but uses an implementation written by Just
       van Rossum that uses the import hooks described in :pep:`302`.
 
+   :mod:`importlib` - The implementation of the import machinery
+      Package providing the relevant protocols for all importers to
+      implement.
+
 
 This module defines an exception:
 
