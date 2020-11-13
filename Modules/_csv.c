@@ -534,13 +534,8 @@ PyType_Spec Dialect_Type_spec = {
  * description of the dialect
  */
 static PyObject *
-_call_dialect(PyObject *module, PyObject *dialect_inst, PyObject *kwargs)
+_call_dialect(_csvstate *module_state, PyObject *dialect_inst, PyObject *kwargs)
 {
-    _csvstate *module_state = PyModule_GetState(module);
-    if (module_state == NULL) {
-        return NULL;
-    }
-
     PyObject *type = (PyObject *)module_state->dialect_type;
     if (dialect_inst) {
         return PyObject_VectorcallDict(type, &dialect_inst, 1, kwargs);
@@ -1004,7 +999,8 @@ csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
         Py_DECREF(self);
         return NULL;
     }
-    self->dialect = (DialectObj *)_call_dialect(module, dialect, keyword_args);
+    self->dialect = (DialectObj *)_call_dialect(module_state, dialect,
+                                                keyword_args);
     if (self->dialect == NULL) {
         Py_DECREF(self);
         return NULL;
@@ -1427,7 +1423,8 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
         Py_DECREF(self);
         return NULL;
     }
-    self->dialect = (DialectObj *)_call_dialect(module, dialect, keyword_args);
+    self->dialect = (DialectObj *)_call_dialect(module_state, dialect,
+                                                keyword_args);
     if (self->dialect == NULL) {
         Py_DECREF(self);
         return NULL;
@@ -1449,6 +1446,7 @@ static PyObject *
 csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *name_obj, *dialect_obj = NULL;
+    _csvstate *module_state = get_csv_state(module);
     PyObject *dialect;
 
     if (!PyArg_UnpackTuple(args, "", 1, 2, &name_obj, &dialect_obj))
@@ -1460,10 +1458,10 @@ csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
     }
     if (PyUnicode_READY(name_obj) == -1)
         return NULL;
-    dialect = _call_dialect(module, dialect_obj, kwargs);
+    dialect = _call_dialect(module_state, dialect_obj, kwargs);
     if (dialect == NULL)
         return NULL;
-    if (PyDict_SetItem(get_csv_state(module)->dialects, name_obj, dialect) < 0) {
+    if (PyDict_SetItem(module_state->dialects, name_obj, dialect) < 0) {
         Py_DECREF(dialect);
         return NULL;
     }
