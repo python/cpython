@@ -1,0 +1,4 @@
+On Windows, fix a regression in signal handling which prevented to interrupt
+a program using CTRL+C. The signal handler can be run in a thread different
+than the Python thread, in which case the test deciding if the thread can
+handle signals is wrong.
