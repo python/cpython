@@ -308,6 +308,9 @@
 /* Define to 1 if you have the <errno.h> header file. */
 #undef HAVE_ERRNO_H
 
+/* Define if you have the 'eventfd' function. */
+#undef HAVE_EVENTFD
+
 /* Define to 1 if you have the `execv' function. */
 #undef HAVE_EXECV
 
@@ -1118,6 +1121,9 @@
 
 /* Define to 1 if you have the <sys/epoll.h> header file. */
 #undef HAVE_SYS_EPOLL_H
+
+/* Define to 1 if you have the <sys/eventfd.h> header file. */
+#undef HAVE_SYS_EVENTFD_H
 
 /* Define to 1 if you have the <sys/event.h> header file. */
 #undef HAVE_SYS_EVENT_H

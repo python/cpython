@@ -3276,6 +3276,102 @@ features:
    .. versionadded:: 3.8
 
 
+.. function:: eventfd(initval[, flags=os.EFD_CLOEXEC])
+
+   Create and return an event file descriptor. The file descriptors supports
+   raw :func:`read` and :func:`write` with a buffer size of 8,
+   :func:`~select.select`, :func:`~select.poll` and similar. See man page
+   :manpage:`eventfd(2)` for more information.  By default, the
+   new file descriptor is :ref:`non-inheritable <fd_inheritance>`.
+
+   *initval* is the initial value of the event counter. The initial value
+   must be an 32 bit unsigned integer. Please note that the initial value is
+   limited to a 32 bit unsigned int although the event counter is an unsigned
+   64 bit integer with a maximum value of 2\ :sup:`64`\ -\ 2.
+
+   *flags* can be constructed from :const:`EFD_CLOEXEC`,
+   :const:`EFD_NONBLOCK`, and :const:`EFD_SEMAPHORE`.
+
+   If :const:`EFD_SEMAPHORE` is specified and the event counter is non-zero,
+   :func:`eventfd_read` returns 1 and decrements the counter by one.
+
+   If :const:`EFD_SEMAPHORE` is not specified and the event counter is
+   non-zero, :func:`eventfd_read` returns the current event counter value and
+   resets the counter to zero.
+
+   If the event counter is zero and :const:`EFD_NONBLOCK` is not
+   specified, :func:`eventfd_read` blocks.
+
+   :func:`eventfd_write` increments the event counter. Write blocks if the
+   write operation would increment the counter to a value larger than
+   2\ :sup:`64`\ -\ 2.
+
+   Example::
+
+       import os
+
+       # semaphore with start value '1'
+       fd = os.eventfd(1, os.EFD_SEMAPHORE | os.EFC_CLOEXEC)
+       try:
+           # acquire semaphore
+           v = os.eventfd_read(fd)
+           try:
+               do_work()
+           finally:
+               # release semaphore
+               os.eventfd_write(fd, v)
+       finally:
+           os.close(fd)
+
+   .. availability:: Linux 2.6.27 or newer with glibc 2.8 or newer.
+
+   .. versionadded:: 3.10
+
+.. function:: eventfd_read(fd)
+
+   Read value from an :func:`eventfd` file descriptor and return a 64 bit
+   unsigned int. The function does not verify that *fd* is an :func:`eventfd`.
+
+   .. availability:: See :func:`eventfd`
+
+   .. versionadded:: 3.10
+
+.. function:: eventfd_write(fd, value)
+
+   Add value to an :func:`eventfd` file descriptor. *value* must be a 64 bit
+   unsigned int. The function does not verify that *fd* is an :func:`eventfd`.
+
+   .. availability:: See :func:`eventfd`
+
+   .. versionadded:: 3.10
+
+.. data:: EFD_CLOEXEC
+
+   Set close-on-exec flag for new :func:`eventfd` file descriptor.
+
+   .. availability:: See :func:`eventfd`
+
+   .. versionadded:: 3.10
+
+.. data:: EFD_NONBLOCK
+
+   Set :const:`O_NONBLOCK` status flag for new :func:`eventfd` file
+   descriptor.
+
+   .. availability:: See :func:`eventfd`
+
+   .. versionadded:: 3.10
+
+.. data:: EFD_SEMAPHORE
+
+   Provide semaphore-like semantics for reads from a :func:`eventfd` file
+   descriptor. On read the internal counter is decremented by one.
+
+   .. availability:: Linux 2.6.30 or newer with glibc 2.8 or newer.
+
+   .. versionadded:: 3.10
+
+
 Linux extended attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
