@@ -303,6 +303,13 @@ Add a :class:`~xml.sax.handler.LexicalHandler` class to the
 :mod:`xml.sax.handler` module.
 (Contributed by Jonathan Gossage and Zackery Spytz in :issue:`35018`.)
 
+zipimport
+---------
+Add methods related to :pep:`451`: :meth:`~zipimport.zipimporter.find_spec`,
+:meth:`zipimport.zipimporter.create_module`, and
+:meth:`zipimport.zipimporter.exec_module`.
+(Contributed by Brett Cannon in :issue:`42131`.
+
 
 Optimizations
 =============
