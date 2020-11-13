@@ -409,7 +409,7 @@ Additional Utility Classes and Functions
                return "{}({})".format(type(self).__name__, ", ".join(items))
 
            def __eq__(self, other):
-               return self.__dict__ == other.__dict__
+               return self.__dict__ == other.__dict__ and type(self) == type(other)
 
    ``SimpleNamespace`` may be useful as a replacement for ``class NS: pass``.
    However, for a structured record type use :func:`~collections.namedtuple`
