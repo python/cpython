@@ -975,9 +975,10 @@ static PyObject *
 csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
 {
     PyObject * iterator, * dialect = NULL;
+    _csvstate *module_state = get_csv_state(module);
     ReaderObj * self = PyObject_GC_New(
         ReaderObj,
-        get_csv_state(module)->reader_type);
+        module_state->reader_type);
 
     if (!self)
         return NULL;
@@ -1394,9 +1395,8 @@ static PyObject *
 csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
 {
     PyObject * output_file, * dialect = NULL;
-    WriterObj * self = PyObject_GC_New(
-        WriterObj,
-        get_csv_state(module)->writer_type);
+    _csvstate *module_state = get_csv_state(module);
+    WriterObj * self = PyObject_GC_New(WriterObj, module_state->writer_type);
     _Py_IDENTIFIER(write);
 
     if (!self)
@@ -1410,7 +1410,7 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
     self->rec_len = 0;
     self->num_fields = 0;
 
-    self->error_obj = get_csv_state(module)->error_obj;
+    self->error_obj = module_state->error_obj;
     Py_INCREF(self->error_obj);
 
     if (!PyArg_UnpackTuple(args, "", 1, 2, &output_file, &dialect)) {
@@ -1474,9 +1474,10 @@ csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
 static PyObject *
 csv_unregister_dialect(PyObject *module, PyObject *name_obj)
 {
-    if (PyDict_DelItem(get_csv_state(module)->dialects, name_obj) < 0) {
+    _csvstate *module_state = get_csv_state(module);
+    if (PyDict_DelItem(module_state->dialects, name_obj) < 0) {
         if (PyErr_ExceptionMatches(PyExc_KeyError)) {
-            PyErr_Format(get_csv_state(module)->error_obj, "unknown dialect");
+            PyErr_Format(module_state->error_obj, "unknown dialect");
         }
         return NULL;
     }
@@ -1493,7 +1494,8 @@ static PyObject *
 csv_field_size_limit(PyObject *module, PyObject *args)
 {
     PyObject *new_limit = NULL;
-    long old_limit = get_csv_state(module)->field_limit;
+    _csvstate *module_state = get_csv_state(module);
+    long old_limit = module_state->field_limit;
 
     if (!PyArg_UnpackTuple(args, "field_size_limit", 0, 1, &new_limit))
         return NULL;
@@ -1503,9 +1505,9 @@ csv_field_size_limit(PyObject *module, PyObject *args)
                          "limit must be an integer");
             return NULL;
         }
-        get_csv_state(module)->field_limit = PyLong_AsLong(new_limit);
-        if (get_csv_state(module)->field_limit == -1 && PyErr_Occurred()) {
-            get_csv_state(module)->field_limit = old_limit;
+        module_state->field_limit = PyLong_AsLong(new_limit);
+        if (module_state->field_limit == -1 && PyErr_Occurred()) {
+            module_state->field_limit = old_limit;
             return NULL;
         }
     }
