@@ -52,43 +52,6 @@ module _imp
 /* Initialize things */
 
 PyStatus
-_PyImportHooks_Init(PyThreadState *tstate)
-{
-    PyObject *v, *path_hooks = NULL;
-    int err = 0;
-
-    /* adding sys.path_hooks and sys.path_importer_cache */
-    v = PyList_New(0);
-    if (v == NULL)
-        goto error;
-    err = PySys_SetObject("meta_path", v);
-    Py_DECREF(v);
-    if (err)
-        goto error;
-    v = PyDict_New();
-    if (v == NULL)
-        goto error;
-    err = PySys_SetObject("path_importer_cache", v);
-    Py_DECREF(v);
-    if (err)
-        goto error;
-    path_hooks = PyList_New(0);
-    if (path_hooks == NULL)
-        goto error;
-    err = PySys_SetObject("path_hooks", path_hooks);
-    if (err) {
-        goto error;
-    }
-    Py_DECREF(path_hooks);
-    return _PyStatus_OK();
-
-  error:
-    _PyErr_Print(tstate);
-    return _PyStatus_ERR("initializing sys.meta_path, sys.path_hooks, "
-                        "or path_importer_cache failed");
-}
-
-PyStatus
 _PyImportZip_Init(PyThreadState *tstate)
 {
     PyObject *path_hooks, *zipimport;
