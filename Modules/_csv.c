@@ -37,24 +37,24 @@ get_csv_state(PyObject *module)
 static int
 _csv_clear(PyObject *m)
 {
-    _csvstate *m_state = PyModule_GetState(m);
-    Py_CLEAR(m_state->error_obj);
-    Py_CLEAR(m_state->dialects);
-    Py_CLEAR(m_state->dialect_type);
-    Py_CLEAR(m_state->reader_type);
-    Py_CLEAR(m_state->writer_type);
+    _csvstate *module_state = PyModule_GetState(m);
+    Py_CLEAR(module_state->error_obj);
+    Py_CLEAR(module_state->dialects);
+    Py_CLEAR(module_state->dialect_type);
+    Py_CLEAR(module_state->reader_type);
+    Py_CLEAR(module_state->writer_type);
     return 0;
 }
 
 static int
 _csv_traverse(PyObject *m, visitproc visit, void *arg)
 {
-    _csvstate *m_state = PyModule_GetState(m);
-    Py_VISIT(m_state->error_obj);
-    Py_VISIT(m_state->dialects);
-    Py_VISIT(m_state->dialect_type);
-    Py_VISIT(m_state->reader_type);
-    Py_VISIT(m_state->writer_type);
+    _csvstate *module_state = PyModule_GetState(m);
+    Py_VISIT(module_state->error_obj);
+    Py_VISIT(module_state->dialects);
+    Py_VISIT(module_state->dialect_type);
+    Py_VISIT(module_state->reader_type);
+    Py_VISIT(module_state->writer_type);
     return 0;
 }
 
@@ -137,14 +137,14 @@ typedef struct {
  */
 
 static PyObject *
-get_dialect_from_registry(PyObject *name_obj, _csvstate *m_state)
+get_dialect_from_registry(PyObject *name_obj, _csvstate *module_state)
 {
     PyObject *dialect_obj;
 
-    dialect_obj = PyDict_GetItemWithError(m_state->dialects, name_obj);
+    dialect_obj = PyDict_GetItemWithError(module_state->dialects, name_obj);
     if (dialect_obj == NULL) {
         if (!PyErr_Occurred())
-            PyErr_Format(m_state->error_obj, "unknown dialect");
+            PyErr_Format(module_state->error_obj, "unknown dialect");
     }
     else
         Py_INCREF(dialect_obj);
@@ -372,8 +372,8 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (m == NULL) {
         return NULL;
     }
-    _csvstate *m_state = PyModule_GetState(m);
-    if (m_state == NULL) {
+    _csvstate *module_state = PyModule_GetState(m);
+    if (module_state == NULL) {
         return PyErr_Format(PyExc_SystemError,
                             "dialect_new: No _csv module state found");
     }
@@ -381,14 +381,14 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 
     if (dialect != NULL) {
         if (PyUnicode_Check(dialect)) {
-            dialect = get_dialect_from_registry(dialect, m_state);
+            dialect = get_dialect_from_registry(dialect, module_state);
             if (dialect == NULL)
                 return NULL;
         }
         else
             Py_INCREF(dialect);
         /* Can we reuse this instance? */
-        if (PyObject_TypeCheck(dialect, m_state->dialect_type) &&
+        if (PyObject_TypeCheck(dialect, module_state->dialect_type) &&
             delimiter == NULL &&
             doublequote == NULL &&
             escapechar == NULL &&
@@ -529,12 +529,12 @@ PyType_Spec Dialect_Type_spec = {
 static PyObject *
 _call_dialect(PyObject *m, PyObject *dialect_inst, PyObject *kwargs)
 {
-    _csvstate *m_state = PyModule_GetState(m);
-    if (m_state == NULL) {
+    _csvstate *module_state = PyModule_GetState(m);
+    if (module_state == NULL) {
         return NULL;
     }
 
-    PyObject *type = (PyObject *)m_state->dialect_type;
+    PyObject *type = (PyObject *)module_state->dialect_type;
     if (dialect_inst) {
         return PyObject_VectorcallDict(type, &dialect_inst, 1, kwargs);
     }
@@ -592,11 +592,12 @@ parse_grow_buff(ReaderObj *self)
 }
 
 static int
-parse_add_char(ReaderObj *self, _csvstate *m_state, Py_UCS4 c)
+parse_add_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
 {
-    if (self->field_len >= m_state->field_limit) {
-        PyErr_Format(m_state->error_obj, "field larger than field limit (%ld)",
-                     m_state->field_limit);
+    if (self->field_len >= module_state->field_limit) {
+        PyErr_Format(module_state->error_obj,
+                     "field larger than field limit (%ld)",
+                     module_state->field_limit);
         return -1;
     }
     if (self->field_len == self->field_size && !parse_grow_buff(self))
@@ -606,7 +607,7 @@ parse_add_char(ReaderObj *self, _csvstate *m_state, Py_UCS4 c)
 }
 
 static int
-parse_process_char(ReaderObj *self, _csvstate *m_state, Py_UCS4 c)
+parse_process_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
 {
     DialectObj *dialect = self->dialect;
 
@@ -652,7 +653,7 @@ parse_process_char(ReaderObj *self, _csvstate *m_state, Py_UCS4 c)
             /* begin new unquoted field */
             if (dialect->quoting == QUOTE_NONNUMERIC)
                 self->numeric_field = 1;
-            if (parse_add_char(self, m_state, c) < 0)
+            if (parse_add_char(self, module_state, c) < 0)
                 return -1;
             self->state = IN_FIELD;
         }
@@ -660,14 +661,14 @@ parse_process_char(ReaderObj *self, _csvstate *m_state, Py_UCS4 c)
 
     case ESCAPED_CHAR:
         if (c == '\n' || c=='\r') {
-            if (parse_add_char(self, m_state, c) < 0)
+            if (parse_add_char(self, module_state, c) < 0)
                 return -1;
             self->state = AFTER_ESCAPED_CRNL;
             break;
         }
         if (c == '\0')
             c = '\n';
-        if (parse_add_char(self, m_state, c) < 0)
+        if (parse_add_char(self, module_state, c) < 0)
             return -1;
         self->state = IN_FIELD;
         break;
@@ -697,7 +698,7 @@ parse_process_char(ReaderObj *self, _csvstate *m_state, Py_UCS4 c)
         }
         else {
             /* normal character - save in field */
-            if (parse_add_char(self, m_state, c) < 0)
+            if (parse_add_char(self, module_state, c) < 0)
                 return -1;
         }
         break;
@@ -723,7 +724,7 @@ parse_process_char(ReaderObj *self, _csvstate *m_state, Py_UCS4 c)
         }
         else {
             /* normal character - save in field */
-            if (parse_add_char(self, m_state, c) < 0)
+            if (parse_add_char(self, module_state, c) < 0)
                 return -1;
         }
         break;
@@ -731,7 +732,7 @@ parse_process_char(ReaderObj *self, _csvstate *m_state, Py_UCS4 c)
     case ESCAPE_IN_QUOTED_FIELD:
         if (c == '\0')
             c = '\n';
-        if (parse_add_char(self, m_state, c) < 0)
+        if (parse_add_char(self, module_state, c) < 0)
             return -1;
         self->state = IN_QUOTED_FIELD;
         break;
@@ -741,7 +742,7 @@ parse_process_char(ReaderObj *self, _csvstate *m_state, Py_UCS4 c)
         if (dialect->quoting != QUOTE_NONE &&
             c == dialect->quotechar) {
             /* save "" as " */
-            if (parse_add_char(self, m_state, c) < 0)
+            if (parse_add_char(self, module_state, c) < 0)
                 return -1;
             self->state = IN_QUOTED_FIELD;
         }
@@ -758,13 +759,13 @@ parse_process_char(ReaderObj *self, _csvstate *m_state, Py_UCS4 c)
             self->state = (c == '\0' ? START_RECORD : EAT_CRNL);
         }
         else if (!dialect->strict) {
-            if (parse_add_char(self, m_state, c) < 0)
+            if (parse_add_char(self, module_state, c) < 0)
                 return -1;
             self->state = IN_FIELD;
         }
         else {
             /* illegal */
-            PyErr_Format(m_state->error_obj, "'%c' expected after '%c'",
+            PyErr_Format(module_state->error_obj, "'%c' expected after '%c'",
                             dialect->delimiter,
                             dialect->quotechar);
             return -1;
@@ -777,7 +778,7 @@ parse_process_char(ReaderObj *self, _csvstate *m_state, Py_UCS4 c)
         else if (c == '\0')
             self->state = START_RECORD;
         else {
-            PyErr_Format(m_state->error_obj,
+            PyErr_Format(module_state->error_obj,
                          "new-line character seen in unquoted field - do you need to open the file in universal-newline mode?");
             return -1;
         }
@@ -813,8 +814,8 @@ Reader_iternext(ReaderObj *self)
     if (m == NULL) {
         return NULL;
     }
-    _csvstate *m_state = PyModule_GetState(m);
-    if (m_state == NULL) {
+    _csvstate *module_state = PyModule_GetState(m);
+    if (module_state == NULL) {
         return PyErr_Format(PyExc_SystemError,
                             "dialect_new: No _csv module state found");
     }
@@ -828,7 +829,7 @@ Reader_iternext(ReaderObj *self)
             if (!PyErr_Occurred() && (self->field_len != 0 ||
                                       self->state == IN_QUOTED_FIELD)) {
                 if (self->dialect->strict)
-                    PyErr_SetString(m_state->error_obj,
+                    PyErr_SetString(module_state->error_obj,
                                     "unexpected end of data");
                 else if (parse_save_field(self) >= 0)
                     break;
@@ -836,7 +837,7 @@ Reader_iternext(ReaderObj *self)
             return NULL;
         }
         if (!PyUnicode_Check(lineobj)) {
-            PyErr_Format(m_state->error_obj,
+            PyErr_Format(module_state->error_obj,
                          "iterator should return strings, "
                          "not %.200s "
                          "(the file should be opened in text mode)",
@@ -858,18 +859,18 @@ Reader_iternext(ReaderObj *self)
             c = PyUnicode_READ(kind, data, pos);
             if (c == '\0') {
                 Py_DECREF(lineobj);
-                PyErr_Format(m_state->error_obj,
+                PyErr_Format(module_state->error_obj,
                              "line contains NUL");
                 goto err;
             }
-            if (parse_process_char(self, m_state, c) < 0) {
+            if (parse_process_char(self, module_state, c) < 0) {
                 Py_DECREF(lineobj);
                 goto err;
             }
             pos++;
         }
         Py_DECREF(lineobj);
-        if (parse_process_char(self, m_state, 0) < 0)
+        if (parse_process_char(self, module_state, 0) < 0)
             goto err;
     } while (self->state != START_RECORD);
 
@@ -1651,22 +1652,22 @@ static int
 csv_exec(PyObject *module) {
     const StyleDesc *style;
     PyObject *temp;
-    _csvstate *m_state = get_csv_state(module);
+    _csvstate *module_state = get_csv_state(module);
 
     temp = PyType_FromModuleAndSpec(module, &Dialect_Type_spec, NULL);
-    m_state->dialect_type = (PyTypeObject *)temp;
+    module_state->dialect_type = (PyTypeObject *)temp;
     if (PyModule_AddObjectRef(module, "Dialect", temp) < 0) {
         return -1;
     }
 
     temp = PyType_FromModuleAndSpec(module, &Reader_Type_spec, NULL);
-    m_state->reader_type = (PyTypeObject *)temp;
+    module_state->reader_type = (PyTypeObject *)temp;
     if (PyModule_AddObjectRef(module, "Reader", temp) < 0) {
         return -1;
     }
 
     temp = PyType_FromModuleAndSpec(module, &Writer_Type_spec, NULL);
-    m_state->writer_type = (PyTypeObject *)temp;
+    module_state->writer_type = (PyTypeObject *)temp;
     if (PyModule_AddObjectRef(module, "Writer", temp) < 0) {
         return -1;
     }
@@ -1678,11 +1679,11 @@ csv_exec(PyObject *module) {
     }
 
     /* Set the field limit */
-    m_state->field_limit = 128 * 1024;
+    module_state->field_limit = 128 * 1024;
 
     /* Add _dialects dictionary */
-    m_state->dialects = PyDict_New();
-    if (PyModule_AddObjectRef(module, "_dialects", m_state->dialects) < 0) {
+    module_state->dialects = PyDict_New();
+    if (PyModule_AddObjectRef(module, "_dialects", module_state->dialects) < 0) {
         return -1;
     }
 
@@ -1698,12 +1699,13 @@ csv_exec(PyObject *module) {
     if (bases == NULL) {
         return -1;
     }
-    m_state->error_obj = PyType_FromModuleAndSpec(module, &error_spec, bases);
+    module_state->error_obj = PyType_FromModuleAndSpec(module, &error_spec,
+                                                       bases);
     Py_DECREF(bases);
-    if (m_state->error_obj == NULL) {
+    if (module_state->error_obj == NULL) {
         return -1;
     }
-    if (PyModule_AddType(module, (PyTypeObject *)m_state->error_obj) != 0) {
+    if (PyModule_AddType(module, (PyTypeObject *)module_state->error_obj) != 0) {
         return -1;
     }
 
