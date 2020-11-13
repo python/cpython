@@ -316,7 +316,7 @@ static void
 Dialect_dealloc(DialectObj *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    Py_XDECREF(self->lineterminator);
+    Py_CLEAR(self->lineterminator);
     tp->tp_free((PyObject *)self);
     Py_DECREF(tp);
 }
@@ -324,7 +324,7 @@ Dialect_dealloc(DialectObj *self)
 static void
 Dialect_finalize(DialectObj *self)
 {
-    Py_XDECREF(self->lineterminator);
+    Py_CLEAR(self->lineterminator);
 }
 
 static char *dialect_kws[] = {
@@ -402,7 +402,7 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 
     self = (DialectObj *)type->tp_alloc(type, 0);
     if (self == NULL) {
-        Py_XDECREF(dialect);
+        Py_CLEAR(dialect);
         return NULL;
     }
     self->lineterminator = NULL;
@@ -466,16 +466,16 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     ret = (PyObject *)self;
     Py_INCREF(self);
 err:
-    Py_XDECREF(self);
-    Py_XDECREF(dialect);
-    Py_XDECREF(delimiter);
-    Py_XDECREF(doublequote);
-    Py_XDECREF(escapechar);
-    Py_XDECREF(lineterminator);
-    Py_XDECREF(quotechar);
-    Py_XDECREF(quoting);
-    Py_XDECREF(skipinitialspace);
-    Py_XDECREF(strict);
+    Py_CLEAR(self);
+    Py_CLEAR(dialect);
+    Py_CLEAR(delimiter);
+    Py_CLEAR(doublequote);
+    Py_CLEAR(escapechar);
+    Py_CLEAR(lineterminator);
+    Py_CLEAR(quotechar);
+    Py_CLEAR(quoting);
+    Py_CLEAR(skipinitialspace);
+    Py_CLEAR(strict);
     return ret;
 }
 
@@ -885,9 +885,9 @@ Reader_dealloc(ReaderObj *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    Py_XDECREF(self->dialect);
-    Py_XDECREF(self->input_iter);
-    Py_XDECREF(self->fields);
+    Py_CLEAR(self->dialect);
+    Py_CLEAR(self->input_iter);
+    Py_CLEAR(self->fields);
     if (self->field != NULL)
         PyMem_Free(self->field);
     PyObject_GC_Del(self);
@@ -897,9 +897,9 @@ Reader_dealloc(ReaderObj *self)
 static void
 Reader_finalize(ReaderObj *self)
 {
-    Py_XDECREF(self->dialect);
-    Py_XDECREF(self->input_iter);
-    Py_XDECREF(self->fields);
+    Py_CLEAR(self->dialect);
+    Py_CLEAR(self->input_iter);
+    Py_CLEAR(self->fields);
     if (self->field != NULL) {
         PyMem_Free(self->field);
     }
