@@ -3280,7 +3280,8 @@ features:
 
    Create and return an event file descriptor. The file descriptors supports
    raw :func:`read` and :func:`write` with a buffer size of 8,
-   :func:`~select.select`, :func:`~select.poll` and similar. By default, the
+   :func:`~select.select`, :func:`~select.poll` and similar. See man page
+   :manpage:`eventfd(2)` for more information.  By default, the
    new file descriptor is :ref:`non-inheritable <fd_inheritance>`.
 
    *initval* is the initial value of the event counter. The initial value
@@ -3298,11 +3299,29 @@ features:
    non-zero, :func:`eventfd_read` returns the current event counter value and
    resets the counter to zero.
 
-   If the event counter is zero, :func:`eventfd_read` blocks.
+   If the event counter is zero and :const:`EFD_NONBLOCK` is not
+   specified, :func:`eventfd_read` blocks.
 
    :func:`eventfd_write` increments the event counter. Write blocks if the
    write operation would increment the counter to a value larger than
    2\ :sup:`64`\ -\ 2.
+
+   Example::
+
+       import os
+
+       # semaphore with start value '1'
+       fd = os.eventfd(1, os.EFD_SEMAPHORE | os.EFC_CLOEXEC)
+       try:
+           # acquire semaphore
+           v = os.eventfd_read(fd)
+           try:
+               do_work()
+           finally:
+               # release semaphore
+               os.eventfd_write(fd, v)
+       finally:
+           os.close(fd)
 
    .. availability:: Linux 2.6.27 or newer with glibc 2.8 or newer.
 
