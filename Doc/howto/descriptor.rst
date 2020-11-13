@@ -528,10 +528,9 @@ If a descriptor is found for ``a.x``, then it is invoked with:
 The logic for a dotted lookup is in :meth:`object.__getattribute__`.  Here is
 a pure Python equivalent::
 
-    null = object()
-
     def object_getattribute(obj, name):
         "Emulate PyObject_GenericGetAttr() in Objects/object.c"
+        null = object()
         objtype = type(obj)
         cls_var = getattr(objtype, name, null)
         descr_get = getattr(type(cls_var), '__get__', null)
@@ -554,7 +553,7 @@ perform attribute lookup by way of a helper function::
     def getattr_hook(obj, name):
         "Emulate slot_tp_getattr_hook() in Objects/typeobject.c"
         try:
-            return object_getattribute(obj, name)
+            return obj.__getattribute__(name)
         except AttributeError:
             if not hasattr(type(obj), '__getattr__'):
                 raise
