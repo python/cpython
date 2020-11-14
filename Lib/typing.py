@@ -18,6 +18,7 @@ At large scale, the structure of the module is following:
 """
 
 from abc import abstractmethod, ABCMeta
+import ast
 import collections
 import collections.abc
 import contextlib
@@ -112,6 +113,7 @@ __all__ = [
     'runtime_checkable',
     'Text',
     'TYPE_CHECKING',
+    'TypeAlias',
 ]
 
 # The pseudo-submodules 're' and 'io' are part of the public
@@ -160,6 +162,8 @@ def _type_repr(obj):
     typically enough to uniquely identify a type.  For everything
     else, we fall back on repr(obj).
     """
+    if isinstance(obj, types.GenericAlias):
+        return repr(obj)
     if isinstance(obj, type):
         if obj.__module__ == 'builtins':
             return obj.__qualname__
@@ -459,6 +463,21 @@ def Literal(self, parameters):
     return _GenericAlias(self, parameters)
 
 
+@_SpecialForm
+def TypeAlias(self, parameters):
+    """Special marker indicating that an assignment should
+    be recognized as a proper type alias definition by type
+    checkers.
+
+    For example::
+
+        Predicate: TypeAlias = Callable[..., bool]
+
+    It's invalid when used anywhere except as in the example above.
+    """
+    raise TypeError(f"{self} is not subscriptable")
+
+
 class ForwardRef(_Final, _root=True):
     """Internal wrapper to hold a forward reference."""
 
@@ -469,6 +488,13 @@ class ForwardRef(_Final, _root=True):
     def __init__(self, arg, is_argument=True):
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
+
+        # Double-stringified forward references is a result of activating
+        # the 'annotations' future by default. This way, we eliminate them in
+        # the runtime.
+        if arg.startswith(("'", '\"')) and arg.endswith(("'", '"')):
+            arg = arg[1:-1]
+
         try:
             code = compile(arg, '<string>', 'eval')
         except SyntaxError:

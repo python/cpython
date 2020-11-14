@@ -202,6 +202,8 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
         context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH,
                                              cafile=cafile,
                                              capath=capath)
+        # send ALPN extension to indicate HTTP/1.1 protocol
+        context.set_alpn_protocols(['http/1.1'])
         https_handler = HTTPSHandler(context=context)
         opener = build_opener(https_handler)
     elif context:
@@ -2596,6 +2598,11 @@ def _proxy_bypass_macosx_sysconf(host, proxy_settings):
                 mask = 8 * (m.group(1).count('.') + 1)
             else:
                 mask = int(mask[1:])
+
+            if mask < 0 or mask > 32:
+                # System libraries ignore invalid prefix lengths
+                continue
+
             mask = 32 - mask
 
             if (hostIP >> mask) == (base >> mask):

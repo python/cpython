@@ -1,1 +1,0 @@
-Fixes automatic import of props file when using the Nuget package.

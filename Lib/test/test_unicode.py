@@ -36,7 +36,6 @@ def search_function(encoding):
         return (encode2, decode2, None, None)
     else:
         return None
-codecs.register(search_function)
 
 def duplicate_string(text):
     """
@@ -57,6 +56,10 @@ class UnicodeTest(string_tests.CommonTest,
         unittest.TestCase):
 
     type2test = str
+
+    def setUp(self):
+        codecs.register(search_function)
+        self.addCleanup(codecs.unregister, search_function)
 
     def checkequalnofix(self, result, object, methodname, *args):
         method = getattr(object, methodname)
@@ -2513,11 +2516,13 @@ class CAPITest(unittest.TestCase):
     def test_from_format(self):
         import_helper.import_module('ctypes')
         from ctypes import (
+            c_char_p,
             pythonapi, py_object, sizeof,
             c_int, c_long, c_longlong, c_ssize_t,
             c_uint, c_ulong, c_ulonglong, c_size_t, c_void_p)
         name = "PyUnicode_FromFormat"
         _PyUnicode_FromFormat = getattr(pythonapi, name)
+        _PyUnicode_FromFormat.argtypes = (c_char_p,)
         _PyUnicode_FromFormat.restype = py_object
 
         def PyUnicode_FromFormat(format, *args):

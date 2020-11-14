@@ -1,10 +1,12 @@
-"Test calltip, coverage 60%"
+"Test calltip, coverage 76%"
 
 from idlelib import calltip
 import unittest
+from unittest.mock import Mock
 import textwrap
 import types
 import re
+from idlelib.idle_test.mock_tk import Text
 
 
 # Test Class TC is used in multiple get_argspec test methods
@@ -255,6 +257,101 @@ class Get_entityTest(unittest.TestCase):
         self.assertIsNone(calltip.get_entity('1/0'))
     def test_good_entity(self):
         self.assertIs(calltip.get_entity('int'), int)
+
+
+# Test the 9 Calltip methods.
+# open_calltip is about half the code; the others are fairly trivial.
+# The default mocks are what are needed for open_calltip.
+
+class mock_Shell():
+    "Return mock sufficient to pass to hyperparser."
+    def __init__(self, text):
+        text.tag_prevrange = Mock(return_value=None)
+        self.text = text
+        self.prompt_last_line = ">>> "
+        self.indentwidth = 4
+        self.tabwidth = 8
+
+
+class mock_TipWindow:
+    def __init__(self):
+        pass
+
+    def showtip(self, text, parenleft, parenright):
+        self.args = parenleft, parenright
+        self.parenline, self.parencol = map(int, parenleft.split('.'))
+
+
+class WrappedCalltip(calltip.Calltip):
+    def _make_tk_calltip_window(self):
+        return mock_TipWindow()
+
+    def remove_calltip_window(self, event=None):
+        if self.active_calltip:  # Setup to None.
+            self.active_calltip = None
+            self.tips_removed += 1  # Setup to 0.
+
+    def fetch_tip(self, expression):
+        return 'tip'
+
+
+class CalltipTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.text = Text()
+        cls.ct = WrappedCalltip(mock_Shell(cls.text))
+
+    def setUp(self):
+        self.text.delete('1.0', 'end')  # Insert and call
+        self.ct.active_calltip = None
+        # Test .active_calltip, +args
+        self.ct.tips_removed = 0
+
+    def open_close(self, testfunc):
+        # Open-close template with testfunc called in between.
+        opentip = self.ct.open_calltip
+        self.text.insert(1.0, 'f(')
+        opentip(False)
+        self.tip = self.ct.active_calltip
+        testfunc(self)  ###
+        self.text.insert('insert', ')')
+        opentip(False)
+        self.assertIsNone(self.ct.active_calltip, None)
+
+    def test_open_close(self):
+        def args(self):
+            self.assertEqual(self.tip.args, ('1.1', '1.end'))
+        self.open_close(args)
+
+    def test_repeated_force(self):
+        def force(self):
+            for char in 'abc':
+                self.text.insert('insert', 'a')
+                self.ct.open_calltip(True)
+                self.ct.open_calltip(True)
+            self.assertIs(self.ct.active_calltip, self.tip)
+        self.open_close(force)
+
+    def test_repeated_parens(self):
+        def parens(self):
+            for context in "a", "'":
+                with self.subTest(context=context):
+                    self.text.insert('insert', context)
+                    for char in '(()())':
+                        self.text.insert('insert', char)
+                    self.assertIs(self.ct.active_calltip, self.tip)
+            self.text.insert('insert', "'")
+        self.open_close(parens)
+
+    def test_comment_parens(self):
+        def comment(self):
+            self.text.insert('insert', "# ")
+            for char in '(()())':
+                self.text.insert('insert', char)
+            self.assertIs(self.ct.active_calltip, self.tip)
+            self.text.insert('insert', "\n")
+        self.open_close(comment)
 
 
 if __name__ == '__main__':

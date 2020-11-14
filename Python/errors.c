@@ -1098,10 +1098,11 @@ PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
             goto failure;
     }
 
-    if (_PyDict_GetItemIdWithError(dict, &PyId___module__) == NULL) {
-        if (_PyErr_Occurred(tstate)) {
-            goto failure;
-        }
+    int r = _PyDict_ContainsId(dict, &PyId___module__);
+    if (r < 0) {
+        goto failure;
+    }
+    if (r == 0) {
         modulename = PyUnicode_FromStringAndSize(name,
                                              (Py_ssize_t)(dot-name));
         if (modulename == NULL)
@@ -1593,9 +1594,18 @@ PyErr_SyntaxLocationObject(PyObject *filename, int lineno, int col_offset)
             }
             Py_DECREF(tmp);
         }
+        else {
+            _PyErr_Clear(tstate);
+        }
     }
     if (exc != PyExc_SyntaxError) {
-        if (!_PyObject_HasAttrId(v, &PyId_msg)) {
+        if (_PyObject_LookupAttrId(v, &PyId_msg, &tmp) < 0) {
+            _PyErr_Clear(tstate);
+        }
+        else if (tmp) {
+            Py_DECREF(tmp);
+        }
+        else {
             tmp = PyObject_Str(v);
             if (tmp) {
                 if (_PyObject_SetAttrId(v, &PyId_msg, tmp)) {
@@ -1607,7 +1617,13 @@ PyErr_SyntaxLocationObject(PyObject *filename, int lineno, int col_offset)
                 _PyErr_Clear(tstate);
             }
         }
-        if (!_PyObject_HasAttrId(v, &PyId_print_file_and_line)) {
+        if (_PyObject_LookupAttrId(v, &PyId_print_file_and_line, &tmp) < 0) {
+            _PyErr_Clear(tstate);
+        }
+        else if (tmp) {
+            Py_DECREF(tmp);
+        }
+        else {
             if (_PyObject_SetAttrId(v, &PyId_print_file_and_line,
                                     Py_None)) {
                 _PyErr_Clear(tstate);

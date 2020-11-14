@@ -432,6 +432,73 @@ class SysModuleTest(unittest.TestCase):
         leave_g.set()
         t.join()
 
+    @threading_helper.reap_threads
+    def test_current_exceptions(self):
+        import threading
+        import traceback
+
+        # Spawn a thread that blocks at a known place.  Then the main
+        # thread does sys._current_frames(), and verifies that the frames
+        # returned make sense.
+        entered_g = threading.Event()
+        leave_g = threading.Event()
+        thread_info = []  # the thread's id
+
+        def f123():
+            g456()
+
+        def g456():
+            thread_info.append(threading.get_ident())
+            entered_g.set()
+            while True:
+                try:
+                    raise ValueError("oops")
+                except ValueError:
+                    if leave_g.wait(timeout=support.LONG_TIMEOUT):
+                        break
+
+        t = threading.Thread(target=f123)
+        t.start()
+        entered_g.wait()
+
+        # At this point, t has finished its entered_g.set(), although it's
+        # impossible to guess whether it's still on that line or has moved on
+        # to its leave_g.wait().
+        self.assertEqual(len(thread_info), 1)
+        thread_id = thread_info[0]
+
+        d = sys._current_exceptions()
+        for tid in d:
+            self.assertIsInstance(tid, int)
+            self.assertGreater(tid, 0)
+
+        main_id = threading.get_ident()
+        self.assertIn(main_id, d)
+        self.assertIn(thread_id, d)
+        self.assertEqual((None, None, None), d.pop(main_id))
+
+        # Verify that the captured thread frame is blocked in g456, called
+        # from f123.  This is a litte tricky, since various bits of
+        # threading.py are also in the thread's call stack.
+        exc_type, exc_value, exc_tb = d.pop(thread_id)
+        stack = traceback.extract_stack(exc_tb.tb_frame)
+        for i, (filename, lineno, funcname, sourceline) in enumerate(stack):
+            if funcname == "f123":
+                break
+        else:
+            self.fail("didn't find f123() on thread's call stack")
+
+        self.assertEqual(sourceline, "g456()")
+
+        # And the next record must be for g456().
+        filename, lineno, funcname, sourceline = stack[i+1]
+        self.assertEqual(funcname, "g456")
+        self.assertTrue(sourceline.startswith("if leave_g.wait("))
+
+        # Reap the spawned thread.
+        leave_g.set()
+        t.join()
+
     def test_attributes(self):
         self.assertIsInstance(sys.api_version, int)
         self.assertIsInstance(sys.argv, list)
@@ -1340,7 +1407,7 @@ class SizeofTest(unittest.TestCase):
         check(int, s)
         # class
         s = vsize(fmt +                 # PyTypeObject
-                  '3P'                  # PyAsyncMethods
+                  '4P'                  # PyAsyncMethods
                   '36P'                 # PyNumberMethods
                   '3P'                  # PyMappingMethods
                   '10P'                 # PySequenceMethods

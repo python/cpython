@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_initconfig.h"
 #include "pycore_interp.h"        // PyInterpreterState.warnings
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "frameobject.h"          // PyFrame_GetBack()
@@ -73,7 +74,7 @@ create_filter(PyObject *category, _Py_Identifier *id, const char *modname)
 
     /* This assumes the line number is zero for now. */
     return PyTuple_Pack(5, action_str, Py_None,
-                        category, modname_obj, _PyLong_Zero);
+                        category, modname_obj, _PyLong_GetZero());
 }
 #endif
 
@@ -113,37 +114,34 @@ init_filters(void)
 }
 
 /* Initialize the given warnings module state. */
-static int
-warnings_init_state(WarningsState *st)
+int
+_PyWarnings_InitState(PyThreadState *tstate)
 {
+    WarningsState *st = &tstate->interp->warnings;
+
     if (st->filters == NULL) {
         st->filters = init_filters();
         if (st->filters == NULL) {
-            goto error;
+            return -1;
         }
     }
 
     if (st->once_registry == NULL) {
         st->once_registry = PyDict_New();
         if (st->once_registry == NULL) {
-            goto error;
+            return -1;
         }
     }
 
     if (st->default_action == NULL) {
         st->default_action = PyUnicode_FromString("default");
         if (st->default_action == NULL) {
-            goto error;
+            return -1;
         }
     }
 
     st->filters_version = 0;
-
     return 0;
-
-error:
-    warnings_clear_state(st);
-    return -1;
 }
 
 
@@ -472,7 +470,7 @@ update_registry(PyObject *registry, PyObject *text, PyObject *category,
     int rc;
 
     if (add_zero)
-        altkey = PyTuple_Pack(3, text, category, _PyLong_Zero);
+        altkey = PyTuple_Pack(3, text, category, _PyLong_GetZero());
     else
         altkey = PyTuple_Pack(2, text, category);
 
@@ -851,7 +849,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     }
 
     if (f == NULL) {
-        globals = _PyInterpreterState_GET()->sysdict;
+        globals = tstate->interp->sysdict;
         *filename = PyUnicode_FromString("sys");
         *lineno = 1;
     }
@@ -1366,16 +1364,6 @@ static struct PyModuleDef warningsmodule = {
 };
 
 
-PyStatus
-_PyWarnings_InitState(PyThreadState *tstate)
-{
-    if (warnings_init_state(&tstate->interp->warnings) < 0) {
-        return _PyStatus_ERR("can't initialize warnings");
-    }
-    return _PyStatus_OK();
-}
-
-
 PyMODINIT_FUNC
 _PyWarnings_Init(void)
 {
@@ -1390,22 +1378,14 @@ _PyWarnings_Init(void)
     if (st == NULL) {
         goto error;
     }
-    if (warnings_init_state(st) < 0) {
+
+    if (PyModule_AddObjectRef(m, "filters", st->filters) < 0) {
         goto error;
     }
-
-    Py_INCREF(st->filters);
-    if (PyModule_AddObject(m, "filters", st->filters) < 0) {
+    if (PyModule_AddObjectRef(m, "_onceregistry", st->once_registry) < 0) {
         goto error;
     }
-
-    Py_INCREF(st->once_registry);
-    if (PyModule_AddObject(m, "_onceregistry", st->once_registry) < 0) {
-        goto error;
-    }
-
-    Py_INCREF(st->default_action);
-    if (PyModule_AddObject(m, "_defaultaction", st->default_action) < 0) {
+    if (PyModule_AddObjectRef(m, "_defaultaction", st->default_action) < 0) {
         goto error;
     }
 
