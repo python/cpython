@@ -14834,84 +14834,6 @@ static PyMethodDef posix_methods[] = {
 static int
 all_ins(PyObject *m)
 {
-#ifdef F_OK
-    if (PyModule_AddIntMacro(m, F_OK)) return -1;
-#endif
-#ifdef R_OK
-    if (PyModule_AddIntMacro(m, R_OK)) return -1;
-#endif
-#ifdef W_OK
-    if (PyModule_AddIntMacro(m, W_OK)) return -1;
-#endif
-#ifdef X_OK
-    if (PyModule_AddIntMacro(m, X_OK)) return -1;
-#endif
-#ifdef NGROUPS_MAX
-    if (PyModule_AddIntMacro(m, NGROUPS_MAX)) return -1;
-#endif
-#ifdef TMP_MAX
-    if (PyModule_AddIntMacro(m, TMP_MAX)) return -1;
-#endif
-#ifdef WCONTINUED
-    if (PyModule_AddIntMacro(m, WCONTINUED)) return -1;
-#endif
-#ifdef WNOHANG
-    if (PyModule_AddIntMacro(m, WNOHANG)) return -1;
-#endif
-#ifdef WUNTRACED
-    if (PyModule_AddIntMacro(m, WUNTRACED)) return -1;
-#endif
-#ifdef O_RDONLY
-    if (PyModule_AddIntMacro(m, O_RDONLY)) return -1;
-#endif
-#ifdef O_WRONLY
-    if (PyModule_AddIntMacro(m, O_WRONLY)) return -1;
-#endif
-#ifdef O_RDWR
-    if (PyModule_AddIntMacro(m, O_RDWR)) return -1;
-#endif
-#ifdef O_NDELAY
-    if (PyModule_AddIntMacro(m, O_NDELAY)) return -1;
-#endif
-#ifdef O_NONBLOCK
-    if (PyModule_AddIntMacro(m, O_NONBLOCK)) return -1;
-#endif
-#ifdef O_APPEND
-    if (PyModule_AddIntMacro(m, O_APPEND)) return -1;
-#endif
-#ifdef O_DSYNC
-    if (PyModule_AddIntMacro(m, O_DSYNC)) return -1;
-#endif
-#ifdef O_RSYNC
-    if (PyModule_AddIntMacro(m, O_RSYNC)) return -1;
-#endif
-#ifdef O_SYNC
-    if (PyModule_AddIntMacro(m, O_SYNC)) return -1;
-#endif
-#ifdef O_NOCTTY
-    if (PyModule_AddIntMacro(m, O_NOCTTY)) return -1;
-#endif
-#ifdef O_CREAT
-    if (PyModule_AddIntMacro(m, O_CREAT)) return -1;
-#endif
-#ifdef O_EXCL
-    if (PyModule_AddIntMacro(m, O_EXCL)) return -1;
-#endif
-#ifdef O_TRUNC
-    if (PyModule_AddIntMacro(m, O_TRUNC)) return -1;
-#endif
-#ifdef O_BINARY
-    if (PyModule_AddIntMacro(m, O_BINARY)) return -1;
-#endif
-#ifdef O_TEXT
-    if (PyModule_AddIntMacro(m, O_TEXT)) return -1;
-#endif
-#ifdef O_XATTR
-    if (PyModule_AddIntMacro(m, O_XATTR)) return -1;
-#endif
-#ifdef O_LARGEFILE
-    if (PyModule_AddIntMacro(m, O_LARGEFILE)) return -1;
-#endif
 #ifndef __GNU__
 #ifdef O_SHLOCK
     if (PyModule_AddIntMacro(m, O_SHLOCK)) return -1;
@@ -15765,6 +15687,88 @@ posixmodule_exec(PyObject *m)
     return 0;
 }
 
+static PyModuleConstants_Def _posix_constants[] = {
+#ifdef F_OK
+    PyMC_LongMacro(F_OK),
+#endif
+#ifdef R_OK
+    PyMC_LongMacro(R_OK),
+#endif
+#ifdef W_OK
+    PyMC_LongMacro(W_OK),
+#endif
+#ifdef X_OK
+    PyMC_LongMacro(X_OK),
+#endif
+#ifdef NGROUPS_MAX
+    PyMC_LongMacro(NGROUPS_MAX),
+#endif
+#ifdef TMP_MAX
+    PyMC_LongMacro(TMP_MAX),
+#endif
+#ifdef WCONTINUED
+    PyMC_LongMacro(WCONTINUED),
+#endif
+#ifdef WNOHANG
+    PyMC_LongMacro(WNOHANG),
+#endif
+#ifdef WUNTRACED
+    PyMC_LongMacro(WUNTRACED),
+#endif
+#ifdef O_RDONLY
+    PyMC_LongMacro(O_RDONLY),
+#endif
+#ifdef O_WRONLY
+    PyMC_LongMacro(O_WRONLY),
+#endif
+#ifdef O_RDWR
+    PyMC_LongMacro(O_RDWR),
+#endif
+#ifdef O_NDELAY
+    PyMC_LongMacro(O_NDELAY),
+#endif
+#ifdef O_NONBLOCK
+    PyMC_LongMacro(O_NONBLOCK),
+#endif
+#ifdef O_APPEND
+    PyMC_LongMacro(O_APPEND),
+#endif
+#ifdef O_DSYNC
+    PyMC_LongMacro(O_DSYNC),
+#endif
+#ifdef O_RSYNC
+    PyMC_LongMacro(O_RSYNC),
+#endif
+#ifdef O_SYNC
+    PyMC_LongMacro(O_SYNC),
+#endif
+#ifdef O_NOCTTY
+    PyMC_LongMacro(O_NOCTTY),
+#endif
+#ifdef O_CREAT
+    PyMC_LongMacro(O_CREAT),
+#endif
+#ifdef O_EXCL
+    PyMC_LongMacro(O_EXCL),
+#endif
+#ifdef O_TRUNC
+    PyMC_LongMacro(O_TRUNC),
+#endif
+#ifdef O_BINARY
+    PyMC_LongMacro(O_BINARY),
+#endif
+#ifdef O_TEXT
+    PyMC_LongMacro(O_TEXT),
+#endif
+#ifdef O_XATTR
+    PyMC_LongMacro(O_XATTR),
+#endif
+#ifdef O_LARGEFILE
+    PyMC_LongMacro(O_LARGEFILE),
+#endif
+    {NULL, 0},
+};
+
 
 static PyModuleDef_Slot posixmodile_slots[] = {
     {Py_mod_exec, posixmodule_exec},
@@ -15781,6 +15785,7 @@ static struct PyModuleDef posixmodule = {
     .m_traverse = _posix_traverse,
     .m_clear = _posix_clear,
     .m_free = _posix_free,
+    .m_constants = _posix_constants,
 };
 
 PyMODINIT_FUNC

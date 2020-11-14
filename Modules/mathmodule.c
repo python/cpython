@@ -270,6 +270,12 @@ m_inf(void)
 #endif
 }
 
+static PyObject*
+m_inf_o(void)
+{
+    return PyFloat_FromDouble(m_inf());
+}
+
 /* Constant nan value, generated in the same way as float('nan'). */
 /* We don't currently assume that Py_NAN is defined everywhere. */
 
@@ -283,6 +289,12 @@ m_nan(void)
 #else
     return Py_NAN;
 #endif
+}
+
+static PyObject*
+m_nan_o(void)
+{
+    return PyFloat_FromDouble(m_nan());
 }
 
 #endif
@@ -3514,30 +3526,6 @@ math_ulp_impl(PyObject *module, double x)
     return x2 - x;
 }
 
-static int
-math_exec(PyObject *module)
-{
-    if (PyModule_AddObject(module, "pi", PyFloat_FromDouble(Py_MATH_PI)) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObject(module, "e", PyFloat_FromDouble(Py_MATH_E)) < 0) {
-        return -1;
-    }
-    // 2pi
-    if (PyModule_AddObject(module, "tau", PyFloat_FromDouble(Py_MATH_TAU)) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObject(module, "inf", PyFloat_FromDouble(m_inf())) < 0) {
-        return -1;
-    }
-#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
-    if (PyModule_AddObject(module, "nan", PyFloat_FromDouble(m_nan())) < 0) {
-        return -1;
-    }
-#endif
-    return 0;
-}
-
 static PyMethodDef math_methods[] = {
     {"acos",            math_acos,      METH_O,         math_acos_doc},
     {"acosh",           math_acosh,     METH_O,         math_acosh_doc},
@@ -3595,9 +3583,16 @@ static PyMethodDef math_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
-static PyModuleDef_Slot math_slots[] = {
-    {Py_mod_exec, math_exec},
-    {0, NULL}
+static PyModuleConstants_Def math_constants[] = {
+    PyMC_Double("pi", Py_MATH_PI),
+    PyMC_Double("e", Py_MATH_E),
+    // 2pi
+    PyMC_Double("tau", Py_MATH_TAU),
+    PyMC_Call("inf", m_inf_o),
+#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
+    PyMC_Call("nan", m_nan_o),
+#endif
+    {NULL, 0},
 };
 
 PyDoc_STRVAR(module_doc,
@@ -3610,7 +3605,7 @@ static struct PyModuleDef mathmodule = {
     .m_doc = module_doc,
     .m_size = 0,
     .m_methods = math_methods,
-    .m_slots = math_slots,
+    .m_constants = math_constants,
 };
 
 PyMODINIT_FUNC

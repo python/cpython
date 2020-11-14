@@ -245,6 +245,12 @@ _PyModule_CreateInitialized(struct PyModuleDef* module, int module_api_version)
             return NULL;
         }
     }
+    if (module->m_constants != NULL) {
+        if (PyModule_AddConstants((PyObject *) m, module->m_constants) != 0) {
+            Py_DECREF(m);
+            return NULL;
+        }
+    }
     m->md_def = module;
     return (PyObject*)m;
 }
@@ -364,6 +370,13 @@ PyModule_FromDefAndSpec2(struct PyModuleDef* def, PyObject *spec, int module_api
         }
     }
 
+    if (def->m_constants != NULL) {
+        if (PyModule_AddConstants((PyObject *) m, def->m_constants) != 0) {
+            Py_DECREF(m);
+            return NULL;
+        }
+    }
+
     Py_DECREF(nameobj);
     return m;
 
@@ -435,6 +448,60 @@ PyModule_ExecDef(PyObject *module, PyModuleDef *def)
                 return -1;
         }
     }
+    return 0;
+}
+
+int
+PyModule_AddConstants(PyObject *module, PyModuleConstants_Def *def)
+{
+    PyObject *dict;
+    PyModuleConstants_Def *cur_def;
+    PyObject *v;
+    int res;
+
+    dict = PyModule_GetDict(module);
+    if (dict == NULL) {
+        return -1;
+    }
+
+    for (cur_def = def; cur_def && cur_def->name; cur_def++) {
+        switch(cur_def->type) {
+        case Py_mc_none:
+            v = Py_None;
+            Py_INCREF(v);
+            break;
+        case Py_mc_long:
+            v = PyLong_FromLong(cur_def->value.m_long);
+            break;
+        case Py_mc_bool:
+            v = PyBool_FromLong(cur_def->value.m_long);
+            break;
+        case Py_mc_double:
+            v = PyFloat_FromDouble(cur_def->value.m_double);
+            break;
+        case Py_mc_string:
+            v =  PyUnicode_FromString(cur_def->value.m_str);
+            break;
+        case Py_mc_call:
+            v = cur_def->value.m_call();
+            break;
+        default:
+            v = NULL;
+            PyErr_Format(PyExc_SystemError,
+                         "Invalid format for '%s'",
+                          cur_def->name);
+            break;
+        }
+        if (v == NULL) {
+            return -1;
+        }
+        res = PyDict_SetItemString(dict, cur_def->name, v);
+        Py_DECREF(v);
+        if (res < 0) {
+            return -1;
+        }
+    }
+
     return 0;
 }
 

@@ -72,6 +72,42 @@ typedef struct PyModuleDef_Slot{
 
 #endif /* New in 3.5 */
 
+struct PyModuleConstants_Def;
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03100000
+/* New in 3.10 */
+#define Py_mc_none 1
+#define Py_mc_long 2
+#define Py_mc_bool 3
+#define Py_mc_double 4
+#define Py_mc_string 5
+#define Py_mc_call 6
+#define Py_mc_type 7
+
+typedef struct PyModuleConstants_Def {
+    const char *name;
+    int type;
+    union {
+        const char *m_str;
+        long m_long;
+        double m_double;
+        PyObject* (*m_call)(void);
+    } value;
+} PyModuleConstants_Def;
+
+PyAPI_FUNC(int) PyModule_AddConstants(PyObject *, PyModuleConstants_Def *);
+
+#define PyMC_None(name) {(name), Py_mc_none, {.m_long=0}}
+#define PyMC_Long(name, value) {(name), Py_mc_long, {.m_long=(value)}}
+#define PyMC_Bool(name, value) {(name), Py_mc_bool, {.m_long=(value)}}
+#define PyMC_Double(name, value) {(name), Py_mc_double, {.m_double=(value)}}
+#define PyMC_String(name, value) {(name), Py_mc_string, {.m_string=(value)}}
+#define PyMC_Call(name, value) {(name), Py_mc_call, {.m_call=(value)}}
+
+#define PyMC_LongMacro(m) PyMC_Long(#m, m)
+#define PyMC_StringMacro(m) PyMC_String(#m, m)
+
+#endif /* New in 3.10 */
+
 typedef struct PyModuleDef{
   PyModuleDef_Base m_base;
   const char* m_name;
@@ -82,6 +118,7 @@ typedef struct PyModuleDef{
   traverseproc m_traverse;
   inquiry m_clear;
   freefunc m_free;
+  struct PyModuleConstants_Def* m_constants;
 } PyModuleDef;
 
 
