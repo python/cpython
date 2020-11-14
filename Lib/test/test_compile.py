@@ -769,10 +769,11 @@ if 1:
 
         # Check that condition is removed.
         for func in funcs:
-            opcodes = list(dis.get_instructions(func))
-            self.assertEqual(2, len(opcodes))
-            self.assertIn('LOAD_', opcodes[0].opname)
-            self.assertEqual('RETURN_VALUE', opcodes[1].opname)
+            with self.subTest(func=func):
+                opcodes = list(dis.get_instructions(func))
+                self.assertEqual(2, len(opcodes))
+                self.assertIn('LOAD_', opcodes[0].opname)
+                self.assertEqual('RETURN_VALUE', opcodes[1].opname)
 
 
     def test_big_dict_literal(self):
