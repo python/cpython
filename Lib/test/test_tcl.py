@@ -1,4 +1,5 @@
 import unittest
+import locale
 import re
 import subprocess
 import sys
@@ -197,38 +198,45 @@ class TclTest(unittest.TestCase):
 
     def testEvalFile(self):
         tcl = self.interp
-        with open(os_helper.TESTFN, 'w') as f:
-            self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        filename = os_helper.TESTFN_ASCII
+        self.addCleanup(os_helper.unlink, filename)
+        with open(filename, 'w') as f:
             f.write("""set a 1
             set b 2
             set c [ expr $a + $b ]
             """)
-        tcl.evalfile(os_helper.TESTFN)
+        tcl.evalfile(filename)
         self.assertEqual(tcl.eval('set a'),'1')
         self.assertEqual(tcl.eval('set b'),'2')
         self.assertEqual(tcl.eval('set c'),'3')
 
     def test_evalfile_null_in_result(self):
         tcl = self.interp
-        with open(os_helper.TESTFN, 'w') as f:
-            self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        filename = os_helper.TESTFN_ASCII
+        self.addCleanup(os_helper.unlink, filename)
+        with open(filename, 'w') as f:
             f.write("""
             set a "a\0b"
             set b "a\\0b"
             """)
-        tcl.evalfile(os_helper.TESTFN)
+        tcl.evalfile(filename)
         self.assertEqual(tcl.eval('set a'), 'a\x00b')
         self.assertEqual(tcl.eval('set b'), 'a\x00b')
 
     def test_evalfile_surrogates_in_result(self):
         tcl = self.interp
-        with open(os_helper.TESTFN, 'wb') as f:
-            self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        encoding = tcl.call('encoding', 'system')
+        self.addCleanup(tcl.call, 'encoding', 'system', encoding)
+        tcl.call('encoding', 'system', 'utf-8')
+
+        filename = os_helper.TESTFN_ASCII
+        self.addCleanup(os_helper.unlink, filename)
+        with open(filename, 'wb') as f:
             f.write(b"""
             set a "<\xed\xa0\xbd\xed\xb2\xbb>"
             set b "<\\ud83d\\udcbb>"
             """)
-        tcl.evalfile(os_helper.TESTFN)
+        tcl.evalfile(filename)
         self.assertEqual(tcl.eval('set a'), '<\U0001f4bb>')
         self.assertEqual(tcl.eval('set b'), '<\U0001f4bb>')
 
