@@ -2441,6 +2441,15 @@ PyInit_select(void)
 
     get_select_state(m)->close = PyUnicode_InternFromString("close");
 
+#define ADD_INT(name, value) \
+    do { \
+        if (PyModule_AddIntConstant(m, name, value) < 0) { \
+            goto error; \
+        } \
+    } while (0)
+
+#define ADD_INT_MACRO(macro) ADD_INT(#macro, macro)
+
     Py_INCREF(PyExc_OSError);
     if (PyModule_Add(m, "error", PyExc_OSError) < 0) {
         goto error;
@@ -2451,7 +2460,7 @@ PyInit_select(void)
 #undef PIPE_BUF
 #define PIPE_BUF 512
 #endif
-    PyModule_AddIntMacro(m, PIPE_BUF);
+    ADD_INT_MACRO(PIPE_BUF);
 #endif
 
 #if defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)
@@ -2466,34 +2475,34 @@ PyInit_select(void)
 #endif
         PyObject *poll_Type = PyType_FromSpec(&poll_Type_spec);
         if (poll_Type == NULL)
-            return NULL;
+            goto error;
         get_select_state(m)->poll_Type = (PyTypeObject *)poll_Type;
 
-        PyModule_AddIntMacro(m, POLLIN);
-        PyModule_AddIntMacro(m, POLLPRI);
-        PyModule_AddIntMacro(m, POLLOUT);
-        PyModule_AddIntMacro(m, POLLERR);
-        PyModule_AddIntMacro(m, POLLHUP);
-        PyModule_AddIntMacro(m, POLLNVAL);
+        ADD_INT_MACRO(POLLIN);
+        ADD_INT_MACRO(POLLPRI);
+        ADD_INT_MACRO(POLLOUT);
+        ADD_INT_MACRO(POLLERR);
+        ADD_INT_MACRO(POLLHUP);
+        ADD_INT_MACRO(POLLNVAL);
 
 #ifdef POLLRDNORM
-        PyModule_AddIntMacro(m, POLLRDNORM);
+        ADD_INT_MACRO(POLLRDNORM);
 #endif
 #ifdef POLLRDBAND
-        PyModule_AddIntMacro(m, POLLRDBAND);
+        ADD_INT_MACRO(POLLRDBAND);
 #endif
 #ifdef POLLWRNORM
-        PyModule_AddIntMacro(m, POLLWRNORM);
+        ADD_INT_MACRO(POLLWRNORM);
 #endif
 #ifdef POLLWRBAND
-        PyModule_AddIntMacro(m, POLLWRBAND);
+        ADD_INT_MACRO(POLLWRBAND);
 #endif
 #ifdef POLLMSG
-        PyModule_AddIntMacro(m, POLLMSG);
+        ADD_INT_MACRO(POLLMSG);
 #endif
 #ifdef POLLRDHUP
         /* Kernel 2.6.17+ */
-        PyModule_AddIntMacro(m, POLLRDHUP);
+        ADD_INT_MACRO(POLLRDHUP);
 #endif
     }
 #endif /* HAVE_POLL */
@@ -2501,7 +2510,7 @@ PyInit_select(void)
 #ifdef HAVE_SYS_DEVPOLL_H
     PyObject *devpoll_Type = PyType_FromSpec(&devpoll_Type_spec);
     if (devpoll_Type == NULL)
-        return NULL;
+        goto error;
     get_select_state(m)->devpoll_Type = (PyTypeObject *)devpoll_Type;
 #endif
 
@@ -2513,42 +2522,42 @@ PyInit_select(void)
         goto error;
     }
 
-    PyModule_AddIntMacro(m, EPOLLIN);
-    PyModule_AddIntMacro(m, EPOLLOUT);
-    PyModule_AddIntMacro(m, EPOLLPRI);
-    PyModule_AddIntMacro(m, EPOLLERR);
-    PyModule_AddIntMacro(m, EPOLLHUP);
+    ADD_INT_MACRO(EPOLLIN);
+    ADD_INT_MACRO(EPOLLOUT);
+    ADD_INT_MACRO(EPOLLPRI);
+    ADD_INT_MACRO(EPOLLERR);
+    ADD_INT_MACRO(EPOLLHUP);
 #ifdef EPOLLRDHUP
     /* Kernel 2.6.17 */
-    PyModule_AddIntMacro(m, EPOLLRDHUP);
+    ADD_INT_MACRO(EPOLLRDHUP);
 #endif
-    PyModule_AddIntMacro(m, EPOLLET);
+    ADD_INT_MACRO(EPOLLET);
 #ifdef EPOLLONESHOT
     /* Kernel 2.6.2+ */
-    PyModule_AddIntMacro(m, EPOLLONESHOT);
+    ADD_INT_MACRO(EPOLLONESHOT);
 #endif
 #ifdef EPOLLEXCLUSIVE
-    PyModule_AddIntMacro(m, EPOLLEXCLUSIVE);
+    ADD_INT_MACRO(EPOLLEXCLUSIVE);
 #endif
 
 #ifdef EPOLLRDNORM
-    PyModule_AddIntMacro(m, EPOLLRDNORM);
+    ADD_INT_MACRO(EPOLLRDNORM);
 #endif
 #ifdef EPOLLRDBAND
-    PyModule_AddIntMacro(m, EPOLLRDBAND);
+    ADD_INT_MACRO(EPOLLRDBAND);
 #endif
 #ifdef EPOLLWRNORM
-    PyModule_AddIntMacro(m, EPOLLWRNORM);
+    ADD_INT_MACRO(EPOLLWRNORM);
 #endif
 #ifdef EPOLLWRBAND
-    PyModule_AddIntMacro(m, EPOLLWRBAND);
+    ADD_INT_MACRO(EPOLLWRBAND);
 #endif
 #ifdef EPOLLMSG
-    PyModule_AddIntMacro(m, EPOLLMSG);
+    ADD_INT_MACRO(EPOLLMSG);
 #endif
 
 #ifdef EPOLL_CLOEXEC
-    PyModule_AddIntMacro(m, EPOLL_CLOEXEC);
+    ADD_INT_MACRO(EPOLL_CLOEXEC);
 #endif
 #endif /* HAVE_EPOLL */
 
@@ -2568,77 +2577,77 @@ PyInit_select(void)
     }
 
     /* event filters */
-    PyModule_AddIntConstant(m, "KQ_FILTER_READ", EVFILT_READ);
-    PyModule_AddIntConstant(m, "KQ_FILTER_WRITE", EVFILT_WRITE);
+    ADD_INT("KQ_FILTER_READ", EVFILT_READ);
+    ADD_INT("KQ_FILTER_WRITE", EVFILT_WRITE);
 #ifdef EVFILT_AIO
-    PyModule_AddIntConstant(m, "KQ_FILTER_AIO", EVFILT_AIO);
+    ADD_INT("KQ_FILTER_AIO", EVFILT_AIO);
 #endif
 #ifdef EVFILT_VNODE
-    PyModule_AddIntConstant(m, "KQ_FILTER_VNODE", EVFILT_VNODE);
+    ADD_INT("KQ_FILTER_VNODE", EVFILT_VNODE);
 #endif
 #ifdef EVFILT_PROC
-    PyModule_AddIntConstant(m, "KQ_FILTER_PROC", EVFILT_PROC);
+    ADD_INT("KQ_FILTER_PROC", EVFILT_PROC);
 #endif
 #ifdef EVFILT_NETDEV
-    PyModule_AddIntConstant(m, "KQ_FILTER_NETDEV", EVFILT_NETDEV);
+    ADD_INT("KQ_FILTER_NETDEV", EVFILT_NETDEV);
 #endif
 #ifdef EVFILT_SIGNAL
-    PyModule_AddIntConstant(m, "KQ_FILTER_SIGNAL", EVFILT_SIGNAL);
+    ADD_INT("KQ_FILTER_SIGNAL", EVFILT_SIGNAL);
 #endif
-    PyModule_AddIntConstant(m, "KQ_FILTER_TIMER", EVFILT_TIMER);
+    ADD_INT("KQ_FILTER_TIMER", EVFILT_TIMER);
 
     /* event flags */
-    PyModule_AddIntConstant(m, "KQ_EV_ADD", EV_ADD);
-    PyModule_AddIntConstant(m, "KQ_EV_DELETE", EV_DELETE);
-    PyModule_AddIntConstant(m, "KQ_EV_ENABLE", EV_ENABLE);
-    PyModule_AddIntConstant(m, "KQ_EV_DISABLE", EV_DISABLE);
-    PyModule_AddIntConstant(m, "KQ_EV_ONESHOT", EV_ONESHOT);
-    PyModule_AddIntConstant(m, "KQ_EV_CLEAR", EV_CLEAR);
+    ADD_INT("KQ_EV_ADD", EV_ADD);
+    ADD_INT("KQ_EV_DELETE", EV_DELETE);
+    ADD_INT("KQ_EV_ENABLE", EV_ENABLE);
+    ADD_INT("KQ_EV_DISABLE", EV_DISABLE);
+    ADD_INT("KQ_EV_ONESHOT", EV_ONESHOT);
+    ADD_INT("KQ_EV_CLEAR", EV_CLEAR);
 
 #ifdef EV_SYSFLAGS
-    PyModule_AddIntConstant(m, "KQ_EV_SYSFLAGS", EV_SYSFLAGS);
+    ADD_INT("KQ_EV_SYSFLAGS", EV_SYSFLAGS);
 #endif
 #ifdef EV_FLAG1
-    PyModule_AddIntConstant(m, "KQ_EV_FLAG1", EV_FLAG1);
+    ADD_INT("KQ_EV_FLAG1", EV_FLAG1);
 #endif
 
-    PyModule_AddIntConstant(m, "KQ_EV_EOF", EV_EOF);
-    PyModule_AddIntConstant(m, "KQ_EV_ERROR", EV_ERROR);
+    ADD_INT("KQ_EV_EOF", EV_EOF);
+    ADD_INT("KQ_EV_ERROR", EV_ERROR);
 
     /* READ WRITE filter flag */
 #ifdef NOTE_LOWAT
-    PyModule_AddIntConstant(m, "KQ_NOTE_LOWAT", NOTE_LOWAT);
+    ADD_INT("KQ_NOTE_LOWAT", NOTE_LOWAT);
 #endif
 
     /* VNODE filter flags  */
 #ifdef EVFILT_VNODE
-    PyModule_AddIntConstant(m, "KQ_NOTE_DELETE", NOTE_DELETE);
-    PyModule_AddIntConstant(m, "KQ_NOTE_WRITE", NOTE_WRITE);
-    PyModule_AddIntConstant(m, "KQ_NOTE_EXTEND", NOTE_EXTEND);
-    PyModule_AddIntConstant(m, "KQ_NOTE_ATTRIB", NOTE_ATTRIB);
-    PyModule_AddIntConstant(m, "KQ_NOTE_LINK", NOTE_LINK);
-    PyModule_AddIntConstant(m, "KQ_NOTE_RENAME", NOTE_RENAME);
-    PyModule_AddIntConstant(m, "KQ_NOTE_REVOKE", NOTE_REVOKE);
+    ADD_INT("KQ_NOTE_DELETE", NOTE_DELETE);
+    ADD_INT("KQ_NOTE_WRITE", NOTE_WRITE);
+    ADD_INT("KQ_NOTE_EXTEND", NOTE_EXTEND);
+    ADD_INT("KQ_NOTE_ATTRIB", NOTE_ATTRIB);
+    ADD_INT("KQ_NOTE_LINK", NOTE_LINK);
+    ADD_INT("KQ_NOTE_RENAME", NOTE_RENAME);
+    ADD_INT("KQ_NOTE_REVOKE", NOTE_REVOKE);
 #endif
 
     /* PROC filter flags  */
 #ifdef EVFILT_PROC
-    PyModule_AddIntConstant(m, "KQ_NOTE_EXIT", NOTE_EXIT);
-    PyModule_AddIntConstant(m, "KQ_NOTE_FORK", NOTE_FORK);
-    PyModule_AddIntConstant(m, "KQ_NOTE_EXEC", NOTE_EXEC);
-    PyModule_AddIntConstant(m, "KQ_NOTE_PCTRLMASK", NOTE_PCTRLMASK);
-    PyModule_AddIntConstant(m, "KQ_NOTE_PDATAMASK", NOTE_PDATAMASK);
+    ADD_INT("KQ_NOTE_EXIT", NOTE_EXIT);
+    ADD_INT("KQ_NOTE_FORK", NOTE_FORK);
+    ADD_INT("KQ_NOTE_EXEC", NOTE_EXEC);
+    ADD_INT("KQ_NOTE_PCTRLMASK", NOTE_PCTRLMASK);
+    ADD_INT("KQ_NOTE_PDATAMASK", NOTE_PDATAMASK);
 
-    PyModule_AddIntConstant(m, "KQ_NOTE_TRACK", NOTE_TRACK);
-    PyModule_AddIntConstant(m, "KQ_NOTE_CHILD", NOTE_CHILD);
-    PyModule_AddIntConstant(m, "KQ_NOTE_TRACKERR", NOTE_TRACKERR);
+    ADD_INT("KQ_NOTE_TRACK", NOTE_TRACK);
+    ADD_INT("KQ_NOTE_CHILD", NOTE_CHILD);
+    ADD_INT("KQ_NOTE_TRACKERR", NOTE_TRACKERR);
 #endif
 
     /* NETDEV filter flags */
 #ifdef EVFILT_NETDEV
-    PyModule_AddIntConstant(m, "KQ_NOTE_LINKUP", NOTE_LINKUP);
-    PyModule_AddIntConstant(m, "KQ_NOTE_LINKDOWN", NOTE_LINKDOWN);
-    PyModule_AddIntConstant(m, "KQ_NOTE_LINKINV", NOTE_LINKINV);
+    ADD_INT("KQ_NOTE_LINKUP", NOTE_LINKUP);
+    ADD_INT("KQ_NOTE_LINKDOWN", NOTE_LINKDOWN);
+    ADD_INT("KQ_NOTE_LINKINV", NOTE_LINKINV);
 #endif
 
 #endif /* HAVE_KQUEUE */
