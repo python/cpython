@@ -265,3 +265,5 @@ The following functions and structs are used to create
 
       The desired value of the slot. In most cases, this is a pointer
       to a function.
+
+      Slots other than ``Py_tp_doc`` may not be ``NULL``.
