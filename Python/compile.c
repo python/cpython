@@ -6358,7 +6358,7 @@ clean_basic_block(basicblock *bb) {
 static int
 normalize_basic_block(basicblock *bb) {
     /* Mark blocks as exit and/or nofallthrough.
-     Raise SystemError if CFG is malformwed. */
+     Raise SystemError if CFG is malformed. */
     for (int i = 0; i < bb->b_iused; i++) {
         switch(bb->b_instr[i].i_opcode) {
             case RETURN_VALUE:
