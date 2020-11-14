@@ -1122,16 +1122,12 @@ PyInit_ossaudiodev(void)
 
     OSSAudioError = PyErr_NewException("ossaudiodev.OSSAudioError",
                                        NULL, NULL);
-    if (OSSAudioError == NULL) {
-        Py_DECREF(m);
-        return NULL;
-    }
-    Py_INCREF(OSSAudioError);
+    Py_XINCREF(OSSAudioError);
     if (PyModule_Add(m, "error", OSSAudioError) < 0) {
         Py_DECREF(m);
         return NULL;
     }
-    Py_INCREF(OSSAudioError);
+    Py_XINCREF(OSSAudioError);
     if (PyModule_Add(m, "OSSAudioError", OSSAudioError) < 0) {
         Py_DECREF(m);
         return NULL;
