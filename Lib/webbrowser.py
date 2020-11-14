@@ -573,6 +573,9 @@ def register_standard_browsers():
             # The w3m browser <http://w3m.sourceforge.net/>
             if shutil.which("w3m"):
                 register("w3m", None, GenericBrowser("w3m"))
+            # The browsh browser <https://www.brow.sh/>
+            if shutil.which("browsh") and shutil.which("firefox"):
+                register("browsh", None, GenericBrowser(["browsh", "--startup-url", "%s"]))
 
     # OK, now that we know what the default preference orders for each
     # platform are, allow user to override them with the BROWSER variable.
