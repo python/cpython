@@ -241,7 +241,7 @@ def is_macosx_sdk_path(path):
 
 def grep_headers_for(function, headers):
     for header in headers:
-        with open(header, 'r') as f:
+        with open(header, 'r', errors='surrogateescape') as f:
             if function in f.read():
                 return True
     return False
