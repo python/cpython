@@ -1195,9 +1195,10 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 
 .. note::
 
-   Although :func:`os.path.relpath` and :meth:`PurePath.relative_to` have some
-   overlapping use-cases, their semantics differ enough to warrant not
-   considering them equivalent.
+   Not all pairs of functions/methods below are equivalent. Some of them,
+   despite having some overlapping use-cases, have different semantics. They
+   include :func:`os.path.abspath` and :meth:`Path.resolve`,
+   :func:`os.path.relpath` and :meth:`PurePath.relative_to`.
 
 ====================================   ==============================
 os and os.path                         pathlib
