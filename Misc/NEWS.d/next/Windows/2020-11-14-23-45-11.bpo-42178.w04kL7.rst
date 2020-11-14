@@ -1,0 +1,1 @@
+Fix issue causing cmd to hang in Windows

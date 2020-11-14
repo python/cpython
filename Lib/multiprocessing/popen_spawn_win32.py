@@ -1,4 +1,5 @@
 import os
+import io
 import msvcrt
 import signal
 import sys
@@ -43,6 +44,19 @@ class Popen(object):
 
     def __init__(self, process_obj):
         prep_data = spawn.get_preparation_data(process_obj._name)
+
+        # bpo-42178: Check for pickle error before creating subprocess
+        self.sentinel = None
+        set_spawning_popen(self)
+        try:
+            with io.BytesIO() as f:
+                    reduction.dump(prep_data, f)
+                    try:
+                        reduction.pickle.dump(process_obj, f)
+                    except:
+                        reduction.dump(process_obj, f)
+        finally:
+            set_spawning_popen(None)
 
         # read end of pipe will be duplicated by the child process
         # -- see spawn_main() in spawn.py.
