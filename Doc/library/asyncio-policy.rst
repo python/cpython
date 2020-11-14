@@ -209,7 +209,7 @@ implementation used by the asyncio event loop:
    It works reliably even when the asyncio event loop is run in a non-main OS thread.
 
    There is no noticeable overhead when handling a big number of children (*O(1)* each
-   time a child terminates), but stating a thread per process requires extra memory.
+   time a child terminates), but starting a thread per process requires extra memory.
 
    This watcher is used by default.
 
