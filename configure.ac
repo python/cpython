@@ -2210,7 +2210,8 @@ sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
 sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
-sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h sys/mman.h)
+sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h \
+sys/mman.h sys/eventfd.h)
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
@@ -3799,6 +3800,17 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #endif
 ]], [[void *x=memfd_create]])],
   [AC_DEFINE(HAVE_MEMFD_CREATE, 1, Define if you have the 'memfd_create' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)
+])
+
+AC_MSG_CHECKING(for eventfd)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#ifdef HAVE_SYS_EVENTFD_H
+#include <sys/eventfd.h>
+#endif
+]], [[int x = eventfd(0, EFD_CLOEXEC)]])],
+  [AC_DEFINE(HAVE_EVENTFD, 1, Define if you have the 'eventfd' function.)
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)
 ])

@@ -2841,6 +2841,11 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
         }
     }
 
+    /* adding sys.path_hooks and sys.path_importer_cache */
+    SET_SYS("meta_path", PyList_New(0));
+    SET_SYS("path_importer_cache", PyDict_New());
+    SET_SYS("path_hooks", PyList_New(0));
+
     if (_PyErr_Occurred(tstate)) {
         goto err_occurred;
     }

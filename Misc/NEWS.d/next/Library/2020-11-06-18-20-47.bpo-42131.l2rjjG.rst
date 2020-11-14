@@ -1,0 +1,5 @@
+Implement PEP 451/spec methods on zipimport.zipimporter: find_spec(),
+create_module(), and exec_module().
+
+This also allows for the documented deprecation of find_loader(),
+find_module(), and load_module().

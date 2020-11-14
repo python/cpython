@@ -518,6 +518,11 @@ extern char        *ctermid_r(char *);
 #  include <linux/memfd.h>
 #endif
 
+/* eventfd() */
+#ifdef HAVE_SYS_EVENTFD_H
+#  include <sys/eventfd.h>
+#endif
+
 #ifdef _Py_MEMORY_SANITIZER
 #  include <sanitizer/msan_interface.h>
 #endif
@@ -9873,11 +9878,26 @@ done:
     if (offset >= st.st_size) {
         return Py_BuildValue("i", 0);
     }
+
+    // On illumos specifically sendfile() may perform a partial write but
+    // return -1/an error (in one confirmed case the destination socket
+    // had a 5 second timeout set and errno was EAGAIN) and it's on the client
+    // code to check if the offset parameter was modified by sendfile().
+    //
+    // We need this variable to track said change.
+    off_t original_offset = offset;
 #endif
 
     do {
         Py_BEGIN_ALLOW_THREADS
         ret = sendfile(out_fd, in_fd, &offset, count);
+#if defined(__sun) && defined(__SVR4)
+        // This handles illumos-specific sendfile() partial write behavior,
+        // see a comment above for more details.
+        if (ret < 0 && offset != original_offset) {
+            ret = offset - original_offset;
+        }
+#endif
         Py_END_ALLOW_THREADS
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     if (ret < 0)
@@ -12844,6 +12864,79 @@ os_memfd_create_impl(PyObject *module, PyObject *name, unsigned int flags)
 }
 #endif
 
+#ifdef HAVE_EVENTFD
+/*[clinic input]
+os.eventfd
+
+    initval: unsigned_int
+    flags: int(c_default="EFD_CLOEXEC") = EFD_CLOEXEC
+
+Creates and returns an event notification file descriptor.
+[clinic start generated code]*/
+
+static PyObject *
+os_eventfd_impl(PyObject *module, unsigned int initval, int flags)
+/*[clinic end generated code: output=ce9c9bbd1446f2de input=66203e3c50c4028b]*/
+
+{
+    /* initval is limited to uint32_t, internal counter is uint64_t */
+    int fd;
+    Py_BEGIN_ALLOW_THREADS
+    fd = eventfd(initval, flags);
+    Py_END_ALLOW_THREADS
+    if (fd == -1) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    return PyLong_FromLong(fd);
+}
+
+/*[clinic input]
+os.eventfd_read
+
+    fd: fildes
+
+Read eventfd value
+[clinic start generated code]*/
+
+static PyObject *
+os_eventfd_read_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=8f2c7b59a3521fd1 input=110f8b57fa596afe]*/
+{
+    eventfd_t value;
+    int result;
+    Py_BEGIN_ALLOW_THREADS
+    result = eventfd_read(fd, &value);
+    Py_END_ALLOW_THREADS
+    if (result == -1) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    return PyLong_FromUnsignedLongLong(value);
+}
+
+/*[clinic input]
+os.eventfd_write
+
+    fd: fildes
+    value: unsigned_long_long
+
+Write eventfd value.
+[clinic start generated code]*/
+
+static PyObject *
+os_eventfd_write_impl(PyObject *module, int fd, unsigned long long value)
+/*[clinic end generated code: output=bebd9040bbf987f5 input=156de8555be5a949]*/
+{
+    int result;
+    Py_BEGIN_ALLOW_THREADS
+    result = eventfd_write(fd, value);
+    Py_END_ALLOW_THREADS
+    if (result == -1) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    Py_RETURN_NONE;
+}
+#endif  /* HAVE_EVENTFD */
+
 /* Terminal size querying */
 
 PyDoc_STRVAR(TerminalSize_docstring,
@@ -14604,6 +14697,9 @@ static PyMethodDef posix_methods[] = {
     OS_FSPATH_METHODDEF
     OS_GETRANDOM_METHODDEF
     OS_MEMFD_CREATE_METHODDEF
+    OS_EVENTFD_METHODDEF
+    OS_EVENTFD_READ_METHODDEF
+    OS_EVENTFD_WRITE_METHODDEF
     OS__ADD_DLL_DIRECTORY_METHODDEF
     OS__REMOVE_DLL_DIRECTORY_METHODDEF
     OS_WAITSTATUS_TO_EXITCODE_METHODDEF
@@ -15112,6 +15208,12 @@ all_ins(PyObject *m)
 #ifdef MFD_HUGE_16GB
     if (PyModule_AddIntMacro(m, MFD_HUGE_16GB)) return -1;
 #endif
+#endif /* HAVE_MEMFD_CREATE */
+
+#ifdef HAVE_EVENTFD
+    if (PyModule_AddIntMacro(m, EFD_CLOEXEC)) return -1;
+    if (PyModule_AddIntMacro(m, EFD_NONBLOCK)) return -1;
+    if (PyModule_AddIntMacro(m, EFD_SEMAPHORE)) return -1;
 #endif
 
 #if defined(__APPLE__)
@@ -15204,6 +15306,10 @@ static const struct have_function {
     const char * const label;
     int (*probe)(void);
 } have_functions[] = {
+
+#ifdef HAVE_EVENTFD
+    {"HAVE_EVENTFD", NULL},
+#endif
 
 #ifdef HAVE_FACCESSAT
     { "HAVE_FACCESSAT", probe_faccessat },

@@ -229,6 +229,10 @@ os
 Added :func:`os.cpu_count()` support for VxWorks RTOS.
 (Contributed by Peixing Xin in :issue:`41440`.)
 
+Added a new function :func:`os.eventfd` and related helpers to wrap the
+``eventfd2`` syscall on Linux.
+(Contributed by Christian Heimes in :issue:`41001`.)
+
 py_compile
 ----------
 
@@ -263,6 +267,11 @@ retrieve the functions set by :func:`threading.settrace` and
 :func:`threading.setprofile` respectively.
 (Contributed by Mario Corchero in :issue:`42251`.)
 
+Add :data:`threading.__excepthook__` to allow retrieving the original value
+of :func:`threading.excepthook` in case it is set to a broken or a different
+value.
+(Contributed by Mario Corchero in :issue:`42308`.)
+
 traceback
 ---------
 
@@ -293,6 +302,13 @@ xml
 Add a :class:`~xml.sax.handler.LexicalHandler` class to the
 :mod:`xml.sax.handler` module.
 (Contributed by Jonathan Gossage and Zackery Spytz in :issue:`35018`.)
+
+zipimport
+---------
+Add methods related to :pep:`451`: :meth:`~zipimport.zipimporter.find_spec`,
+:meth:`zipimport.zipimporter.create_module`, and
+:meth:`zipimport.zipimporter.exec_module`.
+(Contributed by Brett Cannon in :issue:`42131`.
 
 
 Optimizations

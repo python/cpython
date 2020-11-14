@@ -42,7 +42,7 @@ END_CENTRAL_DIR_SIZE = 22
 STRING_END_ARCHIVE = b'PK\x05\x06'
 MAX_COMMENT_LEN = (1 << 16) - 1
 
-class zipimporter:
+class zipimporter(_bootstrap_external._LoaderBasics):
     """zipimporter(archivepath) -> zipimporter object
 
     Create a new zipimporter instance. 'archivepath' must be a path to
@@ -115,6 +115,8 @@ class zipimporter:
         full path name if it's possibly a portion of a namespace package,
         or None otherwise. The optional 'path' argument is ignored -- it's
         there for compatibility with the importer protocol.
+
+        Deprecated since Python 3.10. Use find_spec() instead.
         """
         mi = _get_module_info(self, fullname)
         if mi is not None:
@@ -146,9 +148,37 @@ class zipimporter:
         instance itself if the module was found, or None if it wasn't.
         The optional 'path' argument is ignored -- it's there for compatibility
         with the importer protocol.
+
+        Deprecated since Python 3.10. Use find_spec() instead.
         """
         return self.find_loader(fullname, path)[0]
 
+    def find_spec(self, fullname, target=None):
+        """Create a ModuleSpec for the specified module.
+
+        Returns None if the module cannot be found.
+        """
+        module_info = _get_module_info(self, fullname)
+        if module_info is not None:
+            return _bootstrap.spec_from_loader(fullname, self, is_package=module_info)
+        else:
+            # Not a module or regular package. See if this is a directory, and
+            # therefore possibly a portion of a namespace package.
+
+            # We're only interested in the last path component of fullname
+            # earlier components are recorded in self.prefix.
+            modpath = _get_module_path(self, fullname)
+            if _is_dir(self, modpath):
+                # This is possibly a portion of a namespace
+                # package. Return the string representing its path,
+                # without a trailing separator.
+                path = f'{self.archive}{path_sep}{modpath}'
+                spec = _bootstrap.ModuleSpec(name=fullname, loader=None,
+                                             is_package=True)
+                spec.submodule_search_locations.append(path)
+                return spec
+            else:
+                return None
 
     def get_code(self, fullname):
         """get_code(fullname) -> code object.
@@ -237,6 +267,8 @@ class zipimporter:
         Load the module specified by 'fullname'. 'fullname' must be the
         fully qualified (dotted) module name. It returns the imported
         module, or raises ZipImportError if it wasn't found.
+
+        Deprecated since Python 3.10. use exec_module() instead.
         """
         code, ispackage, modpath = _get_module_code(self, fullname)
         mod = sys.modules.get(fullname)
