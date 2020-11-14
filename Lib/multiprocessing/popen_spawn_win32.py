@@ -23,6 +23,7 @@ WINSERVICE = sys.executable.lower().endswith("pythonservice.exe")
 def _path_eq(p1, p2):
     return p1 == p2 or os.path.normcase(p1) == os.path.normcase(p2)
 
+
 WINENV = not _path_eq(sys.executable, sys._base_executable)
 
 
@@ -50,11 +51,11 @@ class Popen(object):
         set_spawning_popen(self)
         try:
             with io.BytesIO() as f:
-                    reduction.dump(prep_data, f)
-                    try:
-                        reduction.pickle.dump(process_obj, f)
-                    except:
-                        reduction.dump(process_obj, f)
+                reduction.dump(prep_data, f)
+                try:
+                    reduction.pickle.dump(process_obj, f)
+                except:
+                    reduction.dump(process_obj, f)
         finally:
             set_spawning_popen(None)
 
