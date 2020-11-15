@@ -306,9 +306,9 @@ class Debugger:
             # this stackframe represents an object method; preface the method
             # name with the name of the class
             if selfval.__class__.__name__ == 'str':
-                # we've got the string representation of the object sent from
+                # We've got the string representation of the object sent from
                 # the remote debugger; parse out the name of the class, e.g.
-                # from "<random.Random object at 0x...>" extract "Random"
+                # from "<random.Random object at 0x...>" extract "Random".
                 match = re.match(r'^<(?:.*)\.([^.]*) object at 0x[0-9a-f]+>$',
                                  selfval)
                 if match:
@@ -399,7 +399,7 @@ class Debugger:
         pass
 
     def var_tooltip(self, ev):
-        # Callback from tooltip package to return text of tooltip
+        # Callback from tooltip package to return text of tooltip.
         item = None
         if self.vars.identify('column', ev.x, ev.y) == '#1':
             item = self.vars.identify('item', ev.x, ev.y)
