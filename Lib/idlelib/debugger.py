@@ -194,7 +194,7 @@ class Debugger:
         self.status_error_font = self.status_normal_font.copy()
         self.status_error_font['slant'] = 'italic'
         self.status = Label(controls, text=' ', font=self.status_normal_font)
-        self.status.grid(column=6, row=0, sticky='nw', padx=[25,0])
+        self.status.grid(column=0, row=1, columnspan=8, sticky='nw', padx=[5,0])
         controls.grid(column=0, row=0, sticky='new', pady=[0,6])
         controls.grid_columnconfigure(7, weight=1)
 
@@ -239,16 +239,7 @@ class Debugger:
         scroll2.grid(column=1, row=0, sticky='ns')
         right.grid_columnconfigure(0, weight=1)
         right.grid_rowconfigure(0, weight=1)
-        left.bind('<Configure>', lambda e: self._adjust_layout())
         self.clear_stack()
-
-
-    def _adjust_layout(self):
-        # if too narrow, move message below buttons
-        if self.left.winfo_width() < 380:
-            self.status.grid(column=0, row=1, columnspan=8, padx=[5,0])
-        else:
-            self.status.grid(column=6, row=0, columnspan=1, padx=[25,0])
 
     def enable_buttons(self, buttons=None):
         for key in self.buttons:
