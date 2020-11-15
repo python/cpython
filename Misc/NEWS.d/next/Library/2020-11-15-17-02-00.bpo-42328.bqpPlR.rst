@@ -1,0 +1,2 @@
+Fixed :meth:`tkinter.ttk.Style.map`. It accepts now the default state as
+returned by ``Style.map()``.
