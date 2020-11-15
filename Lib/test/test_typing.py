@@ -560,6 +560,7 @@ class LiteralTests(BaseTestCase):
             Literal[1][1]
 
     def test_equal(self):
+        self.assertNotEqual(Literal[1, True], Literal[1])
         self.assertEqual(Literal[1], Literal[1])
         self.assertEqual(Literal[1, 2], Literal[2, 1])
         self.assertEqual(Literal[1, 2, 3], Literal[1, 2, 3, 3])
