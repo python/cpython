@@ -1,2 +1,2 @@
-Literal equality no longer depends on order of arguments. Patch provided by
-Yurii Karabas.
+Fix ``typing.Literal`` equals method to ignore the order of arguments.
+Patch provided by Yurii Karabas.
