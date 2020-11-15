@@ -2630,9 +2630,8 @@ are awaitable.
       `return (yield from future)`), rather than yielding objects directly.
       An exception to this is a `yield None` (or equivalent bare `yield`)
       within an `__await__`, which can be used to suspend execution until the
-      next iteration of the event loop.
-      The type of objects that the event loop expects are considered a
-      private implementation detail of :mod:`asyncio`.
+      next iteration of the event loop. The type of objects that the event loop
+      expects are considered a private implementation detail of :mod:`asyncio`.
 
 .. versionadded:: 3.5
 
