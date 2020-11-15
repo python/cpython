@@ -174,9 +174,9 @@ example of usage.
 
 .. seealso::
 
-   Documents describing the protocol, and sources and binaries  for servers
-   implementing it, can all be found at the University of Washington's *IMAP
-   Information Center* (https://www.washington.edu/imap/).
+   Source Code of Documents describing the protocol, sources and binaries for servers
+   implementing it, by the University of Washington's IMAP Information Center
+   can all be found at (https://github.com/uw-imap/imap) (**Not Maintained**).
 
 
 .. _imap4-objects:
