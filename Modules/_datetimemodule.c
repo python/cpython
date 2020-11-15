@@ -6524,56 +6524,44 @@ _datetime_exec(PyObject *module)
     }
     Py_INCREF(&PyDateTime_IsoCalendarDateType);
 
-
-    PyObject *x = NULL;
-
-#define DATETIME_ADD_MACRO(x, c)                    \
-    do {                                            \
-        if (x == NULL) {                            \
-            return -1;                              \
-        }                                           \
-        if (PyDict_SetItemString(d, c, x) < 0) {    \
-            Py_DECREF(x);                           \
-            return -1;                              \
-        }                                           \
-        Py_DECREF(x);                               \
+#define DATETIME_ADD_MACRO(dict, c, value)              \
+    do {                                                \
+        if (value == NULL) {                            \
+            return -1;                                  \
+        }                                               \
+        if (PyDict_SetItemString(dict, c, value) < 0) { \
+            Py_DECREF(value);                           \
+            return -1;                                  \
+        }                                               \
+        Py_DECREF(value);                               \
     } while(0)
 
     /* timedelta values */
     PyObject *d = PyDateTime_DeltaType.tp_dict;
-    x = new_delta(0, 0, 1, 0);
-    DATETIME_ADD_MACRO(x, "resolution");
-    x = new_delta(-MAX_DELTA_DAYS, 0, 0, 0);
-    DATETIME_ADD_MACRO(x, "min");
-    x = new_delta(MAX_DELTA_DAYS, 24*3600-1, 1000000-1, 0);
-    DATETIME_ADD_MACRO(x, "max");
+    DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
+    DATETIME_ADD_MACRO(d, "min", new_delta(-MAX_DELTA_DAYS, 0, 0, 0));
+    DATETIME_ADD_MACRO(d, "max",
+                       new_delta(MAX_DELTA_DAYS, 24*3600-1, 1000000-1, 0));
 
     /* date values */
     d = PyDateTime_DateType.tp_dict;
-    x = new_date(1, 1, 1);
-    DATETIME_ADD_MACRO(x, "min");
-    x = new_date(MAXYEAR, 12, 31);
-    DATETIME_ADD_MACRO(x, "max");
-    x = new_delta(1, 0, 0, 0);
-    DATETIME_ADD_MACRO(x, "resolution");
+    DATETIME_ADD_MACRO(d, "min", new_date(1, 1, 1));
+    DATETIME_ADD_MACRO(d, "max", new_date(MAXYEAR, 12, 31));
+    DATETIME_ADD_MACRO(d, "resolution", new_delta(1, 0, 0, 0));
 
     /* time values */
     d = PyDateTime_TimeType.tp_dict;
-    x = new_time(0, 0, 0, 0, Py_None, 0);
-    DATETIME_ADD_MACRO(x, "min");
-    x = new_time(23, 59, 59, 999999, Py_None, 0);
-    DATETIME_ADD_MACRO(x, "max");
-    x = new_delta(0, 0, 1, 0);
-    DATETIME_ADD_MACRO(x, "resolution");
+    DATETIME_ADD_MACRO(d, "min", new_time(0, 0, 0, 0, Py_None, 0));
+    DATETIME_ADD_MACRO(d, "max", new_time(23, 59, 59, 999999, Py_None, 0));
+    DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
 
     /* datetime values */
     d = PyDateTime_DateTimeType.tp_dict;
-    x = new_datetime(1, 1, 1, 0, 0, 0, 0, Py_None, 0);
-    DATETIME_ADD_MACRO(x, "min");
-    x = new_datetime(MAXYEAR, 12, 31, 23, 59, 59, 999999, Py_None, 0);
-    DATETIME_ADD_MACRO(x, "max");
-    x = new_delta(0, 0, 1, 0);
-    DATETIME_ADD_MACRO(x, "resolution");
+    DATETIME_ADD_MACRO(d, "min",
+                       new_datetime(1, 1, 1, 0, 0, 0, 0, Py_None, 0));
+    DATETIME_ADD_MACRO(d, "max", new_datetime(MAXYEAR, 12, 31, 23, 59, 59,
+                                              999999, Py_None, 0));
+    DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
 
     /* timezone values */
     d = PyDateTime_TimeZoneType.tp_dict;
@@ -6582,7 +6570,7 @@ _datetime_exec(PyObject *module)
         return -1;
     }
 
-    x = create_timezone(delta, NULL);
+    PyObject *x = create_timezone(delta, NULL);
     Py_DECREF(delta);
     if (x == NULL) {
         return -1;
@@ -6602,17 +6590,26 @@ _datetime_exec(PyObject *module)
     if (delta == NULL) {
         return -1;
     }
+
     x = create_timezone(delta, NULL);
     Py_DECREF(delta);
-    DATETIME_ADD_MACRO(x, "min");
+    if (x == NULL) {
+        return -1;
+    }
+    DATETIME_ADD_MACRO(d, "min", x);
 
     delta = new_delta(0, (23 * 60 + 59) * 60, 0, 0); /* +23:59 */
     if (delta == NULL) {
         return -1;
     }
+
     x = create_timezone(delta, NULL);
     Py_DECREF(delta);
-    DATETIME_ADD_MACRO(x, "max");
+    if (x == NULL) {
+        return -1;
+    }
+
+    DATETIME_ADD_MACRO(d, "max", x);
 
     /* Epoch */
     PyDateTime_Epoch = new_datetime(1970, 1, 1, 0, 0, 0, 0,
@@ -6635,7 +6632,7 @@ _datetime_exec(PyObject *module)
     }
 
     if (PyModule_AddObject(module, "datetime_CAPI", x) < 0) {
-        Py_XDECREF(x);
+        Py_DECREF(x);
         return -1;
     }
 
