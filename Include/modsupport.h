@@ -156,7 +156,11 @@ PyAPI_FUNC(int) PyModule_AddType(PyObject *module, PyTypeObject *type);
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03100000
 /* New in 3.9 */
-PyAPI_FUNC(int) PyModule_AddTypeFromSpec(PyObject *module, PyType_Spec *spec, PyObject *bases, PyTypeObject **rtype);
+PyAPI_FUNC(PyTypeObject *) PyModule_AddNewTypeFromSpec(
+    PyObject *module, PyType_Spec *spec, PyObject *base);
+PyAPI_FUNC(PyObject *) PyModule_AddNewException(
+    PyObject *module, const char *name, const char *doc,
+    PyObject *base, PyObject *dict);
 #endif
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000

@@ -713,22 +713,58 @@ PyModule_AddType(PyObject *module, PyTypeObject *type)
     return PyModule_AddObjectRef(module, name, (PyObject *)type);
 }
 
-int
-PyModule_AddTypeFromSpec(PyObject *module, PyType_Spec *spec, PyObject *bases, PyTypeObject **rtype)
+PyTypeObject *
+PyModule_AddNewTypeFromSpec(PyObject *module, PyType_Spec *spec,
+                            PyObject *base)
 {
     PyTypeObject *type;
+    PyObject *bases;
+
+    /* Support single, optional type like PyErr_NewException() */
+    if (base == NULL) {
+        bases = NULL;
+    }
+    else if (PyTuple_Check(base)) {
+        bases = base;
+        Py_INCREF(bases);
+    } else {
+        bases = PyTuple_Pack(1, base);
+        if (bases == NULL)
+            return NULL;
+    }
 
     type = (PyTypeObject *)PyType_FromModuleAndSpec(module, spec, bases);
-    /* steal ref to bases */
     Py_XDECREF(bases);
     if (type == NULL) {
-        return -1;
+        return NULL;
     }
+
     if (PyModule_AddType(module, type) < 0) {
-        return -1;
+        Py_DECREF(type);
+        return NULL;
     }
-    if (rtype != NULL) {
-        *rtype = type;
+    return type;
+}
+
+PyObject *
+PyModule_AddNewException(PyObject *module, const char *name, const char *doc,
+                         PyObject *base, PyObject *dict)
+{
+    PyObject *exc = PyErr_NewExceptionWithDoc(name, doc, base, dict);
+    if (exc == NULL) {
+        return NULL;
     }
-    return 0;
+
+    const char *shortname = strrchr(name, '.');
+    if (shortname == NULL) {
+        shortname = name;
+    }
+    else {
+        shortname++;
+    }
+    if (PyModule_AddObjectRef(module, shortname, exc) < 0) {
+        Py_DECREF(exc);
+        return NULL;
+    }
+    return exc;
 }
