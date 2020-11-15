@@ -303,8 +303,8 @@ class Debugger:
         except KeyError:
             selfval = None;
         if selfval:
-            # this stackframe represents an object method; preface the method
-            # name with the name of the class
+            # This stackframe represents an object method; preface the method
+            # name with the name of the class.
             if selfval.__class__.__name__ == 'str':
                 # We've got the string representation of the object sent from
                 # the remote debugger; parse out the name of the class, e.g.
@@ -357,7 +357,7 @@ class Debugger:
         self.top.wakeup()
         # Nested main loop: Tkinter's main loop is not reentrant, so use
         # Tcl's vwait facility, which reenters the event loop until an
-        # event handler sets the variable we're waiting on
+        # event handler sets the variable we're waiting on.
         self.nesting_level += 1
         self.root.tk.call('vwait', '::idledebugwait')
         self.nesting_level -= 1
@@ -372,9 +372,8 @@ class Debugger:
         sel = self.stack.selection()
         if len(sel) == 1 and sel[0] in self.framevars:
             locals, globals, _, _ = self.framevars[sel[0]]
-            # note: locals/globals may be from a remotedebugger, in
-            # which case for reasons we don't need to get into here,
-            # they aren't iterable
+            # locals/globals are normally rpc DictProxy objects, which are
+            # not iterable.
             self.add_varheader()
             for name in sorted(locals.keys(), key=underscore_at_end):
                 self.add_var(name, locals[name])
