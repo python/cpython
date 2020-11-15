@@ -3,7 +3,7 @@ import os
 import linecache
 import re
 
-from tkinter import BooleanVar, Menu
+from tkinter import BooleanVar, Menu, TclError
 from tkinter.ttk import PanedWindow, Frame, Label, Treeview, Scrollbar
 from tkinter import PhotoImage
 from tkinter.font import Font
