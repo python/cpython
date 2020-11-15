@@ -154,6 +154,11 @@ PyAPI_FUNC(int) PyModule_AddType(PyObject *module, PyTypeObject *type);
 #define PyModule_AddIntMacro(m, c) PyModule_AddIntConstant(m, #c, c)
 #define PyModule_AddStringMacro(m, c) PyModule_AddStringConstant(m, #c, c)
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03100000
+/* New in 3.9 */
+PyAPI_FUNC(int) PyModule_AddTypeFromSpec(PyObject *module, PyType_Spec *spec, PyObject *bases, PyTypeObject **rtype);
+#endif
+
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
 /* New in 3.5 */
 PyAPI_FUNC(int) PyModule_SetDocString(PyObject *, const char *);

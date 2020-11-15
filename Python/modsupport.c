@@ -712,3 +712,23 @@ PyModule_AddType(PyObject *module, PyTypeObject *type)
 
     return PyModule_AddObjectRef(module, name, (PyObject *)type);
 }
+
+int
+PyModule_AddTypeFromSpec(PyObject *module, PyType_Spec *spec, PyObject *bases, PyTypeObject **rtype)
+{
+    PyTypeObject *type;
+
+    type = (PyTypeObject *)PyType_FromModuleAndSpec(module, spec, bases);
+    /* steal ref to bases */
+    Py_XDECREF(bases);
+    if (type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, type) < 0) {
+        return -1;
+    }
+    if (rtype != NULL) {
+        *rtype = type;
+    }
+    return 0;
+}

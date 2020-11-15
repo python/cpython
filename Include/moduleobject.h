@@ -94,8 +94,6 @@ typedef struct PyModuleConstants_Def {
     } value;
 } PyModuleConstants_Def;
 
-PyAPI_FUNC(int) PyModule_AddConstants(PyObject *, PyModuleConstants_Def *);
-
 #define PyMC_None(name) {(name), Py_mc_none, {.m_long=0}}
 #define PyMC_Long(name, value) {(name), Py_mc_long, {.m_long=(value)}}
 #define PyMC_Bool(name, value) {(name), Py_mc_bool, {.m_long=(value)}}
