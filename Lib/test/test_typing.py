@@ -559,6 +559,15 @@ class LiteralTests(BaseTestCase):
         with self.assertRaises(TypeError):
             Literal[1][1]
 
+    def test_equal(self):
+        self.assertEqual(Literal[1, 2], Literal[2, 1])
+        self.assertNotEqual(Literal[1, True], Literal[1])
+
+    def test_flatten(self):
+        self.assertEqual(Literal[Literal[1], Literal[2], Literal[3]], Literal[1, 2, 3])
+        self.assertEqual(Literal[Literal[1, 2], 3], Literal[1, 2, 3])
+        self.assertEqual(Literal[Literal[1, 2, 3]], Literal[1, 2, 3])
+
 
 XK = TypeVar('XK', str, bytes)
 XV = TypeVar('XV')

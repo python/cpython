@@ -228,6 +228,17 @@ def _remove_dups_flatten(parameters):
     return tuple(params)
 
 
+def _flatten_literal_params(parameters):
+    """An internal helper for Literal creation: flatten Literals among parameters"""
+    params = []
+    for p in parameters:
+        if isinstance(p, _LiteralGenericAlias):
+            params.extend(p.__args__)
+        else:
+            params.append(p)
+    return tuple(params)
+
+
 _cleanups = []
 
 
@@ -460,7 +471,11 @@ def Literal(self, parameters):
     """
     # There is no '_type_check' call because arguments to Literal[...] are
     # values, not types.
-    return _GenericAlias(self, parameters)
+    if not isinstance(parameters, tuple):
+        parameters = (parameters,)
+
+    parameters = _flatten_literal_params(parameters)
+    return _LiteralGenericAlias(self, parameters)
 
 
 @_SpecialForm
@@ -929,6 +944,14 @@ class _UnionGenericAlias(_GenericAlias, _root=True):
             if issubclass(cls, arg):
                 return True
 
+
+class _LiteralGenericAlias(_GenericAlias, _root=True):
+
+    def __eq__(self, other):
+        if not isinstance(other, _LiteralGenericAlias):
+            return NotImplemented
+
+        return len(self.__args__) == len(other.__args__) and set(self.__args__) == set(other.__args__)
 
 
 class Generic:

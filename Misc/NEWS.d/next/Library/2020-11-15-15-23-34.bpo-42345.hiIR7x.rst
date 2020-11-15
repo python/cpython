@@ -1,0 +1,2 @@
+Literal equality no longer depends on order of arguments. Patch provided by
+Yurii Karabas.
