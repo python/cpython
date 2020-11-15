@@ -387,9 +387,9 @@ def library_recipes():
 
 def compilerCanOptimize():
     """
-    Return True iff the default Xcode version can use PGO
+    Return True iff the default Xcode version can use PGO and LTO
     """
-    # The version check is pretty conservative, can be
+    # bpo-42235: The version check is pretty conservative, can be
     # adjusted after testing
     mac_ver = tuple(map(int, platform.mac_ver()[0].split('.')))
     return mac_ver >= (10, 15)
