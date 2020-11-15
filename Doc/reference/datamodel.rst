@@ -2622,7 +2622,7 @@ are awaitable.
       objects yielded by the iterator returned by `__await__`, as this is
       specific to the implementation of the asynchronous execution framework
       (e.g. :mod:`asyncio`) that will be managing the :term:`awaitable` object.
-      
+
       In the case of :mod:`asyncio`, user code should generally be using
       :term:`coroutines <coroutine>`, instances of :class:`asyncio.Task`,
       :class:`asyncio.Future`, and other :mod:`asyncio` objects to implement
