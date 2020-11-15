@@ -551,7 +551,9 @@ Pure paths provide the following methods and properties:
         File "<stdin>", line 1, in <module>
         File "pathlib.py", line 694, in relative_to
           .format(str(self), str(formatted)))
-      ValueError: '/etc/passwd' does not start with '/usr'
+      ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other absolute.
+
+   NOTE: This function is part of :class:`PurePath` and works with strings. It does not check or access the underlying file structure.
 
 
 .. method:: PurePath.with_name(name)
@@ -888,6 +890,11 @@ call fails (for example because the path doesn't exist).
       PosixPath('docs/_static')
       PosixPath('docs/Makefile')
 
+   The children are yielded in arbitrary order, and the special entries
+   ``'.'`` and ``'..'`` are not included.  If a file is removed from or added
+   to the directory after creating the iterator, whether an path object for
+   that file be included is unspecified.
+
 .. method:: Path.lchmod(mode)
 
    Like :meth:`Path.chmod` but, if the path points to a symbolic link, the
@@ -1001,6 +1008,10 @@ call fails (for example because the path doesn't exist).
       >>> target.open().read()
       'some text'
 
+   The target path may be absolute or relative. Relative paths are interpreted
+   relative to the current working directory, *not* the directory of the Path
+   object.
+
    .. versionchanged:: 3.8
       Added return value, return the new Path instance.
 
@@ -1010,6 +1021,10 @@ call fails (for example because the path doesn't exist).
    Rename this file or directory to the given *target*, and return a new Path
    instance pointing to *target*.  If *target* points to an existing file or
    directory, it will be unconditionally replaced.
+
+   The target path may be absolute or relative. Relative paths are interpreted
+   relative to the current working directory, *not* the directory of the Path
+   object.
 
    .. versionchanged:: 3.8
       Added return value, return the new Path instance.
@@ -1132,7 +1147,7 @@ call fails (for example because the path doesn't exist).
 
    Create a hard link pointing to a path named *target*.
 
-   .. versionchanged:: 3.8
+   .. versionadded:: 3.8
 
 
 .. method:: Path.write_bytes(data)
@@ -1151,7 +1166,7 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
-.. method:: Path.write_text(data, encoding=None, errors=None)
+.. method:: Path.write_text(data, encoding=None, errors=None, newline=None)
 
    Open the file pointed to in text mode, write *data* to it, and close the
    file::
@@ -1166,6 +1181,9 @@ call fails (for example because the path doesn't exist).
    have the same meaning as in :func:`open`.
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.10
+      The *newline* parameter was added.
 
 Correspondence to tools in the :mod:`os` module
 -----------------------------------------------
@@ -1194,9 +1212,12 @@ os and os.path                         pathlib
 :func:`os.path.exists`                 :meth:`Path.exists`
 :func:`os.path.expanduser`             :meth:`Path.expanduser` and
                                        :meth:`Path.home`
+:func:`os.listdir`                     :meth:`Path.iterdir`
 :func:`os.path.isdir`                  :meth:`Path.is_dir`
 :func:`os.path.isfile`                 :meth:`Path.is_file`
 :func:`os.path.islink`                 :meth:`Path.is_symlink`
+:func:`os.link`                        :meth:`Path.link_to`
+:func:`os.symlink`                     :meth:`Path.symlink_to`
 :func:`os.readlink`                    :meth:`Path.readlink`
 :func:`os.stat`                        :meth:`Path.stat`,
                                        :meth:`Path.owner`,

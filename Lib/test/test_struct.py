@@ -671,6 +671,14 @@ class StructTest(unittest.TestCase):
         self.assertIn(b"Exception ignored in:", stderr)
         self.assertIn(b"C.__del__", stderr)
 
+    def test_issue35714(self):
+        # Embedded null characters should not be allowed in format strings.
+        for s in '\0', '2\0i', b'\0':
+            with self.assertRaisesRegex(struct.error,
+                                        'embedded null character'):
+                struct.calcsize(s)
+
+
 class UnpackIteratorTest(unittest.TestCase):
     """
     Tests for iterative unpacking (struct.Struct.iter_unpack).

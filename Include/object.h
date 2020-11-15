@@ -119,25 +119,44 @@ typedef struct {
 
 /* Cast argument to PyVarObject* type. */
 #define _PyVarObject_CAST(op) ((PyVarObject*)(op))
+#define _PyVarObject_CAST_CONST(op) ((const PyVarObject*)(op))
 
-#define Py_REFCNT(ob)           (_PyObject_CAST(ob)->ob_refcnt)
-#define Py_TYPE(ob)             (_PyObject_CAST(ob)->ob_type)
-#define Py_SIZE(ob)             (_PyVarObject_CAST(ob)->ob_size)
+
+static inline Py_ssize_t _Py_REFCNT(const PyObject *ob) {
+    return ob->ob_refcnt;
+}
+#define Py_REFCNT(ob) _Py_REFCNT(_PyObject_CAST_CONST(ob))
+
+
+static inline Py_ssize_t _Py_SIZE(const PyVarObject *ob) {
+    return ob->ob_size;
+}
+#define Py_SIZE(ob) _Py_SIZE(_PyVarObject_CAST_CONST(ob))
+
+
+static inline PyTypeObject* _Py_TYPE(const PyObject *ob) {
+    return ob->ob_type;
+}
+#define Py_TYPE(ob) _Py_TYPE(_PyObject_CAST_CONST(ob))
+
 
 static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
-    return ob->ob_type == type;
+    return Py_TYPE(ob) == type;
 }
 #define Py_IS_TYPE(ob, type) _Py_IS_TYPE(_PyObject_CAST_CONST(ob), type)
+
 
 static inline void _Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
     ob->ob_refcnt = refcnt;
 }
 #define Py_SET_REFCNT(ob, refcnt) _Py_SET_REFCNT(_PyObject_CAST(ob), refcnt)
 
+
 static inline void _Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
     ob->ob_type = type;
 }
 #define Py_SET_TYPE(ob, type) _Py_SET_TYPE(_PyObject_CAST(ob), type)
+
 
 static inline void _Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
     ob->ob_size = size;
@@ -337,6 +356,11 @@ given type object has a specified feature.
 /* Type is abstract and cannot be instantiated */
 #define Py_TPFLAGS_IS_ABSTRACT (1UL << 20)
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+/* Type has am_send entry in tp_as_async slot */
+#define Py_TPFLAGS_HAVE_AM_SEND (1UL << 21)
+#endif
+
 /* These flags are used to determine if a type is a subclass. */
 #define Py_TPFLAGS_LONG_SUBCLASS        (1UL << 24)
 #define Py_TPFLAGS_LIST_SUBCLASS        (1UL << 25)
@@ -507,6 +531,32 @@ they can have object code that is not dependent on Python compilation flags.
 PyAPI_FUNC(void) Py_IncRef(PyObject *);
 PyAPI_FUNC(void) Py_DecRef(PyObject *);
 
+// Create a new strong reference to an object:
+// increment the reference count of the object and return the object.
+PyAPI_FUNC(PyObject*) Py_NewRef(PyObject *obj);
+
+// Similar to Py_NewRef(), but the object can be NULL.
+PyAPI_FUNC(PyObject*) Py_XNewRef(PyObject *obj);
+
+static inline PyObject* _Py_NewRef(PyObject *obj)
+{
+    Py_INCREF(obj);
+    return obj;
+}
+
+static inline PyObject* _Py_XNewRef(PyObject *obj)
+{
+    Py_XINCREF(obj);
+    return obj;
+}
+
+// Py_NewRef() and Py_XNewRef() are exported as functions for the stable ABI.
+// Names overriden with macros by static inline functions for best
+// performances.
+#define Py_NewRef(obj) _Py_NewRef(obj)
+#define Py_XNewRef(obj) _Py_XNewRef(obj)
+
+
 /*
 _Py_NoneStruct is an object of undefined type which can be used in contexts
 where NULL (nil) is not suitable (since NULL often means 'error').
@@ -517,7 +567,7 @@ PyAPI_DATA(PyObject) _Py_NoneStruct; /* Don't use this directly */
 #define Py_None (&_Py_NoneStruct)
 
 /* Macro for returning Py_None from a function */
-#define Py_RETURN_NONE return Py_INCREF(Py_None), Py_None
+#define Py_RETURN_NONE return Py_NewRef(Py_None)
 
 /*
 Py_NotImplemented is a singleton used to signal that an operation is
@@ -527,8 +577,7 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 #define Py_NotImplemented (&_Py_NotImplementedStruct)
 
 /* Macro for returning Py_NotImplemented from a function */
-#define Py_RETURN_NOTIMPLEMENTED \
-    return Py_INCREF(Py_NotImplemented), Py_NotImplemented
+#define Py_RETURN_NOTIMPLEMENTED return Py_NewRef(Py_NotImplemented)
 
 /* Rich comparison opcodes */
 #define Py_LT 0
@@ -537,6 +586,15 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 #define Py_NE 3
 #define Py_GT 4
 #define Py_GE 5
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+/* Result of calling PyIter_Send */
+typedef enum {
+    PYGEN_RETURN = 0,
+    PYGEN_ERROR = -1,
+    PYGEN_NEXT = 1,
+} PySendResult;
+#endif
 
 /*
  * Macro for implementing rich comparisons
@@ -618,8 +676,16 @@ times.
 
 
 static inline int
-PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
-    return ((PyType_GetFlags(type) & feature) != 0);
+PyType_HasFeature(PyTypeObject *type, unsigned long feature)
+{
+    unsigned long flags;
+#ifdef Py_LIMITED_API
+    // PyTypeObject is opaque in the limited C API
+    flags = PyType_GetFlags(type);
+#else
+    flags = type->tp_flags;
+#endif
+    return ((flags & feature) != 0);
 }
 
 #define PyType_FastSubclass(type, flag) PyType_HasFeature(type, flag)

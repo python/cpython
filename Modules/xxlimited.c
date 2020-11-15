@@ -43,6 +43,7 @@ newXxoObject(PyObject *arg)
 static int
 Xxo_traverse(XxoObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->x_attr);
     return 0;
 }

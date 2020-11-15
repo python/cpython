@@ -605,7 +605,7 @@ class Executor(object):
                     future.cancel()
         return result_iterator()
 
-    def shutdown(self, wait=True):
+    def shutdown(self, wait=True, *, cancel_futures=False):
         """Clean-up the resources associated with the Executor.
 
         It is safe to call this method several times. Otherwise, no other
@@ -615,6 +615,9 @@ class Executor(object):
             wait: If True then shutdown will not return until all running
                 futures have finished executing and the resources used by the
                 executor have been reclaimed.
+            cancel_futures: If True then shutdown will cancel all pending
+                futures. Futures that are completed or running will not be
+                cancelled.
         """
         pass
 

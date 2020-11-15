@@ -89,7 +89,7 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
 
 .. c:type:: Py_buffer
 
-   .. c:member:: void \*buf
+   .. c:member:: void *buf
 
       A pointer to the start of the logical structure described by the buffer
       fields. This can be any location within the underlying physical memory
@@ -99,7 +99,7 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       For :term:`contiguous` arrays, the value points to the beginning of
       the memory block.
 
-   .. c:member:: void \*obj
+   .. c:member:: void *obj
 
       A new reference to the exporting object. The reference is owned by
       the consumer and automatically decremented and set to ``NULL`` by
@@ -145,7 +145,7 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       or a :c:macro:`PyBUF_WRITABLE` request, the consumer must disregard
       :c:member:`~Py_buffer.itemsize` and assume ``itemsize == 1``.
 
-   .. c:member:: const char \*format
+   .. c:member:: const char *format
 
       A *NUL* terminated string in :mod:`struct` module style syntax describing
       the contents of a single item. If this is ``NULL``, ``"B"`` (unsigned bytes)
@@ -164,7 +164,7 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       to 64. Exporters MUST respect this limit, consumers of multi-dimensional
       buffers SHOULD be able to handle up to :c:macro:`PyBUF_MAX_NDIM` dimensions.
 
-   .. c:member:: Py_ssize_t \*shape
+   .. c:member:: Py_ssize_t *shape
 
       An array of :c:type:`Py_ssize_t` of length :c:member:`~Py_buffer.ndim`
       indicating the shape of the memory as an n-dimensional array. Note that
@@ -177,7 +177,7 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
 
       The shape array is read-only for the consumer.
 
-   .. c:member:: Py_ssize_t \*strides
+   .. c:member:: Py_ssize_t *strides
 
       An array of :c:type:`Py_ssize_t` of length :c:member:`~Py_buffer.ndim`
       giving the number of bytes to skip to get to a new element in each
@@ -189,7 +189,7 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
 
       The strides array is read-only for the consumer.
 
-   .. c:member:: Py_ssize_t \*suboffsets
+   .. c:member:: Py_ssize_t *suboffsets
 
       An array of :c:type:`Py_ssize_t` of length :c:member:`~Py_buffer.ndim`.
       If ``suboffsets[n] >= 0``, the values stored along the nth dimension are
@@ -207,7 +207,7 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
 
       The suboffsets array is read-only for the consumer.
 
-   .. c:member:: void \*internal
+   .. c:member:: void *internal
 
       This is for use internally by the exporting object. For example, this
       might be re-cast as an integer by the exporter and used to store flags
@@ -301,7 +301,7 @@ must be C-contiguous.
 +-----------------------------------+-------+---------+------------+--------+
 | .. c:macro:: PyBUF_ANY_CONTIGUOUS |  yes  |   yes   |    NULL    | C or F |
 +-----------------------------------+-------+---------+------------+--------+
-| .. c:macro:: PyBUF_ND             |  yes  |   NULL  |    NULL    |   C    |
+| :c:macro:`PyBUF_ND`               |  yes  |   NULL  |    NULL    |   C    |
 +-----------------------------------+-------+---------+------------+--------+
 
 
@@ -438,12 +438,12 @@ Buffer-related functions
 
    Send a request to *exporter* to fill in *view* as specified by  *flags*.
    If the exporter cannot provide a buffer of the exact type, it MUST raise
-   :c:data:`PyExc_BufferError`, set :c:member:`view->obj` to ``NULL`` and
+   :c:data:`PyExc_BufferError`, set ``view->obj`` to ``NULL`` and
    return ``-1``.
 
-   On success, fill in *view*, set :c:member:`view->obj` to a new reference
+   On success, fill in *view*, set ``view->obj`` to a new reference
    to *exporter* and return 0. In the case of chained buffer providers
-   that redirect requests to a single object, :c:member:`view->obj` MAY
+   that redirect requests to a single object, ``view->obj`` MAY
    refer to this object instead of *exporter* (See :ref:`Buffer Object Structures <buffer-structs>`).
 
    Successful calls to :c:func:`PyObject_GetBuffer` must be paired with calls
@@ -455,7 +455,7 @@ Buffer-related functions
 .. c:function:: void PyBuffer_Release(Py_buffer *view)
 
    Release the buffer *view* and decrement the reference count for
-   :c:member:`view->obj`. This function MUST be called when the buffer
+   ``view->obj``. This function MUST be called when the buffer
    is no longer being used, otherwise reference leaks may occur.
 
    It is an error to call this function on a buffer that was not obtained via
@@ -516,9 +516,9 @@ Buffer-related functions
    *view* as specified by flags, unless *buf* has been designated as read-only
    and :c:macro:`PyBUF_WRITABLE` is set in *flags*.
 
-   On success, set :c:member:`view->obj` to a new reference to *exporter* and
+   On success, set ``view->obj`` to a new reference to *exporter* and
    return 0. Otherwise, raise :c:data:`PyExc_BufferError`, set
-   :c:member:`view->obj` to ``NULL`` and return ``-1``;
+   ``view->obj`` to ``NULL`` and return ``-1``;
 
    If this function is used as part of a :ref:`getbufferproc <buffer-structs>`,
    *exporter* MUST be set to the exporting object and *flags* must be passed

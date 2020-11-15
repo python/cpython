@@ -532,7 +532,7 @@ PyNumber_AsOff_t(PyObject *item, PyObject *err)
 {
     Py_off_t result;
     PyObject *runerr;
-    PyObject *value = PyNumber_Index(item);
+    PyObject *value = _PyNumber_Index(item);
     if (value == NULL)
         return -1;
 
@@ -593,39 +593,12 @@ _PyIO_get_module_state(void)
     return state;
 }
 
-PyObject *
-_PyIO_get_locale_module(_PyIO_State *state)
-{
-    PyObject *mod;
-    if (state->locale_module != NULL) {
-        assert(PyWeakref_CheckRef(state->locale_module));
-        mod = PyWeakref_GET_OBJECT(state->locale_module);
-        if (mod != Py_None) {
-            Py_INCREF(mod);
-            return mod;
-        }
-        Py_CLEAR(state->locale_module);
-    }
-    mod = PyImport_ImportModule("_bootlocale");
-    if (mod == NULL)
-        return NULL;
-    state->locale_module = PyWeakref_NewRef(mod, NULL);
-    if (state->locale_module == NULL) {
-        Py_DECREF(mod);
-        return NULL;
-    }
-    return mod;
-}
-
-
 static int
 iomodule_traverse(PyObject *mod, visitproc visit, void *arg) {
     _PyIO_State *state = get_io_state(mod);
     if (!state->initialized)
         return 0;
-    if (state->locale_module != NULL) {
-        Py_VISIT(state->locale_module);
-    }
+    Py_VISIT(state->locale_module);
     Py_VISIT(state->unsupported_operation);
     return 0;
 }

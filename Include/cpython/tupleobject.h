@@ -2,10 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct {
     PyObject_VAR_HEAD
     /* ob_item contains space for 'ob_size' elements.
@@ -30,7 +26,3 @@ PyAPI_FUNC(void) _PyTuple_MaybeUntrack(PyObject *);
 #define PyTuple_SET_ITEM(op, i, v) (_PyTuple_CAST(op)->ob_item[i] = v)
 
 PyAPI_FUNC(void) _PyTuple_DebugMallocStats(FILE *out);
-
-#ifdef __cplusplus
-}
-#endif

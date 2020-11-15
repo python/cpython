@@ -13,7 +13,8 @@ extern "C" {
 
 PyAPI_DATA(PyTypeObject) PyCFunction_Type;
 
-#define PyCFunction_Check(op) (Py_IS_TYPE(op, &PyCFunction_Type) || (PyType_IsSubtype(Py_TYPE(op), &PyCFunction_Type)))
+#define PyCFunction_CheckExact(op) Py_IS_TYPE(op, &PyCFunction_Type)
+#define PyCFunction_Check(op) PyObject_TypeCheck(op, &PyCFunction_Type)
 
 typedef PyObject *(*PyCFunction)(PyObject *, PyObject *);
 typedef PyObject *(*_PyCFunctionFast) (PyObject *, PyObject *const *, Py_ssize_t);
@@ -72,7 +73,7 @@ PyAPI_FUNC(PyObject *) PyCMethod_New(PyMethodDef *, PyObject *,
 
 #define METH_COEXIST   0x0040
 
-#ifndef Py_LIMITED_API
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03100000
 #define METH_FASTCALL  0x0080
 #endif
 

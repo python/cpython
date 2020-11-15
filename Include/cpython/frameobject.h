@@ -4,9 +4,20 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+/* These values are chosen so that the inline functions below all
+ * compare f_state to zero.
+ */
+enum _framestate {
+    FRAME_CREATED = -2,
+    FRAME_SUSPENDED = -1,
+    FRAME_EXECUTING = 0,
+    FRAME_RETURNED = 1,
+    FRAME_UNWINDING = 2,
+    FRAME_RAISED = 3,
+    FRAME_CLEARED = 4
+};
+
+typedef signed char PyFrameState;
 
 typedef struct {
     int b_type;                 /* what kind of block this is */
@@ -22,11 +33,8 @@ struct _frame {
     PyObject *f_globals;        /* global symbol table (PyDictObject) */
     PyObject *f_locals;         /* local symbol table (any mapping) */
     PyObject **f_valuestack;    /* points after the last local */
-    /* Next free slot in f_valuestack.  Frame creation sets to f_valuestack.
-       Frame evaluation usually NULLs it, but a frame that yields sets it
-       to the current stack top. */
-    PyObject **f_stacktop;
     PyObject *f_trace;          /* Trace function */
+    int f_stackdepth;           /* Depth of value stack */
     char f_trace_lines;         /* Emit per-line trace events? */
     char f_trace_opcodes;       /* Emit per-opcode trace events? */
 
@@ -41,11 +49,22 @@ struct _frame {
        bytecode index. */
     int f_lineno;               /* Current line number */
     int f_iblock;               /* index in f_blockstack */
-    char f_executing;           /* whether the frame is still executing */
+    PyFrameState f_state;       /* What state the frame is in */
     PyTryBlock f_blockstack[CO_MAXBLOCKS]; /* for try and loop blocks */
     PyObject *f_localsplus[1];  /* locals+stack, dynamically sized */
 };
 
+static inline int _PyFrame_IsRunnable(struct _frame *f) {
+    return f->f_state < FRAME_EXECUTING;
+}
+
+static inline int _PyFrame_IsExecuting(struct _frame *f) {
+    return f->f_state == FRAME_EXECUTING;
+}
+
+static inline int _PyFrameHasCompleted(struct _frame *f) {
+    return f->f_state > FRAME_EXECUTING;
+}
 
 /* Standard object interface */
 
@@ -78,7 +97,3 @@ PyAPI_FUNC(void) PyFrame_FastToLocals(PyFrameObject *);
 PyAPI_FUNC(void) _PyFrame_DebugMallocStats(FILE *out);
 
 PyAPI_FUNC(PyFrameObject *) PyFrame_GetBack(PyFrameObject *frame);
-
-#ifdef __cplusplus
-}
-#endif

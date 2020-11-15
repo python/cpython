@@ -4,6 +4,9 @@
 
 PyAPI_DATA(PyTypeObject) PyCMethod_Type;
 
+#define PyCMethod_CheckExact(op) Py_IS_TYPE(op, &PyCMethod_Type)
+#define PyCMethod_Check(op) PyObject_TypeCheck(op, &PyCMethod_Type)
+
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
 #define PyCFunction_GET_FUNCTION(func) \

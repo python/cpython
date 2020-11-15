@@ -3,7 +3,9 @@ Tests for the threading module.
 """
 
 import test.support
-from test.support import verbose, import_module, cpython_only
+from test.support import threading_helper
+from test.support import verbose, cpython_only
+from test.support.import_helper import import_module
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 import random
@@ -18,6 +20,7 @@ import subprocess
 import signal
 import textwrap
 
+from unittest import mock
 from test import lock_tests
 from test import support
 
@@ -75,14 +78,41 @@ class TestThread(threading.Thread):
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self._threads = test.support.threading_setup()
+        self._threads = threading_helper.threading_setup()
 
     def tearDown(self):
-        test.support.threading_cleanup(*self._threads)
+        threading_helper.threading_cleanup(*self._threads)
         test.support.reap_children()
 
 
 class ThreadTests(BaseTestCase):
+
+    @cpython_only
+    def test_name(self):
+        def func(): pass
+
+        thread = threading.Thread(name="myname1")
+        self.assertEqual(thread.name, "myname1")
+
+        # Convert int name to str
+        thread = threading.Thread(name=123)
+        self.assertEqual(thread.name, "123")
+
+        # target name is ignored if name is specified
+        thread = threading.Thread(target=func, name="myname2")
+        self.assertEqual(thread.name, "myname2")
+
+        with mock.patch.object(threading, '_counter', return_value=2):
+            thread = threading.Thread(name="")
+            self.assertEqual(thread.name, "Thread-2")
+
+        with mock.patch.object(threading, '_counter', return_value=3):
+            thread = threading.Thread()
+            self.assertEqual(thread.name, "Thread-3")
+
+        with mock.patch.object(threading, '_counter', return_value=5):
+            thread = threading.Thread(target=func)
+            self.assertEqual(thread.name, "Thread-5 (func)")
 
     # Create a bunch of threads, let each do some work, wait until all are
     # done.
@@ -130,7 +160,7 @@ class ThreadTests(BaseTestCase):
             done.set()
         done = threading.Event()
         ident = []
-        with support.wait_threads_exit():
+        with threading_helper.wait_threads_exit():
             tid = _thread.start_new_thread(f, ())
             done.wait()
             self.assertEqual(ident[0], tid)
@@ -171,7 +201,7 @@ class ThreadTests(BaseTestCase):
 
         mutex = threading.Lock()
         mutex.acquire()
-        with support.wait_threads_exit():
+        with threading_helper.wait_threads_exit():
             tid = _thread.start_new_thread(f, (mutex,))
             # Wait for the thread to finish.
             mutex.acquire()
@@ -529,7 +559,7 @@ class ThreadTests(BaseTestCase):
             import os, threading, sys
             from test import support
 
-            def f():
+            def func():
                 pid = os.fork()
                 if pid == 0:
                     main = threading.main_thread()
@@ -542,14 +572,14 @@ class ThreadTests(BaseTestCase):
                 else:
                     support.wait_process(pid, exitcode=0)
 
-            th = threading.Thread(target=f)
+            th = threading.Thread(target=func)
             th.start()
             th.join()
         """
         _, out, err = assert_python_ok("-c", code)
         data = out.decode().replace('\r', '')
         self.assertEqual(err, b"")
-        self.assertEqual(data, "Thread-1\nTrue\nTrue\n")
+        self.assertEqual(data, "Thread-1 (func)\nTrue\nTrue\n")
 
     def test_main_thread_during_shutdown(self):
         # bpo-31516: current_thread() should still point to the main thread
@@ -734,6 +764,27 @@ class ThreadTests(BaseTestCase):
                 callback()
         finally:
             sys.settrace(old_trace)
+
+    def test_gettrace(self):
+        def noop_trace(frame, event, arg):
+            # no operation
+            return noop_trace
+        old_trace = threading.gettrace()
+        try:
+            threading.settrace(noop_trace)
+            trace_func = threading.gettrace()
+            self.assertEqual(noop_trace,trace_func)
+        finally:
+            threading.settrace(old_trace)
+
+    def test_getprofile(self):
+        def fn(*args): pass
+        old_profile = threading.getprofile()
+        try:
+            threading.setprofile(fn)
+            self.assertEqual(fn, threading.getprofile())
+        finally:
+            threading.setprofile(old_profile)
 
     @cpython_only
     def test_shutdown_locks(self):
@@ -1301,6 +1352,27 @@ class ExceptHookTests(BaseTestCase):
                          'Exception in threading.excepthook:\n')
         self.assertEqual(err_str, 'threading_hook failed')
 
+    def test_original_excepthook(self):
+        def run_thread():
+            with support.captured_output("stderr") as output:
+                thread = ThreadRunFail(name="excepthook thread")
+                thread.start()
+                thread.join()
+            return output.getvalue()
+
+        def threading_hook(args):
+            print("Running a thread failed", file=sys.stderr)
+
+        default_output = run_thread()
+        with support.swap_attr(threading, 'excepthook', threading_hook):
+            custom_hook_output = run_thread()
+            threading.excepthook = threading.__excepthook__
+            recovered_output = run_thread()
+
+        self.assertEqual(default_output, recovered_output)
+        self.assertNotEqual(default_output, custom_hook_output)
+        self.assertEqual(custom_hook_output, "Running a thread failed\n")
+
 
 class TimerTests(BaseTestCase):
 
@@ -1363,9 +1435,9 @@ class BarrierTests(lock_tests.BarrierTests):
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         extra = {"ThreadError"}
-        blacklist = {'currentThread', 'activeCount'}
+        not_exported = {'currentThread', 'activeCount'}
         support.check__all__(self, threading, ('threading', '_thread'),
-                             extra=extra, blacklist=blacklist)
+                             extra=extra, not_exported=not_exported)
 
 
 class InterruptMainTests(unittest.TestCase):

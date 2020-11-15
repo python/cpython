@@ -438,8 +438,9 @@ ABC hierarchy::
             package. This attribute is not set on modules.
 
         - :attr:`__package__`
-            The parent package for the module/package. If the module is
-            top-level then it has a value of the empty string. The
+            The fully-qualified name of the package under which the module was
+            loaded as a submodule (or the empty string for top-level modules).
+            For packages, it is the same as :attr:`__name__`.  The
             :func:`importlib.util.module_for_loader` decorator can handle the
             details for :attr:`__package__`.
 
@@ -1073,7 +1074,7 @@ find and load modules.
 
 .. class:: WindowsRegistryFinder
 
-   :term:`Finder` for modules declared in the Windows registry.  This class
+   :term:`Finder <finder>` for modules declared in the Windows registry.  This class
    implements the :class:`importlib.abc.MetaPathFinder` ABC.
 
    Only class methods are defined by this class to alleviate the need for
@@ -1088,7 +1089,7 @@ find and load modules.
 
 .. class:: PathFinder
 
-   A :term:`Finder` for :data:`sys.path` and package ``__path__`` attributes.
+   A :term:`Finder <finder>` for :data:`sys.path` and package ``__path__`` attributes.
    This class implements the :class:`importlib.abc.MetaPathFinder` ABC.
 
    Only class methods are defined by this class to alleviate the need for
@@ -1347,8 +1348,8 @@ find and load modules.
 
    (``__loader__``)
 
-   The loader to use for loading.  For namespace packages this should be
-   set to ``None``.
+   The :term:`Loader <loader>` that should be used when loading
+   the module.  :term:`Finders <finder>` should always set this.
 
    .. attribute:: origin
 
@@ -1381,8 +1382,9 @@ find and load modules.
 
    (``__package__``)
 
-   (Read-only) Fully-qualified name of the package to which the module
-   belongs as a submodule (or ``None``).
+   (Read-only) The fully-qualified name of the package under which the module
+   should be loaded as a submodule (or the empty string for top-level modules).
+   For packages, it is the same as :attr:`__name__`.
 
    .. attribute:: has_location
 
@@ -1717,6 +1719,29 @@ To import a Python source file directly, use the following recipe
   module = importlib.util.module_from_spec(spec)
   sys.modules[module_name] = module
   spec.loader.exec_module(module)
+
+
+Implementing lazy imports
+'''''''''''''''''''''''''
+
+The example below shows how to implement lazy imports::
+
+    >>> import importlib.util
+    >>> import sys
+    >>> def lazy_import(name):
+    ...     spec = importlib.util.find_spec(name)
+    ...     loader = importlib.util.LazyLoader(spec.loader)
+    ...     spec.loader = loader
+    ...     module = importlib.util.module_from_spec(spec)
+    ...     sys.modules[name] = module
+    ...     loader.exec_module(module)
+    ...     return module
+    ...
+    >>> lazy_typing = lazy_import("typing")
+    >>> #lazy_typing is a real module object,
+    >>> #but it is not loaded in memory yet.
+    >>> lazy_typing.TYPE_CHECKING
+    False
 
 
 

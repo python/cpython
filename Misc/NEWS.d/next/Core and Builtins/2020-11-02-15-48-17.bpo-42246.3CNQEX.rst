@@ -1,0 +1,2 @@
+Improved accuracy of line tracing events and f_lineno attribute of Frame
+objects. See PEP 626 for details.

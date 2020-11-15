@@ -67,7 +67,6 @@
 /* ---------------------------------------------------------------*/
 
 #include "Python.h"
-#include "pycore_byteswap.h"      // _Py_bswap32()
 #ifdef HAVE_PROCESS_H
 #  include <process.h>            // getpid()
 #endif
@@ -535,6 +534,7 @@ random_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_DECREF(tmp);
     return (PyObject *)self;
 }
+
 
 static PyMethodDef random_methods[] = {
     _RANDOM_RANDOM_RANDOM_METHODDEF

@@ -42,7 +42,10 @@ import sys
 import tempfile
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import support
+from test.support import os_helper
 from test.support import socket_helper
+from test.support import threading_helper
+from test.support import warnings_helper
 from test.support.logging_helper import TestHandler
 import textwrap
 import threading
@@ -79,7 +82,7 @@ class BaseTest(unittest.TestCase):
     def setUp(self):
         """Setup the default logging stream to an internal StringIO instance,
         so that we can examine log output as we want."""
-        self._threading_key = support.threading_setup()
+        self._threading_key = threading_helper.threading_setup()
 
         logger_dict = logging.getLogger().manager.loggerDict
         logging._acquireLock()
@@ -150,7 +153,7 @@ class BaseTest(unittest.TestCase):
             logging._releaseLock()
 
         self.doCleanups()
-        support.threading_cleanup(*self._threading_key)
+        threading_helper.threading_cleanup(*self._threading_key)
 
     def assert_log_lines(self, expected_values, stream=None, pat=None):
         """Match the collected log lines against the regular expression
@@ -865,7 +868,7 @@ class TestSMTPServer(smtpd.SMTPServer):
         Wait for the server thread to terminate.
         """
         self.close()
-        support.join_thread(self._thread)
+        threading_helper.join_thread(self._thread)
         self._thread = None
         asyncore.close_all(map=self._map, ignore_all=True)
 
@@ -915,7 +918,7 @@ class ControlMixin(object):
         """
         self.shutdown()
         if self._thread is not None:
-            support.join_thread(self._thread)
+            threading_helper.join_thread(self._thread)
             self._thread = None
         self.server_close()
         self.ready.clear()
@@ -1157,6 +1160,32 @@ class MemoryHandlerTest(BaseTest):
         # assert that no new lines have been added
         self.assert_log_lines(lines)  # no change
 
+    def test_race_between_set_target_and_flush(self):
+        class MockRaceConditionHandler:
+            def __init__(self, mem_hdlr):
+                self.mem_hdlr = mem_hdlr
+                self.threads = []
+
+            def removeTarget(self):
+                self.mem_hdlr.setTarget(None)
+
+            def handle(self, msg):
+                thread = threading.Thread(target=self.removeTarget)
+                self.threads.append(thread)
+                thread.start()
+
+        target = MockRaceConditionHandler(self.mem_hdlr)
+        try:
+            self.mem_hdlr.setTarget(target)
+
+            for _ in range(10):
+                time.sleep(0.005)
+                self.mem_logger.info("not flushed")
+                self.mem_logger.warning("flushed")
+        finally:
+            for thread in target.threads:
+                threading_helper.join_thread(thread)
+
 
 class ExceptionFormatter(logging.Formatter):
     """A special exception formatter."""
@@ -1168,7 +1197,7 @@ class ConfigFileTest(BaseTest):
 
     """Reading logging config from a .ini-style config file."""
 
-    check_no_resource_warning = support.check_no_resource_warning
+    check_no_resource_warning = warnings_helper.check_no_resource_warning
     expected_log_pat = r"^(\w+) \+\+ (\w+)$"
 
     # config0 is a standard configuration.
@@ -1755,7 +1784,7 @@ class UnixSocketHandlerTest(SocketHandlerTest):
 
     def tearDown(self):
         SocketHandlerTest.tearDown(self)
-        support.unlink(self.address)
+        os_helper.unlink(self.address)
 
 class DatagramHandlerTest(BaseTest):
 
@@ -1836,7 +1865,7 @@ class UnixDatagramHandlerTest(DatagramHandlerTest):
 
     def tearDown(self):
         DatagramHandlerTest.tearDown(self)
-        support.unlink(self.address)
+        os_helper.unlink(self.address)
 
 class SysLogHandlerTest(BaseTest):
 
@@ -1920,7 +1949,7 @@ class UnixSysLogHandlerTest(SysLogHandlerTest):
 
     def tearDown(self):
         SysLogHandlerTest.tearDown(self)
-        support.unlink(self.address)
+        os_helper.unlink(self.address)
 
 @unittest.skipUnless(socket_helper.IPV6_ENABLED,
                      'IPv6 support required for this test.')
@@ -2174,7 +2203,7 @@ class ConfigDictTest(BaseTest):
 
     """Reading logging config from a dictionary."""
 
-    check_no_resource_warning = support.check_no_resource_warning
+    check_no_resource_warning = warnings_helper.check_no_resource_warning
     expected_log_pat = r"^(\w+) \+\+ (\w+)$"
 
     # config0 is a standard configuration.
@@ -3212,7 +3241,7 @@ class ConfigDictTest(BaseTest):
         finally:
             t.ready.wait(2.0)
             logging.config.stopListening()
-            support.join_thread(t)
+            threading_helper.join_thread(t)
 
     def test_listen_config_10_ok(self):
         with support.captured_stdout() as output:
@@ -3629,9 +3658,9 @@ if hasattr(logging.handlers, 'QueueListener'):
 
         @patch.object(logging.handlers.QueueListener, 'handle')
         def test_handle_called_with_mp_queue(self, mock_handle):
-            # Issue 28668: The multiprocessing (mp) module is not functional
+            # bpo-28668: The multiprocessing (mp) module is not functional
             # when the mp.synchronize module cannot be imported.
-            support.import_module('multiprocessing.synchronize')
+            support.skip_if_broken_multiprocessing_synchronize()
             for i in range(self.repeat):
                 log_queue = multiprocessing.Queue()
                 self.setup_and_log(log_queue, '%s_%s' % (self.id(), i))
@@ -3655,9 +3684,9 @@ if hasattr(logging.handlers, 'QueueListener'):
             indicates that messages were not registered on the queue until
             _after_ the QueueListener stopped.
             """
-            # Issue 28668: The multiprocessing (mp) module is not functional
+            # bpo-28668: The multiprocessing (mp) module is not functional
             # when the mp.synchronize module cannot be imported.
-            support.import_module('multiprocessing.synchronize')
+            support.skip_if_broken_multiprocessing_synchronize()
             for i in range(self.repeat):
                 queue = multiprocessing.Queue()
                 self.setup_and_log(queue, '%s_%s' %(self.id(), i))
@@ -3696,7 +3725,15 @@ class UTC(datetime.tzinfo):
 
 utc = UTC()
 
-class FormatterTest(unittest.TestCase):
+class AssertErrorMessage:
+
+    def assert_error_message(self, exception, message, *args, **kwargs):
+        try:
+            self.assertRaises((), *args, **kwargs)
+        except exception as e:
+            self.assertEqual(message, str(e))
+
+class FormatterTest(unittest.TestCase, AssertErrorMessage):
     def setUp(self):
         self.common = {
             'name': 'formatter.test',
@@ -3709,6 +3746,9 @@ class FormatterTest(unittest.TestCase):
             'args': (2, 'placeholders'),
         }
         self.variants = {
+            'custom': {
+                'custom': 1234
+            }
         }
 
     def get_record(self, name=None):
@@ -3716,12 +3756,6 @@ class FormatterTest(unittest.TestCase):
         if name is not None:
             result.update(self.variants[name])
         return logging.makeLogRecord(result)
-
-    def assert_error_message(self, exception, message, *args, **kwargs):
-        try:
-            self.assertRaises(exception, *args, **kwargs)
-        except exception as e:
-            self.assertEqual(message, e.message)
 
     def test_percent(self):
         # Test %-formatting
@@ -3841,7 +3875,7 @@ class FormatterTest(unittest.TestCase):
         # Testing failure for '-' in field name
         self.assert_error_message(
             ValueError,
-            "invalid field name/expression: 'name-thing'",
+            "invalid format: invalid field name/expression: 'name-thing'",
             logging.Formatter, "{name-thing}", style="{"
         )
         # Testing failure for style mismatch
@@ -3864,7 +3898,7 @@ class FormatterTest(unittest.TestCase):
         # Testing failure for invalid spec
         self.assert_error_message(
             ValueError,
-            "bad specifier: '.2ff'",
+            "invalid format: bad specifier: '.2ff'",
             logging.Formatter, '{process:.2ff}', style='{'
         )
         self.assertRaises(ValueError, logging.Formatter, '{process:.2Z}', style='{')
@@ -3874,12 +3908,12 @@ class FormatterTest(unittest.TestCase):
         # Testing failure for mismatch braces
         self.assert_error_message(
             ValueError,
-            "invalid format: unmatched '{' in format spec",
+            "invalid format: expected '}' before end of string",
             logging.Formatter, '{process', style='{'
         )
         self.assert_error_message(
             ValueError,
-            "invalid format: unmatched '{' in format spec",
+            "invalid format: Single '}' encountered in format string",
             logging.Formatter, 'process}', style='{'
         )
         self.assertRaises(ValueError, logging.Formatter, '{{foo!r:4.2}', style='{')
@@ -3924,6 +3958,26 @@ class FormatterTest(unittest.TestCase):
             logging.Formatter, 'foo', style='$'
         )
         self.assertRaises(ValueError, logging.Formatter, '${asctime', style='$')
+
+    def test_defaults_parameter(self):
+        fmts = ['%(custom)s %(message)s', '{custom} {message}', '$custom $message']
+        styles = ['%', '{', '$']
+        for fmt, style in zip(fmts, styles):
+            f = logging.Formatter(fmt, style=style, defaults={'custom': 'Default'})
+            r = self.get_record()
+            self.assertEqual(f.format(r), 'Default Message with 2 placeholders')
+            r = self.get_record("custom")
+            self.assertEqual(f.format(r), '1234 Message with 2 placeholders')
+
+            # Without default
+            f = logging.Formatter(fmt, style=style)
+            r = self.get_record()
+            self.assertRaises(ValueError, f.format, r)
+
+            # Non-existing default is ignored
+            f = logging.Formatter(fmt, style=style, defaults={'Non-existing': 'Default'})
+            r = self.get_record("custom")
+            self.assertEqual(f.format(r), '1234 Message with 2 placeholders')
 
     def test_invalid_style(self):
         self.assertRaises(ValueError, logging.Formatter, None, None, 'x')
@@ -4256,8 +4310,8 @@ class ModuleLevelMiscTest(BaseTest):
             logging.setLoggerClass(logging.Logger)
 
     def test_logging_at_shutdown(self):
-        # Issue #20037
-        code = """if 1:
+        # bpo-20037: Doing text I/O late at interpreter shutdown must not crash
+        code = textwrap.dedent("""
             import logging
 
             class A:
@@ -4267,22 +4321,55 @@ class ModuleLevelMiscTest(BaseTest):
                     except Exception:
                         logging.exception("exception in __del__")
 
-            a = A()"""
+            a = A()
+        """)
         rc, out, err = assert_python_ok("-c", code)
         err = err.decode()
         self.assertIn("exception in __del__", err)
         self.assertIn("ValueError: some error", err)
 
+    def test_logging_at_shutdown_open(self):
+        # bpo-26789: FileHandler keeps a reference to the builtin open()
+        # function to be able to open or reopen the file during Python
+        # finalization.
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+
+        code = textwrap.dedent(f"""
+            import builtins
+            import logging
+
+            class A:
+                def __del__(self):
+                    logging.error("log in __del__")
+
+            # basicConfig() opens the file, but logging.shutdown() closes
+            # it at Python exit. When A.__del__() is called,
+            # FileHandler._open() must be called again to re-open the file.
+            logging.basicConfig(filename={filename!r})
+
+            a = A()
+
+            # Simulate the Python finalization which removes the builtin
+            # open() function.
+            del builtins.open
+        """)
+        assert_python_ok("-c", code)
+
+        with open(filename) as fp:
+            self.assertEqual(fp.read().rstrip(), "ERROR:root:log in __del__")
+
     def test_recursion_error(self):
         # Issue 36272
-        code = """if 1:
+        code = textwrap.dedent("""
             import logging
 
             def rec():
                 logging.error("foo")
                 rec()
 
-            rec()"""
+            rec()
+        """)
         rc, out, err = assert_python_failure("-c", code)
         err = err.decode()
         self.assertNotIn("Cannot recover from stack overflow.", err)
@@ -4307,15 +4394,65 @@ class LogRecordTest(BaseTest):
         r.removeHandler(h)
         h.close()
 
-    def test_multiprocessing(self):
-        r = logging.makeLogRecord({})
-        self.assertEqual(r.processName, 'MainProcess')
+    @staticmethod # pickled as target of child process in the following test
+    def _extract_logrecord_process_name(key, logMultiprocessing, conn=None):
+        prev_logMultiprocessing = logging.logMultiprocessing
+        logging.logMultiprocessing = logMultiprocessing
         try:
             import multiprocessing as mp
+            name = mp.current_process().name
+
+            r1 = logging.makeLogRecord({'msg': f'msg1_{key}'})
+            del sys.modules['multiprocessing']
+            r2 = logging.makeLogRecord({'msg': f'msg2_{key}'})
+
+            results = {'processName'  : name,
+                       'r1.processName': r1.processName,
+                       'r2.processName': r2.processName,
+                      }
+        finally:
+            logging.logMultiprocessing = prev_logMultiprocessing
+        if conn:
+            conn.send(results)
+        else:
+            return results
+
+    def test_multiprocessing(self):
+        multiprocessing_imported = 'multiprocessing' in sys.modules
+        try:
+            # logMultiprocessing is True by default
+            self.assertEqual(logging.logMultiprocessing, True)
+
+            LOG_MULTI_PROCESSING = True
+            # When logMultiprocessing == True:
+            # In the main process processName = 'MainProcess'
             r = logging.makeLogRecord({})
-            self.assertEqual(r.processName, mp.current_process().name)
-        except ImportError:
-            pass
+            self.assertEqual(r.processName, 'MainProcess')
+
+            results = self._extract_logrecord_process_name(1, LOG_MULTI_PROCESSING)
+            self.assertEqual('MainProcess', results['processName'])
+            self.assertEqual('MainProcess', results['r1.processName'])
+            self.assertEqual('MainProcess', results['r2.processName'])
+
+            # In other processes, processName is correct when multiprocessing in imported,
+            # but it is (incorrectly) defaulted to 'MainProcess' otherwise (bpo-38762).
+            import multiprocessing
+            parent_conn, child_conn = multiprocessing.Pipe()
+            p = multiprocessing.Process(
+                target=self._extract_logrecord_process_name,
+                args=(2, LOG_MULTI_PROCESSING, child_conn,)
+            )
+            p.start()
+            results = parent_conn.recv()
+            self.assertNotEqual('MainProcess', results['processName'])
+            self.assertEqual(results['processName'], results['r1.processName'])
+            self.assertEqual('MainProcess', results['r2.processName'])
+            p.join()
+
+        finally:
+            if multiprocessing_imported:
+                import multiprocessing
+
 
     def test_optional(self):
         r = logging.makeLogRecord({})
@@ -4770,7 +4907,7 @@ class LoggerAdapterTest(unittest.TestCase):
         self.assertIs(self.logger.manager, orig_manager)
 
 
-class LoggerTest(BaseTest):
+class LoggerTest(BaseTest, AssertErrorMessage):
 
     def setUp(self):
         super(LoggerTest, self).setUp()
@@ -4782,7 +4919,12 @@ class LoggerTest(BaseTest):
         self.addCleanup(logging.shutdown)
 
     def test_set_invalid_level(self):
-        self.assertRaises(TypeError, self.logger.setLevel, object())
+        self.assert_error_message(
+            TypeError, 'Level not an integer or a valid string: None',
+            self.logger.setLevel, None)
+        self.assert_error_message(
+            TypeError, 'Level not an integer or a valid string: (0, 0)',
+            self.logger.setLevel, (0, 0))
 
     def test_exception(self):
         msg = 'testing exception: %r'
@@ -5076,7 +5218,7 @@ class RotatingFileHandlerTest(BaseFileTest):
         self.assertFalse(os.path.exists(rh.namer(self.fn + ".1")))
         rh.close()
 
-    @support.requires_zlib
+    @support.requires_zlib()
     def test_rotator(self):
         def namer(name):
             return name + ".gz"
@@ -5316,12 +5458,12 @@ class NTEventLogHandlerTest(BaseTest):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {'logThreads', 'logMultiprocessing',
-                     'logProcesses', 'currentframe',
-                     'PercentStyle', 'StrFormatStyle', 'StringTemplateStyle',
-                     'Filterer', 'PlaceHolder', 'Manager', 'RootLogger',
-                     'root', 'threading'}
-        support.check__all__(self, logging, blacklist=blacklist)
+        not_exported = {
+            'logThreads', 'logMultiprocessing', 'logProcesses', 'currentframe',
+            'PercentStyle', 'StrFormatStyle', 'StringTemplateStyle',
+            'Filterer', 'PlaceHolder', 'Manager', 'RootLogger', 'root',
+            'threading'}
+        support.check__all__(self, logging, not_exported=not_exported)
 
 
 # Set the locale to the platform-dependent default.  I have no idea

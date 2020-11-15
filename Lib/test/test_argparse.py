@@ -13,6 +13,7 @@ import argparse
 from io import StringIO
 
 from test import support
+from test.support import os_helper
 from unittest import mock
 class StdIOBuffer(StringIO):
     pass
@@ -23,7 +24,7 @@ class TestCase(unittest.TestCase):
         # The tests assume that line wrapping occurs at 80 columns, but this
         # behaviour can be overridden by setting the COLUMNS environment
         # variable.  To ensure that this width is used, set COLUMNS to 80.
-        env = support.EnvironmentVarGuard()
+        env = os_helper.EnvironmentVarGuard()
         env['COLUMNS'] = '80'
         self.addCleanup(env.__exit__)
 
@@ -699,6 +700,14 @@ class TestBooleanOptionalAction(ParserTestCase):
         ('--foo --no-foo', NS(foo=False)),  # useful for aliases
         ('--no-foo --foo', NS(foo=True)),
     ]
+
+    def test_const(self):
+        # See bpo-40862
+        parser = argparse.ArgumentParser()
+        with self.assertRaises(TypeError) as cm:
+            parser.add_argument('--foo', const=True, action=argparse.BooleanOptionalAction)
+
+        self.assertIn("got an unexpected keyword argument 'const'", str(cm.exception))
 
 class TestBooleanOptionalActionRequired(ParserTestCase):
     """Tests BooleanOptionalAction required"""
@@ -3236,7 +3245,7 @@ class TestShortColumns(HelpTestCase):
     but we don't want any exceptions thrown in such cases. Only ugly representation.
     '''
     def setUp(self):
-        env = support.EnvironmentVarGuard()
+        env = os_helper.EnvironmentVarGuard()
         env.set("COLUMNS", '15')
         self.addCleanup(env.__exit__)
 
@@ -4725,7 +4734,7 @@ class TestStrings(TestCase):
 
     def test_namespace(self):
         ns = argparse.Namespace(foo=42, bar='spam')
-        string = "Namespace(bar='spam', foo=42)"
+        string = "Namespace(foo=42, bar='spam')"
         self.assertStringEqual(ns, string)
 
     def test_namespace_starkwargs_notidentifier(self):

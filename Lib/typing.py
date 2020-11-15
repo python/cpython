@@ -18,6 +18,7 @@ At large scale, the structure of the module is following:
 """
 
 from abc import abstractmethod, ABCMeta
+import ast
 import collections
 import collections.abc
 import contextlib
@@ -103,6 +104,7 @@ __all__ = [
     'get_args',
     'get_origin',
     'get_type_hints',
+    'is_typeddict',
     'NewType',
     'no_type_check',
     'no_type_check_decorator',
@@ -111,12 +113,12 @@ __all__ = [
     'runtime_checkable',
     'Text',
     'TYPE_CHECKING',
+    'TypeAlias',
 ]
 
 # The pseudo-submodules 're' and 'io' are part of the public
 # namespace, but excluded from __all__ because they might stomp on
 # legitimate imports of those modules.
-
 
 def _type_check(arg, msg, is_argument=True):
     """Check that the argument is a type, and return it (internal helper).
@@ -145,7 +147,7 @@ def _type_check(arg, msg, is_argument=True):
         return arg
     if isinstance(arg, _SpecialForm) or arg in (Generic, Protocol):
         raise TypeError(f"Plain {arg} is not valid as type argument")
-    if isinstance(arg, (type, TypeVar, ForwardRef)):
+    if isinstance(arg, (type, TypeVar, ForwardRef, types.Union)):
         return arg
     if not callable(arg):
         raise TypeError(f"{msg} Got {arg!r:.100}.")
@@ -160,6 +162,8 @@ def _type_repr(obj):
     typically enough to uniquely identify a type.  For everything
     else, we fall back on repr(obj).
     """
+    if isinstance(obj, types.GenericAlias):
+        return repr(obj)
     if isinstance(obj, type):
         if obj.__module__ == 'builtins':
             return obj.__qualname__
@@ -205,7 +209,7 @@ def _remove_dups_flatten(parameters):
     # Flatten out Union[Union[...], ...].
     params = []
     for p in parameters:
-        if isinstance(p, _UnionGenericAlias):
+        if isinstance(p, (_UnionGenericAlias, types.Union)):
             params.extend(p.__args__)
         elif isinstance(p, tuple) and len(p) > 0 and p[0] is Union:
             params.extend(p[1:])
@@ -244,14 +248,16 @@ def _tp_cache(func):
     return inner
 
 
-def _eval_type(t, globalns, localns):
-    """Evaluate all forward reverences in the given type t.
+def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
+    """Evaluate all forward references in the given type t.
     For use of globalns and localns see the docstring for get_type_hints().
+    recursive_guard is used to prevent prevent infinite recursion
+    with recursive ForwardRef.
     """
     if isinstance(t, ForwardRef):
-        return t._evaluate(globalns, localns)
+        return t._evaluate(globalns, localns, recursive_guard)
     if isinstance(t, (_GenericAlias, GenericAlias)):
-        ev_args = tuple(_eval_type(a, globalns, localns) for a in t.__args__)
+        ev_args = tuple(_eval_type(a, globalns, localns, recursive_guard) for a in t.__args__)
         if ev_args == t.__args__:
             return t
         if isinstance(t, GenericAlias):
@@ -457,6 +463,21 @@ def Literal(self, parameters):
     return _GenericAlias(self, parameters)
 
 
+@_SpecialForm
+def TypeAlias(self, parameters):
+    """Special marker indicating that an assignment should
+    be recognized as a proper type alias definition by type
+    checkers.
+
+    For example::
+
+        Predicate: TypeAlias = Callable[..., bool]
+
+    It's invalid when used anywhere except as in the example above.
+    """
+    raise TypeError(f"{self} is not subscriptable")
+
+
 class ForwardRef(_Final, _root=True):
     """Internal wrapper to hold a forward reference."""
 
@@ -467,6 +488,13 @@ class ForwardRef(_Final, _root=True):
     def __init__(self, arg, is_argument=True):
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
+
+        # Double-stringified forward references is a result of activating
+        # the 'annotations' future by default. This way, we eliminate them in
+        # the runtime.
+        if arg.startswith(("'", '\"')) and arg.endswith(("'", '"')):
+            arg = arg[1:-1]
+
         try:
             code = compile(arg, '<string>', 'eval')
         except SyntaxError:
@@ -477,7 +505,9 @@ class ForwardRef(_Final, _root=True):
         self.__forward_value__ = None
         self.__forward_is_argument__ = is_argument
 
-    def _evaluate(self, globalns, localns):
+    def _evaluate(self, globalns, localns, recursive_guard):
+        if self.__forward_arg__ in recursive_guard:
+            return self
         if not self.__forward_evaluated__ or localns is not globalns:
             if globalns is None and localns is None:
                 globalns = localns = {}
@@ -485,10 +515,14 @@ class ForwardRef(_Final, _root=True):
                 globalns = localns
             elif localns is None:
                 localns = globalns
-            self.__forward_value__ = _type_check(
+            type_ =_type_check(
                 eval(self.__forward_code__, globalns, localns),
                 "Forward references must evaluate to types.",
-                is_argument=self.__forward_is_argument__)
+                is_argument=self.__forward_is_argument__,
+            )
+            self.__forward_value__ = _eval_type(
+                type_, globalns, localns, recursive_guard | {self.__forward_arg__}
+            )
             self.__forward_evaluated__ = True
         return self.__forward_value__
 
@@ -577,6 +611,12 @@ class TypeVar(_Final, _Immutable, _root=True):
             def_mod = None
         if def_mod != 'typing':
             self.__module__ = def_mod
+
+    def __or__(self, right):
+        return Union[self, right]
+
+    def __ror__(self, right):
+        return Union[self, right]
 
     def __repr__(self):
         if self.__covariant__:
@@ -685,6 +725,12 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
     def __hash__(self):
         return hash((self.__origin__, self.__args__))
 
+    def __or__(self, right):
+        return Union[self, right]
+
+    def __ror__(self, right):
+        return Union[self, right]
+
     @_tp_cache
     def __getitem__(self, params):
         if self.__origin__ in (Generic, Protocol):
@@ -784,6 +830,11 @@ class _SpecialGenericAlias(_BaseGenericAlias, _root=True):
     def __reduce__(self):
         return self._name
 
+    def __or__(self, right):
+        return Union[self, right]
+
+    def __ror__(self, right):
+        return Union[self, right]
 
 class _CallableGenericAlias(_GenericAlias, _root=True):
     def __repr__(self):
@@ -870,6 +921,15 @@ class _UnionGenericAlias(_GenericAlias, _root=True):
                 return f'typing.Optional[{_type_repr(args[0])}]'
         return super().__repr__()
 
+    def __instancecheck__(self, obj):
+        return self.__subclasscheck__(type(obj))
+
+    def __subclasscheck__(self, cls):
+        for arg in self.__args__:
+            if issubclass(cls, arg):
+                return True
+
+
 
 class Generic:
     """Abstract base class for generic types.
@@ -893,16 +953,6 @@ class Generic:
     """
     __slots__ = ()
     _is_protocol = False
-
-    def __new__(cls, *args, **kwds):
-        if cls in (Generic, Protocol):
-            raise TypeError(f"Type {cls.__name__} cannot be instantiated; "
-                            "it can be used only as a base class")
-        if super().__new__ is object.__new__ and cls.__init__ is not object.__init__:
-            obj = super().__new__(cls)
-        else:
-            obj = super().__new__(cls, *args, **kwds)
-        return obj
 
     @_tp_cache
     def __class_getitem__(cls, params):
@@ -1023,7 +1073,7 @@ def _allow_reckless_class_cheks():
         return True
 
 
-_PROTO_WHITELIST = {
+_PROTO_ALLOWLIST = {
     'collections.abc': [
         'Callable', 'Awaitable', 'Iterable', 'Iterator', 'AsyncIterable',
         'Hashable', 'Sized', 'Container', 'Collection', 'Reversible',
@@ -1142,8 +1192,8 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
         # ... otherwise check consistency of bases, and prohibit instantiation.
         for base in cls.__bases__:
             if not (base in (object, Generic) or
-                    base.__module__ in _PROTO_WHITELIST and
-                    base.__name__ in _PROTO_WHITELIST[base.__module__] or
+                    base.__module__ in _PROTO_ALLOWLIST and
+                    base.__name__ in _PROTO_ALLOWLIST[base.__module__] or
                     issubclass(base, Generic) and base._is_protocol):
                 raise TypeError('Protocols can only inherit from other'
                                 ' protocols, got %r' % base)
@@ -1454,6 +1504,20 @@ def get_args(tp):
     if isinstance(tp, GenericAlias):
         return tp.__args__
     return ()
+
+
+def is_typeddict(tp):
+    """Check if an annotation is a TypedDict class
+
+    For example::
+        class Film(TypedDict):
+            title: str
+            year: int
+
+        is_typeddict(Film)  # => True
+        is_typeddict(Union[list, str])  # => False
+    """
+    return isinstance(tp, _TypedDictMeta)
 
 
 def no_type_check(arg):

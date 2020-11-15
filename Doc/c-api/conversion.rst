@@ -27,12 +27,8 @@ not.
 
 The wrappers ensure that *str*[*size*-1] is always ``'\0'`` upon return. They
 never write more than *size* bytes (including the trailing ``'\0'``) into str.
-Both functions require that ``str != NULL``, ``size > 0`` and ``format !=
-NULL``.
-
-If the platform doesn't have :c:func:`vsnprintf` and the buffer size needed to
-avoid truncation exceeds *size* by more than 512 bytes, Python aborts with a
-:c:func:`Py_FatalError`.
+Both functions require that ``str != NULL``, ``size > 0``, ``format != NULL``
+and ``size < INT_MAX``.
 
 The return value (*rv*) for these functions should be interpreted as follows:
 
@@ -48,8 +44,8 @@ The return value (*rv*) for these functions should be interpreted as follows:
   this case too, but the rest of *str* is undefined. The exact cause of the error
   depends on the underlying platform.
 
-The following functions provide locale-independent string to number conversions.
 
+The following functions provide locale-independent string to number conversions.
 
 .. c:function:: double PyOS_string_to_double(const char *s, char **endptr, PyObject *overflow_exception)
 

@@ -52,43 +52,6 @@ module _imp
 /* Initialize things */
 
 PyStatus
-_PyImportHooks_Init(PyThreadState *tstate)
-{
-    PyObject *v, *path_hooks = NULL;
-    int err = 0;
-
-    /* adding sys.path_hooks and sys.path_importer_cache */
-    v = PyList_New(0);
-    if (v == NULL)
-        goto error;
-    err = PySys_SetObject("meta_path", v);
-    Py_DECREF(v);
-    if (err)
-        goto error;
-    v = PyDict_New();
-    if (v == NULL)
-        goto error;
-    err = PySys_SetObject("path_importer_cache", v);
-    Py_DECREF(v);
-    if (err)
-        goto error;
-    path_hooks = PyList_New(0);
-    if (path_hooks == NULL)
-        goto error;
-    err = PySys_SetObject("path_hooks", path_hooks);
-    if (err) {
-        goto error;
-    }
-    Py_DECREF(path_hooks);
-    return _PyStatus_OK();
-
-  error:
-    _PyErr_Print(tstate);
-    return _PyStatus_ERR("initializing sys.meta_path, sys.path_hooks, "
-                        "or path_importer_cache failed");
-}
-
-PyStatus
 _PyImportZip_Init(PyThreadState *tstate)
 {
     PyObject *path_hooks, *zipimport;
@@ -148,7 +111,7 @@ _PyImportZip_Init(PyThreadState *tstate)
    in different threads to return with a partially loaded module.
    These calls are serialized by the global interpreter lock. */
 
-static PyThread_type_lock import_lock = 0;
+static PyThread_type_lock import_lock = NULL;
 static unsigned long import_lock_thread = PYTHREAD_INVALID_THREAD_ID;
 static int import_lock_level = 0;
 
@@ -171,7 +134,7 @@ _PyImport_AcquireLock(void)
         !PyThread_acquire_lock(import_lock, 0))
     {
         PyThreadState *tstate = PyEval_SaveThread();
-        PyThread_acquire_lock(import_lock, 1);
+        PyThread_acquire_lock(import_lock, WAIT_LOCK);
         PyEval_RestoreThread(tstate);
     }
     assert(import_lock_level == 0);
@@ -197,33 +160,30 @@ _PyImport_ReleaseLock(void)
 }
 
 #ifdef HAVE_FORK
-/* This function is called from PyOS_AfterFork_Child to ensure that newly
+/* This function is called from PyOS_AfterFork_Child() to ensure that newly
    created child processes do not share locks with the parent.
    We now acquire the import lock around fork() calls but on some platforms
    (Solaris 9 and earlier? see isue7242) that still left us with problems. */
-
-void
+PyStatus
 _PyImport_ReInitLock(void)
 {
     if (import_lock != NULL) {
         if (_PyThread_at_fork_reinit(&import_lock) < 0) {
-            _Py_FatalErrorFunc(__func__, "failed to create a new lock");
+            return _PyStatus_ERR("failed to create a new lock");
         }
     }
+
     if (import_lock_level > 1) {
         /* Forked as a side effect of import */
         unsigned long me = PyThread_get_thread_ident();
-        /* The following could fail if the lock is already held, but forking as
-           a side-effect of an import is a) rare, b) nuts, and c) difficult to
-           do thanks to the lock only being held when doing individual module
-           locks per import. */
-        PyThread_acquire_lock(import_lock, NOWAIT_LOCK);
+        PyThread_acquire_lock(import_lock, WAIT_LOCK);
         import_lock_thread = me;
         import_lock_level--;
     } else {
         import_lock_thread = PYTHREAD_INVALID_THREAD_ID;
         import_lock_level = 0;
     }
+    return _PyStatus_OK();
 }
 #endif
 
@@ -406,233 +366,6 @@ import_ensure_initialized(PyThreadState *tstate, PyObject *mod, PyObject *name)
         Py_DECREF(value);
     }
     return 0;
-}
-
-
-/* List of names to clear in sys */
-static const char * const sys_deletes[] = {
-    "path", "argv", "ps1", "ps2",
-    "last_type", "last_value", "last_traceback",
-    "path_hooks", "path_importer_cache", "meta_path",
-    "__interactivehook__",
-    NULL
-};
-
-static const char * const sys_files[] = {
-    "stdin", "__stdin__",
-    "stdout", "__stdout__",
-    "stderr", "__stderr__",
-    NULL
-};
-
-/* Un-initialize things, as good as we can */
-
-void
-_PyImport_Cleanup(PyThreadState *tstate)
-{
-    PyInterpreterState *interp = tstate->interp;
-    PyObject *modules = interp->modules;
-    if (modules == NULL) {
-        /* Already done */
-        return;
-    }
-
-    /* Delete some special variables first.  These are common
-       places where user values hide and people complain when their
-       destructors fail.  Since the modules containing them are
-       deleted *last* of all, they would come too late in the normal
-       destruction order.  Sigh. */
-
-    /* XXX Perhaps these precautions are obsolete. Who knows? */
-
-    int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
-    if (verbose) {
-        PySys_WriteStderr("# clear builtins._\n");
-    }
-    if (PyDict_SetItemString(interp->builtins, "_", Py_None) < 0) {
-        PyErr_WriteUnraisable(NULL);
-    }
-
-    const char * const *p;
-    for (p = sys_deletes; *p != NULL; p++) {
-        if (verbose) {
-            PySys_WriteStderr("# clear sys.%s\n", *p);
-        }
-        if (PyDict_SetItemString(interp->sysdict, *p, Py_None) < 0) {
-            PyErr_WriteUnraisable(NULL);
-        }
-    }
-    for (p = sys_files; *p != NULL; p+=2) {
-        if (verbose) {
-            PySys_WriteStderr("# restore sys.%s\n", *p);
-        }
-        PyObject *value = _PyDict_GetItemStringWithError(interp->sysdict,
-                                                         *(p+1));
-        if (value == NULL) {
-            if (_PyErr_Occurred(tstate)) {
-                PyErr_WriteUnraisable(NULL);
-            }
-            value = Py_None;
-        }
-        if (PyDict_SetItemString(interp->sysdict, *p, value) < 0) {
-            PyErr_WriteUnraisable(NULL);
-        }
-    }
-
-    /* We prepare a list which will receive (name, weakref) tuples of
-       modules when they are removed from sys.modules.  The name is used
-       for diagnosis messages (in verbose mode), while the weakref helps
-       detect those modules which have been held alive. */
-    PyObject *weaklist = PyList_New(0);
-    if (weaklist == NULL) {
-        PyErr_WriteUnraisable(NULL);
-    }
-
-#define STORE_MODULE_WEAKREF(name, mod) \
-    if (weaklist != NULL) { \
-        PyObject *wr = PyWeakref_NewRef(mod, NULL); \
-        if (wr) { \
-            PyObject *tup = PyTuple_Pack(2, name, wr); \
-            if (!tup || PyList_Append(weaklist, tup) < 0) { \
-                PyErr_WriteUnraisable(NULL); \
-            } \
-            Py_XDECREF(tup); \
-            Py_DECREF(wr); \
-        } \
-        else { \
-            PyErr_WriteUnraisable(NULL); \
-        } \
-    }
-#define CLEAR_MODULE(name, mod) \
-    if (PyModule_Check(mod)) { \
-        if (verbose && PyUnicode_Check(name)) { \
-            PySys_FormatStderr("# cleanup[2] removing %U\n", name); \
-        } \
-        STORE_MODULE_WEAKREF(name, mod); \
-        if (PyObject_SetItem(modules, name, Py_None) < 0) { \
-            PyErr_WriteUnraisable(NULL); \
-        } \
-    }
-
-    /* Remove all modules from sys.modules, hoping that garbage collection
-       can reclaim most of them. */
-    if (PyDict_CheckExact(modules)) {
-        Py_ssize_t pos = 0;
-        PyObject *key, *value;
-        while (PyDict_Next(modules, &pos, &key, &value)) {
-            CLEAR_MODULE(key, value);
-        }
-    }
-    else {
-        PyObject *iterator = PyObject_GetIter(modules);
-        if (iterator == NULL) {
-            PyErr_WriteUnraisable(NULL);
-        }
-        else {
-            PyObject *key;
-            while ((key = PyIter_Next(iterator))) {
-                PyObject *value = PyObject_GetItem(modules, key);
-                if (value == NULL) {
-                    PyErr_WriteUnraisable(NULL);
-                    continue;
-                }
-                CLEAR_MODULE(key, value);
-                Py_DECREF(value);
-                Py_DECREF(key);
-            }
-            if (PyErr_Occurred()) {
-                PyErr_WriteUnraisable(NULL);
-            }
-            Py_DECREF(iterator);
-        }
-    }
-
-    /* Clear the modules dict. */
-    if (PyDict_CheckExact(modules)) {
-        PyDict_Clear(modules);
-    }
-    else {
-        _Py_IDENTIFIER(clear);
-        if (_PyObject_CallMethodIdNoArgs(modules, &PyId_clear) == NULL) {
-            PyErr_WriteUnraisable(NULL);
-        }
-    }
-    /* Restore the original builtins dict, to ensure that any
-       user data gets cleared. */
-    PyObject *dict = PyDict_Copy(interp->builtins);
-    if (dict == NULL) {
-        PyErr_WriteUnraisable(NULL);
-    }
-    PyDict_Clear(interp->builtins);
-    if (PyDict_Update(interp->builtins, interp->builtins_copy)) {
-        _PyErr_Clear(tstate);
-    }
-    Py_XDECREF(dict);
-    /* Collect references */
-    _PyGC_CollectNoFail();
-    /* Dump GC stats before it's too late, since it uses the warnings
-       machinery. */
-    _PyGC_DumpShutdownStats(tstate);
-
-    /* Now, if there are any modules left alive, clear their globals to
-       minimize potential leaks.  All C extension modules actually end
-       up here, since they are kept alive in the interpreter state.
-
-       The special treatment of "builtins" here is because even
-       when it's not referenced as a module, its dictionary is
-       referenced by almost every module's __builtins__.  Since
-       deleting a module clears its dictionary (even if there are
-       references left to it), we need to delete the "builtins"
-       module last.  Likewise, we don't delete sys until the very
-       end because it is implicitly referenced (e.g. by print). */
-    if (weaklist != NULL) {
-        Py_ssize_t i;
-        /* Since dict is ordered in CPython 3.6+, modules are saved in
-           importing order.  First clear modules imported later. */
-        for (i = PyList_GET_SIZE(weaklist) - 1; i >= 0; i--) {
-            PyObject *tup = PyList_GET_ITEM(weaklist, i);
-            PyObject *name = PyTuple_GET_ITEM(tup, 0);
-            PyObject *mod = PyWeakref_GET_OBJECT(PyTuple_GET_ITEM(tup, 1));
-            if (mod == Py_None)
-                continue;
-            assert(PyModule_Check(mod));
-            dict = PyModule_GetDict(mod);
-            if (dict == interp->builtins || dict == interp->sysdict)
-                continue;
-            Py_INCREF(mod);
-            if (verbose && PyUnicode_Check(name)) {
-                PySys_FormatStderr("# cleanup[3] wiping %U\n", name);
-            }
-            _PyModule_Clear(mod);
-            Py_DECREF(mod);
-        }
-        Py_DECREF(weaklist);
-    }
-
-    /* Next, delete sys and builtins (in that order) */
-    if (verbose) {
-        PySys_FormatStderr("# cleanup[3] wiping sys\n");
-    }
-    _PyModule_ClearDict(interp->sysdict);
-    if (verbose) {
-        PySys_FormatStderr("# cleanup[3] wiping builtins\n");
-    }
-    _PyModule_ClearDict(interp->builtins);
-
-    /* Clear module dict copies stored in the interpreter state */
-    _PyInterpreterState_ClearModules(interp);
-
-    /* Clear and delete the modules directory.  Actual modules will
-       still be there only if imported during the execution of some
-       destructor. */
-    interp->modules = NULL;
-    Py_DECREF(modules);
-
-    /* Once more */
-    _PyGC_CollectNoFail();
-
-#undef CLEAR_MODULE
-#undef STORE_MODULE_WEAKREF
 }
 
 
@@ -905,7 +638,11 @@ PyImport_AddModule(const char *name)
 }
 
 
-/* Remove name from sys.modules, if it's there. */
+/* Remove name from sys.modules, if it's there.
+ * Can be called with an exception raised.
+ * If fail to remove name a new exception will be chained with the old
+ * exception, otherwise the old exception is preserved.
+ */
 static void
 remove_module(PyThreadState *tstate, PyObject *name)
 {
@@ -913,18 +650,17 @@ remove_module(PyThreadState *tstate, PyObject *name)
     _PyErr_Fetch(tstate, &type, &value, &traceback);
 
     PyObject *modules = tstate->interp->modules;
-    if (!PyMapping_HasKey(modules, name)) {
-        goto out;
+    if (PyDict_CheckExact(modules)) {
+        PyObject *mod = _PyDict_Pop(modules, name, Py_None);
+        Py_XDECREF(mod);
     }
-    if (PyMapping_DelItem(modules, name) < 0) {
-        _PyErr_SetString(tstate, PyExc_RuntimeError,
-                         "deleting key in sys.modules failed");
-        _PyErr_ChainExceptions(type, value, traceback);
-        return;
+    else if (PyMapping_DelItem(modules, name) < 0) {
+        if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+            _PyErr_Clear(tstate);
+        }
     }
 
-out:
-    _PyErr_Restore(tstate, type, value, traceback);
+    _PyErr_ChainExceptions(type, value, traceback);
 }
 
 
@@ -1018,14 +754,14 @@ module_dict_for_exec(PyThreadState *tstate, PyObject *name)
     /* If the module is being reloaded, we get the old module back
        and re-use its dict to exec the new code. */
     d = PyModule_GetDict(m);
-    if (_PyDict_GetItemIdWithError(d, &PyId___builtins__) == NULL) {
-        if (_PyErr_Occurred(tstate) ||
-            _PyDict_SetItemId(d, &PyId___builtins__,
-                              PyEval_GetBuiltins()) != 0)
-        {
-            remove_module(tstate, name);
-            return NULL;
-        }
+    int r = _PyDict_ContainsId(d, &PyId___builtins__);
+    if (r == 0) {
+        r = _PyDict_SetItemId(d, &PyId___builtins__,
+                              PyEval_GetBuiltins());
+    }
+    if (r < 0) {
+        remove_module(tstate, name);
+        return NULL;
     }
 
     return d;  /* Return a borrowed reference. */
@@ -1660,10 +1396,14 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
             goto error;
         }
 
-        if (_PyDict_GetItemIdWithError(globals, &PyId___path__) == NULL) {
+        int haspath = _PyDict_ContainsId(globals, &PyId___path__);
+        if (haspath < 0) {
+            goto error;
+        }
+        if (!haspath) {
             Py_ssize_t dot;
 
-            if (_PyErr_Occurred(tstate) || PyUnicode_READY(package) < 0) {
+            if (PyUnicode_READY(package) < 0) {
                 goto error;
             }
 

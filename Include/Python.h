@@ -141,6 +141,7 @@
 #include "modsupport.h"
 #include "compile.h"
 #include "pythonrun.h"
+#include "parser_interface.h"
 #include "pylifecycle.h"
 #include "ceval.h"
 #include "sysmodule.h"

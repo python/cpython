@@ -229,13 +229,13 @@ Objects, Types and Reference Counts
 .. index:: object: type
 
 Most Python/C API functions have one or more arguments as well as a return value
-of type :c:type:`PyObject\*`.  This type is a pointer to an opaque data type
+of type :c:type:`PyObject*`.  This type is a pointer to an opaque data type
 representing an arbitrary Python object.  Since all Python object types are
 treated the same way by the Python language in most situations (e.g.,
 assignments, scope rules, and argument passing), it is only fitting that they
 should be represented by a single C type.  Almost all Python objects live on the
 heap: you never declare an automatic or static variable of type
-:c:type:`PyObject`, only pointer variables of type :c:type:`PyObject\*` can  be
+:c:type:`PyObject`, only pointer variables of type :c:type:`PyObject*` can  be
 declared.  The sole exception are the type objects; since these must never be
 deallocated, they are typically static :c:type:`PyTypeObject` objects.
 
@@ -326,7 +326,7 @@ when it's no longer needed---or passing on this responsibility (usually to its
 caller). When a function passes ownership of a reference on to its caller, the
 caller is said to receive a *new* reference.  When no ownership is transferred,
 the caller is said to *borrow* the reference. Nothing needs to be done for a
-borrowed reference.
+:term:`borrowed reference`.
 
 Conversely, when a calling function passes in a reference to an  object, there
 are two possibilities: the function *steals* a  reference to the object, or it
@@ -496,7 +496,7 @@ Types
 
 There are few other data types that play a significant role in  the Python/C
 API; most are simple C types such as :c:type:`int`,  :c:type:`long`,
-:c:type:`double` and :c:type:`char\*`.  A few structure types  are used to
+:c:type:`double` and :c:type:`char*`.  A few structure types  are used to
 describe static tables used to list the functions exported  by a module or the
 data attributes of a new object type, and another is used to describe the value
 of a complex number.  These will  be discussed together with the functions that

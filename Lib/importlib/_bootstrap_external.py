@@ -277,6 +277,8 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.9a2  3423 (add IS_OP, CONTAINS_OP and JUMP_IF_NOT_EXC_MATCH bytecodes #39156)
 #     Python 3.9a2  3424 (simplify bytecodes for *value unpacking)
 #     Python 3.9a2  3425 (simplify bytecodes for **value unpacking)
+#     Python 3.10a1 3430 (Make 'annotations' future by default)
+#     Python 3.10a1 3431 (New line number table format -- PEP 626)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -286,7 +288,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3425).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3431).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
@@ -982,32 +984,10 @@ class FileLoader:
             with _io.FileIO(path, 'r') as file:
                 return file.read()
 
-    # ResourceReader ABC API.
-
     @_check_name
     def get_resource_reader(self, module):
-        if self.is_package(module):
-            return self
-        return None
-
-    def open_resource(self, resource):
-        path = _path_join(_path_split(self.path)[0], resource)
-        return _io.FileIO(path, 'r')
-
-    def resource_path(self, resource):
-        if not self.is_resource(resource):
-            raise FileNotFoundError
-        path = _path_join(_path_split(self.path)[0], resource)
-        return path
-
-    def is_resource(self, name):
-        if path_sep in name:
-            return False
-        path = _path_join(_path_split(self.path)[0], name)
-        return _path_isfile(path)
-
-    def contents(self):
-        return iter(_os.listdir(_path_split(self.path)[0]))
+        from importlib.readers import FileReader
+        return FileReader(self)
 
 
 class SourceFileLoader(FileLoader, SourceLoader):

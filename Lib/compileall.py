@@ -15,6 +15,7 @@ import sys
 import importlib.util
 import py_compile
 import struct
+import filecmp
 
 from functools import partial
 from pathlib import Path
@@ -47,7 +48,7 @@ def _walk_dir(dir, maxlevels, quiet=0):
 def compile_dir(dir, maxlevels=None, ddir=None, force=False,
                 rx=None, quiet=0, legacy=False, optimize=-1, workers=1,
                 invalidation_mode=None, *, stripdir=None,
-                prependdir=None, limit_sl_dest=None):
+                prependdir=None, limit_sl_dest=None, hardlink_dupes=False):
     """Byte-compile all modules in the given directory tree.
 
     Arguments (only dir is required):
@@ -70,6 +71,7 @@ def compile_dir(dir, maxlevels=None, ddir=None, force=False,
                after stripdir
     limit_sl_dest: ignore symlinks if they are pointing outside of
                    the defined path
+    hardlink_dupes: hardlink duplicated pyc files
     """
     ProcessPoolExecutor = None
     if ddir is not None and (stripdir is not None or prependdir is not None):
@@ -104,7 +106,8 @@ def compile_dir(dir, maxlevels=None, ddir=None, force=False,
                                            invalidation_mode=invalidation_mode,
                                            stripdir=stripdir,
                                            prependdir=prependdir,
-                                           limit_sl_dest=limit_sl_dest),
+                                           limit_sl_dest=limit_sl_dest,
+                                           hardlink_dupes=hardlink_dupes),
                                    files)
             success = min(results, default=True)
     else:
@@ -112,14 +115,15 @@ def compile_dir(dir, maxlevels=None, ddir=None, force=False,
             if not compile_file(file, ddir, force, rx, quiet,
                                 legacy, optimize, invalidation_mode,
                                 stripdir=stripdir, prependdir=prependdir,
-                                limit_sl_dest=limit_sl_dest):
+                                limit_sl_dest=limit_sl_dest,
+                                hardlink_dupes=hardlink_dupes):
                 success = False
     return success
 
 def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
                  legacy=False, optimize=-1,
                  invalidation_mode=None, *, stripdir=None, prependdir=None,
-                 limit_sl_dest=None):
+                 limit_sl_dest=None, hardlink_dupes=False):
     """Byte-compile one file.
 
     Arguments (only fullname is required):
@@ -140,6 +144,7 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
                after stripdir
     limit_sl_dest: ignore symlinks if they are pointing outside of
                    the defined path.
+    hardlink_dupes: hardlink duplicated pyc files
     """
 
     if ddir is not None and (stripdir is not None or prependdir is not None):
@@ -175,6 +180,14 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
 
     if isinstance(optimize, int):
         optimize = [optimize]
+
+    # Use set() to remove duplicates.
+    # Use sorted() to create pyc files in a deterministic order.
+    optimize = sorted(set(optimize))
+
+    if hardlink_dupes and len(optimize) < 2:
+        raise ValueError("Hardlinking of duplicated bytecode makes sense "
+                          "only for more than one optimization level")
 
     if rx is not None:
         mo = rx.search(fullname)
@@ -220,10 +233,16 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
             if not quiet:
                 print('Compiling {!r}...'.format(fullname))
             try:
-                for opt_level, cfile in opt_cfiles.items():
+                for index, opt_level in enumerate(optimize):
+                    cfile = opt_cfiles[opt_level]
                     ok = py_compile.compile(fullname, cfile, dfile, True,
                                             optimize=opt_level,
                                             invalidation_mode=invalidation_mode)
+                    if index > 0 and hardlink_dupes:
+                        previous_cfile = opt_cfiles[optimize[index - 1]]
+                        if filecmp.cmp(cfile, previous_cfile, shallow=False):
+                            os.unlink(cfile)
+                            os.link(previous_cfile, cfile)
             except py_compile.PyCompileError as err:
                 success = False
                 if quiet >= 2:
@@ -352,6 +371,9 @@ def main():
                               'Python interpreter itself (specified by -O).'))
     parser.add_argument('-e', metavar='DIR', dest='limit_sl_dest',
                         help='Ignore symlinks pointing outsite of the DIR')
+    parser.add_argument('--hardlink-dupes', action='store_true',
+                        dest='hardlink_dupes',
+                        help='Hardlink duplicated pyc files')
 
     args = parser.parse_args()
     compile_dests = args.compile_dest
@@ -370,6 +392,10 @@ def main():
 
     if args.opt_levels is None:
         args.opt_levels = [-1]
+
+    if len(args.opt_levels) == 1 and args.hardlink_dupes:
+        parser.error(("Hardlinking of duplicated bytecode makes sense "
+                      "only for more than one optimization level."))
 
     if args.ddir is not None and (
         args.stripdir is not None or args.prependdir is not None
@@ -404,7 +430,8 @@ def main():
                                         stripdir=args.stripdir,
                                         prependdir=args.prependdir,
                                         optimize=args.opt_levels,
-                                        limit_sl_dest=args.limit_sl_dest):
+                                        limit_sl_dest=args.limit_sl_dest,
+                                        hardlink_dupes=args.hardlink_dupes):
                         success = False
                 else:
                     if not compile_dir(dest, maxlevels, args.ddir,
@@ -414,7 +441,8 @@ def main():
                                        stripdir=args.stripdir,
                                        prependdir=args.prependdir,
                                        optimize=args.opt_levels,
-                                       limit_sl_dest=args.limit_sl_dest):
+                                       limit_sl_dest=args.limit_sl_dest,
+                                       hardlink_dupes=args.hardlink_dupes):
                         success = False
             return success
         else:

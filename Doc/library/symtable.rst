@@ -156,6 +156,10 @@ Examining Symbol Tables
 
       Return ``True`` if the symbol is local to its block.
 
+    .. method:: is_annotated()
+
+      Return ``True`` if the symbol is annotated.
+
    .. method:: is_free()
 
       Return ``True`` if the symbol is referenced in its block, but not assigned
