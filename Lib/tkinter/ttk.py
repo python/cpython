@@ -241,19 +241,20 @@ def _script_from_settings(settings):
 def _list_from_statespec(stuple):
     """Construct a list from the given statespec tuple according to the
     accepted statespec accepted by _format_mapdict."""
-    nval = []
-    for val in stuple:
-        typename = getattr(val, 'typename', None)
-        if typename is None:
-            nval.append(val)
-        else: # this is a Tcl object
+    if isinstance(stuple, str):
+        return stuple
+    result = []
+    it = iter(stuple)
+    for state, val in zip(it, it):
+        if hasattr(state, 'typename'):  # this is a Tcl object
+            state = str(state).split()
+        elif not isinstance(state, (tuple, list)):
+            state = (state,)
+        if hasattr(val, 'typename'):
             val = str(val)
-            if typename == 'StateSpec':
-                val = val.split()
-            nval.append(val)
+        result.append((*state, val))
 
-    it = iter(nval)
-    return [_flatten(spec) for spec in zip(it, it)]
+    return result
 
 def _list_from_layouttuple(tk, ltuple):
     """Construct a list from the tuple returned by ttk::layout, this is
@@ -399,7 +400,7 @@ class Style(object):
         return _splitdict(
             self.tk,
             self.tk.call(self._name, "map", style, *_format_mapdict(kw)),
-            conv=_tclobj_to_py)
+            conv=_list_from_statespec)
 
 
     def lookup(self, style, option, state=None, default=None):
