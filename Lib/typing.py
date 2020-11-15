@@ -945,13 +945,20 @@ class _UnionGenericAlias(_GenericAlias, _root=True):
                 return True
 
 
+def _value_and_type_iter(parameters):
+    return ((p, type(p)) for p in parameters)
+
+
 class _LiteralGenericAlias(_GenericAlias, _root=True):
 
     def __eq__(self, other):
         if not isinstance(other, _LiteralGenericAlias):
             return NotImplemented
 
-        return len(self.__args__) == len(other.__args__) and set(self.__args__) == set(other.__args__)
+        return set(_value_and_type_iter(self.__args__)) == set(_value_and_type_iter(other.__args__))
+
+    def __hash__(self):
+        return hash(tuple(_value_and_type_iter(self.__args__)))
 
 
 class Generic:
