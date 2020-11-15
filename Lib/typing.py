@@ -242,22 +242,27 @@ def _flatten_literal_params(parameters):
 _cleanups = []
 
 
-def _tp_cache(func):
+def _tp_cache(typed=False):
     """Internal wrapper caching __getitem__ of generic types with a fallback to
     original function for non-hashable arguments.
     """
-    cached = functools.lru_cache()(func)
-    _cleanups.append(cached.cache_clear)
+    if callable(typed):
+        return _tp_cache()(typed)
 
-    @functools.wraps(func)
-    def inner(*args, **kwds):
-        try:
-            return cached(*args, **kwds)
-        except TypeError:
-            pass  # All real errors (not unhashable args) are raised below.
-        return func(*args, **kwds)
-    return inner
+    def decorator(func):
+        cached = functools.lru_cache(typed=typed)(func)
+        _cleanups.append(cached.cache_clear)
 
+        @functools.wraps(func)
+        def inner(*args, **kwds):
+            try:
+                return cached(*args, **kwds)
+            except TypeError:
+                pass  # All real errors (not unhashable args) are raised below.
+            return func(*args, **kwds)
+        return inner
+
+    return decorator
 
 def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
     """Evaluate all forward references in the given type t.
@@ -329,6 +334,13 @@ class _SpecialForm(_Final, _root=True):
     @_tp_cache
     def __getitem__(self, parameters):
         return self._getitem(self, parameters)
+
+
+class _LiteralSpecialForm(_SpecialForm, _root=True):
+    @_tp_cache(typed=True)
+    def __getitem__(self, parameters):
+        return self._getitem(self, parameters)
+
 
 @_SpecialForm
 def Any(self, parameters):
@@ -447,7 +459,7 @@ def Optional(self, parameters):
     arg = _type_check(parameters, f"{self} requires a single type.")
     return Union[arg, type(None)]
 
-@_SpecialForm
+@_LiteralSpecialForm
 def Literal(self, parameters):
     """Special typing form to define literal types (a.k.a. value types).
 
