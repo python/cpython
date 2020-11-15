@@ -176,7 +176,7 @@ example of usage.
 
    Source Code of Documents describing the protocol, sources and binaries for servers
    implementing it, by the University of Washington's IMAP Information Center
-   can all be found at (https://github.com/uw-imap/imap) (**Not Maintained**).
+   can all be found at https://github.com/uw-imap/imap (**Not Maintained**).
 
 
 .. _imap4-objects:
