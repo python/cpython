@@ -1,3 +1,3 @@
-The link provided by University of Washington's *IMAP Information Center is not Available (https://www.washington.edu/imap/)
+The link provided by University of Washington's IMAP Information Center is not Available (https://www.washington.edu/imap/)
 As the link is taken down It should be replaced by another link.
 It is replaced by the Link of Source Code provided by University of Washington's *IMAP Information Center on Github for the same URL (https://github.com/uw-imap/imap) (Not Currently Maintained)
