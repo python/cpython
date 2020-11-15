@@ -1867,21 +1867,16 @@ pyexpat_exec(PyObject *mod)
 
     /* Add some symbolic constants to the module */
 
-    Py_INCREF(state->error);
-    if (PyModule_AddObject(mod, "error", state->error) < 0) {
-        Py_DECREF(state->error);
-        return -1;
-    }
-    Py_INCREF(state->error);
-    if (PyModule_AddObject(mod, "ExpatError", state->error) < 0) {
-        Py_DECREF(state->error);
+    if (PyModule_AddObjectRef(mod, "error", state->error) < 0) {
         return -1;
     }
 
-    Py_INCREF(state->xml_parse_type);
-    if (PyModule_AddObject(mod, "XMLParserType",
+    if (PyModule_AddObjectRef(mod, "ExpatError", state->error) < 0) {
+        return -1;
+    }
+
+    if (PyModule_AddObjectRef(mod, "XMLParserType",
                            (PyObject *) state->xml_parse_type) < 0) {
-        Py_DECREF(state->xml_parse_type);
         return -1;
     }
 
