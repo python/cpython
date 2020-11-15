@@ -395,7 +395,8 @@ unicodeFromTclStringAndSize(const char *s, Py_ssize_t size)
 
     char *buf = NULL;
     PyErr_Clear();
-    /* Tcl encodes null character as \xc0\x80 */
+    /* Tcl encodes null character as \xc0\x80.
+       https://en.wikipedia.org/wiki/UTF-8#Modified_UTF-8 */
     if (memchr(s, '\xc0', size)) {
         char *q;
         const char *e = s + size;
@@ -419,6 +420,57 @@ unicodeFromTclStringAndSize(const char *s, Py_ssize_t size)
     if (buf != NULL) {
         PyMem_Free(buf);
     }
+    if (r == NULL || PyUnicode_KIND(r) == PyUnicode_1BYTE_KIND) {
+        return r;
+    }
+
+    /* In CESU-8 non-BMP characters are represented as a surrogate pair,
+       like in UTF-16, and then each surrogate code point is encoded in UTF-8.
+       https://en.wikipedia.org/wiki/CESU-8 */
+    Py_ssize_t len = PyUnicode_GET_LENGTH(r);
+    Py_ssize_t i, j;
+    /* All encoded surrogate characters start with \xED. */
+    i = PyUnicode_FindChar(r, 0xdcED, 0, len, 1);
+    if (i == -2) {
+        Py_DECREF(r);
+        return NULL;
+    }
+    if (i == -1) {
+        return r;
+    }
+    Py_UCS4 *u = PyUnicode_AsUCS4Copy(r);
+    Py_DECREF(r);
+    if (u == NULL) {
+        return NULL;
+    }
+    Py_UCS4 ch;
+    for (j = i; i < len; i++, u[j++] = ch) {
+        Py_UCS4 ch1, ch2, ch3, high, low;
+        /* Low surrogates U+D800 - U+DBFF are encoded as
+           \xED\xA0\x80 - \xED\xAF\xBF. */
+        ch1 = ch = u[i];
+        if (ch1 != 0xdcED) continue;
+        ch2 = u[i + 1];
+        if (!(0xdcA0 <= ch2 && ch2 <= 0xdcAF)) continue;
+        ch3 = u[i + 2];
+        if (!(0xdc80 <= ch3 && ch3 <= 0xdcBF)) continue;
+        high = 0xD000 | ((ch2 & 0x3F) << 6) | (ch3 & 0x3F);
+        assert(Py_UNICODE_IS_HIGH_SURROGATE(high));
+        /* High surrogates U+DC00 - U+DFFF are encoded as
+           \xED\xB0\x80 - \xED\xBF\xBF. */
+        ch1 = u[i + 3];
+        if (ch1 != 0xdcED) continue;
+        ch2 = u[i + 4];
+        if (!(0xdcB0 <= ch2 && ch2 <= 0xdcBF)) continue;
+        ch3 = u[i + 5];
+        if (!(0xdc80 <= ch3 && ch3 <= 0xdcBF)) continue;
+        low = 0xD000 | ((ch2 & 0x3F) << 6) | (ch3 & 0x3F);
+        assert(Py_UNICODE_IS_HIGH_SURROGATE(high));
+        ch = Py_UNICODE_JOIN_SURROGATES(high, low);
+        i += 5;
+    }
+    r = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, u, j);
+    PyMem_Free(u);
     return r;
 }
 
