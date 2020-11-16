@@ -1569,6 +1569,9 @@ _winapi_ResumeThread_impl(PyObject *module, HANDLE handle)
     result = ResumeThread(handle);
     Py_END_ALLOW_THREADS
 
+    if (result == -1)
+        PyErr_SetFromWindowsErr(0);
+
     return result;
 }
 
