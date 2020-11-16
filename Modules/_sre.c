@@ -374,7 +374,8 @@ getstring(PyObject* string, Py_ssize_t* p_length,
 
     /* get pointer to byte string buffer */
     if (PyObject_GetBuffer(string, view, PyBUF_SIMPLE) != 0) {
-        PyErr_SetString(PyExc_TypeError, "expected string or bytes-like object");
+        PyErr_Format(PyExc_TypeError, "expected string or bytes-like "
+                     "object, got '%.200s'", Py_TYPE(string)->tp_name);
         return NULL;
     }
 

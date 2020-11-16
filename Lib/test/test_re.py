@@ -2104,6 +2104,12 @@ ELSE
                           {'tag': 'foo', 'text': None},
                           {'tag': 'foo', 'text': None}])
 
+    def test_bug_40736(self):
+        with self.assertRaisesRegex(TypeError, "got 'int'"):
+            re.search("x*", 5)
+        with self.assertRaisesRegex(TypeError, "got 'type'"):
+            re.search("x*", type)
+
 
 class PatternReprTests(unittest.TestCase):
     def check(self, pattern, expected):
