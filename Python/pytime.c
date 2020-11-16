@@ -785,7 +785,7 @@ _PyTime_GetSystemClockWithInfo(_PyTime_t *t, _Py_clock_info_t *info)
 
 #if __APPLE__
 static int
-py_mach_timebase_info(_PyTime *pnumer, _PyTime_t *pdenom, int raise)
+py_mach_timebase_info(_PyTime_t *pnumer, _PyTime_t *pdenom, int raise)
 {
     static mach_timebase_info_data_t timebase;
     /* According to the Technical Q&A QA1398, mach_timebase_info() cannot
@@ -884,7 +884,7 @@ py_get_monotonic_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 
     if (info) {
         info->implementation = "mach_absolute_time()";
-        info->resolution = (double)timebase.numer / (double)timebase.denom * 1e-9;
+        info->resolution = (double)timebase_numer / (double)timebase_denom * 1e-9;
         info->monotonic = 1;
         info->adjustable = 0;
     }
