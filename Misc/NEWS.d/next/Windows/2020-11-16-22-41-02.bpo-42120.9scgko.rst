@@ -1,0 +1,1 @@
+Remove macro definition of ``copysign`` (to ``_copysign``) in headers.
