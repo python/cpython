@@ -7,8 +7,8 @@
 Py_LOCAL_INLINE(PyObject *)
 STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
 {
-    char *sepstr = STRINGLIB_STR(sep);
-    const Py_ssize_t seplen = STRINGLIB_LEN(sep);
+    const char *sepstr = STRINGLIB_STR(sep);
+    Py_ssize_t seplen = STRINGLIB_LEN(sep);
     PyObject *res = NULL;
     char *p;
     Py_ssize_t seqlen = 0;
@@ -20,7 +20,7 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
     Py_buffer static_buffers[NB_STATIC_BUFFERS];
 #define GIL_THRESHOLD 1048576
     int drop_gil = 1;
-    PyThreadState *save;
+    PyThreadState *save = NULL;
 
     seq = PySequence_Fast(iterable, "can only join an iterable");
     if (seq == NULL) {

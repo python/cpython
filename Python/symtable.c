@@ -1,8 +1,8 @@
 #include "Python.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"   // _PyThreadState_GET()
 #include "symtable.h"
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 /* error strings used for warnings */
 #define GLOBAL_PARAM \
@@ -190,7 +190,7 @@ static int symtable_analyze(struct symtable *st);
 static int symtable_enter_block(struct symtable *st, identifier name,
                                 _Py_block_ty block, void *ast, int lineno,
                                 int col_offset);
-static int symtable_exit_block(struct symtable *st, void *ast);
+static int symtable_exit_block(struct symtable *st);
 static int symtable_visit_stmt(struct symtable *st, stmt_ty s);
 static int symtable_visit_expr(struct symtable *st, expr_ty s);
 static int symtable_visit_genexp(struct symtable *st, expr_ty s);
@@ -202,11 +202,10 @@ static int symtable_visit_excepthandler(struct symtable *st, excepthandler_ty);
 static int symtable_visit_alias(struct symtable *st, alias_ty);
 static int symtable_visit_comprehension(struct symtable *st, comprehension_ty);
 static int symtable_visit_keyword(struct symtable *st, keyword_ty);
-static int symtable_visit_slice(struct symtable *st, slice_ty);
-static int symtable_visit_params(struct symtable *st, asdl_seq *args);
-static int symtable_visit_argannotations(struct symtable *st, asdl_seq *args);
+static int symtable_visit_params(struct symtable *st, asdl_arg_seq *args);
+static int symtable_visit_argannotations(struct symtable *st, asdl_arg_seq *args);
 static int symtable_implicit_arg(struct symtable *st, int pos);
-static int symtable_visit_annotations(struct symtable *st, stmt_ty s, arguments_ty, expr_ty);
+static int symtable_visit_annotations(struct symtable *st, arguments_ty, expr_ty);
 static int symtable_visit_withitem(struct symtable *st, withitem_ty item);
 
 
@@ -262,7 +261,7 @@ struct symtable *
 PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
 {
     struct symtable *st = symtable_new();
-    asdl_seq *seq;
+    asdl_stmt_seq *seq;
     int i;
     PyThreadState *tstate;
     int recursion_limit = Py_GetRecursionLimit();
@@ -318,16 +317,12 @@ PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
                         (stmt_ty)asdl_seq_GET(seq, i)))
                 goto error;
         break;
-    case Suite_kind:
-        PyErr_SetString(PyExc_RuntimeError,
-                        "this compiler does not handle Suites");
-        goto error;
     case FunctionType_kind:
         PyErr_SetString(PyExc_RuntimeError,
                         "this compiler does not handle FunctionTypes");
         goto error;
     }
-    if (!symtable_exit_block(st, (void *)mod)) {
+    if (!symtable_exit_block(st)) {
         PySymtable_Free(st);
         return NULL;
     }
@@ -345,7 +340,7 @@ PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
     PySymtable_Free(st);
     return NULL;
  error:
-    (void) symtable_exit_block(st, (void *)mod);
+    (void) symtable_exit_block(st);
     PySymtable_Free(st);
     return NULL;
 }
@@ -397,7 +392,7 @@ PySymtable_Lookup(struct symtable *st, void *key)
 static long
 _PyST_GetSymbol(PySTEntryObject *ste, PyObject *name)
 {
-    PyObject *v = PyDict_GetItem(ste->ste_symbols, name);
+    PyObject *v = PyDict_GetItemWithError(ste->ste_symbols, name);
     if (!v)
         return 0;
     assert(PyLong_Check(v));
@@ -639,7 +634,7 @@ update_symbols(PyObject *symbols, PyObject *scopes,
         long scope, flags;
         assert(PyLong_Check(v));
         flags = PyLong_AS_LONG(v);
-        v_scope = PyDict_GetItem(scopes, name);
+        v_scope = PyDict_GetItemWithError(scopes, name);
         assert(v_scope && PyLong_Check(v_scope));
         scope = PyLong_AS_LONG(v_scope);
         flags |= (scope << SCOPE_OFFSET);
@@ -954,7 +949,7 @@ symtable_analyze(struct symtable *st)
 */
 
 static int
-symtable_exit_block(struct symtable *st, void *ast)
+symtable_exit_block(struct symtable *st)
 {
     Py_ssize_t size;
 
@@ -1076,8 +1071,11 @@ symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _s
         /* XXX need to update DEF_GLOBAL for other flags too;
            perhaps only DEF_FREE_GLOBAL */
         val = flag;
-        if ((o = PyDict_GetItem(st->st_global, mangled))) {
+        if ((o = PyDict_GetItemWithError(st->st_global, mangled))) {
             val |= PyLong_AS_LONG(o);
+        }
+        else if (PyErr_Occurred()) {
+            goto error;
         }
         o = PyLong_FromLong(val);
         if (o == NULL)
@@ -1121,7 +1119,7 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag) {
 
 #define VISIT_SEQ(ST, TYPE, SEQ) { \
     int i; \
-    asdl_seq *seq = (SEQ); /* avoid variable capture */ \
+    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
     for (i = 0; i < asdl_seq_LEN(seq); i++) { \
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
         if (!symtable_visit_ ## TYPE((ST), elt)) \
@@ -1131,7 +1129,7 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag) {
 
 #define VISIT_SEQ_TAIL(ST, TYPE, SEQ, START) { \
     int i; \
-    asdl_seq *seq = (SEQ); /* avoid variable capture */ \
+    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
     for (i = (START); i < asdl_seq_LEN(seq); i++) { \
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
         if (!symtable_visit_ ## TYPE((ST), elt)) \
@@ -1141,7 +1139,7 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag) {
 
 #define VISIT_SEQ_WITH_NULL(ST, TYPE, SEQ) {     \
     int i = 0; \
-    asdl_seq *seq = (SEQ); /* avoid variable capture */ \
+    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
     for (i = 0; i < asdl_seq_LEN(seq); i++) { \
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
         if (!elt) continue; /* can be NULL */ \
@@ -1188,7 +1186,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_SEQ(st, expr, s->v.FunctionDef.args->defaults);
         if (s->v.FunctionDef.args->kw_defaults)
             VISIT_SEQ_WITH_NULL(st, expr, s->v.FunctionDef.args->kw_defaults);
-        if (!symtable_visit_annotations(st, s, s->v.FunctionDef.args,
+        if (!symtable_visit_annotations(st, s->v.FunctionDef.args,
                                         s->v.FunctionDef.returns))
             VISIT_QUIT(st, 0);
         if (s->v.FunctionDef.decorator_list)
@@ -1199,7 +1197,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_QUIT(st, 0);
         VISIT(st, arguments, s->v.FunctionDef.args);
         VISIT_SEQ(st, stmt, s->v.FunctionDef.body);
-        if (!symtable_exit_block(st, s))
+        if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);
         break;
     case ClassDef_kind: {
@@ -1217,7 +1215,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         st->st_private = s->v.ClassDef.name;
         VISIT_SEQ(st, stmt, s->v.ClassDef.body);
         st->st_private = tmp;
-        if (!symtable_exit_block(st, s))
+        if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);
         break;
     }
@@ -1323,7 +1321,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         break;
     case Global_kind: {
         int i;
-        asdl_seq *seq = s->v.Global.names;
+        asdl_identifier_seq *seq = s->v.Global.names;
         for (i = 0; i < asdl_seq_LEN(seq); i++) {
             identifier name = (identifier)asdl_seq_GET(seq, i);
             long cur = symtable_lookup(st, name);
@@ -1356,7 +1354,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
     }
     case Nonlocal_kind: {
         int i;
-        asdl_seq *seq = s->v.Nonlocal.names;
+        asdl_identifier_seq *seq = s->v.Nonlocal.names;
         for (i = 0; i < asdl_seq_LEN(seq); i++) {
             identifier name = (identifier)asdl_seq_GET(seq, i);
             long cur = symtable_lookup(st, name);
@@ -1406,7 +1404,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (s->v.AsyncFunctionDef.args->kw_defaults)
             VISIT_SEQ_WITH_NULL(st, expr,
                                 s->v.AsyncFunctionDef.args->kw_defaults);
-        if (!symtable_visit_annotations(st, s, s->v.AsyncFunctionDef.args,
+        if (!symtable_visit_annotations(st, s->v.AsyncFunctionDef.args,
                                         s->v.AsyncFunctionDef.returns))
             VISIT_QUIT(st, 0);
         if (s->v.AsyncFunctionDef.decorator_list)
@@ -1418,7 +1416,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         st->st_cur->ste_coroutine = 1;
         VISIT(st, arguments, s->v.AsyncFunctionDef.args);
         VISIT_SEQ(st, stmt, s->v.AsyncFunctionDef.body);
-        if (!symtable_exit_block(st, s))
+        if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);
         break;
     case AsyncWith_kind:
@@ -1565,7 +1563,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             VISIT_QUIT(st, 0);
         VISIT(st, arguments, e->v.Lambda.args);
         VISIT(st, expr, e->v.Lambda.body);
-        if (!symtable_exit_block(st, (void *)e))
+        if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);
         break;
     }
@@ -1636,10 +1634,18 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         break;
     case Subscript_kind:
         VISIT(st, expr, e->v.Subscript.value);
-        VISIT(st, slice, e->v.Subscript.slice);
+        VISIT(st, expr, e->v.Subscript.slice);
         break;
     case Starred_kind:
         VISIT(st, expr, e->v.Starred.value);
+        break;
+    case Slice_kind:
+        if (e->v.Slice.lower)
+            VISIT(st, expr, e->v.Slice.lower)
+        if (e->v.Slice.upper)
+            VISIT(st, expr, e->v.Slice.upper)
+        if (e->v.Slice.step)
+            VISIT(st, expr, e->v.Slice.step)
         break;
     case Name_kind:
         if (!symtable_add_def(st, e->v.Name.id,
@@ -1680,7 +1686,7 @@ symtable_implicit_arg(struct symtable *st, int pos)
 }
 
 static int
-symtable_visit_params(struct symtable *st, asdl_seq *args)
+symtable_visit_params(struct symtable *st, asdl_arg_seq *args)
 {
     int i;
 
@@ -1697,7 +1703,7 @@ symtable_visit_params(struct symtable *st, asdl_seq *args)
 }
 
 static int
-symtable_visit_argannotations(struct symtable *st, asdl_seq *args)
+symtable_visit_argannotations(struct symtable *st, asdl_arg_seq *args)
 {
     int i;
 
@@ -1714,8 +1720,7 @@ symtable_visit_argannotations(struct symtable *st, asdl_seq *args)
 }
 
 static int
-symtable_visit_annotations(struct symtable *st, stmt_ty s,
-                           arguments_ty a, expr_ty returns)
+symtable_visit_annotations(struct symtable *st, arguments_ty a, expr_ty returns)
 {
     if (a->posonlyargs && !symtable_visit_argannotations(st, a->posonlyargs))
         return 0;
@@ -1847,30 +1852,8 @@ symtable_visit_keyword(struct symtable *st, keyword_ty k)
 
 
 static int
-symtable_visit_slice(struct symtable *st, slice_ty s)
-{
-    switch (s->kind) {
-    case Slice_kind:
-        if (s->v.Slice.lower)
-            VISIT(st, expr, s->v.Slice.lower)
-        if (s->v.Slice.upper)
-            VISIT(st, expr, s->v.Slice.upper)
-        if (s->v.Slice.step)
-            VISIT(st, expr, s->v.Slice.step)
-        break;
-    case ExtSlice_kind:
-        VISIT_SEQ(st, slice, s->v.ExtSlice.dims)
-        break;
-    case Index_kind:
-        VISIT(st, expr, s->v.Index.value)
-        break;
-    }
-    return 1;
-}
-
-static int
 symtable_handle_comprehension(struct symtable *st, expr_ty e,
-                              identifier scope_name, asdl_seq *generators,
+                              identifier scope_name, asdl_comprehension_seq *generators,
                               expr_ty elt, expr_ty value)
 {
     int is_generator = (e->kind == GeneratorExp_kind);
@@ -1893,7 +1876,7 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
 
     /* Outermost iter is received as an argument */
     if (!symtable_implicit_arg(st, 0)) {
-        symtable_exit_block(st, (void *)e);
+        symtable_exit_block(st);
         return 0;
     }
     /* Visit iteration variable target, and mark them as such */
@@ -1915,11 +1898,11 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
         PyErr_SyntaxLocationObject(st->st_filename,
                                    st->st_cur->ste_lineno,
                                    st->st_cur->ste_col_offset + 1);
-        symtable_exit_block(st, (void *)e);
+        symtable_exit_block(st);
         return 0;
     }
     st->st_cur->ste_generator = is_generator;
-    return symtable_exit_block(st, (void *)e);
+    return symtable_exit_block(st);
 }
 
 static int

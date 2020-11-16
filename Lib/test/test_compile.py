@@ -7,7 +7,9 @@ import _ast
 import tempfile
 import types
 from test import support
-from test.support import script_helper, FakePath
+from test.support import script_helper
+from test.support.os_helper import FakePath
+
 
 class TestSpecifics(unittest.TestCase):
 
@@ -153,8 +155,8 @@ if 1:
     def test_leading_newlines(self):
         s256 = "".join(["\n"] * 256 + ["spam"])
         co = compile(s256, 'fn', 'exec')
-        self.assertEqual(co.co_firstlineno, 257)
-        self.assertEqual(co.co_lnotab, bytes())
+        self.assertEqual(co.co_firstlineno, 1)
+        self.assertEqual(list(co.co_lines()), [(0, 4, 257), (4, 8, None)])
 
     def test_literals_with_leading_zeroes(self):
         for arg in ["077787", "0xj", "0x.", "0e",  "090000000000000",
@@ -749,6 +751,16 @@ if 1:
             self.assertEqual('LOAD_CONST', opcodes[0].opname)
             self.assertEqual(None, opcodes[0].argval)
             self.assertEqual('RETURN_VALUE', opcodes[1].opname)
+
+    def test_big_dict_literal(self):
+        # The compiler has a flushing point in "compiler_dict" that calls compiles
+        # a portion of the dictionary literal when the loop that iterates over the items
+        # reaches 0xFFFF elements but the code was not including the boundary element,
+        # dropping the key at position 0xFFFF. See bpo-41531 for more information
+
+        dict_size = 0xFFFF + 1
+        the_dict = "{" + ",".join(f"{x}:{x}" for x in range(dict_size)) + "}"
+        self.assertEqual(len(eval(the_dict)), dict_size)
 
 class TestExpressionStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object

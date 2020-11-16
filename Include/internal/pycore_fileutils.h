@@ -48,6 +48,11 @@ PyAPI_FUNC(int) _Py_GetLocaleconvNumeric(
     PyObject **decimal_point,
     PyObject **thousands_sep);
 
+PyAPI_FUNC(void) _Py_closerange(int first, int last);
+
+PyAPI_FUNC(wchar_t*) _Py_GetLocaleEncoding(void);
+PyAPI_FUNC(PyObject*) _Py_GetLocaleEncodingObject(void);
+
 #ifdef __cplusplus
 }
 #endif

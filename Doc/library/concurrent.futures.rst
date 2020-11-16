@@ -67,7 +67,7 @@ Executor Objects
        .. versionchanged:: 3.5
           Added the *chunksize* argument.
 
-    .. method:: shutdown(wait=True)
+    .. method:: shutdown(wait=True, \*, cancel_futures=False)
 
        Signal the executor that it should free any resources that it is using
        when the currently pending futures are done executing.  Calls to
@@ -82,6 +82,15 @@ Executor Objects
        value of *wait*, the entire Python program will not exit until all
        pending futures are done executing.
 
+       If *cancel_futures* is ``True``, this method will cancel all pending
+       futures that the executor has not started running. Any futures that
+       are completed or running won't be cancelled, regardless of the value
+       of *cancel_futures*.
+
+       If both *cancel_futures* and *wait* are ``True``, all futures that the
+       executor has started running will be completed prior to this method
+       returning. The remaining futures are cancelled.
+
        You can avoid having to call this method explicitly if you use the
        :keyword:`with` statement, which will shutdown the :class:`Executor`
        (waiting as if :meth:`Executor.shutdown` were called with *wait* set to
@@ -93,6 +102,9 @@ Executor Objects
               e.submit(shutil.copy, 'src2.txt', 'dest2.txt')
               e.submit(shutil.copy, 'src3.txt', 'dest3.txt')
               e.submit(shutil.copy, 'src4.txt', 'dest4.txt')
+
+       .. versionchanged:: 3.9
+          Added *cancel_futures*.
 
 
 ThreadPoolExecutor
@@ -209,7 +221,8 @@ ProcessPoolExecutor
 The :class:`ProcessPoolExecutor` class is an :class:`Executor` subclass that
 uses a pool of processes to execute calls asynchronously.
 :class:`ProcessPoolExecutor` uses the :mod:`multiprocessing` module, which
-allows it to side-step the :term:`Global Interpreter Lock` but also means that
+allows it to side-step the :term:`Global Interpreter Lock
+<global interpreter lock>` but also means that
 only picklable objects can be executed and returned.
 
 The ``__main__`` module must be importable by worker subprocesses. This means
@@ -223,9 +236,9 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    An :class:`Executor` subclass that executes calls asynchronously using a pool
    of at most *max_workers* processes.  If *max_workers* is ``None`` or not
    given, it will default to the number of processors on the machine.
-   If *max_workers* is lower or equal to ``0``, then a :exc:`ValueError`
+   If *max_workers* is less than or equal to ``0``, then a :exc:`ValueError`
    will be raised.
-   On Windows, *max_workers* must be equal or lower than ``61``. If it is not
+   On Windows, *max_workers* must be less than or equal to ``61``. If it is not
    then :exc:`ValueError` will be raised. If *max_workers* is ``None``, then
    the default chosen will be at most ``61``, even if more processors are
    available.
@@ -237,7 +250,7 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    each worker process; *initargs* is a tuple of arguments passed to the
    initializer.  Should *initializer* raise an exception, all currently
    pending jobs will raise a :exc:`~concurrent.futures.process.BrokenProcessPool`,
-   as well any attempt to submit more jobs to the pool.
+   as well as any attempt to submit more jobs to the pool.
 
    .. versionchanged:: 3.3
       When one of the worker processes terminates abruptly, a

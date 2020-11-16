@@ -420,6 +420,8 @@ class _Stream:
         self.__write(b"\037\213\010\010" + timestamp + b"\002\377")
         if self.name.endswith(".gz"):
             self.name = self.name[:-3]
+        # Honor "directory components removed" from RFC1952
+        self.name = os.path.basename(self.name)
         # RFC1952 says we must use ISO-8859-1 for the FNAME field.
         self.__write(self.name.encode("iso-8859-1", "replace") + NUL)
 
@@ -930,6 +932,14 @@ class TarInfo(object):
         """Return a header block. info is a dictionary with file
            information, format must be one of the *_FORMAT constants.
         """
+        has_device_fields = info.get("type") in (CHRTYPE, BLKTYPE)
+        if has_device_fields:
+            devmajor = itn(info.get("devmajor", 0), 8, format)
+            devminor = itn(info.get("devminor", 0), 8, format)
+        else:
+            devmajor = stn("", 8, encoding, errors)
+            devminor = stn("", 8, encoding, errors)
+
         parts = [
             stn(info.get("name", ""), 100, encoding, errors),
             itn(info.get("mode", 0) & 0o7777, 8, format),
@@ -943,8 +953,8 @@ class TarInfo(object):
             info.get("magic", POSIX_MAGIC),
             stn(info.get("uname", ""), 32, encoding, errors),
             stn(info.get("gname", ""), 32, encoding, errors),
-            itn(info.get("devmajor", 0), 8, format),
-            itn(info.get("devminor", 0), 8, format),
+            devmajor,
+            devminor,
             stn(info.get("prefix", ""), 155, encoding, errors)
         ]
 
@@ -1241,6 +1251,8 @@ class TarInfo(object):
 
             length, keyword = match.groups()
             length = int(length)
+            if length == 0:
+                raise InvalidHeaderError("invalid header")
             value = buf[match.end(2) + 1:match.start(1) + length - 1]
 
             # Normally, we could just use "utf-8" as the encoding and "strict"
@@ -2081,9 +2093,10 @@ class TarFile(object):
 
     def extractfile(self, member):
         """Extract a member from the archive as a file object. `member' may be
-           a filename or a TarInfo object. If `member' is a regular file or a
-           link, an io.BufferedReader object is returned. Otherwise, None is
-           returned.
+           a filename or a TarInfo object. If `member' is a regular file or
+           a link, an io.BufferedReader object is returned. For all other
+           existing members, None is returned. If `member' does not appear
+           in the archive, KeyError is raised.
         """
         self._check("r")
 

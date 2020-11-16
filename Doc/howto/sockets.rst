@@ -319,7 +319,7 @@ inside-out.
 
 In Python, you use ``socket.setblocking(False)`` to make it non-blocking. In C, it's
 more complex, (for one thing, you'll need to choose between the BSD flavor
-``O_NONBLOCK`` and the almost indistinguishable Posix flavor ``O_NDELAY``, which
+``O_NONBLOCK`` and the almost indistinguishable POSIX flavor ``O_NDELAY``, which
 is completely different from ``TCP_NODELAY``), but it's the exact same idea. You
 do this after creating the socket, but before using it. (Actually, if you're
 nuts, you can switch back and forth.)

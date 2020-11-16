@@ -806,7 +806,9 @@ class BaseEventLoop(events.AbstractEventLoop):
             # Only check when the default executor is being used
             self._check_default_executor()
             if executor is None:
-                executor = concurrent.futures.ThreadPoolExecutor()
+                executor = concurrent.futures.ThreadPoolExecutor(
+                    thread_name_prefix='asyncio'
+                )
                 self._default_executor = executor
         return futures.wrap_future(
             executor.submit(func, *args), loop=self)

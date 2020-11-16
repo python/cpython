@@ -252,10 +252,10 @@ process more convenient:
    .. versionchanged:: 3.8
       The *buffers* argument was added.
 
-.. function:: loads(bytes_object, \*, fix_imports=True, encoding="ASCII", errors="strict", buffers=None)
+.. function:: loads(data, /, \*, fix_imports=True, encoding="ASCII", errors="strict", buffers=None)
 
    Return the reconstituted object hierarchy of the pickled representation
-   *bytes_object* of an object.
+   *data* of an object. *data* must be a :term:`bytes-like object`.
 
    The protocol version of the pickle is detected automatically, so no
    protocol argument is needed.  Bytes past the pickled representation
@@ -639,9 +639,9 @@ the methods :meth:`__getstate__` and :meth:`__setstate__`.
    At unpickling time, some methods like :meth:`__getattr__`,
    :meth:`__getattribute__`, or :meth:`__setattr__` may be called upon the
    instance.  In case those methods rely on some internal invariant being
-   true, the type should implement :meth:`__getnewargs__` or
-   :meth:`__getnewargs_ex__` to establish such an invariant; otherwise,
-   neither :meth:`__new__` nor :meth:`__init__` will be called.
+   true, the type should implement :meth:`__new__` to establish such an
+   invariant, as :meth:`__init__` is not called when unpickling an
+   instance.
 
 .. index:: pair: copy; protocol
 

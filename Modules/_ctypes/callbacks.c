@@ -1,6 +1,8 @@
 #include "Python.h"
 #include "frameobject.h"
 
+#include <stdbool.h>
+
 #include <ffi.h>
 #ifdef MS_WIN32
 #include <windows.h>
@@ -18,7 +20,7 @@ CThunkObject_dealloc(PyObject *myself)
     Py_XDECREF(self->callable);
     Py_XDECREF(self->restype);
     if (self->pcl_write)
-        ffi_closure_free(self->pcl_write);
+        Py_ffi_closure_free(self->pcl_write);
     PyObject_GC_Del(self);
 }
 
@@ -84,7 +86,7 @@ PrintError(const char *msg, ...)
     va_list marker;
 
     va_start(marker, msg);
-    vsnprintf(buf, sizeof(buf), msg, marker);
+    PyOS_vsnprintf(buf, sizeof(buf), msg, marker);
     va_end(marker);
     if (f != NULL && f != Py_None)
         PyFile_WriteString(buf, f);
@@ -109,8 +111,9 @@ TryAddRef(StgDictObject *dict, CDataObject *obj)
     IUnknown *punk;
     _Py_IDENTIFIER(_needs_com_addref_);
 
-    if (!_PyDict_GetItemIdWithError((PyObject *)dict, &PyId__needs_com_addref_)) {
-        if (PyErr_Occurred()) {
+    int r = _PyDict_ContainsId((PyObject *)dict, &PyId__needs_com_addref_);
+    if (r <= 0) {
+        if (r < 0) {
             PrintError("getting _needs_com_addref_");
         }
         return;
@@ -213,9 +216,6 @@ static void _CallPythonObject(void *mem,
         pArgs++;
     }
 
-#define CHECK(what, x) \
-if (x == NULL) _PyTraceback_Add(what, "_ctypes/callbacks.c", __LINE__ - 1), PyErr_Print()
-
     if (flags & (FUNCFLAG_USE_ERRNO | FUNCFLAG_USE_LASTERROR)) {
         error_object = _ctypes_get_errobj(&space);
         if (error_object == NULL)
@@ -235,7 +235,10 @@ if (x == NULL) _PyTraceback_Add(what, "_ctypes/callbacks.c", __LINE__ - 1), PyEr
     }
 
     result = PyObject_CallObject(callable, arglist);
-    CHECK("'calling callback function'", result);
+    if (result == NULL) {
+        _PyErr_WriteUnraisableMsg("on calling ctypes callback function",
+                                  callable);
+    }
 
 #ifdef MS_WIN32
     if (flags & FUNCFLAG_USE_LASTERROR) {
@@ -251,16 +254,17 @@ if (x == NULL) _PyTraceback_Add(what, "_ctypes/callbacks.c", __LINE__ - 1), PyEr
     }
     Py_XDECREF(error_object);
 
-    if ((restype != &ffi_type_void) && result) {
-        PyObject *keep;
+    if (restype != &ffi_type_void && result) {
         assert(setfunc);
+
 #ifdef WORDS_BIGENDIAN
-        /* See the corresponding code in callproc.c, around line 961 */
-        if (restype->type != FFI_TYPE_FLOAT && restype->size < sizeof(ffi_arg))
+        /* See the corresponding code in _ctypes_callproc():
+           in callproc.c, around line 1219. */
+        if (restype->type != FFI_TYPE_FLOAT && restype->size < sizeof(ffi_arg)) {
             mem = (char *)mem + sizeof(ffi_arg) - restype->size;
+        }
 #endif
-        keep = setfunc(mem, result, 0);
-        CHECK("'converting callback result'", keep);
+
         /* keep is an object we have to keep alive so that the result
            stays valid.  If there is no such object, the setfunc will
            have returned Py_None.
@@ -270,18 +274,32 @@ if (x == NULL) _PyTraceback_Add(what, "_ctypes/callbacks.c", __LINE__ - 1), PyEr
            be the result.  EXCEPT when restype is py_object - Python
            itself knows how to manage the refcount of these objects.
         */
-        if (keep == NULL) /* Could not convert callback result. */
-            PyErr_WriteUnraisable(callable);
-        else if (keep == Py_None) /* Nothing to keep */
+        PyObject *keep = setfunc(mem, result, 0);
+
+        if (keep == NULL) {
+            /* Could not convert callback result. */
+            _PyErr_WriteUnraisableMsg("on converting result "
+                                      "of ctypes callback function",
+                                      callable);
+        }
+        else if (keep == Py_None) {
+            /* Nothing to keep */
             Py_DECREF(keep);
+        }
         else if (setfunc != _ctypes_get_fielddesc("O")->setfunc) {
             if (-1 == PyErr_WarnEx(PyExc_RuntimeWarning,
                                    "memory leak in callback function.",
                                    1))
-                PyErr_WriteUnraisable(callable);
+            {
+                _PyErr_WriteUnraisableMsg("on converting result "
+                                          "of ctypes callback function",
+                                          callable);
+            }
         }
     }
+
     Py_XDECREF(result);
+
   Done:
     Py_XDECREF(arglist);
     PyGILState_Release(state);
@@ -346,8 +364,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 
     assert(CThunk_CheckExact((PyObject *)p));
 
-    p->pcl_write = ffi_closure_alloc(sizeof(ffi_closure),
-                                                                         &p->pcl_exec);
+    p->pcl_write = Py_ffi_closure_alloc(sizeof(ffi_closure), &p->pcl_exec);
     if (p->pcl_write == NULL) {
         PyErr_NoMemory();
         goto error;
@@ -393,13 +410,35 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
                      "ffi_prep_cif failed with %d", result);
         goto error;
     }
-#if defined(X86_DARWIN) || defined(POWERPC_DARWIN)
-    result = ffi_prep_closure(p->pcl_write, &p->cif, closure_fcn, p);
-#else
-    result = ffi_prep_closure_loc(p->pcl_write, &p->cif, closure_fcn,
-                                  p,
-                                  p->pcl_exec);
+#if HAVE_FFI_PREP_CLOSURE_LOC
+#   if USING_APPLE_OS_LIBFFI
+#      define HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME __builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)
+#   else
+#      define HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME 1
+#   endif
+    if (HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME) {
+        result = ffi_prep_closure_loc(p->pcl_write, &p->cif, closure_fcn,
+                                    p,
+                                    p->pcl_exec);
+    } else
 #endif
+    {
+#if USING_APPLE_OS_LIBFFI && defined(__arm64__)
+        PyErr_Format(PyExc_NotImplementedError, "ffi_prep_closure_loc() is missing");
+        goto error;
+#else
+#ifdef MACOSX
+        #pragma clang diagnostic push
+        #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+        result = ffi_prep_closure(p->pcl_write, &p->cif, closure_fcn, p);
+
+#ifdef MACOSX
+        #pragma clang diagnostic pop
+#endif
+
+#endif
+    }
     if (result != FFI_OK) {
         PyErr_Format(PyExc_RuntimeError,
                      "ffi_prep_closure failed with %d", result);
@@ -423,7 +462,6 @@ static void LoadPython(void)
 {
     if (!Py_IsInitialized()) {
         Py_Initialize();
-        PyEval_InitThreads();
     }
 }
 

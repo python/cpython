@@ -220,8 +220,7 @@ ireturn_example.events = [(0, 'call'),
                           (2, 'line'),
                           (3, 'line'),
                           (4, 'line'),
-                          (6, 'line'),
-                          (6, 'return')]
+                          (4, 'return')]
 
 # Tight loop with while(1) example (SF #765624)
 def tightloop_example():
@@ -602,6 +601,34 @@ class TraceTestCase(unittest.TestCase):
         self.compare_events(doit_async.__code__.co_firstlineno,
                             tracer.events, events)
 
+    def test_21_repeated_pass(self):
+        def func():
+            pass
+            pass
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (2, 'return')])
+
+    def test_loop_in_try_except(self):
+        # https://bugs.python.org/issue41670
+
+        def func():
+            try:
+                for i in []: pass
+                return 1
+            except:
+                return 2
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'return')])
+
 
 class SkipLineEventsTraceTestCase(TraceTestCase):
     """Repeat the trace tests, but with per-line events skipped"""
@@ -749,7 +776,7 @@ class JumpTracer:
         if (self.firstLine is None and frame.f_code == self.code and
                 event == 'line'):
             self.firstLine = frame.f_lineno - 1
-        if (event == self.event and self.firstLine and
+        if (event == self.event and self.firstLine is not None and
                 frame.f_lineno == self.firstLine + self.jumpFrom):
             f = frame
             while f is not None and f.f_code != self.code:
@@ -948,8 +975,8 @@ class JumpTestCase(unittest.TestCase):
             output.append(11)
         output.append(12)
 
-    @jump_test(5, 11, [2, 4, 12])
-    def test_jump_over_return_try_finally_in_finally_block(output):
+    @jump_test(5, 11, [2, 4], (ValueError, 'after'))
+    def test_no_jump_over_return_try_finally_in_finally_block(output):
         try:
             output.append(2)
         finally:
@@ -963,8 +990,8 @@ class JumpTestCase(unittest.TestCase):
             pass
         output.append(12)
 
-    @jump_test(3, 4, [1, 4])
-    def test_jump_infinite_while_loop(output):
+    @jump_test(3, 4, [1], (ValueError, 'after'))
+    def test_no_jump_infinite_while_loop(output):
         output.append(1)
         while True:
             output.append(3)
@@ -1357,16 +1384,16 @@ class JumpTestCase(unittest.TestCase):
             output.append(7)
         output.append(8)
 
-    @jump_test(1, 5, [], (ValueError, "into a 'finally'"))
-    def test_no_jump_into_finally_block(output):
+    @jump_test(1, 5, [5])
+    def test_jump_into_finally_block(output):
         output.append(1)
         try:
             output.append(3)
         finally:
             output.append(5)
 
-    @jump_test(3, 6, [2, 5, 6], (ValueError, "into a 'finally'"))
-    def test_no_jump_into_finally_block_from_try_block(output):
+    @jump_test(3, 6, [2, 6, 7])
+    def test_jump_into_finally_block_from_try_block(output):
         try:
             output.append(2)
             output.append(3)
@@ -1375,8 +1402,8 @@ class JumpTestCase(unittest.TestCase):
             output.append(6)
         output.append(7)
 
-    @jump_test(5, 1, [1, 3], (ValueError, "out of a 'finally'"))
-    def test_no_jump_out_of_finally_block(output):
+    @jump_test(5, 1, [1, 3, 1, 3, 5])
+    def test_jump_out_of_finally_block(output):
         output.append(1)
         try:
             output.append(3)
@@ -1441,23 +1468,23 @@ class JumpTestCase(unittest.TestCase):
             output.append(6)
             output.append(7)
 
-    @jump_test(3, 5, [1, 2, -2], (ValueError, 'into'))
-    def test_no_jump_between_with_blocks(output):
+    @jump_test(3, 5, [1, 2, 5, -2])
+    def test_jump_between_with_blocks(output):
         output.append(1)
         with tracecontext(output, 2):
             output.append(3)
         with tracecontext(output, 4):
             output.append(5)
 
-    @async_jump_test(3, 5, [1, 2, -2], (ValueError, 'into'))
-    async def test_no_jump_between_async_with_blocks(output):
+    @async_jump_test(3, 5, [1, 2, 5, -2])
+    async def test_jump_between_async_with_blocks(output):
         output.append(1)
         async with asynctracecontext(output, 2):
             output.append(3)
         async with asynctracecontext(output, 4):
             output.append(5)
 
-    @jump_test(5, 7, [2, 4], (ValueError, 'finally'))
+    @jump_test(5, 7, [2, 4], (ValueError, "after"))
     def test_no_jump_over_return_out_of_finally_block(output):
         try:
             output.append(2)
@@ -1523,7 +1550,7 @@ output.append(4)
 """, "<fake module>", "exec")
         class fake_function:
             __code__ = code
-        tracer = JumpTracer(fake_function, 2, 0)
+        tracer = JumpTracer(fake_function, 4, 1)
         sys.settrace(tracer.trace)
         namespace = {"output": []}
         exec(code, namespace)
@@ -1551,9 +1578,8 @@ output.append(4)
         output.append(1)
         1 / 0
 
-    @jump_test(3, 2, [2], event='return', error=(ValueError,
-               "can't jump from a 'yield' statement"))
-    def test_no_jump_from_yield(output):
+    @jump_test(3, 2, [2, 5], event='return')
+    def test_jump_from_yield(output):
         def gen():
             output.append(2)
             yield 3

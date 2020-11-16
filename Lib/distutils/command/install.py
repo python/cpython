@@ -30,14 +30,14 @@ WINDOWS_SCHEME = {
 INSTALL_SCHEMES = {
     'unix_prefix': {
         'purelib': '$base/lib/python$py_version_short/site-packages',
-        'platlib': '$platbase/lib/python$py_version_short/site-packages',
+        'platlib': '$platbase/$platlibdir/python$py_version_short/site-packages',
         'headers': '$base/include/python$py_version_short$abiflags/$dist_name',
         'scripts': '$base/bin',
         'data'   : '$base',
         },
     'unix_home': {
         'purelib': '$base/lib/python',
-        'platlib': '$base/lib/python',
+        'platlib': '$base/$platlibdir/python',
         'headers': '$base/include/python/$dist_name',
         'scripts': '$base/bin',
         'data'   : '$base',
@@ -298,6 +298,7 @@ class install(Command):
                             'sys_exec_prefix': exec_prefix,
                             'exec_prefix': exec_prefix,
                             'abiflags': abiflags,
+                            'platlibdir': sys.platlibdir,
                            }
 
         if HAS_USER_SITE:

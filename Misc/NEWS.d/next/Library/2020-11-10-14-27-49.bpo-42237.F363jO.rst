@@ -1,0 +1,1 @@
+Fix `os.sendfile()` on illumos.

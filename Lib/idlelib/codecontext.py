@@ -7,7 +7,6 @@ the lines which contain the block opening keywords, e.g. 'if', for the
 enclosing block.  The number of hint lines is determined by the maxlines
 variable in the codecontext section of config-extensions.def. Lines which do
 not open blocks are not shown in the context hints pane.
-
 """
 import re
 from sys import maxsize as INFINITY
@@ -17,8 +16,8 @@ from tkinter.constants import NSEW, SUNKEN
 
 from idlelib.config import idleConf
 
-BLOCKOPENERS = {"class", "def", "elif", "else", "except", "finally", "for",
-                "if", "try", "while", "with", "async"}
+BLOCKOPENERS = {'class', 'def', 'if', 'elif', 'else', 'while', 'for',
+                 'try', 'except', 'finally', 'with', 'async'}
 
 
 def get_spaces_firstword(codeline, c=re.compile(r"^(\s*)(\w*)")):
@@ -84,7 +83,7 @@ class CodeContext:
         if self.t1 is not None:
             try:
                 self.text.after_cancel(self.t1)
-            except tkinter.TclError:
+            except tkinter.TclError:  # pragma: no cover
                 pass
             self.t1 = None
 
@@ -112,7 +111,7 @@ class CodeContext:
                 padx += widget.tk.getint(info['padx'])
                 padx += widget.tk.getint(widget.cget('padx'))
                 border += widget.tk.getint(widget.cget('border'))
-            self.context = tkinter.Text(
+            context = self.context = tkinter.Text(
                 self.editwin.text_frame,
                 height=1,
                 width=1,  # Don't request more than we get.
@@ -120,11 +119,11 @@ class CodeContext:
                 padx=padx, border=border, relief=SUNKEN, state='disabled')
             self.update_font()
             self.update_highlight_colors()
-            self.context.bind('<ButtonRelease-1>', self.jumptoline)
+            context.bind('<ButtonRelease-1>', self.jumptoline)
             # Get the current context and initiate the recurring update event.
             self.timer_event()
             # Grid the context widget above the text widget.
-            self.context.grid(row=0, column=1, sticky=NSEW)
+            context.grid(row=0, column=1, sticky=NSEW)
 
             line_number_colors = idleConf.GetHighlight(idleConf.CurrentTheme(),
                                                        'linenumber')
@@ -215,18 +214,25 @@ class CodeContext:
         self.context['state'] = 'disabled'
 
     def jumptoline(self, event=None):
-        "Show clicked context line at top of editor."
-        lines = len(self.info)
-        if lines == 1:  # No context lines are showing.
-            newtop = 1
-        else:
-            # Line number clicked.
-            contextline = int(float(self.context.index('insert')))
-            # Lines not displayed due to maxlines.
-            offset = max(1, lines - self.context_depth) - 1
-            newtop = self.info[offset + contextline][0]
-        self.text.yview(f'{newtop}.0')
-        self.update_code_context()
+        """ Show clicked context line at top of editor.
+
+        If a selection was made, don't jump; allow copying.
+        If no visible context, show the top line of the file.
+        """
+        try:
+            self.context.index("sel.first")
+        except tkinter.TclError:
+            lines = len(self.info)
+            if lines == 1:  # No context lines are showing.
+                newtop = 1
+            else:
+                # Line number clicked.
+                contextline = int(float(self.context.index('insert')))
+                # Lines not displayed due to maxlines.
+                offset = max(1, lines - self.context_depth) - 1
+                newtop = self.info[offset + contextline][0]
+            self.text.yview(f'{newtop}.0')
+            self.update_code_context()
 
     def timer_event(self):
         "Event on editor text widget triggered every UPDATEINTERVAL ms."

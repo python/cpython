@@ -68,15 +68,15 @@ or on combining URL components into a URL string.
    .. doctest::
       :options: +NORMALIZE_WHITESPACE
 
-       >>> from urllib.parse import urlparse
-       >>> urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
-       ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
+      >>> from urllib.parse import urlparse
+      >>> urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
+      ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
                   params='', query='', fragment='')
-       >>> urlparse('www.cwi.nl/%7Eguido/Python.html')
-       ParseResult(scheme='', netloc='', path='www.cwi.nl/%7Eguido/Python.html',
+      >>> urlparse('www.cwi.nl/%7Eguido/Python.html')
+      ParseResult(scheme='', netloc='', path='www.cwi.nl/%7Eguido/Python.html',
                   params='', query='', fragment='')
-       >>> urlparse('help/Python.html')
-       ParseResult(scheme='', netloc='', path='help/Python.html', params='',
+      >>> urlparse('help/Python.html')
+      ParseResult(scheme='', netloc='', path='help/Python.html', params='',
                   query='', fragment='')
 
    The *scheme* argument gives the default addressing scheme, to be
@@ -138,14 +138,14 @@ or on combining URL components into a URL string.
    .. doctest::
       :options: +NORMALIZE_WHITESPACE
 
-       >>> from urllib.parse import urlparse
-       >>> u = urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
-       >>> u
-       ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
-                   params='', query='', fragment='')
-       >>> u._replace(scheme='http')
-       ParseResult(scheme='http', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
-                   params='', query='', fragment='')
+      >>> from urllib.parse import urlparse
+      >>> u = urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
+      >>> u
+      ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
+                  params='', query='', fragment='')
+      >>> u._replace(scheme='http')
+      ParseResult(scheme='http', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
+                  params='', query='', fragment='')
 
 
    .. versionchanged:: 3.2
@@ -153,7 +153,7 @@ or on combining URL components into a URL string.
 
    .. versionchanged:: 3.3
       The fragment is now parsed for all URL schemes (unless *allow_fragment* is
-      false), in accordance with :rfc:`3986`.  Previously, a whitelist of
+      false), in accordance with :rfc:`3986`.  Previously, an allowlist of
       schemes that support fragments existed.
 
    .. versionchanged:: 3.6
