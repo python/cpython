@@ -1325,6 +1325,10 @@ PyMethod_New:PyObject*:class:0:
 PyMethod_Self:PyObject*::0:
 PyMethod_Self:PyObject*:im:0:
 
+PyModule_AddConstants:int:::
+PyModule_AddConstants:PyObject*:module:0:
+PyModule_AddConstants:PyModuleConst_Def*:def::
+
 PyModule_AddFunctions:int:::
 PyModule_AddFunctions:PyObject*:module:0:
 PyModule_AddFunctions:PyMethodDef*:functions::
@@ -1342,6 +1346,18 @@ PyModule_AddObject:int:::
 PyModule_AddObject:PyObject*:module:0:
 PyModule_AddObject:const char*:name::
 PyModule_AddObject:PyObject*:value:+1:
+
+PyModule_AddNewException:PyObject*::+1:
+PyModule_AddNewException:PyObject*:module:0:
+PyModule_AddNewException:const char*:name::
+PyModule_AddNewException:const char*:doc::
+PyModule_AddNewException:PyObject*:base:0:
+PyModule_AddNewException:PyObject*:dict:0:
+
+PyModule_AddNewTypeFromSpec:PyObject*::+1:
+PyModule_AddNewTypeFromSpec:PyObject*:module:0:
+PyModule_AddNewTypeFromSpec:PyType_spec*:spec::
+PyModule_AddNewTypeFromSpec:PyObject*:base:0:
 
 PyModule_AddStringConstant:int:::
 PyModule_AddStringConstant:PyObject*:module:0:

@@ -1,0 +1,3 @@
+Add new functions :c:func:`PyModule_AddConstants`,
+:c:func:`PyModule_AddNewTypeFromSpec`, :c:func:`PyModule_AddNewException` to
+simplify the declaration of attribute in modules.
