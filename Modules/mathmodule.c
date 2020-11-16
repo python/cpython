@@ -3583,14 +3583,14 @@ static PyMethodDef math_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
-static PyModuleConstants_Def math_constants[] = {
-    PyMC_Double("pi", Py_MATH_PI),
-    PyMC_Double("e", Py_MATH_E),
+static PyModuleConst_Def math_constants[] = {
+    PyModuleConst_Double("pi", Py_MATH_PI),
+    PyModuleConst_Double("e", Py_MATH_E),
     // 2pi
-    PyMC_Double("tau", Py_MATH_TAU),
-    PyMC_Call("inf", m_inf_o),
+    PyModuleConst_Double("tau", Py_MATH_TAU),
+    PyModuleConst_Call("inf", m_inf_o),
 #if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
-    PyMC_Call("nan", m_nan_o),
+    PyModuleConst_Call("nan", m_nan_o),
 #endif
     {NULL, 0},
 };

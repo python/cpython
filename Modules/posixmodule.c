@@ -15687,84 +15687,84 @@ posixmodule_exec(PyObject *m)
     return 0;
 }
 
-static PyModuleConstants_Def _posix_constants[] = {
+static PyModuleConst_Def _posix_constants[] = {
 #ifdef F_OK
-    PyMC_LongMacro(F_OK),
+    PyModuleConst_LongMacro(F_OK),
 #endif
 #ifdef R_OK
-    PyMC_LongMacro(R_OK),
+    PyModuleConst_LongMacro(R_OK),
 #endif
 #ifdef W_OK
-    PyMC_LongMacro(W_OK),
+    PyModuleConst_LongMacro(W_OK),
 #endif
 #ifdef X_OK
-    PyMC_LongMacro(X_OK),
+    PyModuleConst_LongMacro(X_OK),
 #endif
 #ifdef NGROUPS_MAX
-    PyMC_LongMacro(NGROUPS_MAX),
+    PyModuleConst_LongMacro(NGROUPS_MAX),
 #endif
 #ifdef TMP_MAX
-    PyMC_LongMacro(TMP_MAX),
+    PyModuleConst_LongMacro(TMP_MAX),
 #endif
 #ifdef WCONTINUED
-    PyMC_LongMacro(WCONTINUED),
+    PyModuleConst_LongMacro(WCONTINUED),
 #endif
 #ifdef WNOHANG
-    PyMC_LongMacro(WNOHANG),
+    PyModuleConst_LongMacro(WNOHANG),
 #endif
 #ifdef WUNTRACED
-    PyMC_LongMacro(WUNTRACED),
+    PyModuleConst_LongMacro(WUNTRACED),
 #endif
 #ifdef O_RDONLY
-    PyMC_LongMacro(O_RDONLY),
+    PyModuleConst_LongMacro(O_RDONLY),
 #endif
 #ifdef O_WRONLY
-    PyMC_LongMacro(O_WRONLY),
+    PyModuleConst_LongMacro(O_WRONLY),
 #endif
 #ifdef O_RDWR
-    PyMC_LongMacro(O_RDWR),
+    PyModuleConst_LongMacro(O_RDWR),
 #endif
 #ifdef O_NDELAY
-    PyMC_LongMacro(O_NDELAY),
+    PyModuleConst_LongMacro(O_NDELAY),
 #endif
 #ifdef O_NONBLOCK
-    PyMC_LongMacro(O_NONBLOCK),
+    PyModuleConst_LongMacro(O_NONBLOCK),
 #endif
 #ifdef O_APPEND
-    PyMC_LongMacro(O_APPEND),
+    PyModuleConst_LongMacro(O_APPEND),
 #endif
 #ifdef O_DSYNC
-    PyMC_LongMacro(O_DSYNC),
+    PyModuleConst_LongMacro(O_DSYNC),
 #endif
 #ifdef O_RSYNC
-    PyMC_LongMacro(O_RSYNC),
+    PyModuleConst_LongMacro(O_RSYNC),
 #endif
 #ifdef O_SYNC
-    PyMC_LongMacro(O_SYNC),
+    PyModuleConst_LongMacro(O_SYNC),
 #endif
 #ifdef O_NOCTTY
-    PyMC_LongMacro(O_NOCTTY),
+    PyModuleConst_LongMacro(O_NOCTTY),
 #endif
 #ifdef O_CREAT
-    PyMC_LongMacro(O_CREAT),
+    PyModuleConst_LongMacro(O_CREAT),
 #endif
 #ifdef O_EXCL
-    PyMC_LongMacro(O_EXCL),
+    PyModuleConst_LongMacro(O_EXCL),
 #endif
 #ifdef O_TRUNC
-    PyMC_LongMacro(O_TRUNC),
+    PyModuleConst_LongMacro(O_TRUNC),
 #endif
 #ifdef O_BINARY
-    PyMC_LongMacro(O_BINARY),
+    PyModuleConst_LongMacro(O_BINARY),
 #endif
 #ifdef O_TEXT
-    PyMC_LongMacro(O_TEXT),
+    PyModuleConst_LongMacro(O_TEXT),
 #endif
 #ifdef O_XATTR
-    PyMC_LongMacro(O_XATTR),
+    PyModuleConst_LongMacro(O_XATTR),
 #endif
 #ifdef O_LARGEFILE
-    PyMC_LongMacro(O_LARGEFILE),
+    PyModuleConst_LongMacro(O_LARGEFILE),
 #endif
     {NULL, 0},
 };

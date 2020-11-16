@@ -175,11 +175,11 @@ _add_methods_to_object(PyObject *module, PyObject *name, PyMethodDef *functions)
     return 0;
 }
 
-static int
-module_add_constants(PyObject *module, PyModuleConstants_Def *def)
+int
+PyModule_AddConstants(PyObject *module, PyModuleConst_Def *def)
 {
     PyObject *dict;
-    PyModuleConstants_Def *cur_def;
+    PyModuleConst_Def *cur_def;
     PyObject *v;
     int res;
 
@@ -190,23 +190,23 @@ module_add_constants(PyObject *module, PyModuleConstants_Def *def)
 
     for (cur_def = def; cur_def && cur_def->name; cur_def++) {
         switch(cur_def->type) {
-        case Py_mc_none:
+        case PyModuleConst_none_type:
             v = Py_None;
             Py_INCREF(v);
             break;
-        case Py_mc_long:
+        case PyModuleConst_long_type:
             v = PyLong_FromLong(cur_def->value.m_long);
             break;
-        case Py_mc_bool:
+        case PyModuleConst_bool_type:
             v = PyBool_FromLong(cur_def->value.m_long);
             break;
-        case Py_mc_double:
+        case PyModuleConst_double_type:
             v = PyFloat_FromDouble(cur_def->value.m_double);
             break;
-        case Py_mc_string:
+        case PyModuleConst_string_type:
             v =  PyUnicode_FromString(cur_def->value.m_str);
             break;
-        case Py_mc_call:
+        case PyModuleConst_call_type:
             v = cur_def->value.m_call();
             break;
         default:
@@ -300,7 +300,7 @@ _PyModule_CreateInitialized(struct PyModuleDef* module, int module_api_version)
         }
     }
     if (module->m_constants != NULL) {
-        if (module_add_constants((PyObject *) m, module->m_constants) != 0) {
+        if (PyModule_AddConstants((PyObject *) m, module->m_constants) != 0) {
             Py_DECREF(m);
             return NULL;
         }
@@ -425,7 +425,7 @@ PyModule_FromDefAndSpec2(struct PyModuleDef* def, PyObject *spec, int module_api
     }
 
     if (def->m_constants != NULL) {
-        if (module_add_constants((PyObject *) m, def->m_constants) != 0) {
+        if (PyModule_AddConstants(m, def->m_constants) != 0) {
             Py_DECREF(m);
             return NULL;
         }
