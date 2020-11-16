@@ -491,7 +491,7 @@ slices[expr_ty]:
     | a[asdl_expr_seq*]=','.slice+ [','] { _Py_Tuple(a, Load, EXTRA) }
 slice[expr_ty]:
     | a=[expression] ':' b=[expression] c=[':' d=[expression] { d }] { _Py_Slice(a, b, c, EXTRA) }
-    | a=expression { a }
+    | a=named_expression { a }
 atom[expr_ty]:
     | NAME
     | 'True' { _Py_Constant(Py_True, NULL, EXTRA) }
