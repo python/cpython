@@ -3595,6 +3595,17 @@ static PyModuleConst_Def math_constants[] = {
     {NULL, 0},
 };
 
+static int
+math_init_constants(PyObject *module)
+{
+    return PyModule_AddConstants(module, math_constants);
+}
+
+static PyModuleDef_Slot math_slots[] = {
+    {Py_mod_exec, math_init_constants},
+    {0, NULL}
+};
+
 PyDoc_STRVAR(module_doc,
 "This module provides access to the mathematical functions\n"
 "defined by the C standard.");
@@ -3605,7 +3616,7 @@ static struct PyModuleDef mathmodule = {
     .m_doc = module_doc,
     .m_size = 0,
     .m_methods = math_methods,
-    .m_constants = math_constants,
+    .m_slots = math_slots,
 };
 
 PyMODINIT_FUNC

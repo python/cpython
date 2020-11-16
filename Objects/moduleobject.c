@@ -299,12 +299,6 @@ _PyModule_CreateInitialized(struct PyModuleDef* module, int module_api_version)
             return NULL;
         }
     }
-    if (module->m_constants != NULL) {
-        if (PyModule_AddConstants((PyObject *) m, module->m_constants) != 0) {
-            Py_DECREF(m);
-            return NULL;
-        }
-    }
     m->md_def = module;
     return (PyObject*)m;
 }
@@ -421,13 +415,6 @@ PyModule_FromDefAndSpec2(struct PyModuleDef* def, PyObject *spec, int module_api
         ret = PyModule_SetDocString(m, def->m_doc);
         if (ret != 0) {
             goto error;
-        }
-    }
-
-    if (def->m_constants != NULL) {
-        if (PyModule_AddConstants(m, def->m_constants) != 0) {
-            Py_DECREF(m);
-            return NULL;
         }
     }
 

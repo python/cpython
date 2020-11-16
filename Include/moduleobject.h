@@ -125,7 +125,6 @@ typedef struct PyModuleDef{
   traverseproc m_traverse;
   inquiry m_clear;
   freefunc m_free;
-  struct PyModuleConst_Def* m_constants;
 } PyModuleDef;
 
 

@@ -571,6 +571,143 @@ state:
 
    .. versionadded:: 3.9
 
+.. c:function:: PyTypeeObject * PyModule_AddNewTypeFromSpec(PyObject *module, PyType_Spec *spec, PyObject *base)
+
+   Initialize a new type and add it to *module*.
+   The function is equivalent to :c:func:`PyType_FromModuleAndSpec` followed
+   by :c:func:`PyModule_AddType`. *base* must be either ``NULL``, a single
+   type object, or a tuple of types.
+   Return ``NULL`` on error; otherwise a borrowed reference to a
+   ``PyTypeObject *``, which can be assigned to a module state object.
+
+   .. versionadded:: 3.10
+
+.. c:function:: PyObject * PyModule_AddNewException(PyObject *module, const char *name, const char *doc, PyObject *base, PyObject *dict)
+
+   Create a new exception and add it to *module*.
+   The function is equivalent to :c:func:`PyErr_NewExceptionWithDoc` followed
+   by :c:func:`PyModule_AddObjectRef`. The name of the exception object is
+   taken from the last component of *name* after dot.
+   Return ``NULL`` on error; otherwise a borrowed reference to a
+   ``PyObject *``, which can be assigned to a module state object.
+
+   .. versionadded:: 3.10
+
+.. c:function:: int PyModule_AddConstants(PyObject *module, PyModuleConst_Def *def)
+
+   Initialize module constants from a PyModuleConst_Def array. The function
+   provides a convenient way to declare module-level constants.
+   Return ``-1`` on error, ``0`` on success.
+
+   Example::
+
+      static PyObject*
+      example_call(void *)
+      {
+          return PyBytes_FromString("23");
+      }
+
+      #define EXAMPLE_INT 23
+      #define EXAMPLE_STRING "world"
+
+      static PyModuleConst_Def example_constants[] = {
+          PyModuleConst_None("none_value"),
+          PyModuleConst_Long("integer", 42),
+          PyModuleConst_Bool("false_value", 0),
+          PyModuleConst_Bool("true_value", 1),
+      #ifdef Py_MATH_PI
+          PyModuleConst_Double("pi", Py_MATH_PI),
+      #endif
+          PyModuleConst_String("somestring", "Hello"),
+          PyModuleConst_Call("call", example_call),
+          PyModuleConst_LongMacro(EXAMPLE_INT),
+          PyModuleConst_StringMacro(EXAMPLE_STRING),
+          {NULL},
+      }
+
+      static int
+      example_init_constants(PyObject *module)
+      {
+          return PyModule_AddConstants(module, posix_constants);
+      }
+
+      static PyModuleDef_Slot example_slots[] = {
+          {Py_mod_exec, example_init_constants},
+          {0, NULL}
+      };
+
+
+.. c:type:: PyModuleConst_Def
+
+   The values for *type* and the definition of the *value* union are
+   internal implementation details. Use any of the ``PyModuleConst_`` macros
+   to define entries. The array must be terminated by an entry with name
+   set to ``NULL``.
+
+   .. c:member:: const char *name
+
+      Attribute name.
+
+   .. c:member:: int type
+
+      Attribute type.
+
+   .. c:member:: union value
+
+      Value of the module constant definition, whose meaning depends on
+      *type*.
+
+   .. versionadded:: 3.10
+
+.. c:macro:: PyModuleConst_None(name)
+
+   Add an entry for None.
+
+   .. versionadded:: 3.10
+
+.. c:macro:: PyModuleConst_Long(name, value)
+
+   Add an entry for an int constant.
+
+   .. versionadded:: 3.10
+
+.. c:macro:: PyModuleConst_Bool(name, value)
+
+   Add an entry for a bool constant.
+
+   .. versionadded:: 3.10
+
+.. c:macro:: PyModuleConst_Double(name, value)
+
+   Add an entry for a float constant.
+
+   .. versionadded:: 3.10
+
+.. c:macro:: PyModuleConst_String(name, value)
+
+   Add an entry for a string constant.
+
+   .. versionadded:: 3.10
+
+.. c:macro:: PyModuleConst_Call(name, c_function)
+
+   Add an entry for a constant as returned by *c_function*.
+
+   .. versionadded:: 3.10
+
+.. c:macro:: PyModuleConst_LongMacro(macro)
+
+   Add an entry for an int constant. The name and the value are taken from
+   *macro*.
+
+   .. versionadded:: 3.10
+
+.. c:macro:: PyModuleConst_StringMacro(macro)
+
+   Add an entry for a string constant. The name and the value are taken from
+   *macro*.
+
+   .. versionadded:: 3.10
 
 Module lookup
 ^^^^^^^^^^^^^
