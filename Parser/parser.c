@@ -11357,7 +11357,7 @@ group_rule(Parser *p)
     return _res;
 }
 
-// genexp: '(' expression ~ for_if_clauses ')' | invalid_comprehension
+// genexp: '(' named_expression ~ for_if_clauses ')' | invalid_comprehension
 static expr_ty
 genexp_rule(Parser *p)
 {
@@ -11377,12 +11377,12 @@ genexp_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    { // '(' expression ~ for_if_clauses ')'
+    { // '(' named_expression ~ for_if_clauses ')'
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> genexp[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' expression ~ for_if_clauses ')'"));
+        D(fprintf(stderr, "%*c> genexp[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' named_expression ~ for_if_clauses ')'"));
         int _cut_var = 0;
         Token * _literal;
         Token * _literal_1;
@@ -11391,7 +11391,7 @@ genexp_rule(Parser *p)
         if (
             (_literal = _PyPegen_expect_token(p, 7))  // token='('
             &&
-            (a = expression_rule(p))  // expression
+            (a = named_expression_rule(p))  // named_expression
             &&
             (_cut_var = 1)
             &&
@@ -11400,7 +11400,7 @@ genexp_rule(Parser *p)
             (_literal_1 = _PyPegen_expect_token(p, 8))  // token=')'
         )
         {
-            D(fprintf(stderr, "%*c+ genexp[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' expression ~ for_if_clauses ')'"));
+            D(fprintf(stderr, "%*c+ genexp[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' named_expression ~ for_if_clauses ')'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 D(p->level--);
@@ -11420,7 +11420,7 @@ genexp_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s genexp[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'(' expression ~ for_if_clauses ')'"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'(' named_expression ~ for_if_clauses ')'"));
         if (_cut_var) {
             D(p->level--);
             return NULL;
