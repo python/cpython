@@ -290,8 +290,8 @@ importlib.import_module() to programmatically import a module.\n\
 \n\
 The globals argument is only used to determine the context;\n\
 they are not modified.  The locals argument is unused.  The fromlist\n\
-should be a list of names to emulate ``from name import ...'', or an\n\
-empty list to emulate ``import name''.\n\
+should be a list of names to emulate ``from name import ...``, or an\n\
+empty list to emulate ``import name``.\n\
 When importing a module from a package, note that __import__('A.B', ...)\n\
 returns package A when fromlist is empty, but its submodule B when\n\
 fromlist is not empty.  The level argument is used to determine whether to\n\
@@ -1425,7 +1425,7 @@ setattr as builtin_setattr
 
 Sets the named attribute on the given object to the specified value.
 
-setattr(x, 'y', v) is equivalent to ``x.y = v''
+``setattr(x, 'y', v)`` is equivalent to ``x.y = v``
 [clinic start generated code]*/
 
 static PyObject *
@@ -1448,7 +1448,7 @@ delattr as builtin_delattr
 
 Deletes the named attribute from the given object.
 
-delattr(x, 'y') is equivalent to ``del x.y''
+``delattr(x, 'y')`` is equivalent to ``del x.y``
 [clinic start generated code]*/
 
 static PyObject *
@@ -2831,7 +2831,7 @@ static PyMethodDef builtin_methods[] = {
 PyDoc_STRVAR(builtin_doc,
 "Built-in functions, exceptions, and other objects.\n\
 \n\
-Noteworthy: None is the `nil' object; Ellipsis represents `...' in slices.");
+Noteworthy: None is the 'nil' object; Ellipsis represents '...' in slices.");
 
 static struct PyModuleDef builtinsmodule = {
     PyModuleDef_HEAD_INIT,
