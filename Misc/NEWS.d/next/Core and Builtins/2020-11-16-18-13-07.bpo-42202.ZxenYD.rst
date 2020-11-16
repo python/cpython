@@ -1,0 +1,2 @@
+Add ``co_annotations`` field to ``PyCodeObject`` in order to compute
+function annotations at compilation time. Patch provided by Yurii Karabas.

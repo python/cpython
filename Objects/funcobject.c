@@ -423,6 +423,11 @@ func_get_annotations(PyFunctionObject *op, void *Py_UNUSED(ignored))
         op->func_annotations = PyDict_New();
         if (op->func_annotations == NULL)
             return NULL;
+
+        PyObject* annotations = ((PyCodeObject*) op->func_code )->co_annotations;
+        if (annotations != Py_None) {
+            PyDict_MergeFromSeq2(op->func_annotations, annotations, 0);
+        }
     }
     Py_INCREF(op->func_annotations);
     return op->func_annotations;

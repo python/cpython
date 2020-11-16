@@ -228,7 +228,8 @@ class CodeTest(unittest.TestCase):
                         co.co_firstlineno,
                         co.co_lnotab,
                         co.co_freevars,
-                        co.co_cellvars)
+                        co.co_cellvars,
+                        co.co_annotations)
 
     def test_replace(self):
         def func():

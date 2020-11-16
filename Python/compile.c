@@ -150,6 +150,7 @@ struct compiler_unit {
     */
     PyObject *u_consts;    /* all constants */
     PyObject *u_names;     /* all names */
+    PyObject *u_annotations; /* all annotations */
     PyObject *u_varnames;  /* local variables */
     PyObject *u_cellvars;  /* cell variables */
     PyObject *u_freevars;  /* free variables */
@@ -590,6 +591,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
     Py_INCREF(name);
     u->u_name = name;
+    u->u_annotations = Py_None;
     u->u_varnames = list2dict(u->u_ste->ste_varnames);
     u->u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, 0, 0);
     if (!u->u_varnames || !u->u_cellvars) {
@@ -2027,18 +2029,26 @@ compiler_visit_annexpr(struct compiler *c, expr_ty annotation)
 
 static int
 compiler_visit_argannotation(struct compiler *c, identifier id,
-    expr_ty annotation, PyObject *names)
+    expr_ty annotation, PyObject *annotations)
 {
     if (annotation) {
         PyObject *mangled;
-        VISIT(c, annexpr, annotation);
+        PyObject *pair;
         mangled = _Py_Mangle(c->u->u_private, id);
         if (!mangled)
             return 0;
-        if (PyList_Append(names, mangled) < 0) {
+
+        pair = PyTuple_Pack(2, mangled, _PyAST_ExprAsUnicode(annotation));
+        if (pair == NULL)
+            return 0;
+
+        if (PyList_Append(annotations, pair) < 0) {
             Py_DECREF(mangled);
+            Py_DECREF(pair);
             return 0;
         }
+
+        Py_DECREF(pair);
         Py_DECREF(mangled);
     }
     return 1;
@@ -2046,7 +2056,7 @@ compiler_visit_argannotation(struct compiler *c, identifier id,
 
 static int
 compiler_visit_argannotations(struct compiler *c, asdl_arg_seq* args,
-                              PyObject *names)
+                              PyObject *annotations)
 {
     int i;
     for (i = 0; i < asdl_seq_LEN(args); i++) {
@@ -2055,7 +2065,7 @@ compiler_visit_argannotations(struct compiler *c, asdl_arg_seq* args,
                         c,
                         arg->arg,
                         arg->annotation,
-                        names))
+                        annotations ))
             return 0;
     }
     return 1;
@@ -2071,25 +2081,25 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
        Return 0 on error, -1 if no dict pushed, 1 if a dict is pushed.
        */
     static identifier return_str;
-    PyObject *names;
+    PyObject *annotations;
     Py_ssize_t len;
-    names = PyList_New(0);
-    if (!names)
+    annotations = PyList_New(0);
+    if (!annotations)
         return 0;
 
-    if (!compiler_visit_argannotations(c, args->args, names))
+    if (!compiler_visit_argannotations(c, args->args, annotations))
         goto error;
-    if (!compiler_visit_argannotations(c, args->posonlyargs, names))
+    if (!compiler_visit_argannotations(c, args->posonlyargs, annotations))
         goto error;
     if (args->vararg && args->vararg->annotation &&
         !compiler_visit_argannotation(c, args->vararg->arg,
-                                     args->vararg->annotation, names))
+                                     args->vararg->annotation, annotations))
         goto error;
-    if (!compiler_visit_argannotations(c, args->kwonlyargs, names))
+    if (!compiler_visit_argannotations(c, args->kwonlyargs, annotations))
         goto error;
     if (args->kwarg && args->kwarg->annotation &&
         !compiler_visit_argannotation(c, args->kwarg->arg,
-                                     args->kwarg->annotation, names))
+                                     args->kwarg->annotation, annotations))
         goto error;
 
     if (!return_str) {
@@ -2097,25 +2107,22 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
         if (!return_str)
             goto error;
     }
-    if (!compiler_visit_argannotation(c, return_str, returns, names)) {
+    if (!compiler_visit_argannotation(c, return_str, returns, annotations)) {
         goto error;
     }
 
-    len = PyList_GET_SIZE(names);
+    len = PyList_GET_SIZE(annotations);
     if (len) {
-        PyObject *keytuple = PyList_AsTuple(names);
-        Py_DECREF(names);
-        ADDOP_LOAD_CONST_NEW(c, keytuple);
-        ADDOP_I(c, BUILD_CONST_KEY_MAP, len);
+        c->u->u_annotations = PyList_AsTuple(annotations);
         return 1;
     }
     else {
-        Py_DECREF(names);
+        Py_DECREF(annotations);
         return -1;
     }
 
 error:
-    Py_DECREF(names);
+    Py_DECREF(annotations);
     return 0;
 }
 
@@ -2251,15 +2258,12 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         return 0;
     }
 
-    annotations = compiler_visit_annotations(c, args, returns);
-    if (annotations == 0) {
+    if (!compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno)) {
         return 0;
     }
-    else if (annotations > 0) {
-        funcflags |= 0x04;
-    }
 
-    if (!compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno)) {
+    annotations = compiler_visit_annotations(c, args, returns);
+    if (annotations == 0) {
         return 0;
     }
 
@@ -5896,11 +5900,13 @@ makecode(struct compiler *c, struct assembler *a, PyObject *consts)
         Py_DECREF(consts);
         goto error;
     }
+
     co = PyCode_NewWithPosOnlyArgs(posonlyargcount+posorkeywordargcount,
                                    posonlyargcount, kwonlyargcount, nlocals_int,
                                    maxdepth, flags, a->a_bytecode, consts, names,
                                    varnames, freevars, cellvars, c->c_filename,
-                                   c->u->u_name, c->u->u_firstlineno, a->a_lnotab);
+                                   c->u->u_name, c->u->u_firstlineno, a->a_lnotab,
+                                   c->u->u_annotations);
     Py_DECREF(consts);
  error:
     Py_XDECREF(names);

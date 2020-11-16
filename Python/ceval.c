@@ -3879,10 +3879,6 @@ main_loop:
                 assert(PyTuple_CheckExact(TOP()));
                 func ->func_closure = POP();
             }
-            if (oparg & 0x04) {
-                assert(PyDict_CheckExact(TOP()));
-                func->func_annotations = POP();
-            }
             if (oparg & 0x02) {
                 assert(PyDict_CheckExact(TOP()));
                 func->func_kwdefaults = POP();
