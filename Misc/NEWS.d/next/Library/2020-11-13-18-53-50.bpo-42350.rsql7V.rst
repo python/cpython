@@ -1,0 +1,3 @@
+Fix the :class:`threading.Thread` class at fork: do nothing if the thread is
+already stopped (ex: fork called at Python exit). Previously, an error was
+logged in the child process.
