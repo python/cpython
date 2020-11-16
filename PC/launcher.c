@@ -425,11 +425,21 @@ compare_pythons(const void * p1, const void * p2)
     INSTALLED_PYTHON * ip1 = (INSTALLED_PYTHON *) p1;
     INSTALLED_PYTHON * ip2 = (INSTALLED_PYTHON *) p2;
     /* note reverse sorting on version */
-    int result = wcscmp(ip2->version, ip1->version);
-
-    if (result == 0)
-        result = ip2->bits - ip1->bits; /* 64 before 32 */
-    return result;
+    int result = CompareStringW(LOCALE_INVARIANT, SORT_DIGITSASNUMBERS,
+                                ip2->version, -1, ip1->version, -1);
+    switch (result) {
+    case 0:
+        error(0, L"CompareStringW failed");
+        return 0;
+    case CSTR_LESS_THAN:
+        return -1;
+    case CSTR_EQUAL:
+        return ip2->bits - ip1->bits; /* 64 before 32 */
+    case CSTR_GREATER_THAN:
+        return 1;
+    default:
+        return 0; // This should never be reached.
+    }
 }
 
 static void

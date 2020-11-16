@@ -1,0 +1,2 @@
+The Windows launcher now properly handles Python 3.10 when listing installed
+Python versions.
