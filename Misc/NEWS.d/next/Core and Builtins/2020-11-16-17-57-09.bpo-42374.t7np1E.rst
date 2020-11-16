@@ -1,0 +1,2 @@
+Fix a regression introduced by the new parser, where an unparenthesized walrus operator
+was not allowed within generator expressions.
