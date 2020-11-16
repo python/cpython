@@ -47,46 +47,46 @@ V = TypeVar('V')
 
 class BaseTest(unittest.TestCase):
     """Test basics."""
+    generic_types = [type, tuple, list, dict, set, frozenset, enumerate,
+                     defaultdict, deque,
+                     SequenceMatcher,
+                     dircmp,
+                     FileInput,
+                     OrderedDict, Counter, UserDict, UserList,
+                     Pattern, Match,
+                     partial, partialmethod, cached_property,
+                     AbstractContextManager, AbstractAsyncContextManager,
+                     Awaitable, Coroutine,
+                     AsyncIterable, AsyncIterator,
+                     AsyncGenerator, Generator,
+                     Iterable, Iterator,
+                     Reversible,
+                     Container, Collection,
+                     Callable,
+                     Mailbox, _PartialFile,
+                     ContextVar, Token,
+                     Field,
+                     Set, MutableSet,
+                     Mapping, MutableMapping, MappingView,
+                     KeysView, ItemsView, ValuesView,
+                     Sequence, MutableSequence,
+                     MappingProxyType, AsyncGeneratorType,
+                     DirEntry,
+                     chain,
+                     TemporaryDirectory, SpooledTemporaryFile,
+                     Queue, SimpleQueue,
+                     _AssertRaisesContext,
+                     SplitResult, ParseResult,
+                     ValueProxy, ApplyResult,
+                     WeakSet, ReferenceType, ref,
+                     ShareableList, MPSimpleQueue,
+                     Future, _WorkItem,
+                     Morsel]
+    if ctypes is not None:
+        generic_types.extend((ctypes.Array, ctypes.LibraryLoader))
 
     def test_subscriptable(self):
-        types = [type, tuple, list, dict, set, frozenset, enumerate,
-                 defaultdict, deque,
-                 SequenceMatcher,
-                 dircmp,
-                 FileInput,
-                 OrderedDict, Counter, UserDict, UserList,
-                 Pattern, Match,
-                 partial, partialmethod, cached_property,
-                 AbstractContextManager, AbstractAsyncContextManager,
-                 Awaitable, Coroutine,
-                 AsyncIterable, AsyncIterator,
-                 AsyncGenerator, Generator,
-                 Iterable, Iterator,
-                 Reversible,
-                 Container, Collection,
-                 Callable,
-                 Mailbox, _PartialFile,
-                 ContextVar, Token,
-                 Field,
-                 Set, MutableSet,
-                 Mapping, MutableMapping, MappingView,
-                 KeysView, ItemsView, ValuesView,
-                 Sequence, MutableSequence,
-                 MappingProxyType, AsyncGeneratorType,
-                 DirEntry,
-                 chain,
-                 TemporaryDirectory, SpooledTemporaryFile,
-                 Queue, SimpleQueue,
-                 _AssertRaisesContext,
-                 SplitResult, ParseResult,
-                 ValueProxy, ApplyResult,
-                 WeakSet, ReferenceType, ref,
-                 ShareableList, MPSimpleQueue,
-                 Future, _WorkItem,
-                 Morsel]
-        if ctypes is not None:
-            types.extend((ctypes.Array, ctypes.LibraryLoader))
-        for t in types:
+        for t in self.generic_types:
             if t is None:
                 continue
             tname = t.__name__
@@ -292,6 +292,16 @@ class BaseTest(unittest.TestCase):
         self.assertTrue(dir_of_gen_alias.issuperset(dir(list)))
         for generic_alias_property in ("__origin__", "__args__", "__parameters__"):
             self.assertIn(generic_alias_property, dir_of_gen_alias)
+
+    def test_weakref(self):
+        for t in self.generic_types:
+            if t is None:
+                continue
+            tname = t.__name__
+            with self.subTest(f"Testing {tname}"):
+                alias = t[int]
+                self.assertEqual(ref(alias)(), alias)
+
 
 if __name__ == "__main__":
     unittest.main()
