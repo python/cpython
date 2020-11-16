@@ -202,6 +202,20 @@ def _check_generic(cls, parameters, elen):
                         f" actual {alen}, expected {elen}")
 
 
+def _deduplicate(params):
+    # Weed out strict duplicates, preserving the first of each occurrence.
+    all_params = set(params)
+    if len(all_params) < len(params):
+        new_params = []
+        for t in params:
+            if t in all_params:
+                new_params.append(t)
+                all_params.remove(t)
+        params = new_params
+        assert not all_params, all_params
+    return params
+
+
 def _remove_dups_flatten(parameters):
     """An internal helper for Union creation and substitution: flatten Unions
     among parameters, then remove duplicates.
@@ -215,17 +229,8 @@ def _remove_dups_flatten(parameters):
             params.extend(p[1:])
         else:
             params.append(p)
-    # Weed out strict duplicates, preserving the first of each occurrence.
-    all_params = set(params)
-    if len(all_params) < len(params):
-        new_params = []
-        for t in params:
-            if t in all_params:
-                new_params.append(t)
-                all_params.remove(t)
-        params = new_params
-        assert not all_params, all_params
-    return tuple(params)
+
+    return tuple(_deduplicate(params))
 
 
 def _flatten_literal_params(parameters):
@@ -487,6 +492,12 @@ def Literal(self, parameters):
         parameters = (parameters,)
 
     parameters = _flatten_literal_params(parameters)
+
+    try:
+        parameters = tuple(p for p, _ in _deduplicate(list(_value_and_type_iter(parameters))))
+    except TypeError:  # unhashable parameters
+        pass
+
     return _LiteralGenericAlias(self, parameters)
 
 
