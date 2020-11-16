@@ -763,12 +763,6 @@ pycore_interp_init(PyThreadState *tstate)
         goto done;
     }
 
-    if (_Py_IsMainInterpreter(tstate)) {
-        if (_PyTime_Init() < 0) {
-            return _PyStatus_ERR("can't initialize time");
-        }
-    }
-
     status = _PySys_Create(tstate, &sysmod);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
