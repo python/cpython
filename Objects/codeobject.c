@@ -114,7 +114,7 @@ intern_string_constants(PyObject *tuple, int *modified)
 }
 
 PyCodeObject *
-PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
+PyCode_NewWithAnnotations(int argcount, int posonlyargcount, int kwonlyargcount,
                           int nlocals, int stacksize, int flags,
                           PyObject *code, PyObject *consts, PyObject *names,
                           PyObject *varnames, PyObject *freevars, PyObject *cellvars,
@@ -274,17 +274,30 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
 }
 
 PyCodeObject *
+PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
+                          int nlocals, int stacksize, int flags,
+                          PyObject *code, PyObject *consts, PyObject *names,
+                          PyObject *varnames, PyObject *freevars, PyObject *cellvars,
+                          PyObject *filename, PyObject *name, int firstlineno,
+                          PyObject *linetable) {
+    return PyCode_NewWithAnnotations(argcount, posonlyargcount, kwonlyargcount, nlocals,
+                                     stacksize, flags, code, consts, names,
+                                     varnames, freevars, cellvars, filename,
+                                     name, firstlineno, linetable, Py_None);
+}
+
+PyCodeObject *
 PyCode_New(int argcount, int kwonlyargcount,
            int nlocals, int stacksize, int flags,
            PyObject *code, PyObject *consts, PyObject *names,
            PyObject *varnames, PyObject *freevars, PyObject *cellvars,
            PyObject *filename, PyObject *name, int firstlineno,
-           PyObject *linetable, PyObject* annotations)
+           PyObject *linetable)
 {
     return PyCode_NewWithPosOnlyArgs(argcount, 0, kwonlyargcount, nlocals,
                                      stacksize, flags, code, consts, names,
                                      varnames, freevars, cellvars, filename,
-                                     name, firstlineno, linetable, annotations);
+                                     name, firstlineno, linetable);
 }
 
 int
@@ -355,7 +368,7 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
     if (filename_ob == NULL)
         goto failed;
 
-    result = PyCode_NewWithPosOnlyArgs(
+    result = PyCode_NewWithAnnotations(
                 0,                    /* argcount */
                 0,                              /* posonlyargcount */
                 0,                              /* kwonlyargcount */
@@ -626,7 +639,7 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
     }
 
 
-    co = (PyObject *)PyCode_NewWithPosOnlyArgs(argcount, posonlyargcount,
+    co = (PyObject *)PyCode_NewWithAnnotations(argcount, posonlyargcount,
                                                kwonlyargcount,
                                                nlocals, stacksize, flags,
                                                code, consts, ournames,
@@ -770,7 +783,7 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
         return NULL;
     }
 
-    return (PyObject *)PyCode_NewWithPosOnlyArgs(
+    return (PyObject *)PyCode_NewWithAnnotations(
         co_argcount, co_posonlyargcount, co_kwonlyargcount, co_nlocals,
         co_stacksize, co_flags, (PyObject*)co_code, co_consts, co_names,
         co_varnames, co_freevars, co_cellvars, co_filename, co_name,

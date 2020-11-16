@@ -1382,7 +1382,7 @@ r_object(RFILE *p)
                 goto code_error;
             }
 
-            v = (PyObject *) PyCode_NewWithPosOnlyArgs(
+            v = (PyObject *) PyCode_NewWithAnnotations(
                             argcount, posonlyargcount, kwonlyargcount,
                             nlocals, stacksize, flags,
                             code, consts, names, varnames,

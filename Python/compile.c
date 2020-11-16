@@ -2034,22 +2034,32 @@ compiler_visit_argannotation(struct compiler *c, identifier id,
     if (annotation) {
         PyObject *mangled;
         PyObject *pair;
+        PyObject *value;
         mangled = _Py_Mangle(c->u->u_private, id);
         if (!mangled)
             return 0;
 
-        pair = PyTuple_Pack(2, mangled, _PyAST_ExprAsUnicode(annotation));
-        if (pair == NULL)
+        value = _PyAST_ExprAsUnicode(annotation);
+        if (value == NULL)
             return 0;
 
+        pair = PyTuple_Pack(2, mangled, value);
+        if (pair == NULL) {
+            Py_DECREF(value);
+            Py_DECREF(mangled);
+            return 0;
+        }
+
         if (PyList_Append(annotations, pair) < 0) {
+            Py_DECREF(value);
             Py_DECREF(mangled);
             Py_DECREF(pair);
             return 0;
         }
 
-        Py_DECREF(pair);
+        Py_DECREF(value);
         Py_DECREF(mangled);
+        Py_DECREF(pair);
     }
     return 1;
 }
@@ -2081,7 +2091,7 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
        Return 0 on error, -1 if no dict pushed, 1 if a dict is pushed.
        */
     static identifier return_str;
-    PyObject *annotations;
+    PyObject *annotations, *annotationstuple;
     Py_ssize_t len;
     annotations = PyList_New(0);
     if (!annotations)
@@ -2113,13 +2123,16 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
 
     len = PyList_GET_SIZE(annotations);
     if (len) {
-        c->u->u_annotations = PyList_AsTuple(annotations);
-        return 1;
+        annotationstuple = PyList_AsTuple(annotations);
+
+        if (annotationstuple == NULL)
+            goto error;
+
+        c->u->u_annotations = annotationstuple;
     }
-    else {
-        Py_DECREF(annotations);
-        return -1;
-    }
+
+    Py_DECREF(annotations);
+    return 1;
 
 error:
     Py_DECREF(annotations);
@@ -5900,7 +5913,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *consts)
         goto error;
     }
 
-    co = PyCode_NewWithPosOnlyArgs(posonlyargcount+posorkeywordargcount,
+    co = PyCode_NewWithAnnotations(posonlyargcount+posorkeywordargcount,
                                    posonlyargcount, kwonlyargcount, nlocals_int,
                                    maxdepth, flags, a->a_bytecode, consts, names,
                                    varnames, freevars, cellvars, c->c_filename,
