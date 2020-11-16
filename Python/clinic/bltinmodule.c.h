@@ -445,7 +445,7 @@ PyDoc_STRVAR(builtin_setattr__doc__,
 "\n"
 "Sets the named attribute on the given object to the specified value.\n"
 "\n"
-"setattr(x, \'y\', v) is equivalent to ``x.y = v\'\'");
+"``setattr(x, \'y\', v)`` is equivalent to ``x.y = v``");
 
 #define BUILTIN_SETATTR_METHODDEF    \
     {"setattr", (PyCFunction)(void(*)(void))builtin_setattr, METH_FASTCALL, builtin_setattr__doc__},
@@ -480,7 +480,7 @@ PyDoc_STRVAR(builtin_delattr__doc__,
 "\n"
 "Deletes the named attribute from the given object.\n"
 "\n"
-"delattr(x, \'y\') is equivalent to ``del x.y\'\'");
+"``delattr(x, \'y\')`` is equivalent to ``del x.y``");
 
 #define BUILTIN_DELATTR_METHODDEF    \
     {"delattr", (PyCFunction)(void(*)(void))builtin_delattr, METH_FASTCALL, builtin_delattr__doc__},
