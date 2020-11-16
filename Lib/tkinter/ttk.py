@@ -248,6 +248,8 @@ def _list_from_statespec(stuple):
     for state, val in zip(it, it):
         if hasattr(state, 'typename'):  # this is a Tcl object
             state = str(state).split()
+        elif isinstance(state, str):
+            state = state.split()
         elif not isinstance(state, (tuple, list)):
             state = (state,)
         if hasattr(val, 'typename'):
@@ -394,13 +396,12 @@ class Style(object):
         or something else of your preference. A statespec is compound of
         one or more states and then a value."""
         if query_opt is not None:
-            return _list_from_statespec(self.tk.splitlist(
-                self.tk.call(self._name, "map", style, '-%s' % query_opt)))
+            result = self.tk.call(self._name, "map", style, '-%s' % query_opt)
+            return _list_from_statespec(self.tk.splitlist(result))
 
-        return _splitdict(
-            self.tk,
-            self.tk.call(self._name, "map", style, *_format_mapdict(kw)),
-            conv=_list_from_statespec)
+        result = self.tk.call(self._name, "map", style, *_format_mapdict(kw))
+        return {k: _list_from_statespec(self.tk.splitlist(v))
+                for k, v in _splitdict(self.tk, result).items()}
 
 
     def lookup(self, style, option, state=None, default=None):

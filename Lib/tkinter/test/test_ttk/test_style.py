@@ -37,45 +37,33 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
 
         # Single state
         for states in ['active'], [('active',)]:
-            style.map('TButton', background=[('active', 'white')])
-            self.assertEqual(style.map('TButton', 'background'), [('active', 'white')])
-            m = style.map('TButton')
-            self.assertIsInstance(m, dict)
-            if self.wantobjects:
-                self.assertEqual(m['background'], [('active', 'white')])
-            else:
-                self.assertEqual(m['background'], 'active white')
+            with self.subTest(states=states):
+                style.map('TButton', background=[(*states, 'white')])
+                expected = [('active', 'white')]
+                self.assertEqual(style.map('TButton', 'background'), expected)
+                m = style.map('TButton')
+                self.assertIsInstance(m, dict)
+                self.assertEqual(m['background'], expected)
 
         # Multiple states
-        for states in ['pressed', '!disabled'], [('pressed', '!disabled')], ['pressed !disabled']:
-            style.map('TButton', background=[(*states, 'black')])
-            if self.wantobjects:
-                self.assertEqual(style.map('TButton', 'background'),
-                                [('pressed', '!disabled', 'black')])
-            else:
-                self.assertEqual(style.map('TButton', 'background'),
-                                [('pressed !disabled', 'black')])
-            m = style.map('TButton')
-            self.assertIsInstance(m, dict)
-            if self.wantobjects:
-                self.assertEqual(m['background'],
-                                [('pressed', '!disabled', 'black')])
-            else:
-                self.assertEqual(m['background'], '{pressed !disabled} black')
+        for states in ['pressed', '!disabled'], ['pressed !disabled'], [('pressed', '!disabled')]:
+            with self.subTest(states=states):
+                style.map('TButton', background=[(*states, 'black')])
+                expected = [('pressed', '!disabled', 'black')]
+                self.assertEqual(style.map('TButton', 'background'), expected)
+                m = style.map('TButton')
+                self.assertIsInstance(m, dict)
+                self.assertEqual(m['background'], expected)
 
         # Default state
-        for states in [], ['']:
-            style.map('TButton', background=[(*states, 'grey')])
-            if self.wantobjects:
-                self.assertEqual(style.map('TButton', 'background'), [('grey',)])
-            else:
-                self.assertEqual(style.map('TButton', 'background'), [('', 'grey')])
-            m = style.map('TButton')
-            self.assertIsInstance(m, dict)
-            if self.wantobjects:
-                self.assertEqual(m['background'], [('grey',)])
-            else:
-                self.assertEqual(m['background'], '{} grey')
+        for states in [], [''], [()]:
+            with self.subTest(states=states):
+                style.map('TButton', background=[(*states, 'grey')])
+                expected = [('grey',)]
+                self.assertEqual(style.map('TButton', 'background'), expected)
+                m = style.map('TButton')
+                self.assertIsInstance(m, dict)
+                self.assertEqual(m['background'], expected)
 
 
     def test_lookup(self):
@@ -135,53 +123,47 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
 
 
     def test_configure_custom_copy(self):
-        if not self.wantobjects:
-            self.skipTest("requires wantobjects=1")
-
         style = self.style
 
         curr_theme = self.style.theme_use()
         self.addCleanup(self.style.theme_use, curr_theme)
         for theme in self.style.theme_names():
             self.style.theme_use(theme)
-
             for name in CLASS_NAMES:
                 default = style.configure(name)
                 if not default:
                     continue
-                if support.verbose >= 2:
-                    print('configure', theme, name, default)
-                newname = f'C.{name}'
-                self.assertEqual(style.configure(newname), None)
-                style.configure(newname, **default)
-                self.assertEqual(style.configure(newname), default)
-                for key, value in default.items():
-                    self.assertEqual(style.configure(newname, key), value)
+                with self.subTest(theme=theme, name=name):
+                    if support.verbose >= 2:
+                        print('configure', theme, name, default)
+                    newname = f'C.{name}'
+                    self.assertEqual(style.configure(newname), None)
+                    style.configure(newname, **default)
+                    self.assertEqual(style.configure(newname), default)
+                    for key, value in default.items():
+                        self.assertEqual(style.configure(newname, key), value)
 
 
     def test_map_custom_copy(self):
-        if not self.wantobjects:
-            self.skipTest("requires wantobjects=1")
-
         style = self.style
 
         curr_theme = self.style.theme_use()
         self.addCleanup(self.style.theme_use, curr_theme)
         for theme in self.style.theme_names():
             self.style.theme_use(theme)
-
             for name in CLASS_NAMES:
                 default = style.map(name)
                 if not default:
                     continue
-                if support.verbose >= 2:
-                    print('map', theme, name, default)
-                newname = f'C.{name}'
-                self.assertEqual(style.map(newname), {})
-                style.map(newname, **default)
-                self.assertEqual(style.map(newname), default)
-                for key, value in default.items():
-                    self.assertEqual(style.map(newname, key), value)
+                with self.subTest(theme=theme, name=name):
+                    if support.verbose >= 2:
+                        print('map', theme, name, default)
+                    newname = f'C.{name}'
+                    self.assertEqual(style.map(newname), {})
+                    style.map(newname, **default)
+                    self.assertEqual(style.map(newname), default)
+                    for key, value in default.items():
+                        self.assertEqual(style.map(newname, key), value)
 
 
 tests_gui = (StyleTest, )
