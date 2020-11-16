@@ -3059,6 +3059,22 @@ main_loop:
                     Py_DECREF(ann_dict);
                 }
             }
+            if (ann_dict && f->f_code->co_annotations != Py_None) {
+                if (PyDict_CheckExact(ann_dict)) {
+                    if (PyDict_MergeFromSeq2(ann_dict, f->f_code->co_annotations, 1))
+                        goto error;
+                } else {
+                    Py_ssize_t  i;
+                    PyObject *annotations = f->f_code->co_annotations;
+
+                    for (i = 0; i < PyTuple_Size(annotations); i++) {
+                        PyObject* pair = PyTuple_GET_ITEM(annotations, i);
+
+                        if (PyObject_SetItem(ann_dict, PyTuple_GET_ITEM(pair, 0), PyTuple_GET_ITEM(pair, 1)))
+                            goto error;
+                    }
+                }
+            }
             DISPATCH();
         }
 

@@ -253,7 +253,7 @@ static int compiler_async_comprehension_generator(
                                       expr_ty elt, expr_ty val, int type);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
-static PyObject *__doc__, *__annotations__;
+static PyObject *__doc__;
 
 #define CAPSULE_NAME "compile.c compiler unit"
 
@@ -356,11 +356,6 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     if (!__doc__) {
         __doc__ = PyUnicode_InternFromString("__doc__");
         if (!__doc__)
-            return NULL;
-    }
-    if (!__annotations__) {
-        __annotations__ = PyUnicode_InternFromString("__annotations__");
-        if (!__annotations__)
             return NULL;
     }
     if (!compiler_init(&c))
@@ -1786,9 +1781,9 @@ compiler_unwind_fblock_stack(struct compiler *c, int preserve_tos, struct fblock
 static int
 compiler_body(struct compiler *c, asdl_stmt_seq *stmts)
 {
-    int i = 0;
+    int i = 0, has_annotations = 0;
     stmt_ty st;
-    PyObject *docstring;
+    PyObject *docstring, *annotations;
 
     /* Set current line number to the line number of first statement.
        This way line number for SETUP_ANNOTATIONS will always
@@ -1801,6 +1796,10 @@ compiler_body(struct compiler *c, asdl_stmt_seq *stmts)
     /* Every annotated class and module should have __annotations__. */
     if (find_ann(stmts)) {
         ADDOP(c, SETUP_ANNOTATIONS);
+        has_annotations = 1;
+        c->u->u_annotations = PyList_New(0);
+        if (!c->u->u_annotations)
+            return 0;
     }
     if (!asdl_seq_LEN(stmts))
         return 1;
@@ -1818,6 +1817,16 @@ compiler_body(struct compiler *c, asdl_stmt_seq *stmts)
     }
     for (; i < asdl_seq_LEN(stmts); i++)
         VISIT(c, stmt, (stmt_ty)asdl_seq_GET(stmts, i));
+
+    if (has_annotations) {
+        annotations = PyList_AsTuple(c->u->u_annotations);
+        Py_DECREF(c->u->u_annotations);
+        c->u->u_annotations = Py_None;
+        if (annotations == NULL)
+            return 0;
+        c->u->u_annotations = annotations;
+    }
+
     return 1;
 }
 
@@ -2028,38 +2037,46 @@ compiler_visit_annexpr(struct compiler *c, expr_ty annotation)
 }
 
 static int
+compiler_add_annotation(struct compiler *c, PyObject* mangled,
+                        expr_ty annotation, PyObject *annotations) {
+    PyObject *pair;
+    PyObject *value;
+
+    value = _PyAST_ExprAsUnicode(annotation);
+    if (value == NULL)
+        return 0;
+
+    pair = PyTuple_Pack(2, mangled, value);
+    if (pair == NULL) {
+        Py_DECREF(value);
+        return 0;
+    }
+
+    if (PyList_Append(annotations, pair) < 0) {
+        Py_DECREF(value);
+        Py_DECREF(pair);
+        return 0;
+    }
+
+    Py_DECREF(value);
+    Py_DECREF(pair);
+    return 1;
+}
+
+static int
 compiler_visit_argannotation(struct compiler *c, identifier id,
     expr_ty annotation, PyObject *annotations)
 {
     if (annotation) {
         PyObject *mangled;
-        PyObject *pair;
-        PyObject *value;
         mangled = _Py_Mangle(c->u->u_private, id);
         if (!mangled)
             return 0;
-
-        value = _PyAST_ExprAsUnicode(annotation);
-        if (value == NULL)
-            return 0;
-
-        pair = PyTuple_Pack(2, mangled, value);
-        if (pair == NULL) {
-            Py_DECREF(value);
+        if(!compiler_add_annotation(c, mangled, annotation, annotations)){
             Py_DECREF(mangled);
             return 0;
         }
-
-        if (PyList_Append(annotations, pair) < 0) {
-            Py_DECREF(value);
-            Py_DECREF(mangled);
-            Py_DECREF(pair);
-            return 0;
-        }
-
-        Py_DECREF(value);
         Py_DECREF(mangled);
-        Py_DECREF(pair);
     }
     return 1;
 }
@@ -5284,11 +5301,12 @@ compiler_annassign(struct compiler *c, stmt_ty s)
         if (s->v.AnnAssign.simple &&
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
              c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
-            VISIT(c, annexpr, s->v.AnnAssign.annotation);
-            ADDOP_NAME(c, LOAD_NAME, __annotations__, names);
             mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
-            ADDOP_LOAD_CONST_NEW(c, mangled);
-            ADDOP(c, STORE_SUBSCR);
+            if(!compiler_add_annotation(c, mangled, s->v.AnnAssign.annotation, c->u->u_annotations)){
+                Py_DECREF(mangled);
+                return 0;
+            }
+            Py_DECREF(mangled);
         }
         break;
     case Attribute_kind:

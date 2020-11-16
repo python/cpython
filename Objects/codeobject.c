@@ -165,6 +165,9 @@ PyCode_NewWithAnnotations(int argcount, int posonlyargcount, int kwonlyargcount,
     if (intern_string_constants(consts, NULL) < 0) {
         return NULL;
     }
+    if (annotations != Py_None && intern_string_constants(annotations, NULL) < 0) {
+        return NULL;
+    }
 
     /* Make sure that code is indexable with an int, this is
        a long running assumption in ceval.c and many parts of
