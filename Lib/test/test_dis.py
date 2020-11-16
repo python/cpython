@@ -669,24 +669,14 @@ class DisWithFileTests(DisTests):
 
 
 if sys.flags.optimize:
-    code_info_code_info = """\
-Name:              code_info
-Filename:          (.*)
-Argument count:    1
-Positional-only arguments: 0
-Kw-only arguments: 0
-Number of locals:  1
-Stack size:        3
-Flags:             OPTIMIZED, NEWLOCALS, NOFREE
-Constants:
-   0: None
-Names:
-   0: _format_code_info
-   1: _get_code_object
-Variable names:
-   0: x"""
+    code_info_consts = "0: None"
 else:
-    code_info_code_info = """\
+    code_info_consts = (
+    """0: 'Formatted details of methods, functions, or code.'
+   1: None"""
+)
+
+code_info_code_info = f"""\
 Name:              code_info
 Filename:          (.*)
 Argument count:    1
@@ -696,13 +686,13 @@ Number of locals:  1
 Stack size:        3
 Flags:             OPTIMIZED, NEWLOCALS, NOFREE
 Constants:
-   0: 'Formatted details of methods, functions, or code.'
-   1: None
+   {code_info_consts}
 Names:
    0: _format_code_info
    1: _get_code_object
 Variable names:
    0: x"""
+
 
 @staticmethod
 def tricky(a, b, /, x, y, z=True, *args, c, d, e=[], **kwds):
