@@ -3599,18 +3599,13 @@ PyDoc_STRVAR(module_doc,
 "This module provides access to the mathematical functions\n"
 "defined by the C standard.");
 
-static PyModuleDef_Slot math_slots[] = {
-    {Py_mod_constants, math_constants},
-    {0, NULL}
-};
-
 static struct PyModuleDef mathmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "math",
     .m_doc = module_doc,
     .m_size = 0,
     .m_methods = math_methods,
-    .m_slots = math_slots,
+    .m_constants = math_constants,
 };
 
 PyMODINIT_FUNC
