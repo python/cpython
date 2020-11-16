@@ -556,7 +556,6 @@ static struct langinfo_constant{
     LANGINFO(PM_STR),
 
     /* The following constants are available only with XPG4, but...
-       AIX 3.2. only has CODESET.
        OpenBSD doesn't have CODESET but has T_FMT_AMPM, and doesn't have
        a few of the others.
        Solution: ifdef-test them all. */
