@@ -1,2 +1,3 @@
 Fix ``typing.Literal`` equals method to ignore the order of arguments.
-Patch provided by Yurii Karabas.
+Fix issue related to ``typing.Literal`` caching by adding ``typed``
+parameter to ``typing._tp_cache`` function. Patch provided by Yurii Karabas.

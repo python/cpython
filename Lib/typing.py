@@ -242,12 +242,12 @@ def _flatten_literal_params(parameters):
 _cleanups = []
 
 
-def _tp_cache(typed=False):
+def _tp_cache(func=None, /, *, typed=False):
     """Internal wrapper caching __getitem__ of generic types with a fallback to
     original function for non-hashable arguments.
     """
-    if callable(typed):
-        return _tp_cache()(typed)
+    if func is not None:
+        return _tp_cache(typed=typed)(func)
 
     def decorator(func):
         cached = functools.lru_cache(typed=typed)(func)
