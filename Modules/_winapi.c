@@ -1572,7 +1572,7 @@ _winapi_ResumeThread_impl(PyObject *module, HANDLE handle)
     if (result == -1)
         return PyErr_SetFromWindowsErr(GetLastError());
 
-    Py_RETURN_NONE;
+    return PyLong_FromLong((int) result);
 }
 
 /*[clinic input]

@@ -96,13 +96,13 @@ class Popen(object):
                     reduction.dump(prep_data, f)
                     reduction.dump(process_obj, f)
                 except:
-                    _winapi.TerminateProcess(self._handle)
+                    _winapi.TerminateProcess(self._handle, 1)
+                    raise
                 else:
-                    f.seek(0)
-                    to_child.write(f.read())
                     _winapi.ResumeThread(ht)
-                    _winapi.CloseHandle(ht)
+                    to_child.write(f.getvalue())
                 finally:
+                    _winapi.CloseHandle(ht)
                     set_spawning_popen(None)
 
     def duplicate_for_child(self, handle):
