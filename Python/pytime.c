@@ -6,7 +6,7 @@
 #if defined(__APPLE__)
 #include <mach/mach_time.h>   /* mach_absolute_time(), mach_timebase_info() */
 
-#if defined(__APPLE__) && defined(__has_builtin) 
+#if defined(__APPLE__) && defined(__has_builtin)
 #  if __has_builtin(__builtin_available)
 #    define HAVE_CLOCK_GETTIME_RUNTIME __builtin_available(macOS 10.12, iOS 10.0, tvOS 10.0, watchOS 3.0, *)
 #  endif
@@ -730,7 +730,7 @@ pygettimeofday(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
     }
 
 #ifdef HAVE_CLOCK_GETTIME_RUNTIME
-    } else { 
+    } else {
 #endif
 
 #endif
@@ -822,7 +822,6 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 
 #elif defined(__APPLE__)
     static mach_timebase_info_data_t timebase;
-    static uint64_t t0 = 0;
     uint64_t ticks;
 
     if (timebase.denom == 0) {
@@ -859,8 +858,6 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
                             "mach_timebase_info is too large");
             return -1;
         }
-
-        t0 = mach_absolute_time();
     }
 
     if (info) {
@@ -871,9 +868,6 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
     }
 
     ticks = mach_absolute_time();
-    /* Use a "time zero" to reduce precision loss when converting time
-       to floatting point number, as in time.monotonic(). */
-    ticks -= t0;
     *tp = _PyTime_MulDiv(ticks,
                          (_PyTime_t)timebase.numer,
                          (_PyTime_t)timebase.denom);
@@ -960,7 +954,6 @@ static int
 win_perf_counter(_PyTime_t *tp, _Py_clock_info_t *info)
 {
     static LONGLONG frequency = 0;
-    static LONGLONG t0 = 0;
     LARGE_INTEGER now;
     LONGLONG ticksll;
     _PyTime_t ticks;
@@ -1000,7 +993,6 @@ win_perf_counter(_PyTime_t *tp, _Py_clock_info_t *info)
         }
 
         QueryPerformanceCounter(&now);
-        t0 = now.QuadPart;
     }
 
     if (info) {
@@ -1012,10 +1004,6 @@ win_perf_counter(_PyTime_t *tp, _Py_clock_info_t *info)
 
     QueryPerformanceCounter(&now);
     ticksll = now.QuadPart;
-
-    /* Use a "time zero" to reduce precision loss when converting time
-       to floatting point number, as in time.perf_counter(). */
-    ticksll -= t0;
 
     /* Make sure that casting LONGLONG to _PyTime_t cannot overflow,
        both types are signed */
