@@ -880,7 +880,7 @@ PyDoc_STRVAR(_winapi_ResumeThread__doc__,
 #define _WINAPI_RESUMETHREAD_METHODDEF    \
     {"ResumeThread", (PyCFunction)_winapi_ResumeThread, METH_O, _winapi_ResumeThread__doc__},
 
-static PyObject *
+static DWORD
 _winapi_ResumeThread_impl(PyObject *module, HANDLE handle);
 
 static PyObject *
@@ -888,11 +888,16 @@ _winapi_ResumeThread(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
+    DWORD _return_value;
 
     if (!PyArg_Parse(arg, "" F_HANDLE ":ResumeThread", &handle)) {
         goto exit;
     }
-    return_value = _winapi_ResumeThread_impl(module, handle);
+    _return_value = _winapi_ResumeThread_impl(module, handle);
+    if ((_return_value == PY_DWORD_MAX) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = Py_BuildValue("k", _return_value);
 
 exit:
     return return_value;
@@ -1174,4 +1179,4 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5584447c8d6aa966 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8732809cd81ba876 input=a9049054013a1b77]*/

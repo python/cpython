@@ -1554,25 +1554,22 @@ _winapi_ReadFile_impl(PyObject *module, HANDLE handle, DWORD size,
 }
 
 /*[clinic input]
-_winapi.ResumeThread
+_winapi.ResumeThread -> DWORD
 
     handle: HANDLE
     /
 [clinic start generated code]*/
 
-static PyObject *
+static DWORD
 _winapi_ResumeThread_impl(PyObject *module, HANDLE handle)
-/*[clinic end generated code: output=eadd6124a82b305b input=8800116464bd88c2]*/
+/*[clinic end generated code: output=c1f717bebfc83593 input=6297b36b9bdebc19]*/
 {
     DWORD result;
     Py_BEGIN_ALLOW_THREADS
     result = ResumeThread(handle);
     Py_END_ALLOW_THREADS
 
-    if (result == -1)
-        return PyErr_SetFromWindowsErr(GetLastError());
-
-    return PyLong_FromLong((int) result);
+    return result;
 }
 
 /*[clinic input]
