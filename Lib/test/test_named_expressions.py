@@ -513,6 +513,16 @@ spam()"""
             self.assertEqual(nonlocal_var, None)
         f()
 
+    def test_named_expression_scope_in_genexp(self):
+        a = 1
+        b = [1, 2, 3, 4]
+        genexp = (c := i + a for i in b)
+
+        with self.assertRaises(NameError):
+            print(c)  # c is not bound here
+        for idx, elem in enumerate(genexp):
+            self.assertEqual(elem, b[idx] + a)
+
 
 if __name__ == "__main__":
     unittest.main()

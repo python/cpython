@@ -517,7 +517,7 @@ group[expr_ty]:
     | '(' a=(yield_expr | named_expression) ')' { a }
     | invalid_group
 genexp[expr_ty]:
-    | '(' a=expression ~ b=for_if_clauses ')' { _Py_GeneratorExp(a, b, EXTRA) }
+    | '(' a=named_expression ~ b=for_if_clauses ')' { _Py_GeneratorExp(a, b, EXTRA) }
     | invalid_comprehension
 set[expr_ty]: '{' a=expressions_list '}' { _Py_Set(a, EXTRA) }
 setcomp[expr_ty]:
