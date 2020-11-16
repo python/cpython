@@ -518,8 +518,7 @@ spam()"""
         b = [1, 2, 3, 4]
         genexp = (c := i + a for i in b)
 
-        with self.assertRaises(NameError):
-            print(c)  # c is not bound here
+        self.assertNotIn("c", locals())
         for idx, elem in enumerate(genexp):
             self.assertEqual(elem, b[idx] + a)
 
