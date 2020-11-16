@@ -376,6 +376,16 @@ Removed
   moved to the internal C API.
   (Contributed by Victor Stinner in :issue:`42157`.)
 
+* Removed the ``parser`` module, which was deprecated in 3.9 due to the
+  switch to the new PEG parser, as well as all the C source and header files
+  that were only being used by the old parser, including ``node.h``, ``parser.h``,
+  ``graminit.h`` and ``grammar.h``.
+
+* Removed the Public C API functions :c:func:`PyParser_SimpleParseStringFlags`,
+  :c:func:`PyParser_SimpleParseStringFlagsFilename`,
+  :c:func:`PyParser_SimpleParseFileFlags` and :c:func:`PyNode_Compile`
+  that were deprecated in 3.9 due to the switch to the new PEG parser.
+
 
 Porting to Python 3.10
 ======================
