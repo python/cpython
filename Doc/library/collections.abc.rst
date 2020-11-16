@@ -287,11 +287,12 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
    Since some set operations create new sets, the default mixin methods need
    a way to create new instances from an iterable. The class constructor is
    assumed to have a signature in the form ``ClassName(iterable)``.
-   That assumption is factored-out to an internal method called
+   That assumption is factored-out to an internal classmethod method called
    :meth:`_from_iterable` which calls ``cls(iterable)`` to produce a new set.
    If the :class:`Set` mixin is being used in a class with a different
    constructor signature, you will need to override :meth:`_from_iterable`
-   to construct new instances from an iterable argument.
+   with a classmethod or regular method that can construct new instances from
+   an iterable argument.
 
 (2)
    To override the comparisons (presumably for speed, as the
