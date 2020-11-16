@@ -13,7 +13,10 @@ from contextvars import ContextVar, Token
 from dataclasses import Field
 from functools import partial, partialmethod, cached_property
 from mailbox import Mailbox, _PartialFile
-from ctypes import Array, LibraryLoader
+try:
+    import ctypes
+except ImportError:
+    ctypes = None
 from difflib import SequenceMatcher
 from filecmp import dircmp
 from fileinput import FileInput
