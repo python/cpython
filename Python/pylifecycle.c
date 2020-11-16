@@ -54,7 +54,7 @@ static PyStatus add_main_module(PyInterpreterState *interp);
 static PyStatus init_import_site(void);
 static PyStatus init_set_builtins_open(void);
 static PyStatus init_sys_streams(PyThreadState *tstate);
-static PyStatus init_signals(PyThreadState *tstate);
+static PyStatus init_signals(int install_signal_handlers);
 static void call_py_exitfuncs(PyThreadState *tstate);
 static void wait_for_thread_shutdown(PyThreadState *tstate);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
@@ -1047,11 +1047,9 @@ init_interp_main(PyThreadState *tstate)
     }
 
     if (is_main_interp) {
-        if (config->install_signal_handlers) {
-            status = init_signals(tstate);
-            if (_PyStatus_EXCEPTION(status)) {
-                return status;
-            }
+        status = init_signals(config->install_signal_handlers);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
         }
 
         if (_PyTraceMalloc_Init(config->tracemalloc) < 0) {
@@ -1702,7 +1700,7 @@ Py_FinalizeEx(void)
     }
 
     /* Disable signal handling */
-    PyOS_FiniInterrupts();
+    _PySignal_Fini();
 
     /* Collect garbage.  This may call finalizers; it's nice to call these
      * before all modules are destroyed.
@@ -2731,20 +2729,16 @@ Py_Exit(int sts)
 }
 
 static PyStatus
-init_signals(PyThreadState *tstate)
+init_signals(int install_signal_handlers)
 {
-#ifdef SIGPIPE
-    PyOS_setsig(SIGPIPE, SIG_IGN);
-#endif
-#ifdef SIGXFZ
-    PyOS_setsig(SIGXFZ, SIG_IGN);
-#endif
-#ifdef SIGXFSZ
-    PyOS_setsig(SIGXFSZ, SIG_IGN);
-#endif
-    PyOS_InitInterrupts(); /* May imply init_signals() */
-    if (_PyErr_Occurred(tstate)) {
-        return _PyStatus_ERR("can't import signal");
+    if (_PySignal_Init() < 0) {
+        return _PyStatus_ERR("failed to initialize signals");
+    }
+
+    if (install_signal_handlers) {
+        if (_PyOS_InitInterrupts()) {
+            return _PyStatus_ERR("can't import _signal");
+        }
     }
     return _PyStatus_OK();
 }

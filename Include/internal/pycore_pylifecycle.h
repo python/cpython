@@ -68,7 +68,9 @@ extern void _PyFloat_Fini(PyThreadState *tstate);
 extern void _PySlice_Fini(PyThreadState *tstate);
 extern void _PyAsyncGen_Fini(PyThreadState *tstate);
 
-extern void PyOS_FiniInterrupts(void);
+extern int _PyOS_InitInterrupts(void);
+extern int _PySignal_Init(void);
+extern void _PySignal_Fini(void);
 
 extern void _PyExc_Fini(PyThreadState *tstate);
 extern void _PyImport_Fini(void);

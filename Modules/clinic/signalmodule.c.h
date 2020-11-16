@@ -142,14 +142,14 @@ PyDoc_STRVAR(signal_signal__doc__,
     {"signal", (PyCFunction)(void(*)(void))signal_signal, METH_FASTCALL, signal_signal__doc__},
 
 static PyObject *
-signal_signal_impl(PyObject *module, int signalnum, PyObject *handler);
+signal_signal_impl(PyObject *module, int signalnum, PyObject *handler_func);
 
 static PyObject *
 signal_signal(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int signalnum;
-    PyObject *handler;
+    PyObject *handler_func;
 
     if (!_PyArg_CheckPositional("signal", nargs, 2, 2)) {
         goto exit;
@@ -158,8 +158,8 @@ signal_signal(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (signalnum == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    handler = args[1];
-    return_value = signal_signal_impl(module, signalnum, handler);
+    handler_func = args[1];
+    return_value = signal_signal_impl(module, signalnum, handler_func);
 
 exit:
     return return_value;
@@ -698,4 +698,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=59c33f0af42aebb5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e2f45381e22a8315 input=a9049054013a1b77]*/
