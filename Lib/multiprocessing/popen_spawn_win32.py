@@ -46,19 +46,6 @@ class Popen(object):
     def __init__(self, process_obj):
         prep_data = spawn.get_preparation_data(process_obj._name)
 
-        # bpo-42178: Check for pickle error before creating subprocess
-        self.sentinel = None
-        set_spawning_popen(self)
-        try:
-            with io.BytesIO() as f:
-                reduction.dump(prep_data, f)
-                try:
-                    reduction.pickle.dump(process_obj, f)
-                except:
-                    reduction.dump(process_obj, f)
-        finally:
-            set_spawning_popen(None)
-
         # read end of pipe will be duplicated by the child process
         # -- see spawn_main() in spawn.py.
         #
@@ -87,8 +74,8 @@ class Popen(object):
             try:
                 hp, ht, pid, tid = _winapi.CreateProcess(
                     python_exe, cmd,
-                    None, None, False, 0, env, None, None)
-                _winapi.CloseHandle(ht)
+                    None, None, False, _winapi.CREATE_SUSPENDED,
+                    env, None, None)
             except:
                 _winapi.CloseHandle(rhandle)
                 raise
@@ -102,12 +89,21 @@ class Popen(object):
                                            (self.sentinel, int(rhandle)))
 
             # send information to child
-            set_spawning_popen(self)
-            try:
-                reduction.dump(prep_data, to_child)
-                reduction.dump(process_obj, to_child)
-            finally:
-                set_spawning_popen(None)
+            # bpo-42178: write to BytesIO to check for pickler exceptions
+            with io.BytesIO() as f:
+                set_spawning_popen(self)
+                try:
+                    reduction.dump(prep_data, f)
+                    reduction.dump(process_obj, f)
+                except:
+                    _winapi.TerminateProcess(self._handle)
+                else:
+                    f.seek(0)
+                    to_child.write(f.read())
+                    _winapi.ResumeThread(ht)
+                    _winapi.CloseHandle(ht)
+                finally:
+                    set_spawning_popen(None)
 
     def duplicate_for_child(self, handle):
         assert self is get_spawning_popen()
