@@ -45,7 +45,7 @@ echo.Available arguments:
 echo.  -c Release ^| Debug ^| PGInstrument ^| PGUpdate
 echo.     Set the configuration (default: Release)
 echo.  -p x64 ^| Win32 ^| ARM ^| ARM64
-echo.     Set the platform (default: x64)
+echo.     Set the platform (default: Win32)
 echo.  -t Build ^| Rebuild ^| Clean ^| CleanAll
 echo.     Set the target manually
 echo.  --pgo-job  The job to use for PGO training; implies --pgo
@@ -54,7 +54,7 @@ exit /b 127
 
 :Run
 setlocal
-set platf=x64
+set platf=Win32
 set conf=Release
 set target=Build
 set dir=%~dp0

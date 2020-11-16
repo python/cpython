@@ -5,7 +5,7 @@ rem -d   Run Debug build (python_d.exe).  Else release build.
 
 setlocal
 set PCBUILD=%~dp0
-set exedir=%PCBUILD%\amd64
+set exedir=%PCBUILD%\win32
 set exe=python
 PATH %PATH%;..\externals\tcltk\bin
 

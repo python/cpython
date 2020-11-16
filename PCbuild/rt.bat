@@ -8,7 +8,7 @@ rem      after deleting all the .pyc files reachable from Lib/.
 rem      -q runs the tests just once, and without deleting .pyc files.
 rem -p <Win32|x64|ARM|ARM64> or -win32, -x64, -arm32, -arm64
 rem      Run the specified architecture of python (or python_d if -d
-rem      was specified). If omitted, uses %PREFIX% if set or 64-bit.
+rem      was specified). If omitted, uses %PREFIX% if set or 32-bit.
 rem All leading instances of these switches are shifted off, and
 rem whatever remains (up to 9 arguments) is passed to regrtest.py.
 rem For example,
@@ -46,7 +46,7 @@ if "%1"=="-arm32" (set prefix=%pcbuild%arm32) & shift & goto CheckOpts
 if "%1"=="-p" (call :SetPlatform %~2) & shift & shift & goto CheckOpts
 if NOT "%1"=="" (set regrtestargs=%regrtestargs% %1) & shift & goto CheckOpts
 
-if not defined prefix set prefix=%pcbuild%amd64
+if not defined prefix set prefix=%pcbuild%win32
 set exe=%prefix%\python%suffix%.exe
 set cmd="%exe%" %dashO% -u -Wd -E -bb -m test %regrtestargs%
 if defined qmode goto Qmode

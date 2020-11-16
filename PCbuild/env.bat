@@ -10,7 +10,7 @@ rem 'v110', 'v120' or 'v140') to the build script.
 echo Build environments: x86, amd64, x86_amd64
 echo.
 set _ARGS=%*
-if NOT DEFINED _ARGS set _ARGS=amd64
+if NOT DEFINED _ARGS set _ARGS=x86
 
 if not exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" goto :skip_vswhere
 set VSTOOLS=
