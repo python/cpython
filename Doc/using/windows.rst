@@ -422,6 +422,12 @@ dependants, such as Idle), pip and the Python documentation are not included.
     automatically via Windows Update, and can be detected by finding
     ``ucrtbase.dll`` in the system directory.
 
+.. note::
+
+   When running on Windows 7, Python 3.8 requires the KB2533623 update to be
+   installed. The embeddable distribution does not detect this update, and may
+   fail at runtime. Later versions of Windows include this update.
+
 Third-party packages should be installed by the application installer alongside
 the embedded distribution. Using pip to manage dependencies as for a regular
 Python installation is not supported with this distribution, though with some
