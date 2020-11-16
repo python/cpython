@@ -299,12 +299,6 @@ _PyModule_CreateInitialized(struct PyModuleDef* module, int module_api_version)
             return NULL;
         }
     }
-    if (module->m_constants != NULL) {
-        if (PyModule_AddConstants((PyObject *) m, module->m_constants) != 0) {
-            Py_DECREF(m);
-            return NULL;
-        }
-    }
     m->md_def = module;
     return (PyObject*)m;
 }
@@ -424,13 +418,6 @@ PyModule_FromDefAndSpec2(struct PyModuleDef* def, PyObject *spec, int module_api
         }
     }
 
-    if (def->m_constants != NULL) {
-        if (PyModule_AddConstants(m, def->m_constants) != 0) {
-            Py_DECREF(m);
-            return NULL;
-        }
-    }
-
     Py_DECREF(nameobj);
     return m;
 
@@ -491,6 +478,12 @@ PyModule_ExecDef(PyObject *module, PyModuleDef *def)
                         PyExc_SystemError,
                         "execution of module %s raised unreported exception",
                         name);
+                    return -1;
+                }
+                break;
+            case Py_mod_constants:
+                ret = PyModule_AddConstants(module, (PyModuleConst_Def *)cur_slot->value);
+                if (ret == -1) {
                     return -1;
                 }
                 break;
