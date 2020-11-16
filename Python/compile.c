@@ -2262,8 +2262,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         return 0;
     }
 
-    annotations = compiler_visit_annotations(c, args, returns);
-    if (annotations == 0) {
+    if (!compiler_visit_annotations(c, args, returns)) {
         return 0;
     }
 
@@ -6467,4 +6466,3 @@ PyCode_Optimize(PyObject *code, PyObject* Py_UNUSED(consts),
     Py_INCREF(code);
     return code;
 }
-
