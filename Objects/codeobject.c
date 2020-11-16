@@ -618,7 +618,7 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
         goto cleanup;
     if (annotations == NULL)
         goto cleanup;
-    if (annotations && !(annotations == Py_None || PyTuple_Check(annotations))){
+    if (annotations && annotations != Py_None && !PyTuple_Check(annotations)) {
         PyErr_SetString(
                 PyExc_ValueError,
                 "code: annotations must not be tuple or None");
