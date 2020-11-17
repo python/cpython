@@ -905,13 +905,8 @@ The :mod:`socket` module also offers various network-related services:
 
    Convert 16-bit positive integers from network to host byte order.  On machines
    where the host byte order is the same as network byte order, this is a no-op;
-   otherwise, it performs a 2-byte swap operation.
-
-   .. deprecated:: 3.7
-      In case *x* does not fit in 16-bit unsigned integer, but does fit in a
-      positive C int, it is silently truncated to 16-bit unsigned integer.
-      This silent truncation feature is deprecated, and will raise an
-      exception in future versions of Python.
+   otherwise, it performs a 2-byte swap operation.  :exc:`OverflowError` is raised
+   if *x* does not fit in a 16-bit unsigned integer.
 
 
 .. function:: htonl(x)
@@ -925,13 +920,8 @@ The :mod:`socket` module also offers various network-related services:
 
    Convert 16-bit positive integers from host to network byte order.  On machines
    where the host byte order is the same as network byte order, this is a no-op;
-   otherwise, it performs a 2-byte swap operation.
-
-   .. deprecated:: 3.7
-      In case *x* does not fit in 16-bit unsigned integer, but does fit in a
-      positive C int, it is silently truncated to 16-bit unsigned integer.
-      This silent truncation feature is deprecated, and will raise an
-      exception in future versions of Python.
+   otherwise, it performs a 2-byte swap operation.  :exc:`OverflowError` is raised
+   if *x* does not fit in a 16-bit unsigned integer.
 
 
 .. function:: inet_aton(ip_string)
