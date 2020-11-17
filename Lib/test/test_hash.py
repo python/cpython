@@ -312,7 +312,9 @@ class MemoryviewHashRandomizationTests(StringlikeHashRandomizationTests,
 
 class DatetimeTests(HashRandomizationTests):
     def get_hash_command(self, repr_):
-        return 'import datetime; print(hash(%s))' % repr_
+        if repr_.startswith("datetime."):
+            return f"import datetime; print(hash({repr_}))"
+        return f"import datetime; print(hash(datetime.{repr_}))"
 
 class DatetimeDateTests(DatetimeTests, unittest.TestCase):
     repr_ = repr(datetime.date(1066, 10, 14))

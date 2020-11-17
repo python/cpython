@@ -737,23 +737,23 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
            "999999999 days, 23:59:59.999999")
 
     def test_repr(self):
-        name = 'datetime.' + self.theclass.__name__
-        self.assertEqual(repr(self.theclass(1)),
-                         "%s(days=1)" % name)
-        self.assertEqual(repr(self.theclass(10, 2)),
-                         "%s(days=10, seconds=2)" % name)
-        self.assertEqual(repr(self.theclass(-10, 2, 400000)),
-                         "%s(days=-10, seconds=2, microseconds=400000)" % name)
-        self.assertEqual(repr(self.theclass(seconds=60)),
-                         "%s(seconds=60)" % name)
-        self.assertEqual(repr(self.theclass()),
-                         "%s(0)" % name)
-        self.assertEqual(repr(self.theclass(microseconds=100)),
-                         "%s(microseconds=100)" % name)
-        self.assertEqual(repr(self.theclass(days=1, microseconds=100)),
-                         "%s(days=1, microseconds=100)" % name)
-        self.assertEqual(repr(self.theclass(seconds=1, microseconds=100)),
-                         "%s(seconds=1, microseconds=100)" % name)
+        name = r"(datetime\.)?" + self.theclass.__name__
+        self.assertRegex(repr(self.theclass(1)),
+                         name + r"\(days=1\)")
+        self.assertRegex(repr(self.theclass(10, 2)),
+                         name + r"\(days=10, seconds=2\)")
+        self.assertRegex(repr(self.theclass(-10, 2, 400000)),
+                         name + r"\(days=-10, seconds=2, microseconds=400000\)")
+        self.assertRegex(repr(self.theclass(seconds=60)),
+                         name + r"\(seconds=60\)")
+        self.assertRegex(repr(self.theclass()),
+                         name + r"\(0\)")
+        self.assertRegex(repr(self.theclass(microseconds=100)),
+                         name + r"\(microseconds=100\)")
+        self.assertRegex(repr(self.theclass(days=1, microseconds=100)),
+                         name + r"\(days=1, microseconds=100\)")
+        self.assertRegex(repr(self.theclass(seconds=1, microseconds=100)),
+                         name + r"\(seconds=1, microseconds=100\)")
 
     def test_roundtrip(self):
         for td in (timedelta(days=999999999, hours=23, minutes=59,
@@ -764,8 +764,8 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
 
             # Verify td -> string -> td identity.
             s = repr(td)
-            self.assertTrue(s.startswith('datetime.'))
-            s = s[9:]
+            if s.startswith('datetime.'):
+                s = s[9:]
             td2 = eval(s)
             self.assertEqual(td, td2)
 
@@ -1103,8 +1103,8 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                    self.theclass.today()):
             # Verify dt -> string -> date identity.
             s = repr(dt)
-            self.assertTrue(s.startswith('datetime.'))
-            s = s[9:]
+            if s.startswith('datetime.'):
+                s = s[9:]
             dt2 = eval(s)
             self.assertEqual(dt, dt2)
 
@@ -1981,8 +1981,8 @@ class TestDateTime(TestDate):
                    self.theclass.now()):
             # Verify dt -> string -> datetime identity.
             s = repr(dt)
-            self.assertTrue(s.startswith('datetime.'))
-            s = s[9:]
+            if s.startswith('datetime.'):
+                s = s[9:]
             dt2 = eval(s)
             self.assertEqual(dt, dt2)
 
@@ -3093,8 +3093,8 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
 
         # Verify t -> string -> time identity.
         s = repr(t)
-        self.assertTrue(s.startswith('datetime.'))
-        s = s[9:]
+        if s.startswith('datetime.'):
+            s = s[9:]
         t2 = eval(s)
         self.assertEqual(t, t2)
 
@@ -3325,17 +3325,17 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(str(self.theclass(23, 15, 0, 0)), "23:15:00")
 
     def test_repr(self):
-        name = 'datetime.' + self.theclass.__name__
-        self.assertEqual(repr(self.theclass(1, 2, 3, 4)),
-                         "%s(1, 2, 3, 4)" % name)
-        self.assertEqual(repr(self.theclass(10, 2, 3, 4000)),
-                         "%s(10, 2, 3, 4000)" % name)
-        self.assertEqual(repr(self.theclass(0, 2, 3, 400000)),
-                         "%s(0, 2, 3, 400000)" % name)
-        self.assertEqual(repr(self.theclass(12, 2, 3, 0)),
-                         "%s(12, 2, 3)" % name)
-        self.assertEqual(repr(self.theclass(23, 15, 0, 0)),
-                         "%s(23, 15)" % name)
+        name = r"(datetime\.)?" + self.theclass.__name__
+        self.assertRegex(repr(self.theclass(1, 2, 3, 4)),
+                         name + r"\(1, 2, 3, 4\)")
+        self.assertRegex(repr(self.theclass(10, 2, 3, 4000)),
+                         name + r"\(10, 2, 3, 4000\)")
+        self.assertRegex(repr(self.theclass(0, 2, 3, 400000)),
+                         name + r"\(0, 2, 3, 400000\)")
+        self.assertRegex(repr(self.theclass(12, 2, 3, 0)),
+                         name + r"\(12, 2, 3\)")
+        self.assertRegex(repr(self.theclass(23, 15, 0, 0)),
+                         name + r"\(23, 15\)")
 
     def test_resolution_info(self):
         self.assertIsInstance(self.theclass.min, self.theclass)
@@ -3693,12 +3693,12 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         self.assertEqual(t4.isoformat(), "00:00:00.000040")
         self.assertEqual(t5.isoformat(), "00:00:00.000040+00:00")
 
-        d = 'datetime.time'
-        self.assertEqual(repr(t1), d + "(7, 47, tzinfo=est)")
-        self.assertEqual(repr(t2), d + "(12, 47, tzinfo=utc)")
-        self.assertEqual(repr(t3), d + "(13, 47, tzinfo=met)")
-        self.assertEqual(repr(t4), d + "(0, 0, 0, 40)")
-        self.assertEqual(repr(t5), d + "(0, 0, 0, 40, tzinfo=utc)")
+        d = r"(datetime\.)?time"
+        self.assertRegex(repr(t1), d + r"\(7, 47, tzinfo=est\)")
+        self.assertRegex(repr(t2), d + r"\(12, 47, tzinfo=utc\)")
+        self.assertRegex(repr(t3), d + r"\(13, 47, tzinfo=met\)")
+        self.assertRegex(repr(t4), d + r"\(0, 0, 0, 40\)")
+        self.assertRegex(repr(t5), d + r"\(0, 0, 0, 40, tzinfo=utc\)")
 
         self.assertEqual(t1.strftime("%H:%M:%S %%Z=%Z %%z=%z"),
                                      "07:47:00 %Z=EST %z=-0500")
@@ -4213,10 +4213,10 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         self.assertEqual(str(t1), "2002-03-19 07:47:00-05:00")
         self.assertEqual(str(t2), "2002-03-19 12:47:00+00:00")
         self.assertEqual(str(t3), "2002-03-19 13:47:00+01:00")
-        d = 'datetime.datetime(2002, 3, 19, '
-        self.assertEqual(repr(t1), d + "7, 47, tzinfo=est)")
-        self.assertEqual(repr(t2), d + "12, 47, tzinfo=utc)")
-        self.assertEqual(repr(t3), d + "13, 47, tzinfo=met)")
+        d = r"(datetime\.)?datetime\(2002, 3, 19, "
+        self.assertRegex(repr(t1), d + r"7, 47, tzinfo=est\)")
+        self.assertRegex(repr(t2), d + r"12, 47, tzinfo=utc\)")
+        self.assertRegex(repr(t3), d + r"13, 47, tzinfo=met\)")
 
     def test_combine(self):
         met = FixedOffset(60, "MET")
@@ -5456,9 +5456,9 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
     def test_repr(self):
         t = time(fold=1)
         dt = datetime(1, 1, 1, fold=1)
-        self.assertEqual(repr(t), 'datetime.time(0, 0, fold=1)')
-        self.assertEqual(repr(dt),
-                         'datetime.datetime(1, 1, 1, 0, 0, fold=1)')
+        self.assertRegex(repr(t), r"(datetime\.)?time\(0, 0, fold=1\)")
+        self.assertRegex(repr(dt),
+                         r"(datetime\.)?datetime\(1, 1, 1, 0, 0, fold=1\)")
 
     def test_dst(self):
         # Let's first establish that things work in regular times.
