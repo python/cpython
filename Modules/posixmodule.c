@@ -6521,7 +6521,6 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
 
 #endif /* HAVE_SPAWNV */
 
-
 #ifdef HAVE_FORK
 
 /* Helper function to validate arguments.
@@ -10369,6 +10368,75 @@ os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
     return PyLong_FromSsize_t(ret);
 }
 #endif /* HAVE_COPY_FILE_RANGE*/
+
+#ifdef HAVE_SPLICE
+/*[clinic input]
+
+os.splice
+    src: int
+        Source file descriptor.
+    dst: int
+        Destination file descriptor.
+    count: Py_ssize_t
+        Number of bytes to copy.
+    offset_src: object = None
+        Starting offset in src.
+    offset_dst: object = None
+        Starting offset in dst.
+    flags: unsigned_int = 0
+        Flags to modify the semantics of the call.
+
+Transfer count bytes from one pipe to a descriptor or vice versa.
+
+If offset_src is None, then src is read from the current position;
+respectively for offset_dst. The offset associated to the file
+descriptor that refers to a pipe must be None.
+[clinic start generated code]*/
+
+static PyObject *
+os_splice_impl(PyObject *module, int src, int dst, Py_ssize_t count,
+               PyObject *offset_src, PyObject *offset_dst,
+               unsigned int flags)
+/*[clinic end generated code: output=d0386f25a8519dc5 input=047527c66c6d2e0a]*/
+{
+    off_t offset_src_val, offset_dst_val;
+    off_t *p_offset_src = NULL;
+    off_t *p_offset_dst = NULL;
+    Py_ssize_t ret;
+    int async_err = 0;
+
+    if (count < 0) {
+        PyErr_SetString(PyExc_ValueError, "negative value for 'count' not allowed");
+        return NULL;
+    }
+
+    if (offset_src != Py_None) {
+        if (!Py_off_t_converter(offset_src, &offset_src_val)) {
+            return NULL;
+        }
+        p_offset_src = &offset_src_val;
+    }
+
+    if (offset_dst != Py_None) {
+        if (!Py_off_t_converter(offset_dst, &offset_dst_val)) {
+            return NULL;
+        }
+        p_offset_dst = &offset_dst_val;
+    }
+
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        ret = splice(src, p_offset_src, dst, p_offset_dst, count, flags);
+        Py_END_ALLOW_THREADS
+    } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+
+    if (ret < 0) {
+        return (!async_err) ? posix_error() : NULL;
+    }
+
+    return PyLong_FromSsize_t(ret);
+}
+#endif /* HAVE_SPLICE*/
 
 #ifdef HAVE_MKFIFO
 /*[clinic input]
@@ -14550,6 +14618,7 @@ static PyMethodDef posix_methods[] = {
     OS_POSIX_SPAWNP_METHODDEF
     OS_READLINK_METHODDEF
     OS_COPY_FILE_RANGE_METHODDEF
+    OS_SPLICE_METHODDEF
     OS_RENAME_METHODDEF
     OS_REPLACE_METHODDEF
     OS_RMDIR_METHODDEF
@@ -15070,6 +15139,13 @@ all_ins(PyObject *m)
 #endif
 #ifdef RWF_APPEND
     if (PyModule_AddIntConstant(m, "RWF_APPEND", RWF_APPEND)) return -1;
+#endif
+
+/* constants for splice */
+#ifdef HAVE_SPLICE
+    if (PyModule_AddIntConstant(m, "SPLICE_F_MOVE", SPLICE_F_MOVE)) return -1;
+    if (PyModule_AddIntConstant(m, "SPLICE_F_NONBLOCK", SPLICE_F_NONBLOCK)) return -1;
+    if (PyModule_AddIntConstant(m, "SPLICE_F_MORE", SPLICE_F_MORE)) return -1;
 #endif
 
 /* constants for posix_spawn */
