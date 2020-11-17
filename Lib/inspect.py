@@ -2351,34 +2351,31 @@ def _signature_from_callable(obj, *,
     sig = None
     if isinstance(obj, type):
         # obj is a class or a metaclass
-
+        create_method = None
         # First, let's see if it has an overloaded __call__ defined
         # in its metaclass
         call = _signature_get_user_defined_method(type(obj), '__call__')
         if call is not None:
+            create_method = call
+        else:
+            new = _signature_get_user_defined_method(obj, '__new__')
+            init = _signature_get_user_defined_method(obj, '__init__')
+            # Give priority to using the current class constructor
+            if '__new__' in obj.__dict__:
+                create_method = new
+            elif '__init__' in obj.__dict__:
+                create_method = init
+            elif new is not None:
+                create_method = new
+            elif init is not None:
+                create_method = init
+
+        if create_method is not None:
             sig = _signature_from_callable(
-                call,
+                create_method,
                 follow_wrapper_chains=follow_wrapper_chains,
                 skip_bound_arg=skip_bound_arg,
                 sigcls=sigcls)
-        else:
-            # Now we check if the 'obj' class has a '__new__' method
-            new = _signature_get_user_defined_method(obj, '__new__')
-            if new is not None:
-                sig = _signature_from_callable(
-                    new,
-                    follow_wrapper_chains=follow_wrapper_chains,
-                    skip_bound_arg=skip_bound_arg,
-                    sigcls=sigcls)
-            else:
-                # Finally, we should have at least __init__ implemented
-                init = _signature_get_user_defined_method(obj, '__init__')
-                if init is not None:
-                    sig = _signature_from_callable(
-                        init,
-                        follow_wrapper_chains=follow_wrapper_chains,
-                        skip_bound_arg=skip_bound_arg,
-                        sigcls=sigcls)
 
         if sig is None:
             # At this point we know, that `obj` is a class, with no user-
