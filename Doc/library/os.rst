@@ -1450,6 +1450,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
           SPLICE_F_NONBLOCK
           SPLICE_F_MORE
 
+   .. versionadded:: 3.10
 
 .. function:: readv(fd, buffers)
 
