@@ -2034,14 +2034,13 @@ compiler_add_annotation(struct compiler *c, PyObject* mangled,
                         expr_ty annotation, PyObject *annotations) {
     PyObject *value;
 
+    if (PyList_Append(annotations, mangled) < 0) {
+        return 0;
+    }
+
     value = _PyAST_ExprAsUnicode(annotation);
     if (value == NULL)
         return 0;
-
-    if (PyList_Append(annotations, mangled) < 0) {
-        Py_DECREF(value);
-        return 0;
-    }
 
     if (PyList_Append(annotations, value) < 0) {
         Py_DECREF(value);
