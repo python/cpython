@@ -752,6 +752,30 @@ if 1:
             self.assertEqual(None, opcodes[0].argval)
             self.assertEqual('RETURN_VALUE', opcodes[1].opname)
 
+    def test_consts_in_conditionals(self):
+        def and_true(x):
+            return True and x
+
+        def and_false(x):
+            return False and x
+
+        def or_true(x):
+            return True or x
+
+        def or_false(x):
+            return False or x
+
+        funcs = [and_true, and_false, or_true, or_false]
+
+        # Check that condition is removed.
+        for func in funcs:
+            with self.subTest(func=func):
+                opcodes = list(dis.get_instructions(func))
+                self.assertEqual(2, len(opcodes))
+                self.assertIn('LOAD_', opcodes[0].opname)
+                self.assertEqual('RETURN_VALUE', opcodes[1].opname)
+
+
     def test_big_dict_literal(self):
         # The compiler has a flushing point in "compiler_dict" that calls compiles
         # a portion of the dictionary literal when the loop that iterates over the items
