@@ -1770,6 +1770,29 @@ signal_install_handlers(void)
 }
 
 
+/* Restore signals that the interpreter has called SIG_IGN on to SIG_DFL.
+ *
+ * All of the code in this function must only use async-signal-safe functions,
+ * listed at `man 7 signal` or
+ * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_04.html.
+ *
+ * If this function is updated, update also _posix_spawn() of subprocess.py.
+ */
+void
+_Py_RestoreSignals(void)
+{
+#ifdef SIGPIPE
+    PyOS_setsig(SIGPIPE, SIG_DFL);
+#endif
+#ifdef SIGXFZ
+    PyOS_setsig(SIGXFZ, SIG_DFL);
+#endif
+#ifdef SIGXFSZ
+    PyOS_setsig(SIGXFSZ, SIG_DFL);
+#endif
+}
+
+
 int
 _PySignal_Init(int install_signal_handlers)
 {
