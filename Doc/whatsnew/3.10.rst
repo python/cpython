@@ -365,6 +365,10 @@ Deprecated
   scheduled for removal in Python 3.12.
   (Contributed by Erlend E. Aasland in :issue:`42264`.)
 
+* :meth:`unittest.makeSuite`, :meth:`unittest.findTestCases`, and :meth:`unittest.getTestCaseNames`
+  are now deprecated, scheduled for removal in Python 3.12.
+  (Contributed by Erlend E. Aasland in :issue:`5846`.)
+
 
 Removed
 =======
