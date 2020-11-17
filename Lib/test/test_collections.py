@@ -1615,9 +1615,8 @@ class TestCollectionABCs(ABCTestCase):
         self.assertEqual('test', impl.created_by)
         self.assertEqual({1, 2, 4}, impl)
 
-
     def test_Set_interoperability_with_real_sets(self):
-            # Issue: 8743
+        # Issue: 8743
         class ListSet(Set):
             def __init__(self, elements=()):
                 self.data = []
