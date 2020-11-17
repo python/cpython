@@ -412,15 +412,6 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     ADD_EXCEPTION(module, "DataError", pysqlite_DataError, pysqlite_DatabaseError);
     ADD_EXCEPTION(module, "NotSupportedError", pysqlite_NotSupportedError, pysqlite_DatabaseError);
 
-    /* In Python 2.x, setting Connection.text_factory to
-       OptimizedUnicode caused Unicode objects to be returned for
-       non-ASCII data and bytestrings to be returned for ASCII data.
-       Now OptimizedUnicode is an alias for str, so it has no
-       effect. */
-    if (PyModule_AddObjectRef(module, "OptimizedUnicode", (PyObject*)&PyUnicode_Type) < 0) {
-        goto error;
-    }
-
     /* Set integer constants */
     if (add_integer_constants(module) < 0) {
         goto error;
