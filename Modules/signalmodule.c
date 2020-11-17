@@ -1598,11 +1598,6 @@ PyInit__signal(void)
          goto finally;
 #endif
 
-#ifdef MS_WINDOWS
-    /* Create manual-reset event, initially unset */
-    sigint_event = CreateEvent(NULL, TRUE, FALSE, FALSE);
-#endif
-
     if (PyErr_Occurred()) {
         Py_DECREF(m);
         m = NULL;
@@ -1725,6 +1720,53 @@ PyOS_InitInterrupts(void)
         Py_DECREF(m);
     }
 }
+
+
+static int
+signal_install_handlers(void)
+{
+#ifdef SIGPIPE
+    PyOS_setsig(SIGPIPE, SIG_IGN);
+#endif
+#ifdef SIGXFZ
+    PyOS_setsig(SIGXFZ, SIG_IGN);
+#endif
+#ifdef SIGXFSZ
+    PyOS_setsig(SIGXFSZ, SIG_IGN);
+#endif
+
+    // Import _signal to install the Python SIGINT handler
+    PyObject *module = PyImport_ImportModule("_signal");
+    if (!module) {
+        return -1;
+    }
+    Py_DECREF(module);
+
+    return 0;
+}
+
+
+int
+_PySignal_Init(int install_signal_handlers)
+{
+#ifdef MS_WINDOWS
+    /* Create manual-reset event, initially unset */
+    sigint_event = CreateEvent(NULL, TRUE, FALSE, FALSE);
+    if (sigint_event == NULL) {
+        PyErr_SetFromWindowsErr(0);
+        return -1;
+    }
+#endif
+
+    if (install_signal_handlers) {
+        if (signal_install_handlers() < 0) {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 
 void
 PyOS_FiniInterrupts(void)
