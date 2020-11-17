@@ -15142,7 +15142,7 @@ all_ins(PyObject *m)
 #endif
 
 /* constants for splice */
-#ifdef HAVE_SPLICE
+#if defined(HAVE_SPLICE) && defined(__linux__)
     if (PyModule_AddIntConstant(m, "SPLICE_F_MOVE", SPLICE_F_MOVE)) return -1;
     if (PyModule_AddIntConstant(m, "SPLICE_F_NONBLOCK", SPLICE_F_NONBLOCK)) return -1;
     if (PyModule_AddIntConstant(m, "SPLICE_F_MORE", SPLICE_F_MORE)) return -1;
