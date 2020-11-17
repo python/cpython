@@ -2030,36 +2030,25 @@ error:
 }
 
 static int
-compiler_visit_annexpr(struct compiler *c, expr_ty annotation)
-{
-    ADDOP_LOAD_CONST_NEW(c, _PyAST_ExprAsUnicode(annotation));
-    return 1;
-}
-
-static int
 compiler_add_annotation(struct compiler *c, PyObject* mangled,
                         expr_ty annotation, PyObject *annotations) {
-    PyObject *pair;
     PyObject *value;
 
     value = _PyAST_ExprAsUnicode(annotation);
     if (value == NULL)
         return 0;
 
-    pair = PyTuple_Pack(2, mangled, value);
-    if (pair == NULL) {
+    if (PyList_Append(annotations, mangled) < 0) {
         Py_DECREF(value);
         return 0;
     }
 
-    if (PyList_Append(annotations, pair) < 0) {
+    if (PyList_Append(annotations, value) < 0) {
         Py_DECREF(value);
-        Py_DECREF(pair);
         return 0;
     }
 
     Py_DECREF(value);
-    Py_DECREF(pair);
     return 1;
 }
 
@@ -2246,7 +2235,6 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     asdl_expr_seq* decos;
     asdl_stmt_seq *body;
     Py_ssize_t i, funcflags;
-    int annotations;
     int scope_type;
     int firstlineno;
 

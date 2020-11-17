@@ -137,7 +137,8 @@ PyCode_NewWithAnnotations(int argcount, int posonlyargcount, int kwonlyargcount,
         cellvars == NULL || !PyTuple_Check(cellvars) ||
         name == NULL || !PyUnicode_Check(name) ||
         filename == NULL || !PyUnicode_Check(filename) ||
-        linetable == NULL || !PyBytes_Check(linetable)) {
+        linetable == NULL || !PyBytes_Check(linetable) ||
+        annotations == NULL || !(annotations == Py_None || PyTuple_Check(annotations))) {
         PyErr_BadInternalCall();
         return NULL;
     }
@@ -165,7 +166,7 @@ PyCode_NewWithAnnotations(int argcount, int posonlyargcount, int kwonlyargcount,
     if (intern_string_constants(consts, NULL) < 0) {
         return NULL;
     }
-    if (annotations != Py_None && intern_string_constants(annotations, NULL) < 0) {
+    if (annotations != Py_None && intern_strings(annotations) < 0) {
         return NULL;
     }
 
@@ -231,6 +232,13 @@ PyCode_NewWithAnnotations(int argcount, int posonlyargcount, int kwonlyargcount,
             cell2arg = NULL;
         }
     }
+
+    /* Check if annotation len is even */
+    if (annotations != Py_None && PyTuple_GET_SIZE(annotations) % 2){
+        PyErr_SetString(PyExc_ValueError, "code: annotations len is odd");
+        return NULL;
+    }
+
     co = PyObject_New(PyCodeObject, &PyCode_Type);
     if (co == NULL) {
         if (cell2arg)
@@ -388,7 +396,7 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
                 funcname_ob,                    /* name */
                 firstlineno,                    /* firstlineno */
                 emptystring,                    /* linetable */
-                nulltuple                       /* annotations */
+                Py_None                         /* annotations */
                 );
 
 failed:
@@ -580,6 +588,7 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
     PyObject *ourvarnames = NULL;
     PyObject *ourfreevars = NULL;
     PyObject *ourcellvars = NULL;
+    PyObject *ourannotations = NULL;
 
     if (PySys_Audit("code.__new__", "OOOiiiiii",
                     code, filename, name, argcount, posonlyargcount,
@@ -632,15 +641,18 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
         ourcellvars = PyTuple_New(0);
     if (ourcellvars == NULL)
         goto cleanup;
-    if (annotations == NULL)
-        goto cleanup;
     if (annotations && annotations != Py_None && !PyTuple_Check(annotations)) {
         PyErr_SetString(
                 PyExc_ValueError,
                 "code: annotations must be tuple or None");
         goto cleanup;
     }
-
+    if (annotations && annotations != Py_None)
+        ourannotations = validate_and_copy_tuple(annotations);
+    else
+        ourannotations = Py_None;
+    if (ourannotations == NULL)
+        goto cleanup;
 
     co = (PyObject *)PyCode_NewWithAnnotations(argcount, posonlyargcount,
                                                kwonlyargcount,
@@ -648,7 +660,8 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
                                                code, consts, ournames,
                                                ourvarnames, ourfreevars,
                                                ourcellvars, filename,
-                                               name, firstlineno, linetable, annotations);
+                                               name, firstlineno, linetable,
+                                               ourannotations);
   cleanup:
     Py_XDECREF(ournames);
     Py_XDECREF(ourvarnames);

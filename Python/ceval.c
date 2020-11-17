@@ -3059,20 +3059,25 @@ main_loop:
                     Py_DECREF(ann_dict);
                 }
             }
-            if (ann_dict && f->f_code->co_annotations != Py_None) {
-                if (PyDict_CheckExact(ann_dict)) {
-                    if (PyDict_MergeFromSeq2(ann_dict, f->f_code->co_annotations, 1))
+            if (ann_dict != NULL && f->f_code->co_annotations != Py_None) {
+                PyObject* annotations = f->f_code->co_annotations;
+                int (*set_item)(PyObject *, PyObject *, PyObject *);
+
+                if (PyDict_CheckExact(ann_dict))
+                    set_item = &PyDict_SetItem;
+                else
+                    set_item = &PyObject_SetItem;
+
+                assert(PyTuple_Size(annotations) % 2 == 0);
+
+                Py_ssize_t i;
+                for (i = 0; i < PyTuple_Size(annotations); i += 2) {
+                    err = set_item(ann_dict,
+                                   PyTuple_GET_ITEM(annotations, i),
+                                   PyTuple_GET_ITEM(annotations, i + 1));
+
+                    if (err < 0)
                         goto error;
-                } else {
-                    Py_ssize_t  i;
-                    PyObject *annotations = f->f_code->co_annotations;
-
-                    for (i = 0; i < PyTuple_Size(annotations); i++) {
-                        PyObject* pair = PyTuple_GET_ITEM(annotations, i);
-
-                        if (PyObject_SetItem(ann_dict, PyTuple_GET_ITEM(pair, 0), PyTuple_GET_ITEM(pair, 1)))
-                            goto error;
-                    }
                 }
             }
             DISPATCH();
