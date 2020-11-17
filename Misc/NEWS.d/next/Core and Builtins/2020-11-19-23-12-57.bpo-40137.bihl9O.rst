@@ -1,0 +1,1 @@
+Convert functools module to use :c:func:`PyType_FromModuleAndSpec`.
