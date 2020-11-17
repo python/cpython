@@ -583,3 +583,8 @@ Removed
   ``Py_END_ALLOW_RECURSION`` and the ``recursion_critical`` field of the
   :c:type:`PyInterpreterState` structure.
   (Contributed by Serhiy Storchaka in :issue:`41936`.)
+
+* Removed the undocumented ``PyOS_InitInterrupts()`` function. Initializing
+  Python already implicitly installs signal handlers: see
+  :c:member:`PyConfig.install_signal_handlers`.
+  (Contributed by Victor Stinner in :issue:`41713`.)
