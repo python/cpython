@@ -2587,6 +2587,7 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
             VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
             ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, n));
             ADDOP_JUMP(c, cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
+            NEXT_BLOCK(c);
             basicblock *end = compiler_new_block(c);
             if (end == NULL)
                 return 0;
@@ -2610,6 +2611,7 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
     /* general implementation */
     VISIT(c, expr, e);
     ADDOP_JUMP(c, cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
+    NEXT_BLOCK(c);
     return 1;
 }
 
@@ -2829,7 +2831,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
 static int
 compiler_while(struct compiler *c, stmt_ty s)
 {
-    basicblock *loop, *orelse, *end, *anchor = NULL;
+    basicblock *loop, *body, *end, *anchor = NULL;
     int constant = expr_constant(s->v.While.test);
 
     if (constant == 0) {
@@ -2850,42 +2852,32 @@ compiler_while(struct compiler *c, stmt_ty s)
         return 1;
     }
     loop = compiler_new_block(c);
+    body = compiler_new_block(c);
+    anchor = compiler_new_block(c);
     end = compiler_new_block(c);
-    if (constant == -1) {
-        anchor = compiler_new_block(c);
-        if (anchor == NULL)
-            return 0;
-    }
-    if (loop == NULL || end == NULL)
+    if (loop == NULL || body == NULL || anchor == NULL || end == NULL) {
         return 0;
-    if (s->v.While.orelse) {
-        orelse = compiler_new_block(c);
-        if (orelse == NULL)
-            return 0;
     }
-    else
-        orelse = NULL;
-
     compiler_use_next_block(c, loop);
-    if (!compiler_push_fblock(c, WHILE_LOOP, loop, end, NULL))
+    if (!compiler_push_fblock(c, WHILE_LOOP, loop, end, NULL)) {
         return 0;
-    if (constant == -1) {
-        if (!compiler_jump_if(c, s->v.While.test, anchor, 0))
-            return 0;
     }
+    if (constant == -1) {
+        if (!compiler_jump_if(c, s->v.While.test, anchor, 0)) {
+            return 0;
+        }
+    }
+
+    compiler_use_next_block(c, body);
     VISIT_SEQ(c, stmt, s->v.While.body);
     ADDOP_JUMP(c, JUMP_ABSOLUTE, loop);
 
-    /* XXX should the two POP instructions be in a separate block
-       if there is no else clause ?
-    */
-
-    if (constant == -1)
-        compiler_use_next_block(c, anchor);
     compiler_pop_fblock(c, WHILE_LOOP, loop);
 
-    if (orelse != NULL) /* what if orelse is just pass? */
+    compiler_use_next_block(c, anchor);
+    if (s->v.While.orelse) {
         VISIT_SEQ(c, stmt, s->v.While.orelse);
+    }
     compiler_use_next_block(c, end);
 
     return 1;
@@ -2916,6 +2908,7 @@ compiler_return(struct compiler *c, stmt_ty s)
         VISIT(c, expr, s->v.Return.value);
     }
     ADDOP(c, RETURN_VALUE);
+    NEXT_BLOCK(c);
 
     return 1;
 }
@@ -2934,6 +2927,7 @@ compiler_break(struct compiler *c)
         return 0;
     }
     ADDOP_JUMP(c, JUMP_ABSOLUTE, loop->fb_exit);
+    NEXT_BLOCK(c);
     return 1;
 }
 
@@ -2948,6 +2942,7 @@ compiler_continue(struct compiler *c)
         return compiler_error(c, "'continue' not properly in loop");
     }
     ADDOP_JUMP(c, JUMP_ABSOLUTE, loop->fb_block);
+    NEXT_BLOCK(c)
     return 1;
 }
 
@@ -3087,6 +3082,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             ADDOP(c, DUP_TOP);
             VISIT(c, expr, handler->v.ExceptHandler.type);
             ADDOP_JUMP(c, JUMP_IF_NOT_EXC_MATCH, except);
+            NEXT_BLOCK(c);
         }
         ADDOP(c, POP_TOP);
         if (handler->v.ExceptHandler.name) {
@@ -3427,6 +3423,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
             }
         }
         ADDOP_I(c, RAISE_VARARGS, (int)n);
+        NEXT_BLOCK(c);
         break;
     case Try_kind:
         return compiler_try(c, s);
@@ -4798,6 +4795,7 @@ compiler_with_except_finish(struct compiler *c) {
     if (exit == NULL)
         return 0;
     ADDOP_JUMP(c, POP_JUMP_IF_TRUE, exit);
+    NEXT_BLOCK(c);
     ADDOP(c, RERAISE);
     compiler_use_next_block(c, exit);
     ADDOP(c, POP_TOP);
@@ -5521,6 +5519,7 @@ stackdepth(struct compiler *c)
             }
         }
         if (next != NULL) {
+            assert(b->b_nofallthrough == 0);
             stackdepth_push(&sp, next, depth);
         }
     }
@@ -6096,7 +6095,6 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
     struct instr nop;
     nop.i_opcode = NOP;
     struct instr *target;
-    int lineno;
     for (int i = 0; i < bb->b_iused; i++) {
         struct instr *inst = &bb->b_instr[i];
         int oparg = inst->i_oparg;
@@ -6112,23 +6110,50 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
             target = &nop;
         }
         switch (inst->i_opcode) {
-            /* Skip over LOAD_CONST trueconst
-                   POP_JUMP_IF_FALSE xx.  This improves
-                   "while 1" performance.  */
+            /* Remove LOAD_CONST const; conditional jump */
             case LOAD_CONST:
-                if (nextop != POP_JUMP_IF_FALSE) {
-                    break;
-                }
-                PyObject* cnt = PyList_GET_ITEM(consts, oparg);
-                int is_true = PyObject_IsTrue(cnt);
-                if (is_true == -1) {
-                    goto error;
-                }
-                if (is_true == 1) {
-                    inst->i_opcode = NOP;
-                    bb->b_instr[i+1].i_opcode = NOP;
+            {
+                PyObject* cnt;
+                int is_true;
+                int jump_if_true;
+                switch(nextop) {
+                    case POP_JUMP_IF_FALSE:
+                    case POP_JUMP_IF_TRUE:
+                        cnt = PyList_GET_ITEM(consts, oparg);
+                        is_true = PyObject_IsTrue(cnt);
+                        if (is_true == -1) {
+                            goto error;
+                        }
+                        inst->i_opcode = NOP;
+                        jump_if_true = nextop == POP_JUMP_IF_TRUE;
+                        if (is_true == jump_if_true) {
+                            bb->b_instr[i+1].i_opcode = JUMP_ABSOLUTE;
+                            bb->b_nofallthrough = 1;
+                        }
+                        else {
+                            bb->b_instr[i+1].i_opcode = NOP;
+                        }
+                        break;
+                    case JUMP_IF_FALSE_OR_POP:
+                    case JUMP_IF_TRUE_OR_POP:
+                        cnt = PyList_GET_ITEM(consts, oparg);
+                        is_true = PyObject_IsTrue(cnt);
+                        if (is_true == -1) {
+                            goto error;
+                        }
+                        jump_if_true = nextop == JUMP_IF_TRUE_OR_POP;
+                        if (is_true == jump_if_true) {
+                            bb->b_instr[i+1].i_opcode = JUMP_ABSOLUTE;
+                            bb->b_nofallthrough = 1;
+                        }
+                        else {
+                            inst->i_opcode = NOP;
+                            bb->b_instr[i+1].i_opcode = NOP;
+                        }
+                        break;
                 }
                 break;
+            }
 
                 /* Try to fold tuples of constants.
                    Skip over BUILD_SEQN 1 UNPACK_SEQN 1.
@@ -6176,16 +6201,21 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
                 switch(target->i_opcode) {
                     case POP_JUMP_IF_FALSE:
                         *inst = *target;
+                        --i;
                         break;
                     case JUMP_ABSOLUTE:
                     case JUMP_FORWARD:
                     case JUMP_IF_FALSE_OR_POP:
-                        inst->i_target = target->i_target;
+                        if (inst->i_target != target->i_target) {
+                            inst->i_target = target->i_target;
+                            --i;
+                        }
                         break;
                     case JUMP_IF_TRUE_OR_POP:
                         assert (inst->i_target->b_iused == 1);
                         inst->i_opcode = POP_JUMP_IF_FALSE;
                         inst->i_target = inst->i_target->b_next;
+                        --i;
                         break;
                 }
                 break;
@@ -6194,16 +6224,21 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
                 switch(target->i_opcode) {
                     case POP_JUMP_IF_TRUE:
                         *inst = *target;
+                        --i;
                         break;
                     case JUMP_ABSOLUTE:
                     case JUMP_FORWARD:
                     case JUMP_IF_TRUE_OR_POP:
-                        inst->i_target = target->i_target;
+                        if (inst->i_target != target->i_target) {
+                            inst->i_target = target->i_target;
+                            --i;
+                        }
                         break;
                     case JUMP_IF_FALSE_OR_POP:
                         assert (inst->i_target->b_iused == 1);
                         inst->i_opcode = POP_JUMP_IF_TRUE;
                         inst->i_target = inst->i_target->b_next;
+                        --i;
                         break;
                 }
                 break;
@@ -6212,7 +6247,10 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
                 switch(target->i_opcode) {
                     case JUMP_ABSOLUTE:
                     case JUMP_FORWARD:
-                        inst->i_target = target->i_target;
+                        if (inst->i_target != target->i_target) {
+                            inst->i_target = target->i_target;
+                            --i;
+                        }
                         break;
                 }
                 break;
@@ -6221,7 +6259,10 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
                 switch(target->i_opcode) {
                     case JUMP_ABSOLUTE:
                     case JUMP_FORWARD:
-                        inst->i_target = target->i_target;
+                        if (inst->i_target != target->i_target) {
+                            inst->i_target = target->i_target;
+                            --i;
+                        }
                         break;
                 }
                 break;
@@ -6231,12 +6272,17 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
                 assert (i == bb->b_iused-1);
                 switch(target->i_opcode) {
                     case JUMP_FORWARD:
-                        inst->i_target = target->i_target;
+                        if (inst->i_target != target->i_target) {
+                            inst->i_target = target->i_target;
+                            --i;
+                        }
                         break;
                     case JUMP_ABSOLUTE:
-                        lineno = inst->i_lineno;
-                        *inst = *target;
-                        inst->i_lineno = lineno;
+                        if (inst->i_target != target->i_target) {
+                            inst->i_target = target->i_target;
+                            inst->i_opcode = target->i_opcode;
+                            --i;
+                        }
                         break;
                 }
                 if (inst->i_target->b_exit && inst->i_target->b_iused <= MAX_COPY_SIZE) {
@@ -6268,15 +6314,15 @@ clean_basic_block(basicblock *bb) {
     for (int src = 0; src < bb->b_iused; src++) {
         int lineno = bb->b_instr[src].i_lineno;
         if (bb->b_instr[src].i_opcode == NOP) {
-            /* Eliminate no-op if it doesn't have a line number, or
-                * if the next instruction has same line number or no line number, or
-                * if the previous instruction had the same line number. */
+            /* Eliminate no-op if it doesn't have a line number */
             if (lineno < 0) {
                 continue;
             }
+            /* or, if the previous instruction had the same line number. */
             if (prev_lineno == lineno) {
                 continue;
             }
+            /* or, if the next instruction has same line number or no line number */
             if (src < bb->b_iused - 1) {
                 int next_lineno = bb->b_instr[src+1].i_lineno;
                 if (next_lineno < 0 || next_lineno == lineno) {
@@ -6284,6 +6330,19 @@ clean_basic_block(basicblock *bb) {
                     continue;
                 }
             }
+            else {
+                basicblock* next = bb->b_next;
+                while (next && next->b_iused == 0) {
+                    next = next->b_next;
+                }
+                /* or if last instruction in BB and next BB has same line number */
+                if (next) {
+                    if (lineno == next->b_instr[0].i_lineno) {
+                        continue;
+                    }
+                }
+            }
+
         }
         if (dest != src) {
             bb->b_instr[dest] = bb->b_instr[src];
@@ -6295,28 +6354,34 @@ clean_basic_block(basicblock *bb) {
     bb->b_iused = dest;
 }
 
-static void
-normalise_basic_block(basicblock *bb) {
-    /* Remove any code following a return or re-raise,
-     and mark those blocks as exit and/or nofallthrough. */
+
+static int
+normalize_basic_block(basicblock *bb) {
+    /* Mark blocks as exit and/or nofallthrough.
+     Raise SystemError if CFG is malformed. */
     for (int i = 0; i < bb->b_iused; i++) {
         switch(bb->b_instr[i].i_opcode) {
             case RETURN_VALUE:
             case RAISE_VARARGS:
             case RERAISE:
-                bb->b_iused = i+1;
                 bb->b_exit = 1;
-                bb->b_nofallthrough = 1;
-                return;
+                /* fall through */
             case JUMP_ABSOLUTE:
             case JUMP_FORWARD:
-                bb->b_iused = i+1;
                 bb->b_nofallthrough = 1;
-                return;
+                /* fall through */
+            case POP_JUMP_IF_FALSE:
+            case POP_JUMP_IF_TRUE:
+            case JUMP_IF_FALSE_OR_POP:
+            case JUMP_IF_TRUE_OR_POP:
+                if (i != bb->b_iused-1) {
+                    PyErr_SetString(PyExc_SystemError, "malformed control flow graph.");
+                    return -1;
+                }
         }
     }
+    return 0;
 }
-
 
 
 static int
@@ -6363,7 +6428,9 @@ static int
 optimize_cfg(struct assembler *a, PyObject *consts)
 {
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
-        normalise_basic_block(b);
+        if (normalize_basic_block(b)) {
+            return -1;
+        }
     }
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
         if (optimize_basic_block(b, consts)) {

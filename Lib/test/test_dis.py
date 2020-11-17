@@ -145,30 +145,24 @@ def bug1333982(x=[]):
     pass
 
 dis_bug1333982 = """\
-%3d           0 LOAD_CONST               1 (0)
-              2 POP_JUMP_IF_TRUE        26
-              4 LOAD_ASSERTION_ERROR
-              6 LOAD_CONST               2 (<code object <listcomp> at 0x..., file "%s", line %d>)
-              8 LOAD_CONST               3 ('bug1333982.<locals>.<listcomp>')
-             10 MAKE_FUNCTION            0
-             12 LOAD_FAST                0 (x)
-             14 GET_ITER
-             16 CALL_FUNCTION            1
+%3d           0 LOAD_ASSERTION_ERROR
+              2 LOAD_CONST               2 (<code object <listcomp> at 0x..., file "%s", line %d>)
+              4 LOAD_CONST               3 ('bug1333982.<locals>.<listcomp>')
+              6 MAKE_FUNCTION            0
+              8 LOAD_FAST                0 (x)
+             10 GET_ITER
+             12 CALL_FUNCTION            1
 
-%3d          18 LOAD_CONST               4 (1)
+%3d          14 LOAD_CONST               4 (1)
 
-%3d          20 BINARY_ADD
-             22 CALL_FUNCTION            1
-             24 RAISE_VARARGS            1
-
-%3d     >>   26 LOAD_CONST               0 (None)
-             28 RETURN_VALUE
+%3d          16 BINARY_ADD
+             18 CALL_FUNCTION            1
+             20 RAISE_VARARGS            1
 """ % (bug1333982.__code__.co_firstlineno + 1,
        __file__,
        bug1333982.__code__.co_firstlineno + 1,
        bug1333982.__code__.co_firstlineno + 2,
-       bug1333982.__code__.co_firstlineno + 1,
-       bug1333982.__code__.co_firstlineno + 3)
+       bug1333982.__code__.co_firstlineno + 1)
 
 _BIG_LINENO_FORMAT = """\
 %3d           0 LOAD_GLOBAL              0 (spam)
@@ -674,8 +668,15 @@ class DisWithFileTests(DisTests):
         return output.getvalue()
 
 
+if sys.flags.optimize:
+    code_info_consts = "0: None"
+else:
+    code_info_consts = (
+    """0: 'Formatted details of methods, functions, or code.'
+   1: None"""
+)
 
-code_info_code_info = """\
+code_info_code_info = f"""\
 Name:              code_info
 Filename:          (.*)
 Argument count:    1
@@ -685,13 +686,13 @@ Number of locals:  1
 Stack size:        3
 Flags:             OPTIMIZED, NEWLOCALS, NOFREE
 Constants:
-   0: %r
+   {code_info_consts}
 Names:
    0: _format_code_info
    1: _get_code_object
 Variable names:
-   0: x""" % (('Formatted details of methods, functions, or code.',)
-              if sys.flags.optimize < 2 else (None,))
+   0: x"""
+
 
 @staticmethod
 def tricky(a, b, /, x, y, z=True, *args, c, d, e=[], **kwds):
