@@ -233,6 +233,11 @@ Added a new function :func:`os.eventfd` and related helpers to wrap the
 ``eventfd2`` syscall on Linux.
 (Contributed by Christian Heimes in :issue:`41001`.)
 
+Added :func:`os.splice()` that allows to move data between two file
+descriptors without copying between kernel address space and user
+address space, where one of the file descriptors must refer to a
+pipe. (Contributed by Pablo Galindo in :issue:`41625`.)
+
 py_compile
 ----------
 
