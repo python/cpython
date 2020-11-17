@@ -1676,7 +1676,7 @@ def bœr():
 
             stdout, stderr = self.run_pdb_script(script, commands)
 
-            self.assertEqual(stdout.split('\n')[2], expected)
+            self.assertEqual(stdout.split('\n')[2].rstrip('\r'), expected)
 
     @os_helper.skip_unless_symlink
     def test_issue42384_symlink(self):
@@ -1701,7 +1701,7 @@ def bœr():
 
             stdout, stderr = self._run_pdb([os.path.join('dir_two', 'foo.py')], commands)
 
-            self.assertEqual(stdout.split('\n')[2], expected)
+            self.assertEqual(stdout.split('\n')[2].rstrip('\r'), expected)
 
     def test_issue42383(self):
         with os_helper.temp_cwd() as cwd:
@@ -1724,7 +1724,7 @@ def bœr():
 
             stdout, stderr = self._run_pdb(['foo.py'], 'c\nc\nq')
             expected = '(Pdb) The correct file was executed'
-            self.assertEqual(stdout.split('\n')[6], expected)
+            self.assertEqual(stdout.split('\n')[6].rstrip('\r'), expected)
 
 
 def load_tests(*args):
