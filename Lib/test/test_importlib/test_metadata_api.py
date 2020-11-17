@@ -51,6 +51,13 @@ class APITests(
         self.assertEqual(ep.value, 'mod:main')
         self.assertEqual(ep.extras, [])
 
+    def test_entry_points_distribution(self):
+        entries = dict(entry_points()['entries'])
+        for entry in ("main", "ns:sub"):
+            ep = entries[entry]
+            self.assertEqual(ep.dist.name, "distinfo-pkg")
+            self.assertEqual(ep.dist.version, "1.0.0")
+
     def test_metadata_for_this_package(self):
         md = metadata('egginfo-pkg')
         assert md['author'] == 'Steven Ma'

@@ -48,7 +48,7 @@ class PackageNotFoundError(ModuleNotFoundError):
 
 
 class EntryPoint(
-        collections.namedtuple('EntryPointBase', 'name value group')):
+        collections.namedtuple('EntryPointBase', 'dist name value group')):
     """An entry point as defined by Python packaging conventions.
 
     See `the packaging docs on entry points
@@ -103,15 +103,15 @@ class EntryPoint(
         return list(re.finditer(r'\w+', match.group('extras') or ''))
 
     @classmethod
-    def _from_config(cls, config):
+    def _from_config(cls, dist, config):
         return [
-            cls(name, value, group)
+            cls(dist, name, value, group)
             for group in config.sections()
             for name, value in config.items(group)
             ]
 
     @classmethod
-    def _from_text(cls, text):
+    def _from_text(cls, dist, text):
         config = ConfigParser(delimiters='=')
         # case sensitive: https://stackoverflow.com/q/1611799/812183
         config.optionxform = str
@@ -120,7 +120,7 @@ class EntryPoint(
         except AttributeError:  # pragma: nocover
             # Python 2 has no read_string
             config.readfp(io.StringIO(text))
-        return EntryPoint._from_config(config)
+        return EntryPoint._from_config(dist, config)
 
     def __iter__(self):
         """
@@ -261,13 +261,18 @@ class Distribution:
         return email.message_from_string(text)
 
     @property
+    def name(self):
+        """Return the 'Name' metadata for the distribution package."""
+        return self.metadata['Name']
+
+    @property
     def version(self):
         """Return the 'Version' metadata for the distribution package."""
         return self.metadata['Version']
 
     @property
     def entry_points(self):
-        return EntryPoint._from_text(self.read_text('entry_points.txt'))
+        return EntryPoint._from_text(self, self.read_text('entry_points.txt'))
 
     @property
     def files(self):
