@@ -1,0 +1,4 @@
+Each `importlib.metadata.EntryPoint` now has a `.dist` attribute which is the
+`importlib.metadata.Distribution` name from where the `EntryPoint` was loaded
+and a `.distribution` property which is the `importlib.metadata.Distribution`
+instance from where the ``EntryPoint`` was loaded.
