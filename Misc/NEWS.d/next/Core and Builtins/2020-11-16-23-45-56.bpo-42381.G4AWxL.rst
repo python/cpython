@@ -1,0 +1,2 @@
+Allow assignment expressions in set literals and set comprehensions as per
+PEP 572. Patch by Pablo Galindo.
