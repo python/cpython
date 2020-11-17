@@ -1,0 +1,2 @@
+Fix various issues with ``typing.Literal`` parameter handling (flatten,
+deduplicate, use type to cache key). Patch provided by Yurii Karabas.
