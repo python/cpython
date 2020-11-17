@@ -1834,8 +1834,10 @@ _PySignal_Init(int install_signal_handlers)
 #endif
 
 #if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
-    if (PyStructSequence_InitType2(&SiginfoType, &struct_siginfo_desc) < 0) {
-        return -1;
+    if (SiginfoType.tp_name == NULL) {
+        if (PyStructSequence_InitType2(&SiginfoType, &struct_siginfo_desc) < 0) {
+            return -1;
+        }
     }
 #endif
 
