@@ -1686,8 +1686,9 @@ def main():
 
     sys.argv[:] = args      # Hide "pdb.py" and pdb options from argument list
 
-    # Replace pdb's dir with script's dir in front of module search path.
     if not run_as_module:
+        mainpyfile = os.path.realpath(mainpyfile)
+        # Replace pdb's dir with script's dir in front of module search path.
         sys.path[0] = os.path.dirname(mainpyfile)
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
