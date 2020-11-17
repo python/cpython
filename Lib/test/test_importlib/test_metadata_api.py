@@ -55,8 +55,10 @@ class APITests(
         entries = dict(entry_points()['entries'])
         for entry in ("main", "ns:sub"):
             ep = entries[entry]
-            self.assertEqual(ep.dist.name, "distinfo-pkg")
-            self.assertEqual(ep.dist.version, "1.0.0")
+            self.assertIsInstance(ep.distribution, Distribution)
+            dist = Distribution.from_name(ep.dist)
+            self.assertEqual(ep.distribution.name, dist.name)
+            self.assertEqual(ep.distribution.version, dist.version)
 
     def test_metadata_for_this_package(self):
         md = metadata('egginfo-pkg')

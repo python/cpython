@@ -70,6 +70,7 @@ class ImportTests(fixtures.DistInfoPkg, unittest.TestCase):
             name='ep',
             value='importlib.metadata',
             group='grp',
+            dist='distribution'
             )
         assert ep.load() is importlib.metadata
 
@@ -232,7 +233,7 @@ class InaccessibleSysPath(fixtures.OnSysPath, ffs.TestCase):
 class TestEntryPoints(unittest.TestCase):
     def __init__(self, *args):
         super(TestEntryPoints, self).__init__(*args)
-        self.ep = importlib.metadata.EntryPoint('name', 'value', 'group')
+        self.ep = importlib.metadata.EntryPoint('name', 'value', 'group', 'dist')
 
     def test_entry_point_pickleable(self):
         revived = pickle.loads(pickle.dumps(self.ep))

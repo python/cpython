@@ -76,10 +76,11 @@ Entry points
 
 The ``entry_points()`` function returns a dictionary of all entry points,
 keyed by group.  Entry points are represented by ``EntryPoint`` instances;
-each ``EntryPoint`` has a ``.name``, ``.group``, and ``.value`` attributes and
-a ``.load()`` method to resolve the value.  There are also ``.module``,
-``.attr``, and ``.extras`` attributes for getting the components of the
-``.value`` attribute::
+each ``EntryPoint`` has a ``.name``, ``.group``, ``.value`` and ``.dist``
+attributes and a ``.load()`` method to resolve the value.  There are also
+``.module``, ``.attr``, and ``.extras`` attributes for getting the components of the
+``.value`` attribute and ``.distribution`` to get the ``Distribution`` instance
+from where the ``EntryPoint`` was loaded::
 
     >>> eps = entry_points()  # doctest: +SKIP
     >>> list(eps)  # doctest: +SKIP
@@ -87,13 +88,15 @@ a ``.load()`` method to resolve the value.  There are also ``.module``,
     >>> scripts = eps['console_scripts']  # doctest: +SKIP
     >>> wheel = [ep for ep in scripts if ep.name == 'wheel'][0]  # doctest: +SKIP
     >>> wheel  # doctest: +SKIP
-    EntryPoint(name='wheel', value='wheel.cli:main', group='console_scripts')
+    EntryPoint(name='wheel', value='wheel.cli:main', group='console_scripts', dist='wheel')
     >>> wheel.module  # doctest: +SKIP
     'wheel.cli'
     >>> wheel.attr  # doctest: +SKIP
     'main'
     >>> wheel.extras  # doctest: +SKIP
     []
+    >>> wheel.distributuion  # doctest: +SKIP
+    <importlib.metadata.PathDistribution object at 0x7f6b309fc668>
     >>> main = wheel.load()  # doctest: +SKIP
     >>> main  # doctest: +SKIP
     <function main at 0x103528488>

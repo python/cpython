@@ -48,7 +48,7 @@ class PackageNotFoundError(ModuleNotFoundError):
 
 
 class EntryPoint(
-        collections.namedtuple('EntryPointBase', 'dist name value group')):
+        collections.namedtuple('EntryPointBase', 'name value group dist')):
     """An entry point as defined by Python packaging conventions.
 
     See `the packaging docs on entry points
@@ -77,6 +77,8 @@ class EntryPoint(
     following the attr, and following any extras.
     """
 
+    _distribution = None
+
     def load(self):
         """Load the entry point from its definition. If only a module
         is indicated by the value, return that module. Otherwise,
@@ -102,13 +104,21 @@ class EntryPoint(
         match = self.pattern.match(self.value)
         return list(re.finditer(r'\w+', match.group('extras') or ''))
 
+    @property
+    def distribution(self):
+        if self._distribution is None:
+            self._distribution = Distribution.from_name(self.dist)
+        return self._distribution
+
     @classmethod
     def _from_config(cls, dist, config):
-        return [
-            cls(dist, name, value, group)
-            for group in config.sections()
-            for name, value in config.items(group)
-            ]
+        eps = []
+        for group in config.sections():
+            for name, value in config.items(group):
+                ep = cls(name, value, group, dist.name)
+                ep._distribution = dist
+                eps.append(ep)
+        return eps
 
     @classmethod
     def _from_text(cls, dist, text):
@@ -131,7 +141,7 @@ class EntryPoint(
     def __reduce__(self):
         return (
             self.__class__,
-            (self.name, self.value, self.group),
+            (self.name, self.value, self.group, self.dist),
             )
 
 
