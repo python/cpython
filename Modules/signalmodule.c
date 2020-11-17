@@ -1674,8 +1674,8 @@ PyInit__signal(void)
 }
 
 
-static void
-finisignal(void)
+void
+_PySignal_Fini(void)
 {
     int i;
     PyObject *func;
@@ -1792,19 +1792,32 @@ PyErr_SetInterrupt(void)
     }
 }
 
-void
-PyOS_InitInterrupts(void)
+int
+_PySignal_Init(int install_signal_handlers)
 {
-    PyObject *m = PyImport_ImportModule("_signal");
-    if (m) {
-        Py_DECREF(m);
+    if (!install_signal_handlers) {
+        // Nothing to do
+        return 0;
     }
-}
 
-void
-PyOS_FiniInterrupts(void)
-{
-    finisignal();
+#ifdef SIGPIPE
+    PyOS_setsig(SIGPIPE, SIG_IGN);
+#endif
+#ifdef SIGXFZ
+    PyOS_setsig(SIGXFZ, SIG_IGN);
+#endif
+#ifdef SIGXFSZ
+    PyOS_setsig(SIGXFSZ, SIG_IGN);
+#endif
+
+    // Import _signal to install the Python SIGINT handler
+    PyObject *module = PyImport_ImportModule("_signal");
+    if (!module) {
+        return -1;
+    }
+    Py_DECREF(module);
+
+    return 0;
 }
 
 
