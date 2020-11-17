@@ -183,6 +183,9 @@ Add a :func:`contextlib.aclosing` context manager to safely close async generato
 and objects representing asynchronously released resources.
 (Contributed by Joongi Kim and John Belmonte in :issue:`41229`.)
 
+Add asynchronous context manager support to :func:`contextlib.nullcontext`.
+(Contributed by Tom Gringauz in :issue:`41543`.)
+
 curses
 ------
 
