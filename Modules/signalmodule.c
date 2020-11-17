@@ -130,15 +130,16 @@ static _Py_atomic_int is_tripped;
 
 static PyObject *DefaultHandler;
 static PyObject *IgnoreHandler;
-static PyObject *IntHandler;
 
 #ifdef MS_WINDOWS
 static HANDLE sigint_event = NULL;
 #endif
 
-#ifdef HAVE_GETITIMER
+#if defined(HAVE_GETITIMER) || defined(HAVE_SETITIMER)
 static PyObject *ItimerError;
+#endif
 
+#ifdef HAVE_GETITIMER
 /* auxiliary functions for setitimer */
 static int
 timeval_from_double(PyObject *obj, struct timeval *tv)
@@ -1074,7 +1075,6 @@ signal_valid_signals_impl(PyObject *module)
 
 
 #if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
-static int initialized;
 static PyStructSequence_Field struct_siginfo_fields[] = {
     {"si_signo",        "signal number"},
     {"si_code",         "signal code"},
@@ -1384,30 +1384,19 @@ signal_exec(PyObject *m)
 {
     /* add the functions */
 #if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
-    if (!initialized) {
-        if (PyStructSequence_InitType2(&SiginfoType, &struct_siginfo_desc) < 0) {
-            return -1;
-        }
-    }
-
     if (PyModule_AddType(m, &SiginfoType) < 0) {
         return -1;
     }
-    initialized = 1;
 #endif
 
     /* Add some symbolic constants to the module */
     PyObject *d = PyModule_GetDict(m);
 
-    DefaultHandler = PyLong_FromVoidPtr((void *)SIG_DFL);
-    if (!DefaultHandler ||
-        PyDict_SetItemString(d, "SIG_DFL", DefaultHandler) < 0) {
+    if (PyDict_SetItemString(d, "SIG_DFL", DefaultHandler) < 0) {
         return -1;
     }
 
-    IgnoreHandler = PyLong_FromVoidPtr((void *)SIG_IGN);
-    if (!IgnoreHandler ||
-        PyDict_SetItemString(d, "SIG_IGN", IgnoreHandler) < 0) {
+    if (PyDict_SetItemString(d, "SIG_IGN", IgnoreHandler) < 0) {
         return -1;
     }
 
@@ -1427,15 +1416,9 @@ signal_exec(PyObject *m)
          return -1;
 #endif
 
-    IntHandler = PyMapping_GetItemString(d, "default_int_handler");
-    if (!IntHandler)
-        return -1;
-
-    _Py_atomic_store_relaxed(&Handlers[0].tripped, 0);
     for (int i = 1; i < NSIG; i++) {
         void (*t)(int);
         t = PyOS_getsig(i);
-        _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
         if (t == SIG_DFL)
             Handlers[i].func = DefaultHandler;
         else if (t == SIG_IGN)
@@ -1445,9 +1428,13 @@ signal_exec(PyObject *m)
         Py_INCREF(Handlers[i].func);
     }
     if (Handlers[SIGINT].func == DefaultHandler) {
+        PyObject *int_handler = PyMapping_GetItemString(d, "default_int_handler");
+        if (!int_handler) {
+            return -1;
+        }
+
         /* Install default int handler */
-        Py_INCREF(IntHandler);
-        Py_SETREF(Handlers[SIGINT].func, IntHandler);
+        Py_SETREF(Handlers[SIGINT].func, int_handler);
         PyOS_setsig(SIGINT, signal_handler);
     }
 
@@ -1617,11 +1604,8 @@ signal_exec(PyObject *m)
          return -1;
 #endif
 
-#if defined (HAVE_SETITIMER) || defined (HAVE_GETITIMER)
-    ItimerError = PyErr_NewException("signal.ItimerError",
-            PyExc_OSError, NULL);
-    if (!ItimerError ||
-        PyDict_SetItemString(d, "ItimerError", ItimerError) < 0) {
+#if defined(HAVE_GETITIMER) || defined(HAVE_SETITIMER)
+    if (PyDict_SetItemString(d, "ItimerError", ItimerError) < 0) {
         return -1;
     }
 #endif
@@ -1634,11 +1618,6 @@ signal_exec(PyObject *m)
 #ifdef CTRL_BREAK_EVENT
     if (PyModule_AddIntMacro(m, CTRL_BREAK_EVENT))
          return -1;
-#endif
-
-#ifdef MS_WINDOWS
-    /* Create manual-reset event, initially unset */
-    sigint_event = CreateEvent(NULL, TRUE, FALSE, FALSE);
 #endif
 
     if (PyErr_Occurred()) {
@@ -1677,23 +1656,31 @@ PyInit__signal(void)
 void
 _PySignal_Fini(void)
 {
-    int i;
-    PyObject *func;
-
-    for (i = 1; i < NSIG; i++) {
-        func = Handlers[i].func;
-        _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
-        Handlers[i].func = NULL;
-        if (func != NULL && func != Py_None &&
-            func != DefaultHandler && func != IgnoreHandler)
-            PyOS_setsig(i, SIG_DFL);
+    // Restore default signals and clear handlers
+    for (int signum = 1; signum < NSIG; signum++) {
+        PyObject *func = Handlers[signum].func;
+        _Py_atomic_store_relaxed(&Handlers[signum].tripped, 0);
+        Handlers[signum].func = NULL;
+        if (func != NULL
+            && func != Py_None
+            && func != DefaultHandler
+            && func != IgnoreHandler)
+        {
+            PyOS_setsig(signum, SIG_DFL);
+        }
         Py_XDECREF(func);
     }
 
-    Py_CLEAR(IntHandler);
+#ifdef MS_WINDOWS
+    if (sigint_event != NULL) {
+        CloseHandle(sigint_event);
+        sigint_event = NULL;
+    }
+#endif
+
     Py_CLEAR(DefaultHandler);
     Py_CLEAR(IgnoreHandler);
-#ifdef HAVE_GETITIMER
+#if defined(HAVE_GETITIMER) || defined(HAVE_SETITIMER)
     Py_CLEAR(ItimerError);
 #endif
 }
@@ -1792,14 +1779,9 @@ PyErr_SetInterrupt(void)
     }
 }
 
-int
-_PySignal_Init(int install_signal_handlers)
+static int
+signal_install_handlers(void)
 {
-    if (!install_signal_handlers) {
-        // Nothing to do
-        return 0;
-    }
-
 #ifdef SIGPIPE
     PyOS_setsig(SIGPIPE, SIG_IGN);
 #endif
@@ -1816,6 +1798,58 @@ _PySignal_Init(int install_signal_handlers)
         return -1;
     }
     Py_DECREF(module);
+
+    return 0;
+}
+
+
+int
+_PySignal_Init(int install_signal_handlers)
+{
+    DefaultHandler = PyLong_FromVoidPtr((void *)SIG_DFL);
+    if (!DefaultHandler) {
+        return -1;
+    }
+
+    IgnoreHandler = PyLong_FromVoidPtr((void *)SIG_IGN);
+    if (!IgnoreHandler) {
+        return -1;
+    }
+
+#if defined(HAVE_GETITIMER) || defined(HAVE_SETITIMER)
+    ItimerError = PyErr_NewException("signal.ItimerError",
+            PyExc_OSError, NULL);
+    if (!ItimerError) {
+        return -1;
+    }
+#endif
+
+#ifdef MS_WINDOWS
+    /* Create manual-reset event, initially unset */
+    sigint_event = CreateEvent(NULL, TRUE, FALSE, FALSE);
+    if (sigint_event == NULL) {
+        PyErr_SetFromWindowsErr(0);
+        return -1;
+    }
+#endif
+
+#if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
+    if (SiginfoType.tp_name == NULL) {
+        if (PyStructSequence_InitType2(&SiginfoType, &struct_siginfo_desc) < 0) {
+            return -1;
+        }
+    }
+#endif
+
+    for (int signum = 1; signum < NSIG; signum++) {
+        _Py_atomic_store_relaxed(&Handlers[signum].tripped, 0);
+    }
+
+    if (install_signal_handlers) {
+        if (signal_install_handlers() < 0) {
+            return -1;
+        }
+    }
 
     return 0;
 }

@@ -1,0 +1,4 @@
+On Windows, the ``SIGINT`` event, ``_PyOS_SigintEvent()``, is now created
+even if Python is configured to not install signal handlers (if
+:c:member:`PyConfig.install_signal_handlers` equals to 0, or
+``Py_InitializeEx(0)``).
