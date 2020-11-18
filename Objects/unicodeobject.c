@@ -839,7 +839,11 @@ xmlcharrefreplace(_PyBytesWriter *writer, char *str,
 
     /* generate replacement */
     for (i = collstart; i < collend; ++i) {
-        str += sprintf(str, "&#%d;", PyUnicode_READ(kind, data, i));
+        size = sprintf(str, "&#%d;", PyUnicode_READ(kind, data, i));
+        if (size < 0) {
+            return NULL;
+        }
+        str += size;
     }
     return str;
 }

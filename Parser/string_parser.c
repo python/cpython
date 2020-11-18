@@ -69,6 +69,9 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
         return NULL;
     }
     p = buf = PyBytes_AsString(u);
+    if (p == NULL) {
+        return NULL;
+    }
     end = s + len;
     while (s < end) {
         if (*s == '\\') {
