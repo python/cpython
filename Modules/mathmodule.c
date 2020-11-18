@@ -271,7 +271,7 @@ m_inf(void)
 }
 
 static PyObject*
-m_inf_o(void)
+m_inf_o(PyObject *module)
 {
     return PyFloat_FromDouble(m_inf());
 }
@@ -292,7 +292,7 @@ m_nan(void)
 }
 
 static PyObject*
-m_nan_o(void)
+m_nan_o(PyObject *module)
 {
     return PyFloat_FromDouble(m_nan());
 }

@@ -75,40 +75,44 @@ typedef struct PyModuleDef_Slot{
 struct PyModuleConst_Def;
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03100000
 /* New in 3.10 */
-enum PyModuleConst_type {
-    PyModuleConst_none_type = 1,
-    PyModuleConst_long_type = 2,
-    PyModuleConst_bool_type = 3,
-    PyModuleConst_double_type = 4,
-    PyModuleConst_string_type = 5,
-    PyModuleConst_call_type = 6,
+enum _PyModuleConst_type {
+    _PyModuleConst_none_type = 1,
+    _PyModuleConst_long_type = 2,
+    _PyModuleConst_ulong_type = 3,
+    _PyModuleConst_bool_type = 4,
+    _PyModuleConst_double_type = 5,
+    _PyModuleConst_string_type = 6,
+    _PyModuleConst_call_type = 7,
 };
 
 typedef struct PyModuleConst_Def {
     const char *name;
-    enum PyModuleConst_type type;
+    enum _PyModuleConst_type type;
     union {
         const char *m_str;
         long m_long;
+        unsigned long m_ulong;
         double m_double;
-        PyObject* (*m_call)(void);
+        PyObject* (*m_call)(PyObject *module);
     } value;
 } PyModuleConst_Def;
 
 PyAPI_FUNC(int) PyModule_AddConstants(PyObject *, PyModuleConst_Def *);
 
 #define PyModuleConst_None(name) \
-    {(name), PyModuleConst_none_type, {.m_long=0}}
+    {(name), _PyModuleConst_none_type, {.m_long=0}}
 #define PyModuleConst_Long(name, value) \
-    {(name), PyModuleConst_long_type, {.m_long=(value)}}
+    {(name), _PyModuleConst_long_type, {.m_long=(value)}}
+#define PyModuleConst_ULong(name, value) \
+    {(name), _PyModuleConst_ulong_type, {.m_ulong=(value)}}
 #define PyModuleConst_Bool(name, value) \
-    {(name), PyModuleConst_bool_type, {.m_long=(value)}}
+    {(name), _PyModuleConst_bool_type, {.m_long=(value)}}
 #define PyModuleConst_Double(name, value) \
-    {(name), PyModuleConst_double_type, {.m_double=(value)}}
+    {(name), _PyModuleConst_double_type, {.m_double=(value)}}
 #define PyModuleConst_String(name, value) \
-    {(name), PyModuleConst_string_type, {.m_string=(value)}}
+    {(name), _PyModuleConst_string_type, {.m_str=(value)}}
 #define PyModuleConst_Call(name, value) \
-    {(name), PyModuleConst_call_type, {.m_call=(value)}}
+    {(name), _PyModuleConst_call_type, {.m_call=(value)}}
 
 #define PyModuleConst_LongMacro(m) PyModuleConst_Long(#m, m)
 #define PyModuleConst_StringMacro(m) PyModuleConst_String(#m, m)

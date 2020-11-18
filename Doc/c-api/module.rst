@@ -602,7 +602,7 @@ state:
    Example::
 
       static PyObject*
-      example_call(void *)
+      example_call(PyObject *module)
       {
           return PyBytes_FromString("23");
       }
@@ -613,6 +613,7 @@ state:
       static PyModuleConst_Def example_constants[] = {
           PyModuleConst_None("none_value"),
           PyModuleConst_Long("integer", 42),
+          PyModuleConst_ULong("unsigned", 42UL),
           PyModuleConst_Bool("false_value", 0),
           PyModuleConst_Bool("true_value", 1),
       #ifdef Py_MATH_PI
@@ -628,7 +629,7 @@ state:
       static int
       example_init_constants(PyObject *module)
       {
-          return PyModule_AddConstants(module, posix_constants);
+          return PyModule_AddConstants(module, example_constants);
       }
 
       static PyModuleDef_Slot example_slots[] = {
@@ -667,13 +668,19 @@ state:
 
 .. c:macro:: PyModuleConst_Long(name, value)
 
-   Add an entry for an int constant.
+   Add an entry for an integer constant.
+
+   .. versionadded:: 3.10
+
+.. c:macro:: PyModuleConst_Long(name, value)
+
+   Add an entry for an unsigned integer constant.
 
    .. versionadded:: 3.10
 
 .. c:macro:: PyModuleConst_Bool(name, value)
 
-   Add an entry for a bool constant.
+   Add an entry for a bool constant. ``0`` is false, ``1`` is true.
 
    .. versionadded:: 3.10
 
@@ -689,9 +696,10 @@ state:
 
    .. versionadded:: 3.10
 
-.. c:macro:: PyModuleConst_Call(name, c_function)
+.. c:macro:: PyModuleConst_Call(name, func)
 
-   Add an entry for a constant as returned by *c_function*.
+   Add an entry for a constant as returned by callback with signature
+   ``PyObject* (*func)(PyObject *module)``.
 
    .. versionadded:: 3.10
 

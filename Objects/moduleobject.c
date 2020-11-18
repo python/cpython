@@ -190,24 +190,27 @@ PyModule_AddConstants(PyObject *module, PyModuleConst_Def *def)
 
     for (cur_def = def; cur_def && cur_def->name; cur_def++) {
         switch(cur_def->type) {
-        case PyModuleConst_none_type:
+        case _PyModuleConst_none_type:
             v = Py_None;
             Py_INCREF(v);
             break;
-        case PyModuleConst_long_type:
+        case _PyModuleConst_long_type:
             v = PyLong_FromLong(cur_def->value.m_long);
             break;
-        case PyModuleConst_bool_type:
+        case _PyModuleConst_ulong_type:
+            v = PyLong_FromUnsignedLong(cur_def->value.m_ulong);
+            break;
+        case _PyModuleConst_bool_type:
             v = PyBool_FromLong(cur_def->value.m_long);
             break;
-        case PyModuleConst_double_type:
+        case _PyModuleConst_double_type:
             v = PyFloat_FromDouble(cur_def->value.m_double);
             break;
-        case PyModuleConst_string_type:
+        case _PyModuleConst_string_type:
             v =  PyUnicode_FromString(cur_def->value.m_str);
             break;
-        case PyModuleConst_call_type:
-            v = cur_def->value.m_call();
+        case _PyModuleConst_call_type:
+            v = cur_def->value.m_call(module);
             break;
         default:
             v = NULL;
