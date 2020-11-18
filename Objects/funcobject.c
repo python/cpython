@@ -442,6 +442,7 @@ func_get_annotations(PyFunctionObject *op, void *Py_UNUSED(ignored))
 
             if (err < 0) {
                 Py_DECREF(op->func_annotations);
+                Py_DECREF(annotations);
                 return NULL;
             }
         }
