@@ -345,15 +345,15 @@ static void grpmodule_free(void *m) {
 }
 
 static struct PyModuleDef grpmodule = {
-        PyModuleDef_HEAD_INIT,
-        "grp",
-        grp__doc__,
-        sizeof(grpmodulestate),
-        grp_methods,
-        grpmodule_slots,
-        grpmodule_traverse,
-        grpmodule_clear,
-        grpmodule_free,
+    PyModuleDef_HEAD_INIT,
+    .m_name = "grp",
+    .m_doc = grp__doc__,
+    .m_size = sizeof(grpmodulestate),
+    .m_methods = grp_methods,
+    .m_slots = grpmodule_slots,
+    .m_traverse = grpmodule_traverse,
+    .m_clear = grpmodule_clear,
+    .m_free = grpmodule_free,
 };
 
 PyMODINIT_FUNC

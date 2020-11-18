@@ -355,14 +355,14 @@ static void pwdmodule_free(void *m) {
 
 static struct PyModuleDef pwdmodule = {
     PyModuleDef_HEAD_INIT,
-    "pwd",
-    pwd__doc__,
-    sizeof(pwdmodulestate),
-    pwd_methods,
-    pwdmodule_slots,
-    pwdmodule_traverse,
-    pwdmodule_clear,
-    pwdmodule_free,
+    .m_name = "pwd",
+    .m_doc = pwd__doc__,
+    .m_size = sizeof(pwdmodulestate),
+    .m_methods = pwd_methods,
+    .m_slots = pwdmodule_slots,
+    .m_traverse = pwdmodule_traverse,
+    .m_clear = pwdmodule_clear,
+    .m_free = pwdmodule_free,
 };
 
 
