@@ -1170,6 +1170,14 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       .. versionadded:: 3.9
 
 
+   .. data:: Py_TPFLAGS_HAVE_AM_SEND
+
+      This bit is set when the :c:member:`~PyAsyncMethods.am_send` entry is present in the
+      :c:member:`~PyTypeObject.tp_as_async` slot of type structure.
+
+      .. versionadded:: 3.10
+
+
 .. c:member:: const char* PyTypeObject.tp_doc
 
    An optional pointer to a NUL-terminated C string giving the docstring for this
