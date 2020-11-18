@@ -69,12 +69,14 @@ create_filter(PyObject *category, _Py_Identifier *id, const char *modname)
             return NULL;
         }
     } else {
-        modname_obj = Py_None;
+        modname_obj = Py_NewRef(Py_None);
     }
 
     /* This assumes the line number is zero for now. */
-    return PyTuple_Pack(5, action_str, Py_None,
-                        category, modname_obj, _PyLong_GetZero());
+    PyObject *filter = PyTuple_Pack(5, action_str, Py_None,
+                                    category, modname_obj, _PyLong_GetZero());
+    Py_DECREF(modname_obj);
+    return filter;
 }
 #endif
 
