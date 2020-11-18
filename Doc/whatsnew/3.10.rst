@@ -500,17 +500,6 @@ Porting to Python 3.10
 
   (Contributed by Victor Stinner in :issue:`39573`.)
 
-* Since :c:func:`Py_SIZE()` is changed to the inline static function,
-  ``Py_SIZE(obj) = new_size`` must be replaced with ``Py_SET_SIZE(obj, new_size)``:
-  see :c:func:`Py_SET_SIZE()` (available since Python 3.9). For backward
-  compatibility, this macro can be used::
-
-      #if PY_VERSION_HEX < 0x030900A4
-      #  define Py_SET_SIZE(obj, size) ((Py_SIZE(obj) = (size)), (void)0)
-      #endif
-
-  (Contributed by Victor Stinner in :issue:`39573`.)
-
 * Calling :c:func:`PyDict_GetItem` without :term:`GIL` held had been allowed
   for historical reason. It is no longer allowed.
   (Contributed by Victor Stinner in :issue:`40839`.)
