@@ -24,9 +24,6 @@ _Py_IDENTIFIER(ignore);
 
 typedef struct _warnings_runtime_state WarningsState;
 
-/* Forward declaration of the _warnings module definition. */
-static struct PyModuleDef warningsmodule;
-
 _Py_IDENTIFIER(__name__);
 
 /* Given a module object, get its per-module state. */
@@ -1353,52 +1350,45 @@ static PyMethodDef warnings_functions[] = {
 };
 
 
-static struct PyModuleDef warningsmodule = {
-        PyModuleDef_HEAD_INIT,
-        MODULE_NAME,            /* m_name */
-        warnings__doc__,        /* m_doc */
-        0,                      /* m_size */
-        warnings_functions,     /* m_methods */
-        NULL,                   /* m_reload */
-        NULL,                   /* m_traverse */
-        NULL,                   /* m_clear */
-        NULL                    /* m_free */
+static int
+warnings_module_exec(PyObject *module)
+{
+    WarningsState *st = warnings_get_state();
+    if (st == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(module, "filters", st->filters) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(module, "_onceregistry", st->once_registry) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(module, "_defaultaction", st->default_action) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+
+static PyModuleDef_Slot warnings_slots[] = {
+    {Py_mod_exec, warnings_module_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef warnings_module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = MODULE_NAME,
+    .m_doc = warnings__doc__,
+    .m_size = 0,
+    .m_methods = warnings_functions,
+    .m_slots = warnings_slots,
 };
 
 
 PyMODINIT_FUNC
 _PyWarnings_Init(void)
 {
-    PyObject *m;
-
-    m = PyModule_Create(&warningsmodule);
-    if (m == NULL) {
-        return NULL;
-    }
-
-    WarningsState *st = warnings_get_state();
-    if (st == NULL) {
-        goto error;
-    }
-
-    if (PyModule_AddObjectRef(m, "filters", st->filters) < 0) {
-        goto error;
-    }
-    if (PyModule_AddObjectRef(m, "_onceregistry", st->once_registry) < 0) {
-        goto error;
-    }
-    if (PyModule_AddObjectRef(m, "_defaultaction", st->default_action) < 0) {
-        goto error;
-    }
-
-    return m;
-
-error:
-    if (st != NULL) {
-        warnings_clear_state(st);
-    }
-    Py_DECREF(m);
-    return NULL;
+    return PyModuleDef_Init(&warnings_module);
 }
 
 // We need this to ensure that warnings still work until late in finalization.
