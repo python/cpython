@@ -22,6 +22,4 @@ exit /B %LASTERRORCODE%
 :SetExeDir
 if /I %1 EQU Win32 (set exedir=%PCBUILD%\win32)
 if /I %1 EQU x64 (set exedir=%PCBUILD%\amd64)
-if /I %1 EQU ARM (set exedir=%PCBUILD%\arm32)
-if /I %1 EQU ARM64 (set exedir=%PCBUILD%\arm64)
 exit /B 0

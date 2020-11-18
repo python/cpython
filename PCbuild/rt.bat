@@ -6,7 +6,7 @@ rem -O   Run python.exe or python_d.exe (see -d) with -O.
 rem -q   "quick" -- normally the tests are run twice, the first time
 rem      after deleting all the .pyc files reachable from Lib/.
 rem      -q runs the tests just once, and without deleting .pyc files.
-rem -p <Win32|x64|ARM|ARM64> or -win32, -x64, -arm32, -arm64
+rem -p <Win32|x64> or -win32, -x64
 rem      Run the specified architecture of python (or python_d if -d
 rem      was specified). If omitted, uses %PREFIX% if set or 32-bit.
 rem All leading instances of these switches are shifted off, and
