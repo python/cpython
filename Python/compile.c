@@ -2040,7 +2040,7 @@ compiler_visit_argannotation(struct compiler *c, identifier id,
         }
 
         value = _PyAST_ExprAsUnicode(annotation);
-        if (!value){
+        if (!value) {
             Py_DECREF(mangled);
             return 0;
         }
@@ -6473,4 +6473,3 @@ PyCode_Optimize(PyObject *code, PyObject* Py_UNUSED(consts),
     Py_INCREF(code);
     return code;
 }
-
