@@ -7010,6 +7010,29 @@ static PyTypeObject ContainerNoGC_type = {
     .tp_new = ContainerNoGC_new,
 };
 
+static PyObject *
+_testcapimodule_const_call(PyObject *module)
+{
+    return PyBytes_FromString("23");
+}
+
+#define CONST_INT 7
+#define CONST_STRING "world"
+
+static PyModuleConst_Def _testcapimodule_consts[] = {
+    PyModuleConst_None("const_none"),
+    PyModuleConst_Long("const_int", 42),
+    PyModuleConst_ULong("const_uint", ULONG_MAX),
+    PyModuleConst_Bool("const_false", 0),
+    PyModuleConst_Bool("const_true", 1),
+    PyModuleConst_Double("const_almost_tau", 6.2831),
+    PyModuleConst_String("const_str", "Hello"),
+    PyModuleConst_Call("const_call", _testcapimodule_const_call),
+    PyModuleConst_LongMacro(CONST_INT),
+    PyModuleConst_StringMacro(CONST_STRING),
+    {NULL},
+};
+
 
 static struct PyModuleDef _testcapimodule = {
     PyModuleDef_HEAD_INIT,
@@ -7034,6 +7057,11 @@ PyInit__testcapi(void)
     m = PyModule_Create(&_testcapimodule);
     if (m == NULL)
         return NULL;
+
+    if (PyModule_AddConstants(m, _testcapimodule_consts) < 0) {
+        Py_DECREF(m);
+        return NULL;
+    }
 
     Py_SET_TYPE(&_HashInheritanceTester_Type, &PyType_Type);
 

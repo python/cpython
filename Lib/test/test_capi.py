@@ -971,5 +971,19 @@ class Test_ModuleStateAccess(unittest.TestCase):
                     increment_count(1, 2, 3)
 
 
+class Test_PyModuleConst_Def(unittest.TestCase):
+    def test_constants(self):
+        self.assertIs(_testcapi.const_none, None)
+        self.assertEqual(_testcapi.const_int, 42)
+        self.assertEqual(_testcapi.const_uint, _testcapi.ULONG_MAX)
+        self.assertIs(_testcapi.const_true, True)
+        self.assertIs(_testcapi.const_false, False)
+        self.assertEqual(_testcapi.const_almost_tau, 6.2831)
+        self.assertEqual(_testcapi.const_str, "Hello")
+        self.assertEqual(_testcapi.const_call, b"23")
+        self.assertEqual(_testcapi.CONST_INT, 7)
+        self.assertEqual(_testcapi.CONST_STRING, "world")
+
+
 if __name__ == "__main__":
     unittest.main()
