@@ -8,6 +8,7 @@
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_context.h"       // _PyContext_Init()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
+#include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_pathconfig.h"    // _PyConfig_WritePathConfig()
@@ -155,18 +156,11 @@ init_importlib(PyThreadState *tstate, PyObject *sysmod)
     }
     interp->importlib = Py_NewRef(importlib);
 
-    PyObject *import_func = _PyDict_GetItemStringWithError(interp->builtins,
-                                                           "__import__");
-    if (import_func == NULL) {
-        return -1;
-    }
-    interp->import_func = Py_NewRef(import_func);
-
     // Import the _imp module
     if (verbose) {
         PySys_FormatStderr("import _imp # builtin\n");
     }
-    PyObject *imp_mod = PyInit__imp();
+    PyObject *imp_mod = _PyImport_BootstrapImp(tstate);
     if (imp_mod == NULL) {
         return -1;
     }
@@ -740,6 +734,14 @@ pycore_init_builtins(PyThreadState *tstate)
         goto error;
     }
     Py_DECREF(bimod);
+
+    // Get the __import__ function
+    PyObject *import_func = _PyDict_GetItemStringWithError(interp->builtins,
+                                                           "__import__");
+    if (import_func == NULL) {
+        goto error;
+    }
+    interp->import_func = Py_NewRef(import_func);
 
     assert(!_PyErr_Occurred(tstate));
 

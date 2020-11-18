@@ -4,6 +4,7 @@
 
 #include "Python-ast.h"
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
+#include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pyhash.h"
@@ -978,6 +979,54 @@ PyImport_GetImporter(PyObject *path)
     return importer;
 }
 
+static PyObject*
+create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
+{
+    PyObject *mod = _PyImport_FindExtensionObject(name, name);
+    if (mod || _PyErr_Occurred(tstate)) {
+        Py_XINCREF(mod);
+        return mod;
+    }
+
+    PyObject *modules = tstate->interp->modules;
+    for (struct _inittab *p = PyImport_Inittab; p->name != NULL; p++) {
+        if (_PyUnicode_EqualToASCIIString(name, p->name)) {
+            if (p->initfunc == NULL) {
+                /* Cannot re-init internal module ("sys" or "builtins") */
+                return PyImport_AddModuleObject(name);
+            }
+
+            mod = (*p->initfunc)();
+            if (mod == NULL) {
+                return NULL;
+            }
+
+            if (PyObject_TypeCheck(mod, &PyModuleDef_Type)) {
+                return PyModule_FromDefAndSpec((PyModuleDef*)mod, spec);
+            }
+            else {
+                /* Remember pointer to module init function. */
+                PyModuleDef *def = PyModule_GetDef(mod);
+                if (def == NULL) {
+                    return NULL;
+                }
+
+                def->m_base.m_init = p->initfunc;
+                if (_PyImport_FixupExtensionObject(mod, name, name,
+                                                   modules) < 0) {
+                    return NULL;
+                }
+                return mod;
+            }
+        }
+    }
+
+    // not found
+    Py_RETURN_NONE;
+}
+
+
+
 /*[clinic input]
 _imp.create_builtin
 
@@ -992,67 +1041,15 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
 /*[clinic end generated code: output=ace7ff22271e6f39 input=37f966f890384e47]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    struct _inittab *p;
-    PyObject *name;
-    const char *namestr;
-    PyObject *mod;
 
-    name = PyObject_GetAttrString(spec, "name");
+    PyObject *name = PyObject_GetAttrString(spec, "name");
     if (name == NULL) {
         return NULL;
     }
 
-    mod = _PyImport_FindExtensionObject(name, name);
-    if (mod || _PyErr_Occurred(tstate)) {
-        Py_DECREF(name);
-        Py_XINCREF(mod);
-        return mod;
-    }
-
-    namestr = PyUnicode_AsUTF8(name);
-    if (namestr == NULL) {
-        Py_DECREF(name);
-        return NULL;
-    }
-
-    PyObject *modules = tstate->interp->modules;
-    for (p = PyImport_Inittab; p->name != NULL; p++) {
-        PyModuleDef *def;
-        if (_PyUnicode_EqualToASCIIString(name, p->name)) {
-            if (p->initfunc == NULL) {
-                /* Cannot re-init internal module ("sys" or "builtins") */
-                mod = PyImport_AddModule(namestr);
-                Py_DECREF(name);
-                return mod;
-            }
-            mod = (*p->initfunc)();
-            if (mod == NULL) {
-                Py_DECREF(name);
-                return NULL;
-            }
-            if (PyObject_TypeCheck(mod, &PyModuleDef_Type)) {
-                Py_DECREF(name);
-                return PyModule_FromDefAndSpec((PyModuleDef*)mod, spec);
-            } else {
-                /* Remember pointer to module init function. */
-                def = PyModule_GetDef(mod);
-                if (def == NULL) {
-                    Py_DECREF(name);
-                    return NULL;
-                }
-                def->m_base.m_init = p->initfunc;
-                if (_PyImport_FixupExtensionObject(mod, name, name,
-                                                   modules) < 0) {
-                    Py_DECREF(name);
-                    return NULL;
-                }
-                Py_DECREF(name);
-                return mod;
-            }
-        }
-    }
+    PyObject *mod = create_builtin(tstate, name, spec);
     Py_DECREF(name);
-    Py_RETURN_NONE;
+    return mod;
 }
 
 
@@ -2127,46 +2124,88 @@ static PyMethodDef imp_methods[] = {
 };
 
 
-static struct PyModuleDef impmodule = {
+static int
+imp_module_exec(PyObject *module)
+{
+    const wchar_t *mode = _Py_GetConfig()->check_hash_pycs_mode;
+    PyObject *pyc_mode = PyUnicode_FromWideChar(mode, -1);
+    if (pyc_mode == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(module, "check_hash_based_pycs", pyc_mode) < 0) {
+        Py_DECREF(pyc_mode);
+        return -1;
+    }
+    Py_DECREF(pyc_mode);
+
+    return 0;
+}
+
+
+static PyModuleDef_Slot imp_slots[] = {
+    {Py_mod_exec, imp_module_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef imp_module = {
     PyModuleDef_HEAD_INIT,
-    "_imp",
-    doc_imp,
-    0,
-    imp_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "_imp",
+    .m_doc = doc_imp,
+    .m_size = 0,
+    .m_methods = imp_methods,
+    .m_slots = imp_slots,
 };
 
 PyMODINIT_FUNC
 PyInit__imp(void)
 {
-    PyObject *m, *d;
+    return PyModuleDef_Init(&imp_module);
+}
 
-    m = PyModule_Create(&impmodule);
-    if (m == NULL) {
-        goto failure;
-    }
-    d = PyModule_GetDict(m);
-    if (d == NULL) {
-        goto failure;
+
+// Import the _imp extension by calling manually _imp.create_builtin() and
+// _imp.exec_builtin() since importlib is not initialized yet. Initializing
+// importlib requires the _imp module: this function fix the bootstrap issue.
+PyObject*
+_PyImport_BootstrapImp(PyThreadState *tstate)
+{
+    PyObject *name = PyUnicode_FromString("_imp");
+    if (name == NULL) {
+        return NULL;
     }
 
-    const wchar_t *mode = _Py_GetConfig()->check_hash_pycs_mode;
-    PyObject *pyc_mode = PyUnicode_FromWideChar(mode, -1);
-    if (pyc_mode == NULL) {
-        goto failure;
+    // Mock a ModuleSpec object just good enough for PyModule_FromDefAndSpec():
+    // an object with just a name attribute.
+    //
+    // _imp.__spec__ is overriden by importlib._bootstrap._instal() anyway.
+    PyObject *attrs = Py_BuildValue("{sO}", "name", name);
+    if (attrs == NULL) {
+        goto error;
     }
-    if (PyDict_SetItemString(d, "check_hash_based_pycs", pyc_mode) < 0) {
-        Py_DECREF(pyc_mode);
-        goto failure;
+    PyObject *spec = _PyNamespace_New(attrs);
+    Py_DECREF(attrs);
+    if (spec == NULL) {
+        goto error;
     }
-    Py_DECREF(pyc_mode);
 
-    return m;
-  failure:
-    Py_XDECREF(m);
+    // Create the _imp module from its definition.
+    PyObject *mod = create_builtin(tstate, name, spec);
+    Py_CLEAR(name);
+    Py_DECREF(spec);
+    if (mod == NULL) {
+        goto error;
+    }
+    assert(mod != Py_None);  // not found
+
+    // Execute the _imp module: call imp_module_exec().
+    if (exec_builtin_or_dynamic(mod) < 0) {
+        Py_DECREF(mod);
+        goto error;
+    }
+    return mod;
+
+error:
+    Py_XDECREF(name);
     return NULL;
 }
 
