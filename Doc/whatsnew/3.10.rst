@@ -154,6 +154,9 @@ Other Language Changes
   :meth:`~object.__index__` method).
   (Contributed by Serhiy Storchaka in :issue:`37999`.)
 
+* Assignment expressions can now be used unparenthesized within set literals
+  and set comprehensions, as well as in sequence indexes (but not slices).
+
 
 New Modules
 ===========
