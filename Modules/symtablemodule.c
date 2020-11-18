@@ -117,14 +117,10 @@ static PyModuleDef_Slot symtable_slots[] = {
 
 static struct PyModuleDef symtablemodule = {
     PyModuleDef_HEAD_INIT,
-    "_symtable",
-    NULL,
-    0,
-    symtable_methods,
-    symtable_slots,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "_symtable",
+    .m_size = 0,
+    .m_methods = symtable_methods,
+    .m_slots = symtable_slots,
 };
 
 PyMODINIT_FUNC
