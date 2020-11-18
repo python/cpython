@@ -1538,7 +1538,7 @@ signal_add_constants(PyObject *module)
 
 
 static int
-signal_exec(PyObject *m)
+signal_module_exec(PyObject *m)
 {
     assert(!PyErr_Occurred());
 
@@ -1568,15 +1568,19 @@ signal_exec(PyObject *m)
     // Get signal handlers
     for (int signum = 1; signum < NSIG; signum++) {
         void (*c_handler)(int) = PyOS_getsig(signum);
+        PyObject *func;
         if (c_handler == SIG_DFL) {
-            Handlers[signum].func = Py_NewRef(DefaultHandler);
+            func = DefaultHandler;
         }
         else if (c_handler == SIG_IGN) {
-            Handlers[signum].func = Py_NewRef(IgnoreHandler);
+            func = IgnoreHandler;
         }
         else {
-            Handlers[signum].func = Py_NewRef(Py_None); // None of our business
+            func = Py_None; // None of our business
         }
+        // If signal_module_exec() is called more than one, we must
+        // clear the strong reference to the previous function.
+        Py_XSETREF(Handlers[signum].func, Py_NewRef(func));
     }
 
     // Instal Python SIGINT handler which raises KeyboardInterrupt
@@ -1595,28 +1599,25 @@ signal_exec(PyObject *m)
 }
 
 
-static struct PyModuleDef signalmodule = {
+static PyModuleDef_Slot signal_slots[] = {
+    {Py_mod_exec, signal_module_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef signal_module = {
     PyModuleDef_HEAD_INIT,
     "_signal",
     .m_doc = module_doc,
-    .m_size = -1,
+    .m_size = 0,
     .m_methods = signal_methods,
+    .m_slots = signal_slots,
 };
 
 
 PyMODINIT_FUNC
 PyInit__signal(void)
 {
-    PyObject *mod = PyModule_Create(&signalmodule);
-    if (mod == NULL) {
-        return NULL;
-    }
-
-    if (signal_exec(mod) < 0) {
-        Py_DECREF(mod);
-        return NULL;
-    }
-    return mod;
+    return PyModuleDef_Init(&signal_module);
 }
 
 
@@ -1767,6 +1768,29 @@ signal_install_handlers(void)
     Py_DECREF(module);
 
     return 0;
+}
+
+
+/* Restore signals that the interpreter has called SIG_IGN on to SIG_DFL.
+ *
+ * All of the code in this function must only use async-signal-safe functions,
+ * listed at `man 7 signal` or
+ * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_04.html.
+ *
+ * If this function is updated, update also _posix_spawn() of subprocess.py.
+ */
+void
+_Py_RestoreSignals(void)
+{
+#ifdef SIGPIPE
+    PyOS_setsig(SIGPIPE, SIG_DFL);
+#endif
+#ifdef SIGXFZ
+    PyOS_setsig(SIGXFZ, SIG_DFL);
+#endif
+#ifdef SIGXFSZ
+    PyOS_setsig(SIGXFSZ, SIG_DFL);
+#endif
 }
 
 

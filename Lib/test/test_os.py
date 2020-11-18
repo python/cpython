@@ -93,6 +93,11 @@ def create_file(filename, content=b'content'):
         fp.write(content)
 
 
+# bpo-41625: On AIX, splice() only works with a socket, not with a pipe.
+requires_splice_pipe = unittest.skipIf(sys.platform.startswith("aix"),
+                                       'on AIX, splice() only accepts sockets')
+
+
 class MiscTests(unittest.TestCase):
     def test_getcwd(self):
         cwd = os.getcwd()
@@ -387,6 +392,7 @@ class FileTests(unittest.TestCase):
             os.splice(0, 1, -10)
 
     @unittest.skipUnless(hasattr(os, 'splice'), 'test needs os.splice()')
+    @requires_splice_pipe
     def test_splice(self):
         TESTFN2 = os_helper.TESTFN + ".3"
         data = b'0123456789'
@@ -419,6 +425,7 @@ class FileTests(unittest.TestCase):
             self.assertEqual(os.read(read_fd, 100), data[:i])
 
     @unittest.skipUnless(hasattr(os, 'splice'), 'test needs os.splice()')
+    @requires_splice_pipe
     def test_splice_offset_in(self):
         TESTFN4 = os_helper.TESTFN + ".4"
         data = b'0123456789'
@@ -456,6 +463,7 @@ class FileTests(unittest.TestCase):
             self.assertEqual(read, data[in_skip:in_skip+i])
 
     @unittest.skipUnless(hasattr(os, 'splice'), 'test needs os.splice()')
+    @requires_splice_pipe
     def test_splice_offset_out(self):
         TESTFN4 = os_helper.TESTFN + ".4"
         data = b'0123456789'
