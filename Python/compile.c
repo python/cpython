@@ -150,7 +150,6 @@ struct compiler_unit {
     */
     PyObject *u_consts;    /* all constants */
     PyObject *u_names;     /* all names */
-    PyObject *u_annotations; /* all annotations */
     PyObject *u_varnames;  /* local variables */
     PyObject *u_cellvars;  /* cell variables */
     PyObject *u_freevars;  /* free variables */
@@ -253,7 +252,7 @@ static int compiler_async_comprehension_generator(
                                       expr_ty elt, expr_ty val, int type);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
-static PyObject *__doc__;
+static PyObject *__doc__, *__annotations__;
 
 #define CAPSULE_NAME "compile.c compiler unit"
 
@@ -356,6 +355,11 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     if (!__doc__) {
         __doc__ = PyUnicode_InternFromString("__doc__");
         if (!__doc__)
+            return NULL;
+    }
+    if (!__annotations__) {
+        __annotations__ = PyUnicode_InternFromString("__annotations__");
+        if (!__annotations__)
             return NULL;
     }
     if (!compiler_init(&c))
@@ -586,7 +590,6 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
     Py_INCREF(name);
     u->u_name = name;
-    u->u_annotations = Py_None;
     u->u_varnames = list2dict(u->u_ste->ste_varnames);
     u->u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, 0, 0);
     if (!u->u_varnames || !u->u_cellvars) {
@@ -1781,9 +1784,9 @@ compiler_unwind_fblock_stack(struct compiler *c, int preserve_tos, struct fblock
 static int
 compiler_body(struct compiler *c, asdl_stmt_seq *stmts)
 {
-    int i = 0, has_annotations = 0;
+    int i = 0;
     stmt_ty st;
-    PyObject *docstring, *annotations;
+    PyObject *docstring;
 
     /* Set current line number to the line number of first statement.
        This way line number for SETUP_ANNOTATIONS will always
@@ -1796,10 +1799,6 @@ compiler_body(struct compiler *c, asdl_stmt_seq *stmts)
     /* Every annotated class and module should have __annotations__. */
     if (find_ann(stmts)) {
         ADDOP(c, SETUP_ANNOTATIONS);
-        has_annotations = 1;
-        c->u->u_annotations = PyList_New(0);
-        if (!c->u->u_annotations)
-            return 0;
     }
     if (!asdl_seq_LEN(stmts))
         return 1;
@@ -1817,16 +1816,6 @@ compiler_body(struct compiler *c, asdl_stmt_seq *stmts)
     }
     for (; i < asdl_seq_LEN(stmts); i++)
         VISIT(c, stmt, (stmt_ty)asdl_seq_GET(stmts, i));
-
-    if (has_annotations) {
-        annotations = PyList_AsTuple(c->u->u_annotations);
-        Py_DECREF(c->u->u_annotations);
-        c->u->u_annotations = Py_None;
-        if (annotations == NULL)
-            return 0;
-        c->u->u_annotations = annotations;
-    }
-
     return 1;
 }
 
@@ -2030,24 +2019,9 @@ error:
 }
 
 static int
-compiler_add_annotation(struct compiler *c, PyObject* mangled,
-                        expr_ty annotation, PyObject *annotations) {
-    PyObject *value;
-
-    if (PyList_Append(annotations, mangled) < 0) {
-        return 0;
-    }
-
-    value = _PyAST_ExprAsUnicode(annotation);
-    if (value == NULL)
-        return 0;
-
-    if (PyList_Append(annotations, value) < 0) {
-        Py_DECREF(value);
-        return 0;
-    }
-
-    Py_DECREF(value);
+compiler_visit_annexpr(struct compiler *c, expr_ty annotation)
+{
+    ADDOP_LOAD_CONST_NEW(c, _PyAST_ExprAsUnicode(annotation));
     return 1;
 }
 
@@ -2056,15 +2030,29 @@ compiler_visit_argannotation(struct compiler *c, identifier id,
     expr_ty annotation, PyObject *annotations)
 {
     if (annotation) {
-        PyObject *mangled;
+        PyObject *mangled, *value;
         mangled = _Py_Mangle(c->u->u_private, id);
         if (!mangled)
             return 0;
-        if(!compiler_add_annotation(c, mangled, annotation, annotations)){
+        if (PyList_Append(annotations, mangled) < 0) {
             Py_DECREF(mangled);
             return 0;
         }
+
+        value = _PyAST_ExprAsUnicode(annotation);
+        if (!value){
+            Py_DECREF(mangled);
+            return 0;
+        }
+
+        if (PyList_Append(annotations, value) < 0) {
+            Py_DECREF(mangled);
+            Py_DECREF(value);
+            return 0;
+        }
+
         Py_DECREF(mangled);
+        Py_DECREF(value);
     }
     return 1;
 }
@@ -2096,7 +2084,7 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
        Return 0 on error, -1 if no dict pushed, 1 if a dict is pushed.
        */
     static identifier return_str;
-    PyObject *annotations, *annotationstuple;
+    PyObject *annotations;
     Py_ssize_t len;
     annotations = PyList_New(0);
     if (!annotations)
@@ -2128,16 +2116,15 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
 
     len = PyList_GET_SIZE(annotations);
     if (len) {
-        annotationstuple = PyList_AsTuple(annotations);
-
-        if (annotationstuple == NULL)
-            goto error;
-
-        c->u->u_annotations = annotationstuple;
+        PyObject *annotationstuple = PyList_AsTuple(annotations);
+        Py_DECREF(annotations);
+        ADDOP_LOAD_CONST_NEW(c, annotationstuple);
+        return 1;
     }
-
-    Py_DECREF(annotations);
-    return 1;
+    else {
+        Py_DECREF(annotations);
+        return -1;
+    }
 
 error:
     Py_DECREF(annotations);
@@ -2234,6 +2221,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     asdl_expr_seq* decos;
     asdl_stmt_seq *body;
     Py_ssize_t i, funcflags;
+    int annotations;
     int scope_type;
     int firstlineno;
 
@@ -2275,11 +2263,15 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         return 0;
     }
 
-    if (!compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno)) {
+    annotations = compiler_visit_annotations(c, args, returns);
+    if (annotations == 0) {
         return 0;
     }
+    else if (annotations > 0) {
+        funcflags |= 0x04;
+    }
 
-    if (!compiler_visit_annotations(c, args, returns)) {
+    if (!compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno)) {
         return 0;
     }
 
@@ -5288,12 +5280,11 @@ compiler_annassign(struct compiler *c, stmt_ty s)
         if (s->v.AnnAssign.simple &&
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
              c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
+            VISIT(c, annexpr, s->v.AnnAssign.annotation);
+            ADDOP_NAME(c, LOAD_NAME, __annotations__, names);
             mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
-            if(!compiler_add_annotation(c, mangled, s->v.AnnAssign.annotation, c->u->u_annotations)){
-                Py_DECREF(mangled);
-                return 0;
-            }
-            Py_DECREF(mangled);
+            ADDOP_LOAD_CONST_NEW(c, mangled);
+            ADDOP(c, STORE_SUBSCR);
         }
         break;
     case Attribute_kind:
@@ -5917,13 +5908,11 @@ makecode(struct compiler *c, struct assembler *a, PyObject *consts)
         Py_DECREF(consts);
         goto error;
     }
-
-    co = PyCode_NewWithAnnotations(posonlyargcount+posorkeywordargcount,
+    co = PyCode_NewWithPosOnlyArgs(posonlyargcount+posorkeywordargcount,
                                    posonlyargcount, kwonlyargcount, nlocals_int,
                                    maxdepth, flags, a->a_bytecode, consts, names,
                                    varnames, freevars, cellvars, c->c_filename,
-                                   c->u->u_name, c->u->u_firstlineno, a->a_lnotab,
-                                   c->u->u_annotations);
+                                   c->u->u_name, c->u->u_firstlineno, a->a_lnotab);
     Py_DECREF(consts);
  error:
     Py_XDECREF(names);
@@ -6484,3 +6473,4 @@ PyCode_Optimize(PyObject *code, PyObject* Py_UNUSED(consts),
     Py_INCREF(code);
     return code;
 }
+

@@ -114,12 +114,12 @@ intern_string_constants(PyObject *tuple, int *modified)
 }
 
 PyCodeObject *
-PyCode_NewWithAnnotations(int argcount, int posonlyargcount, int kwonlyargcount,
+PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
                           int nlocals, int stacksize, int flags,
                           PyObject *code, PyObject *consts, PyObject *names,
                           PyObject *varnames, PyObject *freevars, PyObject *cellvars,
                           PyObject *filename, PyObject *name, int firstlineno,
-                          PyObject *linetable, PyObject* annotations)
+                          PyObject *linetable)
 {
     PyCodeObject *co;
     Py_ssize_t *cell2arg = NULL;
@@ -137,8 +137,7 @@ PyCode_NewWithAnnotations(int argcount, int posonlyargcount, int kwonlyargcount,
         cellvars == NULL || !PyTuple_Check(cellvars) ||
         name == NULL || !PyUnicode_Check(name) ||
         filename == NULL || !PyUnicode_Check(filename) ||
-        linetable == NULL || !PyBytes_Check(linetable) ||
-        annotations == NULL || !(annotations == Py_None || PyTuple_Check(annotations))) {
+        linetable == NULL || !PyBytes_Check(linetable)) {
         PyErr_BadInternalCall();
         return NULL;
     }
@@ -164,9 +163,6 @@ PyCode_NewWithAnnotations(int argcount, int posonlyargcount, int kwonlyargcount,
         return NULL;
     }
     if (intern_string_constants(consts, NULL) < 0) {
-        return NULL;
-    }
-    if (annotations != Py_None && intern_strings(annotations) < 0) {
         return NULL;
     }
 
@@ -232,13 +228,6 @@ PyCode_NewWithAnnotations(int argcount, int posonlyargcount, int kwonlyargcount,
             cell2arg = NULL;
         }
     }
-
-    /* Check if annotation len is even */
-    if (annotations != Py_None && PyTuple_GET_SIZE(annotations) % 2){
-        PyErr_SetString(PyExc_ValueError, "code: annotations len is odd");
-        return NULL;
-    }
-
     co = PyObject_New(PyCodeObject, &PyCode_Type);
     if (co == NULL) {
         if (cell2arg)
@@ -258,8 +247,6 @@ PyCode_NewWithAnnotations(int argcount, int posonlyargcount, int kwonlyargcount,
     Py_INCREF(names);
     co->co_names = names;
     Py_INCREF(varnames);
-    co->co_annotations = annotations;
-    Py_INCREF(annotations);
     co->co_varnames = varnames;
     Py_INCREF(freevars);
     co->co_freevars = freevars;
@@ -282,19 +269,6 @@ PyCode_NewWithAnnotations(int argcount, int posonlyargcount, int kwonlyargcount,
     co->co_opcache_flag = 0;
     co->co_opcache_size = 0;
     return co;
-}
-
-PyCodeObject *
-PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
-                          int nlocals, int stacksize, int flags,
-                          PyObject *code, PyObject *consts, PyObject *names,
-                          PyObject *varnames, PyObject *freevars, PyObject *cellvars,
-                          PyObject *filename, PyObject *name, int firstlineno,
-                          PyObject *linetable) {
-    return PyCode_NewWithAnnotations(argcount, posonlyargcount, kwonlyargcount, nlocals,
-                                     stacksize, flags, code, consts, names,
-                                     varnames, freevars, cellvars, filename,
-                                     name, firstlineno, linetable, Py_None);
 }
 
 PyCodeObject *
@@ -379,7 +353,7 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
     if (filename_ob == NULL)
         goto failed;
 
-    result = PyCode_NewWithAnnotations(
+    result = PyCode_NewWithPosOnlyArgs(
                 0,                    /* argcount */
                 0,                              /* posonlyargcount */
                 0,                              /* kwonlyargcount */
@@ -395,8 +369,7 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
                 filename_ob,                    /* filename */
                 funcname_ob,                    /* name */
                 firstlineno,                    /* firstlineno */
-                emptystring,                    /* linetable */
-                Py_None                         /* annotations */
+                emptystring                     /* linetable */
                 );
 
 failed:
@@ -417,7 +390,6 @@ static PyMemberDef code_memberlist[] = {
     {"co_code",         T_OBJECT,       OFF(co_code),            READONLY},
     {"co_consts",       T_OBJECT,       OFF(co_consts),          READONLY},
     {"co_names",        T_OBJECT,       OFF(co_names),           READONLY},
-    {"co_annotations",  T_OBJECT,       OFF(co_annotations),     READONLY},
     {"co_varnames",     T_OBJECT,       OFF(co_varnames),        READONLY},
     {"co_freevars",     T_OBJECT,       OFF(co_freevars),        READONLY},
     {"co_cellvars",     T_OBJECT,       OFF(co_cellvars),        READONLY},
@@ -568,7 +540,6 @@ code.__new__ as code_new
     linetable: object(subclass_of="&PyBytes_Type")
     freevars: object(subclass_of="&PyTuple_Type", c_default="NULL") = ()
     cellvars: object(subclass_of="&PyTuple_Type", c_default="NULL") = ()
-    annotations: object(c_default="NULL") = ()
     /
 
 Create a code object.  Not for the faint of heart.
@@ -580,15 +551,14 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
               PyObject *code, PyObject *consts, PyObject *names,
               PyObject *varnames, PyObject *filename, PyObject *name,
               int firstlineno, PyObject *linetable, PyObject *freevars,
-              PyObject *cellvars, PyObject *annotations)
-/*[clinic end generated code: output=7e5135bd6c738784 input=fb9579344bff3249]*/
+              PyObject *cellvars)
+/*[clinic end generated code: output=42c1839b082ba293 input=0ec80da632b99f57]*/
 {
     PyObject *co = NULL;
     PyObject *ournames = NULL;
     PyObject *ourvarnames = NULL;
     PyObject *ourfreevars = NULL;
     PyObject *ourcellvars = NULL;
-    PyObject *ourannotations = NULL;
 
     if (PySys_Audit("code.__new__", "OOOiiiiii",
                     code, filename, name, argcount, posonlyargcount,
@@ -641,27 +611,14 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
         ourcellvars = PyTuple_New(0);
     if (ourcellvars == NULL)
         goto cleanup;
-    if (annotations && annotations != Py_None && !PyTuple_Check(annotations)) {
-        PyErr_SetString(
-                PyExc_ValueError,
-                "code: annotations must be tuple or None");
-        goto cleanup;
-    }
-    if (annotations && annotations != Py_None)
-        ourannotations = validate_and_copy_tuple(annotations);
-    else
-        ourannotations = Py_None;
-    if (ourannotations == NULL)
-        goto cleanup;
 
-    co = (PyObject *)PyCode_NewWithAnnotations(argcount, posonlyargcount,
+    co = (PyObject *)PyCode_NewWithPosOnlyArgs(argcount, posonlyargcount,
                                                kwonlyargcount,
                                                nlocals, stacksize, flags,
                                                code, consts, ournames,
                                                ourvarnames, ourfreevars,
                                                ourcellvars, filename,
-                                               name, firstlineno, linetable,
-                                               ourannotations);
+                                               name, firstlineno, linetable);
   cleanup:
     Py_XDECREF(ournames);
     Py_XDECREF(ourvarnames);
@@ -758,7 +715,6 @@ code.replace
     co_filename: unicode(c_default="self->co_filename") = None
     co_name: unicode(c_default="self->co_name") = None
     co_linetable: PyBytesObject(c_default="(PyBytesObject *)self->co_linetable") = None
-    co_annotations: object(subclass_of="&PyTuple_Type", c_default="self->co_annotations") = None
 
 Return a copy of the code object with new values for the specified fields.
 [clinic start generated code]*/
@@ -771,9 +727,8 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
                   PyObject *co_consts, PyObject *co_names,
                   PyObject *co_varnames, PyObject *co_freevars,
                   PyObject *co_cellvars, PyObject *co_filename,
-                  PyObject *co_name, PyBytesObject *co_linetable,
-                  PyObject *co_annotations)
-/*[clinic end generated code: output=d8d18f0fd2f4fb04 input=becb362e1c44b75b]*/
+                  PyObject *co_name, PyBytesObject *co_linetable)
+/*[clinic end generated code: output=50d77e668d3b449b input=a5f997b173d7f636]*/
 {
 #define CHECK_INT_ARG(ARG) \
         if (ARG < 0) { \
@@ -792,18 +747,18 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
 
 #undef CHECK_INT_ARG
 
-    if (PySys_Audit("code.__new__", "OOOiiiiiiO",
+    if (PySys_Audit("code.__new__", "OOOiiiiii",
                     co_code, co_filename, co_name, co_argcount,
                     co_posonlyargcount, co_kwonlyargcount, co_nlocals,
-                    co_stacksize, co_flags, co_annotations) < 0) {
+                    co_stacksize, co_flags) < 0) {
         return NULL;
     }
 
-    return (PyObject *)PyCode_NewWithAnnotations(
+    return (PyObject *)PyCode_NewWithPosOnlyArgs(
         co_argcount, co_posonlyargcount, co_kwonlyargcount, co_nlocals,
         co_stacksize, co_flags, (PyObject*)co_code, co_consts, co_names,
         co_varnames, co_freevars, co_cellvars, co_filename, co_name,
-        co_firstlineno, (PyObject*)co_linetable, co_annotations);
+        co_firstlineno, (PyObject*)co_linetable);
 }
 
 static PyObject *

@@ -3059,27 +3059,6 @@ main_loop:
                     Py_DECREF(ann_dict);
                 }
             }
-            if (ann_dict != NULL && f->f_code->co_annotations != Py_None) {
-                PyObject* annotations = f->f_code->co_annotations;
-                int (*set_item)(PyObject *, PyObject *, PyObject *);
-
-                if (PyDict_CheckExact(ann_dict))
-                    set_item = &PyDict_SetItem;
-                else
-                    set_item = &PyObject_SetItem;
-
-                assert(PyTuple_Size(annotations) % 2 == 0);
-
-                Py_ssize_t i;
-                for (i = 0; i < PyTuple_Size(annotations); i += 2) {
-                    err = set_item(ann_dict,
-                                   PyTuple_GET_ITEM(annotations, i),
-                                   PyTuple_GET_ITEM(annotations, i + 1));
-
-                    if (err < 0)
-                        goto error;
-                }
-            }
             DISPATCH();
         }
 
@@ -3899,6 +3878,10 @@ main_loop:
             if (oparg & 0x08) {
                 assert(PyTuple_CheckExact(TOP()));
                 func ->func_closure = POP();
+            }
+            if (oparg & 0x04) {
+                assert(PyTuple_CheckExact(TOP()));
+                func->func_annotations = POP();
             }
             if (oparg & 0x02) {
                 assert(PyDict_CheckExact(TOP()));

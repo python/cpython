@@ -1,2 +1,2 @@
-Add ``co_annotations`` field to ``PyCodeObject`` in order to compute
-annotations at compilation time. Patch provided by Yurii Karabas.
+Change function parameters annotations internal representation to tuple
+of strings. Patch provided by Yurii Karabas.

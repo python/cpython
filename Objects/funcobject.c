@@ -424,23 +424,28 @@ func_get_annotations(PyFunctionObject *op, void *Py_UNUSED(ignored))
         if (op->func_annotations == NULL)
             return NULL;
 
-        PyObject *annotations = ((PyCodeObject*) op->func_code )->co_annotations;
-        if (annotations != Py_None) {
-            assert(PyTuple_Size(annotations) % 2 == 0);
+    }
+    if (PyTuple_CheckExact(op->func_annotations)){
+        PyObject *annotations = op->func_annotations;
+        op->func_annotations = PyDict_New();
+        if (op->func_annotations == NULL)
+            return NULL;
 
-            Py_ssize_t i;
-            int err;
-            for (i = 0; i < PyTuple_Size(annotations); i += 2) {
-                err = PyDict_SetItem(op->func_annotations,
-                                     PyTuple_GET_ITEM(annotations, i),
-                                     PyTuple_GET_ITEM(annotations, i + 1));
+        assert(PyTuple_Size(annotations) % 2 == 0);
 
-                if (err < 0) {
-                    Py_DECREF(op->func_annotations);
-                    return NULL;
-                }
+        Py_ssize_t i;
+        int err;
+        for (i = 0; i < PyTuple_Size(annotations); i += 2) {
+            err = PyDict_SetItem(op->func_annotations,
+                                 PyTuple_GET_ITEM(annotations, i),
+                                 PyTuple_GET_ITEM(annotations, i + 1));
+
+            if (err < 0) {
+                Py_DECREF(op->func_annotations);
+                return NULL;
             }
         }
+        Py_DECREF(annotations);
     }
     Py_INCREF(op->func_annotations);
     return op->func_annotations;
