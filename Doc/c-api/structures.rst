@@ -68,9 +68,7 @@ the definition of all other Python objects.
 
    Return a :term:`borrowed reference`.
 
-   .. versionchanged:: 3.10
-      :c:func:`Py_TYPE()` is changed to the inline static function.
-      Use :c:func:`Py_SET_TYPE()` to set an object type.
+   The :c:func:`Py_SET_TYPE` function must be used to set an object type.
 
 
 .. c:function:: int Py_IS_TYPE(PyObject *o, PyTypeObject *type)
@@ -108,9 +106,7 @@ the definition of all other Python objects.
 
    Get the size of the Python object *o*.
 
-   .. versionchanged:: 3.10
-      :c:func:`Py_SIZE()` is changed to the inline static function.
-      Use :c:func:`Py_SET_SIZE()` to set an object size.
+   The :c:func:`Py_SET_SIZE` function must be used to set an object size.
 
 
 .. c:function:: void Py_SET_SIZE(PyVarObject *o, Py_ssize_t size)

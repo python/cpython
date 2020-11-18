@@ -489,17 +489,6 @@ Porting to Python 3.10
   <arg-parsing>` and the :pep:`353`.
   (Contributed by Victor Stinner in :issue:`40943`.)
 
-* Since :c:func:`Py_TYPE()` is changed to the inline static function,
-  ``Py_TYPE(obj) = new_type`` must be replaced with ``Py_SET_TYPE(obj, new_type)``:
-  see :c:func:`Py_SET_TYPE()` (available since Python 3.9). For backward
-  compatibility, this macro can be used::
-
-      #if PY_VERSION_HEX < 0x030900A4
-      #  define Py_SET_TYPE(obj, type) ((Py_TYPE(obj) = (type)), (void)0)
-      #endif
-
-  (Contributed by Dong-hee Na in :issue:`39573`.)
-
 * Since :c:func:`Py_REFCNT()` is changed to the inline static function,
   ``Py_REFCNT(obj) = new_refcnt`` must be replaced with ``Py_SET_REFCNT(obj, new_refcnt)``:
   see :c:func:`Py_SET_REFCNT()` (available since Python 3.9). For backward
