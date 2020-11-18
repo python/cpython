@@ -1,0 +1,1 @@
+test_ssl: skip test_min_max_version_mismatch when TLS 1.0 is not available

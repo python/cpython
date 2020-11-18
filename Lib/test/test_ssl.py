@@ -3854,6 +3854,7 @@ class ThreadedTests(unittest.TestCase):
 
     @requires_minimum_version
     @requires_tls_version('TLSv1_2')
+    @requires_tls_version('TLSv1')
     def test_min_max_version_mismatch(self):
         client_context, server_context, hostname = testing_context()
         # client 1.0, server 1.2 (mismatch)
