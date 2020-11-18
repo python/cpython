@@ -2413,6 +2413,17 @@ class TestFlag(unittest.TestCase):
         self.assertEqual(list(Color.BLUE), [Color.BLUE])
         self.assertEqual(list(Color.GREEN), [Color.GREEN])
 
+    def test_member_iter_one_bit(self):
+        class Foo(Flag):
+            NONE = 0
+            A = 1
+            B = 2
+            C = 4
+            AB = A | B
+            ABC = A | B | C
+
+        self.assertEqual(list(Foo.ABC), [Foo.C, Foo.B, Foo.A])
+
     def test_auto_number(self):
         class Color(Flag):
             red = auto()
