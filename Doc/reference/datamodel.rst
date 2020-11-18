@@ -2619,17 +2619,17 @@ are awaitable.
    .. note::
 
       The language doesn't place any restrictions on the type or value of the
-      objects yielded by the iterator returned by `__await__`, as this is
+      objects yielded by the iterator returned by ``__await__``, as this is
       specific to the implementation of the asynchronous execution framework
       (e.g. :mod:`asyncio`) that will be managing the :term:`awaitable` object.
 
       In the case of :mod:`asyncio`, user code should generally be using
       :term:`coroutines <coroutine>`, instances of :class:`asyncio.Task`,
       :class:`asyncio.Future`, and other :mod:`asyncio` objects to implement
-      `__await__`; yielding objects from these (e.g.
-      `return (yield from future)`), rather than yielding objects directly.
-      An exception to this is a `yield None` (or equivalent bare `yield`)
-      within an `__await__`, which can be used to suspend execution until the
+      ``__await__``; yielding objects from these (e.g.
+      ``return (yield from future)``), rather than yielding objects directly.
+      An exception to this is a ``yield None`` (or equivalent bare ``yield``)
+      within an ``__await__``, which can be used to suspend execution until the
       next iteration of the event loop. The type of objects that the event loop
       expects are considered a private implementation detail of :mod:`asyncio`.
 
