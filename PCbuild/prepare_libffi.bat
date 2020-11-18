@@ -22,10 +22,10 @@ echo Based on https://github.com/libffi/libffi/blob/master/.appveyor.yml
 echo.
 echo.
 echo.Available flags:
-echo.  -x64    build for x64
-echo.  -x86    build for x86
-echo.  -arm32  build for arm32
-echo.  -arm64  build for arm64
+echo.  -x64    enable x64 build
+echo.  -x86    enable x86 build
+echo.  -arm32  enable arm32 build
+echo.  -arm64  enable arm64 build
 echo.  -?      this help
 echo.  --install-cygwin  install cygwin to c:\cygwin
 exit /b 127
@@ -44,6 +44,7 @@ set INSTALL_CYGWIN=
 if "%1"=="" goto :CheckOptsDone
 if /I "%1"=="-x64" (set BUILD_X64=1) & shift & goto :CheckOpts
 if /I "%1"=="-x86" (set BUILD_X86=1) & shift & goto :CheckOpts
+if /I "%1"=="-win32" (set BUILD_X86=1) & shift & goto :CheckOpts
 if /I "%1"=="-arm32" (set BUILD_ARM32=1) & shift & goto :CheckOpts
 if /I "%1"=="-arm64" (set BUILD_ARM64=1) & shift & goto :CheckOpts
 if /I "%1"=="-pdb" (set BUILD_PDB=-g) & shift & goto :CheckOpts
@@ -67,9 +68,7 @@ setlocal
 if NOT DEFINED SH if exist c:\cygwin\bin\sh.exe set SH=c:\cygwin\bin\sh.exe
 
 if NOT DEFINED VCVARSALL (
-    if exist "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" (
-        set VCVARSALL="C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvarsall.bat"
-    )
+    for /F "tokens=*" %%i in ('"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -property installationPath -latest -prerelease -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64') DO @(set VCVARSALL="%%i\VC\Auxiliary\Build\vcvarsall.bat")
 )
 if ^%VCVARSALL:~0,1% NEQ ^" SET VCVARSALL="%VCVARSALL%"
 
