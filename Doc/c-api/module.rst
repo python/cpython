@@ -672,7 +672,7 @@ state:
 
    .. versionadded:: 3.10
 
-.. c:macro:: PyModuleConst_Long(name, value)
+.. c:macro:: PyModuleConst_ULong(name, value)
 
    Add an entry for an unsigned integer constant.
 
