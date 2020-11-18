@@ -1992,59 +1992,55 @@ static PyMethodDef GcMethods[] = {
     {NULL,      NULL}           /* Sentinel */
 };
 
-static struct PyModuleDef gcmodule = {
-    PyModuleDef_HEAD_INIT,
-    "gc",              /* m_name */
-    gc__doc__,         /* m_doc */
-    -1,                /* m_size */
-    GcMethods,         /* m_methods */
-    NULL,              /* m_reload */
-    NULL,              /* m_traverse */
-    NULL,              /* m_clear */
-    NULL               /* m_free */
-};
-
-PyMODINIT_FUNC
-PyInit_gc(void)
+static int
+gcmodule_exec(PyObject *module)
 {
     GCState *gcstate = get_gc_state();
 
-    PyObject *m = PyModule_Create(&gcmodule);
-
-    if (m == NULL) {
-        return NULL;
-    }
-
+    gcstate->garbage = PyList_New(0);
     if (gcstate->garbage == NULL) {
-        gcstate->garbage = PyList_New(0);
-        if (gcstate->garbage == NULL) {
-            return NULL;
-        }
+        return -1;
     }
-    Py_INCREF(gcstate->garbage);
-    if (PyModule_AddObject(m, "garbage", gcstate->garbage) < 0) {
-        return NULL;
+    if (PyModule_AddObjectRef(module, "garbage", gcstate->garbage) < 0) {
+        return -1;
     }
 
+    gcstate->callbacks = PyList_New(0);
     if (gcstate->callbacks == NULL) {
-        gcstate->callbacks = PyList_New(0);
-        if (gcstate->callbacks == NULL) {
-            return NULL;
-        }
+        return -1;
     }
-    Py_INCREF(gcstate->callbacks);
-    if (PyModule_AddObject(m, "callbacks", gcstate->callbacks) < 0) {
-        return NULL;
+    if (PyModule_AddObjectRef(module, "callbacks", gcstate->callbacks) < 0) {
+        return -1;
     }
 
-#define ADD_INT(NAME) if (PyModule_AddIntConstant(m, #NAME, NAME) < 0) { return NULL; }
+#define ADD_INT(NAME) if (PyModule_AddIntConstant(module, #NAME, NAME) < 0) { return -1; }
     ADD_INT(DEBUG_STATS);
     ADD_INT(DEBUG_COLLECTABLE);
     ADD_INT(DEBUG_UNCOLLECTABLE);
     ADD_INT(DEBUG_SAVEALL);
     ADD_INT(DEBUG_LEAK);
 #undef ADD_INT
-    return m;
+    return 0;
+}
+
+static PyModuleDef_Slot gcmodule_slots[] = {
+    {Py_mod_exec, gcmodule_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef gcmodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "gc",
+    .m_doc = gc__doc__,
+    .m_size = 0,  /* special case, state is part of interpreter state */
+    .m_methods = GcMethods,
+    .m_slots = gcmodule_slots
+};
+
+PyMODINIT_FUNC
+PyInit_gc(void)
+{
+    return PyModuleDef_Init(&gcmodule);
 }
 
 /* Public API to invoke gc.collect() from C */
