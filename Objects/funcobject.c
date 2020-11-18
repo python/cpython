@@ -425,7 +425,7 @@ func_get_annotations(PyFunctionObject *op, void *Py_UNUSED(ignored))
             return NULL;
 
     }
-    if (PyTuple_CheckExact(op->func_annotations)){
+    if (PyTuple_CheckExact(op->func_annotations)) {
         PyObject *annotations = op->func_annotations;
         op->func_annotations = PyDict_New();
         if (op->func_annotations == NULL) {
