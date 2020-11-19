@@ -22,7 +22,14 @@ work. One should use importlib as the public-facing version of this module.
 
 # Bootstrap-related code ######################################################
 
+# Modules injected manually by _setup()
+_thread = None
+_warnings = None
+_weakref = None
+
+# Import done by _install_external_importers()
 _bootstrap_external = None
+
 
 def _wrap(new, old):
     """Simple substitute for functools.update_wrapper."""
