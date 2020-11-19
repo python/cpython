@@ -427,7 +427,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
     def _group_keywords_by_length(self) -> Dict[int, List[Tuple[str, int]]]:
         groups: Dict[int, List[Tuple[str, int]]] = {}
         for keyword_str, keyword_type in self.callmakervisitor.keyword_cache.items():
-            length = len(keyword_str)
+            length = len(keyword_str.encode())
             if length in groups:
                 groups[length].append((keyword_str, keyword_type))
             else:
