@@ -570,10 +570,6 @@ class LiteralTests(BaseTestCase):
         self.assertEqual(Literal[1, 2, 3], Literal[1, 2, 3, 3])
 
     def test_hash(self):
-        self.assertNotEqual(hash(Literal[0]), hash(Literal[False]))
-        self.assertNotEqual(hash(Literal[True]), hash(Literal[1]))
-        self.assertNotEqual(hash(Literal[1]), hash(Literal[2]))
-        self.assertNotEqual(hash(Literal[1, True]), hash(Literal[1]))
         self.assertEqual(hash(Literal[1]), hash(Literal[1]))
         self.assertEqual(hash(Literal[1, 2]), hash(Literal[2, 1]))
         self.assertEqual(hash(Literal[1, 2, 3]), hash(Literal[1, 2, 3, 3]))
