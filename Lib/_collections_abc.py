@@ -466,8 +466,6 @@ def _type_repr(obj):
     Borrowed from :mod:`typing` without importing since collections.abc
     shouldn't depend on that module.
     """
-    if isinstance(obj, tuple):
-        return f'[{", ".join(_type_repr(elem) for elem in obj)}]'
     if isinstance(obj, GenericAlias):
         return repr(obj)
     if isinstance(obj, type):
@@ -475,7 +473,7 @@ def _type_repr(obj):
             return obj.__qualname__
         return f'{obj.__module__}.{obj.__qualname__}'
     if obj is ...:
-        return ('...')
+        return '...'
     if isinstance(obj, FunctionType):
         return obj.__name__
     return repr(obj)
