@@ -3637,11 +3637,19 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
         goto error;
     }
     if (cls != obj) {
-        Py_DECREF(cls);
-        PyErr_Format(st->PicklingError,
-                     "Can't pickle %R: it's not the same object as %S.%S",
-                     obj, module_name, global_name);
-        goto error;
+        /* bpo-42410: Compare types' name in case some type objects are
+           created in heap. */
+        if (PyType_Check(cls) && PyType_Check(obj)) {
+            const char *cls_name = _PyType_Name((PyTypeObject *)cls);
+            const char *obj_name = _PyType_Name((PyTypeObject *)obj);
+            if (strcmp(cls_name, obj_name)) {
+                Py_DECREF(cls);
+                PyErr_Format(st->PicklingError,
+                             "Can't pickle %R: it's not the same object as %S.%S",
+                             obj, module_name, global_name);
+                goto error;
+            }
+        }
     }
     Py_DECREF(cls);
 
