@@ -165,12 +165,17 @@ PyStatus
 _PyGC_Init(PyThreadState *tstate)
 {
     GCState *gcstate = &tstate->interp->gc;
+
+    gcstate->garbage = PyList_New(0);
     if (gcstate->garbage == NULL) {
-        gcstate->garbage = PyList_New(0);
-        if (gcstate->garbage == NULL) {
-            return _PyStatus_NO_MEMORY();
-        }
+        return _PyStatus_NO_MEMORY();
     }
+
+    gcstate->callbacks = PyList_New(0);
+    if (gcstate->callbacks == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
+
     return _PyStatus_OK();
 }
 
@@ -1997,21 +2002,13 @@ gcmodule_exec(PyObject *module)
 {
     GCState *gcstate = get_gc_state();
 
-    /* Initialized by _PyGC_Init() early in interpreter lifecycle */
-    if (gcstate->garbage == NULL) {
-        PyErr_SetString(PyExc_SystemError,
-                        "GC garbage bin is not initialized");
-        return -1;
-    }
+    /* garbage and callbacks are initialized by _PyGC_Init() early in
+     * interpreter lifecycle. */
+    assert(gcstate->garbage != NULL);
     if (PyModule_AddObjectRef(module, "garbage", gcstate->garbage) < 0) {
         return -1;
     }
-
-    assert(gcstate->callbacks == NULL);
-    gcstate->callbacks = PyList_New(0);
-    if (gcstate->callbacks == NULL) {
-        return -1;
-    }
+    assert(gcstate->callbacks != NULL);
     if (PyModule_AddObjectRef(module, "callbacks", gcstate->callbacks) < 0) {
         return -1;
     }
@@ -2035,7 +2032,7 @@ static struct PyModuleDef gcmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "gc",
     .m_doc = gc__doc__,
-    .m_size = 0,  /* special case, state is part of interpreter state */
+    .m_size = 0,  // per interpreter state, see: get_gc_state()
     .m_methods = GcMethods,
     .m_slots = gcmodule_slots
 };
