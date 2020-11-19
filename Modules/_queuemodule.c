@@ -381,11 +381,46 @@ PyDoc_STRVAR(queue_module_doc,
 "C implementation of the Python queue module.\n\
 This module is an implementation detail, please do not use it directly.");
 
+static int
+queuemodule_exec(PyObject *module)
+{
+    simplequeue_state *state = simplequeue_get_state(module);
+
+    state->EmptyError = PyErr_NewExceptionWithDoc(
+        "_queue.Empty",
+        "Exception raised by Queue.get(block=0)/get_nowait().",
+        NULL, NULL);
+    if (state->EmptyError == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(module, "Empty", state->EmptyError) < 0) {
+        return -1;
+    }
+
+    state->SimpleQueueType = (PyTypeObject *)PyType_FromModuleAndSpec(
+        module, &simplequeue_spec, NULL);
+    if (state->SimpleQueueType == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, state->SimpleQueueType) < 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+static PyModuleDef_Slot queuemodule_slots[] = {
+    {Py_mod_exec, queuemodule_exec},
+    {0, NULL}
+};
+
+
 static struct PyModuleDef queuemodule = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_queue",
     .m_doc = queue_module_doc,
     .m_size = sizeof(simplequeue_state),
+    .m_slots = queuemodule_slots,
     .m_traverse = queue_traverse,
     .m_clear = queue_clear,
     .m_free = queue_free,
@@ -395,41 +430,5 @@ static struct PyModuleDef queuemodule = {
 PyMODINIT_FUNC
 PyInit__queue(void)
 {
-    PyObject *m;
-    simplequeue_state *state;
-
-    /* Create the module */
-    m = PyModule_Create(&queuemodule);
-    if (m == NULL)
-        return NULL;
-
-    state = simplequeue_get_state(m);
-    state->EmptyError = PyErr_NewExceptionWithDoc(
-        "_queue.Empty",
-        "Exception raised by Queue.get(block=0)/get_nowait().",
-        NULL, NULL);
-    if (state->EmptyError == NULL)
-        goto error;
-
-    Py_INCREF(state->EmptyError);
-    if (PyModule_AddObject(m, "Empty", state->EmptyError) < 0) {
-        Py_DECREF(state->EmptyError);
-        goto error;
-    }
-
-    state->SimpleQueueType = (PyTypeObject *)PyType_FromModuleAndSpec(m,
-                                                                 &simplequeue_spec,
-                                                                 NULL);
-    if (state->SimpleQueueType == NULL) {
-        goto error;
-    }
-    if (PyModule_AddType(m, state->SimpleQueueType) < 0) {
-        goto error;
-    }
-
-    return m;
-
-error:
-    Py_DECREF(m);
-    return NULL;
+   return PyModuleDef_Init(&queuemodule);
 }
