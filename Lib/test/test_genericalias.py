@@ -62,7 +62,6 @@ class BaseTest(unittest.TestCase):
                      Iterable, Iterator,
                      Reversible,
                      Container, Collection,
-                     Callable,
                      Mailbox, _PartialFile,
                      ContextVar, Token,
                      Field,
@@ -306,7 +305,7 @@ class BaseTest(unittest.TestCase):
         alias = Callable[[int, str], float]
         with self.subTest("Testing collections.abc.Callable's subscription"):
             self.assertIs(alias.__origin__, Callable)
-            self.assertEqual(alias.__args__, (int, str, float))
+            self.assertEqual(alias.__args__, (tuple[int, str], float))
             self.assertEqual(alias.__parameters__, ())
 
         with self.subTest("Testing collections.abc.Callable's instance checks"):
@@ -323,7 +322,7 @@ class BaseTest(unittest.TestCase):
         # bpo-42195
         with self.subTest("Testing collections.abc.Callable's consistency "
                           "with typing.Callable"):
-            self.assertEquals(typing.Callable[[int, str], dict].__args__,
+            self.assertEqual(typing.Callable[[int, str], dict].__args__,
                               Callable[[int, str], dict].__args__)
 
 if __name__ == "__main__":

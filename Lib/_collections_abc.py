@@ -25,7 +25,7 @@ __all__ = ["Awaitable", "Coroutine",
            "Sequence", "MutableSequence",
            "ByteString",
            # To allow for pickling, not actually meant to be imported.
-           "_CallableGenericAlias"
+           "_CallableGenericAlias",
            ]
 
 # This module has been renamed from collections.abc to _collections_abc to
@@ -418,30 +418,25 @@ class Collection(Sized, Iterable, Container):
 class _CallableGenericAlias(GenericAlias):
     """ Internal class specifically for consistency between the ``__args__`` of
     ``collections.abc.Callable``'s and ``typing.Callable``'s ``GenericAlias``.
-
-    See :issue:`42195`.
     """
 
     def __new__(cls, *args, **kwargs):
         if not isinstance(args, tuple) or len(args) != 2:
-            raise TypeError("Callable must be used as "
-                            "Callable[[arg, ...], result].")
-        _typ, _args = args
-        if not isinstance(_args, (tuple, EllipsisType)) or len(_args) != 2:
-            raise TypeError("Callable must be used as "
-                            "Callable[[arg, ...], result].")
+            raise TypeError("Callable must be used as Callable[[arg, ...], result]")
+        origin, _args = args
+        if not isinstance(_args, tuple) or len(_args) != 2:
+            raise TypeError("Callable must be used as Callable[[arg, ...], result]")
         t_args, t_result = _args
         if not isinstance(t_args, (list, EllipsisType)):
-            raise TypeError("Callable[args, result]: args must be a list. Got"
-                            f" {_type_repr(t_args)}")
+            raise TypeError("Callable[args, result]: args must be a list "
+                            f"or Ellipsis. Got {_type_repr(t_args)}")
 
-        ga_args = []
-        for arg in _args:
-            if isinstance(arg, list):
-                ga_args.extend(arg)
-            else:
-                ga_args.append(arg)
-        return super().__new__(cls, _typ, tuple(ga_args))
+        if t_args == Ellipsis:
+            ga_args = _args
+        else:
+            ga_args = tuple[tuple(t_args)], t_result
+
+        return super().__new__(cls, origin, ga_args)
 
     def __init__(self, *args, **kwargs):
         pass
@@ -456,35 +451,36 @@ class _CallableGenericAlias(GenericAlias):
         return super().__hash__()
 
     def __repr__(self):
-        t_args = self.__args__[:-1]
-        t_result = self.__args__[-1]
+        t_args = self.__args__[0]
+        origin = _type_repr(self.__origin__)
 
-        orig = _type_repr(self.__origin__)
-        args = f"{', '.join(_type_repr(a) for a in t_args)}"
-        result = _type_repr(t_result)
+        if len(self.__args__) == 2 and t_args is Ellipsis:
+            return super().__repr__()
+        if t_args.__args__ == ((),):
+            t_args_repr = '[]'
+        else:
+            t_args_repr = f'[{", ".join(_type_repr(a) for a in t_args.__args__)}]'
 
-        if not isinstance(t_args[0], EllipsisType):
-            args = f"[{args}]"
 
-        return f"{orig}[{args}, {result}]"
+        return f"{origin}[{t_args_repr}, {_type_repr(self.__args__[-1])}]"
 
 
 def _type_repr(obj):
     """Return the repr() of an object, special-casing types (internal helper).
 
-    If obj is a type, we return a shorter version than the default
-    type.__repr__, based on the module and qualified name, which is
-    typically enough to uniquely identify a type.  For everything
-    else, we fall back on repr(obj).
-
-    Borrowed from :mod:`typing`.
+    Borrowed from :mod:`typing` without importing since collections.abc
+    shouldn't depend on that module.
     """
+    if isinstance(obj, tuple):
+        return f'[{", ".join(_type_repr(elem) for elem in obj)}]'
+    if isinstance(obj, GenericAlias):
+        return repr(obj)
     if isinstance(obj, type):
         if obj.__module__ == 'builtins':
             return obj.__qualname__
         return f'{obj.__module__}.{obj.__qualname__}'
     if obj is ...:
-        return('...')
+        return ('...')
     if isinstance(obj, FunctionType):
         return obj.__name__
     return repr(obj)

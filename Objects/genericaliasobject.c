@@ -570,16 +570,18 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     gaobject *self;
 
     assert(type != NULL && type->tp_alloc != NULL);
-    self = (gaobject *)type->tp_alloc(type, 0);
-    if (self == NULL)
-        return NULL;
-
     if (!_PyArg_NoKwnames("GenericAlias", kwds)) {
         return NULL;
     }
     if (!_PyArg_CheckPositional("GenericAlias", PyTuple_GET_SIZE(args), 2, 2)) {
         return NULL;
     }
+    
+    self = (gaobject *)type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
+    }
+
     PyObject *origin = PyTuple_GET_ITEM(args, 0);
     PyObject *arguments = PyTuple_GET_ITEM(args, 1);
 
@@ -598,6 +600,7 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->origin = origin;
     self->args = arguments;
     self->parameters = NULL;
+    self->weakreflist = NULL;
     return (PyObject *) self;
 }
 
