@@ -279,7 +279,7 @@ class _sre.SRE_Pattern "PatternObject *" "get_sre_module_state_by_type(tp)->Patt
 class _sre.SRE_Match "MatchObject *" "get_sre_module_state_by_type(tp)->Match_Type"
 class _sre.SRE_Scanner "ScannerObject *" "get_sre_module_state_by_type(tp)->Scanner_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9f2e869a208f635c]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=8b48770d8db721b4]*/
 
 /*[clinic input]
 _sre.getcodesize -> int
@@ -2841,7 +2841,7 @@ do {                                                                \
             goto error;                                   \
         int res = PyModule_AddObjectRef(module, name, o); \
         Py_DECREF(o);                                     \
-        if (res <) {                                      \
+        if (res < 0) {                                    \
             goto error;                                   \
         }                                                 \
 } while (0)
@@ -2850,8 +2850,6 @@ static int
 sre_exec(PyObject *m)
 {
     _sremodulestate *state;
-    PyObject* d;
-    PyObject* x;
 
     /* Create heap types */
     state = get_sre_module_state(m);
