@@ -8,7 +8,7 @@ PyDoc_STRVAR(select_select__doc__,
 "\n"
 "Wait until one or more file descriptors are ready for some kind of I/O.\n"
 "\n"
-"The first three arguments are sequences of file descriptors to be waited for:\n"
+"The first three arguments are iterables of file descriptors to be waited for:\n"
 "rlist -- wait until ready for reading\n"
 "wlist -- wait until ready for writing\n"
 "xlist -- wait for an \"exceptional condition\"\n"
@@ -45,11 +45,17 @@ select_select(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *xlist;
     PyObject *timeout_obj = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "select",
-        3, 4,
-        &rlist, &wlist, &xlist, &timeout_obj)) {
+    if (!_PyArg_CheckPositional("select", nargs, 3, 4)) {
         goto exit;
     }
+    rlist = args[0];
+    wlist = args[1];
+    xlist = args[2];
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    timeout_obj = args[3];
+skip_optional:
     return_value = select_select_impl(module, rlist, wlist, xlist, timeout_obj);
 
 exit:
@@ -59,7 +65,8 @@ exit:
 #if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL))
 
 PyDoc_STRVAR(select_poll_register__doc__,
-"register($self, fd, eventmask=POLLIN | POLLPRI | POLLOUT, /)\n"
+"register($self, fd,\n"
+"         eventmask=select.POLLIN | select.POLLPRI | select.POLLOUT, /)\n"
 "--\n"
 "\n"
 "Register a file descriptor with the polling object.\n"
@@ -82,10 +89,19 @@ select_poll_register(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     unsigned short eventmask = POLLIN | POLLPRI | POLLOUT;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&|O&:register",
-        fildes_converter, &fd, _PyLong_UnsignedShort_Converter, &eventmask)) {
+    if (!_PyArg_CheckPositional("register", nargs, 1, 2)) {
         goto exit;
     }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyLong_UnsignedShort_Converter(args[1], &eventmask)) {
+        goto exit;
+    }
+skip_optional:
     return_value = select_poll_register_impl(self, fd, eventmask);
 
 exit:
@@ -121,8 +137,13 @@ select_poll_modify(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     unsigned short eventmask;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&O&:modify",
-        fildes_converter, &fd, _PyLong_UnsignedShort_Converter, &eventmask)) {
+    if (!_PyArg_CheckPositional("modify", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+        goto exit;
+    }
+    if (!_PyLong_UnsignedShort_Converter(args[1], &eventmask)) {
         goto exit;
     }
     return_value = select_poll_modify_impl(self, fd, eventmask);
@@ -153,7 +174,7 @@ select_poll_unregister(pollObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!PyArg_Parse(arg, "O&:unregister", fildes_converter, &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
         goto exit;
     }
     return_value = select_poll_unregister_impl(self, fd);
@@ -187,11 +208,14 @@ select_poll_poll(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *timeout_obj = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "poll",
-        0, 1,
-        &timeout_obj)) {
+    if (!_PyArg_CheckPositional("poll", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    timeout_obj = args[0];
+skip_optional:
     return_value = select_poll_poll_impl(self, timeout_obj);
 
 exit:
@@ -203,7 +227,8 @@ exit:
 #if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_register__doc__,
-"register($self, fd, eventmask=POLLIN | POLLPRI | POLLOUT, /)\n"
+"register($self, fd,\n"
+"         eventmask=select.POLLIN | select.POLLPRI | select.POLLOUT, /)\n"
 "--\n"
 "\n"
 "Register a file descriptor with the polling object.\n"
@@ -228,10 +253,19 @@ select_devpoll_register(devpollObject *self, PyObject *const *args, Py_ssize_t n
     int fd;
     unsigned short eventmask = POLLIN | POLLPRI | POLLOUT;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&|O&:register",
-        fildes_converter, &fd, _PyLong_UnsignedShort_Converter, &eventmask)) {
+    if (!_PyArg_CheckPositional("register", nargs, 1, 2)) {
         goto exit;
     }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyLong_UnsignedShort_Converter(args[1], &eventmask)) {
+        goto exit;
+    }
+skip_optional:
     return_value = select_devpoll_register_impl(self, fd, eventmask);
 
 exit:
@@ -243,7 +277,8 @@ exit:
 #if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_modify__doc__,
-"modify($self, fd, eventmask=POLLIN | POLLPRI | POLLOUT, /)\n"
+"modify($self, fd,\n"
+"       eventmask=select.POLLIN | select.POLLPRI | select.POLLOUT, /)\n"
 "--\n"
 "\n"
 "Modify a possible already registered file descriptor.\n"
@@ -268,10 +303,19 @@ select_devpoll_modify(devpollObject *self, PyObject *const *args, Py_ssize_t nar
     int fd;
     unsigned short eventmask = POLLIN | POLLPRI | POLLOUT;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&|O&:modify",
-        fildes_converter, &fd, _PyLong_UnsignedShort_Converter, &eventmask)) {
+    if (!_PyArg_CheckPositional("modify", nargs, 1, 2)) {
         goto exit;
     }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyLong_UnsignedShort_Converter(args[1], &eventmask)) {
+        goto exit;
+    }
+skip_optional:
     return_value = select_devpoll_modify_impl(self, fd, eventmask);
 
 exit:
@@ -300,7 +344,7 @@ select_devpoll_unregister(devpollObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!PyArg_Parse(arg, "O&:unregister", fildes_converter, &fd)) {
+    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
         goto exit;
     }
     return_value = select_devpoll_unregister_impl(self, fd);
@@ -334,11 +378,14 @@ select_devpoll_poll(devpollObject *self, PyObject *const *args, Py_ssize_t nargs
     PyObject *return_value = NULL;
     PyObject *timeout_obj = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "poll",
-        0, 1,
-        &timeout_obj)) {
+    if (!_PyArg_CheckPositional("poll", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    timeout_obj = args[0];
+skip_optional:
     return_value = select_devpoll_poll_impl(self, timeout_obj);
 
 exit:
@@ -468,14 +515,35 @@ select_epoll(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"sizehint", "flags", NULL};
-    static _PyArg_Parser _parser = {"|ii:epoll", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "epoll", 0};
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
     int sizehint = -1;
     int flags = 0;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &sizehint, &flags)) {
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 2, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[0]) {
+        sizehint = _PyLong_AsInt(fastargs[0]);
+        if (sizehint == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    flags = _PyLong_AsInt(fastargs[1]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
     return_value = select_epoll_impl(type, sizehint, flags);
 
 exit:
@@ -550,7 +618,8 @@ select_epoll_fromfd(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!PyArg_Parse(arg, "i:fromfd", &fd)) {
+    fd = _PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = select_epoll_fromfd_impl(type, fd);
@@ -564,7 +633,8 @@ exit:
 #if defined(HAVE_EPOLL)
 
 PyDoc_STRVAR(select_epoll_register__doc__,
-"register($self, /, fd, eventmask=EPOLLIN | EPOLLPRI | EPOLLOUT)\n"
+"register($self, /, fd,\n"
+"         eventmask=select.EPOLLIN | select.EPOLLPRI | select.EPOLLOUT)\n"
 "--\n"
 "\n"
 "Registers a new fd or raises an OSError if the fd is already registered.\n"
@@ -588,14 +658,27 @@ select_epoll_register(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t na
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", "eventmask", NULL};
-    static _PyArg_Parser _parser = {"O&|I:register", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "register", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     int fd;
     unsigned int eventmask = EPOLLIN | EPOLLPRI | EPOLLOUT;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        fildes_converter, &fd, &eventmask)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    eventmask = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
+    if (eventmask == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
     return_value = select_epoll_register_impl(self, fd, eventmask);
 
 exit:
@@ -629,12 +712,20 @@ select_epoll_modify(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t narg
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", "eventmask", NULL};
-    static _PyArg_Parser _parser = {"O&I:modify", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "modify", 0};
+    PyObject *argsbuf[2];
     int fd;
     unsigned int eventmask;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        fildes_converter, &fd, &eventmask)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+        goto exit;
+    }
+    eventmask = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
+    if (eventmask == (unsigned int)-1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = select_epoll_modify_impl(self, fd, eventmask);
@@ -667,11 +758,15 @@ select_epoll_unregister(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {"O&:unregister", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "unregister", 0};
+    PyObject *argsbuf[1];
     int fd;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        fildes_converter, &fd)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     return_value = select_epoll_unregister_impl(self, fd);
@@ -711,14 +806,30 @@ select_epoll_poll(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs,
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"timeout", "maxevents", NULL};
-    static _PyArg_Parser _parser = {"|Oi:poll", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "poll", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *timeout_obj = Py_None;
     int maxevents = -1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &timeout_obj, &maxevents)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        timeout_obj = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    maxevents = _PyLong_AsInt(args[1]);
+    if (maxevents == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
     return_value = select_epoll_poll_impl(self, timeout_obj, maxevents);
 
 exit:
@@ -770,11 +881,22 @@ select_epoll___exit__(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t na
     PyObject *exc_value = Py_None;
     PyObject *exc_tb = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "__exit__",
-        0, 3,
-        &exc_type, &exc_value, &exc_tb)) {
+    if (!_PyArg_CheckPositional("__exit__", nargs, 0, 3)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    exc_type = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    exc_value = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    exc_tb = args[2];
+skip_optional:
     return_value = select_epoll___exit___impl(self, exc_type, exc_value, exc_tb);
 
 exit:
@@ -811,11 +933,11 @@ select_kqueue(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
 
-    if ((type == &kqueue_queue_Type) &&
+    if ((type == _selectstate_global->kqueue_queue_Type) &&
         !_PyArg_NoPositional("kqueue", args)) {
         goto exit;
     }
-    if ((type == &kqueue_queue_Type) &&
+    if ((type == _selectstate_global->kqueue_queue_Type) &&
         !_PyArg_NoKeywords("kqueue", kwargs)) {
         goto exit;
     }
@@ -893,7 +1015,8 @@ select_kqueue_fromfd(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!PyArg_Parse(arg, "i:fromfd", &fd)) {
+    fd = _PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = select_kqueue_fromfd_impl(type, fd);
@@ -936,10 +1059,19 @@ select_kqueue_control(kqueue_queue_Object *self, PyObject *const *args, Py_ssize
     int maxevents;
     PyObject *otimeout = Py_None;
 
-    if (!_PyArg_ParseStack(args, nargs, "Oi|O:control",
-        &changelist, &maxevents, &otimeout)) {
+    if (!_PyArg_CheckPositional("control", nargs, 2, 3)) {
         goto exit;
     }
+    changelist = args[0];
+    maxevents = _PyLong_AsInt(args[1]);
+    if (maxevents == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    otimeout = args[2];
+skip_optional:
     return_value = select_kqueue_control_impl(self, changelist, maxevents, otimeout);
 
 exit:
@@ -1047,4 +1179,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=04c4019eb5a4d464 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=162f4f4efa850416 input=a9049054013a1b77]*/

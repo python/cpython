@@ -24,7 +24,7 @@ For request-based servers (including socket-based):
 
 The classes in this module favor the server type that is simplest to
 write: a synchronous TCP/IP server.  This is bad class design, but
-save some typing.  (There's also the issue that a deep class hierarchy
+saves some typing.  (There's also the issue that a deep class hierarchy
 slows down method lookups.)
 
 There are five classes in an inheritance diagram, four of which represent
@@ -374,7 +374,7 @@ class BaseServer:
 
         """
         print('-'*40, file=sys.stderr)
-        print('Exception happened during processing of request from',
+        print('Exception occurred during processing of request from',
             client_address, file=sys.stderr)
         import traceback
         traceback.print_exc()
@@ -594,7 +594,7 @@ if hasattr(os, "fork"):
         def service_actions(self):
             """Collect the zombie child processes regularly in the ForkingMixIn.
 
-            service_actions is called in the BaseServer's serve_forver loop.
+            service_actions is called in the BaseServer's serve_forever loop.
             """
             self.collect_children()
 

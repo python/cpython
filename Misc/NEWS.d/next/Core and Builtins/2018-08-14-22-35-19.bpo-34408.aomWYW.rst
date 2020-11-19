@@ -1,1 +1,0 @@
-Prevent a null pointer dereference and resource leakage in ``PyInterpreterState_New()``.

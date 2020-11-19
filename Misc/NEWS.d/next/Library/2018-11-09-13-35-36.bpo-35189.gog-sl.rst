@@ -1,2 +1,0 @@
-Modify the following fnctl function to retry if interrupted by a signal
-(EINTR): flock, lockf, fnctl

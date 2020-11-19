@@ -1,3 +1,4 @@
+import errno
 import os
 import random
 import signal
@@ -5,10 +6,10 @@ import socket
 import statistics
 import subprocess
 import sys
-import threading
 import time
 import unittest
 from test import support
+from test.support import os_helper
 from test.support.script_helper import assert_python_ok, spawn_python
 try:
     import _testcapi
@@ -77,6 +78,22 @@ class PosixTests(unittest.TestCase):
         self.assertNotIn(signal.NSIG, s)
         self.assertLess(len(s), signal.NSIG)
 
+    @unittest.skipUnless(sys.executable, "sys.executable required.")
+    def test_keyboard_interrupt_exit_code(self):
+        """KeyboardInterrupt triggers exit via SIGINT."""
+        process = subprocess.run(
+                [sys.executable, "-c",
+                 "import os, signal, time\n"
+                 "os.kill(os.getpid(), signal.SIGINT)\n"
+                 "for _ in range(999): time.sleep(0.01)"],
+                stderr=subprocess.PIPE)
+        self.assertIn(b"KeyboardInterrupt", process.stderr)
+        self.assertEqual(process.returncode, -signal.SIGINT)
+        # Caveat: The exit code is insufficient to guarantee we actually died
+        # via a signal.  POSIX shells do more than look at the 8 bit value.
+        # Writing an automation friendly test of an interactive shell
+        # to confirm that our process died via a SIGINT proved too complex.
+
 
 @unittest.skipUnless(sys.platform == "win32", "Windows specific")
 class WindowsSignalTests(unittest.TestCase):
@@ -111,6 +128,20 @@ class WindowsSignalTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             signal.signal(7, handler)
 
+    @unittest.skipUnless(sys.executable, "sys.executable required.")
+    def test_keyboard_interrupt_exit_code(self):
+        """KeyboardInterrupt triggers an exit using STATUS_CONTROL_C_EXIT."""
+        # We don't test via os.kill(os.getpid(), signal.CTRL_C_EVENT) here
+        # as that requires setting up a console control handler in a child
+        # in its own process group.  Doable, but quite complicated.  (see
+        # @eryksun on https://github.com/python/cpython/pull/11862)
+        process = subprocess.run(
+                [sys.executable, "-c", "raise KeyboardInterrupt"],
+                stderr=subprocess.PIPE)
+        self.assertIn(b"KeyboardInterrupt", process.stderr)
+        STATUS_CONTROL_C_EXIT = 0xC000013A
+        self.assertEqual(process.returncode, STATUS_CONTROL_C_EXIT)
+
 
 class WakeupFDTests(unittest.TestCase):
 
@@ -124,7 +155,7 @@ class WakeupFDTests(unittest.TestCase):
             signal.set_wakeup_fd(signal.SIGINT, False)
 
     def test_invalid_fd(self):
-        fd = support.make_bad_fd()
+        fd = os_helper.make_bad_fd()
         self.assertRaises((ValueError, OSError),
                           signal.set_wakeup_fd, fd)
 
@@ -254,7 +285,7 @@ class WakeupSignalTests(unittest.TestCase):
         signal.set_wakeup_fd(r)
         try:
             with captured_stderr() as err:
-                _testcapi.raise_signal(signal.SIGALRM)
+                signal.raise_signal(signal.SIGALRM)
         except ZeroDivisionError:
             # An ignored exception should have been printed out on stderr
             err = err.getvalue()
@@ -348,10 +379,9 @@ class WakeupSignalTests(unittest.TestCase):
 
     def test_signum(self):
         self.check_wakeup("""def test():
-            import _testcapi
             signal.signal(signal.SIGUSR1, handler)
-            _testcapi.raise_signal(signal.SIGUSR1)
-            _testcapi.raise_signal(signal.SIGALRM)
+            signal.raise_signal(signal.SIGUSR1)
+            signal.raise_signal(signal.SIGALRM)
         """, signal.SIGUSR1, signal.SIGALRM)
 
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
@@ -365,8 +395,8 @@ class WakeupSignalTests(unittest.TestCase):
             signal.signal(signum2, handler)
 
             signal.pthread_sigmask(signal.SIG_BLOCK, (signum1, signum2))
-            _testcapi.raise_signal(signum1)
-            _testcapi.raise_signal(signum2)
+            signal.raise_signal(signum1)
+            signal.raise_signal(signum2)
             # Unblocking the 2 signals calls the C signal handler twice
             signal.pthread_sigmask(signal.SIG_UNBLOCK, (signum1, signum2))
         """,  signal.SIGUSR1, signal.SIGUSR2, ordered=False)
@@ -396,7 +426,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
         write.setblocking(False)
         signal.set_wakeup_fd(write.fileno())
 
-        _testcapi.raise_signal(signum)
+        signal.raise_signal(signum)
 
         data = read.recv(1)
         if not data:
@@ -445,7 +475,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
         write.close()
 
         with captured_stderr() as err:
-            _testcapi.raise_signal(signum)
+            signal.raise_signal(signum)
 
         err = err.getvalue()
         if ('Exception ignored when trying to {action} to the signal wakeup fd'
@@ -519,7 +549,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
         signal.set_wakeup_fd(write.fileno())
 
         with captured_stderr() as err:
-            _testcapi.raise_signal(signum)
+            signal.raise_signal(signum)
 
         err = err.getvalue()
         if msg not in err:
@@ -530,7 +560,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
         signal.set_wakeup_fd(write.fileno(), warn_on_full_buffer=True)
 
         with captured_stderr() as err:
-            _testcapi.raise_signal(signum)
+            signal.raise_signal(signum)
 
         err = err.getvalue()
         if msg not in err:
@@ -541,7 +571,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
         signal.set_wakeup_fd(write.fileno(), warn_on_full_buffer=False)
 
         with captured_stderr() as err:
-            _testcapi.raise_signal(signum)
+            signal.raise_signal(signum)
 
         err = err.getvalue()
         if err != "":
@@ -553,7 +583,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
         signal.set_wakeup_fd(write.fileno())
 
         with captured_stderr() as err:
-            _testcapi.raise_signal(signum)
+            signal.raise_signal(signum)
 
         err = err.getvalue()
         if msg not in err:
@@ -615,7 +645,7 @@ class SiginterruptTest(unittest.TestCase):
                 # wait until the child process is loaded and has started
                 first_line = process.stdout.readline()
 
-                stdout, stderr = process.communicate(timeout=5.0)
+                stdout, stderr = process.communicate(timeout=support.SHORT_TIMEOUT)
             except subprocess.TimeoutExpired:
                 process.kill()
                 return False
@@ -1163,18 +1193,18 @@ class StressTest(unittest.TestCase):
         self.setsig(signal.SIGALRM, second_handler)  # for ITIMER_REAL
 
         expected_sigs = 0
-        deadline = time.time() + 15.0
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
 
         while expected_sigs < N:
             os.kill(os.getpid(), signal.SIGPROF)
             expected_sigs += 1
             # Wait for handlers to run to avoid signal coalescing
-            while len(sigs) < expected_sigs and time.time() < deadline:
+            while len(sigs) < expected_sigs and time.monotonic() < deadline:
                 time.sleep(1e-5)
 
             os.kill(os.getpid(), signal.SIGUSR1)
             expected_sigs += 1
-            while len(sigs) < expected_sigs and time.time() < deadline:
+            while len(sigs) < expected_sigs and time.monotonic() < deadline:
                 time.sleep(1e-5)
 
         # All ITIMER_REAL signals should have been delivered to the
@@ -1197,7 +1227,7 @@ class StressTest(unittest.TestCase):
         self.setsig(signal.SIGALRM, handler)  # for ITIMER_REAL
 
         expected_sigs = 0
-        deadline = time.time() + 15.0
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
 
         while expected_sigs < N:
             # Hopefully the SIGALRM will be received somewhere during
@@ -1207,13 +1237,63 @@ class StressTest(unittest.TestCase):
 
             expected_sigs += 2
             # Wait for handlers to run to avoid signal coalescing
-            while len(sigs) < expected_sigs and time.time() < deadline:
+            while len(sigs) < expected_sigs and time.monotonic() < deadline:
                 time.sleep(1e-5)
 
         # All ITIMER_REAL signals should have been delivered to the
         # Python handler
         self.assertEqual(len(sigs), N, "Some signals were lost")
 
+class RaiseSignalTest(unittest.TestCase):
+
+    def test_sigint(self):
+        with self.assertRaises(KeyboardInterrupt):
+            signal.raise_signal(signal.SIGINT)
+
+    @unittest.skipIf(sys.platform != "win32", "Windows specific test")
+    def test_invalid_argument(self):
+        try:
+            SIGHUP = 1 # not supported on win32
+            signal.raise_signal(SIGHUP)
+            self.fail("OSError (Invalid argument) expected")
+        except OSError as e:
+            if e.errno == errno.EINVAL:
+                pass
+            else:
+                raise
+
+    def test_handler(self):
+        is_ok = False
+        def handler(a, b):
+            nonlocal is_ok
+            is_ok = True
+        old_signal = signal.signal(signal.SIGINT, handler)
+        self.addCleanup(signal.signal, signal.SIGINT, old_signal)
+
+        signal.raise_signal(signal.SIGINT)
+        self.assertTrue(is_ok)
+
+
+class PidfdSignalTest(unittest.TestCase):
+
+    @unittest.skipUnless(
+        hasattr(signal, "pidfd_send_signal"),
+        "pidfd support not built in",
+    )
+    def test_pidfd_send_signal(self):
+        with self.assertRaises(OSError) as cm:
+            signal.pidfd_send_signal(0, signal.SIGINT)
+        if cm.exception.errno == errno.ENOSYS:
+            self.skipTest("kernel does not support pidfds")
+        elif cm.exception.errno == errno.EPERM:
+            self.skipTest("Not enough privileges to use pidfs")
+        self.assertEqual(cm.exception.errno, errno.EBADF)
+        my_pidfd = os.open(f'/proc/{os.getpid()}', os.O_DIRECTORY)
+        self.addCleanup(os.close, my_pidfd)
+        with self.assertRaisesRegex(TypeError, "^siginfo must be None$"):
+            signal.pidfd_send_signal(my_pidfd, signal.SIGINT, object(), 0)
+        with self.assertRaises(KeyboardInterrupt):
+            signal.pidfd_send_signal(my_pidfd, signal.SIGINT)
 
 def tearDownModule():
     support.reap_children()

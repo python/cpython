@@ -49,11 +49,11 @@ _operator_add(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "add",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("add", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_add_impl(module, a, b);
 
 exit:
@@ -79,11 +79,11 @@ _operator_sub(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "sub",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("sub", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_sub_impl(module, a, b);
 
 exit:
@@ -109,11 +109,11 @@ _operator_mul(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "mul",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("mul", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_mul_impl(module, a, b);
 
 exit:
@@ -139,11 +139,11 @@ _operator_matmul(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "matmul",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("matmul", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_matmul_impl(module, a, b);
 
 exit:
@@ -169,11 +169,11 @@ _operator_floordiv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "floordiv",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("floordiv", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_floordiv_impl(module, a, b);
 
 exit:
@@ -199,11 +199,11 @@ _operator_truediv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "truediv",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("truediv", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_truediv_impl(module, a, b);
 
 exit:
@@ -229,11 +229,11 @@ _operator_mod(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "mod",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("mod", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_mod_impl(module, a, b);
 
 exit:
@@ -304,11 +304,11 @@ _operator_lshift(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "lshift",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("lshift", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_lshift_impl(module, a, b);
 
 exit:
@@ -334,11 +334,11 @@ _operator_rshift(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "rshift",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("rshift", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_rshift_impl(module, a, b);
 
 exit:
@@ -392,11 +392,11 @@ _operator_and_(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "and_",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("and_", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_and__impl(module, a, b);
 
 exit:
@@ -422,11 +422,11 @@ _operator_xor(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "xor",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("xor", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_xor_impl(module, a, b);
 
 exit:
@@ -452,11 +452,11 @@ _operator_or_(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "or_",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("or_", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_or__impl(module, a, b);
 
 exit:
@@ -482,11 +482,11 @@ _operator_iadd(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "iadd",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("iadd", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_iadd_impl(module, a, b);
 
 exit:
@@ -512,11 +512,11 @@ _operator_isub(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "isub",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("isub", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_isub_impl(module, a, b);
 
 exit:
@@ -542,11 +542,11 @@ _operator_imul(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "imul",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("imul", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_imul_impl(module, a, b);
 
 exit:
@@ -572,11 +572,11 @@ _operator_imatmul(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "imatmul",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("imatmul", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_imatmul_impl(module, a, b);
 
 exit:
@@ -602,11 +602,11 @@ _operator_ifloordiv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "ifloordiv",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("ifloordiv", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_ifloordiv_impl(module, a, b);
 
 exit:
@@ -632,11 +632,11 @@ _operator_itruediv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "itruediv",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("itruediv", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_itruediv_impl(module, a, b);
 
 exit:
@@ -662,11 +662,11 @@ _operator_imod(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "imod",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("imod", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_imod_impl(module, a, b);
 
 exit:
@@ -692,11 +692,11 @@ _operator_ilshift(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "ilshift",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("ilshift", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_ilshift_impl(module, a, b);
 
 exit:
@@ -722,11 +722,11 @@ _operator_irshift(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "irshift",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("irshift", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_irshift_impl(module, a, b);
 
 exit:
@@ -752,11 +752,11 @@ _operator_iand(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "iand",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("iand", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_iand_impl(module, a, b);
 
 exit:
@@ -782,11 +782,11 @@ _operator_ixor(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "ixor",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("ixor", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_ixor_impl(module, a, b);
 
 exit:
@@ -812,11 +812,11 @@ _operator_ior(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "ior",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("ior", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_ior_impl(module, a, b);
 
 exit:
@@ -842,11 +842,11 @@ _operator_concat(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "concat",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("concat", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_concat_impl(module, a, b);
 
 exit:
@@ -872,11 +872,11 @@ _operator_iconcat(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "iconcat",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("iconcat", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_iconcat_impl(module, a, b);
 
 exit:
@@ -903,11 +903,11 @@ _operator_contains(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *b;
     int _return_value;
 
-    if (!_PyArg_UnpackStack(args, nargs, "contains",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("contains", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     _return_value = _operator_contains_impl(module, a, b);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -938,11 +938,11 @@ _operator_indexOf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *b;
     Py_ssize_t _return_value;
 
-    if (!_PyArg_UnpackStack(args, nargs, "indexOf",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("indexOf", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     _return_value = _operator_indexOf_impl(module, a, b);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -973,11 +973,11 @@ _operator_countOf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *b;
     Py_ssize_t _return_value;
 
-    if (!_PyArg_UnpackStack(args, nargs, "countOf",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("countOf", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     _return_value = _operator_countOf_impl(module, a, b);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -1007,11 +1007,11 @@ _operator_getitem(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "getitem",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("getitem", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_getitem_impl(module, a, b);
 
 exit:
@@ -1039,11 +1039,12 @@ _operator_setitem(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *b;
     PyObject *c;
 
-    if (!_PyArg_UnpackStack(args, nargs, "setitem",
-        3, 3,
-        &a, &b, &c)) {
+    if (!_PyArg_CheckPositional("setitem", nargs, 3, 3)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
+    c = args[2];
     return_value = _operator_setitem_impl(module, a, b, c);
 
 exit:
@@ -1069,11 +1070,11 @@ _operator_delitem(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "delitem",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("delitem", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_delitem_impl(module, a, b);
 
 exit:
@@ -1099,11 +1100,11 @@ _operator_eq(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "eq",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("eq", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_eq_impl(module, a, b);
 
 exit:
@@ -1129,11 +1130,11 @@ _operator_ne(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "ne",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("ne", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_ne_impl(module, a, b);
 
 exit:
@@ -1159,11 +1160,11 @@ _operator_lt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "lt",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("lt", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_lt_impl(module, a, b);
 
 exit:
@@ -1189,11 +1190,11 @@ _operator_le(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "le",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("le", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_le_impl(module, a, b);
 
 exit:
@@ -1219,11 +1220,11 @@ _operator_gt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "gt",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("gt", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_gt_impl(module, a, b);
 
 exit:
@@ -1249,11 +1250,11 @@ _operator_ge(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "ge",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("ge", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_ge_impl(module, a, b);
 
 exit:
@@ -1279,11 +1280,11 @@ _operator_pow(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "pow",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("pow", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_pow_impl(module, a, b);
 
 exit:
@@ -1309,11 +1310,11 @@ _operator_ipow(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "ipow",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("ipow", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_ipow_impl(module, a, b);
 
 exit:
@@ -1348,11 +1349,11 @@ _operator_is_(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "is_",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("is_", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_is__impl(module, a, b);
 
 exit:
@@ -1378,11 +1379,11 @@ _operator_is_not(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "is_not",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("is_not", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator_is_not_impl(module, a, b);
 
 exit:
@@ -1416,10 +1417,26 @@ _operator_length_hint(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t default_value = 0;
     Py_ssize_t _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|n:length_hint",
-        &obj, &default_value)) {
+    if (!_PyArg_CheckPositional("length_hint", nargs, 1, 2)) {
         goto exit;
     }
+    obj = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        default_value = ival;
+    }
+skip_optional:
     _return_value = _operator_length_hint_impl(module, obj, default_value);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -1459,14 +1476,14 @@ _operator__compare_digest(PyObject *module, PyObject *const *args, Py_ssize_t na
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "_compare_digest",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("_compare_digest", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = _operator__compare_digest_impl(module, a, b);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=424b884884ab20b7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eae5d08f971a65fd input=a9049054013a1b77]*/

@@ -31,7 +31,7 @@ is recommended to use keyword arguments for clarity.
 
 The module defines the following user-callable items:
 
-.. function:: TemporaryFile(mode='w+b', buffering=None, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
+.. function:: TemporaryFile(mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
 
    Return a :term:`file-like object` that can be used as a temporary storage area.
    The file is created securely, using the same rules as :func:`mkstemp`. It will be destroyed as soon
@@ -62,6 +62,8 @@ The module defines the following user-callable items:
    The :py:data:`os.O_TMPFILE` flag is used if it is available and works
    (Linux-specific, requires Linux kernel 3.11 or later).
 
+   .. audit-event:: tempfile.mkstemp fullpath tempfile.TemporaryFile
+
    .. versionchanged:: 3.5
 
       The :py:data:`os.O_TMPFILE` flag is now used if available.
@@ -70,7 +72,7 @@ The module defines the following user-callable items:
       Added *errors* parameter.
 
 
-.. function:: NamedTemporaryFile(mode='w+b', buffering=None, encoding=None, newline=None, suffix=None, prefix=None, dir=None, delete=True, *, errors=None)
+.. function:: NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, delete=True, *, errors=None)
 
    This function operates exactly as :func:`TemporaryFile` does, except that
    the file is guaranteed to have a visible name in the file system (on
@@ -85,11 +87,13 @@ The module defines the following user-callable items:
    attribute is the underlying true file object. This file-like object can
    be used in a :keyword:`with` statement, just like a normal file.
 
+   .. audit-event:: tempfile.mkstemp fullpath tempfile.NamedTemporaryFile
+
    .. versionchanged:: 3.8
       Added *errors* parameter.
 
 
-.. function:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=None, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
+.. function:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
 
    This function operates exactly as :func:`TemporaryFile` does, except that
    data is spooled in memory until the file size exceeds *max_size*, or
@@ -101,8 +105,8 @@ The module defines the following user-callable items:
    causes the file to roll over to an on-disk file regardless of its size.
 
    The returned object is a file-like object whose :attr:`_file` attribute
-   is either an :class:`io.BytesIO` or :class:`io.StringIO` object (depending on
-   whether binary or text *mode* was specified) or a true file
+   is either an :class:`io.BytesIO` or :class:`io.TextIOWrapper` object
+   (depending on whether binary or text *mode* was specified) or a true file
    object, depending on whether :func:`rollover` has been called.  This
    file-like object can be used in a :keyword:`with` statement, just like
    a normal file.
@@ -124,11 +128,13 @@ The module defines the following user-callable items:
 
    The directory name can be retrieved from the :attr:`name` attribute of the
    returned object.  When the returned object is used as a context manager, the
-   :attr:`name` will be assigned to the target of the :keyword:`as` clause in
+   :attr:`name` will be assigned to the target of the :keyword:`!as` clause in
    the :keyword:`with` statement, if there is one.
 
    The directory can be explicitly cleaned up by calling the
    :func:`cleanup` method.
+
+   .. audit-event:: tempfile.mkdtemp fullpath tempfile.TemporaryDirectory
 
    .. versionadded:: 3.2
 
@@ -169,19 +175,23 @@ The module defines the following user-callable items:
    If you want to force a bytes return value with otherwise default behavior,
    pass ``suffix=b''``.
 
-   If *text* is specified, it indicates whether to open the file in binary
-   mode (the default) or text mode.  On some platforms, this makes no
-   difference.
+   If *text* is specified and true, the file is opened in text mode.
+   Otherwise, (the default) the file is opened in binary mode.
 
    :func:`mkstemp` returns a tuple containing an OS-level handle to an open
    file (as would be returned by :func:`os.open`) and the absolute pathname
    of that file, in that order.
+
+   .. audit-event:: tempfile.mkstemp fullpath tempfile.mkstemp
 
    .. versionchanged:: 3.5
       *suffix*, *prefix*, and *dir* may now be supplied in bytes in order to
       obtain a bytes return value.  Prior to this, only str was allowed.
       *suffix* and *prefix* now accept and default to ``None`` to cause
       an appropriate default value to be used.
+
+   .. versionchanged:: 3.6
+      The *dir* parameter now accepts a :term:`path-like object`.
 
 
 .. function:: mkdtemp(suffix=None, prefix=None, dir=None)
@@ -198,11 +208,16 @@ The module defines the following user-callable items:
 
    :func:`mkdtemp` returns the absolute pathname of the new directory.
 
+   .. audit-event:: tempfile.mkdtemp fullpath tempfile.mkdtemp
+
    .. versionchanged:: 3.5
       *suffix*, *prefix*, and *dir* may now be supplied in bytes in order to
       obtain a bytes return value.  Prior to this, only str was allowed.
       *suffix* and *prefix* now accept and default to ``None`` to cause
       an appropriate default value to be used.
+
+   .. versionchanged:: 3.6
+      The *dir* parameter now accepts a :term:`path-like object`.
 
 
 .. function:: gettempdir()

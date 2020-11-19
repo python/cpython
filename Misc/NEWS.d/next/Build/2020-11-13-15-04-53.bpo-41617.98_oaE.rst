@@ -1,0 +1,3 @@
+Fix building ``pycore_bitutils.h`` internal header on old clang version
+without ``__builtin_bswap16()`` (ex: Xcode 4.6.3 on Mac OS X 10.7). Patch by
+Joshua Root and Victor Stinner.

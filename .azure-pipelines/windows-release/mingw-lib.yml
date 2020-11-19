@@ -1,0 +1,13 @@
+parameters:
+  DllToolOpt: -m i386:x86-64
+  #DllToolOpt: -m i386 --as-flags=--32
+
+steps:
+- powershell: |
+    git clone https://github.com/python/cpython-bin-deps --branch binutils --single-branch --depth 1 --progress -v "binutils"
+    gci "bin\$(Arch)\python*.dll" | %{
+      & "binutils\gendef.exe" $_ | Out-File -Encoding ascii tmp.def
+      & "binutils\dlltool.exe" --dllname $($_.BaseName).dll --def tmp.def --output-lib "$($_.Directory)\lib$($_.BaseName).a" ${{ parameters.DllToolOpt }}
+    }
+  displayName: 'Generate MinGW import library'
+  workingDirectory: $(Build.BinariesDirectory)

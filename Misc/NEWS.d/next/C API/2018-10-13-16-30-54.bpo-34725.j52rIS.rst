@@ -1,1 +1,0 @@
-Adds _Py_SetProgramFullPath so embedders may override sys.executable

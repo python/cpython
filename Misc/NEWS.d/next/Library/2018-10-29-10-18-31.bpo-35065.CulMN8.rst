@@ -1,3 +1,0 @@
-Remove `StreamReaderProtocol._untrack_reader`. The call to `_untrack_reader`
-is currently performed too soon, causing the protocol to forget about the
-reader before `connection_lost` can run and feed the EOF to the reader.

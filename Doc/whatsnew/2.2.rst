@@ -121,7 +121,7 @@ added so if no built-in type is suitable, you can just subclass
 This means that :keyword:`class` statements that don't have any base classes are
 always classic classes in Python 2.2.  (Actually you can also change this by
 setting a module-level variable named :attr:`__metaclass__` --- see :pep:`253`
-for the details --- but it's easier to just subclass :keyword:`object`.)
+for the details --- but it's easier to just subclass :class:`object`.)
 
 The type objects for the built-in types are available as built-ins, named using
 a clever trick.  Python has always had built-in functions named :func:`int`,
@@ -560,7 +560,7 @@ Here's the simplest example of a generator function::
            yield i
 
 A new keyword, :keyword:`yield`, was introduced for generators.  Any function
-containing a :keyword:`yield` statement is a generator function; this is
+containing a :keyword:`!yield` statement is a generator function; this is
 detected by Python's bytecode compiler which compiles the function specially as
 a result.  Because a new keyword was introduced, generators must be explicitly
 enabled in a module by including a ``from __future__ import generators``
@@ -571,14 +571,14 @@ When you call a generator function, it doesn't return a single value; instead it
 returns a generator object that supports the iterator protocol.  On executing
 the :keyword:`yield` statement, the generator outputs the value of ``i``,
 similar to a :keyword:`return` statement.  The big difference between
-:keyword:`yield` and a :keyword:`return` statement is that on reaching a
-:keyword:`yield` the generator's state of execution is suspended and local
+:keyword:`!yield` and a :keyword:`!return` statement is that on reaching a
+:keyword:`!yield` the generator's state of execution is suspended and local
 variables are preserved.  On the next call to the generator's ``next()`` method,
-the function will resume executing immediately after the :keyword:`yield`
-statement.  (For complicated reasons, the :keyword:`yield` statement isn't
-allowed inside the :keyword:`try` block of a
+the function will resume executing immediately after the :keyword:`!yield`
+statement.  (For complicated reasons, the :keyword:`!yield` statement isn't
+allowed inside the :keyword:`!try` block of a
 :keyword:`try`...\ :keyword:`finally` statement; read :pep:`255` for a full
-explanation of the interaction between :keyword:`yield` and exceptions.)
+explanation of the interaction between :keyword:`!yield` and exceptions.)
 
 Here's a sample usage of the :func:`generate_ints` generator::
 
@@ -602,7 +602,7 @@ generate_ints(3)``.
 
 Inside a generator function, the :keyword:`return` statement can only be used
 without a value, and signals the end of the procession of values; afterwards the
-generator cannot return any further values. :keyword:`return` with a value, such
+generator cannot return any further values. :keyword:`!return` with a value, such
 as ``return 5``, is a syntax error inside a generator function.  The end of the
 generator's results can also be indicated by raising :exc:`StopIteration`
 manually, or by just letting the flow of execution fall off the bottom of the
@@ -863,8 +863,8 @@ The function :func:`g` will always raise a :exc:`NameError` exception, because
 the binding of the name ``g`` isn't in either its local namespace or in the
 module-level namespace.  This isn't much of a problem in practice (how often do
 you recursively define interior functions like this?), but this also made using
-the :keyword:`lambda` statement clumsier, and this was a problem in practice.
-In code which uses :keyword:`lambda` you can often find local variables being
+the :keyword:`lambda` expression clumsier, and this was a problem in practice.
+In code which uses :keyword:`!lambda` you can often find local variables being
 copied by passing them as the default values of arguments. ::
 
    def find(self, name):

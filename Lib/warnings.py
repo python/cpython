@@ -124,7 +124,7 @@ def _formatwarnmsg(msg):
         if fw is not _formatwarning_orig:
             # warnings.formatwarning() was replaced
             return fw(msg.message, msg.category,
-                      msg.filename, msg.lineno, line=msg.line)
+                      msg.filename, msg.lineno, msg.line)
     return _formatwarnmsg_impl(msg)
 
 def filterwarnings(action, message="", category=Warning, module="", lineno=0,
@@ -211,7 +211,6 @@ def _processoptions(args):
 
 # Helper for _processoptions()
 def _setoption(arg):
-    import re
     parts = arg.split(':')
     if len(parts) > 5:
         raise _OptionError("too many fields (max 5): %r" % (arg,))
@@ -220,11 +219,13 @@ def _setoption(arg):
     action, message, category, module, lineno = [s.strip()
                                                  for s in parts]
     action = _getaction(action)
-    message = re.escape(message)
     category = _getcategory(category)
-    module = re.escape(module)
+    if message or module:
+        import re
+    if message:
+        message = re.escape(message)
     if module:
-        module = module + '$'
+        module = re.escape(module) + r'\Z'
     if lineno:
         try:
             lineno = int(lineno)
@@ -248,26 +249,21 @@ def _getaction(action):
 
 # Helper for _setoption()
 def _getcategory(category):
-    import re
     if not category:
         return Warning
-    if re.match("^[a-zA-Z0-9_]+$", category):
-        try:
-            cat = eval(category)
-        except NameError:
-            raise _OptionError("unknown warning category: %r" % (category,)) from None
+    if '.' not in category:
+        import builtins as m
+        klass = category
     else:
-        i = category.rfind(".")
-        module = category[:i]
-        klass = category[i+1:]
+        module, _, klass = category.rpartition('.')
         try:
             m = __import__(module, None, None, [klass])
         except ImportError:
             raise _OptionError("invalid module name: %r" % (module,)) from None
-        try:
-            cat = getattr(m, klass)
-        except AttributeError:
-            raise _OptionError("unknown warning category: %r" % (category,)) from None
+    try:
+        cat = getattr(m, klass)
+    except AttributeError:
+        raise _OptionError("unknown warning category: %r" % (category,)) from None
     if not issubclass(cat, Warning):
         raise _OptionError("invalid warning category: %r" % (category,))
     return cat

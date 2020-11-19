@@ -1,7 +1,10 @@
 import unittest
 import shelve
 import glob
+import pickle
+
 from test import support
+from test.support import os_helper
 from collections.abc import MutableMapping
 from test.test_dbm import dbm_iterator
 
@@ -45,7 +48,7 @@ class TestCase(unittest.TestCase):
 
     def tearDown(self):
         for f in glob.glob(self.fn+"*"):
-            support.unlink(f)
+            os_helper.unlink(f)
 
     def test_close(self):
         d1 = {}
@@ -88,15 +91,13 @@ class TestCase(unittest.TestCase):
 
     def test_in_memory_shelf(self):
         d1 = byteskeydict()
-        s = shelve.Shelf(d1, protocol=0)
-        s['key1'] = (1,2,3,4)
-        self.assertEqual(s['key1'], (1,2,3,4))
-        s.close()
+        with shelve.Shelf(d1, protocol=0) as s:
+            s['key1'] = (1,2,3,4)
+            self.assertEqual(s['key1'], (1,2,3,4))
         d2 = byteskeydict()
-        s = shelve.Shelf(d2, protocol=1)
-        s['key1'] = (1,2,3,4)
-        self.assertEqual(s['key1'], (1,2,3,4))
-        s.close()
+        with shelve.Shelf(d2, protocol=1) as s:
+            s['key1'] = (1,2,3,4)
+            self.assertEqual(s['key1'], (1,2,3,4))
 
         self.assertEqual(len(d1), 1)
         self.assertEqual(len(d2), 1)
@@ -104,20 +105,18 @@ class TestCase(unittest.TestCase):
 
     def test_mutable_entry(self):
         d1 = byteskeydict()
-        s = shelve.Shelf(d1, protocol=2, writeback=False)
-        s['key1'] = [1,2,3,4]
-        self.assertEqual(s['key1'], [1,2,3,4])
-        s['key1'].append(5)
-        self.assertEqual(s['key1'], [1,2,3,4])
-        s.close()
+        with shelve.Shelf(d1, protocol=2, writeback=False) as s:
+            s['key1'] = [1,2,3,4]
+            self.assertEqual(s['key1'], [1,2,3,4])
+            s['key1'].append(5)
+            self.assertEqual(s['key1'], [1,2,3,4])
 
         d2 = byteskeydict()
-        s = shelve.Shelf(d2, protocol=2, writeback=True)
-        s['key1'] = [1,2,3,4]
-        self.assertEqual(s['key1'], [1,2,3,4])
-        s['key1'].append(5)
-        self.assertEqual(s['key1'], [1,2,3,4,5])
-        s.close()
+        with shelve.Shelf(d2, protocol=2, writeback=True) as s:
+            s['key1'] = [1,2,3,4]
+            self.assertEqual(s['key1'], [1,2,3,4])
+            s['key1'].append(5)
+            self.assertEqual(s['key1'], [1,2,3,4,5])
 
         self.assertEqual(len(d1), 1)
         self.assertEqual(len(d2), 1)
@@ -140,11 +139,10 @@ class TestCase(unittest.TestCase):
         d = {}
         key = 'key'
         encodedkey = key.encode('utf-8')
-        s = shelve.Shelf(d, writeback=True)
-        s[key] = [1]
-        p1 = d[encodedkey]  # Will give a KeyError if backing store not updated
-        s['key'].append(2)
-        s.close()
+        with shelve.Shelf(d, writeback=True) as s:
+            s[key] = [1]
+            p1 = d[encodedkey]  # Will give a KeyError if backing store not updated
+            s['key'].append(2)
         p2 = d[encodedkey]
         self.assertNotEqual(p1, p2)  # Write creates new object in store
 
@@ -164,7 +162,7 @@ class TestCase(unittest.TestCase):
 
     def test_default_protocol(self):
         with shelve.Shelf({}) as s:
-            self.assertEqual(s._protocol, 3)
+            self.assertEqual(s._protocol, pickle.DEFAULT_PROTOCOL)
 
 from test import mapping_tests
 
@@ -191,7 +189,7 @@ class TestShelveBase(mapping_tests.BasicTestMappingProtocol):
         self._db = []
         if not self._in_mem:
             for f in glob.glob(self.fn+"*"):
-                support.unlink(f)
+                os_helper.unlink(f)
 
 class TestAsciiFileShelve(TestShelveBase):
     _args={'protocol':0}

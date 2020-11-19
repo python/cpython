@@ -1,2 +1,0 @@
-Enum: fix grandchildren subclassing when parent mixed with concrete data
-types.

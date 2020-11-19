@@ -116,7 +116,7 @@ class build(Command):
             self.build_scripts = os.path.join(self.build_base,
                                               'scripts-%d.%d' % sys.version_info[:2])
 
-        if self.executable is None:
+        if self.executable is None and sys.executable:
             self.executable = os.path.normpath(sys.executable)
 
         if isinstance(self.parallel, str):

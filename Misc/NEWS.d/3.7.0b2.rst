@@ -201,7 +201,6 @@ Make sure sys.argv remains as a list when running trace.
 various functions and methods in ``abc``.  Creating an ABC subclass and
 calling ``isinstance`` or ``issubclass`` with an ABC subclass are up to 1.5x
 faster. In addition, this makes Python start-up up to 10% faster.
-
 Note that the new implementation hides internal registry and caches,
 previously accessible via private attributes ``_abc_registry``,
 ``_abc_cache``, and ``_abc_negative_cache``.  There are three debugging

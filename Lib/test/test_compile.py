@@ -7,7 +7,9 @@ import _ast
 import tempfile
 import types
 from test import support
-from test.support import script_helper, FakePath
+from test.support import script_helper
+from test.support.os_helper import FakePath
+
 
 class TestSpecifics(unittest.TestCase):
 
@@ -153,8 +155,8 @@ if 1:
     def test_leading_newlines(self):
         s256 = "".join(["\n"] * 256 + ["spam"])
         co = compile(s256, 'fn', 'exec')
-        self.assertEqual(co.co_firstlineno, 257)
-        self.assertEqual(co.co_lnotab, bytes())
+        self.assertEqual(co.co_firstlineno, 1)
+        self.assertEqual(list(co.co_lines()), [(0, 4, 257), (4, 8, None)])
 
     def test_literals_with_leading_zeroes(self):
         for arg in ["077787", "0xj", "0x.", "0e",  "090000000000000",
@@ -697,6 +699,92 @@ if 1:
         # complex statements.
         compile("if a: b\n" * 200000, "<dummy>", "exec")
 
+    # Multiple users rely on the fact that CPython does not generate
+    # bytecode for dead code blocks. See bpo-37500 for more context.
+    @support.cpython_only
+    def test_dead_blocks_do_not_generate_bytecode(self):
+        def unused_block_if():
+            if 0:
+                return 42
+
+        def unused_block_while():
+            while 0:
+                return 42
+
+        def unused_block_if_else():
+            if 1:
+                return None
+            else:
+                return 42
+
+        def unused_block_while_else():
+            while 1:
+                return None
+            else:
+                return 42
+
+        funcs = [unused_block_if, unused_block_while,
+                 unused_block_if_else, unused_block_while_else]
+
+        for func in funcs:
+            opcodes = list(dis.get_instructions(func))
+            self.assertEqual(2, len(opcodes))
+            self.assertEqual('LOAD_CONST', opcodes[0].opname)
+            self.assertEqual(None, opcodes[0].argval)
+            self.assertEqual('RETURN_VALUE', opcodes[1].opname)
+
+    def test_false_while_loop(self):
+        def break_in_while():
+            while False:
+                break
+
+        def continue_in_while():
+            while False:
+                continue
+
+        funcs = [break_in_while, continue_in_while]
+
+        # Check that we did not raise but we also don't generate bytecode
+        for func in funcs:
+            opcodes = list(dis.get_instructions(func))
+            self.assertEqual(2, len(opcodes))
+            self.assertEqual('LOAD_CONST', opcodes[0].opname)
+            self.assertEqual(None, opcodes[0].argval)
+            self.assertEqual('RETURN_VALUE', opcodes[1].opname)
+
+    def test_consts_in_conditionals(self):
+        def and_true(x):
+            return True and x
+
+        def and_false(x):
+            return False and x
+
+        def or_true(x):
+            return True or x
+
+        def or_false(x):
+            return False or x
+
+        funcs = [and_true, and_false, or_true, or_false]
+
+        # Check that condition is removed.
+        for func in funcs:
+            with self.subTest(func=func):
+                opcodes = list(dis.get_instructions(func))
+                self.assertEqual(2, len(opcodes))
+                self.assertIn('LOAD_', opcodes[0].opname)
+                self.assertEqual('RETURN_VALUE', opcodes[1].opname)
+
+
+    def test_big_dict_literal(self):
+        # The compiler has a flushing point in "compiler_dict" that calls compiles
+        # a portion of the dictionary literal when the loop that iterates over the items
+        # reaches 0xFFFF elements but the code was not including the boundary element,
+        # dropping the key at position 0xFFFF. See bpo-41531 for more information
+
+        dict_size = 0xFFFF + 1
+        the_dict = "{" + ",".join(f"{x}:{x}" for x in range(dict_size)) + "}"
+        self.assertEqual(len(eval(the_dict)), dict_size)
 
 class TestExpressionStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object

@@ -1,1 +1,0 @@
-Add JUnit XML output for regression tests and update Azure DevOps builds.

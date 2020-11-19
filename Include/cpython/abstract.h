@@ -2,25 +2,11 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* === Object Protocol ================================================== */
 
 #ifdef PY_SSIZE_T_CLEAN
 #  define _PyObject_CallMethodId _PyObject_CallMethodId_SizeT
 #endif
-
-PyAPI_FUNC(PyObject*) _PyStack_AsTuple(
-    PyObject *const *stack,
-    Py_ssize_t nargs);
-
-PyAPI_FUNC(PyObject*) _PyStack_AsTupleSlice(
-    PyObject *const *stack,
-    Py_ssize_t nargs,
-    Py_ssize_t start,
-    Py_ssize_t end);
 
 /* Convert keyword arguments from the FASTCALL (stack: C array, kwnames: tuple)
    format to a Python dictionary ("kwargs" dict).
@@ -36,28 +22,10 @@ PyAPI_FUNC(PyObject *) _PyStack_AsDict(
     PyObject *const *values,
     PyObject *kwnames);
 
-/* Convert (args, nargs, kwargs: dict) into a (stack, nargs, kwnames: tuple).
-
-   Return 0 on success, raise an exception and return -1 on error.
-
-   Write the new stack into *p_stack. If *p_stack is differen than args, it
-   must be released by PyMem_Free().
-
-   The stack uses borrowed references.
-
-   The type of keyword keys is not checked, these checks should be done
-   later (ex: _PyArg_ParseStackAndKeywords). */
-PyAPI_FUNC(int) _PyStack_UnpackDict(
-    PyObject *const *args,
-    Py_ssize_t nargs,
-    PyObject *kwargs,
-    PyObject *const **p_stack,
-    PyObject **p_kwnames);
-
 /* Suggested size (number of positional arguments) for arrays of PyObject*
    allocated on a C stack to avoid allocating memory on the heap memory. Such
    array is used to pass positional arguments to call functions of the
-   _PyObject_FastCall() family.
+   PyObject_Vectorcall() family.
 
    The size is chosen to not abuse the C stack and so limit the risk of stack
    overflow. The size is also chosen to allow using the small stack for most
@@ -65,67 +33,177 @@ PyAPI_FUNC(int) _PyStack_UnpackDict(
    40 bytes on the stack. */
 #define _PY_FASTCALL_SMALL_STACK 5
 
-/* Return 1 if callable supports FASTCALL calling convention for positional
-   arguments: see _PyObject_FastCallDict() and _PyObject_FastCallKeywords() */
-PyAPI_FUNC(int) _PyObject_HasFastCall(PyObject *callable);
-
-/* Call the callable object 'callable' with the "fast call" calling convention:
-   args is a C array for positional arguments (nargs is the number of
-   positional arguments), kwargs is a dictionary for keyword arguments.
-
-   If nargs is equal to zero, args can be NULL. kwargs can be NULL.
-   nargs must be greater or equal to zero.
-
-   Return the result on success. Raise an exception on return NULL on
-   error. */
-PyAPI_FUNC(PyObject *) _PyObject_FastCallDict(
+PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(
+    PyThreadState *tstate,
     PyObject *callable,
-    PyObject *const *args,
-    Py_ssize_t nargs,
-    PyObject *kwargs);
+    PyObject *result,
+    const char *where);
 
-/* Call the callable object 'callable' with the "fast call" calling convention:
-   args is a C array for positional arguments followed by values of
-   keyword arguments. Keys of keyword arguments are stored as a tuple
-   of strings in kwnames. nargs is the number of positional parameters at
-   the beginning of stack. The size of kwnames gives the number of keyword
-   values in the stack after positional arguments.
+/* === Vectorcall protocol (PEP 590) ============================= */
 
-   kwnames must only contains str strings, no subclass, and all keys must
-   be unique.
+/* Call callable using tp_call. Arguments are like PyObject_Vectorcall()
+   or PyObject_FastCallDict() (both forms are supported),
+   except that nargs is plainly the number of arguments without flags. */
+PyAPI_FUNC(PyObject *) _PyObject_MakeTpCall(
+    PyThreadState *tstate,
+    PyObject *callable,
+    PyObject *const *args, Py_ssize_t nargs,
+    PyObject *keywords);
 
-   If nargs is equal to zero and there is no keyword argument (kwnames is
-   NULL or its size is zero), args can be NULL.
+#define PY_VECTORCALL_ARGUMENTS_OFFSET ((size_t)1 << (8 * sizeof(size_t) - 1))
+
+static inline Py_ssize_t
+PyVectorcall_NARGS(size_t n)
+{
+    return n & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
+}
+
+static inline vectorcallfunc
+PyVectorcall_Function(PyObject *callable)
+{
+    PyTypeObject *tp;
+    Py_ssize_t offset;
+    vectorcallfunc *ptr;
+
+    assert(callable != NULL);
+    tp = Py_TYPE(callable);
+    if (!PyType_HasFeature(tp, Py_TPFLAGS_HAVE_VECTORCALL)) {
+        return NULL;
+    }
+    assert(PyCallable_Check(callable));
+    offset = tp->tp_vectorcall_offset;
+    assert(offset > 0);
+    ptr = (vectorcallfunc *)(((char *)callable) + offset);
+    return *ptr;
+}
+
+/* Call the callable object 'callable' with the "vectorcall" calling
+   convention.
+
+   args is a C array for positional arguments.
+
+   nargsf is the number of positional arguments plus optionally the flag
+   PY_VECTORCALL_ARGUMENTS_OFFSET which means that the caller is allowed to
+   modify args[-1].
+
+   kwnames is a tuple of keyword names. The values of the keyword arguments
+   are stored in "args" after the positional arguments (note that the number
+   of keyword arguments does not change nargsf). kwnames can also be NULL if
+   there are no keyword arguments.
+
+   keywords must only contain strings and all keys must be unique.
 
    Return the result on success. Raise an exception and return NULL on
    error. */
-PyAPI_FUNC(PyObject *) _PyObject_FastCallKeywords(
+static inline PyObject *
+_PyObject_VectorcallTstate(PyThreadState *tstate, PyObject *callable,
+                           PyObject *const *args, size_t nargsf,
+                           PyObject *kwnames)
+{
+    vectorcallfunc func;
+    PyObject *res;
+
+    assert(kwnames == NULL || PyTuple_Check(kwnames));
+    assert(args != NULL || PyVectorcall_NARGS(nargsf) == 0);
+
+    func = PyVectorcall_Function(callable);
+    if (func == NULL) {
+        Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+        return _PyObject_MakeTpCall(tstate, callable, args, nargs, kwnames);
+    }
+    res = func(callable, args, nargsf, kwnames);
+    return _Py_CheckFunctionResult(tstate, callable, res, NULL);
+}
+
+static inline PyObject *
+PyObject_Vectorcall(PyObject *callable, PyObject *const *args,
+                     size_t nargsf, PyObject *kwnames)
+{
+    PyThreadState *tstate = PyThreadState_GET();
+    return _PyObject_VectorcallTstate(tstate, callable,
+                                      args, nargsf, kwnames);
+}
+
+// Backwards compatibility aliases for API that was provisional in Python 3.8
+#define _PyObject_Vectorcall PyObject_Vectorcall
+#define _PyObject_VectorcallMethod PyObject_VectorcallMethod
+#define _PyObject_FastCallDict PyObject_VectorcallDict
+#define _PyVectorcall_Function PyVectorcall_Function
+#define _PyObject_CallOneArg PyObject_CallOneArg
+#define _PyObject_CallMethodNoArgs PyObject_CallMethodNoArgs
+#define _PyObject_CallMethodOneArg PyObject_CallMethodOneArg
+
+/* Same as PyObject_Vectorcall except that keyword arguments are passed as
+   dict, which may be NULL if there are no keyword arguments. */
+PyAPI_FUNC(PyObject *) PyObject_VectorcallDict(
     PyObject *callable,
     PyObject *const *args,
-    Py_ssize_t nargs,
-    PyObject *kwnames);
-
-#define _PyObject_FastCall(func, args, nargs) \
-    _PyObject_FastCallDict((func), (args), (nargs), NULL)
-
-#define _PyObject_CallNoArg(func) \
-    _PyObject_FastCallDict((func), NULL, 0, NULL)
-
-PyAPI_FUNC(PyObject *) _PyObject_Call_Prepend(
-    PyObject *callable,
-    PyObject *obj,
-    PyObject *args,
+    size_t nargsf,
     PyObject *kwargs);
 
-PyAPI_FUNC(PyObject *) _PyObject_FastCall_Prepend(
-    PyObject *callable,
-    PyObject *obj,
-    PyObject *const *args,
-    Py_ssize_t nargs);
+/* Call "callable" (which must support vectorcall) with positional arguments
+   "tuple" and keyword arguments "dict". "dict" may also be NULL */
+PyAPI_FUNC(PyObject *) PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *dict);
 
-PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(PyObject *callable,
-                                               PyObject *result,
-                                               const char *where);
+static inline PyObject *
+_PyObject_FastCallTstate(PyThreadState *tstate, PyObject *func, PyObject *const *args, Py_ssize_t nargs)
+{
+    return _PyObject_VectorcallTstate(tstate, func, args, (size_t)nargs, NULL);
+}
+
+/* Same as PyObject_Vectorcall except without keyword arguments */
+static inline PyObject *
+_PyObject_FastCall(PyObject *func, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyThreadState *tstate = PyThreadState_GET();
+    return _PyObject_FastCallTstate(tstate, func, args, nargs);
+}
+
+/* Call a callable without any arguments
+   Private static inline function variant of public function
+   PyObject_CallNoArgs(). */
+static inline PyObject *
+_PyObject_CallNoArg(PyObject *func) {
+    PyThreadState *tstate = PyThreadState_GET();
+    return _PyObject_VectorcallTstate(tstate, func, NULL, 0, NULL);
+}
+
+static inline PyObject *
+PyObject_CallOneArg(PyObject *func, PyObject *arg)
+{
+    PyObject *_args[2];
+    PyObject **args;
+    PyThreadState *tstate;
+    size_t nargsf;
+
+    assert(arg != NULL);
+    args = _args + 1;  // For PY_VECTORCALL_ARGUMENTS_OFFSET
+    args[0] = arg;
+    tstate = PyThreadState_GET();
+    nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    return _PyObject_VectorcallTstate(tstate, func, args, nargsf, NULL);
+}
+
+PyAPI_FUNC(PyObject *) PyObject_VectorcallMethod(
+    PyObject *name, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames);
+
+static inline PyObject *
+PyObject_CallMethodNoArgs(PyObject *self, PyObject *name)
+{
+    return PyObject_VectorcallMethod(name, &self,
+           1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+}
+
+static inline PyObject *
+PyObject_CallMethodOneArg(PyObject *self, PyObject *name, PyObject *arg)
+{
+    PyObject *args[2] = {self, arg};
+
+    assert(arg != NULL);
+    return PyObject_VectorcallMethod(name, args,
+           2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+}
 
 /* Like PyObject_CallMethod(), but expect a _Py_Identifier*
    as the method name. */
@@ -143,6 +221,35 @@ PyAPI_FUNC(PyObject *) _PyObject_CallMethodIdObjArgs(
     struct _Py_Identifier *name,
     ...);
 
+static inline PyObject *
+_PyObject_VectorcallMethodId(
+    _Py_Identifier *name, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
+    if (!oname) {
+        return NULL;
+    }
+    return PyObject_VectorcallMethod(oname, args, nargsf, kwnames);
+}
+
+static inline PyObject *
+_PyObject_CallMethodIdNoArgs(PyObject *self, _Py_Identifier *name)
+{
+    return _PyObject_VectorcallMethodId(name, &self,
+           1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+}
+
+static inline PyObject *
+_PyObject_CallMethodIdOneArg(PyObject *self, _Py_Identifier *name, PyObject *arg)
+{
+    PyObject *args[2] = {self, arg};
+
+    assert(arg != NULL);
+    return _PyObject_VectorcallMethodId(name, args,
+           2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+}
+
 PyAPI_FUNC(int) _PyObject_HasLen(PyObject *o);
 
 /* Guess the size of object 'o' using len(o) or o.__length_hint__().
@@ -153,9 +260,7 @@ PyAPI_FUNC(Py_ssize_t) PyObject_LengthHint(PyObject *o, Py_ssize_t);
 /* === New Buffer API ============================================ */
 
 /* Return 1 if the getbuffer function is available, otherwise return 0. */
-#define PyObject_CheckBuffer(obj) \
-    (((obj)->ob_type->tp_as_buffer != NULL) &&  \
-     ((obj)->ob_type->tp_as_buffer->bf_getbuffer != NULL))
+PyAPI_FUNC(int) PyObject_CheckBuffer(PyObject *obj);
 
 /* This is a C-API version of the getbuffer function call.  It checks
    to make sure object has the required function pointer and issues the
@@ -171,7 +276,7 @@ PyAPI_FUNC(void *) PyBuffer_GetPointer(Py_buffer *view, Py_ssize_t *indices);
 
 /* Return the implied itemsize of the data-format area from a
    struct-style description. */
-PyAPI_FUNC(int) PyBuffer_SizeFromFormat(const char *);
+PyAPI_FUNC(Py_ssize_t) PyBuffer_SizeFromFormat(const char *format);
 
 /* Implementation in memoryobject.c */
 PyAPI_FUNC(int) PyBuffer_ToContiguous(void *buf, Py_buffer *view,
@@ -223,14 +328,8 @@ PyAPI_FUNC(void) PyBuffer_Release(Py_buffer *view);
 /* ==== Iterators ================================================ */
 
 #define PyIter_Check(obj) \
-    ((obj)->ob_type->tp_iternext != NULL && \
-     (obj)->ob_type->tp_iternext != &_PyObject_NextNotImplemented)
-
-/* === Number Protocol ================================================== */
-
-#define PyIndex_Check(obj)                              \
-    ((obj)->ob_type->tp_as_number != NULL &&            \
-     (obj)->ob_type->tp_as_number->nb_index != NULL)
+    (Py_TYPE(obj)->tp_iternext != NULL && \
+     Py_TYPE(obj)->tp_iternext != &_PyObject_NextNotImplemented)
 
 /* === Sequence protocol ================================================ */
 
@@ -276,6 +375,5 @@ PyAPI_FUNC(void) _Py_add_one_to_index_C(int nd, Py_ssize_t *index,
 /* Convert Python int to Py_ssize_t. Do nothing if the argument is None. */
 PyAPI_FUNC(int) _Py_convert_optional_to_ssize_t(PyObject *, void *);
 
-#ifdef __cplusplus
-}
-#endif
+/* Same as PyNumber_Index but can return an instance of a subclass of int. */
+PyAPI_FUNC(PyObject *) _PyNumber_Index(PyObject *o);

@@ -1,3 +1,0 @@
-On macOS, :func:`platform.platform` now uses :func:`platform.mac_ver`, if it
-returns a non-empty release string, to get the macOS version rather than the
-darwin version.

@@ -1,2 +1,0 @@
-Py_DecodeLocale() and Py_EncodeLocale() now use the UTF-8 encoding on
-Windows if Py_LegacyWindowsFSEncodingFlag is zero.

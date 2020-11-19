@@ -265,8 +265,8 @@ functions:
       ps.print_stats()
       print(s.getvalue())
 
-   The :class:`Profile` class can also be used as a context manager (see
-   :ref:`typecontextmanager`)::
+   The :class:`Profile` class can also be used as a context manager (supported
+   only in :mod:`cProfile` module. see :ref:`typecontextmanager`)::
 
       import cProfile
 
@@ -280,11 +280,11 @@ functions:
 
    .. method:: enable()
 
-      Start collecting profiling data.
+      Start collecting profiling data. Only in :mod:`cProfile`.
 
    .. method:: disable()
 
-      Stop collecting profiling data.
+      Stop collecting profiling data. Only in :mod:`cProfile`.
 
    .. method:: create_stats()
 
@@ -309,7 +309,7 @@ functions:
       Profile the cmd via :func:`exec` with the specified global and
       local environment.
 
-   .. method:: runcall(func, *args, **kwargs)
+   .. method:: runcall(func, /, *args, **kwargs)
 
       Profile ``func(*args, **kwargs)``
 
@@ -525,6 +525,17 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
       ordering are identical to the :meth:`~pstats.Stats.print_callers` method.
 
 
+    .. method:: get_stats_profile()
+
+      This method returns an instance of StatsProfile, which contains a mapping
+      of function names to instances of FunctionProfile. Each FunctionProfile
+      instance holds information related to the function's profile such as how
+      long the function took to run, how many times it was called, etc...
+
+       .. versionadded:: 3.9
+          Added the following dataclasses: StatsProfile, FunctionProfile.
+          Added the following function: get_stats_profile.
+
 .. _deterministic-profiling:
 
 What Is Deterministic Profiling?
@@ -540,9 +551,9 @@ less overhead (as the code does not need to be instrumented), but provides only
 relative indications of where time is being spent.
 
 In Python, since there is an interpreter active during execution, the presence
-of instrumented code is not required to do deterministic profiling.  Python
-automatically provides a :dfn:`hook` (optional callback) for each event.  In
-addition, the interpreted nature of Python tends to add so much overhead to
+of instrumented code is not required in order to do deterministic profiling.
+Python automatically provides a :dfn:`hook` (optional callback) for each event.
+In addition, the interpreted nature of Python tends to add so much overhead to
 execution, that deterministic profiling tends to only add small processing
 overhead in typical applications.  The result is that deterministic profiling is
 not that expensive, yet provides extensive run time statistics about the

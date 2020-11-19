@@ -65,11 +65,11 @@ _abc__abc_register(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *self;
     PyObject *subclass;
 
-    if (!_PyArg_UnpackStack(args, nargs, "_abc_register",
-        2, 2,
-        &self, &subclass)) {
+    if (!_PyArg_CheckPositional("_abc_register", nargs, 2, 2)) {
         goto exit;
     }
+    self = args[0];
+    subclass = args[1];
     return_value = _abc__abc_register_impl(module, self, subclass);
 
 exit:
@@ -96,11 +96,11 @@ _abc__abc_instancecheck(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *self;
     PyObject *instance;
 
-    if (!_PyArg_UnpackStack(args, nargs, "_abc_instancecheck",
-        2, 2,
-        &self, &instance)) {
+    if (!_PyArg_CheckPositional("_abc_instancecheck", nargs, 2, 2)) {
         goto exit;
     }
+    self = args[0];
+    instance = args[1];
     return_value = _abc__abc_instancecheck_impl(module, self, instance);
 
 exit:
@@ -127,11 +127,11 @@ _abc__abc_subclasscheck(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *self;
     PyObject *subclass;
 
-    if (!_PyArg_UnpackStack(args, nargs, "_abc_subclasscheck",
-        2, 2,
-        &self, &subclass)) {
+    if (!_PyArg_CheckPositional("_abc_subclasscheck", nargs, 2, 2)) {
         goto exit;
     }
+    self = args[0];
+    subclass = args[1];
     return_value = _abc__abc_subclasscheck_impl(module, self, subclass);
 
 exit:
@@ -159,4 +159,4 @@ _abc_get_cache_token(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _abc_get_cache_token_impl(module);
 }
-/*[clinic end generated code: output=606db3cb658d9240 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2544b4b5ae50a089 input=a9049054013a1b77]*/

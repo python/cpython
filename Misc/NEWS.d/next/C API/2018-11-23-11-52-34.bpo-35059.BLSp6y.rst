@@ -1,3 +1,0 @@
-The following C macros have been converted to static inline functions:
-:c:func:`Py_INCREF`, :c:func:`Py_DECREF`, :c:func:`Py_XINCREF`,
-:c:func:`Py_XDECREF`, :c:func:`PyObject_INIT`, :c:func:`PyObject_INIT_VAR`.

@@ -1,2 +1,0 @@
-Create availability directive for documentation.  Original patch by Georg
-Brandl.

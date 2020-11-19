@@ -15,11 +15,11 @@ way.  Functions such as :func:`importlib.import_module` and built-in
 
 The :keyword:`import` statement combines two operations; it searches for the
 named module, then it binds the results of that search to a name in the local
-scope.  The search operation of the :keyword:`import` statement is defined as
+scope.  The search operation of the :keyword:`!import` statement is defined as
 a call to the :func:`__import__` function, with the appropriate arguments.
 The return value of :func:`__import__` is used to perform the name
-binding operation of the :keyword:`import` statement.  See the
-:keyword:`import` statement for the exact details of that name binding
+binding operation of the :keyword:`!import` statement.  See the
+:keyword:`!import` statement for the exact details of that name binding
 operation.
 
 A direct call to :func:`__import__` performs only the module search and, if
@@ -83,7 +83,7 @@ module.  Specifically, any module that contains a ``__path__`` attribute is
 considered a package.
 
 All modules have a name.  Subpackage names are separated from their parent
-package name by dots, akin to Python's standard attribute access syntax.  Thus
+package name by a dot, akin to Python's standard attribute access syntax.  Thus
 you might have a module called :mod:`sys` and a package called :mod:`email`,
 which in turn has a subpackage called :mod:`email.mime` and a module within
 that subpackage called :mod:`email.mime.text`.
@@ -201,6 +201,8 @@ named module, the two module objects will *not* be the same. By contrast,
 :func:`importlib.reload` will reuse the *same* module object, and simply
 reinitialise the module contents by rerunning the module's code.
 
+
+.. _finders-and-loaders:
 
 Finders and loaders
 -------------------
@@ -345,12 +347,11 @@ of what happens during the loading portion of import::
     _init_module_attrs(spec, module)
 
     if spec.loader is None:
-        if spec.submodule_search_locations is not None:
-            # namespace package
-            sys.modules[spec.name] = module
-        else:
-            # unsupported
-            raise ImportError
+        # unsupported
+        raise ImportError
+    if spec.origin is None and spec.submodule_search_locations is not None:
+        # namespace package
+        sys.modules[spec.name] = module
     elif not hasattr(spec.loader, 'exec_module'):
         module = spec.loader.load_module(spec.name)
         # Set __loader__ and __package__ if missing.
@@ -679,11 +680,11 @@ Here are the exact rules used:
 Cached bytecode invalidation
 ----------------------------
 
-Before Python loads cached bytecode from ``.pyc`` file, it checks whether the
+Before Python loads cached bytecode from a ``.pyc`` file, it checks whether the
 cache is up-to-date with the source ``.py`` file. By default, Python does this
 by storing the source's last-modified timestamp and size in the cache file when
 writing it. At runtime, the import system then validates the cache file by
-checking the stored metadata in the cache file against at source's
+checking the stored metadata in the cache file against the source's
 metadata.
 
 Python also supports "hash-based" cache files, which store a hash of the source
@@ -850,15 +851,14 @@ In order to support imports of modules and initialized packages and also to
 contribute portions to namespace packages, path entry finders must implement
 the :meth:`~importlib.abc.PathEntryFinder.find_spec` method.
 
-:meth:`~importlib.abc.PathEntryFinder.find_spec` takes two argument, the
+:meth:`~importlib.abc.PathEntryFinder.find_spec` takes two arguments: the
 fully qualified name of the module being imported, and the (optional) target
 module.  ``find_spec()`` returns a fully populated spec for the module.
 This spec will always have "loader" set (with one exception).
 
 To indicate to the import machinery that the spec represents a namespace
-:term:`portion`. the path entry finder sets "loader" on the spec to
-``None`` and "submodule_search_locations" to a list containing the
-portion.
+:term:`portion`, the path entry finder sets "submodule_search_locations" to
+a list containing the portion.
 
 .. versionchanged:: 3.4
    :meth:`~importlib.abc.PathEntryFinder.find_spec` replaced
@@ -874,18 +874,7 @@ portion.
    :meth:`~importlib.abc.PathEntryFinder.find_loader` takes one argument, the
    fully qualified name of the module being imported.  ``find_loader()``
    returns a 2-tuple where the first item is the loader and the second item
-   is a namespace :term:`portion`.  When the first item (i.e. the loader) is
-   ``None``, this means that while the path entry finder does not have a
-   loader for the named module, it knows that the path entry contributes to
-   a namespace portion for the named module.  This will almost always be the
-   case where Python is asked to import a namespace package that has no
-   physical presence on the file system.  When a path entry finder returns
-   ``None`` for the loader, the second item of the 2-tuple return value must
-   be a sequence, although it can be empty.
-
-   If ``find_loader()`` returns a non-``None`` loader value, the portion is
-   ignored and the loader is returned from the path based finder, terminating
-   the search through the path entries.
+   is a namespace :term:`portion`.
 
    For backwards compatibility with other implementations of the import
    protocol, many path entry finders also support the same,
@@ -914,12 +903,52 @@ the builtin :func:`__import__` function may be sufficient. This technique
 may also be employed at the module level to only alter the behaviour of
 import statements within that module.
 
-To selectively prevent import of some modules from a hook early on the
+To selectively prevent the import of some modules from a hook early on the
 meta path (rather than disabling the standard import system entirely),
 it is sufficient to raise :exc:`ModuleNotFoundError` directly from
 :meth:`~importlib.abc.MetaPathFinder.find_spec` instead of returning
 ``None``. The latter indicates that the meta path search should continue,
 while raising an exception terminates it immediately.
+
+.. _relativeimports:
+
+Package Relative Imports
+========================
+
+Relative imports use leading dots. A single leading dot indicates a relative
+import, starting with the current package. Two or more leading dots indicate a
+relative import to the parent(s) of the current package, one level per dot
+after the first. For example, given the following package layout::
+
+    package/
+        __init__.py
+        subpackage1/
+            __init__.py
+            moduleX.py
+            moduleY.py
+        subpackage2/
+            __init__.py
+            moduleZ.py
+        moduleA.py
+
+In either ``subpackage1/moduleX.py`` or ``subpackage1/__init__.py``,
+the following are valid relative imports::
+
+    from .moduleY import spam
+    from .moduleY import spam as ham
+    from . import moduleY
+    from ..subpackage1 import moduleY
+    from ..subpackage2.moduleZ import eggs
+    from ..moduleA import foo
+
+Absolute imports may use either the ``import <>`` or ``from <> import <>``
+syntax, but relative imports may only use the second form; the reason
+for this is that::
+
+    import XXX.YYY.ZZZ
+
+should expose ``XXX.YYY.ZZZ`` as a usable expression, but .moduleY is
+not a valid expression.
 
 
 Special considerations for __main__

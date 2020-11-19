@@ -1,2 +1,0 @@
-Fixed crash on debug builds when opcode stack was adjusted with negative
-numbers. Patch by Constantin Petrisor.

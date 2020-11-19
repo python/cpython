@@ -1,4 +1,5 @@
 from test import support
+from test.support import warnings_helper
 import decimal
 import enum
 import locale
@@ -14,6 +15,7 @@ try:
 except ImportError:
     _testcapi = None
 
+from test.support import skip_if_buggy_ucrt_strfptime
 
 # Max year is only limited by the size of C int.
 SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
@@ -88,15 +90,6 @@ class TimeTestCase(unittest.TestCase):
             check_ns(time.clock_gettime(time.CLOCK_REALTIME),
                      time.clock_gettime_ns(time.CLOCK_REALTIME))
 
-    def test_clock(self):
-        with self.assertWarns(DeprecationWarning):
-            time.clock()
-
-        with self.assertWarns(DeprecationWarning):
-            info = time.get_clock_info('clock')
-        self.assertTrue(info.monotonic)
-        self.assertFalse(info.adjustable)
-
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
     def test_clock_realtime(self):
@@ -119,7 +112,13 @@ class TimeTestCase(unittest.TestCase):
     def test_pthread_getcpuclockid(self):
         clk_id = time.pthread_getcpuclockid(threading.get_ident())
         self.assertTrue(type(clk_id) is int)
-        self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        # when in 32-bit mode AIX only returns the predefined constant
+        if not platform.system() == "AIX":
+            self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        elif (sys.maxsize.bit_length() > 32):
+            self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        else:
+            self.assertEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
         t1 = time.clock_gettime(clk_id)
         t2 = time.clock_gettime(clk_id)
         self.assertLessEqual(t1, t2)
@@ -249,10 +248,11 @@ class TimeTestCase(unittest.TestCase):
         # not change output based on its value and no test for year
         # because systems vary in their support for year 0.
         expected = "2000 01 01 00 00 00 1 001"
-        with support.check_warnings():
+        with warnings_helper.check_warnings():
             result = time.strftime("%Y %m %d %H %M %S %w %j", (2000,)+(0,)*8)
         self.assertEqual(expected, result)
 
+    @skip_if_buggy_ucrt_strfptime
     def test_strptime(self):
         # Should be able to go round-trip from strftime to strptime without
         # raising an exception.
@@ -424,13 +424,6 @@ class TimeTestCase(unittest.TestCase):
     def test_mktime(self):
         # Issue #1726687
         for t in (-2, -1, 0, 1):
-            if sys.platform.startswith('aix') and t == -1:
-                # Issue #11188, #19748: mktime() returns -1 on error. On Linux,
-                # the tm_wday field is used as a sentinel () to detect if -1 is
-                # really an error or a valid timestamp. On AIX, tm_wday is
-                # unchanged even on success and so cannot be used as a
-                # sentinel.
-                continue
             try:
                 tt = time.localtime(t)
             except (OverflowError, OSError):
@@ -469,8 +462,9 @@ class TimeTestCase(unittest.TestCase):
         t2 = time.monotonic()
         dt = t2 - t1
         self.assertGreater(t2, t1)
-        # Issue #20101: On some Windows machines, dt may be slightly low
-        self.assertTrue(0.45 <= dt <= 1.0, dt)
+        # bpo-20101: tolerate a difference of 50 ms because of bad timer
+        # resolution on Windows
+        self.assertTrue(0.450 <= dt)
 
         # monotonic() is a monotonic but non adjustable clock
         info = time.get_clock_info('monotonic')
@@ -550,14 +544,10 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(ValueError, time.ctime, float("nan"))
 
     def test_get_clock_info(self):
-        clocks = ['clock', 'monotonic', 'perf_counter', 'process_time', 'time']
+        clocks = ['monotonic', 'perf_counter', 'process_time', 'time']
 
         for name in clocks:
-            if name == 'clock':
-                with self.assertWarns(DeprecationWarning):
-                    info = time.get_clock_info('clock')
-            else:
-                info = time.get_clock_info(name)
+            info = time.get_clock_info(name)
 
             #self.assertIsInstance(info, dict)
             self.assertIsInstance(info.implementation, str)
@@ -685,6 +675,7 @@ class TestStrftime4dyear(_TestStrftimeYear, _Test4dYear, unittest.TestCase):
 
 
 class TestPytime(unittest.TestCase):
+    @skip_if_buggy_ucrt_strfptime
     @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
     def test_localtime_timezone(self):
 
@@ -835,7 +826,7 @@ class CPyTimeTestCase:
                     try:
                         result = pytime_converter(value, time_rnd)
                         expected = expected_func(value)
-                    except Exception as exc:
+                    except Exception:
                         self.fail("Error on timestamp conversion: %s" % debug_info)
                     self.assertEqual(result,
                                      expected,
@@ -1049,6 +1040,36 @@ class TestOldPyTime(CPyTimeTestCase, unittest.TestCase):
         for time_rnd, _ in ROUNDING_MODES:
             with self.assertRaises(ValueError):
                 pytime_object_to_timespec(float('nan'), time_rnd)
+
+@unittest.skipUnless(sys.platform == "darwin", "test weak linking on macOS")
+class TestTimeWeaklinking(unittest.TestCase):
+    # These test cases verify that weak linking support on macOS works
+    # as expected. These cases only test new behaviour introduced by weak linking,
+    # regular behaviour is tested by the normal test cases.
+    #
+    # See the section on Weak Linking in Mac/README.txt for more information.
+    def test_clock_functions(self):
+        import sysconfig
+        import platform
+
+        config_vars = sysconfig.get_config_vars()
+        var_name = "HAVE_CLOCK_GETTIME"
+        if var_name not in config_vars or not config_vars[var_name]:
+            raise unittest.SkipTest(f"{var_name} is not available")
+
+        mac_ver = tuple(int(x) for x in platform.mac_ver()[0].split("."))
+
+        clock_names = [
+            "CLOCK_MONOTONIC", "clock_gettime", "clock_gettime_ns", "clock_settime",
+            "clock_settime_ns", "clock_getres"]
+        
+        if mac_ver >= (10, 12):
+            for name in clock_names:
+                self.assertTrue(hasattr(time, name), f"time.{name} is not available")
+
+        else:
+            for name in clock_names:
+                self.assertFalse(hasattr(time, name), f"time.{name} is available")
 
 
 if __name__ == "__main__":

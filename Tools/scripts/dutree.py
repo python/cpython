@@ -4,18 +4,18 @@
 import os, sys, errno
 
 def main():
-    p = os.popen('du ' + ' '.join(sys.argv[1:]), 'r')
     total, d = None, {}
-    for line in p.readlines():
-        i = 0
-        while line[i] in '0123456789': i = i+1
-        size = eval(line[:i])
-        while line[i] in ' \t': i = i+1
-        filename = line[i:-1]
-        comps = filename.split('/')
-        if comps[0] == '': comps[0] = '/'
-        if comps[len(comps)-1] == '': del comps[len(comps)-1]
-        total, d = store(size, comps, total, d)
+    with os.popen('du ' + ' '.join(sys.argv[1:])) as p:
+        for line in p:
+            i = 0
+            while line[i] in '0123456789': i = i+1
+            size = eval(line[:i])
+            while line[i] in ' \t': i = i+1
+            filename = line[i:-1]
+            comps = filename.split('/')
+            if comps[0] == '': comps[0] = '/'
+            if comps[len(comps)-1] == '': del comps[len(comps)-1]
+            total, d = store(size, comps, total, d)
     try:
         display(total, d)
     except IOError as e:

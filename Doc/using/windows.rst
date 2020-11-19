@@ -1,4 +1,4 @@
-.. highlightlang:: none
+.. highlight:: none
 
 .. _using-on-windows:
 
@@ -103,14 +103,12 @@ paths longer than this would not resolve and errors would result.
 
 In the latest versions of Windows, this limitation can be expanded to
 approximately 32,000 characters. Your administrator will need to activate the
-"Enable Win32 long paths" group policy, or set the registry value
-``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem@LongPathsEnabled``
-to ``1``.
+"Enable Win32 long paths" group policy, or set ``LongPathsEnabled`` to ``1``
+in the registry key
+``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem``.
 
 This allows the :func:`open` function, the :mod:`os` module and most other
-path functionality to accept and return paths longer than 260 characters when
-using strings. (Use of bytes as paths is deprecated on Windows, and this feature
-is not available when using bytes.)
+path functionality to accept and return paths longer than 260 characters.
 
 After changing the above option, no further configuration is required.
 
@@ -154,7 +152,9 @@ of available options is shown below.
 | DefaultJustForMeTargetDir | The default install directory for    | :file:`%LocalAppData%\\\ |
 |                           | just-for-me installs                 | Programs\\PythonXY` or   |
 |                           |                                      | :file:`%LocalAppData%\\\ |
-|                           |                                      | Programs\\PythonXY-32`   |
+|                           |                                      | Programs\\PythonXY-32` or|
+|                           |                                      | :file:`%LocalAppData%\\\ |
+|                           |                                      | Programs\\PythonXY-64`   |
 +---------------------------+--------------------------------------+--------------------------+
 | DefaultCustomTargetDir    | The default custom install directory | (empty)                  |
 |                           | displayed in the UI                  |                          |
@@ -212,13 +212,13 @@ of available options is shown below.
 For example, to silently install a default, system-wide Python installation,
 you could use the following command (from an elevated command prompt)::
 
-    python-3.6.0.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
+    python-3.9.0.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
 
 To allow users to easily install a personal copy of Python without the test
 suite, you could provide a shortcut with the following command. This will
 display a simplified initial page and disallow customization::
 
-    python-3.6.0.exe InstallAllUsers=0 Include_launcher=0 Include_test=0
+    python-3.9.0.exe InstallAllUsers=0 Include_launcher=0 Include_test=0
         SimpleInstall=1 SimpleInstallDescription="Just for me, no test suite."
 
 (Note that omitting the launcher also omits file associations, and is only
@@ -255,13 +255,13 @@ where a large number of installations are going to be performed it is very
 useful to have a locally cached copy.
 
 Execute the following command from Command Prompt to download all possible
-required files.  Remember to substitute ``python-3.6.0.exe`` for the actual
+required files.  Remember to substitute ``python-3.9.0.exe`` for the actual
 name of your installer, and to create layouts in their own directories to
 avoid collisions between files with the same name.
 
 ::
 
-    python-3.6.0.exe /layout [optional target directory]
+    python-3.9.0.exe /layout [optional target directory]
 
 You may also specify the ``/quiet`` option to hide the progress display.
 
@@ -291,12 +291,6 @@ The Microsoft Store package
 
 .. versionadded:: 3.7.2
 
-.. note::
-   The Microsoft Store package is currently considered unstable while its
-   interactions with other tools and other copies of Python are evaluated.
-   While Python itself is stable, this installation method may change its
-   behavior and capabilities during Python 3.7 releases.
-
 The Microsoft Store package is an easily installable Python interpreter that
 is intended mainly for interactive use, for example, by students.
 
@@ -316,7 +310,10 @@ session by typing ``python``. Further, pip and IDLE may be used by typing
 All three commands are also available with version number suffixes, for
 example, as ``python3.exe`` and ``python3.x.exe`` as well as
 ``python.exe`` (where ``3.x`` is the specific version you want to launch,
-such as |version|).
+such as |version|). Open "Manage App Execution Aliases" through Start to
+select which version of Python is associated with each command. It is
+recommended to make sure that ``pip`` and ``idle`` are consistent with
+whichever version of ``python`` is selected.
 
 Virtual environments can be created with ``python -m venv`` and activated
 and used as normal.
@@ -326,6 +323,9 @@ If you have installed another version of Python and added it to your
 one from the Microsoft Store. To access the new installation, use
 ``python3.exe`` or ``python3.x.exe``.
 
+The ``py.exe`` launcher will detect this Python installation, but will prefer
+installations from the traditional installer.
+
 To remove Python, open Settings and use Apps and Features, or else find
 Python in Start and right-click to select Uninstall. Uninstalling will
 remove all packages you installed directly into this Python installation, but
@@ -333,9 +333,6 @@ will not remove any virtual environments
 
 Known Issues
 ------------
-
-Currently, the ``py.exe`` launcher cannot be used to start Python when it
-has been installed from the Microsoft Store.
 
 Because of restrictions on Microsoft Store apps, Python scripts may not have
 full write access to shared locations such as ``TEMP`` and the registry.
@@ -528,7 +525,7 @@ To temporarily set environment variables, open Command Prompt and use the
 
 .. code-block:: doscon
 
-    C:\>set PATH=C:\Program Files\Python 3.6;%PATH%
+    C:\>set PATH=C:\Program Files\Python 3.9;%PATH%
     C:\>set PYTHONPATH=%PYTHONPATH%;C:\My_python_lib
     C:\>python
 
@@ -601,7 +598,45 @@ of your Python installation, delimited by a semicolon from other entries.  An
 example variable could look like this (assuming the first two entries already
 existed)::
 
-    C:\WINDOWS\system32;C:\WINDOWS;C:\Program Files\Python 3.6
+    C:\WINDOWS\system32;C:\WINDOWS;C:\Program Files\Python 3.9
+
+.. _win-utf8-mode:
+
+UTF-8 mode
+==========
+
+.. versionadded:: 3.7
+
+Windows still uses legacy encodings for the system encoding (the ANSI Code
+Page).  Python uses it for the default encoding of text files (e.g.
+:func:`locale.getpreferredencoding`).
+
+This may cause issues because UTF-8 is widely used on the internet
+and most Unix systems, including WSL (Windows Subsystem for Linux).
+
+You can use the :ref:`Python UTF-8 Mode <utf8-mode>` to change the default text
+encoding to UTF-8. You can enable the :ref:`Python UTF-8 Mode <utf8-mode>` via
+the ``-X utf8`` command line option, or the ``PYTHONUTF8=1`` environment
+variable.  See :envvar:`PYTHONUTF8` for enabling UTF-8 mode, and
+:ref:`setting-envvars` for how to modify environment variables.
+
+When the :ref:`Python UTF-8 Mode <utf8-mode>` is enabled, you can still use the
+system encoding (the ANSI Code Page) via the "mbcs" codec.
+
+Note that adding ``PYTHONUTF8=1`` to the default environment variables
+will affect all Python 3.7+ applications on your system.
+If you have any Python 3.7+ applications which rely on the legacy
+system encoding, it is recommended to set the environment variable
+temporarily or use the ``-X utf8`` command line option.
+
+.. note::
+   Even when UTF-8 mode is disabled, Python uses UTF-8 by default
+   on Windows for:
+
+   * Console I/O including standard I/O (see :pep:`528` for details).
+   * The :term:`filesystem encoding <filesystem encoding and error handler>`
+     (see :pep:`529` for details).
+
 
 .. _launcher:
 
@@ -762,9 +797,16 @@ on Windows which you hope will be useful on Unix, you should use one of the
 shebang lines starting with ``/usr``.
 
 Any of the above virtual commands can be suffixed with an explicit version
-(either just the major version, or the major and minor version) - for example
-``/usr/bin/python2.7`` - which will cause that specific version to be located
-and used.
+(either just the major version, or the major and minor version).
+Furthermore the 32-bit version can be requested by adding "-32" after the
+minor version. I.e. ``/usr/bin/python2.7-32`` will request usage of the
+32-bit python 2.7.
+
+.. versionadded:: 3.7
+
+   Beginning with python launcher 3.7 it is possible to request 64-bit version
+   by the "-64" suffix. Furthermore it is possible to specify a major and
+   architecture without minor (i.e. ``/usr/bin/python3-64``).
 
 The ``/usr/bin/env`` form of shebang line has one further special property.
 Before looking for installed Python interpreters, this form will search the
@@ -806,17 +848,18 @@ Customizing default Python versions
 In some cases, a version qualifier can be included in a command to dictate
 which version of Python will be used by the command. A version qualifier
 starts with a major version number and can optionally be followed by a period
-('.') and a minor version specifier. If the minor qualifier is specified, it
-may optionally be followed by "-32" to indicate the 32-bit implementation of
-that version be used.
+('.') and a minor version specifier. Furthermore it is possible to specify
+if a 32 or 64 bit implementation shall be requested by adding "-32" or "-64".
 
 For example, a shebang line of ``#!python`` has no version qualifier, while
 ``#!python3`` has a version qualifier which specifies only a major version.
 
-If no version qualifiers are found in a command, the environment variable
-``PY_PYTHON`` can be set to specify the default version qualifier - the default
-value is "2". Note this value could specify just a major version (e.g. "2") or
-a major.minor qualifier (e.g. "2.6"), or even major.minor-32.
+If no version qualifiers are found in a command, the environment
+variable :envvar:`PY_PYTHON` can be set to specify the default version
+qualifier. If it is not set, the default is "3". The variable can
+specify any value that may be passed on the command line, such as "3",
+"3.7", "3.7-32" or "3.7-64". (Note that the "-64" option is only
+available with the launcher included with Python 3.7 or newer.)
 
 If no minor version qualifiers are found, the environment variable
 ``PY_PYTHON{major}`` (where ``{major}`` is the current major version qualifier
@@ -834,8 +877,8 @@ of the specified version if available. This is so the behavior of the launcher
 can be predicted knowing only what versions are installed on the PC and
 without regard to the order in which they were installed (i.e., without knowing
 whether a 32 or 64-bit version of Python and corresponding launcher was
-installed last). As noted above, an optional "-32" suffix can be used on a
-version specifier to change this behaviour.
+installed last). As noted above, an optional "-32" or "-64" suffix can be
+used on a version specifier to change this behaviour.
 
 Examples:
 
@@ -1033,7 +1076,9 @@ The `PyWin32 <https://pypi.org/project/pywin32>`_ module by Mark Hammond
 is a collection of modules for advanced Windows-specific support.  This includes
 utilities for:
 
-* `Component Object Model <https://www.microsoft.com/com/>`_ (COM)
+* `Component Object Model
+  <https://docs.microsoft.com/en-us/windows/desktop/com/component-object-model--com--portal>`_
+  (COM)
 * Win32 API calls
 * Registry
 * Event log
@@ -1099,8 +1144,7 @@ For extension modules, consult :ref:`building-on-windows`.
       MinGW gcc under Windows" or "Installing Python extension with distutils
       and without Microsoft Visual C++" by Sébastien Sauvage, 2003
 
-   `MingW -- Python extensions <http://oldwiki.mingw.org/index.php/Python%20extensions>`_
-      by Trent Apted et al, 2007
+   `MingW -- Python extensions <http://www.mingw.org/wiki/FAQ#toc14>`_
 
 
 Other Platforms

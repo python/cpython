@@ -76,17 +76,6 @@ the following::
    root = tix.Tk()
    root.tk.eval('package require Tix')
 
-If this fails, you have a Tk installation problem which must be resolved before
-proceeding. Use the environment variable :envvar:`TIX_LIBRARY` to point to the
-installed Tix library directory, and make sure you have the dynamic
-object library (:file:`tix8183.dll` or :file:`libtix8183.so`) in  the same
-directory that contains your Tk dynamic object library (:file:`tk8183.dll` or
-:file:`libtk8183.so`). The directory with the dynamic object library should also
-have a file called :file:`pkgIndex.tcl` (case sensitive), which contains the
-line::
-
-   package ifneeded Tix 8.1 [list load "[file join $dir tix8183.dll]" Tix]
-
 
 Tix Widgets
 -----------

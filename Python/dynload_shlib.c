@@ -2,7 +2,8 @@
 /* Support for dynamic loading of extension modules */
 
 #include "Python.h"
-#include "pycore_pystate.h"
+#include "pycore_interp.h"    // _PyInterpreterState.dlopenflags
+#include "pycore_pystate.h"   // _PyInterpreterState_GET()
 #include "importdl.h"
 
 #include <sys/types.h>
@@ -38,9 +39,10 @@ const char *_PyImport_DynLoadFiletab[] = {
     ".dll",
 #else  /* !__CYGWIN__ */
     "." SOABI ".so",
-#ifndef Py_DEBUG
+#ifdef ALT_SOABI
+    "." ALT_SOABI ".so",
+#endif
     ".abi" PYTHON_ABI_STRING ".so",
-#endif /* ! Py_DEBUG */
     ".so",
 #endif  /* __CYGWIN__ */
     NULL,
@@ -93,7 +95,7 @@ _PyImport_FindSharedFuncptr(const char *prefix,
         }
     }
 
-    dlopenflags = _PyInterpreterState_Get()->dlopenflags;
+    dlopenflags = _PyInterpreterState_GET()->dlopenflags;
 
     handle = dlopen(pathname, dlopenflags);
 
@@ -104,7 +106,7 @@ _PyImport_FindSharedFuncptr(const char *prefix,
         const char *error = dlerror();
         if (error == NULL)
             error = "unknown dlopen() error";
-        error_ob = PyUnicode_FromString(error);
+        error_ob = PyUnicode_DecodeLocale(error, "surrogateescape");
         if (error_ob == NULL)
             return NULL;
         mod_name = PyUnicode_FromString(shortname);
@@ -112,7 +114,7 @@ _PyImport_FindSharedFuncptr(const char *prefix,
             Py_DECREF(error_ob);
             return NULL;
         }
-        path = PyUnicode_FromString(pathname);
+        path = PyUnicode_DecodeFSDefault(pathname);
         if (path == NULL) {
             Py_DECREF(error_ob);
             Py_DECREF(mod_name);

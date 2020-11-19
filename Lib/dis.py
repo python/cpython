@@ -157,6 +157,7 @@ def _format_code_info(co):
     lines.append("Name:              %s" % co.co_name)
     lines.append("Filename:          %s" % co.co_filename)
     lines.append("Argument count:    %s" % co.co_argcount)
+    lines.append("Positional-only arguments: %s" % co.co_posonlyargcount)
     lines.append("Kw-only arguments: %s" % co.co_kwonlyargcount)
     lines.append("Number of locals:  %s" % co.co_nlocals)
     lines.append("Stack size:        %s" % co.co_stacksize)
@@ -448,27 +449,15 @@ def findlabels(code):
 def findlinestarts(code):
     """Find the offsets in a byte code which are start of lines in the source.
 
-    Generate pairs (offset, lineno) as described in Python/compile.c.
-
+    Generate pairs (offset, lineno)
     """
-    byte_increments = code.co_lnotab[0::2]
-    line_increments = code.co_lnotab[1::2]
+    lastline = None
+    for start, end, line in code.co_lines():
+        if line is not None and line != lastline:
+            lastline = line
+            yield start, line
+    return
 
-    lastlineno = None
-    lineno = code.co_firstlineno
-    addr = 0
-    for byte_incr, line_incr in zip(byte_increments, line_increments):
-        if byte_incr:
-            if lineno != lastlineno:
-                yield (addr, lineno)
-                lastlineno = lineno
-            addr += byte_incr
-        if line_incr >= 0x80:
-            # line_increments is an array of 8-bit signed integers
-            line_incr -= 0x100
-        lineno += line_incr
-    if lineno != lastlineno:
-        yield (addr, lineno)
 
 class Bytecode:
     """The bytecode operations of a piece of code
@@ -536,7 +525,7 @@ def _test():
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('infile', type=argparse.FileType(), nargs='?', default='-')
+    parser.add_argument('infile', type=argparse.FileType('rb'), nargs='?', default='-')
     args = parser.parse_args()
     with args.infile as infile:
         source = infile.read()

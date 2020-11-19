@@ -44,7 +44,8 @@ executed::
 
 Summarizing:
 
-.. productionlist::
+
+.. productionlist:: python-grammar
    compound_stmt: `if_stmt`
                 : | `while_stmt`
                 : | `for_stmt`
@@ -78,20 +79,20 @@ on a separate line for clarity.
 .. _elif:
 .. _else:
 
-The :keyword:`if` statement
-===========================
+The :keyword:`!if` statement
+============================
 
 .. index::
-   statement: if
+   ! statement: if
    keyword: elif
    keyword: else
    single: : (colon); compound statement
 
 The :keyword:`if` statement is used for conditional execution:
 
-.. productionlist::
-   if_stmt: "if" `expression` ":" `suite`
-          : ("elif" `expression` ":" `suite`)*
+.. productionlist:: python-grammar
+   if_stmt: "if" `assignment_expression` ":" `suite`
+          : ("elif" `assignment_expression` ":" `suite`)*
           : ["else" ":" `suite`]
 
 It selects exactly one of the suites by evaluating the expressions one by one
@@ -103,26 +104,25 @@ false, the suite of the :keyword:`else` clause, if present, is executed.
 
 .. _while:
 
-The :keyword:`while` statement
-==============================
+The :keyword:`!while` statement
+===============================
 
 .. index::
-   statement: while
+   ! statement: while
    keyword: else
    pair: loop; statement
-   keyword: else
    single: : (colon); compound statement
 
 The :keyword:`while` statement is used for repeated execution as long as an
 expression is true:
 
-.. productionlist::
-   while_stmt: "while" `expression` ":" `suite`
+.. productionlist:: python-grammar
+   while_stmt: "while" `assignment_expression` ":" `suite`
              : ["else" ":" `suite`]
 
 This repeatedly tests the expression and, if it is true, executes the first
 suite; if the expression is false (which may be the first time it is tested) the
-suite of the :keyword:`else` clause, if present, is executed and the loop
+suite of the :keyword:`!else` clause, if present, is executed and the loop
 terminates.
 
 .. index::
@@ -130,32 +130,29 @@ terminates.
    statement: continue
 
 A :keyword:`break` statement executed in the first suite terminates the loop
-without executing the :keyword:`else` clause's suite.  A :keyword:`continue`
+without executing the :keyword:`!else` clause's suite.  A :keyword:`continue`
 statement executed in the first suite skips the rest of the suite and goes back
 to testing the expression.
 
 
 .. _for:
 
-The :keyword:`for` statement
-============================
+The :keyword:`!for` statement
+=============================
 
 .. index::
-   statement: for
+   ! statement: for
    keyword: in
    keyword: else
    pair: target; list
    pair: loop; statement
-   keyword: in
-   keyword: else
-   pair: target; list
    object: sequence
    single: : (colon); compound statement
 
 The :keyword:`for` statement is used to iterate over the elements of a sequence
 (such as a string, tuple or list) or other iterable object:
 
-.. productionlist::
+.. productionlist:: python-grammar
    for_stmt: "for" `target_list` "in" `expression_list` ":" `suite`
            : ["else" ":" `suite`]
 
@@ -166,16 +163,16 @@ by the iterator.  Each item in turn is assigned to the target list using the
 standard rules for assignments (see :ref:`assignment`), and then the suite is
 executed.  When the items are exhausted (which is immediately when the sequence
 is empty or an iterator raises a :exc:`StopIteration` exception), the suite in
-the :keyword:`else` clause, if present, is executed, and the loop terminates.
+the :keyword:`!else` clause, if present, is executed, and the loop terminates.
 
 .. index::
    statement: break
    statement: continue
 
 A :keyword:`break` statement executed in the first suite terminates the loop
-without executing the :keyword:`else` clause's suite.  A :keyword:`continue`
+without executing the :keyword:`!else` clause's suite.  A :keyword:`continue`
 statement executed in the first suite skips the rest of the suite and continues
-with the next item, or with the :keyword:`else` clause if there is no next
+with the next item, or with the :keyword:`!else` clause if there is no next
 item.
 
 The for-loop makes assignments to the variables in the target list.
@@ -224,11 +221,11 @@ returns the list ``[0, 1, 2]``.
 .. _except:
 .. _finally:
 
-The :keyword:`try` statement
-============================
+The :keyword:`!try` statement
+=============================
 
 .. index::
-   statement: try
+   ! statement: try
    keyword: except
    keyword: finally
    keyword: else
@@ -238,7 +235,7 @@ The :keyword:`try` statement
 The :keyword:`try` statement specifies exception handlers and/or cleanup code
 for a group of statements:
 
-.. productionlist::
+.. productionlist:: python-grammar
    try_stmt: `try1_stmt` | `try2_stmt`
    try1_stmt: "try" ":" `suite`
             : ("except" [`expression` ["as" `identifier`]] ":" `suite`)+
@@ -250,7 +247,7 @@ for a group of statements:
 
 The :keyword:`except` clause(s) specify one or more exception handlers. When no
 exception occurs in the :keyword:`try` clause, no exception handler is executed.
-When an exception occurs in the :keyword:`try` suite, a search for an exception
+When an exception occurs in the :keyword:`!try` suite, a search for an exception
 handler is started.  This search inspects the except clauses in turn until one
 is found that matches the exception.  An expression-less except clause, if
 present, must be last; it matches any exception.  For an except clause with an
@@ -270,7 +267,7 @@ as if the entire :keyword:`try` statement raised the exception).
 .. index:: single: as; except clause
 
 When a matching except clause is found, the exception is assigned to the target
-specified after the :keyword:`as` keyword in that except clause, if present, and
+specified after the :keyword:`!as` keyword in that except clause, if present, and
 the except clause's suite is executed.  All except clauses must have an
 executable block.  When the end of this block is reached, execution continues
 normally after the entire try statement.  (This means that if two nested
@@ -314,22 +311,22 @@ from a function that handled an exception.
    statement: break
    statement: continue
 
-The optional :keyword:`else` clause is executed if the control flow leaves the
+The optional :keyword:`!else` clause is executed if the control flow leaves the
 :keyword:`try` suite, no exception was raised, and no :keyword:`return`,
 :keyword:`continue`, or :keyword:`break` statement was executed.  Exceptions in
-the :keyword:`else` clause are not handled by the preceding :keyword:`except`
+the :keyword:`!else` clause are not handled by the preceding :keyword:`except`
 clauses.
 
 .. index:: keyword: finally
 
 If :keyword:`finally` is present, it specifies a 'cleanup' handler.  The
 :keyword:`try` clause is executed, including any :keyword:`except` and
-:keyword:`else` clauses.  If an exception occurs in any of the clauses and is
-not handled, the exception is temporarily saved. The :keyword:`finally` clause
+:keyword:`!else` clauses.  If an exception occurs in any of the clauses and is
+not handled, the exception is temporarily saved. The :keyword:`!finally` clause
 is executed.  If there is a saved exception it is re-raised at the end of the
-:keyword:`finally` clause.  If the :keyword:`finally` clause raises another
+:keyword:`!finally` clause.  If the :keyword:`!finally` clause raises another
 exception, the saved exception is set as the context of the new exception.
-If the :keyword:`finally` clause executes a :keyword:`return`, :keyword:`break`
+If the :keyword:`!finally` clause executes a :keyword:`return`, :keyword:`break`
 or :keyword:`continue` statement, the saved exception is discarded::
 
    >>> def f():
@@ -350,12 +347,12 @@ the :keyword:`finally` clause.
    statement: continue
 
 When a :keyword:`return`, :keyword:`break` or :keyword:`continue` statement is
-executed in the :keyword:`try` suite of a :keyword:`try`...\ :keyword:`finally`
+executed in the :keyword:`try` suite of a :keyword:`!try`...\ :keyword:`!finally`
 statement, the :keyword:`finally` clause is also executed 'on the way out.'
 
 The return value of a function is determined by the last :keyword:`return`
 statement executed.  Since the :keyword:`finally` clause always executes, a
-:keyword:`return` statement executed in the :keyword:`finally` clause will
+:keyword:`!return` statement executed in the :keyword:`!finally` clause will
 always be the last one executed::
 
    >>> def foo():
@@ -379,11 +376,11 @@ may be found in section :ref:`raise`.
 .. _with:
 .. _as:
 
-The :keyword:`with` statement
-=============================
+The :keyword:`!with` statement
+==============================
 
 .. index::
-   statement: with
+   ! statement: with
    keyword: as
    single: as; with statement
    single: , (comma); with statement
@@ -394,7 +391,7 @@ methods defined by a context manager (see section :ref:`context-managers`).
 This allows common :keyword:`try`...\ :keyword:`except`...\ :keyword:`finally`
 usage patterns to be encapsulated for convenient reuse.
 
-.. productionlist::
+.. productionlist:: python-grammar
    with_stmt: "with" `with_item` ("," `with_item`)* ":" `suite`
    with_item: `expression` ["as" `target`]
 
@@ -402,6 +399,8 @@ The execution of the :keyword:`with` statement with one "item" proceeds as follo
 
 #. The context expression (the expression given in the :token:`with_item`) is
    evaluated to obtain a context manager.
+
+#. The context manager's :meth:`__enter__` is loaded for later use.
 
 #. The context manager's :meth:`__exit__` is loaded for later use.
 
@@ -434,17 +433,41 @@ The execution of the :keyword:`with` statement with one "item" proceeds as follo
    value from :meth:`__exit__` is ignored, and execution proceeds at the normal
    location for the kind of exit that was taken.
 
+The following code::
+
+    with EXPRESSION as TARGET:
+        SUITE
+
+is semantically equivalent to::
+
+    manager = (EXPRESSION)
+    enter = type(manager).__enter__
+    exit = type(manager).__exit__
+    value = enter(manager)
+    hit_except = False
+
+    try:
+        TARGET = value
+        SUITE
+    except:
+        hit_except = True
+        if not exit(manager, *sys.exc_info()):
+            raise
+    finally:
+        if not hit_except:
+            exit(manager, None, None, None)
+
 With more than one item, the context managers are processed as if multiple
 :keyword:`with` statements were nested::
 
    with A() as a, B() as b:
-       suite
+       SUITE
 
-is equivalent to ::
+is semantically equivalent to::
 
    with A() as a:
        with B() as b:
-           suite
+           SUITE
 
 .. versionchanged:: 3.1
    Support for multiple context expressions.
@@ -481,14 +504,16 @@ Function definitions
 A function definition defines a user-defined function object (see section
 :ref:`types`):
 
-.. productionlist::
+.. productionlist:: python-grammar
    funcdef: [`decorators`] "def" `funcname` "(" [`parameter_list`] ")"
           : ["->" `expression`] ":" `suite`
    decorators: `decorator`+
-   decorator: "@" `dotted_name` ["(" [`argument_list` [","]] ")"] NEWLINE
+   decorator: "@" `assignment_expression` NEWLINE
    dotted_name: `identifier` ("." `identifier`)*
-   parameter_list: `defparameter` ("," `defparameter`)* ["," [`parameter_list_starargs`]]
-                 : | `parameter_list_starargs`
+   parameter_list: `defparameter` ("," `defparameter`)* "," "/" ["," [`parameter_list_no_posonly`]]
+                 :   | `parameter_list_no_posonly`
+   parameter_list_no_posonly: `defparameter` ("," `defparameter`)* ["," [`parameter_list_starargs`]]
+                            : | `parameter_list_starargs`
    parameter_list_starargs: "*" [`parameter`] ("," `defparameter`)* ["," ["**" `parameter` [","]]]
                           : | "**" `parameter` [","]
    parameter: `identifier` [":" `expression`]
@@ -526,6 +551,11 @@ is roughly equivalent to ::
 
 except that the original function is not temporarily bound to the name ``func``.
 
+.. versionchanged:: 3.9
+   Functions may be decorated with any valid :token:`assignment_expression`.
+   Previously, the grammar was much more restrictive; see :pep:`614` for
+   details.
+
 .. index::
    triple: default; parameter; value
    single: argument; function definition
@@ -542,9 +572,9 @@ value --- this is a syntactic restriction that is not expressed by the grammar.
 **Default parameter values are evaluated from left to right when the function
 definition is executed.** This means that the expression is evaluated once, when
 the function is defined, and that the same "pre-computed" value is used for each
-call.  This is especially important to understand when a default parameter is a
+call.  This is especially important to understand when a default parameter value is a
 mutable object, such as a list or a dictionary: if the function modifies the
-object (e.g. by appending an item to a list), the default value is in effect
+object (e.g. by appending an item to a list), the default parameter value is in effect
 modified.  This is generally not what was intended.  A way around this is to use
 ``None`` as the default, and explicitly test for it in the body of the function,
 e.g.::
@@ -575,18 +605,14 @@ used keyword arguments.
    single: ->; function annotations
    single: : (colon); function annotations
 
-Parameters may have annotations of the form "``: expression``" following the
-parameter name.  Any parameter may have an annotation even those of the form
+Parameters may have an :term:`annotation <function annotation>` of the form "``: expression``"
+following the parameter name.  Any parameter may have an annotation, even those of the form
 ``*identifier`` or ``**identifier``.  Functions may have "return" annotation of
 the form "``-> expression``" after the parameter list.  These annotations can be
 any valid Python expression.  The presence of annotations does not change the
-semantics of a function.  The annotation values are available as values of
-a dictionary keyed by the parameters' names in the :attr:`__annotations__`
-attribute of the function object.  If the ``annotations`` import from
-:mod:`__future__` is used, annotations are preserved as strings at runtime which
-enables postponed evaluation.  Otherwise, they are evaluated when the function
-definition is executed.  In this case annotations may be evaluated in
-a different order than they appear in the source code.
+semantics of a function.  The annotation values are available as string values
+in a dictionary keyed by the parameters' names in the :attr:`__annotations__`
+attribute of the function object.
 
 .. index:: pair: lambda; expression
 
@@ -595,7 +621,7 @@ name), for immediate use in expressions.  This uses lambda expressions, describe
 section :ref:`lambda`.  Note that the lambda expression is merely a shorthand for a
 simplified function definition; a function defined in a ":keyword:`def`"
 statement can be passed around or assigned to another name just like a function
-defined by a lambda expression.  The ":keyword:`def`" form is actually more powerful
+defined by a lambda expression.  The ":keyword:`!def`" form is actually more powerful
 since it allows the execution of multiple statements and annotations.
 
 **Programmer's note:** Functions are first-class objects.  A "``def``" statement
@@ -641,7 +667,7 @@ Class definitions
 
 A class definition defines a class object (see section :ref:`types`):
 
-.. productionlist::
+.. productionlist:: python-grammar
    classdef: [`decorators`] "class" `classname` [`inheritance`] ":" `suite`
    inheritance: "(" [`argument_list`] ")"
    classname: `identifier`
@@ -693,6 +719,11 @@ is roughly equivalent to ::
 The evaluation rules for the decorator expressions are the same as for function
 decorators.  The result is then bound to the class name.
 
+.. versionchanged:: 3.9
+   Classes may be decorated with any valid :token:`assignment_expression`.
+   Previously, the grammar was much more restrictive; see :pep:`614` for
+   details.
+
 **Programmer's note:** Variables defined in the class definition are class
 attributes; they are shared by instances.  Instance attributes can be set in a
 method with ``self.name = value``.  Both class and instance attributes are
@@ -728,7 +759,7 @@ Coroutines
 Coroutine function definition
 -----------------------------
 
-.. productionlist::
+.. productionlist:: python-grammar
    async_funcdef: [`decorators`] "async" "def" `funcname` "(" [`parameter_list`] ")"
                 : ["->" `expression`] ":" `suite`
 
@@ -737,10 +768,8 @@ Coroutine function definition
    keyword: await
 
 Execution of Python coroutines can be suspended and resumed at many points
-(see :term:`coroutine`).  Inside the body of a coroutine function, ``await`` and
-``async`` identifiers become reserved keywords; :keyword:`await` expressions,
-:keyword:`async for` and :keyword:`async with` can only be used in
-coroutine function bodies.
+(see :term:`coroutine`). :keyword:`await` expressions, :keyword:`async for` and
+:keyword:`async with` can only be used in the body of a coroutine function.
 
 Functions defined with ``async def`` syntax are always coroutine functions,
 even if they do not contain ``await`` or ``async`` keywords.
@@ -754,14 +783,17 @@ An example of a coroutine function::
         do_stuff()
         await some_coroutine()
 
+.. versionchanged:: 3.7
+   ``await`` and ``async`` are now keywords; previously they were only
+   treated as such inside the body of a coroutine function.
 
 .. index:: statement: async for
 .. _`async for`:
 
-The :keyword:`async for` statement
-----------------------------------
+The :keyword:`!async for` statement
+-----------------------------------
 
-.. productionlist::
+.. productionlist:: python-grammar
    async_for_stmt: "async" `for_stmt`
 
 An :term:`asynchronous iterable` is able to call asynchronous code in its
@@ -774,24 +806,25 @@ iterators.
 The following code::
 
     async for TARGET in ITER:
-        BLOCK
+        SUITE
     else:
-        BLOCK2
+        SUITE2
 
 Is semantically equivalent to::
 
     iter = (ITER)
     iter = type(iter).__aiter__(iter)
     running = True
+
     while running:
         try:
             TARGET = await type(iter).__anext__(iter)
         except StopAsyncIteration:
             running = False
         else:
-            BLOCK
+            SUITE
     else:
-        BLOCK2
+        SUITE2
 
 See also :meth:`__aiter__` and :meth:`__anext__` for details.
 
@@ -802,10 +835,10 @@ body of a coroutine function.
 .. index:: statement: async with
 .. _`async with`:
 
-The :keyword:`async with` statement
------------------------------------
+The :keyword:`!async with` statement
+------------------------------------
 
-.. productionlist::
+.. productionlist:: python-grammar
    async_with_stmt: "async" `with_stmt`
 
 An :term:`asynchronous context manager` is a :term:`context manager` that is
@@ -813,23 +846,27 @@ able to suspend execution in its *enter* and *exit* methods.
 
 The following code::
 
-    async with EXPR as VAR:
-        BLOCK
+    async with EXPRESSION as TARGET:
+        SUITE
 
-Is semantically equivalent to::
+is semantically equivalent to::
 
-    mgr = (EXPR)
-    aexit = type(mgr).__aexit__
-    aenter = type(mgr).__aenter__(mgr)
+    manager = (EXPRESSION)
+    aenter = type(manager).__aenter__
+    aexit = type(manager).__aexit__
+    value = await aenter(manager)
+    hit_except = False
 
-    VAR = await aenter
     try:
-        BLOCK
+        TARGET = value
+        SUITE
     except:
-        if not await aexit(mgr, *sys.exc_info()):
+        hit_except = True
+        if not await aexit(manager, *sys.exc_info()):
             raise
-    else:
-        await aexit(mgr, None, None, None)
+    finally:
+        if not hit_except:
+            await aexit(manager, None, None, None)
 
 See also :meth:`__aenter__` and :meth:`__aexit__` for details.
 

@@ -1,3 +1,0 @@
-Add methods ``selection_from``, ``selection_range``, ``selection_present``
-and ``selection_to`` to the ``tkinter.Spinbox`` for consistency with the
-``tkinter.Entry`` widget. Patch by Juliette Monsel.

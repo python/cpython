@@ -1,1 +1,0 @@
-Fix returning structs from functions produced by MSVC

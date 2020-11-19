@@ -31,8 +31,8 @@ import os
 import sys
 import shutil
 import tempfile
-import warnings
 import unittest
+import warnings
 
 
 TEMPLATE = r"""# coding: %s
@@ -109,24 +109,25 @@ class TestLiterals(unittest.TestCase):
         for b in range(1, 128):
             if b in b"""\n\r"'01234567NU\\abfnrtuvx""":
                 continue
-            with self.assertWarns(SyntaxWarning):
+            with self.assertWarns(DeprecationWarning):
                 self.assertEqual(eval(r"'\%c'" % b), '\\' + chr(b))
 
         with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always', category=SyntaxWarning)
+            warnings.simplefilter('always', category=DeprecationWarning)
             eval("'''\n\\z'''")
         self.assertEqual(len(w), 1)
         self.assertEqual(w[0].filename, '<string>')
-        self.assertEqual(w[0].lineno, 2)
+        self.assertEqual(w[0].lineno, 1)
 
         with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('error', category=SyntaxWarning)
+            warnings.simplefilter('error', category=DeprecationWarning)
             with self.assertRaises(SyntaxError) as cm:
                 eval("'''\n\\z'''")
             exc = cm.exception
         self.assertEqual(w, [])
         self.assertEqual(exc.filename, '<string>')
-        self.assertEqual(exc.lineno, 2)
+        self.assertEqual(exc.lineno, 1)
+        self.assertEqual(exc.offset, 1)
 
     def test_eval_str_raw(self):
         self.assertEqual(eval(""" r'x' """), 'x')
@@ -158,24 +159,24 @@ class TestLiterals(unittest.TestCase):
         for b in range(1, 128):
             if b in b"""\n\r"'01234567\\abfnrtvx""":
                 continue
-            with self.assertWarns(SyntaxWarning):
+            with self.assertWarns(DeprecationWarning):
                 self.assertEqual(eval(r"b'\%c'" % b), b'\\' + bytes([b]))
 
         with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always', category=SyntaxWarning)
+            warnings.simplefilter('always', category=DeprecationWarning)
             eval("b'''\n\\z'''")
         self.assertEqual(len(w), 1)
         self.assertEqual(w[0].filename, '<string>')
-        self.assertEqual(w[0].lineno, 2)
+        self.assertEqual(w[0].lineno, 1)
 
         with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('error', category=SyntaxWarning)
+            warnings.simplefilter('error', category=DeprecationWarning)
             with self.assertRaises(SyntaxError) as cm:
                 eval("b'''\n\\z'''")
             exc = cm.exception
         self.assertEqual(w, [])
         self.assertEqual(exc.filename, '<string>')
-        self.assertEqual(exc.lineno, 2)
+        self.assertEqual(exc.lineno, 1)
 
     def test_eval_bytes_raw(self):
         self.assertEqual(eval(""" br'x' """), b'x')

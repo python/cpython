@@ -79,15 +79,15 @@ class Annotations(dict):
                                               classes=['stableabi']))
             if par['objtype'] != 'function':
                 continue
-            if not par[0].has_key('names') or not par[0]['names']:
+            if not par[0].has_key('ids') or not par[0]['ids']:
                 continue
-            name = par[0]['names'][0]
+            name = par[0]['ids'][0]
             if name.startswith("c."):
                 name = name[2:]
             entry = self.get(name)
             if not entry:
                 continue
-            elif entry.result_type not in ("PyObject*", "PyVarObject*"):
+            elif not entry.result_type.endswith("Object*"):
                 continue
             if entry.result_refs is None:
                 rc = 'Return value: Always NULL.'

@@ -1,1 +1,0 @@
-Make ``lib2to3.pgen2.parse.ParseError`` round-trip pickle-able.  Patch by Anthony Sottile.

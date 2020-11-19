@@ -1,2 +1,0 @@
-Added test demonstrating double-patching of an instance method.  Patch by
-Anthony Sottile.

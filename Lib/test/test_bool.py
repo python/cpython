@@ -2,6 +2,7 @@
 
 import unittest
 from test import support
+from test.support import os_helper
 
 import os
 
@@ -18,22 +19,11 @@ class BoolTest(unittest.TestCase):
 
         self.assertRaises(TypeError, int.__new__, bool, 0)
 
-    def test_print(self):
-        try:
-            fo = open(support.TESTFN, "w")
-            print(False, True, file=fo)
-            fo.close()
-            fo = open(support.TESTFN, "r")
-            self.assertEqual(fo.read(), 'False True\n')
-        finally:
-            fo.close()
-            os.remove(support.TESTFN)
-
     def test_repr(self):
         self.assertEqual(repr(False), 'False')
         self.assertEqual(repr(True), 'True')
-        self.assertEqual(eval(repr(False)), False)
-        self.assertEqual(eval(repr(True)), True)
+        self.assertIs(eval(repr(False)), False)
+        self.assertIs(eval(repr(True)), True)
 
     def test_str(self):
         self.assertEqual(str(False), 'False')
@@ -245,12 +235,11 @@ class BoolTest(unittest.TestCase):
 
     def test_fileclosed(self):
         try:
-            f = open(support.TESTFN, "w")
-            self.assertIs(f.closed, False)
-            f.close()
+            with open(os_helper.TESTFN, "w") as f:
+                self.assertIs(f.closed, False)
             self.assertIs(f.closed, True)
         finally:
-            os.remove(support.TESTFN)
+            os.remove(os_helper.TESTFN)
 
     def test_types(self):
         # types are always true.

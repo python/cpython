@@ -145,8 +145,8 @@ Cross Platform
 
 .. function:: system()
 
-   Returns the system/OS name, e.g. ``'Linux'``, ``'Windows'``, or ``'Java'``. An
-   empty string is returned if the value cannot be determined.
+   Returns the system/OS name, such as ``'Linux'``, ``'Darwin'``, ``'Java'``,
+   ``'Windows'``. An empty string is returned if the value cannot be determined.
 
 
 .. function:: system_alias(system, release, version)
@@ -209,12 +209,20 @@ Windows Platform
    which means the OS version uses debugging code, i.e. code that checks arguments,
    ranges, etc.
 
-   .. note::
+.. function:: win32_edition()
 
-      This function works best with Mark Hammond's
-      :mod:`win32all` package installed, but also on Python 2.3 and
-      later (support for this was added in Python 2.6). It obviously
-      only runs on Win32 compatible platforms.
+   Returns a string representing the current Windows edition.  Possible
+   values include but are not limited to ``'Enterprise'``, ``'IoTUAP'``,
+   ``'ServerStandard'``, and ``'nanoserver'``.
+
+   .. versionadded:: 3.8
+
+.. function:: win32_is_iot()
+
+   Return ``True`` if the Windows edition returned by :func:`win32_edition`
+   is recognized as an IoT edition.
+
+   .. versionadded:: 3.8
 
 
 Mac OS Platform
@@ -245,4 +253,3 @@ Unix Platforms
    using :program:`gcc`.
 
    The file is read and scanned in chunks of *chunksize* bytes.
-

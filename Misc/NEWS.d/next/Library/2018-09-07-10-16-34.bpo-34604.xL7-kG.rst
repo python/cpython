@@ -1,3 +1,0 @@
-Fix possible mojibake in the error message of `pwd.getpwnam` and
-`grp.getgrnam` using string representation because of invisible characters
-or trailing whitespaces. Patch by William Grzybowski.

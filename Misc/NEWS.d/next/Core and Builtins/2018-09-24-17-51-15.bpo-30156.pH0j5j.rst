@@ -1,4 +1,0 @@
-The C function ``property_descr_get()`` uses a "cached" tuple to optimize
-function calls. But this tuple can be discovered in debug mode with
-:func:`sys.getobjects()`. Remove the optimization, it's not really worth it
-and it causes 3 different crashes last years.

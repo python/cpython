@@ -23,6 +23,7 @@
 
 #ifndef PYSQLITE_STATEMENT_H
 #define PYSQLITE_STATEMENT_H
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
 #include "connection.h"
@@ -42,7 +43,7 @@ typedef struct
     PyObject* in_weakreflist; /* List of weak references */
 } pysqlite_Statement;
 
-extern PyTypeObject pysqlite_StatementType;
+extern PyTypeObject *pysqlite_StatementType;
 
 int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* connection, PyObject* sql);
 void pysqlite_statement_dealloc(pysqlite_Statement* self);
@@ -54,6 +55,6 @@ int pysqlite_statement_finalize(pysqlite_Statement* self);
 int pysqlite_statement_reset(pysqlite_Statement* self);
 void pysqlite_statement_mark_dirty(pysqlite_Statement* self);
 
-int pysqlite_statement_setup_types(void);
+int pysqlite_statement_setup_types(PyObject *module);
 
 #endif
