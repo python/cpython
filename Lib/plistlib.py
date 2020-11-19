@@ -140,10 +140,23 @@ def _date_from_string(s):
         if val is None:
             break
         lst.append(int(val))
+    return datetime.datetime(*lst, tzinfo=datetime.timezone.utc)
+
+
+def _date_from_string_naive(s):
+    order = ('year', 'month', 'day', 'hour', 'minute', 'second')
+    gd = _dateParser.match(s).groupdict()
+    lst = []
+    for key in order:
+        val = gd[key]
+        if val is None:
+            break
+        lst.append(int(val))
     return datetime.datetime(*lst)
 
 
 def _date_to_string(d):
+    d = d.astimezone(datetime.timezone.utc)
     return '%04d-%02d-%02dT%02d:%02d:%02dZ' % (
         d.year, d.month, d.day,
         d.hour, d.minute, d.second
@@ -162,10 +175,11 @@ def _escape(text):
     return text
 
 class _PlistParser:
-    def __init__(self, dict_type):
+    def __init__(self, tz_aware, dict_type):
         self.stack = []
         self.current_key = None
         self.root = None
+        self._date_from_string = _date_from_string if tz_aware else _date_from_string_naive
         self._dict_type = dict_type
 
     def parse(self, fileobj):
@@ -268,7 +282,7 @@ class _PlistParser:
         self.add_object(_decode_base64(self.get_data()))
 
     def end_date(self):
-        self.add_object(_date_from_string(self.get_data()))
+        self.add_object(self._date_from_string(self.get_data()))
 
 
 class _DumbXMLWriter:
@@ -442,6 +456,9 @@ class InvalidFileException (ValueError):
 
 _BINARY_FORMAT = {1: 'B', 2: 'H', 4: 'L', 8: 'Q'}
 
+_MACOS_EPOCH = datetime.datetime(2001, 1, 1, tzinfo=datetime.timezone.utc)
+_MACOS_EPOCH_NAIVE = datetime.datetime(2001, 1, 1)
+
 _undefined = object()
 
 class _BinaryPlistParser:
@@ -452,8 +469,9 @@ class _BinaryPlistParser:
 
     see also: http://opensource.apple.com/source/CF/CF-744.18/CFBinaryPList.c
     """
-    def __init__(self, dict_type):
+    def __init__(self, tz_aware, dict_type):
         self._dict_type = dict_type
+        self._macos_epoch = _MACOS_EPOCH if tz_aware else _MACOS_EPOCH_NAIVE
 
     def parse(self, fp):
         try:
@@ -547,8 +565,7 @@ class _BinaryPlistParser:
             f = struct.unpack('>d', self._fp.read(8))[0]
             # timestamp 0 of binary plists corresponds to 1/1/2001
             # (year of Mac OS X 10.0), instead of 1/1/1970.
-            result = (datetime.datetime(2001, 1, 1) +
-                      datetime.timedelta(seconds=f))
+            result = self._macos_epoch + datetime.timedelta(seconds=f)
 
         elif tokenH == 0x40:  # data
             s = self._get_size(tokenL)
@@ -769,7 +786,7 @@ class _BinaryPlistWriter (object):
             self._fp.write(struct.pack('>Bd', 0x23, value))
 
         elif isinstance(value, datetime.datetime):
-            f = (value - datetime.datetime(2001, 1, 1)).total_seconds()
+            f = (value.astimezone(datetime.timezone.utc) - _MACOS_EPOCH).total_seconds()
             self._fp.write(struct.pack('>Bd', 0x33, f))
 
         elif isinstance(value, (bytes, bytearray)):
@@ -853,7 +870,7 @@ _FORMATS={
 }
 
 
-def load(fp, *, fmt=None, dict_type=dict):
+def load(fp, *, fmt=None, tz_aware=False, dict_type=dict):
     """Read a .plist file. 'fp' should be a readable and binary file object.
     Return the unpacked root object (which usually is a dictionary).
     """
@@ -871,16 +888,16 @@ def load(fp, *, fmt=None, dict_type=dict):
     else:
         P = _FORMATS[fmt]['parser']
 
-    p = P(dict_type=dict_type)
+    p = P(tz_aware=tz_aware, dict_type=dict_type)
     return p.parse(fp)
 
 
-def loads(value, *, fmt=None, dict_type=dict):
+def loads(value, *, fmt=None, tz_aware=False, dict_type=dict):
     """Read a .plist file from a bytes object.
     Return the unpacked root object (which usually is a dictionary).
     """
     fp = BytesIO(value)
-    return load(fp, fmt=fmt, dict_type=dict_type)
+    return load(fp, fmt=fmt, tz_aware=tz_aware, dict_type=dict_type)
 
 
 def dump(value, fp, *, fmt=FMT_XML, sort_keys=True, skipkeys=False):
