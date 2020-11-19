@@ -34,7 +34,7 @@ try:
     import _frozen_importlib_external as _bootstrap_external
 except ImportError:
     from . import _bootstrap_external
-    _bootstrap_external._setup(_bootstrap)
+    _bootstrap_external._set_bootstrap_module(_bootstrap)
     _bootstrap._bootstrap_external = _bootstrap_external
 else:
     _bootstrap_external.__name__ = 'importlib._bootstrap_external'
