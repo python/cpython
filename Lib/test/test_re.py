@@ -2197,6 +2197,10 @@ class ImplementationTest(unittest.TestCase):
         self.assertEqual(f("ababba"), [0, 0, 1, 2, 0, 1])
         self.assertEqual(f("abcabdac"), [0, 0, 0, 1, 2, 0, 1, 0])
 
+    def test_signedness(self):
+        self.assertGreaterEqual(sre_compile.MAXREPEAT, 0)
+        self.assertGreaterEqual(sre_compile.MAXGROUPS, 0)
+
 
 class ExternalTests(unittest.TestCase):
 

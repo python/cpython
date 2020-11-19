@@ -2834,6 +2834,18 @@ do {                                                                \
     }                                                               \
 } while (0)
 
+#define ADD_ULONG_CONSTANT(module, name, value)           \
+    do {                                                  \
+        PyObject *o = PyLong_FromUnsignedLong(value);     \
+        if (!o)                                           \
+            goto error;                                   \
+        int res = PyModule_AddObjectRef(module, name, o); \
+        Py_DECREF(o);                                     \
+        if (res <) {                                      \
+            goto error;                                   \
+        }                                                 \
+} while (0)
+
 static int
 sre_exec(PyObject *m)
 {
@@ -2847,37 +2859,21 @@ sre_exec(PyObject *m)
     CREATE_TYPE(m, state->Match_Type, &match_spec);
     CREATE_TYPE(m, state->Scanner_Type, &scanner_spec);
 
-    d = PyModule_GetDict(m);
-
-    x = PyLong_FromLong(SRE_MAGIC);
-    if (x) {
-        PyDict_SetItemString(d, "MAGIC", x);
-        Py_DECREF(x);
+    if (PyModule_AddIntConstant(m, "MAGIC", SRE_MAGIC) < 0) {
+        goto error;
     }
 
-    x = PyLong_FromLong(sizeof(SRE_CODE));
-    if (x) {
-        PyDict_SetItemString(d, "CODESIZE", x);
-        Py_DECREF(x);
+    if (PyModule_AddIntConstant(m, "CODESIZE", sizeof(SRE_CODE)) < 0) {
+        goto error;
     }
 
-    x = PyLong_FromUnsignedLong(SRE_MAXREPEAT);
-    if (x) {
-        PyDict_SetItemString(d, "MAXREPEAT", x);
-        Py_DECREF(x);
+    ADD_ULONG_CONSTANT(m, "MAXREPEAT", SRE_MAXREPEAT);
+    ADD_ULONG_CONSTANT(m, "MAXGROUPS", SRE_MAXGROUPS);
+
+    if (PyModule_AddStringConstant(m, "copyright", copyright) < 0) {
+        goto error;
     }
 
-    x = PyLong_FromUnsignedLong(SRE_MAXGROUPS);
-    if (x) {
-        PyDict_SetItemString(d, "MAXGROUPS", x);
-        Py_DECREF(x);
-    }
-
-    x = PyUnicode_FromString(copyright);
-    if (x) {
-        PyDict_SetItemString(d, "copyright", x);
-        Py_DECREF(x);
-    }
     return 0;
 
 error:
