@@ -319,6 +319,9 @@ class BaseTest(unittest.TestCase):
                     with self.assertRaises(TypeError):
                         eval(bad)
 
+        with self.subTest("Testing collections.abc.Callable's weakref"):
+            self.assertEqual(ref(alias)(), alias)
+
         # bpo-42195
         with self.subTest("Testing collections.abc.Callable's consistency "
                           "with typing.Callable"):

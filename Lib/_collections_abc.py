@@ -431,10 +431,8 @@ class _CallableGenericAlias(GenericAlias):
             raise TypeError("Callable[args, result]: args must be a list "
                             f"or Ellipsis. Got {_type_repr(t_args)}")
 
-        if t_args == Ellipsis:
-            ga_args = _args
-        else:
-            ga_args = tuple[tuple(t_args)], t_result
+        ga_args = (_args if t_args is Ellipsis
+                   else (tuple[tuple(t_args)], t_result))
 
         return super().__new__(cls, origin, ga_args)
 
@@ -456,11 +454,8 @@ class _CallableGenericAlias(GenericAlias):
 
         if len(self.__args__) == 2 and t_args is Ellipsis:
             return super().__repr__()
-        if t_args.__args__ == ((),):
-            t_args_repr = '[]'
-        else:
-            t_args_repr = f'[{", ".join(_type_repr(a) for a in t_args.__args__)}]'
-
+        t_args_repr = ('[]' if t_args.__args__ == ((),) else
+                       f'[{", ".join(_type_repr(a) for a in t_args.__args__)}]')
 
         return f"{origin}[{t_args_repr}, {_type_repr(self.__args__[-1])}]"
 

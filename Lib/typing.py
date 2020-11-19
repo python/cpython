@@ -880,10 +880,8 @@ class _CallableGenericAlias(_GenericAlias, _root=True):
         t_args = self.__args__[0]
         if len(self.__args__) == 2 and t_args is Ellipsis:
             return super().__repr__()
-        if t_args.__args__ == ((),):
-            t_args_repr = '[]'
-        else:
-            t_args_repr = f'[{", ".join(_type_repr(a) for a in t_args.__args__)}]'
+        t_args_repr = ('[]' if t_args.__args__ == ((),) else
+                       f'[{", ".join(_type_repr(a) for a in t_args.__args__)}]')
         return (f'typing.Callable'
                 f'[{t_args_repr}, '
                 f'{_type_repr(self.__args__[-1])}]')
