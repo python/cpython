@@ -93,7 +93,8 @@ get_random_state(PyObject *module)
 
 static struct PyModuleDef _randommodule;
 
-#define _randomstate_global get_random_state(PyState_FindModule(&_randommodule))
+#define _randomstate_type(type) \
+    (get_random_state(_PyType_GetModuleByDef(type, &_randommodule)))
 
 typedef struct {
     PyObject_HEAD
@@ -106,9 +107,9 @@ typedef struct {
 
 /*[clinic input]
 module _random
-class _random.Random "RandomObject *" "&Random_Type"
+class _random.Random "RandomObject *" "_randomstate_type(type)->Random_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f79898ae7847c321]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=70a2c99619474983]*/
 
 /* Random methods */
 
@@ -290,7 +291,8 @@ random_seed(RandomObject *self, PyObject *arg)
     } else if (PyLong_Check(arg)) {
         /* Calling int.__abs__() prevents calling arg.__abs__(), which might
            return an invalid value. See issue #31478. */
-        n = PyObject_CallOneArg(_randomstate_global->Long___abs__, arg);
+        _randomstate *state = _randomstate_type(Py_TYPE(self));
+        n = PyObject_CallOneArg(state->Long___abs__, arg);
     }
     else {
         Py_hash_t hash = PyObject_Hash(arg);
@@ -517,8 +519,9 @@ random_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     RandomObject *self;
     PyObject *tmp;
+    _randomstate *state = _randomstate_type(type);
 
-    if (type == (PyTypeObject*)_randomstate_global->Random_Type &&
+    if (type == (PyTypeObject*)state->Random_Type &&
         !_PyArg_NoKeywords("Random()", kwds)) {
         return NULL;
     }
@@ -568,6 +571,45 @@ PyDoc_STRVAR(module_doc,
 "Module implements the Mersenne Twister random number generator.");
 
 static int
+_random_exec(PyObject *module)
+{
+    _randomstate *state = get_random_state(module);
+
+    state->Random_Type = PyType_FromModuleAndSpec(
+        module, &Random_Type_spec, NULL);
+    if (state->Random_Type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, (PyTypeObject *)state->Random_Type) < 0) {
+        return -1;
+    }
+
+    /* Look up and save int.__abs__, which is needed in random_seed(). */
+    PyObject *longval = longval = PyLong_FromLong(0);
+    if (longval == NULL) {
+        return -1;
+    }
+
+    PyObject *longtype = PyObject_Type(longval);
+    Py_DECREF(longval);
+    if (longtype == NULL) {
+        return -1;
+    }
+
+    state->Long___abs__ = PyObject_GetAttrString(longtype, "__abs__");
+    Py_DECREF(longtype);
+    if (state->Long___abs__ == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
+static PyModuleDef_Slot _random_slots[] = {
+    {Py_mod_exec, _random_exec},
+    {0, NULL}
+};
+
+static int
 _random_traverse(PyObject *module, visitproc visit, void *arg)
 {
     Py_VISIT(get_random_state(module)->Random_Type);
@@ -594,7 +636,7 @@ static struct PyModuleDef _randommodule = {
     module_doc,
     sizeof(_randomstate),
     NULL,
-    NULL,
+    _random_slots,
     _random_traverse,
     _random_clear,
     _random_free,
@@ -603,43 +645,5 @@ static struct PyModuleDef _randommodule = {
 PyMODINIT_FUNC
 PyInit__random(void)
 {
-    PyObject *m;
-
-    PyObject *Random_Type = PyType_FromSpec(&Random_Type_spec);
-    if (Random_Type == NULL) {
-        return NULL;
-    }
-
-    m = PyModule_Create(&_randommodule);
-    if (m == NULL) {
-        Py_DECREF(Random_Type);
-        return NULL;
-    }
-    get_random_state(m)->Random_Type = Random_Type;
-
-    Py_INCREF(Random_Type);
-    PyModule_AddObject(m, "Random", Random_Type);
-
-    /* Look up and save int.__abs__, which is needed in random_seed(). */
-    PyObject *longval = NULL, *longtype = NULL;
-    longval = PyLong_FromLong(0);
-    if (longval == NULL) goto fail;
-
-    longtype = PyObject_Type(longval);
-    if (longtype == NULL) goto fail;
-
-    PyObject *abs = PyObject_GetAttrString(longtype, "__abs__");
-    if (abs == NULL) goto fail;
-
-    Py_DECREF(longtype);
-    Py_DECREF(longval);
-    get_random_state(m)->Long___abs__ = abs;
-
-    return m;
-
-fail:
-    Py_XDECREF(longtype);
-    Py_XDECREF(longval);
-    Py_DECREF(m);
-    return NULL;
+    return PyModuleDef_Init(&_randommodule);
 }
