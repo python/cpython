@@ -1,1 +1,1 @@
-Prepare _struct extension module for multiphase initialization
+Port _struct extension module to multiphase initialization (:pep:`489`)

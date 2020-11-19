@@ -15,6 +15,7 @@ class Struct "PyStructObject *" "&PyStructType"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=9b032058a83ed7c3]*/
 
 typedef struct {
+    PyObject *cache;
     PyObject *PyStructType;
     PyObject *unpackiter_type;
     PyObject *StructError;
@@ -30,7 +31,6 @@ get_struct_state(PyObject *module)
 
 static struct PyModuleDef _structmodule;
 
-#define _structmodulestate_global get_struct_state(PyState_FindModule(&_structmodule))
 #define get_struct_state_structinst(self) \
     (get_struct_state(_PyType_GetModuleByDef(Py_TYPE(self), &_structmodule)))
 #define get_struct_state_iterinst(self) \
@@ -103,12 +103,20 @@ class cache_struct_converter(CConverter):
     converter = 'cache_struct_converter'
     c_default = "NULL"
 
+    def parse_arg(self, argname, displayname):
+        return """
+            if (!{converter}(module, {argname}, &{paramname})) {{{{
+                goto exit;
+            }}}}
+            """.format(argname=argname, paramname=self.name,
+                       converter=self.converter)
+
     def cleanup(self):
         return "Py_XDECREF(%s);\n" % self.name
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=49957cca130ffb63]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=d6746621c2fb1a7d]*/
 
-static int cache_struct_converter(PyObject *, PyStructObject **);
+static int cache_struct_converter(PyObject *, PyObject *, PyStructObject **);
 
 #include "clinic/_struct.c.h"
 
@@ -2093,13 +2101,12 @@ static PyType_Spec PyStructType_spec = {
 /* ---- Standalone functions  ---- */
 
 #define MAXCACHE 100
-static PyObject *cache = NULL;
 
 static int
-cache_struct_converter(PyObject *fmt, PyStructObject **ptr)
+cache_struct_converter(PyObject *module, PyObject *fmt, PyStructObject **ptr)
 {
     PyObject * s_object;
-    _structmodulestate *state = _structmodulestate_global;
+    _structmodulestate *state = get_struct_state(module);
 
     if (fmt == NULL) {
         Py_DECREF(*ptr);
@@ -2107,13 +2114,13 @@ cache_struct_converter(PyObject *fmt, PyStructObject **ptr)
         return 1;
     }
 
-    if (cache == NULL) {
-        cache = PyDict_New();
-        if (cache == NULL)
+    if (state->cache == NULL) {
+        state->cache = PyDict_New();
+        if (state->cache == NULL)
             return 0;
     }
 
-    s_object = PyDict_GetItemWithError(cache, fmt);
+    s_object = PyDict_GetItemWithError(state->cache, fmt);
     if (s_object != NULL) {
         Py_INCREF(s_object);
         *ptr = (PyStructObject *)s_object;
@@ -2125,10 +2132,10 @@ cache_struct_converter(PyObject *fmt, PyStructObject **ptr)
 
     s_object = PyObject_CallOneArg(state->PyStructType, fmt);
     if (s_object != NULL) {
-        if (PyDict_GET_SIZE(cache) >= MAXCACHE)
-            PyDict_Clear(cache);
+        if (PyDict_GET_SIZE(state->cache) >= MAXCACHE)
+            PyDict_Clear(state->cache);
         /* Attempt to cache the result */
-        if (PyDict_SetItem(cache, fmt, s_object) == -1)
+        if (PyDict_SetItem(state->cache, fmt, s_object) == -1)
             PyErr_Clear();
         *ptr = (PyStructObject *)s_object;
         return Py_CLEANUP_SUPPORTED;
@@ -2146,7 +2153,7 @@ static PyObject *
 _clearcache_impl(PyObject *module)
 /*[clinic end generated code: output=ce4fb8a7bf7cb523 input=463eaae04bab3211]*/
 {
-    Py_CLEAR(cache);
+    Py_CLEAR(get_struct_state(module)->cache);
     Py_RETURN_NONE;
 }
 
@@ -2174,7 +2181,7 @@ Return a bytes object containing the values v1, v2, ... packed according\n\
 to the format string.  See help(struct) for more on format strings.");
 
 static PyObject *
-pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+pack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *s_object = NULL;
     PyObject *format, *result;
@@ -2185,7 +2192,7 @@ pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     format = args[0];
 
-    if (!cache_struct_converter(format, (PyStructObject **)&s_object)) {
+    if (!cache_struct_converter(module, format, (PyStructObject **)&s_object)) {
         return NULL;
     }
     result = s_pack(s_object, args + 1, nargs - 1);
@@ -2202,7 +2209,7 @@ that the offset is a required argument.  See help(struct) for more\n\
 on format strings.");
 
 static PyObject *
-pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+pack_into(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *s_object = NULL;
     PyObject *format, *result;
@@ -2213,7 +2220,7 @@ pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     format = args[0];
 
-    if (!cache_struct_converter(format, (PyStructObject **)&s_object)) {
+    if (!cache_struct_converter(module, format, (PyStructObject **)&s_object)) {
         return NULL;
     }
     result = s_pack_into(s_object, args + 1, nargs - 1);
@@ -2338,6 +2345,7 @@ _structmodule_traverse(PyObject *module, visitproc visit, void *arg)
 {
     _structmodulestate *state = get_struct_state(module);
     if (state) {
+        Py_VISIT(state->cache);
         Py_VISIT(state->PyStructType);
         Py_VISIT(state->unpackiter_type);
         Py_VISIT(state->StructError);
@@ -2350,6 +2358,7 @@ _structmodule_clear(PyObject *module)
 {
     _structmodulestate *state = get_struct_state(module);
     if (state) {
+        Py_CLEAR(state->cache);
         Py_CLEAR(state->PyStructType);
         Py_CLEAR(state->unpackiter_type);
         Py_CLEAR(state->StructError);
@@ -2435,34 +2444,27 @@ _structmodule_exec(PyObject *m)
     }
 
     return 0;
-
 }
+
+static PyModuleDef_Slot _structmodule_slots[] = {
+    {Py_mod_exec, _structmodule_exec},
+    {0, NULL}
+};
 
 static struct PyModuleDef _structmodule = {
     PyModuleDef_HEAD_INIT,
-    "_struct",
-    module_doc,
-    sizeof(_structmodulestate),
-    module_functions,
-    NULL,
-    _structmodule_traverse,
-    _structmodule_clear,
-    _structmodule_free,
+    .m_name = "_struct",
+    .m_doc = module_doc,
+    .m_size = sizeof(_structmodulestate),
+    .m_methods = module_functions,
+    .m_slots = _structmodule_slots,
+    .m_traverse = _structmodule_traverse,
+    .m_clear = _structmodule_clear,
+    .m_free = _structmodule_free,
 };
 
 PyMODINIT_FUNC
 PyInit__struct(void)
 {
-    PyObject *m;
-
-    m = PyModule_Create(&_structmodule);
-    if (m == NULL)
-        return NULL;
-
-    if (_structmodule_exec(m) < 0) {
-        Py_DECREF(m);
-        return NULL;
-    }
-    return m;
-
+    return PyModuleDef_Init(&_structmodule);
 }
