@@ -728,7 +728,7 @@ np_halffloat(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
 #if PY_LITTLE_ENDIAN
     return pack_halffloat(state, p, v, 1);
 #else
-    return pack_halffloat(statem p, v, 0);
+    return pack_halffloat(state, p, v, 0);
 #endif
 }
 
