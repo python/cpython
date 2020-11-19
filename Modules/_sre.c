@@ -264,8 +264,6 @@ get_sre_module_state(PyObject *m)
 }
 
 static struct PyModuleDef sremodule;
-#define get_sre_module_state_by_type(tp) \
-    (get_sre_module_state(_PyType_GetModuleByDef(tp, &sremodule)))
 #define get_sre_module_state_by_class(cls) \
     (get_sre_module_state(PyType_GetModule(cls)))
 
@@ -275,11 +273,11 @@ static PyObject *pattern_scanner(_sremodulestate *, PatternObject *, PyObject *,
 
 /*[clinic input]
 module _sre
-class _sre.SRE_Pattern "PatternObject *" "get_sre_module_state_by_type(tp)->Pattern_Type"
-class _sre.SRE_Match "MatchObject *" "get_sre_module_state_by_type(tp)->Match_Type"
-class _sre.SRE_Scanner "ScannerObject *" "get_sre_module_state_by_type(tp)->Scanner_Type"
+class _sre.SRE_Pattern "PatternObject *" "get_sre_module_state_by_class(tp)->Pattern_Type"
+class _sre.SRE_Match "MatchObject *" "get_sre_module_state_by_class(tp)->Match_Type"
+class _sre.SRE_Scanner "ScannerObject *" "get_sre_module_state_by_class(tp)->Scanner_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=8b48770d8db721b4]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=fe2966e32b66a231]*/
 
 /*[clinic input]
 _sre.getcodesize -> int
@@ -2593,7 +2591,7 @@ static PyObject*
 pattern_richcompare(PyObject *lefto, PyObject *righto, int op)
 {
     PyTypeObject *tp = Py_TYPE(lefto);
-    _sremodulestate *module_state = get_sre_module_state_by_type(tp);
+    _sremodulestate *module_state = get_sre_module_state_by_class(tp);
     PatternObject *left, *right;
     int cmp;
 
