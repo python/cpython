@@ -314,8 +314,8 @@ The behavior of :class:`typing.Literal` was changed.
       Their :func:`hash` results are also order independent.
    3. ``Literal`` comparisons now respects types.
    4. ``Literal`` objects will now raise a :exc:`TypeError` exception during
-      equality comparisons if one of their parameters are :term:`immutable` to
-      conform with :pep:`586`. Note that declaring ``Literal`` with mutable
+      equality comparisons if one of their parameters are not :term:`immutable`
+      to conform with :pep:`586`. Note that declaring ``Literal`` with mutable
       parameters will not throw an error::
 
          >>> from typing import Literal
