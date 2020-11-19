@@ -1,0 +1,1 @@
+Prepare _struct extension module for multiphase initialization
