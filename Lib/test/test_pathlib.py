@@ -446,7 +446,7 @@ class _BasePurePathTest(object):
         self.assertEqual(par[1:], (P('a'), P('.')))
         self.assertEqual(par[::2], (P('a/b'), P('.')))
         self.assertEqual(par[::-1], (P('.'), P('a'), P('a/b')))
-        self.assertEqual(list(par), (P('a/b'), P('a'), P('.')))
+        self.assertEqual(list(par), [P('a/b'), P('a'), P('.')])
         with self.assertRaises(IndexError):
             par[-1]
         with self.assertRaises(IndexError):
@@ -466,7 +466,7 @@ class _BasePurePathTest(object):
         self.assertEqual(par[1:], (P('/a'), P('/')))
         self.assertEqual(par[::2], (P('/a/b'), P('/')))
         self.assertEqual(par[::-1], (P('/'), P('/a'), P('/a/b')))
-        self.assertEqual(list(par), (P('/a/b'), P('/a'), P('/')))
+        self.assertEqual(list(par), [P('/a/b'), P('/a'), P('/')])
         with self.assertRaises(IndexError):
             par[3]
 
