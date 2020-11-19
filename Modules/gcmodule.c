@@ -1997,14 +1997,17 @@ gcmodule_exec(PyObject *module)
 {
     GCState *gcstate = get_gc_state();
 
-    gcstate->garbage = PyList_New(0);
+    /* Initialized by _PyGC_Init() early in interpreter lifecycle */
     if (gcstate->garbage == NULL) {
+        PyErr_SetString(PyExc_SystemError,
+                        "GC garbage bin is not initialized");
         return -1;
     }
     if (PyModule_AddObjectRef(module, "garbage", gcstate->garbage) < 0) {
         return -1;
     }
 
+    assert(gcstate->callbacks == NULL);
     gcstate->callbacks = PyList_New(0);
     if (gcstate->callbacks == NULL) {
         return -1;
