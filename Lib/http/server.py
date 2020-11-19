@@ -770,7 +770,6 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 "No permission to list directory")
             return None
         list.sort(key=lambda a: a.lower())
-        r = []
         try:
             displaypath = urllib.parse.unquote(self.path,
                                                errors='surrogatepass')
@@ -778,37 +777,12 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             displaypath = urllib.parse.unquote(path)
         displaypath = html.escape(displaypath, quote=False)
         enc = sys.getfilesystemencoding()
-        title = 'Directory listing for %s' % displaypath
-        r.append('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" '
-                 '"http://www.w3.org/TR/html4/strict.dtd">')
-        r.append('<html>\n<head>')
-        r.append('<meta http-equiv="Content-Type" '
-                 'content="text/html; charset=%s">' % enc)
-        r.append('<title>%s</title>\n</head>' % title)
-        r.append('<body>\n<h1>%s</h1>' % title)
-        r.append('<hr>\n<ul>')
-        for name in list:
-            fullname = os.path.join(path, name)
-            displayname = linkname = name
-            # Append / for directories or @ for symbolic links
-            if os.path.isdir(fullname):
-                displayname = name + "/"
-                linkname = name + "/"
-            if os.path.islink(fullname):
-                displayname = name + "@"
-                # Note: a link to a directory displays with @ and links with /
-            r.append('<li><a href="%s">%s</a></li>'
-                    % (urllib.parse.quote(linkname,
-                                          errors='surrogatepass'),
-                       html.escape(displayname, quote=False)))
-        r.append('</ul>\n<hr>\n</body>\n</html>\n')
-        encoded = '\n'.join(r).encode(enc, 'surrogateescape')
+        encoded = self.encoded_directory_body(list, displaypath, path, enc)
         f = io.BytesIO()
         f.write(encoded)
         f.seek(0)
         self.send_response(HTTPStatus.OK)
-        self.send_header("Content-type", "text/html; charset=%s" % enc)
-        self.send_header("Content-Length", str(len(encoded)))
+        self.send_directory_headers(enc, str(len(encoded)))
         self.end_headers()
         return f
 
@@ -882,6 +856,88 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if guess:
             return guess
         return 'application/octet-stream'
+
+    def encoded_directory_body(self,  list_of_files, displaypath, actual_path, enc) -> bytes:
+        """
+        Compose and encode the list_of_files into HTML
+
+        displaypath is a relative path str
+        actual_path is the full actual filesystem path
+        enc is the encoding of the system `sys.getfilesystemencoding()`
+        return the encoded body text
+
+        Override this method to change how the server displays the files
+        Example:
+
+            from http.server import SimpleHTTPRequestHandler
+            from socketserver import TCPServer
+
+            def my_beautiful_body(self, list_of_files, displaypath, actual_path, enc) -> bytes:
+                ... whatever you want
+
+            Handler = SimpleHTTPRequestHandler
+            Handler.encoded_directory_body = my_beautiful_body
+
+            httpd = TCPServer(("", PORT), Handler)
+
+            print("Serving at port", PORT)
+            httpd.serve_forever()
+         """
+        r = []
+        title = 'Directory listing for %s' % displaypath
+        r.append('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" '
+                 '"http://www.w3.org/TR/html4/strict.dtd">')
+        r.append('<html>\n<head>')
+        r.append('<meta http-equiv="Content-Type" '
+                 'content="text/html; charset=%s">' % enc)
+        r.append('<title>%s</title>\n</head>' % title)
+        r.append('<body>\n<h1>%s</h1>' % title)
+        r.append('<hr>\n<ul>')
+        for name in list_of_files:
+            fullname = os.path.join(actual_path, name)
+            displayname = linkname = name
+            # Append / for directories or @ for symbolic links
+            if os.path.isdir(fullname):
+                displayname = name + "/"
+                linkname = name + "/"
+            if os.path.islink(fullname):
+                displayname = name + "@"
+                # Note: a link to a directory displays with @ and links with /
+            r.append('<li><a href="%s">%s</a></li>'
+                     % (urllib.parse.quote(linkname,
+                                           errors='surrogatepass'),
+                        html.escape(displayname, quote=False)))
+        r.append('</ul>\n<hr>\n</body>\n</html>\n')
+        return '\n'.join(r).encode(enc, 'surrogateescape')
+
+    def send_directory_headers(self, enc, content_length):
+        """
+        Headers to send in the list_directory request (do_GET)
+
+        Example:
+
+            from http.server import SimpleHTTPRequestHandler
+            from socketserver import TCPServer
+            from json import dumps
+
+            def my_json_body(self, list_of_files, displaypath, actual_path, enc) -> bytes:
+                return dumps({'files: list_of_files}).encode(enc, 'surrogateescape')
+
+            def send_json_headers(self, enc, len):
+                self.send_header('Content-type', 'application/json; charset=%s' % enc)
+                self.send_header('Content-Length', len)
+
+            Handler = SimpleHTTPRequestHandler
+            Handler.encoded_directory_body = my_json_body
+            Handler.send_directory_headers = send_json_headers
+
+            httpd = TCPServer(("", PORT), Handler)
+
+            print("Serving at port", PORT)
+            httpd.serve_forever()
+        """
+        self.send_header("Content-type", "text/html; charset=%s" % enc)
+        self.send_header("Content-Length", content_length)
 
 
 # Utilities for CGIHTTPRequestHandler
