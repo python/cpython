@@ -316,7 +316,7 @@ The behavior of :class:`typing.Literal` was changed.
    4. ``Literal`` objects will now raise a :exc:`TypeError` exception during
       equality comparisons if one of their parameters are :term:`immutable` to
       conform with :pep:`586`. Note that declaring ``Literal`` with mutable
-      parameters will not throw an error.::
+      parameters will not throw an error::
 
          >>> from typing import Literal
          >>> Literal[{0}]
