@@ -674,6 +674,12 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    .. versionadded:: 3.8
 
+   .. versionchanged:: 3.9.1
+      ``Literal`` now de-duplicates parameters.  Equality comparison of
+      ``Literal`` objects are no longer order dependent. ``Literal`` objects
+      will now raise a :exc:`TypeError` exception during equality comparisons
+      if one of their parameters are not :term:`immutable`.
+
 .. data:: ClassVar
 
    Special type construct to mark class variables.
