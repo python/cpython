@@ -433,15 +433,14 @@ func_get_annotations(PyFunctionObject *op, void *Py_UNUSED(ignored))
             return NULL;
         }
 
-        assert(PyTuple_Size(anns) % 2 == 0);
+        assert(PyTuple_GET_SIZE(anns) % 2 == 0);
 
-        for (Py_ssize_t i = 0; i < PyTuple_Size(anns); i += 2) {
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(anns); i += 2) {
             int err = PyDict_SetItem(op->func_annotations,
                                      PyTuple_GET_ITEM(anns, i),
                                      PyTuple_GET_ITEM(anns, i + 1));
 
             if (err < 0) {
-                Py_DECREF(op->func_annotations);
                 Py_DECREF(anns);
                 return NULL;
             }
