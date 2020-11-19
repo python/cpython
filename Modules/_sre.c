@@ -253,12 +253,12 @@ typedef struct {
     PyTypeObject *Pattern_Type;
     PyTypeObject *Match_Type;
     PyTypeObject *Scanner_Type;
-} sre_module_state;
+} _sremodulestate;
 
-static sre_module_state *
+static _sremodulestate *
 get_sre_module_state(PyObject *m)
 {
-    sre_module_state *state = (sre_module_state *)PyModule_GetState(m);
+    _sremodulestate *state = (_sremodulestate *)PyModule_GetState(m);
     assert(state);
     return state;
 }
@@ -270,8 +270,8 @@ static struct PyModuleDef sremodule;
     (get_sre_module_state(PyType_GetModule(cls)))
 
 /* see sre.h for object declarations */
-static PyObject*pattern_new_match(sre_module_state *, PatternObject*, SRE_STATE*, Py_ssize_t);
-static PyObject *pattern_scanner(sre_module_state *, PatternObject *, PyObject *, Py_ssize_t, Py_ssize_t);
+static PyObject*pattern_new_match(_sremodulestate *, PatternObject*, SRE_STATE*, Py_ssize_t);
+static PyObject *pattern_scanner(_sremodulestate *, PatternObject *, PyObject *, Py_ssize_t, Py_ssize_t);
 
 /*[clinic input]
 module _sre
@@ -617,7 +617,7 @@ _sre_SRE_Pattern_match_impl(PatternObject *self, PyTypeObject *cls,
                             Py_ssize_t endpos)
 /*[clinic end generated code: output=ec6208ea58a0cca0 input=4bdb9c3e564d13ac]*/
 {
-    sre_module_state *module_state = get_sre_module_state_by_class(cls);
+    _sremodulestate *module_state = get_sre_module_state_by_class(cls);
     SRE_STATE state;
     Py_ssize_t status;
     PyObject *match;
@@ -660,7 +660,7 @@ _sre_SRE_Pattern_fullmatch_impl(PatternObject *self, PyTypeObject *cls,
                                 Py_ssize_t endpos)
 /*[clinic end generated code: output=625b75b027ef94da input=50981172ab0fcfdd]*/
 {
-    sre_module_state *module_state = get_sre_module_state_by_class(cls);
+    _sremodulestate *module_state = get_sre_module_state_by_class(cls);
     SRE_STATE state;
     Py_ssize_t status;
     PyObject *match;
@@ -706,7 +706,7 @@ _sre_SRE_Pattern_search_impl(PatternObject *self, PyTypeObject *cls,
                              Py_ssize_t endpos)
 /*[clinic end generated code: output=bd7f2d9d583e1463 input=afa9afb66a74a4b3]*/
 {
-    sre_module_state *module_state = get_sre_module_state_by_class(cls);
+    _sremodulestate *module_state = get_sre_module_state_by_class(cls);
     SRE_STATE state;
     Py_ssize_t status;
     PyObject *match;
@@ -874,7 +874,7 @@ _sre_SRE_Pattern_finditer_impl(PatternObject *self, PyTypeObject *cls,
                                Py_ssize_t endpos)
 /*[clinic end generated code: output=1791dbf3618ade56 input=812e332a4848cbaf]*/
 {
-    sre_module_state *module_state = get_sre_module_state_by_class(cls);
+    _sremodulestate *module_state = get_sre_module_state_by_class(cls);
     PyObject* scanner;
     PyObject* search;
     PyObject* iterator;
@@ -911,7 +911,7 @@ _sre_SRE_Pattern_scanner_impl(PatternObject *self, PyTypeObject *cls,
                               Py_ssize_t endpos)
 /*[clinic end generated code: output=f70cd506112f1bd9 input=2e487e5151bcee4c]*/
 {
-    sre_module_state *module_state = get_sre_module_state_by_class(cls);
+    _sremodulestate *module_state = get_sre_module_state_by_class(cls);
 
     return pattern_scanner(module_state, self, string, pos, endpos);
 }
@@ -1020,7 +1020,7 @@ error:
 }
 
 static PyObject*
-pattern_subx(sre_module_state* module_state,
+pattern_subx(_sremodulestate* module_state,
              PatternObject* self,
              PyObject* ptemplate,
              PyObject* string,
@@ -1221,7 +1221,7 @@ _sre_SRE_Pattern_sub_impl(PatternObject *self, PyTypeObject *cls,
                           PyObject *repl, PyObject *string, Py_ssize_t count)
 /*[clinic end generated code: output=4be141ab04bca60d input=d8d1d4ac2311a07c]*/
 {
-    sre_module_state *module_state = get_sre_module_state_by_class(cls);
+    _sremodulestate *module_state = get_sre_module_state_by_class(cls);
 
     return pattern_subx(module_state, self, repl, string, count, 0);
 }
@@ -1244,7 +1244,7 @@ _sre_SRE_Pattern_subn_impl(PatternObject *self, PyTypeObject *cls,
                            Py_ssize_t count)
 /*[clinic end generated code: output=da02fd85258b1e1f input=8b78a65b8302e58d]*/
 {
-    sre_module_state *module_state = get_sre_module_state_by_class(cls);
+    _sremodulestate *module_state = get_sre_module_state_by_class(cls);
 
     return pattern_subx(module_state, self, repl, string, count, 1);
 }
@@ -1391,7 +1391,7 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
 {
     /* "compile" pattern descriptor to pattern object */
 
-    sre_module_state *module_state = get_sre_module_state(module);
+    _sremodulestate *module_state = get_sre_module_state(module);
     PatternObject* self;
     Py_ssize_t i, n;
 
@@ -2376,7 +2376,7 @@ match_repr(MatchObject *self)
 
 
 static PyObject*
-pattern_new_match(sre_module_state* module_state,
+pattern_new_match(_sremodulestate* module_state,
                   PatternObject* pattern,
                   SRE_STATE* state,
                   Py_ssize_t status)
@@ -2468,7 +2468,7 @@ static PyObject *
 _sre_SRE_Scanner_match_impl(ScannerObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=6e22c149dc0f0325 input=b5146e1f30278cb7]*/
 {
-    sre_module_state *module_state = get_sre_module_state_by_class(cls);
+    _sremodulestate *module_state = get_sre_module_state_by_class(cls);
     SRE_STATE* state = &self->state;
     PyObject* match;
     Py_ssize_t status;
@@ -2510,7 +2510,7 @@ static PyObject *
 _sre_SRE_Scanner_search_impl(ScannerObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=23e8fc78013f9161 input=056c2d37171d0bf2]*/
 {
-    sre_module_state *module_state = get_sre_module_state_by_class(cls);
+    _sremodulestate *module_state = get_sre_module_state_by_class(cls);
     SRE_STATE* state = &self->state;
     PyObject* match;
     Py_ssize_t status;
@@ -2540,7 +2540,7 @@ _sre_SRE_Scanner_search_impl(ScannerObject *self, PyTypeObject *cls)
 }
 
 static PyObject *
-pattern_scanner(sre_module_state *module_state,
+pattern_scanner(_sremodulestate *module_state,
                 PatternObject *self,
                 PyObject *string,
                 Py_ssize_t pos,
@@ -2593,7 +2593,7 @@ static PyObject*
 pattern_richcompare(PyObject *lefto, PyObject *righto, int op)
 {
     PyTypeObject *tp = Py_TYPE(lefto);
-    sre_module_state *module_state = get_sre_module_state_by_type(tp);
+    _sremodulestate *module_state = get_sre_module_state_by_type(tp);
     PatternObject *left, *right;
     int cmp;
 
@@ -2799,7 +2799,7 @@ static PyMethodDef _functions[] = {
 static int
 sre_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    sre_module_state *state = get_sre_module_state(module);
+    _sremodulestate *state = get_sre_module_state(module);
 
     Py_VISIT(state->Pattern_Type);
     Py_VISIT(state->Match_Type);
@@ -2811,7 +2811,7 @@ sre_traverse(PyObject *module, visitproc visit, void *arg)
 static int
 sre_clear(PyObject *module)
 {
-    sre_module_state *state = get_sre_module_state(module);
+    _sremodulestate *state = get_sre_module_state(module);
 
     Py_CLEAR(state->Pattern_Type);
     Py_CLEAR(state->Match_Type);
@@ -2837,7 +2837,7 @@ do {                                                                \
 static int
 sre_exec(PyObject *m)
 {
-    sre_module_state *state;
+    _sremodulestate *state;
     PyObject* d;
     PyObject* x;
 
@@ -2892,7 +2892,7 @@ static PyModuleDef_Slot sre_slots[] = {
 static struct PyModuleDef sremodule = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_" SRE_MODULE,
-    .m_size = sizeof(sre_module_state),
+    .m_size = sizeof(_sremodulestate),
     .m_methods = _functions,
     .m_slots = sre_slots,
     .m_traverse = sre_traverse,
