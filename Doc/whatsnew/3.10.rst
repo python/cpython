@@ -303,16 +303,14 @@ of types readily interpretable by type checkers.
 typing
 ------
 
-The internally used type cache now supports differentiating types.  For example,
-``Literal[0] == Literal[False]`` previously evaluated to ``True``.  It is now
-``False``.
-(Contributed by Yurii Karabas in :issue:`42345`.)
-
 The behavior of :class:`typing.Literal` was changed.
    1. ``Literal`` now de-duplicates parameters.
    2. Equality comparisons between ``Literal`` objects are now order independent.
-      Their :func:`hash` results are also order independent.
-   3. ``Literal`` comparisons now respects types.
+   3. ``Literal`` comparisons now respects types.  For example,
+      ``Literal[0] == Literal[False]`` previously evaluated to ``True``.  It is
+      now ``False``.  This matches the behavior of static type checkers as per
+      :pep:`586`.  To support this change, the internally used type cache now
+      supports differentiating types.
    4. ``Literal`` objects will now raise a :exc:`TypeError` exception during
       equality comparisons if one of their parameters are not :term:`immutable`
       to conform with :pep:`586`. Note that declaring ``Literal`` with mutable
