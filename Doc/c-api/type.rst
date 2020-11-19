@@ -154,9 +154,8 @@ The following functions and structs are used to create
    Creates and returns a heap type object from the *spec*
    (:const:`Py_TPFLAGS_HEAPTYPE`).
 
-   If *bases* is a tuple, the created heap type contains all types contained
-   in it as base types.
-
+   The *bases* argument can be used to specify base classes; it can either
+   be only one class or a tuple of classes.
    If *bases* is ``NULL``, the *Py_tp_bases* slot is used instead.
    If that also is ``NULL``, the *Py_tp_base* slot is used instead.
    If that also is ``NULL``, the new type derives from :class:`object`.
@@ -174,7 +173,8 @@ The following functions and structs are used to create
 
    .. versionchanged:: 3.10
 
-      The function now accepts NULL ``tp_doc`` slot.
+      The function now accepts a single class as the *bases* argument and
+      ``NULL`` as the ``tp_doc`` slot.
 
 .. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 

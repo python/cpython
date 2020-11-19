@@ -1,0 +1,3 @@
+The :c:func:`PyType_FromSpecWithBases` and
+:c:func:`PyType_FromModuleAndSpec` functions now accept a single class as
+the *bases* argument.
