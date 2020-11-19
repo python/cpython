@@ -569,6 +569,11 @@ class LiteralTests(BaseTestCase):
         self.assertEqual(Literal[1, 2], Literal[2, 1])
         self.assertEqual(Literal[1, 2, 3], Literal[1, 2, 3, 3])
 
+    def test_hash(self):
+        self.assertEqual(hash(Literal[1]), hash(Literal[1]))
+        self.assertEqual(hash(Literal[1, 2]), hash(Literal[2, 1]))
+        self.assertEqual(hash(Literal[1, 2, 3]), hash(Literal[1, 2, 3, 3]))
+
     def test_args(self):
         self.assertEqual(Literal[1, 2, 3].__args__, (1, 2, 3))
         self.assertEqual(Literal[1, 2, 3, 3].__args__, (1, 2, 3))

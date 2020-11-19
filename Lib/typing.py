@@ -981,7 +981,7 @@ class _LiteralGenericAlias(_GenericAlias, _root=True):
         return set(_value_and_type_iter(self.__args__)) == set(_value_and_type_iter(other.__args__))
 
     def __hash__(self):
-        return hash(tuple(_value_and_type_iter(self.__args__)))
+        return hash(frozenset(_value_and_type_iter(self.__args__)))
 
 
 class Generic:
