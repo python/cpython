@@ -385,6 +385,7 @@ static int
 queuemodule_exec(PyObject *module)
 {
     simplequeue_state *state = simplequeue_get_state(module);
+
     state->EmptyError = PyErr_NewExceptionWithDoc(
         "_queue.Empty",
         "Exception raised by Queue.get(block=0)/get_nowait().",
@@ -392,10 +393,7 @@ queuemodule_exec(PyObject *module)
     if (state->EmptyError == NULL) {
         return -1;
     }
-
-    Py_INCREF(state->EmptyError);
-    if (PyModule_AddObject(module, "Empty", state->EmptyError) < 0) {
-        Py_CLEAR(state->EmptyError);
+    if (PyModule_AddObjectRef(module, "Empty", state->EmptyError) < 0) {
         return -1;
     }
 
