@@ -176,6 +176,21 @@ class BaseQueueTestMixin(BlockingTestMixin):
         for thread in threads:
             thread.join()
 
+    def test_join_negative_timeout_raises_exception(self):
+        q = self.type2test(QUEUE_SIZE)
+        with self.assertRaises(ValueError):
+            q.join(timeout=-1)
+        with self.assertRaises(ValueError):
+            q.join(timeout=-1)
+
+    def test_join_timeout_raises_exception(self):
+        q = self.type2test(QUEUE_SIZE)
+        q.put(1)
+        with self.assertRaises(TimeoutError):
+            q.join(timeout=.1)
+        with self.assertRaises(TimeoutError):
+            q.join(timeout=.1)
+
     def test_queue_task_done(self):
         # Test to make sure a queue task completed successfully.
         q = self.type2test()
