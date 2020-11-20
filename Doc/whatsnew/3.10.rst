@@ -263,6 +263,12 @@ site
 When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
 (Contributed by Brett Cannon in :issue:`42133`.)
 
+socket
+------
+
+The exception :exc:`socket.timeout` is now an alias of :exc:`TimeoutError`.
+(Contributed by Christian Heimes in :issue:`42413`.)
+
 sys
 ---
 

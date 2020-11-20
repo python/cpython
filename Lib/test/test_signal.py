@@ -528,7 +528,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
                 while True:
                     write.send(chunk)
                     written += chunk_size
-            except (BlockingIOError, socket.timeout):
+            except (BlockingIOError, TimeoutError):
                 pass
 
         print(f"%s bytes written into the socketpair" % written, flush=True)
