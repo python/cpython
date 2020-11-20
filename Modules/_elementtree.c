@@ -83,7 +83,7 @@ static void _clear_joined_ptr(PyObject **p)
 /* Types defined by this extension */
 static PyTypeObject *Element_Type;
 static PyTypeObject *ElementIter_Type;
-static PyTypeObject TreeBuilder_Type;
+static PyTypeObject *TreeBuilder_Type;
 static PyTypeObject XMLParser_Type;
 
 
@@ -382,7 +382,7 @@ get_attrib_from_keywords(PyObject *kwds)
 /*[clinic input]
 module _elementtree
 class _elementtree.Element "ElementObject *" "Element_Type"
-class _elementtree.TreeBuilder "TreeBuilderObject *" "&TreeBuilder_Type"
+class _elementtree.TreeBuilder "TreeBuilderObject *" "TreeBuilder_Type"
 class _elementtree.XMLParser "XMLParserObject *" "&XMLParser_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=f56d497fee3f9c95]*/
@@ -2325,7 +2325,7 @@ typedef struct {
     char insert_pis;
 } TreeBuilderObject;
 
-#define TreeBuilder_CheckExact(op) Py_IS_TYPE((op), &TreeBuilder_Type)
+#define TreeBuilder_CheckExact(op) Py_IS_TYPE((op), TreeBuilder_Type)
 
 /* -------------------------------------------------------------------- */
 /* constructor and destructor */
@@ -2469,7 +2469,10 @@ treebuilder_dealloc(TreeBuilderObject *self)
 {
     PyObject_GC_UnTrack(self);
     treebuilder_gc_clear(self);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
 }
 
 /* -------------------------------------------------------------------- */
@@ -3643,7 +3646,7 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
     if (target) {
         Py_INCREF(target);
     } else {
-        target = treebuilder_new(&TreeBuilder_Type, NULL, NULL);
+        target = treebuilder_new(TreeBuilder_Type, NULL, NULL);
         if (!target) {
             Py_CLEAR(self->entity);
             Py_CLEAR(self->names);
@@ -4223,47 +4226,25 @@ static PyMethodDef treebuilder_methods[] = {
     {NULL, NULL}
 };
 
-static PyTypeObject TreeBuilder_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "xml.etree.ElementTree.TreeBuilder", sizeof(TreeBuilderObject), 0,
-    /* methods */
-    (destructor)treebuilder_dealloc,                /* tp_dealloc */
-    0,                                              /* tp_vectorcall_offset */
-    0,                                              /* tp_getattr */
-    0,                                              /* tp_setattr */
-    0,                                              /* tp_as_async */
-    0,                                              /* tp_repr */
-    0,                                              /* tp_as_number */
-    0,                                              /* tp_as_sequence */
-    0,                                              /* tp_as_mapping */
-    0,                                              /* tp_hash */
-    0,                                              /* tp_call */
-    0,                                              /* tp_str */
-    0,                                              /* tp_getattro */
-    0,                                              /* tp_setattro */
-    0,                                              /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-                                                    /* tp_flags */
-    0,                                              /* tp_doc */
-    (traverseproc)treebuilder_gc_traverse,          /* tp_traverse */
-    (inquiry)treebuilder_gc_clear,                  /* tp_clear */
-    0,                                              /* tp_richcompare */
-    0,                                              /* tp_weaklistoffset */
-    0,                                              /* tp_iter */
-    0,                                              /* tp_iternext */
-    treebuilder_methods,                            /* tp_methods */
-    0,                                              /* tp_members */
-    0,                                              /* tp_getset */
-    0,                                              /* tp_base */
-    0,                                              /* tp_dict */
-    0,                                              /* tp_descr_get */
-    0,                                              /* tp_descr_set */
-    0,                                              /* tp_dictoffset */
-    _elementtree_TreeBuilder___init__,              /* tp_init */
-    PyType_GenericAlloc,                            /* tp_alloc */
-    treebuilder_new,                                /* tp_new */
-    0,                                              /* tp_free */
+static PyType_Slot treebuilder_slots[] = {
+    {Py_tp_dealloc, treebuilder_dealloc},
+    {Py_tp_traverse, treebuilder_gc_traverse},
+    {Py_tp_clear, treebuilder_gc_clear},
+    {Py_tp_methods, treebuilder_methods},
+    {Py_tp_init, _elementtree_TreeBuilder___init__},
+    {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_new, treebuilder_new},
+    {0, NULL},
 };
+
+static PyType_Spec treebuilder_spec = {
+    .name = "xml.etree.ElementTree.TreeBuilder",
+    .basicsize = sizeof(TreeBuilderObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .slots = treebuilder_slots,
+};
+
+static PyTypeObject *TreeBuilder_Type = NULL;
 
 static PyMethodDef xmlparser_methods[] = {
     _ELEMENTTREE_XMLPARSER_FEED_METHODDEF
@@ -4359,8 +4340,7 @@ PyInit__elementtree(void)
 
     /* Initialize object types */
     CREATE_TYPE(m, ElementIter_Type, &elementiter_spec);
-    if (PyType_Ready(&TreeBuilder_Type) < 0)
-        goto error;
+    CREATE_TYPE(m, TreeBuilder_Type, &treebuilder_spec);
     CREATE_TYPE(m, Element_Type, &element_spec);
     if (PyType_Ready(&XMLParser_Type) < 0)
         goto error;
@@ -4410,7 +4390,7 @@ PyInit__elementtree(void)
 
     PyTypeObject *types[] = {
         Element_Type,
-        &TreeBuilder_Type,
+        TreeBuilder_Type,
         &XMLParser_Type
     };
 
