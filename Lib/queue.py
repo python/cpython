@@ -79,13 +79,12 @@ class Queue:
     def join(self, timeout=None):
         '''Blocks until all items in the Queue have been gotten and processed.
 
-        If optional args 'timeout' is None (the default)
         The count of unfinished tasks goes up whenever an item is added to the
         queue. The count goes down whenever a consumer thread calls task_done()
         to indicate the item was retrieved and all work on it is complete. If
-        'timeout' is a non-negative number, it blocks at most 'timeout' seconds
-        and raises the Full exception if no free slot was available within that
-        time.
+        optional args 'timeout' is a non-negative number, it blocks at most
+        'timeout' seconds and raises the TimeoutError exception if the number
+        of unfinished tasks is not equal to the task_done in the available time.
 
         When the count of unfinished tasks drops to zero or timeout is reached,
         join() unblocks.

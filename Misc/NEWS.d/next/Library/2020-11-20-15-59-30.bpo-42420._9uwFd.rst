@@ -1,0 +1,3 @@
+If optional args 'timeout' is a non-negative number, it blocks at most
+'timeout' seconds and raises the TimeoutError exception if the number of
+unfinished tasks is not equal to the task_done in the available time.
