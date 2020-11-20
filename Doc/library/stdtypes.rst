@@ -5065,7 +5065,7 @@ instantiated from the type::
 
       >>> class M(type):
       ...     def __or__(self, other):
-      ...     return "Hello"
+      ...         return "Hello"
       ...
       >>> class C(metaclass=M):
       ...     pass

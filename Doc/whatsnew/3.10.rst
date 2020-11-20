@@ -120,8 +120,8 @@ See :pep:`613` for more details.
 
 (Contributed by Mikhail Golubev in :issue:`41923`.)
 
-PEP604: New Type Union Operator
--------------------------------
+PEP 604: New Type Union Operator
+--------------------------------
 
 A new type union operator was introduced which enables the syntax ``X | Y``.
 This provides a cleaner way of expressing 'either type X or type Y' instead of
