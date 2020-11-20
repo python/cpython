@@ -76,18 +76,23 @@ class Queue:
                 self.all_tasks_done.notify_all()
             self.unfinished_tasks = unfinished
 
-    def join(self):
+    def join(self, timeout=None):
         '''Blocks until all items in the Queue have been gotten and processed.
 
         The count of unfinished tasks goes up whenever an item is added to the
         queue. The count goes down whenever a consumer thread calls task_done()
-        to indicate the item was retrieved and all work on it is complete.
+        to indicate the item was retrieved and all work on it is complete. If
+        'timeout' is a non-negative number, it blocks at most 'timeout' seconds
+        and raises the Full exception if no free slot was available within that
+        time.
 
         When the count of unfinished tasks drops to zero, join() unblocks.
         '''
+        if timeout and timeout < 0:
+            raise ValueError("'timeout' must be a non-negative number")
         with self.all_tasks_done:
             while self.unfinished_tasks:
-                self.all_tasks_done.wait()
+                self.all_tasks_done.wait(timeout)
 
     def qsize(self):
         '''Return the approximate size of the queue (not reliable!).'''
