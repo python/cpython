@@ -5,7 +5,7 @@ __all__ = ('LoopBoundedMixin',)
 import threading
 from . import events
 
-global_lock = threading.Lock()
+_global_lock = threading.Lock()
 
 
 class LoopBoundedMixin:
