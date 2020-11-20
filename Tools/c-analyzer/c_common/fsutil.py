@@ -8,6 +8,9 @@ import stat
 from .iterutil import iter_many
 
 
+USE_CWD = object()
+
+
 C_SOURCE_SUFFIXES = ('.c', '.h')
 
 
@@ -27,6 +30,78 @@ def create_backup(old, backup=None):
             raise   # re-raise
         backup = None
     return backup
+
+
+##################################
+# filenames
+
+def fix_filename(filename, relroot=USE_CWD, *,
+                 fixroot=True,
+                 _badprefix=f'..{os.path.sep}',
+                 ):
+    """Return a normalized, absolute-path copy of the given filename."""
+    if not relroot or relroot is USE_CWD:
+        return os.path.abspath(filename)
+    if fixroot:
+        relroot = os.path.abspath(relroot)
+    return _fix_filename(filename, relroot)
+
+
+def _fix_filename(filename, relroot, *,
+                  _badprefix=f'..{os.path.sep}',
+                  ):
+    orig = filename
+
+    # First we normalize.
+    filename = os.path.normpath(filename)
+    if filename.startswith(_badprefix):
+        raise ValueError(f'bad filename {orig!r} (resolves beyond relative root')
+
+    # Now make sure it is absolute (relative to relroot).
+    if not os.path.isabs(filename):
+        filename = os.path.join(relroot, filename)
+    else:
+        relpath = os.path.relpath(filename, relroot)
+        if os.path.join(relroot, relpath) != filename:
+            raise ValueError(f'expected {relroot!r} as lroot, got {orig!r}')
+
+    return filename
+
+
+def fix_filenames(filenames, relroot=USE_CWD):
+    if not relroot or relroot is USE_CWD:
+        filenames = (os.path.abspath(v) for v in filenames)
+    else:
+        relroot = os.path.abspath(relroot)
+        filenames = (_fix_filename(v, relroot) for v in filenames)
+    return filenames, relroot
+
+
+def format_filename(filename, relroot=USE_CWD, *,
+                    fixroot=True,
+                    normalize=True,
+                    _badprefix=f'..{os.path.sep}',
+                    ):
+    """Return a consistent relative-path representation of the filename."""
+    orig = filename
+    if normalize:
+        filename = os.path.normpath(filename)
+    if relroot is None:
+        # Otherwise leave it as-is.
+        return filename
+    elif relroot is USE_CWD:
+        # Make it relative to CWD.
+        filename = os.path.relpath(filename)
+    else:
+        # Make it relative to "relroot".
+        if fixroot:
+            relroot = os.path.abspath(relroot)
+        elif not relroot:
+            raise ValueError('missing relroot')
+        filename = os.path.relpath(filename, relroot)
+    if filename.startswith(_badprefix):
+        raise ValueError(f'bad filename {orig!r} (resolves beyond relative root')
+    return filename
 
 
 ##################################
@@ -54,34 +129,29 @@ def match_glob(filename, pattern):
     return fnmatch.fnmatch(filename, pattern.replace('**/', '', 1))
 
 
-def iter_filenames(filenames, *,
-                   start=None,
-                   include=None,
-                   exclude=None,
-                   ):
+def process_filenames(filenames, *,
+                      start=None,
+                      include=None,
+                      exclude=None,
+                      relroot=USE_CWD,
+                      ):
+    if relroot and relroot is not USE_CWD:
+        relroot = os.path.abspath(relroot)
+    if start:
+        start = fix_filename(start, relroot, fixroot=False)
+    if include:
+        include = set(fix_filename(v, relroot, fixroot=False)
+                      for v in include)
+    if exclude:
+        exclude = set(fix_filename(v, relroot, fixroot=False)
+                      for v in exclude)
+
     onempty = Exception('no filenames provided')
     for filename, solo in iter_many(filenames, onempty):
+        filename = fix_filename(filename, relroot, fixroot=False)
+        relfile = format_filename(filename, relroot, fixroot=False, normalize=False)
         check, start = _get_check(filename, start, include, exclude)
-        yield filename, check, solo
-#    filenames = iter(filenames or ())
-#    try:
-#        first = next(filenames)
-#    except StopIteration:
-#        raise Exception('no filenames provided')
-#    try:
-#        second = next(filenames)
-#    except StopIteration:
-#        check, _ = _get_check(first, start, include, exclude)
-#        yield first, check, False
-#        return
-#
-#    check, start = _get_check(first, start, include, exclude)
-#    yield first, check, True
-#    check, start = _get_check(second, start, include, exclude)
-#    yield second, check, True
-#    for filename in filenames:
-#        check, start = _get_check(filename, start, include, exclude)
-#        yield filename, check, True
+        yield filename, relfile, check, solo
 
 
 def expand_filenames(filenames):
