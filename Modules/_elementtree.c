@@ -82,7 +82,7 @@ static void _clear_joined_ptr(PyObject **p)
 
 /* Types defined by this extension */
 static PyTypeObject *Element_Type;
-static PyTypeObject ElementIter_Type;
+static PyTypeObject *ElementIter_Type;
 static PyTypeObject TreeBuilder_Type;
 static PyTypeObject XMLParser_Type;
 
@@ -2095,6 +2095,8 @@ elementiter_dealloc(ElementIterObject *it)
     Py_XDECREF(it->root_element);
 
     PyObject_GC_Del(it);
+    PyTypeObject *tp = Py_TYPE(it);
+    Py_DECREF(tp);
 }
 
 static int
@@ -2238,50 +2240,24 @@ gettext:
     return NULL;
 }
 
+static PyType_Slot elementiter_slots[] = {
+    {Py_tp_dealloc, elementiter_dealloc},
+    {Py_tp_traverse, elementiter_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, elementiter_next},
+    {0, NULL},
+};
 
-static PyTypeObject ElementIter_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+static PyType_Spec elementiter_spec = {
     /* Using the module's name since the pure-Python implementation does not
        have such a type. */
-    "_elementtree._element_iterator",           /* tp_name */
-    sizeof(ElementIterObject),                  /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    /* methods */
-    (destructor)elementiter_dealloc,            /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
-    0,                                          /* tp_doc */
-    (traverseproc)elementiter_traverse,         /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    PyObject_SelfIter,                          /* tp_iter */
-    (iternextfunc)elementiter_next,             /* tp_iternext */
-    0,                                          /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
+    .name = "_elementtree._element_iterator",
+    .basicsize = sizeof(ElementIterObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .slots = elementiter_slots,
 };
+
+static PyTypeObject *ElementIter_Type = NULL;
 
 #define INIT_PARENT_STACK_SIZE 8
 
@@ -2290,7 +2266,7 @@ create_elementiter(ElementObject *self, PyObject *tag, int gettext)
 {
     ElementIterObject *it;
 
-    it = PyObject_GC_New(ElementIterObject, &ElementIter_Type);
+    it = PyObject_GC_New(ElementIterObject, ElementIter_Type);
     if (!it)
         return NULL;
 
@@ -4382,8 +4358,7 @@ PyInit__elementtree(void)
     }
 
     /* Initialize object types */
-    if (PyType_Ready(&ElementIter_Type) < 0)
-        goto error;
+    CREATE_TYPE(m, ElementIter_Type, &elementiter_spec);
     if (PyType_Ready(&TreeBuilder_Type) < 0)
         goto error;
     CREATE_TYPE(m, Element_Type, &element_spec);
