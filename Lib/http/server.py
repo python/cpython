@@ -410,9 +410,9 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                 return
             method = getattr(self, mname)
             method()
-            self.wfile.flush()  # actually send the response if not already done.
-        except socket.timeout as e:
-            # a read or a write timed out.  Discard this connection
+            self.wfile.flush() #actually send the response if not already done.
+        except TimeoutError as e:
+            #a read or a write timed out.  Discard this connection
             self.log_error("Request timed out: %r", e)
             self.close_connection = True
             return
