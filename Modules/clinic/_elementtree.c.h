@@ -19,8 +19,8 @@ _elementtree_Element_append(ElementObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *subelement;
 
-    if (!PyObject_TypeCheck(arg, &Element_Type)) {
-        _PyArg_BadArgument("append", "argument", (&Element_Type)->tp_name, arg);
+    if (!PyObject_TypeCheck(arg, Element_Type)) {
+        _PyArg_BadArgument("append", "argument", (Element_Type)->tp_name, arg);
         goto exit;
     }
     subelement = arg;
@@ -442,8 +442,8 @@ _elementtree_Element_insert(ElementObject *self, PyObject *const *args, Py_ssize
         }
         index = ival;
     }
-    if (!PyObject_TypeCheck(args[1], &Element_Type)) {
-        _PyArg_BadArgument("insert", "argument 2", (&Element_Type)->tp_name, args[1]);
+    if (!PyObject_TypeCheck(args[1], Element_Type)) {
+        _PyArg_BadArgument("insert", "argument 2", (Element_Type)->tp_name, args[1]);
         goto exit;
     }
     subelement = args[1];
@@ -538,8 +538,8 @@ _elementtree_Element_remove(ElementObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *subelement;
 
-    if (!PyObject_TypeCheck(arg, &Element_Type)) {
-        _PyArg_BadArgument("remove", "argument", (&Element_Type)->tp_name, arg);
+    if (!PyObject_TypeCheck(arg, Element_Type)) {
+        _PyArg_BadArgument("remove", "argument", (Element_Type)->tp_name, arg);
         goto exit;
     }
     subelement = arg;
@@ -915,4 +915,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1385b5e5688f3614 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5ea065ac45181d56 input=a9049054013a1b77]*/

@@ -81,7 +81,7 @@ static void _clear_joined_ptr(PyObject **p)
 }
 
 /* Types defined by this extension */
-static PyTypeObject Element_Type;
+static PyTypeObject *Element_Type;
 static PyTypeObject ElementIter_Type;
 static PyTypeObject TreeBuilder_Type;
 static PyTypeObject XMLParser_Type;
@@ -215,8 +215,8 @@ typedef struct {
 } ElementObject;
 
 
-#define Element_CheckExact(op) Py_IS_TYPE(op, &Element_Type)
-#define Element_Check(op) PyObject_TypeCheck(op, &Element_Type)
+#define Element_CheckExact(op) Py_IS_TYPE(op, Element_Type)
+#define Element_Check(op) PyObject_TypeCheck(op, Element_Type)
 
 
 /* -------------------------------------------------------------------- */
@@ -284,7 +284,7 @@ create_new_element(PyObject* tag, PyObject* attrib)
 {
     ElementObject* self;
 
-    self = PyObject_GC_New(ElementObject, &Element_Type);
+    self = PyObject_GC_New(ElementObject, Element_Type);
     if (self == NULL)
         return NULL;
     self->extra = NULL;
@@ -381,11 +381,11 @@ get_attrib_from_keywords(PyObject *kwds)
 
 /*[clinic input]
 module _elementtree
-class _elementtree.Element "ElementObject *" "&Element_Type"
+class _elementtree.Element "ElementObject *" "Element_Type"
 class _elementtree.TreeBuilder "TreeBuilderObject *" "&TreeBuilder_Type"
 class _elementtree.XMLParser "XMLParserObject *" "&XMLParser_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=159aa50a54061c22]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f56d497fee3f9c95]*/
 
 static int
 element_init(PyObject *self, PyObject *args, PyObject *kwds)
@@ -594,7 +594,7 @@ subelement(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject* tag;
     PyObject* attrib = NULL;
     if (!PyArg_ParseTuple(args, "O!O|O!:SubElement",
-                          &Element_Type, &parent, &tag,
+                          Element_Type, &parent, &tag,
                           &PyDict_Type, &attrib)) {
         return NULL;
     }
@@ -676,7 +676,9 @@ element_dealloc(ElementObject* self)
     element_gc_clear(self);
 
     RELEASE(sizeof(ElementObject), "destroy element");
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
     Py_TRASHCAN_END
 }
 
@@ -685,14 +687,14 @@ element_dealloc(ElementObject* self)
 /*[clinic input]
 _elementtree.Element.append
 
-    subelement: object(subclass_of='&Element_Type')
+    subelement: object(subclass_of='Element_Type')
     /
 
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_Element_append_impl(ElementObject *self, PyObject *subelement)
-/*[clinic end generated code: output=54a884b7cf2295f4 input=3ed648beb5bfa22a]*/
+/*[clinic end generated code: output=54a884b7cf2295f4 input=59866b732e6e2891]*/
 {
     if (element_add_subelement(self, subelement) < 0)
         return NULL;
@@ -1475,7 +1477,7 @@ element_getitem(PyObject* self_, Py_ssize_t index)
 _elementtree.Element.insert
 
     index: Py_ssize_t
-    subelement: object(subclass_of='&Element_Type')
+    subelement: object(subclass_of='Element_Type')
     /
 
 [clinic start generated code]*/
@@ -1483,7 +1485,7 @@ _elementtree.Element.insert
 static PyObject *
 _elementtree_Element_insert_impl(ElementObject *self, Py_ssize_t index,
                                  PyObject *subelement)
-/*[clinic end generated code: output=990adfef4d424c0b input=cd6fbfcdab52d7a8]*/
+/*[clinic end generated code: output=990adfef4d424c0b input=4382c42ab2659f9b]*/
 {
     Py_ssize_t i;
 
@@ -1583,14 +1585,14 @@ _elementtree_Element_makeelement_impl(ElementObject *self, PyObject *tag,
 /*[clinic input]
 _elementtree.Element.remove
 
-    subelement: object(subclass_of='&Element_Type')
+    subelement: object(subclass_of='Element_Type')
     /
 
 [clinic start generated code]*/
 
 static PyObject *
 _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement)
-/*[clinic end generated code: output=38fe6c07d6d87d1f input=d52fc28ededc0bd8]*/
+/*[clinic end generated code: output=38fe6c07d6d87d1f input=cbdf9f2ab34d93b0]*/
 {
     Py_ssize_t i;
     int rc;
@@ -2051,16 +2053,6 @@ element_attrib_setter(ElementObject *self, PyObject *value, void *closure)
     Py_XSETREF(self->extra->attrib, value);
     return 0;
 }
-
-static PySequenceMethods element_as_sequence = {
-    (lenfunc) element_length,
-    0, /* sq_concat */
-    0, /* sq_repeat */
-    element_getitem,
-    0,
-    element_setitem,
-    0,
-};
 
 /******************************* Element iterator ****************************/
 
@@ -4190,10 +4182,9 @@ static PyMethodDef element_methods[] = {
     {NULL, NULL}
 };
 
-static PyMappingMethods element_as_mapping = {
-    (lenfunc) element_length,
-    (binaryfunc) element_subscr,
-    (objobjargproc) element_ass_subscr,
+static struct PyMemberDef element_members[] = {
+    {"__weaklistoffset__", T_PYSSIZET, offsetof(ElementObject, weakreflist), READONLY},
+    {NULL},
 };
 
 static PyGetSetDef element_getsetlist[] = {
@@ -4216,47 +4207,35 @@ static PyGetSetDef element_getsetlist[] = {
     {NULL},
 };
 
-static PyTypeObject Element_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "xml.etree.ElementTree.Element", sizeof(ElementObject), 0,
-    /* methods */
-    (destructor)element_dealloc,                    /* tp_dealloc */
-    0,                                              /* tp_vectorcall_offset */
-    0,                                              /* tp_getattr */
-    0,                                              /* tp_setattr */
-    0,                                              /* tp_as_async */
-    (reprfunc)element_repr,                         /* tp_repr */
-    0,                                              /* tp_as_number */
-    &element_as_sequence,                           /* tp_as_sequence */
-    &element_as_mapping,                            /* tp_as_mapping */
-    0,                                              /* tp_hash */
-    0,                                              /* tp_call */
-    0,                                              /* tp_str */
-    PyObject_GenericGetAttr,                        /* tp_getattro */
-    0,                                              /* tp_setattro */
-    0,                                              /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-                                                    /* tp_flags */
-    0,                                              /* tp_doc */
-    (traverseproc)element_gc_traverse,              /* tp_traverse */
-    (inquiry)element_gc_clear,                      /* tp_clear */
-    0,                                              /* tp_richcompare */
-    offsetof(ElementObject, weakreflist),           /* tp_weaklistoffset */
-    0,                                              /* tp_iter */
-    0,                                              /* tp_iternext */
-    element_methods,                                /* tp_methods */
-    0,                                              /* tp_members */
-    element_getsetlist,                             /* tp_getset */
-    0,                                              /* tp_base */
-    0,                                              /* tp_dict */
-    0,                                              /* tp_descr_get */
-    0,                                              /* tp_descr_set */
-    0,                                              /* tp_dictoffset */
-    (initproc)element_init,                         /* tp_init */
-    PyType_GenericAlloc,                            /* tp_alloc */
-    element_new,                                    /* tp_new */
-    0,                                              /* tp_free */
+static PyType_Slot element_slots[] = {
+    {Py_tp_dealloc, element_dealloc},
+    {Py_tp_repr, element_repr},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_traverse, element_gc_traverse},
+    {Py_tp_clear, element_gc_clear},
+    {Py_tp_methods, element_methods},
+    {Py_tp_members, element_members},
+    {Py_tp_getset, element_getsetlist},
+    {Py_tp_init, element_init},
+    {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_new, element_new},
+    {Py_sq_length, element_length},
+    {Py_sq_item, element_getitem},
+    {Py_sq_ass_item, element_setitem},
+    {Py_mp_length, element_length},
+    {Py_mp_subscript, element_subscr},
+    {Py_mp_ass_subscript, element_ass_subscr},
+    {0, NULL},
 };
+
+static PyType_Spec element_spec = {
+    .name = "xml.etree.ElementTree.Element",
+    .basicsize = sizeof(ElementObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .slots = element_slots,
+};
+
+static PyTypeObject *Element_Type = NULL;
 
 static PyMethodDef treebuilder_methods[] = {
     _ELEMENTTREE_TREEBUILDER_DATA_METHODDEF
@@ -4407,8 +4386,7 @@ PyInit__elementtree(void)
         goto error;
     if (PyType_Ready(&TreeBuilder_Type) < 0)
         goto error;
-    if (PyType_Ready(&Element_Type) < 0)
-        goto error;
+    CREATE_TYPE(m, Element_Type, &element_spec);
     if (PyType_Ready(&XMLParser_Type) < 0)
         goto error;
 
@@ -4456,7 +4434,7 @@ PyInit__elementtree(void)
     }
 
     PyTypeObject *types[] = {
-        &Element_Type,
+        Element_Type,
         &TreeBuilder_Type,
         &XMLParser_Type
     };
