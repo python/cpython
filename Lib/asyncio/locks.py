@@ -19,7 +19,7 @@ class _ContextManagerMixin:
         self.release()
 
 
-class Lock(_ContextManagerMixin, mixins.LoopBoundedMixin):
+class Lock(_ContextManagerMixin, mixins._LoopBoundedMixin):
     """Primitive lock objects.
 
     A primitive lock is a synchronization primitive that is not owned
@@ -153,7 +153,7 @@ class Lock(_ContextManagerMixin, mixins.LoopBoundedMixin):
             fut.set_result(True)
 
 
-class Event(mixins.LoopBoundedMixin):
+class Event(mixins._LoopBoundedMixin):
     """Asynchronous equivalent to threading.Event.
 
     Class implementing event objects. An event manages a flag that can be set
@@ -214,7 +214,7 @@ class Event(mixins.LoopBoundedMixin):
             self._waiters.remove(fut)
 
 
-class Condition(_ContextManagerMixin, mixins.LoopBoundedMixin):
+class Condition(_ContextManagerMixin, mixins._LoopBoundedMixin):
     """Asynchronous equivalent to threading.Condition.
 
     This class implements condition variable objects. A condition variable
@@ -328,7 +328,7 @@ class Condition(_ContextManagerMixin, mixins.LoopBoundedMixin):
         self.notify(len(self._waiters))
 
 
-class Semaphore(_ContextManagerMixin, mixins.LoopBoundedMixin):
+class Semaphore(_ContextManagerMixin, mixins._LoopBoundedMixin):
     """A Semaphore implementation.
 
     A semaphore manages an internal counter which is decremented by each

@@ -17,5 +17,5 @@ class _LoopBoundedMixin:
                 if self._loop is None:
                     self._loop = loop
         if loop is not self._loop:
-            raise RuntimeError
+            raise RuntimeError(f'{type(self).__name__} have already bounded to another loop')
         return loop
