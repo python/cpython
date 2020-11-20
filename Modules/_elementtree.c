@@ -385,7 +385,7 @@ class _elementtree.Element "ElementObject *" "Element_Type"
 class _elementtree.TreeBuilder "TreeBuilderObject *" "TreeBuilder_Type"
 class _elementtree.XMLParser "XMLParserObject *" "XMLParser_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f56d497fee3f9c95]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=1ecdb32b55d9d5de]*/
 
 static int
 element_init(PyObject *self, PyObject *args, PyObject *kwds)
