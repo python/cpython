@@ -336,6 +336,8 @@ Pure paths provide the following methods and properties:
       >>> p.parents[2]
       PureWindowsPath('c:/')
 
+   .. versionchanged:: 3.10
+      Slice support was added.
 
 .. data:: PurePath.parent
 

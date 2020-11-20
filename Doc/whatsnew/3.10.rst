@@ -244,6 +244,12 @@ descriptors without copying between kernel address space and user
 address space, where one of the file descriptors must refer to a
 pipe. (Contributed by Pablo Galindo in :issue:`41625`.)
 
+pathlib
+-------
+
+Added slice support to :meth:`~pathlib.Path.parents`.
+(Contributed by Joshua Cannon in :issue:`35498`)
+
 py_compile
 ----------
 
