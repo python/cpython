@@ -855,7 +855,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def directory_body(self, list_of_files, displaypath, actual_path, enc) -> str:
         """
-        Compose and encode the list_of_files into HTML
+        Compose the list_of_files into body content
+
+        This method is a proxy method, to enable using the original
+        method when overriding the behaviour of the Handler
 
         displaypath is a relative path str
         actual_path is the full actual filesystem path
@@ -879,21 +882,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             print("Serving at port", PORT)
             httpd.serve_forever()
          """
-        r = []
-        title = 'Directory listing for %s' % displaypath
-        r.append('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" '
-                 '"http://www.w3.org/TR/html4/strict.dtd">')
-        r.append('<html>\n<head>')
-        r.append('<meta http-equiv="Content-Type" '
-                 'content="text/html; charset=%s">' % enc)
-        r.append('<title>%s</title>\n</head>' % title)
-        r.append('<body>\n<h1>%s</h1>' % title)
-        r.append('<hr>\n<ul>')
-        for name in list_of_files:
-            r.append('<li><a href="%s">%s</a></li>'
-                     % self.link_and_display_name(actual_path, name))
-        r.append('</ul>\n<hr>\n</body>\n</html>\n')
-        return '\n'.join(r)
+        return self.directory_body_html(list_of_files, displaypath, actual_path, enc)
 
     def send_directory_headers(self, enc, content_length):
         """
@@ -943,6 +932,23 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         return (urllib.parse.quote(linkname,
                                    errors='surrogatepass'),
                 html.escape(displayname, quote=False))
+
+    def directory_body_html(self, list_of_files, displaypath, actual_path, enc):
+        r = []
+        title = 'Directory listing for %s' % displaypath
+        r.append('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" '
+                 '"http://www.w3.org/TR/html4/strict.dtd">')
+        r.append('<html>\n<head>')
+        r.append('<meta http-equiv="Content-Type" '
+                 'content="text/html; charset=%s">' % enc)
+        r.append('<title>%s</title>\n</head>' % title)
+        r.append('<body>\n<h1>%s</h1>' % title)
+        r.append('<hr>\n<ul>')
+        for name in list_of_files:
+            r.append('<li><a href="%s">%s</a></li>'
+                     % self.link_and_display_name(actual_path, name))
+        r.append('</ul>\n<hr>\n</body>\n</html>\n')
+        return '\n'.join(r)
 
 
 # Utilities for CGIHTTPRequestHandler
