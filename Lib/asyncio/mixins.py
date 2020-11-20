@@ -1,7 +1,5 @@
 """Event loop mixins."""
 
-__all__ = ('LoopBoundedMixin',)
-
 import threading
 from . import events
 
@@ -15,7 +13,7 @@ class _LoopBoundedMixin:
         loop = events._get_running_loop()
 
         if self._loop is None:
-            with global_lock:
+            with _global_lock:
                 if self._loop is None:
                     self._loop = loop
         if loop is not self._loop:
