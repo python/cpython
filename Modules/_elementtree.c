@@ -4366,7 +4366,9 @@ PyInit__elementtree(void)
         "xml.etree.ElementTree.ParseError", PyExc_SyntaxError, NULL
         );
     Py_INCREF(st->parseerror_obj);
-    if (PyModule_AddObject(m, "ParseError", st->parseerror_obj) < 0) {
+    int res = PyModule_AddObjectRef(m, "ParseError", st->parseerror_obj);
+    Py_DECREF(st->parseerror_obj);
+    if (res < 0) {
         goto error;
     }
 
@@ -4385,7 +4387,6 @@ PyInit__elementtree(void)
     return m;
 
 error:
-    Py_XDECREF(st->parseerror_obj);
     Py_XDECREF(m);
     return NULL;
 }
