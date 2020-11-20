@@ -88,11 +88,19 @@ class Queue:
 
         When the count of unfinished tasks drops to zero, join() unblocks.
         '''
-        if timeout and timeout < 0:
-            raise ValueError("'timeout' must be a non-negative number")
         with self.all_tasks_done:
-            while self.unfinished_tasks:
-                self.all_tasks_done.wait(timeout)
+            if timeout is None:
+                while self.unfinished_tasks:
+                    self.all_tasks_done.wait()
+            elif timeout and timeout < 0:
+                raise ValueError("'timeout' must be a non-negative number")
+            else:
+                endtime = time() + timeout
+                while self.unfinished_tasks:
+                    remaining = endtime - time()
+                    if remaining <= 0.0:
+                        raise TimeoutError
+                    self.all_tasks_done.wait(remaining)
 
     def qsize(self):
         '''Return the approximate size of the queue (not reliable!).'''
