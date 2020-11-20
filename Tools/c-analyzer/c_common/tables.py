@@ -26,13 +26,14 @@ def fix_row(row, **markers):
     unknown = parse_markers(markers.pop('unknown', ('???',)))
     row = (val if val else None for val in row)
     if not empty:
-        if not unknown:
-            return row
-        return (UNKNOWN if val in unknown else val for val in row)
+        if unknown:
+            row = (UNKNOWN if val in unknown else val for val in row)
     elif not unknown:
-        return (EMPTY if val in empty else val for val in row)
-    return (EMPTY if val in empty else (UNKNOWN if val in unknown else val)
-            for val in row)
+        row = (EMPTY if val in empty else val for val in row)
+    else:
+        row = (EMPTY if val in empty else (UNKNOWN if val in unknown else val)
+               for val in row)
+    return tuple(row)
 
 
 def _fix_read_default(row):
