@@ -754,8 +754,8 @@ class WindowsRegistryFinder:
         '\\Modules\\{fullname}\\Debug')
     DEBUG_BUILD = (_MS_WINDOWS and '_d.pyd' in EXTENSION_SUFFIXES)
 
-    @classmethod
-    def _open_registry(cls, key):
+    @staticmethod
+    def _open_registry(key):
         try:
             return winreg.OpenKey(winreg.HKEY_CURRENT_USER, key)
         except OSError:
@@ -1219,8 +1219,8 @@ class _NamespaceLoader:
     def __init__(self, name, path, path_finder):
         self._path = _NamespacePath(name, path, path_finder)
 
-    @classmethod
-    def module_repr(cls, module):
+    @staticmethod
+    def module_repr(module):
         """Return repr for the module.
 
         The method is deprecated.  The import machinery does the job itself.
@@ -1261,8 +1261,8 @@ class PathFinder:
 
     """Meta path finder for sys.path and package __path__ attributes."""
 
-    @classmethod
-    def invalidate_caches(cls):
+    @staticmethod
+    def invalidate_caches():
         """Call the invalidate_caches() method on all path entry finders
         stored in sys.path_importer_caches (where implemented)."""
         for name, finder in list(sys.path_importer_cache.items()):
@@ -1271,8 +1271,8 @@ class PathFinder:
             elif hasattr(finder, 'invalidate_caches'):
                 finder.invalidate_caches()
 
-    @classmethod
-    def _path_hooks(cls, path):
+    @staticmethod
+    def _path_hooks(path):
         """Search sys.path_hooks for a finder for 'path'."""
         if sys.path_hooks is not None and not sys.path_hooks:
             _warnings.warn('sys.path_hooks is empty', ImportWarning)
@@ -1390,8 +1390,8 @@ class PathFinder:
             return None
         return spec.loader
 
-    @classmethod
-    def find_distributions(cls, *args, **kwargs):
+    @staticmethod
+    def find_distributions(*args, **kwargs):
         """
         Find distributions.
 
