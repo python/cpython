@@ -6522,10 +6522,10 @@ _datetime_exec(PyObject *module)
     if (PyType_Ready(&PyDateTime_IsoCalendarDateType) < 0) {
         return -1;
     }
-    Py_INCREF(&PyDateTime_IsoCalendarDateType);
 
-#define DATETIME_ADD_MACRO(dict, c, value)              \
+#define DATETIME_ADD_MACRO(dict, c, value_expr)         \
     do {                                                \
+        PyObject *value = (value_expr);                 \
         if (value == NULL) {                            \
             return -1;                                  \
         }                                               \
@@ -6593,9 +6593,6 @@ _datetime_exec(PyObject *module)
 
     x = create_timezone(delta, NULL);
     Py_DECREF(delta);
-    if (x == NULL) {
-        return -1;
-    }
     DATETIME_ADD_MACRO(d, "min", x);
 
     delta = new_delta(0, (23 * 60 + 59) * 60, 0, 0); /* +23:59 */
@@ -6605,17 +6602,13 @@ _datetime_exec(PyObject *module)
 
     x = create_timezone(delta, NULL);
     Py_DECREF(delta);
-    if (x == NULL) {
-        return -1;
-    }
-
     DATETIME_ADD_MACRO(d, "max", x);
 
     /* Epoch */
     PyDateTime_Epoch = new_datetime(1970, 1, 1, 0, 0, 0, 0,
                                     PyDateTime_TimeZone_UTC, 0);
     if (PyDateTime_Epoch == NULL) {
-      return -1;
+        return -1;
     }
 
     /* module initialization */
