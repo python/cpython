@@ -1102,7 +1102,7 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
         }
 
         if (sockstate == SOCKET_HAS_TIMED_OUT) {
-            PyErr_SetString(PySocketModule.timeout_error,
+            PyErr_SetString(PyExc_TimeoutError,
                             ERRSTR("The handshake operation timed out"));
             goto error;
         } else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
@@ -2419,7 +2419,7 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
 
     sockstate = PySSL_select(sock, 1, timeout);
     if (sockstate == SOCKET_HAS_TIMED_OUT) {
-        PyErr_SetString(PySocketModule.timeout_error,
+        PyErr_SetString(PyExc_TimeoutError,
                         "The write operation timed out");
         goto error;
     } else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
@@ -2454,7 +2454,7 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
         }
 
         if (sockstate == SOCKET_HAS_TIMED_OUT) {
-            PyErr_SetString(PySocketModule.timeout_error,
+            PyErr_SetString(PyExc_TimeoutError,
                             "The write operation timed out");
             goto error;
         } else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
@@ -2609,7 +2609,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
             sockstate = SOCKET_OPERATION_OK;
 
         if (sockstate == SOCKET_HAS_TIMED_OUT) {
-            PyErr_SetString(PySocketModule.timeout_error,
+            PyErr_SetString(PyExc_TimeoutError,
                             "The read operation timed out");
             goto error;
         } else if (sockstate == SOCKET_IS_NONBLOCKING) {
@@ -2724,10 +2724,10 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
 
         if (sockstate == SOCKET_HAS_TIMED_OUT) {
             if (err.ssl == SSL_ERROR_WANT_READ)
-                PyErr_SetString(PySocketModule.timeout_error,
+                PyErr_SetString(PyExc_TimeoutError,
                                 "The read operation timed out");
             else
-                PyErr_SetString(PySocketModule.timeout_error,
+                PyErr_SetString(PyExc_TimeoutError,
                                 "The write operation timed out");
             goto error;
         }
