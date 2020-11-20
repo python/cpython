@@ -426,26 +426,22 @@ func_get_annotations(PyFunctionObject *op, void *Py_UNUSED(ignored))
 
     }
     if (PyTuple_CheckExact(op->func_annotations)) {
-        PyObject *anns = op->func_annotations;
-        op->func_annotations = PyDict_New();
-        if (op->func_annotations == NULL) {
-            Py_DECREF(anns);
+        PyObject *ann_tuple = op->func_annotations;
+        PyObject *ann_dict = PyDict_New();
+        if (ann_dict == NULL)
             return NULL;
-        }
 
-        assert(PyTuple_GET_SIZE(anns) % 2 == 0);
+        assert(PyTuple_GET_SIZE(ann_tuple) % 2 == 0);
 
-        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(anns); i += 2) {
-            int err = PyDict_SetItem(op->func_annotations,
-                                     PyTuple_GET_ITEM(anns, i),
-                                     PyTuple_GET_ITEM(anns, i + 1));
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(ann_tuple); i += 2) {
+            int err = PyDict_SetItem(ann_dict,
+                                     PyTuple_GET_ITEM(ann_tuple, i),
+                                     PyTuple_GET_ITEM(ann_tuple, i + 1));
 
-            if (err < 0) {
-                Py_DECREF(anns);
+            if (err < 0)
                 return NULL;
-            }
         }
-        Py_DECREF(anns);
+        Py_SETREF(op->func_annotations, ann_dict);
     }
     Py_INCREF(op->func_annotations);
     return op->func_annotations;
