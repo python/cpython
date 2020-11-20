@@ -2127,64 +2127,8 @@ Python/import.c	import_find_and_load	header	-
 
 #-----------------------
 # runtime state
-# []
 
-# PyObject  []
-Objects/typeobject.c	resolve_slotdups	pname	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/import.c	-	extensions	-
-
-# allocator  []
-Objects/obmalloc.c	-	_Py_tracemalloc_config	-
-Objects/obmalloc.c	-	_PyObject_Arena	-
-Objects/obmalloc.c	-	arenas	-
-Objects/obmalloc.c	-	maxarenas	-
-Objects/obmalloc.c	-	unused_arena_objects	-
-Objects/obmalloc.c	-	usable_arenas	-
-Objects/obmalloc.c	-	nfp2lasta	-
-Objects/obmalloc.c	-	narenas_currently_allocated	-
-Objects/obmalloc.c	-	ntimes_arena_allocated	-
-Objects/obmalloc.c	-	narenas_highwater	-
-Objects/obmalloc.c	-	raw_allocated_blocks	-
-Objects/obmalloc.c	new_arena	debug_stats	-
-
-# REPL []
-Parser/myreadline.c	-	_PyOS_ReadlineLock	-
-Parser/myreadline.c	-	_PyOS_ReadlineTState	-
-Parser/myreadline.c	-	PyOS_InputHook	-
-Parser/myreadline.c	-	PyOS_ReadlineFunctionPointer	-
-
-# other  []
-Objects/dictobject.c	-	pydict_global_version	-
-Objects/floatobject.c	-	double_format	-
-Objects/floatobject.c	-	float_format	-
-Objects/floatobject.c	-	detected_double_format	-
-Objects/floatobject.c	-	detected_float_format	-
-Objects/moduleobject.c	-	max_module_number	-
-Objects/object.c	-	_Py_RefTotal	-
-Objects/typeobject.c	-	next_version_tag	-
-Objects/typeobject.c	resolve_slotdups	ptrs	-
-Parser/pegen.c	-	memo_statistics	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/bootstrap_hash.c	-	urandom_cache	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/ceval.c	-	lltrace	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/ceval.c	make_pending_calls	busy	-
-Python/dynload_shlib.c	-	handles	-
-Python/dynload_shlib.c	-	nhandles	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/import.c	-	import_lock_level	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/import.c	-	import_lock_thread	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/import.c	import_find_and_load	accumulated	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/import.c	import_find_and_load	import_level	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/pylifecycle.c	-	_Py_UnhandledKeyboardInterrupt	-
-# XXX This should have been found by the analyzer but wasn't:
-Python/pylifecycle.c	fatal_error	reentrant	-
+# (look at the bottome of the file)
 
 #-----------------------
 # modules
@@ -2931,3 +2875,64 @@ Modules/signalmodule.c	-	is_tripped	-
 Modules/signalmodule.c	-	wakeup	-
 Modules/socketmodule.c	-	defaulttimeout	-
 Modules/syslogmodule.c	-	S_log_open	-
+
+#-----------------------
+# runtime state
+# []
+
+# PyObject  []
+Objects/typeobject.c	resolve_slotdups	pname	-
+# XXX This should have been found by the analyzer but wasn't:
+Python/import.c	-	extensions	-
+
+# allocator  []
+Objects/obmalloc.c	-	_Py_tracemalloc_config	-
+Objects/obmalloc.c	-	_PyObject_Arena	-
+Objects/obmalloc.c	-	arenas	-
+Objects/obmalloc.c	-	maxarenas	-
+Objects/obmalloc.c	-	unused_arena_objects	-
+Objects/obmalloc.c	-	usable_arenas	-
+Objects/obmalloc.c	-	nfp2lasta	-
+Objects/obmalloc.c	-	narenas_currently_allocated	-
+Objects/obmalloc.c	-	ntimes_arena_allocated	-
+Objects/obmalloc.c	-	narenas_highwater	-
+Objects/obmalloc.c	-	raw_allocated_blocks	-
+Objects/obmalloc.c	new_arena	debug_stats	-
+
+# REPL []
+Parser/myreadline.c	-	_PyOS_ReadlineLock	-
+Parser/myreadline.c	-	_PyOS_ReadlineTState	-
+Parser/myreadline.c	-	PyOS_InputHook	-
+Parser/myreadline.c	-	PyOS_ReadlineFunctionPointer	-
+
+# other  []
+Objects/dictobject.c	-	pydict_global_version	-
+Objects/floatobject.c	-	double_format	-
+Objects/floatobject.c	-	float_format	-
+Objects/floatobject.c	-	detected_double_format	-
+Objects/floatobject.c	-	detected_float_format	-
+Objects/moduleobject.c	-	max_module_number	-
+Objects/object.c	-	_Py_RefTotal	-
+Objects/typeobject.c	-	next_version_tag	-
+Objects/typeobject.c	resolve_slotdups	ptrs	-
+Parser/pegen.c	-	memo_statistics	-
+# XXX This should have been found by the analyzer but wasn't:
+Python/bootstrap_hash.c	-	urandom_cache	-
+# XXX This should have been found by the analyzer but wasn't:
+Python/ceval.c	-	lltrace	-
+# XXX This should have been found by the analyzer but wasn't:
+Python/ceval.c	make_pending_calls	busy	-
+Python/dynload_shlib.c	-	handles	-
+Python/dynload_shlib.c	-	nhandles	-
+# XXX This should have been found by the analyzer but wasn't:
+Python/import.c	-	import_lock_level	-
+# XXX This should have been found by the analyzer but wasn't:
+Python/import.c	-	import_lock_thread	-
+# XXX This should have been found by the analyzer but wasn't:
+Python/import.c	import_find_and_load	accumulated	-
+# XXX This should have been found by the analyzer but wasn't:
+Python/import.c	import_find_and_load	import_level	-
+# XXX This should have been found by the analyzer but wasn't:
+Python/pylifecycle.c	-	_Py_UnhandledKeyboardInterrupt	-
+# XXX This should have been found by the analyzer but wasn't:
+Python/pylifecycle.c	fatal_error	reentrant	-
