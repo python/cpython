@@ -84,7 +84,7 @@ static void _clear_joined_ptr(PyObject **p)
 static PyTypeObject *Element_Type;
 static PyTypeObject *ElementIter_Type;
 static PyTypeObject *TreeBuilder_Type;
-static PyTypeObject XMLParser_Type;
+static PyTypeObject *XMLParser_Type;
 
 
 /* Per-module state; PEP 3121 */
@@ -383,7 +383,7 @@ get_attrib_from_keywords(PyObject *kwds)
 module _elementtree
 class _elementtree.Element "ElementObject *" "Element_Type"
 class _elementtree.TreeBuilder "TreeBuilderObject *" "TreeBuilder_Type"
-class _elementtree.XMLParser "XMLParserObject *" "&XMLParser_Type"
+class _elementtree.XMLParser "XMLParserObject *" "XMLParser_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=f56d497fee3f9c95]*/
 
@@ -3786,7 +3786,10 @@ xmlparser_dealloc(XMLParserObject* self)
 {
     PyObject_GC_UnTrack(self);
     xmlparser_gc_clear(self);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
 }
 
 Py_LOCAL_INLINE(int)
@@ -4254,47 +4257,27 @@ static PyMethodDef xmlparser_methods[] = {
     {NULL, NULL}
 };
 
-static PyTypeObject XMLParser_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "xml.etree.ElementTree.XMLParser", sizeof(XMLParserObject), 0,
-    /* methods */
-    (destructor)xmlparser_dealloc,                  /* tp_dealloc */
-    0,                                              /* tp_vectorcall_offset */
-    0,                                              /* tp_getattr */
-    0,                                              /* tp_setattr */
-    0,                                              /* tp_as_async */
-    0,                                              /* tp_repr */
-    0,                                              /* tp_as_number */
-    0,                                              /* tp_as_sequence */
-    0,                                              /* tp_as_mapping */
-    0,                                              /* tp_hash */
-    0,                                              /* tp_call */
-    0,                                              /* tp_str */
-    0,                                              /* tp_getattro */
-    0,                                              /* tp_setattro */
-    0,                                              /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-                                                    /* tp_flags */
-    0,                                              /* tp_doc */
-    (traverseproc)xmlparser_gc_traverse,            /* tp_traverse */
-    (inquiry)xmlparser_gc_clear,                    /* tp_clear */
-    0,                                              /* tp_richcompare */
-    0,                                              /* tp_weaklistoffset */
-    0,                                              /* tp_iter */
-    0,                                              /* tp_iternext */
-    xmlparser_methods,                              /* tp_methods */
-    xmlparser_members,                              /* tp_members */
-    xmlparser_getsetlist,                           /* tp_getset */
-    0,                                              /* tp_base */
-    0,                                              /* tp_dict */
-    0,                                              /* tp_descr_get */
-    0,                                              /* tp_descr_set */
-    0,                                              /* tp_dictoffset */
-    _elementtree_XMLParser___init__,                /* tp_init */
-    PyType_GenericAlloc,                            /* tp_alloc */
-    xmlparser_new,                                  /* tp_new */
-    0,                                              /* tp_free */
+static PyType_Slot xmlparser_slots[] = {
+    {Py_tp_dealloc, xmlparser_dealloc},
+    {Py_tp_traverse, xmlparser_gc_traverse},
+    {Py_tp_clear, xmlparser_gc_clear},
+    {Py_tp_methods, xmlparser_methods},
+    {Py_tp_members, xmlparser_members},
+    {Py_tp_getset, xmlparser_getsetlist},
+    {Py_tp_init, _elementtree_XMLParser___init__},
+    {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_new, xmlparser_new},
+    {0, NULL},
 };
+
+static PyType_Spec xmlparser_spec = {
+    .name = "xml.etree.ElementTree.XMLParser",
+    .basicsize = sizeof(XMLParserObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .slots = xmlparser_slots,
+};
+
+static PyTypeObject *XMLParser_Type = NULL;
 
 /* ==================================================================== */
 /* python module interface */
@@ -4342,8 +4325,7 @@ PyInit__elementtree(void)
     CREATE_TYPE(m, ElementIter_Type, &elementiter_spec);
     CREATE_TYPE(m, TreeBuilder_Type, &treebuilder_spec);
     CREATE_TYPE(m, Element_Type, &element_spec);
-    if (PyType_Ready(&XMLParser_Type) < 0)
-        goto error;
+    CREATE_TYPE(m, XMLParser_Type, &xmlparser_spec);
 
     m = PyModule_Create(&elementtreemodule);
     if (!m)
@@ -4391,7 +4373,7 @@ PyInit__elementtree(void)
     PyTypeObject *types[] = {
         Element_Type,
         TreeBuilder_Type,
-        &XMLParser_Type
+        XMLParser_Type
     };
 
     for (size_t i = 0; i < Py_ARRAY_LENGTH(types); i++) {
