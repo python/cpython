@@ -98,7 +98,7 @@ from enum import Enum as _Enum, IntEnum as _IntEnum, IntFlag as _IntFlag
 import _ssl             # if we can't import it, let the error propagate
 
 from _ssl import OPENSSL_VERSION_NUMBER, OPENSSL_VERSION_INFO, OPENSSL_VERSION
-from _ssl import _SSLContext, MemoryBIO, SSLSession
+from _ssl import _SSLContext, MemoryBIO, SSLSession, Certificate, PrivateKey
 from _ssl import (
     SSLError, SSLZeroReturnError, SSLWantReadError, SSLWantWriteError,
     SSLSyscallError, SSLEOFError, SSLCertVerificationError
