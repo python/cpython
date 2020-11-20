@@ -377,7 +377,7 @@ class socket(_socket.socket):
             try:
                 while True:
                     if timeout and not selector_select(timeout):
-                        raise _socket.timeout('timed out')
+                        raise TimeoutError('timed out')
                     if count:
                         blocksize = count - total_sent
                         if blocksize <= 0:
