@@ -4321,16 +4321,16 @@ PyInit__elementtree(void)
         return m;
     }
 
+    m = PyModule_Create(&elementtreemodule);
+    if (!m)
+        goto error;
+    st = get_elementtree_state(m);
+
     /* Initialize object types */
     CREATE_TYPE(m, ElementIter_Type, &elementiter_spec);
     CREATE_TYPE(m, TreeBuilder_Type, &treebuilder_spec);
     CREATE_TYPE(m, Element_Type, &element_spec);
     CREATE_TYPE(m, XMLParser_Type, &xmlparser_spec);
-
-    m = PyModule_Create(&elementtreemodule);
-    if (!m)
-        goto error;
-    st = get_elementtree_state(m);
 
     if (!(temp = PyImport_ImportModule("copy")))
         goto error;
