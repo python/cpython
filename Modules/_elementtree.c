@@ -4382,11 +4382,19 @@ static struct PyModuleDef elementtreemodule = {
     elementtree_free
 };
 
+#define CREATE_TYPE(module, type, spec) \
+do {                                                                     \
+    type = (PyTypeObject *)PyType_FromModuleAndSpec(module, spec, NULL); \
+    if (type == NULL) {                                                  \
+        goto error;                                                      \
+    }                                                                    \
+} while (0)
+
 PyMODINIT_FUNC
 PyInit__elementtree(void)
 {
-    PyObject *m, *temp;
-    elementtreestate *st;
+    PyObject *m = NULL, *temp;
+    elementtreestate *st = NULL;
 
     m = PyState_FindModule(&elementtreemodule);
     if (m) {
@@ -4396,31 +4404,31 @@ PyInit__elementtree(void)
 
     /* Initialize object types */
     if (PyType_Ready(&ElementIter_Type) < 0)
-        return NULL;
+        goto error;
     if (PyType_Ready(&TreeBuilder_Type) < 0)
-        return NULL;
+        goto error;
     if (PyType_Ready(&Element_Type) < 0)
-        return NULL;
+        goto error;
     if (PyType_Ready(&XMLParser_Type) < 0)
-        return NULL;
+        goto error;
 
     m = PyModule_Create(&elementtreemodule);
     if (!m)
-        return NULL;
+        goto error;
     st = get_elementtree_state(m);
 
     if (!(temp = PyImport_ImportModule("copy")))
-        return NULL;
+        goto error;
     st->deepcopy_obj = PyObject_GetAttrString(temp, "deepcopy");
     Py_XDECREF(temp);
 
     if (st->deepcopy_obj == NULL) {
-        return NULL;
+        goto error;
     }
 
     assert(!PyErr_Occurred());
     if (!(st->elementpath_obj = PyImport_ImportModule("xml.etree.ElementPath")))
-        return NULL;
+        goto error;
 
     /* link against pyexpat */
     expat_capi = PyCapsule_Import(PyExpat_CAPSULE_NAME, 0);
@@ -4433,10 +4441,10 @@ PyInit__elementtree(void)
             expat_capi->MICRO_VERSION != XML_MICRO_VERSION) {
             PyErr_SetString(PyExc_ImportError,
                             "pyexpat version is incompatible");
-            return NULL;
+            goto error;
         }
     } else {
-        return NULL;
+        goto error;
     }
 
     st->parseerror_obj = PyErr_NewException(
@@ -4444,8 +4452,7 @@ PyInit__elementtree(void)
         );
     Py_INCREF(st->parseerror_obj);
     if (PyModule_AddObject(m, "ParseError", st->parseerror_obj) < 0) {
-        Py_DECREF(st->parseerror_obj);
-        return NULL;
+        goto error;
     }
 
     PyTypeObject *types[] = {
@@ -4456,9 +4463,14 @@ PyInit__elementtree(void)
 
     for (size_t i = 0; i < Py_ARRAY_LENGTH(types); i++) {
         if (PyModule_AddType(m, types[i]) < 0) {
-            return NULL;
+            goto error;
         }
     }
 
     return m;
+
+error:
+    Py_XDECREF(st->parseerror_obj);
+    Py_XDECREF(m);
+    return NULL;
 }
