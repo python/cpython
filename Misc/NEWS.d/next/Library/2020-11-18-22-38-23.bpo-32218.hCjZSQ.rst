@@ -1,2 +1,2 @@
-Only keep the one-bit flag for :meth:`Flag.__iter__` in :mod:`enum`. Patch by
-Weipeng Hong.
+Only keep the single-bit members for :meth:`enum.Flag.__iter__` in :mod:`enum`.
+Patch by Weipeng Hong.
