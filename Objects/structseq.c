@@ -492,7 +492,6 @@ PyTypeObject *
 PyStructSequence_NewType(PyStructSequence_Desc *desc)
 {
     PyMemberDef *members;
-    PyObject *bases;
     PyTypeObject *type;
     PyType_Slot slots[8];
     PyType_Spec spec;
