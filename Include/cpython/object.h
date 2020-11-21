@@ -167,10 +167,13 @@ typedef struct {
     objobjargproc mp_ass_subscript;
 } PyMappingMethods;
 
+typedef PySendResult (*sendfunc)(PyObject *iter, PyObject *value, PyObject **result);
+
 typedef struct {
     unaryfunc am_await;
     unaryfunc am_aiter;
     unaryfunc am_anext;
+    sendfunc am_send;
 } PyAsyncMethods;
 
 typedef struct {
@@ -241,6 +244,7 @@ struct _typeobject {
     struct PyMethodDef *tp_methods;
     struct PyMemberDef *tp_members;
     struct PyGetSetDef *tp_getset;
+    // Strong reference on a heap type, borrowed reference on a static type
     struct _typeobject *tp_base;
     PyObject *tp_dict;
     descrgetfunc tp_descr_get;
@@ -296,6 +300,8 @@ PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, _Py_Identifier *);
 PyAPI_FUNC(PyTypeObject *) _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *, const char *);
 PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
+struct PyModuleDef;
+PyAPI_FUNC(PyObject *) _PyType_GetModuleByDef(PyTypeObject *, struct PyModuleDef *);
 
 struct _Py_Identifier;
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);

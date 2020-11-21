@@ -105,9 +105,11 @@ Type Objects
 
    See :c:member:`PyType_Slot.slot` for possible values of the *slot* argument.
 
-   An exception is raised if *type* is not a heap type.
-
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.10
+      :c:func:`PyType_GetSlot` can now accept all types.
+      Previously, it was limited to heap types.
 
 .. c:function:: PyObject* PyType_GetModule(PyTypeObject *type)
 
@@ -168,6 +170,10 @@ The following functions and structs are used to create
    This function calls :c:func:`PyType_Ready` on the new type.
 
    .. versionadded:: 3.9
+
+   .. versionchanged:: 3.10
+
+      The function now accepts NULL ``tp_doc`` slot.
 
 .. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
@@ -260,4 +266,4 @@ The following functions and structs are used to create
       The desired value of the slot. In most cases, this is a pointer
       to a function.
 
-      May not be ``NULL``.
+      Slots other than ``Py_tp_doc`` may not be ``NULL``.

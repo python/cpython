@@ -1,0 +1,2 @@
+Added :c:func:`Py_NewRef` and :c:func:`Py_XNewRef` functions to increment the
+reference count of an object and return the object. Patch by Victor Stinner.

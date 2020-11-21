@@ -71,6 +71,13 @@ This module defines the following functions:
 
    .. versionadded:: 3.8
 
+.. data:: __excepthook__
+
+   Holds the original value of :func:`threading.excepthook`. It is saved so that the
+   original value can be restored in case they happen to get replaced with
+   broken or alternative objects.
+
+   .. versionadded:: 3.10
 
 .. function:: get_ident()
 
@@ -121,6 +128,17 @@ This module defines the following functions:
    :meth:`~Thread.run` method is called.
 
 
+.. function:: gettrace()
+
+   .. index::
+      single: trace function
+      single: debugger
+
+   Get the trace function as set by :func:`settrace`.
+
+   .. versionadded:: 3.10
+
+
 .. function:: setprofile(func)
 
    .. index:: single: profile function
@@ -128,6 +146,15 @@ This module defines the following functions:
    Set a profile function for all threads started from the :mod:`threading` module.
    The *func* will be passed to  :func:`sys.setprofile` for each thread, before its
    :meth:`~Thread.run` method is called.
+
+
+.. function:: getprofile()
+
+   .. index:: single: profile function
+
+   Get the profiler function as set by :func:`setprofile`.
+
+   .. versionadded:: 3.10
 
 
 .. function:: stack_size([size])

@@ -10,6 +10,9 @@ import sys
 from . import fsutil, strutil, iterutil, logging as loggingutil
 
 
+_NOT_SET = object()
+
+
 def get_prog(spec=None, *, absolute=False, allowsuffix=True):
     if spec is None:
         _, spec = _find_script()
@@ -304,13 +307,31 @@ def add_file_filtering_cli(parser, *, excluded=None):
             exclude=tuple(_parse_files(_exclude)),
             # We use the default for "show_header"
         )
-        ns[key] = (lambda files: fsutil.iter_filenames(files, **kwargs))
+        def process_filenames(filenames, relroot=None):
+            return fsutil.process_filenames(filenames, relroot=relroot, **kwargs)
+        ns[key] = process_filenames
     return process_args
 
 
 def _parse_files(filenames):
     for filename, _ in strutil.parse_entries(filenames):
         yield filename.strip()
+
+
+def add_progress_cli(parser, *, threshold=VERBOSITY, **kwargs):
+    parser.add_argument('--progress', dest='track_progress', action='store_const', const=True)
+    parser.add_argument('--no-progress', dest='track_progress', action='store_false')
+    parser.set_defaults(track_progress=True)
+
+    def process_args(args):
+        if args.track_progress:
+            ns = vars(args)
+            verbosity = ns.get('verbosity', VERBOSITY)
+            if verbosity <= threshold:
+                args.track_progress = track_progress_compact
+            else:
+                args.track_progress = track_progress_flat
+    return process_args
 
 
 def add_failure_filtering_cli(parser, pool, *, default=False):
@@ -510,54 +531,84 @@ def set_command(name, add_cli):
 ##################################
 # main() helpers
 
-def filter_filenames(filenames, iter_filenames=None):
-    for filename, check, _ in _iter_filenames(filenames, iter_filenames):
+def filter_filenames(filenames, process_filenames=None, relroot=fsutil.USE_CWD):
+    # We expect each filename to be a normalized, absolute path.
+    for filename, _, check, _ in _iter_filenames(filenames, process_filenames, relroot):
         if (reason := check()):
             logger.debug(f'{filename}: {reason}')
             continue
         yield filename
 
 
-def main_for_filenames(filenames, iter_filenames=None):
-    for filename, check, show in _iter_filenames(filenames, iter_filenames):
+def main_for_filenames(filenames, process_filenames=None, relroot=fsutil.USE_CWD):
+    filenames, relroot = fsutil.fix_filenames(filenames, relroot=relroot)
+    for filename, relfile, check, show in _iter_filenames(filenames, process_filenames, relroot):
         if show:
             print()
+            print(relfile)
             print('-------------------------------------------')
-            print(filename)
         if (reason := check()):
             print(reason)
             continue
-        yield filename
+        yield filename, relfile
 
 
-def _iter_filenames(filenames, iter_files):
-    if iter_files is None:
-        iter_files = fsutil.iter_filenames
-        yield from iter_files(filenames)
+def _iter_filenames(filenames, process, relroot):
+    if process is None:
+        yield from fsutil.process_filenames(filenames, relroot=relroot)
         return
 
     onempty = Exception('no filenames provided')
-    items = iter_files(filenames)
+    items = process(filenames, relroot=relroot)
     items, peeked = iterutil.peek_and_iter(items)
     if not items:
         raise onempty
     if isinstance(peeked, str):
+        if relroot and relroot is not fsutil.USE_CWD:
+            relroot = os.path.abspath(relroot)
         check = (lambda: True)
         for filename, ismany in iterutil.iter_many(items, onempty):
-            yield filename, check, ismany
-    elif len(peeked) == 3:
+            relfile = fsutil.format_filename(filename, relroot, fixroot=False)
+            yield filename, relfile, check, ismany
+    elif len(peeked) == 4:
         yield from items
     else:
         raise NotImplementedError
 
 
-def iter_marks(mark='.', *, group=5, groups=2, lines=10, sep=' '):
+def track_progress_compact(items, *, groups=5, **mark_kwargs):
+    last = os.linesep
+    marks = iter_marks(groups=groups, **mark_kwargs)
+    for item in items:
+        last = next(marks)
+        print(last, end='', flush=True)
+        yield item
+    if not last.endswith(os.linesep):
+        print()
+
+
+def track_progress_flat(items, fmt='<{}>'):
+    for item in items:
+        print(fmt.format(item), flush=True)
+        yield item
+
+
+def iter_marks(mark='.', *, group=5, groups=2, lines=_NOT_SET, sep=' '):
     mark = mark or ''
+    group = group if group and group > 1 else 1
+    groups = groups if groups and groups > 1 else 1
+
     sep = f'{mark}{sep}' if sep else mark
     end = f'{mark}{os.linesep}'
     div = os.linesep
     perline = group * groups
-    perlines = perline * lines
+    if lines is _NOT_SET:
+        # By default we try to put about 100 in each line group.
+        perlines = 100 // perline * perline
+    elif not lines or lines < 0:
+        perlines = None
+    else:
+        perlines = perline * lines
 
     if perline == 1:
         yield end
@@ -568,7 +619,7 @@ def iter_marks(mark='.', *, group=5, groups=2, lines=10, sep=' '):
     while True:
         if count % perline == 0:
             yield end
-            if count % perlines == 0:
+            if perlines and count % perlines == 0:
                 yield div
         elif count % group == 0:
             yield sep

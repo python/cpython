@@ -202,6 +202,32 @@ write code that handles both IP versions correctly.  Address objects are
 .. _iana-ipv4-special-registry: https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
 .. _iana-ipv6-special-registry: https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
 
+.. method:: IPv4Address.__format__(fmt)
+
+   Returns a string representation of the IP address, controlled by
+   an explicit format string.
+   *fmt* can be one of the following: ``'s'``, the default option,
+   equivalent to :func:`str`, ``'b'`` for a zero-padded binary string,
+   ``'X'`` or ``'x'`` for an uppercase or lowercase hexadecimal
+   representation, or ``'n'``, which is equivalent to ``'b'`` for IPv4
+   addresses and ``'x'`` for IPv6. For binary and hexadecimal
+   representations, the form specifier ``'#'`` and the grouping option
+   ``'_'`` are available. ``__format__`` is used by ``format``, ``str.format``
+   and f-strings.
+
+      >>> format(ipaddress.IPv4Address('192.168.0.1'))
+      '192.168.0.1'
+      >>> '{:#b}'.format(ipaddress.IPv4Address('192.168.0.1'))
+      '0b11000000101010000000000000000001'
+      >>> f'{ipaddress.IPv6Address("2001:db8::1000"):s}'
+      '2001:db8::1000'
+      >>> format(ipaddress.IPv6Address('2001:db8::1000'), '_X')
+      '2001_0DB8_0000_0000_0000_0000_0000_1000'
+      >>> '{:#_n}'.format(ipaddress.IPv6Address('2001:db8::1000'))
+      '0x2001_0db8_0000_0000_0000_0000_0000_1000'
+
+   .. versionadded:: 3.9
+
 
 .. class:: IPv6Address(address)
 
@@ -246,8 +272,8 @@ write code that handles both IP versions correctly.  Address objects are
    groups consisting entirely of zeroes included.
 
 
-   For the following attributes, see the corresponding documentation of the
-   :class:`IPv4Address` class:
+   For the following attributes and methods, see the corresponding
+   documentation of the :class:`IPv4Address` class:
 
    .. attribute:: packed
    .. attribute:: reverse_pointer
@@ -297,6 +323,12 @@ write code that handles both IP versions correctly.  Address objects are
       the embedded ``(server, client)`` IP address pair.  For any other
       address, this property will be ``None``.
 
+.. method:: IPv6Address.__format__(fmt)
+
+   Refer to the corresponding method documentation in
+   :class:`IPv4Address`.
+
+   .. versionadded:: 3.9
 
 Conversion to Strings and Integers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

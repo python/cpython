@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_object.h"
+#include "pycore_unionobject.h"   // _Py_union_as_number
 #include "structmember.h"         // PyMemberDef
 
 typedef struct {
@@ -9,6 +10,7 @@ typedef struct {
     PyObject *origin;
     PyObject *args;
     PyObject *parameters;
+    PyObject* weakreflist;
 } gaobject;
 
 static void
@@ -17,6 +19,9 @@ ga_dealloc(PyObject *self)
     gaobject *alias = (gaobject *)self;
 
     _PyObject_GC_UNTRACK(self);
+    if (alias->weakreflist != NULL) {
+        PyObject_ClearWeakRefs((PyObject *)alias);
+    }
     Py_XDECREF(alias->origin);
     Py_XDECREF(alias->args);
     Py_XDECREF(alias->parameters);
@@ -573,6 +578,10 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return Py_GenericAlias(origin, arguments);
 }
 
+static PyNumberMethods ga_as_number = {
+        .nb_or = (binaryfunc)_Py_union_type_or, // Add __or__ function
+};
+
 // TODO:
 // - argument clinic?
 // - __doc__?
@@ -586,6 +595,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_basicsize = sizeof(gaobject),
     .tp_dealloc = ga_dealloc,
     .tp_repr = ga_repr,
+    .tp_as_number = &ga_as_number,  // allow X | Y of GenericAlias objs
     .tp_as_mapping = &ga_as_mapping,
     .tp_hash = ga_hash,
     .tp_call = ga_call,
@@ -593,6 +603,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = ga_traverse,
     .tp_richcompare = ga_richcompare,
+    .tp_weaklistoffset = offsetof(gaobject, weakreflist),
     .tp_methods = ga_methods,
     .tp_members = ga_members,
     .tp_alloc = PyType_GenericAlloc,
@@ -624,6 +635,7 @@ Py_GenericAlias(PyObject *origin, PyObject *args)
     alias->origin = origin;
     alias->args = args;
     alias->parameters = NULL;
+    alias->weakreflist = NULL;
     _PyObject_GC_TRACK(alias);
     return (PyObject *)alias;
 }

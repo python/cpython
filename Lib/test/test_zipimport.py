@@ -450,8 +450,9 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
         zi = zipimport.zipimporter(TEMP_ZIP)
         self.assertEqual(zi.archive, TEMP_ZIP)
-        self.assertEqual(zi.is_package(TESTPACK), True)
+        self.assertTrue(zi.is_package(TESTPACK))
 
+        # PEP 302
         find_mod = zi.find_module('spam')
         self.assertIsNotNone(find_mod)
         self.assertIsInstance(find_mod, zipimport.zipimporter)
@@ -462,25 +463,39 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         mod = zi.load_module(TESTPACK)
         self.assertEqual(zi.get_filename(TESTPACK), mod.__file__)
 
+        # PEP 451
+        spec = zi.find_spec('spam')
+        self.assertIsNotNone(spec)
+        self.assertIsInstance(spec.loader, zipimport.zipimporter)
+        self.assertFalse(spec.loader.is_package('spam'))
+        exec_mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(exec_mod)
+        self.assertEqual(spec.loader.get_filename('spam'), exec_mod.__file__)
+
+        spec = zi.find_spec(TESTPACK)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        self.assertEqual(zi.get_filename(TESTPACK), mod.__file__)
+
         existing_pack_path = importlib.import_module(TESTPACK).__path__[0]
         expected_path_path = os.path.join(TEMP_ZIP, TESTPACK)
         self.assertEqual(existing_pack_path, expected_path_path)
 
-        self.assertEqual(zi.is_package(packdir + '__init__'), False)
-        self.assertEqual(zi.is_package(packdir + TESTPACK2), True)
-        self.assertEqual(zi.is_package(packdir2 + TESTMOD), False)
+        self.assertFalse(zi.is_package(packdir + '__init__'))
+        self.assertTrue(zi.is_package(packdir + TESTPACK2))
+        self.assertFalse(zi.is_package(packdir2 + TESTMOD))
 
         mod_path = packdir2 + TESTMOD
         mod_name = module_path_to_dotted_name(mod_path)
         mod = importlib.import_module(mod_name)
         self.assertTrue(mod_name in sys.modules)
-        self.assertEqual(zi.get_source(TESTPACK), None)
-        self.assertEqual(zi.get_source(mod_path), None)
+        self.assertIsNone(zi.get_source(TESTPACK))
+        self.assertIsNone(zi.get_source(mod_path))
         self.assertEqual(zi.get_filename(mod_path), mod.__file__)
         # To pass in the module name instead of the path, we must use the
         # right importer
-        loader = mod.__loader__
-        self.assertEqual(loader.get_source(mod_name), None)
+        loader = mod.__spec__.loader
+        self.assertIsNone(loader.get_source(mod_name))
         self.assertEqual(loader.get_filename(mod_name), mod.__file__)
 
         # test prefix and archivepath members
@@ -505,17 +520,22 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         zi = zipimport.zipimporter(TEMP_ZIP + os.sep + packdir)
         self.assertEqual(zi.archive, TEMP_ZIP)
         self.assertEqual(zi.prefix, packdir)
-        self.assertEqual(zi.is_package(TESTPACK2), True)
+        self.assertTrue(zi.is_package(TESTPACK2))
+        # PEP 302
         mod = zi.load_module(TESTPACK2)
         self.assertEqual(zi.get_filename(TESTPACK2), mod.__file__)
+        # PEP 451
+        spec = zi.find_spec(TESTPACK2)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        self.assertEqual(spec.loader.get_filename(TESTPACK2), mod.__file__)
 
-        self.assertEqual(
-            zi.is_package(TESTPACK2 + os.sep + '__init__'), False)
-        self.assertEqual(
-            zi.is_package(TESTPACK2 + os.sep + TESTMOD), False)
+        self.assertFalse(zi.is_package(TESTPACK2 + os.sep + '__init__'))
+        self.assertFalse(zi.is_package(TESTPACK2 + os.sep + TESTMOD))
 
         pkg_path = TEMP_ZIP + os.sep + packdir + TESTPACK2
         zi2 = zipimport.zipimporter(pkg_path)
+        # PEP 302
         find_mod_dotted = zi2.find_module(TESTMOD)
         self.assertIsNotNone(find_mod_dotted)
         self.assertIsInstance(find_mod_dotted, zipimport.zipimporter)
@@ -524,17 +544,27 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.assertEqual(
             find_mod_dotted.get_filename(TESTMOD), load_mod.__file__)
 
+        # PEP 451
+        spec = zi2.find_spec(TESTMOD)
+        self.assertIsNotNone(spec)
+        self.assertIsInstance(spec.loader, zipimport.zipimporter)
+        self.assertFalse(spec.loader.is_package(TESTMOD))
+        load_mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(load_mod)
+        self.assertEqual(
+            spec.loader.get_filename(TESTMOD), load_mod.__file__)
+
         mod_path = TESTPACK2 + os.sep + TESTMOD
         mod_name = module_path_to_dotted_name(mod_path)
         mod = importlib.import_module(mod_name)
         self.assertTrue(mod_name in sys.modules)
-        self.assertEqual(zi.get_source(TESTPACK2), None)
-        self.assertEqual(zi.get_source(mod_path), None)
+        self.assertIsNone(zi.get_source(TESTPACK2))
+        self.assertIsNone(zi.get_source(mod_path))
         self.assertEqual(zi.get_filename(mod_path), mod.__file__)
         # To pass in the module name instead of the path, we must use the
         # right importer.
         loader = mod.__loader__
-        self.assertEqual(loader.get_source(mod_name), None)
+        self.assertIsNone(loader.get_source(mod_name))
         self.assertEqual(loader.get_filename(mod_name), mod.__file__)
 
     def testGetData(self):
@@ -655,7 +685,9 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             zinfo = ZipInfo(TESTMOD + ".py", time.localtime(NOW))
             zinfo.compress_type = self.compression
             z.writestr(zinfo, test_src)
-        zipimport.zipimporter(filename).load_module(TESTMOD)
+        spec = zipimport.zipimporter(filename).find_spec(TESTMOD)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
 
     def testBytesPath(self):
         filename = os_helper.TESTFN + ".zip"
@@ -747,6 +779,8 @@ class BadFileZipImportTestCase(unittest.TestCase):
 
         try:
             self.assertRaises(TypeError, z.find_module, None)
+            self.assertRaises(TypeError, z.find_spec, None)
+            self.assertRaises(TypeError, z.exec_module, None)
             self.assertRaises(TypeError, z.load_module, None)
             self.assertRaises(TypeError, z.is_package, None)
             self.assertRaises(TypeError, z.get_code, None)
@@ -754,7 +788,8 @@ class BadFileZipImportTestCase(unittest.TestCase):
             self.assertRaises(TypeError, z.get_source, None)
 
             error = zipimport.ZipImportError
-            self.assertEqual(z.find_module('abc'), None)
+            self.assertIsNone(z.find_module('abc'))
+            self.assertIsNone(z.find_spec('abc'))
 
             self.assertRaises(error, z.load_module, 'abc')
             self.assertRaises(error, z.get_code, 'abc')

@@ -232,7 +232,8 @@ PEP 540: Forced UTF-8 Runtime Mode
 -----------------------------------
 
 The new :option:`-X` ``utf8`` command line option and :envvar:`PYTHONUTF8`
-environment variable can be used to enable the CPython *UTF-8 mode*.
+environment variable can be used to enable the :ref:`Python UTF-8 Mode
+<utf8-mode>`.
 
 When in UTF-8 mode, CPython ignores the locale settings, and uses the
 UTF-8 encoding by default.  The error handlers for :data:`sys.stdin` and
