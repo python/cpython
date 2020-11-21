@@ -425,6 +425,9 @@ class suppress(AbstractContextManager):
 class _BaseExitStack:
     """A base class for ExitStack and AsyncExitStack."""
 
+    def __init__(self, *cms):
+        self._cms = cms
+
     @staticmethod
     def _create_exit_wrapper(cm, cm_exit):
         return MethodType(cm_exit, cm)
@@ -514,7 +517,8 @@ class ExitStack(_BaseExitStack, AbstractContextManager):
     """
 
     def __enter__(self):
-        return self
+        self.context_managers = [self.enter_context(cm) for cm in self._cms]
+        return super().__enter__()
 
     def __exit__(self, *exc_details):
         received_exc = exc_details[0] is not None
@@ -583,6 +587,11 @@ class AsyncExitStack(_BaseExitStack, AbstractAsyncContextManager):
             # end of the async with statement, even if attempts to open a
             # connection later in the list raise an exception.
     """
+
+    async def __aenter__(self):
+        self.async_context_managers = [await self.enter_async_context(cm)
+                                       for cm in self._cms]
+        return await super().__aenter__()
 
     @staticmethod
     def _create_async_exit_wrapper(cm, cm_exit):
