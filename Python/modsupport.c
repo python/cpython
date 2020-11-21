@@ -633,45 +633,52 @@ va_build_stack(PyObject **small_stack, Py_ssize_t small_stack_len,
 }
 
 
-int
-PyModule_AddObjectRef(PyObject *mod, const char *name, PyObject *value)
+static int
+add_object(PyObject *m, const char *name, PyObject *o)
 {
-    if (!PyModule_Check(mod)) {
+    PyObject *dict;
+    if (!PyModule_Check(m)) {
         PyErr_SetString(PyExc_TypeError,
-                        "PyModule_AddObjectRef() first argument "
-                        "must be a module");
+                    "PyModule_Add() needs module as first arg");
         return -1;
     }
-    if (!value) {
-        if (!PyErr_Occurred()) {
+    if (!o) {
+        if (!PyErr_Occurred())
             PyErr_SetString(PyExc_SystemError,
-                            "PyModule_AddObjectRef() must be called "
-                            "with an exception raised if value is NULL");
-        }
+                    "PyModule_Add() needs non-NULL value or exception set");
         return -1;
     }
 
-    PyObject *dict = PyModule_GetDict(mod);
+    dict = PyModule_GetDict(m);
     if (dict == NULL) {
         /* Internal error -- modules must have a dict! */
         PyErr_Format(PyExc_SystemError, "module '%s' has no __dict__",
-                     PyModule_GetName(mod));
+                     PyModule_GetName(m));
         return -1;
     }
-
-    if (PyDict_SetItemString(dict, name, value)) {
-        return -1;
-    }
-    return 0;
+    return PyDict_SetItemString(dict, name, o);
 }
 
+int
+PyModule_AddObjectRef(PyObject *mod, const char *name, PyObject *value)
+{
+    return add_object(mod, name, value);
+}
 
 int
-PyModule_AddObject(PyObject *mod, const char *name, PyObject *value)
+PyModule_Add(PyObject *m, const char *name, PyObject *o)
 {
-    int res = PyModule_AddObjectRef(mod, name, value);
+    int res = add_object(m, name, o);
+    Py_XDECREF(o);
+    return res;
+}
+
+int
+PyModule_AddObject(PyObject *m, const char *name, PyObject *o)
+{
+    int res = add_object(m, name, o);
     if (res == 0) {
-        Py_DECREF(value);
+        Py_DECREF(o);
     }
     return res;
 }
@@ -679,25 +686,13 @@ PyModule_AddObject(PyObject *mod, const char *name, PyObject *value)
 int
 PyModule_AddIntConstant(PyObject *m, const char *name, long value)
 {
-    PyObject *obj = PyLong_FromLong(value);
-    if (!obj) {
-        return -1;
-    }
-    int res = PyModule_AddObjectRef(m, name, obj);
-    Py_DECREF(obj);
-    return res;
+    return PyModule_Add(m, name, PyLong_FromLong(value));
 }
 
 int
 PyModule_AddStringConstant(PyObject *m, const char *name, const char *value)
 {
-    PyObject *obj = PyUnicode_FromString(value);
-    if (!obj) {
-        return -1;
-    }
-    int res = PyModule_AddObjectRef(m, name, obj);
-    Py_DECREF(obj);
-    return res;
+    return PyModule_Add(m, name, PyUnicode_FromString(value));
 }
 
 int
@@ -710,5 +705,6 @@ PyModule_AddType(PyObject *module, PyTypeObject *type)
     const char *name = _PyType_Name(type);
     assert(name != NULL);
 
-    return PyModule_AddObjectRef(module, name, (PyObject *)type);
+    Py_INCREF(type);
+    return PyModule_Add(module, name, (PyObject *)type);
 }

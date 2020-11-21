@@ -1043,7 +1043,7 @@ static PyMethodDef ossaudiodev_methods[] = {
 
 
 #define _EXPORT_INT(mod, name) \
-  if (PyModule_AddIntConstant(mod, #name, (long) (name)) == -1) return NULL;
+  if (PyModule_AddIntConstant(mod, #name, (long) (name)) == -1) {Py_DECREF(mod); return NULL;}
 
 
 static char *control_labels[] = SOUND_DEVICE_LABELS;
@@ -1122,18 +1122,23 @@ PyInit_ossaudiodev(void)
 
     OSSAudioError = PyErr_NewException("ossaudiodev.OSSAudioError",
                                        NULL, NULL);
-    if (OSSAudioError) {
-        /* Each call to PyModule_AddObject decrefs it; compensate: */
-        Py_INCREF(OSSAudioError);
-        Py_INCREF(OSSAudioError);
-        PyModule_AddObject(m, "error", OSSAudioError);
-        PyModule_AddObject(m, "OSSAudioError", OSSAudioError);
+    Py_XINCREF(OSSAudioError);
+    if (PyModule_Add(m, "error", OSSAudioError) < 0) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    Py_XINCREF(OSSAudioError);
+    if (PyModule_Add(m, "OSSAudioError", OSSAudioError) < 0) {
+        Py_DECREF(m);
+        return NULL;
     }
 
     /* Build 'control_labels' and 'control_names' lists and add them
        to the module. */
-    if (build_namelists(m) == -1)       /* XXX what to do here? */
+    if (build_namelists(m) == -1) {       /* XXX what to do here? */
+        Py_DECREF(m);
         return NULL;
+    }
 
     /* Expose the audio format numbers -- essential! */
     _EXPORT_INT(m, AFMT_QUERY);

@@ -136,13 +136,20 @@ PyAPI_FUNC(PyObject * const *) _PyArg_UnpackKeywords(
 void _PyArg_Fini(void);
 #endif   /* Py_LIMITED_API */
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+// Add an attribute with name 'name' and value 'value' to the module 'mod'.
+// Steal a reference to 'value'.
+// On success, return 0.
+// On error, raise an exception and return -1.
+PyAPI_FUNC(int) PyModule_Add(PyObject *mod, const char *name, PyObject *value);
+#endif   /* Py_LIMITED_API */
+
 // Add an attribute with name 'name' and value 'obj' to the module 'mod.
 // On success, return 0 on success.
 // On error, raise an exception and return -1.
 PyAPI_FUNC(int) PyModule_AddObjectRef(PyObject *mod, const char *name, PyObject *value);
 
-// Similar to PyModule_AddObjectRef() but steal a reference to 'obj'
-// (Py_DECREF(obj)) on success (if it returns 0).
+// Similar to PyModule_Add() but steal a reference to 'value' only on success.
 PyAPI_FUNC(int) PyModule_AddObject(PyObject *mod, const char *, PyObject *value);
 
 PyAPI_FUNC(int) PyModule_AddIntConstant(PyObject *, const char *, long);

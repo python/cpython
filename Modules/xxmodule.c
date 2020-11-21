@@ -364,21 +364,27 @@ xx_exec(PyObject *m)
     /* Add some symbolic constants to the module */
     if (ErrorObject == NULL) {
         ErrorObject = PyErr_NewException("xx.error", NULL, NULL);
-        if (ErrorObject == NULL)
-            goto fail;
     }
-    Py_INCREF(ErrorObject);
-    PyModule_AddObject(m, "error", ErrorObject);
+    Py_XINCREF(ErrorObject);
+    if (PyModule_Add(m, "error", ErrorObject) < 0) {
+        goto fail;
+    }
 
     /* Add Str */
     if (PyType_Ready(&Str_Type) < 0)
         goto fail;
-    PyModule_AddObject(m, "Str", (PyObject *)&Str_Type);
+    Py_INCREF(&Str_Type);
+    if (PyModule_Add(m, "Str", (PyObject *)&Str_Type) < 0) {
+        goto fail;
+    }
 
     /* Add Null */
     if (PyType_Ready(&Null_Type) < 0)
         goto fail;
-    PyModule_AddObject(m, "Null", (PyObject *)&Null_Type);
+    Py_INCREF(&Null_Type);
+    if (PyModule_Add(m, "Null", (PyObject *)&Null_Type) < 0) {
+        goto fail;
+    }
     return 0;
  fail:
     Py_XDECREF(m);

@@ -4410,42 +4410,40 @@ PyInit__elementtree(void)
     st = get_elementtree_state(m);
 
     if (!(temp = PyImport_ImportModule("copy")))
-        return NULL;
+        goto error;
     st->deepcopy_obj = PyObject_GetAttrString(temp, "deepcopy");
     Py_XDECREF(temp);
 
     if (st->deepcopy_obj == NULL) {
-        return NULL;
+        goto error;
     }
 
     assert(!PyErr_Occurred());
     if (!(st->elementpath_obj = PyImport_ImportModule("xml.etree.ElementPath")))
-        return NULL;
+        goto error;
 
     /* link against pyexpat */
     expat_capi = PyCapsule_Import(PyExpat_CAPSULE_NAME, 0);
-    if (expat_capi) {
-        /* check that it's usable */
-        if (strcmp(expat_capi->magic, PyExpat_CAPI_MAGIC) != 0 ||
+    if (!expat_capi) {
+        goto error;
+    }
+    /* check that it's usable */
+    if (strcmp(expat_capi->magic, PyExpat_CAPI_MAGIC) != 0 ||
             (size_t)expat_capi->size < sizeof(struct PyExpat_CAPI) ||
             expat_capi->MAJOR_VERSION != XML_MAJOR_VERSION ||
             expat_capi->MINOR_VERSION != XML_MINOR_VERSION ||
             expat_capi->MICRO_VERSION != XML_MICRO_VERSION) {
-            PyErr_SetString(PyExc_ImportError,
-                            "pyexpat version is incompatible");
-            return NULL;
-        }
-    } else {
-        return NULL;
+        PyErr_SetString(PyExc_ImportError,
+                        "pyexpat version is incompatible");
+        goto error;
     }
 
     st->parseerror_obj = PyErr_NewException(
         "xml.etree.ElementTree.ParseError", PyExc_SyntaxError, NULL
         );
-    Py_INCREF(st->parseerror_obj);
-    if (PyModule_AddObject(m, "ParseError", st->parseerror_obj) < 0) {
-        Py_DECREF(st->parseerror_obj);
-        return NULL;
+    Py_XINCREF(st->parseerror_obj);
+    if (PyModule_Add(m, "ParseError", st->parseerror_obj) < 0) {
+        goto error;
     }
 
     PyTypeObject *types[] = {
@@ -4456,9 +4454,13 @@ PyInit__elementtree(void)
 
     for (size_t i = 0; i < Py_ARRAY_LENGTH(types); i++) {
         if (PyModule_AddType(m, types[i]) < 0) {
-            return NULL;
+            goto error;
         }
     }
 
     return m;
+
+error:
+    Py_DECREF(m);
+    return NULL;
 }

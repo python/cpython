@@ -1257,30 +1257,30 @@ static PyMethodDef cmath_methods[] = {
 static int
 cmath_exec(PyObject *mod)
 {
-    if (PyModule_AddObject(mod, "pi", PyFloat_FromDouble(Py_MATH_PI)) < 0) {
+    if (PyModule_Add(mod, "pi", PyFloat_FromDouble(Py_MATH_PI)) < 0) {
         return -1;
     }
-    if (PyModule_AddObject(mod, "e", PyFloat_FromDouble(Py_MATH_E)) < 0) {
+    if (PyModule_Add(mod, "e", PyFloat_FromDouble(Py_MATH_E)) < 0) {
         return -1;
     }
     // 2pi
-    if (PyModule_AddObject(mod, "tau", PyFloat_FromDouble(Py_MATH_TAU)) < 0) {
+    if (PyModule_Add(mod, "tau", PyFloat_FromDouble(Py_MATH_TAU)) < 0) {
         return -1;
     }
-    if (PyModule_AddObject(mod, "inf", PyFloat_FromDouble(m_inf())) < 0) {
+    if (PyModule_Add(mod, "inf", PyFloat_FromDouble(m_inf())) < 0) {
         return -1;
     }
 
-    if (PyModule_AddObject(mod, "infj",
-                           PyComplex_FromCComplex(c_infj())) < 0) {
+    if (PyModule_Add(mod, "infj",
+                     PyComplex_FromCComplex(c_infj())) < 0) {
         return -1;
     }
 #if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
-    if (PyModule_AddObject(mod, "nan", PyFloat_FromDouble(m_nan())) < 0) {
+    if (PyModule_Add(mod, "nan", PyFloat_FromDouble(m_nan())) < 0) {
         return -1;
     }
-    if (PyModule_AddObject(mod, "nanj",
-                           PyComplex_FromCComplex(c_nanj())) < 0) {
+    if (PyModule_Add(mod, "nanj",
+                     PyComplex_FromCComplex(c_nanj())) < 0) {
         return -1;
     }
 #endif
