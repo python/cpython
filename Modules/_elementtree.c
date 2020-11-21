@@ -664,6 +664,8 @@ element_gc_clear(ElementObject *self)
 static void
 element_dealloc(ElementObject* self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
+
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
     Py_TRASHCAN_BEGIN(self, element_dealloc)
@@ -676,7 +678,6 @@ element_dealloc(ElementObject* self)
     element_gc_clear(self);
 
     RELEASE(sizeof(ElementObject), "destroy element");
-    PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
     Py_DECREF(tp);
     Py_TRASHCAN_END
@@ -2083,6 +2084,7 @@ typedef struct {
 static void
 elementiter_dealloc(ElementIterObject *it)
 {
+    PyTypeObject *tp = Py_TYPE(it);
     Py_ssize_t i = it->parent_stack_used;
     it->parent_stack_used = 0;
     /* bpo-31095: UnTrack is needed before calling any callbacks */
@@ -2095,7 +2097,6 @@ elementiter_dealloc(ElementIterObject *it)
     Py_XDECREF(it->root_element);
 
     PyObject_GC_Del(it);
-    PyTypeObject *tp = Py_TYPE(it);
     Py_DECREF(tp);
 }
 
@@ -2467,10 +2468,9 @@ treebuilder_gc_clear(TreeBuilderObject *self)
 static void
 treebuilder_dealloc(TreeBuilderObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     treebuilder_gc_clear(self);
-
-    PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -3784,10 +3784,9 @@ xmlparser_gc_clear(XMLParserObject *self)
 static void
 xmlparser_dealloc(XMLParserObject* self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     xmlparser_gc_clear(self);
-
-    PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
