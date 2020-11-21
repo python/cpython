@@ -337,6 +337,8 @@ MADV_* Constants
           MADV_NOCORE
           MADV_CORE
           MADV_PROTECT
+          MADV_FREE_REUSABLE
+          MADV_FREE_REUSE
 
    These options can be passed to :meth:`mmap.madvise`.  Not every option will
    be present on every system.
