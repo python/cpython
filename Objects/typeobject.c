@@ -2977,26 +2977,40 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
                 base = slot->pfunc;
             else if (slot->slot == Py_tp_bases) {
                 bases = slot->pfunc;
-                Py_INCREF(bases);
             }
         }
-        if (!bases)
+        if (!bases) {
             bases = PyTuple_Pack(1, base);
-        if (!bases)
+            if (!bases)
+                goto fail;
+        }
+        else if (!PyTuple_Check(bases)) {
+            PyErr_SetString(PyExc_SystemError, "Py_tp_bases is not a tuple");
             goto fail;
+        }
+        else {
+            Py_INCREF(bases);
+        }
     }
-    else
+    else if (!PyTuple_Check(bases)) {
+        PyErr_SetString(PyExc_SystemError, "bases is not a tuple");
+        goto fail;
+    }
+    else {
         Py_INCREF(bases);
+    }
 
     /* Calculate best base, and check that all bases are type objects */
     base = best_base(bases);
     if (base == NULL) {
+        Py_DECREF(bases);
         goto fail;
     }
     if (!_PyType_HasFeature(base, Py_TPFLAGS_BASETYPE)) {
         PyErr_Format(PyExc_TypeError,
                      "type '%.100s' is not an acceptable base type",
                      base->tp_name);
+        Py_DECREF(bases);
         goto fail;
     }
 
@@ -3008,7 +3022,6 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     type->tp_as_buffer = &res->as_buffer;
     /* Set tp_base and tp_bases */
     type->tp_bases = bases;
-    bases = NULL;
     Py_INCREF(base);
     type->tp_base = base;
 
