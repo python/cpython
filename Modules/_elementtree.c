@@ -4302,6 +4302,9 @@ static struct PyModuleDef elementtreemodule = {
 
 #define CREATE_TYPE(module, type, spec) \
 do {                                                                     \
+    if (type != NULL) {                                                  \
+        break;                                                           \
+    }                                                                    \
     type = (PyTypeObject *)PyType_FromModuleAndSpec(module, spec, NULL); \
     if (type == NULL) {                                                  \
         goto error;                                                      \
