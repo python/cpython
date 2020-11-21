@@ -98,7 +98,7 @@ to start a process.  These *start methods* are
   *spawn*
     The parent process starts a fresh python interpreter process.  The
     child process will only inherit those resources necessary to run
-    the process objects :meth:`~Process.run` method.  In particular,
+    the process object's :meth:`~Process.run` method.  In particular,
     unnecessary file descriptors and handles from the parent process
     will not be inherited.  Starting a process using this method is
     rather slow compared to using *fork* or *forkserver*.
