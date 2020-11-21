@@ -2063,11 +2063,9 @@ class Popen(object):
             # and the kill() call.
             try:
                 os.kill(self.pid, sig)
-            except ProcessLookupError as e:
-                # supress the process not found error in case the race
-                # condition happens, see bpo-40550
-                if e.errno != errno.ESRCH:
-                    raise e
+            except ProcessLookupError:
+                # Supress the race condition error; bpo-40550.
+                pass
 
         def terminate(self):
             """Terminate the process with SIGTERM
