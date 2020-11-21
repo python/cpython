@@ -311,7 +311,6 @@ block[asdl_stmt_seq*] (memo):
     | simple_stmt
     | invalid_block
 
-expressions_list[asdl_expr_seq*]: a[asdl_expr_seq*]=','.star_expression+ [','] { a }
 star_expressions[expr_ty]:
     | a=star_expression b=(',' c=star_expression { c })+ [','] {
         _Py_Tuple(CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)), Load, EXTRA) }
@@ -491,7 +490,7 @@ slices[expr_ty]:
     | a[asdl_expr_seq*]=','.slice+ [','] { _Py_Tuple(a, Load, EXTRA) }
 slice[expr_ty]:
     | a=[expression] ':' b=[expression] c=[':' d=[expression] { d }] { _Py_Slice(a, b, c, EXTRA) }
-    | a=expression { a }
+    | a=named_expression { a }
 atom[expr_ty]:
     | NAME
     | 'True' { _Py_Constant(Py_True, NULL, EXTRA) }
@@ -517,11 +516,11 @@ group[expr_ty]:
     | '(' a=(yield_expr | named_expression) ')' { a }
     | invalid_group
 genexp[expr_ty]:
-    | '(' a=expression ~ b=for_if_clauses ')' { _Py_GeneratorExp(a, b, EXTRA) }
+    | '(' a=named_expression ~ b=for_if_clauses ')' { _Py_GeneratorExp(a, b, EXTRA) }
     | invalid_comprehension
-set[expr_ty]: '{' a=expressions_list '}' { _Py_Set(a, EXTRA) }
+set[expr_ty]: '{' a=star_named_expressions '}' { _Py_Set(a, EXTRA) }
 setcomp[expr_ty]:
-    | '{' a=expression ~ b=for_if_clauses '}' { _Py_SetComp(a, b, EXTRA) }
+    | '{' a=named_expression ~ b=for_if_clauses '}' { _Py_SetComp(a, b, EXTRA) }
     | invalid_comprehension
 dict[expr_ty]:
     | '{' a=[double_starred_kvpairs] '}' {

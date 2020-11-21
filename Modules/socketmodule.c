@@ -514,7 +514,6 @@ remove_unusable_flags(PyObject *m)
    by this module (but not argument type or memory errors, etc.). */
 static PyObject *socket_herror;
 static PyObject *socket_gaierror;
-static PyObject *socket_timeout;
 
 /* A forward reference to the socket type object.
    The sock_type variable contains pointers to various functions,
@@ -886,7 +885,7 @@ sock_call_ex(PySocketSockObject *s,
                 if (err)
                     *err = SOCK_TIMEOUT_ERR;
                 else
-                    PyErr_SetString(socket_timeout, "timed out");
+                    PyErr_SetString(PyExc_TimeoutError, "timed out");
                 return -1;
             }
 
@@ -2880,7 +2879,7 @@ sock_settimeout(PySocketSockObject *s, PyObject *arg)
     /* Blocking mode for a Python socket object means that operations
        like :meth:`recv` or :meth:`sendall` will block the execution of
        the current thread until they are complete or aborted with a
-       `socket.timeout` or `socket.error` errors.  When timeout is `None`,
+       `TimeoutError` or `socket.error` errors.  When timeout is `None`,
        the underlying FD is in a blocking mode.  When timeout is a positive
        number, the FD is in a non-blocking mode, and socket ops are
        implemented with a `select()` call.
@@ -4206,7 +4205,7 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
             }
 
             if (interval <= 0) {
-                PyErr_SetString(socket_timeout, "timed out");
+                PyErr_SetString(PyExc_TimeoutError, "timed out");
                 goto done;
             }
         }
@@ -7141,11 +7140,9 @@ PyInit__socket(void)
     if (PyModule_Add(m, "gaierror", socket_gaierror) < 0) {
         goto error;
     }
-    socket_timeout = PyErr_NewException("socket.timeout",
-                                        PyExc_OSError, NULL);
-    PySocketModuleAPI.timeout_error = socket_timeout;
-    Py_XINCREF(socket_timeout);
-    if (PyModule_Add(m, "timeout", socket_timeout) < 0) {
+    PySocketModuleAPI.timeout_error = PyExc_TimeoutError;
+    Py_INCREF(PyExc_TimeoutError);
+    if (PyModule_Add(m, "timeout", PyExc_TimeoutError) < 0) {
         goto error;
     }
     Py_INCREF((PyObject *)&sock_type);

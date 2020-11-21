@@ -1018,6 +1018,9 @@
 /* Define to 1 if you have the <spawn.h> header file. */
 #undef HAVE_SPAWN_H
 
+/* Define to 1 if you have the `splice' function. */
+#undef HAVE_SPLICE
+
 /* Define if your compiler provides ssize_t */
 #undef HAVE_SSIZE_T
 

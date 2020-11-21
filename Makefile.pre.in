@@ -1639,7 +1639,7 @@ libainstall:	@DEF_MAKE_RULE@ python-config
 		$(INSTALL_SCRIPT) Modules/ld_so_aix	\
 				$(DESTDIR)$(LIBPL)/ld_so_aix;		\
 		echo "$(LIBPL)/ld_so_aix";			\
-		echo; echo "See Misc/AIX-NOTES for details.";	\
+		echo; echo "See Misc/README.AIX for details.";	\
 	else true; \
 	fi
 
