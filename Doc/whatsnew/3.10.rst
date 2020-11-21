@@ -516,8 +516,8 @@ New Features
   functions now accept a single class as the *bases* argument.
   (Contributed by Serhiy Storchaka in :issue:`42423`.)
 
-* The :c:func:`PyType_FromModuleAndSpec` and :c:func:`PyType_FromModuleAndSpec`
-  functions now accept ``NULL`` as the ``tp_doc`` slot.
+* The :c:func:`PyType_FromModuleAndSpec` function now accepts NULL ``tp_doc``
+  slot.
   (Contributed by Hai Shi in :issue:`41832`.)
 
 * The :c:func:`PyType_GetSlot` function can accept static types.

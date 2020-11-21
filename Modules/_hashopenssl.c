@@ -2044,7 +2044,7 @@ hashlib_init_evpxoftype(PyObject *module)
     }
 
     state->EVPXOFtype = (PyTypeObject *)PyType_FromSpecWithBases(
-        &EVPXOFtype_spec, state->EVPtype
+        &EVPXOFtype_spec, (PyObject *)state->EVPtype
     );
     if (state->EVPXOFtype == NULL) {
         return -1;

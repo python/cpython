@@ -526,7 +526,7 @@ PyStructSequence_NewType(PyStructSequence_Desc *desc)
     spec.flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC;
     spec.slots = slots;
 
-    type = (PyTypeObject *)PyType_FromSpecWithBases(&spec, &PyTuple_Type);
+    type = (PyTypeObject *)PyType_FromSpecWithBases(&spec, (PyObject *)&PyTuple_Type);
     PyMem_FREE(members);
     if (type == NULL) {
         return NULL;
