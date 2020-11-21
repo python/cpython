@@ -135,8 +135,8 @@ More generally, try to run your tests in the :ref:`Python Development Mode
 <devmode>` which helps to prepare your code to make it compatible with the
 next Python version.
 
-Note: a number of pre-existing deprecatations were removed in this version
-of Python as well. Consult the :ref:`removed-in-python-39` section.
+Note: a number of pre-existing deprecations were removed in this version of
+Python as well. Consult the :ref:`removed-in-python-39` section.
 
 
 New Features
