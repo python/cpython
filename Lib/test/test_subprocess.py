@@ -3229,6 +3229,19 @@ class POSIXProcessTestCase(BaseTestCase):
         # so Popen failed to read it and uses a default returncode instead.
         self.assertIsNotNone(proc.returncode)
 
+    def test_send_signal_race2(self):
+        # bpo-40550: the process might exist between the returncode check and
+        # the kill operation
+        p = subprocess.Popen([sys.executable, '-c', 'exit(1)'])
+
+        # wait for process to exit
+        while not p.returncode:
+            p.poll()
+
+        with mock.patch.object(p, 'poll', new=lambda: None):
+            p.returncode = None
+            p.send_signal(signal.SIGTERM)
+
     def test_communicate_repeated_call_after_stdout_close(self):
         proc = subprocess.Popen([sys.executable, '-c',
                                  'import os, time; os.close(1), time.sleep(2)'],
