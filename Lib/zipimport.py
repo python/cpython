@@ -22,6 +22,7 @@ import _io  # for open
 import marshal  # for loads
 import sys  # for modules
 import time  # for mktime
+import _warnings  # For warn()
 
 __all__ = ['ZipImportError', 'zipimporter']
 
@@ -270,6 +271,9 @@ class zipimporter(_bootstrap_external._LoaderBasics):
 
         Deprecated since Python 3.10. use exec_module() instead.
         """
+        msg = ("the load_module() method is deprecated and slated for removal in "
+               "Python 3.12; use exec_module() instead")
+        _warnings.warn(msg, DeprecationWarning)
         code, ispackage, modpath = _get_module_code(self, fullname)
         mod = sys.modules.get(fullname)
         if mod is None or not isinstance(mod, _module_type):
