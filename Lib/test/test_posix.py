@@ -2004,7 +2004,7 @@ class TestPosixWeaklinking(unittest.TestCase):
                 os.link("source", "target",  src_dir_fd=0, dst_dir_fd=0)
 
             # issue 41355: !HAVE_LINKAT code path ignores the follow_symlinks flag
-            with os_helper.temp_dir() as base_path:
+            with support.temp_dir() as base_path:
                 link_path = os.path.join(base_path, "link")
                 target_path = os.path.join(base_path, "target")
                 source_path = os.path.join(base_path, "source")
