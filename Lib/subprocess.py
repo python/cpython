@@ -2061,7 +2061,11 @@ class Popen(object):
             # The race condition can still happen if the race condition
             # described above happens between the returncode test
             # and the kill() call.
-            os.kill(self.pid, sig)
+            try:
+                os.kill(self.pid, sig)
+            except ProcessLookupError:
+                # Supress the race condition error; bpo-40550.
+                pass
 
         def terminate(self):
             """Terminate the process with SIGTERM
