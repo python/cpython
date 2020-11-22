@@ -1,0 +1,1 @@
+Ensure distutils.unixxcompiler.find_library_file can find system provided libraries on macOS 11.
