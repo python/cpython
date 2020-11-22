@@ -1,0 +1,2 @@
+The :mod:`curses.textpad` module can now handle systems that send
+``ascii.DEL`` (``127``) on the backspace key event.
