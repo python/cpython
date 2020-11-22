@@ -2993,8 +2993,9 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         }
     }
     else if (!PyTuple_Check(bases)) {
-        PyErr_SetString(PyExc_SystemError, "bases is not a tuple");
-        goto fail;
+        bases = PyTuple_Pack(1, bases);
+        if (!bases)
+            goto fail;
     }
     else {
         Py_INCREF(bases);

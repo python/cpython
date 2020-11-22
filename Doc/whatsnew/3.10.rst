@@ -512,6 +512,10 @@ New Features
   reference count of an object and return the object.
   (Contributed by Victor Stinner in :issue:`42262`.)
 
+* The :c:func:`PyType_FromSpecWithBases` and :c:func:`PyType_FromModuleAndSpec`
+  functions now accept a single class as the *bases* argument.
+  (Contributed by Serhiy Storchaka in :issue:`42423`.)
+
 * The :c:func:`PyType_FromModuleAndSpec` function now accepts NULL ``tp_doc``
   slot.
   (Contributed by Hai Shi in :issue:`41832`.)
