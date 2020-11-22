@@ -2,6 +2,9 @@
 #  error "this header file must not be included directly"
 #endif
 
+/* Caching the hash (ob_shash) saves recalculation of a bytes' hash value.
+   This significantly speeds up dict lookups. */
+
 typedef struct {
     PyObject_VAR_HEAD
     Py_hash_t ob_shash;
@@ -10,7 +13,7 @@ typedef struct {
     /* Invariants:
      *     ob_sval contains space for 'ob_size+1' elements.
      *     ob_sval[ob_size] == 0.
-     *     ob_shash is the hash of the string or -1 if not computed yet.
+     *     ob_shash is the hash of the byte string or -1 if not computed yet.
      */
 } PyBytesObject;
 

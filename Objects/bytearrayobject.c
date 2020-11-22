@@ -13,9 +13,8 @@ class bytearray "PyByteArrayObject *" "&PyByteArray_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=5535b77c37a119e0]*/
 
+/* For PyByteArray_AS_STRING(). */
 char _PyByteArray_empty_string[] = "";
-
-/* end nullbytes support */
 
 /* Helpers */
 
@@ -266,7 +265,7 @@ PyByteArray_Concat(PyObject *a, PyObject *b)
 
     result = (PyByteArrayObject *) \
         PyByteArray_FromStringAndSize(NULL, va.len + vb.len);
-    // result->ob_bytes is NULL if result is an empty string:
+    // result->ob_bytes is NULL if result is an empty bytearray:
     // if va.len + vb.len equals zero.
     if (result != NULL && result->ob_bytes != NULL) {
         memcpy(result->ob_bytes, va.buf, va.len);
@@ -1007,9 +1006,6 @@ bytearray_richcompare(PyObject *self, PyObject *other, int op)
     Py_buffer self_bytes, other_bytes;
     int cmp, rc;
 
-    /* Bytes can be compared to anything that supports the (binary)
-       buffer API.  Except that a comparison with Unicode is always an
-       error, even if the comparison is for equality. */
     rc = PyObject_IsInstance(self, (PyObject*)&PyUnicode_Type);
     if (!rc)
         rc = PyObject_IsInstance(other, (PyObject*)&PyUnicode_Type);
@@ -1025,6 +1021,7 @@ bytearray_richcompare(PyObject *self, PyObject *other, int op)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
+    /* Bytearrays can be compared to anything that supports the buffer API. */
     if (PyObject_GetBuffer(self, &self_bytes, PyBUF_SIMPLE) != 0) {
         PyErr_Clear();
         Py_RETURN_NOTIMPLEMENTED;
@@ -1332,7 +1329,7 @@ bytearray_translate_impl(PyByteArrayObject *self, PyObject *table,
         if (trans_table[c] != -1)
             *output++ = (char)trans_table[c];
     }
-    /* Fix the size of the resulting string */
+    /* Fix the size of the resulting bytearray */
     if (inlen > 0)
         if (PyByteArray_Resize(result, output - output_start) < 0) {
             Py_CLEAR(result);
@@ -2087,7 +2084,7 @@ bytearray.hex
         How many bytes between separators.  Positive values count from the
         right, negative values count from the left.
 
-Create a str of hexadecimal numbers from a bytearray object.
+Create a string of hexadecimal numbers from a bytearray object.
 
 Example:
 >>> value = bytearray([0xb9, 0x01, 0xef])
@@ -2103,7 +2100,7 @@ Example:
 
 static PyObject *
 bytearray_hex_impl(PyByteArrayObject *self, PyObject *sep, int bytes_per_sep)
-/*[clinic end generated code: output=29c4e5ef72c565a0 input=814c15830ac8c4b5]*/
+/*[clinic end generated code: output=29c4e5ef72c565a0 input=808667e49bcccb54]*/
 {
     char* argbuf = PyByteArray_AS_STRING(self);
     Py_ssize_t arglen = PyByteArray_GET_SIZE(self);
@@ -2362,7 +2359,7 @@ PyTypeObject PyByteArray_Type = {
     PyObject_Del,                       /* tp_free */
 };
 
-/*********************** Bytes Iterator ****************************/
+/*********************** Bytearray Iterator ****************************/
 
 typedef struct {
     PyObject_HEAD
