@@ -411,6 +411,10 @@ Deprecated
   :meth:`~importlib.abc.Loader.exec_module` instead.
   (Contributed by Brett Cannon in :issue:`26131`.)
 
+* :meth:`zimport.zipimporter.load_module` has been deprecated in
+  preference for :meth:`~zipimport.zipimporter.exec_module`.
+  (Contributed by Brett Cannon in :issue:`26131`.)
+
 * The use of :meth:`~importlib.abc.Loader.load_module` by the import
   system now triggers an :exc:`ImportWarning` as
   :meth:`~importlib.abc.Loader.exec_module` is preferred.
