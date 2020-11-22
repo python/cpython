@@ -5955,12 +5955,7 @@ do {                                                                      \
     if (PyModule_AddObjectRef(module, name, exc) < 0) goto error;         \
 } while(0)
 
-    bases = PyTuple_Pack(1, PyExc_OSError);
-    if (bases == NULL) {
-        goto error;
-    }
-    PySSLErrorObject = PyType_FromSpecWithBases(&sslerror_type_spec, bases);
-    Py_CLEAR(bases);
+    PySSLErrorObject = PyType_FromSpecWithBases(&sslerror_type_spec, PyExc_OSError);
     if (PySSLErrorObject == NULL) {
         goto error;
     }

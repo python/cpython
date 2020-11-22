@@ -2038,21 +2038,14 @@ hashlib_init_evpxoftype(PyObject *module)
 {
 #ifdef PY_OPENSSL_HAS_SHAKE
     _hashlibstate *state = get_hashlib_state(module);
-    PyObject *bases;
 
     if (state->EVPtype == NULL) {
         return -1;
     }
 
-    bases = PyTuple_Pack(1, state->EVPtype);
-    if (bases == NULL) {
-        return -1;
-    }
-
     state->EVPXOFtype = (PyTypeObject *)PyType_FromSpecWithBases(
-        &EVPXOFtype_spec, bases
+        &EVPXOFtype_spec, (PyObject *)state->EVPtype
     );
-    Py_DECREF(bases);
     if (state->EVPXOFtype == NULL) {
         return -1;
     }
