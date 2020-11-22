@@ -201,8 +201,8 @@ class JSONEncoder(object):
             chunks = list(chunks)
         return ''.join(chunks)
 
-    def floatstr(o, allow_nan=self.allow_nan,
-            _repr=float.__repr__, _inf=INFINITY, _neginf=-INFINITY):
+    def floatstr(self, o, allow_nan, _repr=float.__repr__,
+                 _inf=INFINITY, _neginf=-INFINITY):
         """Return a representation of float value Infinity, -Infinity
         and NaN. Note that this type of test is processor and/or 
         platform-specific, so do tests which don't depend on the
