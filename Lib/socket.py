@@ -706,7 +706,7 @@ class SocketIO(io.RawIOBase):
                 self._timeout_occurred = True
                 raise
             except error as e:
-                if e.args[0] in _blocking_errnos:
+                if e.errno in _blocking_errnos:
                     return None
                 raise
 
@@ -722,7 +722,7 @@ class SocketIO(io.RawIOBase):
             return self._sock.send(b)
         except error as e:
             # XXX what about EINTR?
-            if e.args[0] in _blocking_errnos:
+            if e.errno in _blocking_errnos:
                 return None
             raise
 
