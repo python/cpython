@@ -5459,37 +5459,28 @@ static PyMethodDef PySSL_methods[] = {
 static int
 sslmodule_init_types(PyObject *module)
 {
-    PySSLContext_Type = (PyTypeObject *)PyType_FromModuleAndSpec(
+    PySSLContext_Type = PyModule_AddNewTypeFromSpec(
         module, &PySSLContext_spec, NULL
     );
     if (PySSLContext_Type == NULL)
         return -1;
 
-    PySSLSocket_Type = (PyTypeObject *)PyType_FromModuleAndSpec(
+    PySSLSocket_Type = PyModule_AddNewTypeFromSpec(
         module, &PySSLSocket_spec, NULL
     );
     if (PySSLSocket_Type == NULL)
         return -1;
 
-    PySSLMemoryBIO_Type = (PyTypeObject *)PyType_FromModuleAndSpec(
+    PySSLMemoryBIO_Type = PyModule_AddNewTypeFromSpec(
         module, &PySSLMemoryBIO_spec, NULL
     );
     if (PySSLMemoryBIO_Type == NULL)
         return -1;
 
-    PySSLSession_Type = (PyTypeObject *)PyType_FromModuleAndSpec(
+    PySSLSession_Type = PyModule_AddNewTypeFromSpec(
         module, &PySSLSession_spec, NULL
     );
     if (PySSLSession_Type == NULL)
-        return -1;
-
-    if (PyModule_AddType(module, PySSLContext_Type))
-        return -1;
-    if (PyModule_AddType(module, PySSLSocket_Type))
-        return -1;
-    if (PyModule_AddType(module, PySSLMemoryBIO_Type))
-        return -1;
-    if (PyModule_AddType(module, PySSLSession_Type))
         return -1;
 
     return 0;

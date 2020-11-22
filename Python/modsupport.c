@@ -715,26 +715,11 @@ PyModule_AddType(PyObject *module, PyTypeObject *type)
 
 PyTypeObject *
 PyModule_AddNewTypeFromSpec(PyObject *module, PyType_Spec *spec,
-                            PyObject *base)
+                            PyObject *bases)
 {
     PyTypeObject *type;
-    PyObject *bases;
-
-    /* Support single, optional type like PyErr_NewException() */
-    if (base == NULL) {
-        bases = NULL;
-    }
-    else if (PyTuple_Check(base)) {
-        bases = base;
-        Py_INCREF(bases);
-    } else {
-        bases = PyTuple_Pack(1, base);
-        if (bases == NULL)
-            return NULL;
-    }
 
     type = (PyTypeObject *)PyType_FromModuleAndSpec(module, spec, bases);
-    Py_XDECREF(bases);
     if (type == NULL) {
         return NULL;
     }
