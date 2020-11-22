@@ -269,10 +269,10 @@ class zipimporter(_bootstrap_external._LoaderBasics):
         fully qualified (dotted) module name. It returns the imported
         module, or raises ZipImportError if it wasn't found.
 
-        Deprecated since Python 3.10. use exec_module() instead.
+        Deprecated since Python 3.10. Use exec_module() instead.
         """
-        msg = ("the load_module() method is deprecated and slated for removal in "
-               "Python 3.12; use exec_module() instead")
+        msg = ("zipimport.zipimporter.load_module() is deprecated and slated for "
+               "removal in Python 3.12; use exec_module() instead")
         _warnings.warn(msg, DeprecationWarning)
         code, ispackage, modpath = _get_module_code(self, fullname)
         mod = sys.modules.get(fullname)
