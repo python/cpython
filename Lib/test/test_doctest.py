@@ -443,7 +443,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print(tests)  # doctest: +ELLIPSIS
-    [<DocTest sample_func from ...:27 (1 example)>]
+    [<DocTest sample_func from test_doctest.py:28 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
 leading path components.
