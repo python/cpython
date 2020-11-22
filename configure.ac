@@ -1978,6 +1978,13 @@ yes)
         EXPORT_MACOSX_DEPLOYMENT_TARGET=''
         AC_MSG_RESULT($MACOSX_DEPLOYMENT_TARGET)
 
+        AC_MSG_CHECKING(if specified universal architectures work)
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]], [[printf("%d", 42);]])],
+            [AC_MSG_RESULT(yes)],
+            [AC_MSG_RESULT(no)
+             AC_MSG_ERROR(check config.log and use the '--with-universal-archs' option)
+        ])
+
         # end of Darwin* tests
         ;;
     esac
