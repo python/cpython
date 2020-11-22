@@ -1,0 +1,2 @@
+Speed up comparison of bytes objects with non-bytes objects when option :option:`-b`
+is specified. Speed up comparison of bytarray objects with non-buffer object.
