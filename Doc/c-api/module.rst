@@ -577,8 +577,8 @@ state:
    The function is equivalent to :c:func:`PyType_FromModuleAndSpec` followed
    by :c:func:`PyModule_AddType`. *base* must be either ``NULL``, a single
    type object, or a tuple of types.
-   Return ``NULL`` on error; otherwise a borrowed reference to a
-   ``PyTypeObject *``, which can be assigned to a module state object.
+   Return ``NULL`` on error; otherwise a ``PyTypeObject *``, which can
+   be assigned to a module state object.
 
    .. versionadded:: 3.10
 
@@ -588,8 +588,8 @@ state:
    The function is equivalent to :c:func:`PyErr_NewExceptionWithDoc` followed
    by :c:func:`PyModule_AddObjectRef`. The name of the exception object is
    taken from the last component of *name* after dot.
-   Return ``NULL`` on error; otherwise a borrowed reference to a
-   ``PyObject *``, which can be assigned to a module state object.
+   Return ``NULL`` on error; otherwise ``PyObject *``, which can be assigned
+   to a module state object.
 
    .. versionadded:: 3.10
 
