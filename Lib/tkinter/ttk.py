@@ -81,8 +81,6 @@ def _mapdict_values(items):
     #   ['active selected', 'grey', 'focus', [1, 2, 3, 4]]
     opt_val = []
     for *state, val in items:
-        # hacks for backward compatibility
-        state[0] # raise IndexError if empty
         if len(state) == 1:
             # if it is empty (something that evaluates to False), then
             # format it to Tcl code to denote the "normal" state
@@ -243,19 +241,22 @@ def _script_from_settings(settings):
 def _list_from_statespec(stuple):
     """Construct a list from the given statespec tuple according to the
     accepted statespec accepted by _format_mapdict."""
-    nval = []
-    for val in stuple:
-        typename = getattr(val, 'typename', None)
-        if typename is None:
-            nval.append(val)
-        else: # this is a Tcl object
+    if isinstance(stuple, str):
+        return stuple
+    result = []
+    it = iter(stuple)
+    for state, val in zip(it, it):
+        if hasattr(state, 'typename'):  # this is a Tcl object
+            state = str(state).split()
+        elif isinstance(state, str):
+            state = state.split()
+        elif not isinstance(state, (tuple, list)):
+            state = (state,)
+        if hasattr(val, 'typename'):
             val = str(val)
-            if typename == 'StateSpec':
-                val = val.split()
-            nval.append(val)
+        result.append((*state, val))
 
-    it = iter(nval)
-    return [_flatten(spec) for spec in zip(it, it)]
+    return result
 
 def _list_from_layouttuple(tk, ltuple):
     """Construct a list from the tuple returned by ttk::layout, this is
@@ -395,13 +396,12 @@ class Style(object):
         or something else of your preference. A statespec is compound of
         one or more states and then a value."""
         if query_opt is not None:
-            return _list_from_statespec(self.tk.splitlist(
-                self.tk.call(self._name, "map", style, '-%s' % query_opt)))
+            result = self.tk.call(self._name, "map", style, '-%s' % query_opt)
+            return _list_from_statespec(self.tk.splitlist(result))
 
-        return _splitdict(
-            self.tk,
-            self.tk.call(self._name, "map", style, *_format_mapdict(kw)),
-            conv=_tclobj_to_py)
+        result = self.tk.call(self._name, "map", style, *_format_mapdict(kw))
+        return {k: _list_from_statespec(self.tk.splitlist(v))
+                for k, v in _splitdict(self.tk, result).items()}
 
 
     def lookup(self, style, option, state=None, default=None):
