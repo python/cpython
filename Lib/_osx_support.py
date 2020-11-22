@@ -128,7 +128,7 @@ def _get_system_version_tuple():
                 _SYSTEM_VERSION_TUPLE = ()
 
     return _SYSTEM_VERSION_TUPLE
-   
+
 
 def _remove_original_values(_config_vars):
     """Remove original unmodified values for testing"""
@@ -357,7 +357,7 @@ def compiler_fixup(compiler_so, cc_args):
 
     elif not _supports_arm64_builds():
         # Look for "-arch arm64" and drop that
-        for idx in range(len(compiler_so)):
+        for idx in reversed(range(len(compiler_so))):
             if compiler_so[idx] == '-arch' and compiler_so[idx+1] == "arm64":
                 del compiler_so[idx:idx+2]
 
