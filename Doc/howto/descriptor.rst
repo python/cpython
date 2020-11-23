@@ -1079,6 +1079,8 @@ simulation where the actual C structure for slots is emulated by a private
 ``_slotvalues`` list.  Reads and writes to that private structure are managed
 by member descriptors::
 
+    null = object()
+
     class Member:
 
         def __init__(self, name, clsname, offset):
@@ -1091,11 +1093,21 @@ by member descriptors::
         def __get__(self, obj, objtype=None):
             'Emulate member_get() in Objects/descrobject.c'
             # Also see PyMember_GetOne() in Python/structmember.c
-            return obj._slotvalues[self.offset]
+            value = obj._slotvalues[self.offset]
+            if value is null:
+                raise AttributeError(self.name)
+            return value
 
         def __set__(self, obj, value):
             'Emulate member_set() in Objects/descrobject.c'
             obj._slotvalues[self.offset] = value
+
+        def __delete__(self, obj):
+            'Emulate member_delete() in Objects/descrobject.c'
+            value = obj._slotvalues[self.offset]
+            if value is null:
+                raise AttributeError(self.name)
+            obj._slotvalues[self.offset] = null
 
         def __repr__(self):
             'Emulate member_repr() in Objects/descrobject.c'
@@ -1124,13 +1136,33 @@ in pure Python::
             'Emulate object_new() in Objects/typeobject.c'
             inst = super().__new__(cls)
             if hasattr(cls, 'slot_names'):
-                inst._slotvalues = [None] * len(cls.slot_names)
+                empty_slots = [null] * len(cls.slot_names)
+                object.__setattr__(inst, '_slotvalues', empty_slots)
             return inst
+
+        def __setattr__(self, name, value):
+            'Emulate _PyObject_GenericSetAttrWithDict() Objects/object.c'
+            cls = type(self)
+            if hasattr(cls, 'slot_names') and name not in cls.slot_names:
+                raise AttributeError(
+                    f'{type(self).__name__!r} object has no attribute {name!r}'
+                )
+            super().__setattr__(name, value)
+
+        def __delattr__(self, name):
+            'Emulate _PyObject_GenericSetAttrWithDict() Objects/object.c'
+            cls = type(self)
+            if hasattr(cls, 'slot_names') and name not in cls.slot_names:
+                raise AttributeError(
+                    f'{type(self).__name__!r} object has no attribute {name!r}'
+                )
+            super().__delattr__(name)
 
 To use the simulation in a real class, just inherit from :class:`Object` and
 set the :term:`metaclass` to :class:`Type`::
 
     class H(Object, metaclass=Type):
+        'Instance variables stored in slots'
 
         slot_names = ['x', 'y']
 
@@ -1143,11 +1175,11 @@ At this point, the metaclass has loaded member objects for *x* and *y*::
     >>> import pprint
     >>> pprint.pp(dict(vars(H)))
     {'__module__': '__main__',
+     '__doc__': 'Instance variables stored in slots',
      'slot_names': ['x', 'y'],
      '__init__': <function H.__init__ at 0x7fb5d302f9d0>,
      'x': <Member 'x' of 'H'>,
-     'y': <Member 'y' of 'H'>,
-     '__doc__': None}
+     'y': <Member 'y' of 'H'>}
 
 When instances are created, they have a ``slot_values`` list where the
 attributes are stored::
@@ -1159,8 +1191,9 @@ attributes are stored::
     >>> vars(h)
     {'_slotvalues': [55, 20]}
 
-Unlike the real ``__slots__``, this simulation does have an instance
-dictionary just to hold the ``_slotvalues`` array.  So, unlike the real code,
-this simulation doesn't block assignments to misspelled attributes::
+Misspelled or unassigned attributes will raise an exception::
 
-    >>> h.xz = 30   # For actual __slots__ this would raise an AttributeError
+    >>> h.xz
+    Traceback (most recent call last):
+        ...
+    AttributeError: 'H' object has no attribute 'xz'
