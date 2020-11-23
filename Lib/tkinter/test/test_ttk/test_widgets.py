@@ -6,7 +6,7 @@ import sys
 
 from tkinter.test.test_ttk.test_functions import MockTclObj
 from tkinter.test.support import (AbstractTkTest, tcl_version, get_tk_patchlevel,
-                                  simulate_mouse_click)
+                                  simulate_mouse_click, show)
 from tkinter.test.widget_tests import (add_standard_options, noconv,
     AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests,
     setUpModule)
@@ -60,7 +60,7 @@ class WidgetTest(AbstractTkTest, unittest.TestCase):
         super().setUp()
         self.widget = ttk.Button(self.root, width=0, text="Text")
         self.widget.pack()
-        self.widget.wait_visibility()
+        show(self.widget)
 
 
     def test_identify(self):
@@ -326,7 +326,7 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_identify(self):
         self.entry.pack()
-        self.entry.wait_visibility()
+        show(self.entry)
         self.entry.update_idletasks()
 
         # bpo-27313: macOS Cocoa widget differs from X, allow either
@@ -449,7 +449,7 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         self.combo.bind('<<ComboboxSelected>>',
             lambda evt: success.append(True))
         self.combo.pack()
-        self.combo.wait_visibility()
+        show(self.combo)
 
         height = self.combo.winfo_height()
         self._show_drop_down_listbox()
@@ -465,7 +465,7 @@ class ComboboxTest(EntryTest, unittest.TestCase):
 
         self.combo['postcommand'] = lambda: success.append(True)
         self.combo.pack()
-        self.combo.wait_visibility()
+        show(self.combo)
 
         self._show_drop_down_listbox()
         self.assertTrue(success)
@@ -665,7 +665,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         self.assertRaises(tkinter.TclError, self.paned.sashpos, 1)
 
         self.paned.pack(expand=True, fill='both')
-        self.paned.wait_visibility()
+        show(self.paned)
 
         curr_pos = self.paned.sashpos(0)
         self.paned.sashpos(0, 1000)
@@ -933,7 +933,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.nb.add(self.child1, text='a')
 
         self.nb.pack()
-        self.nb.wait_visibility()
+        show(self.nb)
         if sys.platform == 'darwin':
             tb_idx = "@20,5"
         else:
@@ -1041,7 +1041,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_select(self):
         self.nb.pack()
-        self.nb.wait_visibility()
+        show(self.nb)
 
         success = []
         tab_changed = []
@@ -1084,7 +1084,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_traversal(self):
         self.nb.pack()
-        self.nb.wait_visibility()
+        show(self.nb)
 
         self.nb.select(0)
 
@@ -1342,7 +1342,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
     def test_bbox(self):
         self.tv.pack()
         self.assertEqual(self.tv.bbox(''), '')
-        self.tv.wait_visibility()
+        show(self.tv)
         self.tv.update()
 
         item_id = self.tv.insert('', 'end')
@@ -1536,7 +1536,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         success = [] # no success for now
 
         self.tv.pack()
-        self.tv.wait_visibility()
+        show(self.tv)
         self.tv.heading('#0', command=lambda: success.append(True))
         self.tv.column('#0', width=100)
         self.tv.update()
@@ -1784,7 +1784,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
             lambda evt: events.append(2))
 
         self.tv.pack()
-        self.tv.wait_visibility()
+        show(self.tv)
         self.tv.update()
 
         pos_y = set()

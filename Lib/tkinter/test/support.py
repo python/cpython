@@ -115,3 +115,7 @@ def widget_eq(actual, expected):
         if isinstance(expected, (str, tkinter.Widget)):
             return str(actual) == str(expected)
     return False
+
+def show(widget):
+    if not widget.winfo_ismapped():
+        widget.wait_visibility()
