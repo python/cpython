@@ -3,6 +3,7 @@ import enum
 import os.path
 import re
 
+from c_common import fsutil
 from c_common.clsutil import classonly
 import c_common.misc as _misc
 import c_common.strutil as _strutil
@@ -148,6 +149,16 @@ def get_kind_group(item):
 #############################
 # low-level
 
+def _fix_filename(filename, relroot, *,
+                  formatted=True,
+                  **kwargs):
+    if formatted:
+        fix = fsutil.format_filename
+    else:
+        fix = fsutil.fix_filename
+    return fix(filename, relroot=relroot, **kwargs)
+
+
 class FileInfo(namedtuple('FileInfo', 'filename lno')):
     @classmethod
     def from_raw(cls, raw):
@@ -165,8 +176,10 @@ class FileInfo(namedtuple('FileInfo', 'filename lno')):
     def __str__(self):
         return self.filename
 
-    def fix_filename(self, relroot):
-        filename = os.path.relpath(self.filename, relroot)
+    def fix_filename(self, relroot=fsutil.USE_CWD, **kwargs):
+        filename = _fix_filename(self.filename, relroot, **kwargs)
+        if filename == self.filename:
+            return self
         return self._replace(filename=filename)
 
 
@@ -194,6 +207,16 @@ class DeclID(namedtuple('DeclID', 'filename funcname name')):
         row = _tables.fix_row(row, **markers)
         return cls(*row)
 
+    # We have to provde _make() becaose we implemented __new__().
+
+    @classmethod
+    def _make(cls, iterable):
+        try:
+            return cls(*iterable)
+        except Exception:
+            super()._make(iterable)
+            raise  # re-raise
+
     def __new__(cls, filename, funcname, name):
         self = super().__new__(
             cls,
@@ -220,6 +243,12 @@ class DeclID(namedtuple('DeclID', 'filename funcname name')):
         except TypeError:
             return NotImplemented
         return self._compare > other
+
+    def fix_filename(self, relroot=fsutil.USE_CWD, **kwargs):
+        filename = _fix_filename(self.filename, relroot, **kwargs)
+        if filename == self.filename:
+            return self
+        return self._replace(filename=filename)
 
 
 class ParsedItem(namedtuple('ParsedItem', 'file kind parent name data')):
@@ -289,6 +318,12 @@ class ParsedItem(namedtuple('ParsedItem', 'file kind parent name data')):
             return self.parent
         else:
             return self.parent.name
+
+    def fix_filename(self, relroot=fsutil.USE_CWD, **kwargs):
+        fixed = self.file.fix_filename(relroot, **kwargs)
+        if fixed == self.file:
+            return self
+        return self._replace(file=fixed)
 
     def as_row(self, columns=None):
         if not columns:
@@ -591,9 +626,10 @@ class HighlevelParsedItem:
             )
             return self._parsed
 
-    def fix_filename(self, relroot):
+    def fix_filename(self, relroot=fsutil.USE_CWD, **kwargs):
         if self.file:
-            self.file = self.file.fix_filename(relroot)
+            self.file = self.file.fix_filename(relroot, **kwargs)
+        return self
 
     def as_rowdata(self, columns=None):
         columns, datacolumns, colnames = self._parse_columns(columns)

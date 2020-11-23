@@ -153,6 +153,9 @@ DEPTARGET = '10.5'
 def getDeptargetTuple():
     return tuple([int(n) for n in DEPTARGET.split('.')[0:2]])
 
+def getBuildTuple():
+    return tuple([int(n) for n in platform.mac_ver()[0].split('.')[0:2]])
+
 def getTargetCompilers():
     target_cc_map = {
         '10.4': ('gcc-4.0', 'g++-4.0'),
@@ -191,6 +194,13 @@ EXPECTED_SHARED_LIBS = {}
 #   For now, do so if deployment target is 10.6+.
 def internalTk():
     return getDeptargetTuple() >= (10, 6)
+
+# Do we use 8.6.8 when building our own copy
+# of Tcl/Tk or a modern version.
+#   We use the old version when buildin on
+#   old versions of macOS due to build issues.
+def useOldTk():
+    return getBuildTuple() < (10, 15)
 
 
 def tweak_tcl_build(basedir, archList):
@@ -245,11 +255,26 @@ def library_recipes():
     ])
 
     if internalTk():
+        if useOldTk():
+            tcl_tk_ver='8.6.8'
+            tcl_checksum='81656d3367af032e0ae6157eff134f89'
+
+            tk_checksum='5e0faecba458ee1386078fb228d008ba'
+            tk_patches = ['tk868_on_10_8_10_9.patch']
+
+        else:
+            tcl_tk_ver='8.6.10'
+            tcl_checksum='97c55573f8520bcab74e21bfd8d0aadc'
+
+            tk_checksum='602a47ad9ecac7bf655ada729d140a94'
+            tk_patches = [ ]
+
+
         result.extend([
           dict(
-              name="Tcl 8.6.8",
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tcl8.6.8-src.tar.gz",
-              checksum='81656d3367af032e0ae6157eff134f89',
+              name="Tcl %s"%(tcl_tk_ver,),
+              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tcl%s-src.tar.gz"%(tcl_tk_ver,),
+              checksum=tcl_checksum,
               buildDir="unix",
               configure_pre=[
                     '--enable-shared',
@@ -264,12 +289,10 @@ def library_recipes():
                   },
               ),
           dict(
-              name="Tk 8.6.8",
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk8.6.8-src.tar.gz",
-              checksum='5e0faecba458ee1386078fb228d008ba',
-              patches=[
-                  "tk868_on_10_8_10_9.patch",
-                   ],
+              name="Tk %s"%(tcl_tk_ver,),
+              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk%s-src.tar.gz"%(tcl_tk_ver,),
+              checksum=tk_checksum,
+              patches=tk_patches,
               buildDir="unix",
               configure_pre=[
                     '--enable-aqua',
