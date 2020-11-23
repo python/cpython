@@ -1359,7 +1359,9 @@ Py_FinalizeEx(void)
     }
 
     // Finalize sub-interpreters.
+    PyThread_acquire_lock(runtime->interpreters.mutex, WAIT_LOCK);
     runtime->interpreters.allow_new = 0;
+    PyThread_release_lock(runtime->interpreters.mutex);
     PyInterpreterState *curr_interp = PyInterpreterState_Head();
     PyInterpreterState *next_interp;
     int64_t num_destroyed = 0;
