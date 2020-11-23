@@ -1377,9 +1377,12 @@ Py_FinalizeEx(void)
     PyThreadState_Swap(tstate);
 
     if (num_destroyed > 0) {
-        if (PyErr_ResourceWarning(Py_None, 1,
+        /* Sub-interpreters were still running, but should have be finalized
+         * before finalizing the runtime.
+         */
+        if (PyErr_ResourceWarning(NULL, 1,
                                   "extra %zd interpreters", num_destroyed)) {
-            PyErr_WriteUnraisable(Py_None);
+            _PyErr_WriteUnraisableMsg("in PyFinalizeEx", NULL);
         }
     }
 
