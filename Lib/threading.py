@@ -979,7 +979,7 @@ class Thread:
                 del _limbo[self]
 
             if _thread_creation_hook:
-              _thread_creation_hook()
+                _thread_creation_hook()
             if _trace_hook:
                 _sys.settrace(_trace_hook)
             if _profile_hook:
