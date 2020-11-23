@@ -3,7 +3,7 @@ import unittest
 import tkinter
 from tkinter import ttk
 from test.support import requires, run_unittest, swap_attr
-from tkinter.test.support import AbstractTkTest, destroy_default_root, show
+from tkinter.test.support import AbstractTkTest, destroy_default_root, show_widget
 
 requires('gui')
 
@@ -114,7 +114,7 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
     def test_horizontal_range(self):
         lscale = ttk.LabeledScale(self.root, from_=0, to=10)
         lscale.pack()
-        show(lscale)
+        show_widget(lscale)
         lscale.update()
 
         linfo_1 = lscale.label.place_info()
@@ -144,7 +144,7 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
     def test_variable_change(self):
         x = ttk.LabeledScale(self.root)
         x.pack()
-        show(x)
+        show_widget(x)
         x.update()
 
         curr_xcoord = x.scale.coords()[0]
@@ -187,7 +187,7 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
     def test_resize(self):
         x = ttk.LabeledScale(self.root)
         x.pack(expand=True, fill='both')
-        show(x)
+        show_widget(x)
         x.update()
 
         width, height = x.master.winfo_width(), x.master.winfo_height()
@@ -268,7 +268,7 @@ class OptionMenuTest(AbstractTkTest, unittest.TestCase):
 
         # check that variable is updated correctly
         optmenu.pack()
-        show(optmenu)
+        show_widget(optmenu)
         optmenu['menu'].invoke(0)
         self.assertEqual(optmenu._variable.get(), items[0])
 
@@ -299,9 +299,9 @@ class OptionMenuTest(AbstractTkTest, unittest.TestCase):
         textvar2 = tkinter.StringVar(self.root)
         optmenu2 = ttk.OptionMenu(self.root, textvar2, default, *items)
         optmenu.pack()
-        show(optmenu)
+        show_widget(optmenu)
         optmenu2.pack()
-        show(optmenu2)
+        show_widget(optmenu2)
         optmenu['menu'].invoke(1)
         optmenu2['menu'].invoke(2)
         optmenu_stringvar_name = optmenu['menu'].entrycget(0, 'variable')

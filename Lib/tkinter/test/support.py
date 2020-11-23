@@ -116,8 +116,8 @@ def widget_eq(actual, expected):
             return str(actual) == str(expected)
     return False
 
-def show(widget):
+def show_widget(widget):
     if not widget.winfo_ismapped():
-        widget.wait_visibility()
-    else:
-        print(f"Widget {widget} is already mapped")
+        widget.update_idletasks()
+        if not widget.winfo_ismapped():
+            raise RuntimeError(f"Widget {widget} is still not mapped")
