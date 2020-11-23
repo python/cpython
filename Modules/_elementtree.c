@@ -2258,8 +2258,6 @@ static PyType_Spec elementiter_spec = {
     .slots = elementiter_slots,
 };
 
-static PyTypeObject *ElementIter_Type = NULL;
-
 #define INIT_PARENT_STACK_SIZE 8
 
 static PyObject *
@@ -4216,8 +4214,6 @@ static PyType_Spec element_spec = {
     .slots = element_slots,
 };
 
-static PyTypeObject *Element_Type = NULL;
-
 static PyMethodDef treebuilder_methods[] = {
     _ELEMENTTREE_TREEBUILDER_DATA_METHODDEF
     _ELEMENTTREE_TREEBUILDER_START_METHODDEF
@@ -4246,8 +4242,6 @@ static PyType_Spec treebuilder_spec = {
     .slots = treebuilder_slots,
 };
 
-static PyTypeObject *TreeBuilder_Type = NULL;
-
 static PyMethodDef xmlparser_methods[] = {
     _ELEMENTTREE_XMLPARSER_FEED_METHODDEF
     _ELEMENTTREE_XMLPARSER_CLOSE_METHODDEF
@@ -4275,8 +4269,6 @@ static PyType_Spec xmlparser_spec = {
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     .slots = xmlparser_slots,
 };
-
-static PyTypeObject *XMLParser_Type = NULL;
 
 /* ==================================================================== */
 /* python module interface */
