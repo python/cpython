@@ -119,3 +119,5 @@ def widget_eq(actual, expected):
 def show(widget):
     if not widget.winfo_ismapped():
         widget.wait_visibility()
+    else:
+        print(f"Widget {widget} is already mapped")
