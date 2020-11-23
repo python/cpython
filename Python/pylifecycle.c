@@ -1355,9 +1355,7 @@ Py_FinalizeEx(void)
      * from any interpreter).
      */
     if (interp != PyInterpreterState_Main()) {
-        fprintf(stderr,
-                "Py_FinalizeEx: error: must be called from the main interpreter\n");
-        return -1;
+        Py_FatalError("must be called from the main interpreter\n");
     }
 
     // Finalize sub-interpreters.

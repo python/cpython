@@ -301,7 +301,7 @@ Initializing and finalizing the interpreter
    extensions may not work properly if their initialization routine is called more
    than once; this can happen if an application calls :c:func:`Py_Initialize` and
    :c:func:`Py_FinalizeEx` more than once.  Must be called from the main
-   interpreter, otherwise ``-1`` is returned and an error is output.
+   interpreter.
 
    .. audit-event:: cpython._PySys_ClearAuditHooks "" c.Py_FinalizeEx
 
