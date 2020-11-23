@@ -1,0 +1,2 @@
+Make :class:`filecmp.dircmp` respect subclassing. Now the
+:attr:`filecmp.dircmp.subdirs` behaves as expected when subclassing dircmp.
