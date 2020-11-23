@@ -295,13 +295,15 @@ dis_traceback = """\
              52 STORE_FAST               0 (e)
              54 DELETE_FAST              0 (e)
              56 RERAISE
-        >>   58 RERAISE
+
+%3d     >>   58 RERAISE
 """ % (TRACEBACK_CODE.co_firstlineno + 1,
        TRACEBACK_CODE.co_firstlineno + 2,
        TRACEBACK_CODE.co_firstlineno + 5,
        TRACEBACK_CODE.co_firstlineno + 3,
        TRACEBACK_CODE.co_firstlineno + 4,
-       TRACEBACK_CODE.co_firstlineno + 5)
+       TRACEBACK_CODE.co_firstlineno + 5,
+       TRACEBACK_CODE.co_firstlineno + 3)
 
 def _fstring(a, b, c, d):
     return f'{a} {b:4} {c!r} {d!r:4}'
