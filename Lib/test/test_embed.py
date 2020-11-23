@@ -30,6 +30,8 @@ API_PYTHON = 2
 # _PyCoreConfig_InitIsolatedConfig()
 API_ISOLATED = 3
 
+MAX_HASH_SEED = 4294967295
+
 
 def debug_build(program):
     program = os.path.basename(program)
@@ -403,6 +405,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'exec_prefix': GET_DEFAULT_CONFIG,
         'base_exec_prefix': GET_DEFAULT_CONFIG,
         'module_search_paths': GET_DEFAULT_CONFIG,
+        'module_search_paths_set': 1,
         'platlibdir': sys.platlibdir,
 
         'site_import': 1,
@@ -440,7 +443,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     CONFIG_PYTHON = dict(CONFIG_COMPAT,
         _config_init=API_PYTHON,
         configure_c_stdio=1,
-        parse_argv=1,
+        parse_argv=2,
     )
     CONFIG_ISOLATED = dict(CONFIG_COMPAT,
         _config_init=API_ISOLATED,
@@ -818,7 +821,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                           '-X', 'cmdline_xoption',
                           '-c', 'pass',
                           'arg2'],
-            'parse_argv': 1,
+            'parse_argv': 2,
             'xoptions': [
                 'config_xoption1=3',
                 'config_xoption2=',
@@ -1063,7 +1066,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'orig_argv': ['python3', '-c', code, 'arg2'],
             'program_name': './python3',
             'run_command': code + '\n',
-            'parse_argv': 1,
+            'parse_argv': 2,
         }
         self.check_all_configs("test_init_run_main", config, api=API_PYTHON)
 
@@ -1077,7 +1080,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                           'arg2'],
             'program_name': './python3',
             'run_command': code + '\n',
-            'parse_argv': 1,
+            'parse_argv': 2,
             '_init_main': 0,
         }
         self.check_all_configs("test_init_main", config,
@@ -1086,7 +1089,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_init_parse_argv(self):
         config = {
-            'parse_argv': 1,
+            'parse_argv': 2,
             'argv': ['-c', 'arg1', '-v', 'arg3'],
             'orig_argv': ['./argv0', '-E', '-c', 'pass', 'arg1', '-v', 'arg3'],
             'program_name': './argv0',
@@ -1415,9 +1418,29 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_init_warnoptions", config, preconfig,
                                api=API_PYTHON)
 
+    def test_init_set_config(self):
+        config = {
+            '_init_main': 0,
+            'bytes_warning': 2,
+            'warnoptions': ['error::BytesWarning'],
+        }
+        self.check_all_configs("test_init_set_config", config,
+                               api=API_ISOLATED)
+
     def test_get_argc_argv(self):
         self.run_embedded_interpreter("test_get_argc_argv")
         # ignore output
+
+
+class SetConfigTests(unittest.TestCase):
+    def test_set_config(self):
+        # bpo-42260: Test _PyInterpreterState_SetConfig()
+        cmd = [sys.executable, '-I', '-m', 'test._test_embed_set_config']
+        proc = subprocess.run(cmd,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
+        self.assertEqual(proc.returncode, 0,
+                         (proc.returncode, proc.stdout, proc.stderr))
 
 
 class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):

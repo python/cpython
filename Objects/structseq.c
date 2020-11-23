@@ -19,20 +19,33 @@ static const char unnamed_fields_key[] = "n_unnamed_fields";
 /* Fields with this name have only a field index, not a field name.
    They are only allowed for indices < n_visible_fields. */
 const char * const PyStructSequence_UnnamedField = "unnamed field";
+
 _Py_IDENTIFIER(n_sequence_fields);
 _Py_IDENTIFIER(n_fields);
 _Py_IDENTIFIER(n_unnamed_fields);
 
-#define VISIBLE_SIZE(op) Py_SIZE(op)
-#define VISIBLE_SIZE_TP(tp) PyLong_AsSsize_t( \
-                      _PyDict_GetItemId((tp)->tp_dict, &PyId_n_sequence_fields))
+static ssize_t
+get_type_attr_as_size(PyTypeObject *tp, _Py_Identifier *id)
+{
+    PyObject *name = _PyUnicode_FromId(id);
+    if (name == NULL) {
+        return -1;
+    }
+    PyObject *v = PyDict_GetItemWithError(tp->tp_dict, name);
+    if (v == NULL && !PyErr_Occurred()) {
+        PyErr_Format(PyExc_TypeError,
+                     "Missed attribute '%U' of type %s",
+                     name, tp->tp_name);
+    }
+    return PyLong_AsSsize_t(v);
+}
 
-#define REAL_SIZE_TP(tp) PyLong_AsSsize_t( \
-                      _PyDict_GetItemId((tp)->tp_dict, &PyId_n_fields))
+#define VISIBLE_SIZE(op) Py_SIZE(op)
+#define VISIBLE_SIZE_TP(tp) get_type_attr_as_size(tp, &PyId_n_sequence_fields)
+#define REAL_SIZE_TP(tp) get_type_attr_as_size(tp, &PyId_n_fields)
 #define REAL_SIZE(op) REAL_SIZE_TP(Py_TYPE(op))
 
-#define UNNAMED_FIELDS_TP(tp) PyLong_AsSsize_t( \
-                      _PyDict_GetItemId((tp)->tp_dict, &PyId_n_unnamed_fields))
+#define UNNAMED_FIELDS_TP(tp) get_type_attr_as_size(tp, &PyId_n_unnamed_fields)
 #define UNNAMED_FIELDS(op) UNNAMED_FIELDS_TP(Py_TYPE(op))
 
 
@@ -41,13 +54,20 @@ PyStructSequence_New(PyTypeObject *type)
 {
     PyStructSequence *obj;
     Py_ssize_t size = REAL_SIZE_TP(type), i;
+    if (size < 0) {
+        return NULL;
+    }
+    Py_ssize_t vsize = VISIBLE_SIZE_TP(type);
+    if (vsize < 0) {
+        return NULL;
+    }
 
     obj = PyObject_GC_NewVar(PyStructSequence, type, size);
     if (obj == NULL)
         return NULL;
     /* Hack the size of the variable object, so invisible fields don't appear
      to Python code. */
-    Py_SET_SIZE(obj, VISIBLE_SIZE_TP(type));
+    Py_SET_SIZE(obj, vsize);
     for (i = 0; i < size; i++)
         obj->ob_item[i] = NULL;
 
@@ -121,6 +141,19 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
     PyStructSequence *res = NULL;
     Py_ssize_t len, min_len, max_len, i, n_unnamed_fields;
 
+    min_len = VISIBLE_SIZE_TP(type);
+    if (min_len < 0) {
+        return NULL;
+    }
+    max_len = REAL_SIZE_TP(type);
+    if (max_len < 0) {
+        return NULL;
+    }
+    n_unnamed_fields = UNNAMED_FIELDS_TP(type);
+    if (n_unnamed_fields < 0) {
+        return NULL;
+    }
+
     arg = PySequence_Fast(arg, "constructor requires a sequence");
 
     if (!arg) {
@@ -136,10 +169,6 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
     }
 
     len = PySequence_Fast_GET_SIZE(arg);
-    min_len = VISIBLE_SIZE_TP(type);
-    max_len = REAL_SIZE_TP(type);
-    n_unnamed_fields = UNNAMED_FIELDS_TP(type);
-
     if (min_len != max_len) {
         if (len < min_len) {
             PyErr_Format(PyExc_TypeError,
@@ -177,18 +206,26 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
         Py_INCREF(v);
         res->ob_item[i] = v;
     }
+    Py_DECREF(arg);
     for (; i < max_len; ++i) {
-        if (dict && (ob = PyDict_GetItemString(
-            dict, type->tp_members[i-n_unnamed_fields].name))) {
+        if (dict == NULL) {
+            ob = Py_None;
         }
         else {
-            ob = Py_None;
+            ob = _PyDict_GetItemStringWithError(dict,
+                type->tp_members[i-n_unnamed_fields].name);
+            if (ob == NULL) {
+                if (PyErr_Occurred()) {
+                    Py_DECREF(res);
+                    return NULL;
+                }
+                ob = Py_None;
+            }
         }
         Py_INCREF(ob);
         res->ob_item[i] = ob;
     }
 
-    Py_DECREF(arg);
     _PyObject_GC_TRACK(res);
     return (PyObject*) res;
 }
@@ -288,8 +325,14 @@ structseq_reduce(PyStructSequence* self, PyObject *Py_UNUSED(ignored))
     Py_ssize_t n_fields, n_visible_fields, n_unnamed_fields, i;
 
     n_fields = REAL_SIZE(self);
+    if (n_fields < 0) {
+        return NULL;
+    }
     n_visible_fields = VISIBLE_SIZE(self);
     n_unnamed_fields = UNNAMED_FIELDS(self);
+    if (n_unnamed_fields < 0) {
+        return NULL;
+    }
     tup = _PyTuple_FromArray(self->ob_item, n_visible_fields);
     if (!tup)
         goto error;
@@ -449,7 +492,6 @@ PyTypeObject *
 PyStructSequence_NewType(PyStructSequence_Desc *desc)
 {
     PyMemberDef *members;
-    PyObject *bases;
     PyTypeObject *type;
     PyType_Slot slots[8];
     PyType_Spec spec;
@@ -483,13 +525,7 @@ PyStructSequence_NewType(PyStructSequence_Desc *desc)
     spec.flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC;
     spec.slots = slots;
 
-    bases = PyTuple_Pack(1, &PyTuple_Type);
-    if (bases == NULL) {
-        PyMem_FREE(members);
-        return NULL;
-    }
-    type = (PyTypeObject *)PyType_FromSpecWithBases(&spec, bases);
-    Py_DECREF(bases);
+    type = (PyTypeObject *)PyType_FromSpecWithBases(&spec, (PyObject *)&PyTuple_Type);
     PyMem_FREE(members);
     if (type == NULL) {
         return NULL;

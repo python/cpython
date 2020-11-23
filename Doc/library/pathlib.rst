@@ -336,6 +336,8 @@ Pure paths provide the following methods and properties:
       >>> p.parents[2]
       PureWindowsPath('c:/')
 
+   .. versionchanged:: 3.10
+      The parents sequence now supports :term:`slices <slice>` and negative index values.
 
 .. data:: PurePath.parent
 
@@ -1166,7 +1168,7 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
-.. method:: Path.write_text(data, encoding=None, errors=None)
+.. method:: Path.write_text(data, encoding=None, errors=None, newline=None)
 
    Open the file pointed to in text mode, write *data* to it, and close the
    file::
@@ -1181,6 +1183,9 @@ call fails (for example because the path doesn't exist).
    have the same meaning as in :func:`open`.
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.10
+      The *newline* parameter was added.
 
 Correspondence to tools in the :mod:`os` module
 -----------------------------------------------

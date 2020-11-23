@@ -116,6 +116,11 @@ Standard names are defined for the following types:
    The type of user-defined functions and functions created by
    :keyword:`lambda`  expressions.
 
+   .. audit-event:: function.__new__ code types.FunctionType
+
+   The audit event only occurs for direct instantiation of function objects,
+   and is not raised for normal compilation.
+
 
 .. data:: GeneratorType
 
@@ -145,10 +150,11 @@ Standard names are defined for the following types:
 
    The type for code objects such as returned by :func:`compile`.
 
-   .. audit-event:: code.__new__ code,filename,name,argcount,posonlyargcount,kwonlyargcount,nlocals,stacksize,flags CodeType
+   .. audit-event:: code.__new__ code,filename,name,argcount,posonlyargcount,kwonlyargcount,nlocals,stacksize,flags types.CodeType
 
    Note that the audited arguments may not match the names or positions
-   required by the initializer.
+   required by the initializer.  The audit event only occurs for direct
+   instantiation of code objects, and is not raised for normal compilation.
 
    .. method:: CodeType.replace(**kwargs)
 
@@ -255,6 +261,24 @@ Standard names are defined for the following types:
    The type of :data:`Ellipsis`.
 
    .. versionadded:: 3.10
+
+.. class:: GenericAlias(t_origin, t_args)
+
+   The type of :ref:`parameterized generics <types-genericalias>` such as
+   ``list[int]``.
+
+   ``t_origin`` should be a non-parameterized generic class, such as ``list``,
+   ``tuple`` or ``dict``.  ``t_args`` should be a :class:`tuple` (possibly of
+   length 1) of types which parameterize ``t_origin``::
+
+      >>> from types import GenericAlias
+
+      >>> list[int] == GenericAlias(list, (int,))
+      True
+      >>> dict[str, int] == GenericAlias(dict, (str, int))
+      True
+
+   .. versionadded:: 3.9
 
 .. data:: Union
 
@@ -385,7 +409,9 @@ Additional Utility Classes and Functions
                return "{}({})".format(type(self).__name__, ", ".join(items))
 
            def __eq__(self, other):
-               return self.__dict__ == other.__dict__
+               if isinstance(self, SimpleNamespace) and isinstance(other, SimpleNamespace):
+                  return self.__dict__ == other.__dict__
+               return NotImplemented
 
    ``SimpleNamespace`` may be useful as a replacement for ``class NS: pass``.
    However, for a structured record type use :func:`~collections.namedtuple`

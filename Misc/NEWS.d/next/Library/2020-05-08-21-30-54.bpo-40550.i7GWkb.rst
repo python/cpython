@@ -1,0 +1,1 @@
+Fix time-of-check/time-of-action issue in subprocess.Popen.send_signal.

@@ -1,5 +1,6 @@
 #include "Python.h"
-#include "pycore_fileutils.h"
+#include "pycore_fileutils.h"     // fileutils definitions
+#include "pycore_runtime.h"       // _PyRuntime
 #include "osdefs.h"               // SEP
 #include <locale.h>
 
@@ -54,9 +55,6 @@ get_surrogateescape(_Py_error_handler errors, int *surrogateescape)
 PyObject *
 _Py_device_encoding(int fd)
 {
-#if defined(MS_WINDOWS)
-    UINT cp;
-#endif
     int valid;
     _Py_BEGIN_SUPPRESS_IPH
     valid = isatty(fd);
@@ -65,6 +63,7 @@ _Py_device_encoding(int fd)
         Py_RETURN_NONE;
 
 #if defined(MS_WINDOWS)
+    UINT cp;
     if (fd == 0)
         cp = GetConsoleCP();
     else if (fd == 1 || fd == 2)
@@ -73,16 +72,14 @@ _Py_device_encoding(int fd)
         cp = 0;
     /* GetConsoleCP() and GetConsoleOutputCP() return 0 if the application
        has no console */
-    if (cp != 0)
-        return PyUnicode_FromFormat("cp%u", (unsigned int)cp);
-#elif defined(CODESET)
-    {
-        char *codeset = nl_langinfo(CODESET);
-        if (codeset != NULL && codeset[0] != 0)
-            return PyUnicode_FromString(codeset);
+    if (cp == 0) {
+        Py_RETURN_NONE;
     }
+
+    return PyUnicode_FromFormat("cp%u", (unsigned int)cp);
+#else
+    return _Py_GetLocaleEncodingObject();
 #endif
-    Py_RETURN_NONE;
 }
 
 #if !defined(_Py_FORCE_UTF8_FS_ENCODING) && !defined(MS_WINDOWS)
@@ -817,6 +814,72 @@ _Py_EncodeLocaleEx(const wchar_t *text, char **str,
 {
     return encode_locale_ex(text, str, error_pos, reason, 1,
                             current_locale, errors);
+}
+
+
+// Get the current locale encoding name:
+//
+// - Return "UTF-8" if _Py_FORCE_UTF8_LOCALE macro is defined (ex: on Android)
+// - Return "UTF-8" if the UTF-8 Mode is enabled
+// - On Windows, return the ANSI code page (ex: "cp1250")
+// - Return "UTF-8" if nl_langinfo(CODESET) returns an empty string.
+// - Otherwise, return nl_langinfo(CODESET).
+//
+// Return NULL on memory allocation failure.
+//
+// See also config_get_locale_encoding()
+wchar_t*
+_Py_GetLocaleEncoding(void)
+{
+#ifdef _Py_FORCE_UTF8_LOCALE
+    // On Android langinfo.h and CODESET are missing,
+    // and UTF-8 is always used in mbstowcs() and wcstombs().
+    return _PyMem_RawWcsdup(L"UTF-8");
+#else
+    const PyPreConfig *preconfig = &_PyRuntime.preconfig;
+    if (preconfig->utf8_mode) {
+        return _PyMem_RawWcsdup(L"UTF-8");
+    }
+
+#ifdef MS_WINDOWS
+    wchar_t encoding[23];
+    unsigned int ansi_codepage = GetACP();
+    swprintf(encoding, Py_ARRAY_LENGTH(encoding), L"cp%u", ansi_codepage);
+    encoding[Py_ARRAY_LENGTH(encoding) - 1] = 0;
+    return _PyMem_RawWcsdup(encoding);
+#else
+    const char *encoding = nl_langinfo(CODESET);
+    if (!encoding || encoding[0] == '\0') {
+        // Use UTF-8 if nl_langinfo() returns an empty string. It can happen on
+        // macOS if the LC_CTYPE locale is not supported.
+        return _PyMem_RawWcsdup(L"UTF-8");
+    }
+
+    wchar_t *wstr;
+    int res = decode_current_locale(encoding, &wstr, NULL,
+                                    NULL, _Py_ERROR_SURROGATEESCAPE);
+    if (res < 0) {
+        return NULL;
+    }
+    return wstr;
+#endif  // !MS_WINDOWS
+
+#endif  // !_Py_FORCE_UTF8_LOCALE
+}
+
+
+PyObject *
+_Py_GetLocaleEncodingObject(void)
+{
+    wchar_t *encoding = _Py_GetLocaleEncoding();
+    if (encoding == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    PyObject *str = PyUnicode_FromWideChar(encoding, -1);
+    PyMem_RawFree(encoding);
+    return str;
 }
 
 
@@ -2047,6 +2110,7 @@ _Py_GetLocaleconvNumeric(struct lconv *lc,
     assert(decimal_point != NULL);
     assert(thousands_sep != NULL);
 
+#ifndef MS_WINDOWS
     int change_locale = 0;
     if ((strlen(lc->decimal_point) > 1 || ((unsigned char)lc->decimal_point[0]) > 127)) {
         change_locale = 1;
@@ -2085,14 +2149,20 @@ _Py_GetLocaleconvNumeric(struct lconv *lc,
         }
     }
 
+#define GET_LOCALE_STRING(ATTR) PyUnicode_DecodeLocale(lc->ATTR, NULL)
+#else /* MS_WINDOWS */
+/* Use _W_* fields of Windows strcut lconv */
+#define GET_LOCALE_STRING(ATTR) PyUnicode_FromWideChar(lc->_W_ ## ATTR, -1)
+#endif /* MS_WINDOWS */
+
     int res = -1;
 
-    *decimal_point = PyUnicode_DecodeLocale(lc->decimal_point, NULL);
+    *decimal_point = GET_LOCALE_STRING(decimal_point);
     if (*decimal_point == NULL) {
         goto done;
     }
 
-    *thousands_sep = PyUnicode_DecodeLocale(lc->thousands_sep, NULL);
+    *thousands_sep = GET_LOCALE_STRING(thousands_sep);
     if (*thousands_sep == NULL) {
         goto done;
     }
@@ -2100,11 +2170,15 @@ _Py_GetLocaleconvNumeric(struct lconv *lc,
     res = 0;
 
 done:
+#ifndef MS_WINDOWS
     if (loc != NULL) {
         setlocale(LC_CTYPE, oldloc);
     }
     PyMem_Free(oldloc);
+#endif
     return res;
+
+#undef GET_LOCALE_STRING
 }
 
 /* Our selection logic for which function to use is as follows:

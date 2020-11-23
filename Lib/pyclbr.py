@@ -25,7 +25,9 @@ has the following attributes:
     children -- nested objects contained in this object.
 The 'children' attribute is a dictionary mapping names to objects.
 
-Instances of Function describe functions with the attributes from _Object.
+Instances of Function describe functions with the attributes from _Object,
+plus the following:
+    is_async -- if a function is defined with an 'async' prefix
 
 Instances of Class describe classes with the attributes from _Object,
 plus the following:
@@ -38,11 +40,10 @@ are recognized and imported modules are scanned as well, this
 shouldn't happen often.
 """
 
-import io
+import ast
+import copy
 import sys
 import importlib.util
-import tokenize
-from token import NAME, DEDENT, OP
 
 __all__ = ["readmodule", "readmodule_ex", "Class", "Function"]
 
@@ -58,41 +59,33 @@ class _Object:
         self.lineno = lineno
         self.parent = parent
         self.children = {}
-
-    def _addchild(self, name, obj):
-        self.children[name] = obj
-
+        if parent is not None:
+            parent.children[name] = self
 
 class Function(_Object):
     "Information about a Python function, including methods."
-    def __init__(self, module, name, file, lineno, parent=None):
-        _Object.__init__(self, module, name, file, lineno, parent)
-
+    def __init__(self, module, name, file, lineno, parent=None, is_async=False):
+        super().__init__(module, name, file, lineno, parent)
+        self.is_async = is_async
+        if isinstance(parent, Class):
+            parent.methods[name] = lineno
 
 class Class(_Object):
     "Information about a Python class."
-    def __init__(self, module, name, super, file, lineno, parent=None):
-        _Object.__init__(self, module, name, file, lineno, parent)
-        self.super = [] if super is None else super
+    def __init__(self, module, name, super_, file, lineno, parent=None):
+        super().__init__(module, name, file, lineno, parent)
+        self.super = super_ or []
         self.methods = {}
 
-    def _addmethod(self, name, lineno):
-        self.methods[name] = lineno
-
-
-def _nest_function(ob, func_name, lineno):
+# These 2 functions are used in these tests
+# Lib/test/test_pyclbr, Lib/idlelib/idle_test/test_browser.py
+def _nest_function(ob, func_name, lineno, is_async=False):
     "Return a Function after nesting within ob."
-    newfunc = Function(ob.module, func_name, ob.file, lineno, ob)
-    ob._addchild(func_name, newfunc)
-    if isinstance(ob, Class):
-        ob._addmethod(func_name, lineno)
-    return newfunc
+    return Function(ob.module, func_name, ob.file, lineno, ob, is_async)
 
 def _nest_class(ob, class_name, lineno, super=None):
     "Return a Class after nesting within ob."
-    newclass = Class(ob.module, class_name, super, ob.file, lineno, ob)
-    ob._addchild(class_name, newclass)
-    return newclass
+    return Class(ob.module, class_name, super, ob.file, lineno, ob)
 
 def readmodule(module, path=None):
     """Return Class objects for the top-level classes in module.
@@ -179,187 +172,95 @@ def _readmodule(module, path, inpackage=None):
     return _create_tree(fullmodule, path, fname, source, tree, inpackage)
 
 
-def _create_tree(fullmodule, path, fname, source, tree, inpackage):
-    """Return the tree for a particular module.
+class _ModuleBrowser(ast.NodeVisitor):
+    def __init__(self, module, path, file, tree, inpackage):
+        self.path = path
+        self.tree = tree
+        self.file = file
+        self.module = module
+        self.inpackage = inpackage
+        self.stack = []
 
-    fullmodule (full module name), inpackage+module, becomes o.module.
-    path is passed to recursive calls of _readmodule.
-    fname becomes o.file.
-    source is tokenized.  Imports cause recursive calls to _readmodule.
-    tree is {} or {'__path__': <submodule search locations>}.
-    inpackage, None or string, is passed to recursive calls of _readmodule.
+    def visit_ClassDef(self, node):
+        bases = []
+        for base in node.bases:
+            name = ast.unparse(base)
+            if name in self.tree:
+                # We know this super class.
+                bases.append(self.tree[name])
+            elif len(names := name.split(".")) > 1:
+                # Super class form is module.class:
+                # look in module for class.
+                *_, module, class_ = names
+                if module in _modules:
+                    bases.append(_modules[module].get(class_, name))
+            else:
+                bases.append(name)
 
-    The effect of recursive calls is mutation of global _modules.
-    """
-    f = io.StringIO(source)
+        parent = self.stack[-1] if self.stack else None
+        class_ = Class(
+            self.module, node.name, bases, self.file, node.lineno, parent
+        )
+        if parent is None:
+            self.tree[node.name] = class_
+        self.stack.append(class_)
+        self.generic_visit(node)
+        self.stack.pop()
 
-    stack = [] # Initialize stack of (class, indent) pairs.
+    def visit_FunctionDef(self, node, *, is_async=False):
+        parent = self.stack[-1] if self.stack else None
+        function = Function(
+            self.module, node.name, self.file, node.lineno, parent, is_async
+        )
+        if parent is None:
+            self.tree[node.name] = function
+        self.stack.append(function)
+        self.generic_visit(node)
+        self.stack.pop()
 
-    g = tokenize.generate_tokens(f.readline)
-    try:
-        for tokentype, token, start, _end, _line in g:
-            if tokentype == DEDENT:
-                lineno, thisindent = start
-                # Close previous nested classes and defs.
-                while stack and stack[-1][1] >= thisindent:
-                    del stack[-1]
-            elif token == 'def':
-                lineno, thisindent = start
-                # Close previous nested classes and defs.
-                while stack and stack[-1][1] >= thisindent:
-                    del stack[-1]
-                tokentype, func_name, start = next(g)[0:3]
-                if tokentype != NAME:
-                    continue  # Skip def with syntax error.
-                cur_func = None
-                if stack:
-                    cur_obj = stack[-1][0]
-                    cur_func = _nest_function(cur_obj, func_name, lineno)
-                else:
-                    # It is just a function.
-                    cur_func = Function(fullmodule, func_name, fname, lineno)
-                    tree[func_name] = cur_func
-                stack.append((cur_func, thisindent))
-            elif token == 'class':
-                lineno, thisindent = start
-                # Close previous nested classes and defs.
-                while stack and stack[-1][1] >= thisindent:
-                    del stack[-1]
-                tokentype, class_name, start = next(g)[0:3]
-                if tokentype != NAME:
-                    continue # Skip class with syntax error.
-                # Parse what follows the class name.
-                tokentype, token, start = next(g)[0:3]
-                inherit = None
-                if token == '(':
-                    names = [] # Initialize list of superclasses.
-                    level = 1
-                    super = [] # Tokens making up current superclass.
-                    while True:
-                        tokentype, token, start = next(g)[0:3]
-                        if token in (')', ',') and level == 1:
-                            n = "".join(super)
-                            if n in tree:
-                                # We know this super class.
-                                n = tree[n]
-                            else:
-                                c = n.split('.')
-                                if len(c) > 1:
-                                    # Super class form is module.class:
-                                    # look in module for class.
-                                    m = c[-2]
-                                    c = c[-1]
-                                    if m in _modules:
-                                        d = _modules[m]
-                                        if c in d:
-                                            n = d[c]
-                            names.append(n)
-                            super = []
-                        if token == '(':
-                            level += 1
-                        elif token == ')':
-                            level -= 1
-                            if level == 0:
-                                break
-                        elif token == ',' and level == 1:
-                            pass
-                        # Only use NAME and OP (== dot) tokens for type name.
-                        elif tokentype in (NAME, OP) and level == 1:
-                            super.append(token)
-                        # Expressions in the base list are not supported.
-                    inherit = names
-                if stack:
-                    cur_obj = stack[-1][0]
-                    cur_class = _nest_class(
-                            cur_obj, class_name, lineno, inherit)
-                else:
-                    cur_class = Class(fullmodule, class_name, inherit,
-                                      fname, lineno)
-                    tree[class_name] = cur_class
-                stack.append((cur_class, thisindent))
-            elif token == 'import' and start[1] == 0:
-                modules = _getnamelist(g)
-                for mod, _mod2 in modules:
-                    try:
-                        # Recursively read the imported module.
-                        if inpackage is None:
-                            _readmodule(mod, path)
-                        else:
-                            try:
-                                _readmodule(mod, path, inpackage)
-                            except ImportError:
-                                _readmodule(mod, [])
-                    except:
-                        # If we can't find or parse the imported module,
-                        # too bad -- don't die here.
-                        pass
-            elif token == 'from' and start[1] == 0:
-                mod, token = _getname(g)
-                if not mod or token != "import":
-                    continue
-                names = _getnamelist(g)
+    def visit_AsyncFunctionDef(self, node):
+        self.visit_FunctionDef(node, is_async=True)
+
+    def visit_Import(self, node):
+        if node.col_offset != 0:
+            return
+
+        for module in node.names:
+            try:
                 try:
-                    # Recursively read the imported module.
-                    d = _readmodule(mod, path, inpackage)
-                except:
-                    # If we can't find or parse the imported module,
-                    # too bad -- don't die here.
-                    continue
-                # Add any classes that were defined in the imported module
-                # to our name space if they were mentioned in the list.
-                for n, n2 in names:
-                    if n in d:
-                        tree[n2 or n] = d[n]
-                    elif n == '*':
-                        # Don't add names that start with _.
-                        for n in d:
-                            if n[0] != '_':
-                                tree[n] = d[n]
-    except StopIteration:
-        pass
+                    _readmodule(module.name, self.path, self.inpackage)
+                except ImportError:
+                    _readmodule(module.name, [])
+            except (ImportError, SyntaxError):
+                # If we can't find or parse the imported module,
+                # too bad -- don't die here.
+                continue
 
-    f.close()
-    return tree
+    def visit_ImportFrom(self, node):
+        if node.col_offset != 0:
+            return
+        try:
+            module = "." * node.level
+            if node.module:
+                module += node.module
+            module = _readmodule(module, self.path, self.inpackage)
+        except (ImportError, SyntaxError):
+            return
 
-
-def _getnamelist(g):
-    """Return list of (dotted-name, as-name or None) tuples for token source g.
-
-    An as-name is the name that follows 'as' in an as clause.
-    """
-    names = []
-    while True:
-        name, token = _getname(g)
-        if not name:
-            break
-        if token == 'as':
-            name2, token = _getname(g)
-        else:
-            name2 = None
-        names.append((name, name2))
-        while token != "," and "\n" not in token:
-            token = next(g)[1]
-        if token != ",":
-            break
-    return names
+        for name in node.names:
+            if name.name in module:
+                self.tree[name.asname or name.name] = module[name.name]
+            elif name.name == "*":
+                for import_name, import_value in module.items():
+                    if import_name.startswith("_"):
+                        continue
+                    self.tree[import_name] = import_value
 
 
-def _getname(g):
-    "Return (dotted-name or None, next-token) tuple for token source g."
-    parts = []
-    tokentype, token = next(g)[0:2]
-    if tokentype != NAME and token != '*':
-        return (None, token)
-    parts.append(token)
-    while True:
-        tokentype, token = next(g)[0:2]
-        if token != '.':
-            break
-        tokentype, token = next(g)[0:2]
-        if tokentype != NAME:
-            break
-        parts.append(token)
-    return (".".join(parts), token)
+def _create_tree(fullmodule, path, fname, source, tree, inpackage):
+    mbrowser = _ModuleBrowser(fullmodule, path, fname, tree, inpackage)
+    mbrowser.visit(ast.parse(source))
+    return mbrowser.tree
 
 
 def _main():

@@ -802,6 +802,9 @@ class SyntaxTestCase(unittest.TestCase):
         else:
             self.fail("compile() did not raise SyntaxError")
 
+    def test_curly_brace_after_primary_raises_immediately(self):
+        self._check_error("f{", "invalid syntax", mode="single")
+
     def test_assign_call(self):
         self._check_error("f() = 1", "assign")
 
@@ -951,6 +954,31 @@ pass
             code += f"{'    '*i}except Exception as e:\n"
         code += f"{' '*4*12}pass"
         self._check_error(code, "too many statically nested blocks")
+
+    def test_barry_as_flufl_with_syntax_errors(self):
+        # The "barry_as_flufl" rule can produce some "bugs-at-a-distance" if
+        # is reading the wrong token in the presence of syntax errors later
+        # in the file. See bpo-42214 for more information.
+        code = """
+def func1():
+    if a != b:
+        raise ValueError
+
+def func2():
+    try
+        return 1
+    finally:
+        pass
+"""
+        self._check_error(code, "invalid syntax")
+
+    def test_invalid_line_continuation_left_recursive(self):
+        # Check bpo-42218: SyntaxErrors following left-recursive rules
+        # (t_primary_raw in this case) need to be tested explicitly
+        self._check_error("A.\u018a\\ ",
+                          "unexpected character after line continuation character")
+        self._check_error("A.\u03bc\\\n",
+                          "unexpected EOF while parsing")
 
 def test_main():
     support.run_unittest(SyntaxTestCase)

@@ -840,9 +840,11 @@ regen-ast:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Parser/asdl_c.py \
 		$(srcdir)/Parser/Python.asdl \
 		-H $(srcdir)/Include/Python-ast.h.new \
+		-I $(srcdir)/Include/internal/pycore_ast.h.new \
 		-C $(srcdir)/Python/Python-ast.c.new
 
 	$(UPDATE_FILE) $(srcdir)/Include/Python-ast.h $(srcdir)/Include/Python-ast.h.new
+	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_ast.h $(srcdir)/Include/internal/pycore_ast.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/Python-ast.c $(srcdir)/Python/Python-ast.c.new
 
 .PHONY: regen-opcode
@@ -1065,7 +1067,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/traceback.h \
 		$(srcdir)/Include/tracemalloc.h \
 		$(srcdir)/Include/tupleobject.h \
-		$(srcdir)/Include/ucnhash.h \
 		$(srcdir)/Include/unicodeobject.h \
 		$(srcdir)/Include/warnings.h \
 		$(srcdir)/Include/weakrefobject.h \
@@ -1082,6 +1083,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/dictobject.h \
 		$(srcdir)/Include/cpython/fileobject.h \
 		$(srcdir)/Include/cpython/fileutils.h \
+		$(srcdir)/Include/cpython/frameobject.h \
 		$(srcdir)/Include/cpython/import.h \
 		$(srcdir)/Include/cpython/initconfig.h \
 		$(srcdir)/Include/cpython/interpreteridobject.h \
@@ -1118,6 +1120,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_initconfig.h \
 		$(srcdir)/Include/internal/pycore_interp.h \
 		$(srcdir)/Include/internal/pycore_list.h \
+		$(srcdir)/Include/internal/pycore_long.h \
 		$(srcdir)/Include/internal/pycore_object.h \
 		$(srcdir)/Include/internal/pycore_pathconfig.h \
 		$(srcdir)/Include/internal/pycore_pyerrors.h \
@@ -1129,6 +1132,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_sysmodule.h \
 		$(srcdir)/Include/internal/pycore_traceback.h \
 		$(srcdir)/Include/internal/pycore_tuple.h \
+		$(srcdir)/Include/internal/pycore_ucnhash.h \
 		$(srcdir)/Include/internal/pycore_unionobject.h \
 		$(srcdir)/Include/internal/pycore_warnings.h \
 		$(DTRACE_HEADERS)
@@ -1635,7 +1639,7 @@ libainstall:	@DEF_MAKE_RULE@ python-config
 		$(INSTALL_SCRIPT) Modules/ld_so_aix	\
 				$(DESTDIR)$(LIBPL)/ld_so_aix;		\
 		echo "$(LIBPL)/ld_so_aix";			\
-		echo; echo "See Misc/AIX-NOTES for details.";	\
+		echo; echo "See Misc/README.AIX for details.";	\
 	else true; \
 	fi
 

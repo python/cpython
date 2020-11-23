@@ -155,6 +155,7 @@ locale_is_ascii(const char *str)
 static int
 locale_decode_monetary(PyObject *dict, struct lconv *lc)
 {
+#ifndef MS_WINDOWS
     int change_locale;
     change_locale = (!locale_is_ascii(lc->int_curr_symbol)
                      || !locale_is_ascii(lc->currency_symbol)
@@ -190,12 +191,18 @@ locale_decode_monetary(PyObject *dict, struct lconv *lc)
         }
     }
 
+#define GET_LOCALE_STRING(ATTR) PyUnicode_DecodeLocale(lc->ATTR, NULL)
+#else  /* MS_WINDOWS */
+/* Use _W_* fields of Windows struct lconv */
+#define GET_LOCALE_STRING(ATTR) PyUnicode_FromWideChar(lc->_W_ ## ATTR, -1)
+#endif /* MS_WINDOWS */
+
     int res = -1;
 
 #define RESULT_STRING(ATTR) \
     do { \
         PyObject *obj; \
-        obj = PyUnicode_DecodeLocale(lc->ATTR, NULL); \
+        obj = GET_LOCALE_STRING(ATTR); \
         if (obj == NULL) { \
             goto done; \
         } \
@@ -211,14 +218,17 @@ locale_decode_monetary(PyObject *dict, struct lconv *lc)
     RESULT_STRING(mon_decimal_point);
     RESULT_STRING(mon_thousands_sep);
 #undef RESULT_STRING
+#undef GET_LOCALE_STRING
 
     res = 0;
 
 done:
+#ifndef MS_WINDOWS
     if (loc != NULL) {
         setlocale(LC_CTYPE, oldloc);
     }
     PyMem_Free(oldloc);
+#endif
     return res;
 }
 
@@ -258,9 +268,15 @@ _locale_localeconv_impl(PyObject *module)
         Py_DECREF(obj); \
     } while (0)
 
+#ifdef MS_WINDOWS
+/* Use _W_* fields of Windows struct lconv */
+#define GET_LOCALE_STRING(ATTR) PyUnicode_FromWideChar(lc->_W_ ## ATTR, -1)
+#else
+#define GET_LOCALE_STRING(ATTR) PyUnicode_DecodeLocale(lc->ATTR, NULL)
+#endif
 #define RESULT_STRING(s)\
     do { \
-        x = PyUnicode_DecodeLocale(lc->s, NULL); \
+        x = GET_LOCALE_STRING(s); \
         RESULT(#s, x); \
     } while (0)
 
@@ -289,8 +305,10 @@ _locale_localeconv_impl(PyObject *module)
     RESULT_INT(n_sign_posn);
 
     /* Numeric information: LC_NUMERIC encoding */
-    PyObject *decimal_point, *thousands_sep;
+    PyObject *decimal_point = NULL, *thousands_sep = NULL;
     if (_Py_GetLocaleconvNumeric(lc, &decimal_point, &thousands_sep) < 0) {
+        Py_XDECREF(decimal_point);
+        Py_XDECREF(thousands_sep);
         goto failed;
     }
 
@@ -319,6 +337,7 @@ _locale_localeconv_impl(PyObject *module)
 #undef RESULT
 #undef RESULT_STRING
 #undef RESULT_INT
+#undef GET_LOCALE_STRING
 }
 
 #if defined(HAVE_WCSCOLL)
@@ -537,7 +556,6 @@ static struct langinfo_constant{
     LANGINFO(PM_STR),
 
     /* The following constants are available only with XPG4, but...
-       AIX 3.2. only has CODESET.
        OpenBSD doesn't have CODESET but has T_FMT_AMPM, and doesn't have
        a few of the others.
        Solution: ifdef-test them all. */
@@ -749,9 +767,24 @@ _locale_bind_textdomain_codeset_impl(PyObject *module, const char *domain,
     }
     Py_RETURN_NONE;
 }
-#endif
+#endif  // HAVE_BIND_TEXTDOMAIN_CODESET
 
-#endif
+#endif  // HAVE_LIBINTL_H
+
+
+/*[clinic input]
+_locale._get_locale_encoding
+
+Get the current locale encoding.
+[clinic start generated code]*/
+
+static PyObject *
+_locale__get_locale_encoding_impl(PyObject *module)
+/*[clinic end generated code: output=e8e2f6f6f184591a input=513d9961d2f45c76]*/
+{
+    return _Py_GetLocaleEncodingObject();
+}
+
 
 static struct PyMethodDef PyLocale_Methods[] = {
     _LOCALE_SETLOCALE_METHODDEF
@@ -778,6 +811,7 @@ static struct PyMethodDef PyLocale_Methods[] = {
     _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
 #endif
 #endif
+    _LOCALE__GET_LOCALE_ENCODING_METHODDEF
   {NULL, NULL}
 };
 

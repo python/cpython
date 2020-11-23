@@ -155,8 +155,8 @@ if 1:
     def test_leading_newlines(self):
         s256 = "".join(["\n"] * 256 + ["spam"])
         co = compile(s256, 'fn', 'exec')
-        self.assertEqual(co.co_firstlineno, 257)
-        self.assertEqual(co.co_lnotab, bytes())
+        self.assertEqual(co.co_firstlineno, 1)
+        self.assertEqual(list(co.co_lines()), [(0, 4, 257), (4, 8, None)])
 
     def test_literals_with_leading_zeroes(self):
         for arg in ["077787", "0xj", "0x.", "0e",  "090000000000000",
@@ -751,6 +751,30 @@ if 1:
             self.assertEqual('LOAD_CONST', opcodes[0].opname)
             self.assertEqual(None, opcodes[0].argval)
             self.assertEqual('RETURN_VALUE', opcodes[1].opname)
+
+    def test_consts_in_conditionals(self):
+        def and_true(x):
+            return True and x
+
+        def and_false(x):
+            return False and x
+
+        def or_true(x):
+            return True or x
+
+        def or_false(x):
+            return False or x
+
+        funcs = [and_true, and_false, or_true, or_false]
+
+        # Check that condition is removed.
+        for func in funcs:
+            with self.subTest(func=func):
+                opcodes = list(dis.get_instructions(func))
+                self.assertEqual(2, len(opcodes))
+                self.assertIn('LOAD_', opcodes[0].opname)
+                self.assertEqual('RETURN_VALUE', opcodes[1].opname)
+
 
     def test_big_dict_literal(self):
         # The compiler has a flushing point in "compiler_dict" that calls compiles

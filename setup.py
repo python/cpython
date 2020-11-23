@@ -9,6 +9,7 @@ import re
 import sys
 import sysconfig
 from glob import glob, escape
+import _osx_support
 
 
 try:
@@ -176,34 +177,10 @@ def macosx_sdk_root():
     m = re.search(r'-isysroot\s*(\S+)', cflags)
     if m is not None:
         MACOS_SDK_ROOT = m.group(1)
-        MACOS_SDK_SPECIFIED = MACOS_SDK_ROOT != '/'
     else:
-        MACOS_SDK_ROOT = '/'
-        MACOS_SDK_SPECIFIED = False
-        cc = sysconfig.get_config_var('CC')
-        tmpfile = '/tmp/setup_sdk_root.%d' % os.getpid()
-        try:
-            os.unlink(tmpfile)
-        except:
-            pass
-        ret = run_command('%s -E -v - </dev/null 2>%s 1>/dev/null' % (cc, tmpfile))
-        in_incdirs = False
-        try:
-            if ret == 0:
-                with open(tmpfile) as fp:
-                    for line in fp.readlines():
-                        if line.startswith("#include <...>"):
-                            in_incdirs = True
-                        elif line.startswith("End of search list"):
-                            in_incdirs = False
-                        elif in_incdirs:
-                            line = line.strip()
-                            if line == '/usr/include':
-                                MACOS_SDK_ROOT = '/'
-                            elif line.endswith(".sdk/usr/include"):
-                                MACOS_SDK_ROOT = line[:-12]
-        finally:
-            os.unlink(tmpfile)
+        MACOS_SDK_ROOT = _osx_support._default_sysroot(
+            sysconfig.get_config_var('CC'))
+    MACOS_SDK_SPECIFIED = MACOS_SDK_ROOT != '/'
 
     return MACOS_SDK_ROOT
 
@@ -238,6 +215,13 @@ def is_macosx_sdk_path(path):
                 or path.startswith('/System/')
                 or path.startswith('/Library/') )
 
+
+def grep_headers_for(function, headers):
+    for header in headers:
+        with open(header, 'r', errors='surrogateescape') as f:
+            if function in f.read():
+                return True
+    return False
 
 def find_file(filename, std_dirs, paths):
     """Searches for the directory where a given file is located,
@@ -856,7 +840,8 @@ class PyBuildExt(build_ext):
                            libraries=['m'],
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # zoneinfo module
-        self.add(Extension('_zoneinfo', ['_zoneinfo.c'])),
+        self.add(Extension('_zoneinfo', ['_zoneinfo.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # random number generator implemented in C
         self.add(Extension("_random", ["_randommodule.c"],
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
@@ -878,7 +863,8 @@ class PyBuildExt(build_ext):
         self.add(Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']))
         # static Unicode character database
         self.add(Extension('unicodedata', ['unicodedata.c'],
-                           depends=['unicodedata_db.h', 'unicodename_db.h']))
+                           depends=['unicodedata_db.h', 'unicodename_db.h'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # _opcode module
         self.add(Extension('_opcode', ['_opcode.c']))
         # asyncio speedups
@@ -1093,6 +1079,7 @@ class PyBuildExt(build_ext):
         if curses_library.startswith('ncurses'):
             curses_libs = [curses_library]
             self.add(Extension('_curses', ['_cursesmodule.c'],
+                               extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
                                include_dirs=curses_includes,
                                define_macros=curses_defines,
                                libraries=curses_libs))
@@ -1107,6 +1094,7 @@ class PyBuildExt(build_ext):
                 curses_libs = ['curses']
 
             self.add(Extension('_curses', ['_cursesmodule.c'],
+                               extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
                                define_macros=curses_defines,
                                libraries=curses_libs))
         else:
@@ -1143,18 +1131,16 @@ class PyBuildExt(build_ext):
 
     def detect_socket(self):
         # socket(2)
-        if not VXWORKS:
-            kwargs = {'depends': ['socketmodule.h']}
-            if MACOS:
-                # Issue #35569: Expose RFC 3542 socket options.
-                kwargs['extra_compile_args'] = ['-D__APPLE_USE_RFC_3542']
+        kwargs = {'depends': ['socketmodule.h']}
+        if VXWORKS:
+            if not self.compiler.find_library_file(self.lib_dirs, 'net'):
+                return
+            kwargs['libraries'] = ['net']
+        elif MACOS:
+            # Issue #35569: Expose RFC 3542 socket options.
+            kwargs['extra_compile_args'] = ['-D__APPLE_USE_RFC_3542']
 
-            self.add(Extension('_socket', ['socketmodule.c'], **kwargs))
-        elif self.compiler.find_library_file(self.lib_dirs, 'net'):
-            libs = ['net']
-            self.add(Extension('_socket', ['socketmodule.c'],
-                               depends=['socketmodule.h'],
-                               libraries=libs))
+        self.add(Extension('_socket', ['socketmodule.c'], **kwargs))
 
     def detect_dbm_gdbm(self):
         # Modules that provide persistent dictionary-like semantics.  You will
@@ -2101,43 +2087,17 @@ class PyBuildExt(build_ext):
                            library_dirs=added_lib_dirs))
         return True
 
-    def configure_ctypes_darwin(self, ext):
-        # Darwin (OS X) uses preconfigured files, in
-        # the Modules/_ctypes/libffi_osx directory.
-        ffi_srcdir = os.path.abspath(os.path.join(self.srcdir, 'Modules',
-                                                  '_ctypes', 'libffi_osx'))
-        sources = [os.path.join(ffi_srcdir, p)
-                   for p in ['ffi.c',
-                             'x86/darwin64.S',
-                             'x86/x86-darwin.S',
-                             'x86/x86-ffi_darwin.c',
-                             'x86/x86-ffi64.c',
-                             'powerpc/ppc-darwin.S',
-                             'powerpc/ppc-darwin_closure.S',
-                             'powerpc/ppc-ffi_darwin.c',
-                             'powerpc/ppc64-darwin_closure.S',
-                             ]]
-
-        # Add .S (preprocessed assembly) to C compiler source extensions.
-        self.compiler.src_extensions.append('.S')
-
-        include_dirs = [os.path.join(ffi_srcdir, 'include'),
-                        os.path.join(ffi_srcdir, 'powerpc')]
-        ext.include_dirs.extend(include_dirs)
-        ext.sources.extend(sources)
-        return True
-
     def configure_ctypes(self, ext):
-        if not self.use_system_libffi:
-            if MACOS:
-                return self.configure_ctypes_darwin(ext)
-            print('INFO: Could not locate ffi libs and/or headers')
-            return False
         return True
 
     def detect_ctypes(self):
         # Thomas Heller's _ctypes module
-        self.use_system_libffi = False
+
+        if (not sysconfig.get_config_var("LIBFFI_INCLUDEDIR") and MACOS):
+            self.use_system_libffi = True
+        else:
+            self.use_system_libffi = '--with-system-ffi' in sysconfig.get_config_var("CONFIG_ARGS")
+
         include_dirs = []
         extra_compile_args = ['-DPy_BUILD_CORE_MODULE']
         extra_link_args = []
@@ -2150,11 +2110,9 @@ class PyBuildExt(build_ext):
 
         if MACOS:
             sources.append('_ctypes/malloc_closure.c')
-            sources.append('_ctypes/darwin/dlfcn_simple.c')
+            extra_compile_args.append('-DUSING_MALLOC_CLOSURE_DOT_C=1')
             extra_compile_args.append('-DMACOSX')
             include_dirs.append('_ctypes/darwin')
-            # XXX Is this still needed?
-            # extra_link_args.extend(['-read_only_relocs', 'warning'])
 
         elif HOST_PLATFORM == 'sunos5':
             # XXX This shouldn't be necessary; it appears that some
@@ -2184,31 +2142,48 @@ class PyBuildExt(build_ext):
                                sources=['_ctypes/_ctypes_test.c'],
                                libraries=['m']))
 
+        ffi_inc = sysconfig.get_config_var("LIBFFI_INCLUDEDIR")
+        ffi_lib = None
+
         ffi_inc_dirs = self.inc_dirs.copy()
         if MACOS:
-            if '--with-system-ffi' not in sysconfig.get_config_var("CONFIG_ARGS"):
-                return
-            # OS X 10.5 comes with libffi.dylib; the include files are
-            # in /usr/include/ffi
-            ffi_inc_dirs.append('/usr/include/ffi')
+            ffi_in_sdk = os.path.join(macosx_sdk_root(), "usr/include/ffi")
 
-        ffi_inc = [sysconfig.get_config_var("LIBFFI_INCLUDEDIR")]
-        if not ffi_inc or ffi_inc[0] == '':
-            ffi_inc = find_file('ffi.h', [], ffi_inc_dirs)
-        if ffi_inc is not None:
-            ffi_h = ffi_inc[0] + '/ffi.h'
+            if not ffi_inc:
+                if os.path.exists(ffi_in_sdk):
+                    ext.extra_compile_args.append("-DUSING_APPLE_OS_LIBFFI=1")
+                    ffi_inc = ffi_in_sdk
+                    ffi_lib = 'ffi'
+                else:
+                    # OS X 10.5 comes with libffi.dylib; the include files are
+                    # in /usr/include/ffi
+                    ffi_inc_dirs.append('/usr/include/ffi')
+
+        if not ffi_inc:
+            found = find_file('ffi.h', [], ffi_inc_dirs)
+            if found:
+                ffi_inc = found[0]
+        if ffi_inc:
+            ffi_h = ffi_inc + '/ffi.h'
             if not os.path.exists(ffi_h):
                 ffi_inc = None
                 print('Header file {} does not exist'.format(ffi_h))
-        ffi_lib = None
-        if ffi_inc is not None:
+        if ffi_lib is None and ffi_inc:
             for lib_name in ('ffi', 'ffi_pic'):
                 if (self.compiler.find_library_file(self.lib_dirs, lib_name)):
                     ffi_lib = lib_name
                     break
 
         if ffi_inc and ffi_lib:
-            ext.include_dirs.extend(ffi_inc)
+            ffi_headers = glob(os.path.join(ffi_inc, '*.h'))
+            if grep_headers_for('ffi_prep_cif_var', ffi_headers):
+                ext.extra_compile_args.append("-DHAVE_FFI_PREP_CIF_VAR=1")
+            if grep_headers_for('ffi_prep_closure_loc', ffi_headers):
+                ext.extra_compile_args.append("-DHAVE_FFI_PREP_CLOSURE_LOC=1")
+            if grep_headers_for('ffi_closure_alloc', ffi_headers):
+                ext.extra_compile_args.append("-DHAVE_FFI_CLOSURE_ALLOC=1")
+
+            ext.include_dirs.append(ffi_inc)
             ext.libraries.append(ffi_lib)
             self.use_system_libffi = True
 

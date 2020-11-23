@@ -300,6 +300,8 @@ class UnionTests(BaseTestCase):
         self.assertEqual(repr(u), repr(int))
         u = Union[List[int], int]
         self.assertEqual(repr(u), 'typing.Union[typing.List[int], int]')
+        u = Union[list[int], dict[str, float]]
+        self.assertEqual(repr(u), 'typing.Union[list[int], dict[str, float]]')
 
     def test_cannot_subclass(self):
         with self.assertRaises(TypeError):
@@ -407,6 +409,7 @@ class TupleTests(BaseTestCase):
         self.assertEqual(repr(Tuple[()]), 'typing.Tuple[()]')
         self.assertEqual(repr(Tuple[int, float]), 'typing.Tuple[int, float]')
         self.assertEqual(repr(Tuple[int, ...]), 'typing.Tuple[int, ...]')
+        self.assertEqual(repr(Tuple[list[int]]), 'typing.Tuple[list[int]]')
 
     def test_errors(self):
         with self.assertRaises(TypeError):
@@ -479,6 +482,8 @@ class CallableTests(BaseTestCase):
         self.assertEqual(repr(ct2), 'typing.Callable[[str, float], int]')
         ctv = Callable[..., str]
         self.assertEqual(repr(ctv), 'typing.Callable[..., str]')
+        ct3 = Callable[[str, float], list[int]]
+        self.assertEqual(repr(ct3), 'typing.Callable[[str, float], list[int]]')
 
     def test_callable_with_ellipsis(self):
 
@@ -523,6 +528,7 @@ class LiteralTests(BaseTestCase):
         self.assertEqual(repr(Literal[int]), "typing.Literal[int]")
         self.assertEqual(repr(Literal), "typing.Literal")
         self.assertEqual(repr(Literal[None]), "typing.Literal[None]")
+        self.assertEqual(repr(Literal[1, 2, 3, 3]), "typing.Literal[1, 2, 3]")
 
     def test_cannot_init(self):
         with self.assertRaises(TypeError):
@@ -553,6 +559,35 @@ class LiteralTests(BaseTestCase):
     def test_no_multiple_subscripts(self):
         with self.assertRaises(TypeError):
             Literal[1][1]
+
+    def test_equal(self):
+        self.assertNotEqual(Literal[0], Literal[False])
+        self.assertNotEqual(Literal[True], Literal[1])
+        self.assertNotEqual(Literal[1], Literal[2])
+        self.assertNotEqual(Literal[1, True], Literal[1])
+        self.assertEqual(Literal[1], Literal[1])
+        self.assertEqual(Literal[1, 2], Literal[2, 1])
+        self.assertEqual(Literal[1, 2, 3], Literal[1, 2, 3, 3])
+
+    def test_hash(self):
+        self.assertEqual(hash(Literal[1]), hash(Literal[1]))
+        self.assertEqual(hash(Literal[1, 2]), hash(Literal[2, 1]))
+        self.assertEqual(hash(Literal[1, 2, 3]), hash(Literal[1, 2, 3, 3]))
+
+    def test_args(self):
+        self.assertEqual(Literal[1, 2, 3].__args__, (1, 2, 3))
+        self.assertEqual(Literal[1, 2, 3, 3].__args__, (1, 2, 3))
+        self.assertEqual(Literal[1, Literal[2], Literal[3, 4]].__args__, (1, 2, 3, 4))
+        # Mutable arguments will not be deduplicated
+        self.assertEqual(Literal[[], []].__args__, ([], []))
+
+    def test_flatten(self):
+        l1 = Literal[Literal[1], Literal[2], Literal[3]]
+        l2 = Literal[Literal[1, 2], 3]
+        l3 = Literal[Literal[1, 2, 3]]
+        for l in l1, l2, l3:
+            self.assertEqual(l, Literal[1, 2, 3])
+            self.assertEqual(l.__args__, (1, 2, 3))
 
 
 XK = TypeVar('XK', str, bytes)
@@ -2269,6 +2304,8 @@ class FinalTests(BaseTestCase):
         self.assertEqual(repr(cv), 'typing.Final[int]')
         cv = Final[Employee]
         self.assertEqual(repr(cv), 'typing.Final[%s.Employee]' % __name__)
+        cv = Final[tuple[int]]
+        self.assertEqual(repr(cv), 'typing.Final[tuple[int]]')
 
     def test_cannot_subclass(self):
         with self.assertRaises(TypeError):

@@ -193,7 +193,6 @@ typedef int pid_t;
 #define Py_IS_NAN _isnan
 #define Py_IS_INFINITY(X) (!_finite(X) && !_isnan(X))
 #define Py_IS_FINITE(X) _finite(X)
-#define copysign _copysign
 
 /* define some ANSI types that are not defined in earlier Win headers */
 #if _MSC_VER >= 1200

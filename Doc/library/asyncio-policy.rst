@@ -209,7 +209,7 @@ implementation used by the asyncio event loop:
    It works reliably even when the asyncio event loop is run in a non-main OS thread.
 
    There is no noticeable overhead when handling a big number of children (*O(1)* each
-   time a child terminates), but stating a thread per process requires extra memory.
+   time a child terminates), but starting a thread per process requires extra memory.
 
    This watcher is used by default.
 
@@ -219,7 +219,7 @@ implementation used by the asyncio event loop:
 
    This implementation registers a :py:data:`SIGCHLD` signal handler on
    instantiation. That can break third-party code that installs a custom handler for
-   `SIGCHLD`.  signal).
+   :py:data:`SIGCHLD` signal.
 
    The watcher avoids disrupting other code spawning processes
    by polling every process explicitly on a :py:data:`SIGCHLD` signal.
