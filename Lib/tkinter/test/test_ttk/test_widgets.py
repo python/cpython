@@ -438,7 +438,7 @@ class ComboboxTest(EntryTest, unittest.TestCase):
     def _show_drop_down_listbox(self):
         width = self.combo.winfo_width()
         x, y = width - 5, 5
-        self.assertEqual(self.combo.identify(x, y), 'downarrow')
+        self.assertRegex(self.combo.identify(x, y), r'.*downarrow\Z')
         self.combo.event_generate('<ButtonPress-1>', x=x, y=y)
         self.combo.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.combo.update_idletasks()
@@ -1134,7 +1134,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         height = self.spin.winfo_height()
         x = width - 5
         y = height//2 - 5
-        self.assertEqual(self.spin.identify(x, y), 'uparrow')
+        self.assertRegex(self.spin.identify(x, y), r'.*uparrow\Z')
         self.spin.event_generate('<ButtonPress-1>', x=x, y=y)
         self.spin.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.spin.update_idletasks()
@@ -1144,7 +1144,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         height = self.spin.winfo_height()
         x = width - 5
         y = height//2 + 4
-        self.assertEqual(self.spin.identify(x, y), 'downarrow')
+        self.assertRegex(self.spin.identify(x, y), r'.*downarrow\Z')
         self.spin.event_generate('<ButtonPress-1>', x=x, y=y)
         self.spin.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.spin.update_idletasks()
