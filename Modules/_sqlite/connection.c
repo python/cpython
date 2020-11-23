@@ -1710,9 +1710,8 @@ finally:
 
     if (PyErr_Occurred()) {
         return NULL;
-    } else {
-        return Py_NewRef(Py_None);
     }
+    return Py_NewRef(Py_None);
 }
 
 /* Called when the connection is used as a context manager. Returns itself as a
