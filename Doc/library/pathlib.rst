@@ -337,7 +337,7 @@ Pure paths provide the following methods and properties:
       PureWindowsPath('c:/')
 
    .. versionchanged:: 3.10
-      Slice support was added.
+      The parents sequence now supports :term:`slices <slice>` and negative index values.
 
 .. data:: PurePath.parent
 
