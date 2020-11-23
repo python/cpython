@@ -2,9 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-/* Caching the hash (ob_shash) saves recalculation of a bytes' hash value.
-   This significantly speeds up dict lookups. */
-
 typedef struct {
     PyObject_VAR_HEAD
     Py_hash_t ob_shash;
