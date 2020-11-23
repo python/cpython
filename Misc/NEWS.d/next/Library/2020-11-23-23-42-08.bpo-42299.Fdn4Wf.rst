@@ -1,0 +1,2 @@
+Removed the ``formatter`` module, which was deprecated in 3.4.
+(Contributed by Dong-hee Na and and Terry J. Reedy in :issue:`33955`.)
