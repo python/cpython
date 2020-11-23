@@ -50,10 +50,11 @@ TIMEOUT_MAX = _thread.TIMEOUT_MAX
 del _thread
 
 
-# Support for profile and trace hooks
+# Support for profile, trace and thread creation hooks
 
 _profile_hook = None
 _trace_hook = None
+_thread_creation_hook = None
 
 def setprofile(func):
     """Set a profile function for all threads started from the threading module.
@@ -82,6 +83,20 @@ def settrace(func):
 def gettrace():
     """Get the trace function as set by threading.settrace()."""
     return _trace_hook
+
+def setthreadcreationhook(func):
+    """Set a thread creation hook.
+
+    The func will be invoked for each newly created thread, before its run()
+    method is called.
+
+    """
+    global _thread_creation_hook
+    _thread_creation_hook = func
+
+def getthreadcreationhook():
+    """Get the thread creation hook as set by threading.setthreadcreationhook()."""
+    return _thread_creation_hook
 
 # Synchronization classes
 
@@ -963,6 +978,8 @@ class Thread:
                 _active[self._ident] = self
                 del _limbo[self]
 
+            if _thread_creation_hook:
+              _thread_creation_hook()
             if _trace_hook:
                 _sys.settrace(_trace_hook)
             if _profile_hook:
