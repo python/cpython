@@ -1114,9 +1114,7 @@ by member descriptors::
             return f'<Member {self.name!r} of {self.clsname!r}>'
 
 The :meth:`type.__new__` method takes care of adding member objects to class
-variables.  The :meth:`object.__new__` method takes care of creating instances
-that have slots instead of an instance dictionary.  Here is a rough equivalent
-in pure Python::
+variables::
 
     class Type(type):
         'Simulate how the type metaclass adds member objects for slots'
@@ -1128,6 +1126,10 @@ in pure Python::
             for offset, name in enumerate(slot_names):
                 mapping[name] = Member(name, clsname, offset)
             return type.__new__(mcls, clsname, bases, mapping)
+
+The :meth:`object.__new__` method takes care of creating instances that have
+slots instead of an instance dictionary.  Here is a rough simulation in pure
+Python::
 
     class Object:
         'Simulate how object.__new__() allocates memory for __slots__'
