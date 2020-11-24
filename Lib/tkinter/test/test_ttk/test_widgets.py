@@ -437,10 +437,11 @@ class ComboboxTest(EntryTest, unittest.TestCase):
 
     def _show_drop_down_listbox(self):
         width = self.combo.winfo_width()
-        self.combo.event_generate('<ButtonPress-1>', x=width - 5, y=5)
-        self.combo.event_generate('<ButtonRelease-1>', x=width - 5, y=5)
+        x, y = width - 5, 5
+        self.assertRegex(self.combo.identify(x, y), r'.*downarrow\Z')
+        self.combo.event_generate('<ButtonPress-1>', x=x, y=y)
+        self.combo.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.combo.update_idletasks()
-
 
     def test_virtual_event(self):
         success = []
@@ -1088,6 +1089,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
         self.nb.select(0)
 
+        self.assertEqual(self.nb.identify(5, 5), 'focus')
         simulate_mouse_click(self.nb, 5, 5)
         self.nb.focus_force()
         self.nb.event_generate('<Control-Tab>')
@@ -1102,6 +1104,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.nb.tab(self.child1, text='a', underline=0)
         self.nb.enable_traversal()
         self.nb.focus_force()
+        self.assertEqual(self.nb.identify(5, 5), 'focus')
         simulate_mouse_click(self.nb, 5, 5)
         if sys.platform == 'darwin':
             self.nb.event_generate('<Option-a>')
@@ -1132,6 +1135,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         height = self.spin.winfo_height()
         x = width - 5
         y = height//2 - 5
+        self.assertRegex(self.spin.identify(x, y), r'.*uparrow\Z')
         self.spin.event_generate('<ButtonPress-1>', x=x, y=y)
         self.spin.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.spin.update_idletasks()
@@ -1141,6 +1145,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         height = self.spin.winfo_height()
         x = width - 5
         y = height//2 + 4
+        self.assertRegex(self.spin.identify(x, y), r'.*downarrow\Z')
         self.spin.event_generate('<ButtonPress-1>', x=x, y=y)
         self.spin.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.spin.update_idletasks()
@@ -1530,6 +1535,9 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_heading_callback(self):
         def simulate_heading_click(x, y):
+            if tcl_version >= (8, 6):
+                self.assertEqual(self.tv.identify_column(x), '#0')
+                self.assertEqual(self.tv.identify_region(x, y), 'heading')
             simulate_mouse_click(self.tv, x, y)
             self.tv.update()
 
