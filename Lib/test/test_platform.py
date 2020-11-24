@@ -8,12 +8,63 @@ from unittest import mock
 from test import support
 from test.support import os_helper
 
+FEDORA_OSRELEASE = """\
+NAME=Fedora
+VERSION="32 (Thirty Two)"
+ID=fedora
+VERSION_ID=32
+VERSION_CODENAME=""
+PLATFORM_ID="platform:f32"
+PRETTY_NAME="Fedora 32 (Thirty Two)"
+ANSI_COLOR="0;34"
+LOGO=fedora-logo-icon
+CPE_NAME="cpe:/o:fedoraproject:fedora:32"
+HOME_URL="https://fedoraproject.org/"
+DOCUMENTATION_URL="https://docs.fedoraproject.org/en-US/fedora/f32/system-administrators-guide/"
+SUPPORT_URL="https://fedoraproject.org/wiki/Communicating_and_getting_help"
+BUG_REPORT_URL="https://bugzilla.redhat.com/"
+REDHAT_BUGZILLA_PRODUCT="Fedora"
+REDHAT_BUGZILLA_PRODUCT_VERSION=32
+REDHAT_SUPPORT_PRODUCT="Fedora"
+REDHAT_SUPPORT_PRODUCT_VERSION=32
+PRIVACY_POLICY_URL="https://fedoraproject.org/wiki/Legal:PrivacyPolicy"
+"""
+
+UBUNTU_OSRELEASE = """\
+NAME="Ubuntu"
+VERSION="20.04.1 LTS (Focal Fossa)"
+ID=ubuntu
+ID_LIKE=debian
+PRETTY_NAME="Ubuntu 20.04.1 LTS"
+VERSION_ID="20.04"
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+VERSION_CODENAME=focal
+UBUNTU_CODENAME=focal
+"""
+
+TEST_OSRELEASE = r"""
+# test data
+ID_LIKE=egg spam viking
+EMPTY=
+# comments and empty lines are ignored
+
+SINGLE_QUOTE='single'
+EMPTY_SINGLE=''
+DOUBLE_QUOTE="double"
+EMPTY_DOUBLE=""
+QUOTES="double's"
+"""
+
 
 class PlatformTest(unittest.TestCase):
     def clear_caches(self):
         platform._platform_cache.clear()
         platform._sys_version_cache.clear()
         platform._uname_cache = None
+        platform._osrelease_cache = None
 
     def test_architecture(self):
         res = platform.architecture()
@@ -381,6 +432,48 @@ class PlatformTest(unittest.TestCase):
                     self.clear_caches()
                     self.assertEqual(platform.platform(terse=1), expected_terse)
                     self.assertEqual(platform.platform(), expected)
+
+    def test_freedesktop_osrelease(self):
+        self.addCleanup(self.clear_caches)
+        self.clear_caches()
+
+        if any(os.path.isfile(fn) for fn in platform._osrelease_candidates):
+            info = platform.freedesktop_osrelease()
+            self.assertIn("NAME", info)
+            self.assertIn("ID", info)
+
+            info["CPYTHON_TEST"] = "test"
+            self.assertNotIn("CPYTHON_TEST", platform.freedesktop_osrelease())
+        else:
+            with self.assertRaises(OSError):
+                platform.freedesktop_osrelease()
+
+    def test_parse_osrelease(self):
+        info = platform._parse_osrelease(FEDORA_OSRELEASE.split("\n"))
+        self.assertEqual(info["NAME"], "Fedora")
+        self.assertEqual(info["ID"], "fedora")
+        self.assertNotIn("ID_LIKE", info)
+        self.assertEqual(info["VERSION_CODENAME"], "")
+
+        info = platform._parse_osrelease(UBUNTU_OSRELEASE.split("\n"))
+        self.assertEqual(info["NAME"], "Ubuntu")
+        self.assertEqual(info["ID"], "ubuntu")
+        self.assertEqual(info["ID_LIKE"], ("debian",))
+        self.assertEqual(info["VERSION_CODENAME"], "focal")
+
+        info = platform._parse_osrelease(TEST_OSRELEASE.split("\n"))
+        expected = {
+            "ID": "linux",
+            "NAME": "Linux",
+            "ID_LIKE": ("egg", "spam", "viking"),
+            "EMPTY": "",
+            "DOUBLE_QUOTE": "double",
+            "EMPTY_DOUBLE": "",
+            "SINGLE_QUOTE": "single",
+            "EMPTY_SINGLE": "",
+            "QUOTES": "double's",
+        }
+        self.assertEqual(info, expected)
 
 
 if __name__ == '__main__':

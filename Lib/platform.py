@@ -1230,6 +1230,59 @@ def platform(aliased=0, terse=0):
     _platform_cache[(aliased, terse)] = platform
     return platform
 
+### freedesktop.org os-release standard
+# https://www.freedesktop.org/software/systemd/man/os-release.html
+
+# NAME=value with optional quotes (' or ")
+_osrelease_line = re.compile(
+    "^(?P<name>[a-zA-Z0-9_]+)=(?P<quote>[\"\']?)(?P<value>.*)(?P=quote)$"
+)
+# /etc takes precedence over /usr/lib
+_osrelease_candidates = ("/etc/os-release", "/usr/lib/os-release", )
+_osrelease_cache = None
+
+
+def _parse_osrelease(lines):
+    # NAME and ID fields are mandatory fields with well-known defaults
+    # in pratice all Linux distributions override NAME and ID.
+    info = {
+        "NAME": "Linux",
+        "ID": "linux"
+    }
+    for line in lines:
+        mo = _osrelease_line.match(line)
+        if mo is not None:
+            info[mo.group('name')] = mo.group('value')
+
+    # ID_LIKE is a space separated field of ids
+    if 'ID_LIKE' in info:
+        info['ID_LIKE'] = tuple(
+            id_like for id_like in info['ID_LIKE'].split(' ') if id_like
+        )
+    return info
+
+
+def freedesktop_osrelease():
+    """Return operation system identification from freedesktop.org os-release
+    """
+    global _osrelease_cache
+
+    if _osrelease_cache is None:
+        for candidate in _osrelease_candidates:
+            try:
+                with open(candidate) as f:
+                    _osrelease_cache = _parse_osrelease(f)
+                break
+            except OSError as e:
+                e.__traceback__ = None
+                _osrelease_cache = e
+
+    if isinstance(_osrelease_cache, Exception):
+        raise _osrelease_cache
+    else:
+        return _osrelease_cache.copy()
+
+
 ### Command line interface
 
 if __name__ == '__main__':
