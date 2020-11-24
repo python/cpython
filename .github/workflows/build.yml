@@ -47,6 +47,34 @@ jobs:
             # https://github.com/python/core-workflow/issues/373
             git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc)' && echo '::set-output name=run_tests::true' || true
           fi
+
+  check_generated_files:
+    name: 'Check if generated files are up to date'
+    runs-on: ubuntu-latest
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - name: Install Dependencies
+        run: sudo ./.github/workflows/posix-deps-apt.sh
+      - name: Build CPython
+        run: |
+          ./configure --with-pydebug
+          make -j4 regen-all
+      - name: Check for changes
+        run: |
+          changes=$(git status --porcelain)
+          # Check for changes in regenerated files
+          if ! test -z "$changes"
+          then
+            echo "Generated files not up to date. Perhaps you forgot to run make regen-all ;)"
+            echo "$changes"
+            exit 1
+          fi
+      - name: Check exported libpython symbols
+        run: make smelly
+
   build_win32:
     name: 'Windows (x86)'
     runs-on: windows-latest
