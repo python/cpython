@@ -43,6 +43,17 @@ get_functools_state(PyObject *module)
 static void partial_setvectorcall(partialobject *pto);
 static struct PyModuleDef _functools_module;
 
+static inline _functools_state *
+get_functools_state_by_type(PyTypeObject *type)
+{
+    PyObject *module = _PyType_GetModuleByDef(type, &_functools_module);
+    if (module == NULL) {
+        return NULL;
+    }
+    _functools_state *state = get_functools_state(module);
+    return state;
+}
+
 static PyObject *
 partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
@@ -55,11 +66,10 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
-    PyObject *module = _PyType_GetModuleByDef(type, &_functools_module);
-    if (module == NULL) {
+    _functools_state *state = get_functools_state_by_type(type);
+    if (state == NULL) {
         return NULL;
     }
-    _functools_state *state = get_functools_state(module);
 
     pargs = pkw = NULL;
     func = PyTuple_GET_ITEM(args, 0);
@@ -542,7 +552,7 @@ static PyType_Spec keyobject_type_spec = {
 static PyObject *
 keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds)
 {
-    PyObject *object, *module;
+    PyObject *object;
     keyobject *result;
     _functools_state *state;
     static char *kwargs[] = {"obj", NULL};
@@ -550,11 +560,10 @@ keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:K", kwargs, &object))
         return NULL;
 
-    module = _PyType_GetModuleByDef(Py_TYPE(ko), &_functools_module);
-    if (module == NULL) {
+    state = get_functools_state_by_type(Py_TYPE(ko));
+    if (state == NULL) {
         return NULL;
     }
-    state = get_functools_state(module);
     result = PyObject_New(keyobject, state->keyobject_type);
     if (!result)
         return NULL;
@@ -573,15 +582,13 @@ keyobject_richcompare(PyObject *ko, PyObject *other, int op)
     PyObject *y;
     PyObject *compare;
     PyObject *answer;
-    PyObject *module;
     PyObject* stack[2];
     _functools_state *state;
 
-    module = _PyType_GetModuleByDef(Py_TYPE(ko), &_functools_module);
-    if (module == NULL) {
+    state = get_functools_state_by_type(Py_TYPE(ko));
+    if (state == NULL) {
         return NULL;
     }
-    state = get_functools_state(module);
     if (!Py_IS_TYPE(other, state->keyobject_type)) {
         PyErr_Format(PyExc_TypeError, "other argument must be K instance");
         return NULL;
@@ -784,7 +791,8 @@ typedef struct lru_cache_object {
 } lru_cache_object;
 
 static PyObject *
-lru_cache_make_key(PyObject *module, PyObject *args, PyObject *kwds, int typed)
+lru_cache_make_key(_functools_state *state, PyObject *args,
+                   PyObject *kwds, int typed)
 {
     PyObject *key, *keyword, *value;
     Py_ssize_t key_size, pos, key_pos, kwds_size;
@@ -822,7 +830,6 @@ lru_cache_make_key(PyObject *module, PyObject *args, PyObject *kwds, int typed)
         Py_INCREF(item);
         PyTuple_SET_ITEM(key, key_pos++, item);
     }
-    _functools_state *state = get_functools_state(module);
     if (kwds_size) {
         Py_INCREF(state->kwd_mark);
         PyTuple_SET_ITEM(key, key_pos++, state->kwd_mark);
@@ -867,10 +874,14 @@ uncached_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
 static PyObject *
 infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds)
 {
-    PyObject *result, *module;
+    PyObject *result;
     Py_hash_t hash;
-    module = _PyType_GetModuleByDef(Py_TYPE(self), &_functools_module);
-    PyObject *key = lru_cache_make_key(module, args, kwds, self->typed);
+    _functools_state *state;
+    state = get_functools_state_by_type(Py_TYPE(self));
+    if (state == NULL) {
+        return NULL;
+    }
+    PyObject *key = lru_cache_make_key(state, args, kwds, self->typed);
     if (!key)
         return NULL;
     hash = PyObject_Hash(key);
@@ -968,15 +979,15 @@ static PyObject *
 bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds)
 {
     lru_list_elem *link;
-    PyObject *key, *result, *testresult, *module;
+    PyObject *key, *result, *testresult;
     Py_hash_t hash;
     _functools_state *state;
 
-    module = _PyType_GetModuleByDef(Py_TYPE(self), &_functools_module);
-    if (module == NULL) {
+    state = get_functools_state_by_type(Py_TYPE(self));
+    if (state == NULL) {
         return NULL;
     }
-    key = lru_cache_make_key(module, args, kwds, self->typed);
+    key = lru_cache_make_key(state, args, kwds, self->typed);
     if (!key)
         return NULL;
     hash = PyObject_Hash(key);
@@ -1030,7 +1041,6 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         self->root.next == &self->root)
     {
         /* Cache is not full, so put the result in a new link */
-        state = get_functools_state(module);
         link = (lru_list_elem *)PyObject_New(lru_list_elem,
                                              state->lru_list_elem_type);
         if (link == NULL) {
