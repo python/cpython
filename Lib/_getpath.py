@@ -1,9 +1,19 @@
 # Compute the Python Path Configuration on Unix.
 
+# This module is imported during the Python initialization.
+# Only builtin and frozen modules can be imported.
 import posix
-from _stat import S_ISREG, S_ISDIR
+from _stat import S_ISREG, S_ISDIR, S_IXUSR, S_IXGRP, S_IXOTH
 import _cgetpath
 import sys
+
+
+# Use 'os' module name to make the code look more regular
+os = posix
+
+# Py_DecodeLocale() function: decode a byte string from the filesystem encoding
+# and error handler.
+decode_locale = _cgetpath.decode_locale
 
 ENV_CFG = "pyvenv.cfg"
 LANDMARK = "os.py"
@@ -22,11 +32,6 @@ __CYGWIN__ = False
 __MINGW32__ = False
 
 
-# Py_DecodeLocale() function: decode a byte string from the filesystem encoding
-# and error handler.
-decode_locale = _cgetpath.decode_locale
-
-
 PYTHONPATH = decode_locale(_cgetpath.PYTHONPATH)
 PREFIX = decode_locale(_cgetpath.PREFIX)
 EXEC_PREFIX = decode_locale(_cgetpath.EXEC_PREFIX)
@@ -35,7 +40,7 @@ VERSION = decode_locale(_cgetpath.VERSION)
 
 
 def isabs(path):
-    # an empty path is not considered as absolute
+    # An empty path is considered as a relative path.
     return (path and path.startswith(SEP))
 
 
@@ -64,7 +69,7 @@ def joinpath(path, path2):
 # Is a file, not a directory?
 def isfile(filename):
     try:
-        st = posix.stat(filename)
+        st = os.stat(filename)
     except OSError:
         return False
     if not S_ISREG(st.st_mode):
@@ -75,18 +80,18 @@ def isfile(filename):
 # Is executable file?
 def isxfile(filename):
     try:
-        st = posix.stat(filename)
+        st = os.stat(filename)
     except OSError:
         return False
     if not S_ISREG(st.st_mode):
         return False
-    return ((st.st_mode & 0o111) != 0)
+    return ((st.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) != 0)
 
 
 # Is a directory?
 def isdir(filename):
     try:
-        st = posix.stat(filename)
+        st = os.stat(filename)
     except OSError:
         return False
     return S_ISDIR(st.st_mode)
@@ -106,7 +111,7 @@ def abspath(path):
         return path
 
     try:
-        cwd = posix.getcwd()
+        cwd = os.getcwd()
     except OSError:
         return path
 
@@ -135,7 +140,7 @@ def resolve_symlinks(path):
     nlink = 0
     while True:
         try:
-            new_path = posix.readlink(path)
+            new_path = os.readlink(path)
         except OSError:
             # Not a symbolic link: we are done.
             break
@@ -152,6 +157,42 @@ def resolve_symlinks(path):
             raise Exception("maximum number of symbolic links reached")
 
     return path
+
+
+def readline(fd):
+    # FIXME: write better code
+    # FIXME: support '\r' newline (macOS)
+    nl = b'\n'
+    buf = bytearray()
+    while True:
+        chunk = os.read(fd, 4096)
+        if not chunk:
+            break
+        if nl in chunk:
+            chunk = chunk.split(nl, 1)[0]
+            buf += chunk
+            break
+        buf += chunk
+    return bytes(buf)
+
+
+# Search for a prefix value in an environment file (pyvenv.cfg).
+def find_env_config_value(fd, key):
+    while True:
+        line = readline(fd)
+        if not line:
+            break
+        if line.startswith(b'#'):
+            # Comment - skip
+            continue
+
+        line = line.decode('utf-8', 'surrogateescape')
+
+        # FIXME: rewrite this code
+        tok = line.split() # FIXME: only split at " \t\r\n"
+        if tok[0] == key and tok[1] == '=':
+            value = tok[2]
+            return value
 
 
 class PathConfig:
@@ -212,42 +253,6 @@ class PathConfig:
                 config['isolated'] = self.isolated
             if self.site_import != -1:
                 config['site_import'] = self.site_import
-
-
-def readline(fd):
-    # FIXME: write better code
-    # FIXME: support '\r' newline (macOS)
-    nl = b'\n'
-    buf = bytearray()
-    while True:
-        chunk = posix.read(fd, 4096)
-        if not chunk:
-            break
-        if nl in chunk:
-            chunk = chunk.split(nl, 1)[0]
-            buf += chunk
-            break
-        buf += chunk
-    return bytes(buf)
-
-
-# Search for a prefix value in an environment file (pyvenv.cfg).
-def find_env_config_value(fd, key):
-    while True:
-        line = readline(fd)
-        if not line:
-            break
-        if line.startswith(b'#'):
-            # Comment - skip
-            continue
-
-        line = line.decode('utf-8', 'surrogateescape')
-
-        # FIXME: rewrite this code
-        tok = line.split() # FIXME: only split at " \t\r\n"
-        if tok[0] == key and tok[1] == '=':
-            value = tok[2]
-            return value
 
 
 class CalculatePath:
@@ -380,14 +385,14 @@ class CalculatePath:
         # Filename: <argv0_path> / "pyvenv.cfg"
         filename = joinpath(self.argv0_path, ENV_CFG)
         try:
-            return posix.open(filename, posix.O_RDONLY)
+            return os.open(filename, os.O_RDONLY)
         except OSError:
             pass
 
         # Path: <dirname(argv0_path)> / "pyvenv.cfg"
         filename = joinpath(dirname(self.argv0_path), ENV_CFG)
         try:
-            return posix.open(filename, posix.O_RDONLY)
+            return os.open(filename, os.O_RDONLY)
         except OSError:
             return None
 
@@ -408,7 +413,7 @@ class CalculatePath:
             if home is not None:
                 self.argv0_path = home
         finally:
-            posix.close(env_file)
+            os.close(env_file)
 
     def search_for_prefix(self):
         # If PYTHONHOME is set, we believe it unconditionally
@@ -484,14 +489,14 @@ class CalculatePath:
         # Filename: <argv0_path> / "pybuilddir.txt"
         filename = joinpath(self.argv0_path, "pybuilddir.txt")
         try:
-            fd = posix.open(filename, posix.O_RDONLY)
+            fd = os.open(filename, os.O_RDONLY)
         except OSError:
             return
 
         try:
             line = readline(fd)
         finally:
-            posix.close(fd)
+            os.close(fd)
         pybuilddir = line.decode('utf-8', 'surrogateescape')
 
         exec_prefix = joinpath(self.argv0_path, pybuilddir)
