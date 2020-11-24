@@ -168,7 +168,6 @@ the lookup or update:
         def birthday(self):
             self.age += 1                   # Calls both __get__() and __set__()
 
-
 An interactive session shows that all access to the managed attribute *age* is
 logged, but that the regular attribute *name* is not logged::
 
@@ -265,9 +264,7 @@ The new class now logs access to both *name* and *age*::
     INFO:root:Updating 'name' to 'Catherine C'
     INFO:root:Updating 'age' to 20
 
-The two *Person* instances contain only the private names:
-
-.. doctest::
+The two *Person* instances contain only the private names::
 
     >>> vars(pete)
     {'_name': 'Peter P', '_age': 10}
