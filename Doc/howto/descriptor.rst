@@ -170,17 +170,7 @@ the lookup or update:
 
 
 An interactive session shows that all access to the managed attribute *age* is
-logged, but that the regular attribute *name* is not logged:
-
-.. testsetup::
-
-   class logging:
-       @staticmethod
-       def info(format_string, *args):
-           message = format_string % args
-           print('INFO:root:' + message)
-
-.. doctest::
+logged, but that the regular attribute *name* is not logged::
 
     >>> mary = Person('Mary M', 30)         # The initial age update is logged
     INFO:root:Updating 'age' to 30
@@ -266,17 +256,7 @@ we call :func:`vars` to look up the descriptor without triggering it:
     >>> vars(vars(Person)['age'])
     {'public_name': 'age', 'private_name': '_age'}
 
-The new class now logs access to both *name* and *age*:
-
-.. testsetup::
-
-   class logging:
-       @staticmethod
-       def info(format_string, *args):
-           message = format_string % args
-           print('INFO:root:' + message)
-
-.. doctest::
+The new class now logs access to both *name* and *age*::
 
     >>> pete = Person('Peter P', 10)
     INFO:root:Updating 'name' to 'Peter P'
