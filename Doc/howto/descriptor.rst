@@ -414,8 +414,8 @@ Here are three practical data validation utilities:
                 )
 
 
-Practical use
--------------
+Practical application
+---------------------
 
 Here's how the data validators can be used in a real class:
 
@@ -804,7 +804,9 @@ The documentation shows a typical use to define a managed attribute ``x``:
         x = property(getx, setx, delx, "I'm the 'x' property.")
 
 To see how :func:`property` is implemented in terms of the descriptor protocol,
-here is a pure Python equivalent::
+here is a pure Python equivalent:
+
+.. testcode::
 
     class Property:
         "Emulate PyProperty_Type() in Objects/descrobject.c"
@@ -842,6 +844,36 @@ here is a pure Python equivalent::
 
         def deleter(self, fdel):
             return type(self)(self.fget, self.fset, fdel, self.__doc__)
+
+.. testsetup::
+
+    # Verify the Property() emulation code
+    class CC:
+        def getx(self): return self.__x
+        def setx(self, value): self.__x = value
+        def delx(self): del self.__x
+        x = Property(getx, setx, delx, "I'm the 'x' property.")
+    cc = CC()
+    assert not hasattr(cc, 'x')
+    cc.x = 33
+    assert cc.x == 33
+    del cc.x
+    assert not hasattr(cc, 'x')
+
+    # Now do it again but the decorator style
+    class CCC:
+        @Property
+        def x(self): return self.__x
+        @x.setter
+        def x(self, value): self.__x = value
+        @x.deleter
+        def delx(self): del self.__x
+    ccc = CCC()
+    assert not hasattr(ccc, 'x')
+    ccc.x = 333
+    assert ccc.x == 333
+    del ccc.x
+    assert not hasattr(ccc, 'x')
 
 The :func:`property` builtin helps whenever a user interface has granted
 attribute access and then subsequent changes require the intervention of a
