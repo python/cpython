@@ -1237,7 +1237,7 @@ by member descriptors:
             return f'<Member {self.name!r} of {self.clsname!r}>'
 
 The :meth:`type.__new__` method takes care of adding member objects to class
-variables::
+variables:
 
 .. testcode:
 
