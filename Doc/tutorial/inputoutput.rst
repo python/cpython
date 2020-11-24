@@ -283,12 +283,7 @@ two arguments: ``open(filename, mode)``.
 
 ::
 
-   >>> try:
-   ...     f = open('workfile', 'w')
-   ... except OSError as e:
-   ...     print('Cannot open file: ', e)
-   ... 
-   
+   >>> f = open('workfile', 'w')
 
 .. XXX str(f) is <io.TextIOWrapper object at 0x82e8dc4>
 
@@ -318,6 +313,18 @@ platform-specific line endings.  This behind-the-scenes modification
 to file data is fine for text files, but will corrupt binary data like that in
 :file:`JPEG` or :file:`EXE` files.  Be very careful to use binary mode when
 reading and writing such files.
+
+If the :func:`open` function is unable to open the file, for instance because
+the file does not exist, it raises an :exc:`OSError` (or one of its
+system-dependent subclasses) which can be handled as follows:
+
+::
+
+   >>> try:
+   ...     f = open('workfile', 'w')
+   ... except OSError as e:
+   ...     print('Cannot open file: ', e)
+   ...
 
 It is good practice to use the :keyword:`with` keyword when dealing
 with file objects.  The advantage is that the file is properly closed
