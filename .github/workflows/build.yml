@@ -60,7 +60,8 @@ jobs:
         run: sudo ./.github/workflows/posix-deps-apt.sh
       - name: Build CPython
         run: |
-          ./configure --with-pydebug
+          # Build Python with the libpython dynamic library
+          ./configure --with-pydebug --enable-shared
           make -j4 regen-all
       - name: Check for changes
         run: |

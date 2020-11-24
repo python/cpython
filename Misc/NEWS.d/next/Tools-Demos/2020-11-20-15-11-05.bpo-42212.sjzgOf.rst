@@ -1,0 +1,3 @@
+The smelly.py script now also checks the Python dynamic library and extension
+modules, not only the Python static library. Make also the script more verbose:
+explain what it does.
