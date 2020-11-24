@@ -546,7 +546,21 @@ class TestCase(unittest.TestCase):
 
     def setUp(self):
         self._get_running_loop = events._get_running_loop
-        events._get_running_loop = lambda: None
+
+        def _get_running_loop():
+            frame = sys._getframe(1)
+
+            if frame.f_globals['__name__'] == 'asyncio.mixins':
+                # When we called from LoopBoundedMixin we should
+                # fallback to default implementation of get_running_loop
+                try:
+                    return events.get_running_loop()
+                except RuntimeError:
+                    return None
+
+            return None
+
+        events._get_running_loop = _get_running_loop
         self._thread_cleanup = threading_helper.threading_setup()
 
     def tearDown(self):

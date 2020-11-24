@@ -578,7 +578,7 @@ def as_completed(fs, *, loop=None, timeout=None):
         raise TypeError(f"expect an iterable of futures, not {type(fs).__name__}")
 
     from .queues import Queue  # Import here to avoid circular import problem.
-    done = Queue(loop=loop)
+    done = Queue()
 
     if loop is None:
         loop = events.get_event_loop()
