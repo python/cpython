@@ -11,7 +11,9 @@ ALLOWED_PREFIXES = ('Py', '_Py')
 if sys.platform == 'darwin':
     ALLOWED_PREFIXES += ('__Py',)
 
-IGNORE_EXTENSION = "_ctypes_test"
+IGNORED_EXTENSION = "_ctypes_test"
+# Ignore constructor and destructor functions
+IGNORED_SYMBOLS = {'_init', '_fini'}
 
 
 def is_local_symbol_type(symtype):
@@ -76,6 +78,8 @@ def get_smelly_symbols(stdout):
 
         if is_local_symbol_type(symtype):
             local_symbols.append(symbol)
+        elif symbol in IGNORED_SYMBOLS:
+            local_symbols.append(symbol)
         else:
             smelly_symbols.append(symbol)
 
@@ -119,7 +123,7 @@ def check_extensions():
     for name in os.listdir(builddir):
         if not name.endswith(".so"):
             continue
-        if IGNORE_EXTENSION in name:
+        if IGNORED_EXTENSION in name:
             print()
             print(f"Ignore extension: {name}")
             continue
