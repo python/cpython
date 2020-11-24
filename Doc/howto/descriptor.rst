@@ -1095,6 +1095,19 @@ Using the non-data descriptor protocol, a pure Python version of
                 return self.f.__get__(cls)
             return MethodType(self.f, cls)
 
+.. testsetup::
+
+   # Verify the emulation works
+   class T:
+       @ClassMethod
+       def cm(cls, x, y):
+           return (cls, x, y)
+   assert T.cm(11, 22) == (T, 11, 22)
+
+   # Also call it from an instance
+   t = T()
+   assert t.cm(11, 22) == (T, 11, 22)
+
 The code path for ``hasattr(obj, '__get__')`` was added in Python 3.9 and
 makes it possible for :func:`classmethod` to support chained decorators.
 For example, a classmethod and property could be chained together:
