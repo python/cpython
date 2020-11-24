@@ -247,8 +247,12 @@ pipe. (Contributed by Pablo Galindo in :issue:`41625`.)
 pathlib
 -------
 
-Added slice support to :meth:`~pathlib.Path.parents`.
+Added slice support to :attr:`PurePath.parents <pathlib.PurePath.parents>`.
 (Contributed by Joshua Cannon in :issue:`35498`)
+
+Added negative indexing support to :attr:`PurePath.parents
+<pathlib.PurePath.parents>`.
+(Contributed by Yaroslav Pankovych in :issue:`21041`)
 
 py_compile
 ----------

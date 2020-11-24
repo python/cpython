@@ -443,7 +443,6 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         self.combo.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.combo.update_idletasks()
 
-
     def test_virtual_event(self):
         success = []
 
@@ -1090,6 +1089,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
         self.nb.select(0)
 
+        self.assertEqual(self.nb.identify(5, 5), 'focus')
         simulate_mouse_click(self.nb, 5, 5)
         self.nb.focus_force()
         self.nb.event_generate('<Control-Tab>')
@@ -1104,6 +1104,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.nb.tab(self.child1, text='a', underline=0)
         self.nb.enable_traversal()
         self.nb.focus_force()
+        self.assertEqual(self.nb.identify(5, 5), 'focus')
         simulate_mouse_click(self.nb, 5, 5)
         if sys.platform == 'darwin':
             self.nb.event_generate('<Option-a>')
@@ -1534,6 +1535,9 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_heading_callback(self):
         def simulate_heading_click(x, y):
+            if tcl_version >= (8, 6):
+                self.assertEqual(self.tv.identify_column(x), '#0')
+                self.assertEqual(self.tv.identify_region(x, y), 'heading')
             simulate_mouse_click(self.tv, x, y)
             self.tv.update()
 
