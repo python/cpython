@@ -2233,6 +2233,7 @@ class TarFile(object):
             # For systems that support symbolic and hard links.
             if tarinfo.issym():
                 if os.path.lexists(targetpath):
+                    # Avoid FileExistsError on following os.symlink.
                     os.unlink(targetpath)
                 os.symlink(tarinfo.linkname, targetpath)
             else:
