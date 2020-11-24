@@ -551,8 +551,10 @@ class TestCase(unittest.TestCase):
             frame = sys._getframe(1)
 
             if frame.f_globals['__name__'] == 'asyncio.mixins':
-                # When we called from LoopBoundedMixin we should
-                # fallback to default implementation of get_running_loop
+                # When we called from LoopBoundMixin we should fall back
+                # to the default implementation of get_running_loop because
+                # we must return the currently running event loop
+                # rather than None
                 try:
                     return events.get_running_loop()
                 except RuntimeError:
