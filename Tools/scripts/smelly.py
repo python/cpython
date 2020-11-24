@@ -70,18 +70,18 @@ def get_smelly_symbols(stdout):
 
         symtype = parts[1].strip()
         symbol = parts[-1]
-        symbol = '%s (type: %s)' % (symbol, symtype)
+        result = '%s (type: %s)' % (symbol, symtype)
 
         if symbol.startswith(ALLOWED_PREFIXES):
-            python_symbols.append(symbol)
+            python_symbols.append(result)
             continue
 
         if is_local_symbol_type(symtype):
-            local_symbols.append(symbol)
+            local_symbols.append(result)
         elif symbol in IGNORED_SYMBOLS:
-            local_symbols.append(symbol)
+            local_symbols.append(result)
         else:
-            smelly_symbols.append(symbol)
+            smelly_symbols.append(result)
 
     if local_symbols:
         print(f"Ignore {len(local_symbols)} local symbols")
