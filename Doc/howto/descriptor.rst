@@ -174,10 +174,11 @@ logged, but that the regular attribute *name* is not logged:
 
 .. testsetup::
 
-   import logging
-   import sys
-
-   logging.basicConfig(stream=sys.stdout, force=True)
+   class logging:
+       @staticmethod
+       def info(format_string, *args):
+           message = format_string % args
+           print('INFO:root:' + message)
 
 .. doctest::
 
@@ -269,10 +270,11 @@ The new class now logs access to both *name* and *age*:
 
 .. testsetup::
 
-   import logging
-   import sys
-
-   logging.basicConfig(stream=sys.stdout, force=True)
+   class logging:
+       @staticmethod
+       def info(format_string, *args):
+           message = format_string % args
+           print('INFO:root:' + message)
 
 .. doctest::
 
