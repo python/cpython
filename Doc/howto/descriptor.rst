@@ -1219,7 +1219,7 @@ by member descriptors:
 The :meth:`type.__new__` method takes care of adding member objects to class
 variables:
 
-.. testcode:
+.. testcode::
 
     class Type(type):
         'Simulate how the type metaclass adds member objects for slots'
