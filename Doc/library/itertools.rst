@@ -881,7 +881,7 @@ which incur interpreter overhead.
    def random_product(*args, repeat=1):
        "Random selection from itertools.product(*args, **kwds)"
        pools = [tuple(pool) for pool in args] * repeat
-       return tuple(random.choice(pool) for pool in pools)
+       return tuple(map(random.choice, pools))
 
    def random_permutation(iterable, r=None):
        "Random selection from itertools.permutations(iterable, r)"
@@ -900,7 +900,7 @@ which incur interpreter overhead.
        "Random selection from itertools.combinations_with_replacement(iterable, r)"
        pool = tuple(iterable)
        n = len(pool)
-       indices = sorted(random.randrange(n) for i in range(r))
+       indices = sorted(random.choices(range(n), k=r))
        return tuple(pool[i] for i in indices)
 
    def nth_combination(iterable, r, index):
