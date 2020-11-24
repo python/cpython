@@ -1196,6 +1196,7 @@
     <Compile Include="test\test_nntplib.py" />
     <Compile Include="test\test_ntpath.py" />
     <Compile Include="test\test_numeric_tower.py" />
+    <Compile Include="test\test_opcache.py" />
     <Compile Include="test\test_opcodes.py" />
     <Compile Include="test\test_openpty.py" />
     <Compile Include="test\test_operator.py" />

@@ -844,8 +844,12 @@ class Thread:
         # they may be in an invalid state leading to a deadlock or crash.
         self._started._at_fork_reinit()
         if is_alive:
-            self._tstate_lock._at_fork_reinit()
-            self._tstate_lock.acquire()
+            # bpo-42350: If the fork happens when the thread is already stopped
+            # (ex: after threading._shutdown() has been called), _tstate_lock
+            # is None. Do nothing in this case.
+            if self._tstate_lock is not None:
+                self._tstate_lock._at_fork_reinit()
+                self._tstate_lock.acquire()
         else:
             # The thread isn't alive after fork: it doesn't have a tstate
             # anymore.
@@ -1198,6 +1202,10 @@ except ImportError:
         _print_exception(args.exc_type, args.exc_value, args.exc_traceback,
                          file=stderr)
         stderr.flush()
+
+
+# Original value of threading.excepthook
+__excepthook__ = excepthook
 
 
 def _make_invoke_excepthook():

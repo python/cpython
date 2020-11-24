@@ -8,46 +8,24 @@ Python Initialization Configuration
 
 .. versionadded:: 3.8
 
-Structures:
+Python can be initialized with :c:func:`Py_InitializeFromConfig` and the
+:c:type:`PyConfig` structure. It can be preinitialized with
+:c:func:`Py_PreInitialize` and the :c:type:`PyPreConfig` structure.
 
-* :c:type:`PyConfig`
-* :c:type:`PyPreConfig`
-* :c:type:`PyStatus`
-* :c:type:`PyWideStringList`
+There are two kinds of configuration:
 
-Functions:
+* The :ref:`Python Configuration <init-python-config>` can be used to build a
+  customized Python which behaves as the regular Python. For example,
+  environments variables and command line arguments are used to configure
+  Python.
 
-* :c:func:`PyConfig_Clear`
-* :c:func:`PyConfig_InitIsolatedConfig`
-* :c:func:`PyConfig_InitPythonConfig`
-* :c:func:`PyConfig_Read`
-* :c:func:`PyConfig_SetArgv`
-* :c:func:`PyConfig_SetBytesArgv`
-* :c:func:`PyConfig_SetBytesString`
-* :c:func:`PyConfig_SetString`
-* :c:func:`PyConfig_SetWideStringList`
-* :c:func:`PyPreConfig_InitIsolatedConfig`
-* :c:func:`PyPreConfig_InitPythonConfig`
-* :c:func:`PyStatus_Error`
-* :c:func:`PyStatus_Exception`
-* :c:func:`PyStatus_Exit`
-* :c:func:`PyStatus_IsError`
-* :c:func:`PyStatus_IsExit`
-* :c:func:`PyStatus_NoMemory`
-* :c:func:`PyStatus_Ok`
-* :c:func:`PyWideStringList_Append`
-* :c:func:`PyWideStringList_Insert`
-* :c:func:`Py_ExitStatusException`
-* :c:func:`Py_InitializeFromConfig`
-* :c:func:`Py_PreInitialize`
-* :c:func:`Py_PreInitializeFromArgs`
-* :c:func:`Py_PreInitializeFromBytesArgs`
-* :c:func:`Py_RunMain`
-* :c:func:`Py_GetArgcArgv`
+* The :ref:`Isolated Configuration <init-isolated-conf>` can be used to embed
+  Python into an application. It isolates Python from the system. For example,
+  environments variables are ignored, the LC_CTYPE locale is left unchanged and
+  no signal handler is registred.
 
-The preconfiguration (``PyPreConfig`` type) is stored in
-``_PyRuntime.preconfig`` and the configuration (``PyConfig`` type) is stored in
-``PyInterpreterState.config``.
+The :c:func:`Py_RunMain` function can be used to write a customized Python
+program.
 
 See also :ref:`Initialization, Finalization, and Threads <initialization>`.
 
@@ -55,8 +33,47 @@ See also :ref:`Initialization, Finalization, and Threads <initialization>`.
    :pep:`587` "Python Initialization Configuration".
 
 
+Example
+=======
+
+Example of customized Python always running in isolated mode::
+
+    int main(int argc, char **argv)
+    {
+        PyStatus status;
+
+        PyConfig config;
+        PyConfig_InitPythonConfig(&config);
+        config.isolated = 1;
+
+        /* Decode command line arguments.
+           Implicitly preinitialize Python (in isolated mode). */
+        status = PyConfig_SetBytesArgv(&config, argc, argv);
+        if (PyStatus_Exception(status)) {
+            goto exception;
+        }
+
+        status = Py_InitializeFromConfig(&config);
+        if (PyStatus_Exception(status)) {
+            goto exception;
+        }
+        PyConfig_Clear(&config);
+
+        return Py_RunMain();
+
+    exception:
+        PyConfig_Clear(&config);
+        if (PyStatus_IsExit(status)) {
+            return status.exitcode;
+        }
+        /* Display the error message and exit the process with
+           non-zero exit code */
+        Py_ExitStatusException(status);
+    }
+
+
 PyWideStringList
-----------------
+================
 
 .. c:type:: PyWideStringList
 
@@ -95,7 +112,7 @@ PyWideStringList
       List items.
 
 PyStatus
---------
+========
 
 .. c:type:: PyStatus
 
@@ -127,6 +144,8 @@ PyStatus
    .. c:function:: PyStatus PyStatus_Error(const char *err_msg)
 
       Initialization error with a message.
+
+      *err_msg* must not be ``NULL``.
 
    .. c:function:: PyStatus PyStatus_NoMemory(void)
 
@@ -185,7 +204,7 @@ Example::
 
 
 PyPreConfig
------------
+===========
 
 .. c:type:: PyPreConfig
 
@@ -315,7 +334,7 @@ PyPreConfig
 .. _c-preinit:
 
 Preinitialize Python with PyPreConfig
--------------------------------------
+=====================================
 
 The preinitialization of Python:
 
@@ -324,11 +343,16 @@ The preinitialization of Python:
 * Set the :ref:`Python UTF-8 Mode <utf8-mode>`
   (:c:member:`PyPreConfig.utf8_mode`)
 
+The current preconfiguration (``PyPreConfig`` type) is stored in
+``_PyRuntime.preconfig``.
+
 Functions to preinitialize Python:
 
 .. c:function:: PyStatus Py_PreInitialize(const PyPreConfig *preconfig)
 
    Preinitialize Python from *preconfig* preconfiguration.
+
+   *preconfig* must not be ``NULL``.
 
 .. c:function:: PyStatus Py_PreInitializeFromBytesArgs(const PyPreConfig *preconfig, int argc, char * const *argv)
 
@@ -337,12 +361,16 @@ Functions to preinitialize Python:
    Parse *argv* command line arguments (bytes strings) if
    :c:member:`~PyPreConfig.parse_argv` of *preconfig* is non-zero.
 
+   *preconfig* must not be ``NULL``.
+
 .. c:function:: PyStatus Py_PreInitializeFromArgs(const PyPreConfig *preconfig, int argc, wchar_t * const * argv)
 
    Preinitialize Python from *preconfig* preconfiguration.
 
    Parse *argv* command line arguments (wide strings) if
    :c:member:`~PyPreConfig.parse_argv` of *preconfig* is non-zero.
+
+   *preconfig* must not be ``NULL``.
 
 The caller is responsible to handle exceptions (error or exit) using
 :c:func:`PyStatus_Exception` and :c:func:`Py_ExitStatusException`.
@@ -386,7 +414,7 @@ the :ref:`Python UTF-8 Mode <utf8-mode>`::
 
 
 PyConfig
---------
+========
 
 .. c:type:: PyConfig
 
@@ -447,7 +475,19 @@ PyConfig
 
       Fields which are already initialized are left unchanged.
 
+      The :c:func:`PyConfig_Read` function only parses
+      :c:member:`PyConfig.argv` arguments once: :c:member:`PyConfig.parse_argv`
+      is set to ``2`` after arguments are parsed. Since Python arguments are
+      strippped from :c:member:`PyConfig.argv`, parsing arguments twice would
+      parse the application options as Python options.
+
       :ref:`Preinitialize Python <c-preinit>` if needed.
+
+      .. versionchanged:: 3.10
+         The :c:member:`PyConfig.argv` arguments are now only parsed once,
+         :c:member:`PyConfig.parse_argv` is set to ``2`` after arguments are
+         parsed, and arguments are only parsed if
+         :c:member:`PyConfig.parse_argv` equals ``1``.
 
    .. c:function:: void PyConfig_Clear(PyConfig *config)
 
@@ -496,7 +536,7 @@ PyConfig
 
       Default: ``NULL``.
 
-      Part of the :ref:`Path Configuration <init-path-config>` output.
+      Part of the :ref:`Python Path Configuration <init-path-config>` output.
 
    .. c:member:: wchar_t* base_executable
 
@@ -508,7 +548,7 @@ PyConfig
 
       Default: ``NULL``.
 
-      Part of the :ref:`Path Configuration <init-path-config>` output.
+      Part of the :ref:`Python Path Configuration <init-path-config>` output.
 
    .. c:member:: wchar_t* base_prefix
 
@@ -516,7 +556,7 @@ PyConfig
 
       Default: ``NULL``.
 
-      Part of the :ref:`Path Configuration <init-path-config>` output.
+      Part of the :ref:`Python Path Configuration <init-path-config>` output.
 
    .. c:member:: int buffered_stdio
 
@@ -598,7 +638,7 @@ PyConfig
 
       Default: ``NULL``.
 
-      Part of the :ref:`Path Configuration <init-path-config>` output.
+      Part of the :ref:`Python Path Configuration <init-path-config>` output.
 
    .. c:member:: wchar_t* executable
 
@@ -607,7 +647,7 @@ PyConfig
 
       Default: ``NULL``.
 
-      Part of the :ref:`Path Configuration <init-path-config>` output.
+      Part of the :ref:`Python Path Configuration <init-path-config>` output.
 
    .. c:member:: int faulthandler
 
@@ -690,7 +730,7 @@ PyConfig
 
       Default: ``NULL``.
 
-      Part of the :ref:`Path Configuration <init-path-config>` input.
+      Part of the :ref:`Python Path Configuration <init-path-config>` input.
 
    .. c:member:: int import_time
 
@@ -781,7 +821,7 @@ PyConfig
       Default: value of the ``PLATLIBDIR`` macro which is set at configure time
       by ``--with-platlibdir`` (default: ``"lib"``).
 
-      Part of the :ref:`Path Configuration <init-path-config>` input.
+      Part of the :ref:`Python Path Configuration <init-path-config>` input.
 
       .. versionadded:: 3.9
 
@@ -794,7 +834,7 @@ PyConfig
 
       Default: ``NULL``.
 
-      Part of the :ref:`Path Configuration <init-path-config>` input.
+      Part of the :ref:`Python Path Configuration <init-path-config>` input.
 
    .. c:member:: PyWideStringList module_search_paths
    .. c:member:: int module_search_paths_set
@@ -802,14 +842,14 @@ PyConfig
       Module search paths: :data:`sys.path`.
 
       If :c:member:`~PyConfig.module_search_paths_set` is equal to 0, the
-      function calculating the :ref:`Path Configuration <init-path-config>`
+      function calculating the :ref:`Python Path Configuration <init-path-config>`
       overrides the :c:member:`~PyConfig.module_search_paths` and sets
       :c:member:`~PyConfig.module_search_paths_set` to ``1``.
 
       Default: empty list (``module_search_paths``) and ``0``
       (``module_search_paths_set``).
 
-      Part of the :ref:`Path Configuration <init-path-config>` output.
+      Part of the :ref:`Python Path Configuration <init-path-config>` output.
 
    .. c:member:: int optimization_level
 
@@ -831,7 +871,7 @@ PyConfig
 
       If :c:member:`~PyConfig.orig_argv` list is empty and
       :c:member:`~PyConfig.argv` is not a list only containing an empty
-      string, :c:func:`PyConfig_Read()` copies :c:member:`~PyConfig.argv` into
+      string, :c:func:`PyConfig_Read` copies :c:member:`~PyConfig.argv` into
       :c:member:`~PyConfig.orig_argv` before modifying
       :c:member:`~PyConfig.argv` (if :c:member:`~PyConfig.parse_argv` is
       non-zero).
@@ -847,11 +887,21 @@ PyConfig
 
       Parse command line arguments?
 
-      If non-zero, parse :c:member:`~PyConfig.argv` the same way the regular
+      If equals to ``1``, parse :c:member:`~PyConfig.argv` the same way the regular
       Python parses :ref:`command line arguments <using-on-cmdline>`, and strip
       Python arguments from :c:member:`~PyConfig.argv`.
 
+      The :c:func:`PyConfig_Read` function only parses
+      :c:member:`PyConfig.argv` arguments once: :c:member:`PyConfig.parse_argv`
+      is set to ``2`` after arguments are parsed. Since Python arguments are
+      strippped from :c:member:`PyConfig.argv`, parsing arguments twice would
+      parse the application options as Python options.
+
       Default: ``1`` in Python mode, ``0`` in isolated mode.
+
+      .. versionchanged:: 3.10
+         The :c:member:`PyConfig.argv` arguments are now only parsed if
+         :c:member:`PyConfig.parse_argv` equals to ``1``.
 
    .. c:member:: int parser_debug
 
@@ -865,7 +915,7 @@ PyConfig
 
    .. c:member:: int pathconfig_warnings
 
-      On Unix, if non-zero, calculating the :ref:`Path Configuration
+      On Unix, if non-zero, calculating the :ref:`Python Path Configuration
       <init-path-config>` can log warnings into ``stderr``. If equals to 0,
       suppress these warnings.
 
@@ -873,7 +923,7 @@ PyConfig
 
       Default: ``1`` in Python mode, ``0`` in isolated mode.
 
-      Part of the :ref:`Path Configuration <init-path-config>` input.
+      Part of the :ref:`Python Path Configuration <init-path-config>` input.
 
    .. c:member:: wchar_t* prefix
 
@@ -882,7 +932,7 @@ PyConfig
 
       Default: ``NULL``.
 
-      Part of the :ref:`Path Configuration <init-path-config>` output.
+      Part of the :ref:`Python Path Configuration <init-path-config>` output.
 
    .. c:member:: wchar_t* program_name
 
@@ -900,7 +950,7 @@ PyConfig
 
       Default: ``NULL``.
 
-      Part of the :ref:`Path Configuration <init-path-config>` input.
+      Part of the :ref:`Python Path Configuration <init-path-config>` input.
 
    .. c:member:: wchar_t* pycache_prefix
 
@@ -1106,7 +1156,7 @@ the :option:`-X` command line option.
 
 
 Initialization with PyConfig
-----------------------------
+============================
 
 Function to initialize Python:
 
@@ -1121,6 +1171,9 @@ If :c:func:`PyImport_FrozenModules`, :c:func:`PyImport_AppendInittab` or
 :c:func:`PyImport_ExtendInittab` are used, they must be set or called after
 Python preinitialization and before the Python initialization.
 
+The current configuration (``PyConfig`` type) is stored in
+``PyInterpreterState.config``.
+
 Example setting the program name::
 
     void init_python(void)
@@ -1134,17 +1187,17 @@ Example setting the program name::
         status = PyConfig_SetString(&config, &config.program_name,
                                     L"/path/to/my_program");
         if (PyStatus_Exception(status)) {
-            goto fail;
+            goto exception;
         }
 
         status = Py_InitializeFromConfig(&config);
         if (PyStatus_Exception(status)) {
-            goto fail;
+            goto exception;
         }
         PyConfig_Clear(&config);
         return;
 
-    fail:
+    exception:
         PyConfig_Clear(&config);
         Py_ExitStatusException(status);
     }
@@ -1200,7 +1253,7 @@ configuration, and then override some parameters::
 .. _init-isolated-conf:
 
 Isolated Configuration
-----------------------
+======================
 
 :c:func:`PyPreConfig_InitIsolatedConfig` and
 :c:func:`PyConfig_InitIsolatedConfig` functions create a configuration to
@@ -1213,7 +1266,7 @@ and user site directory. The C standard streams (ex: ``stdout``) and the
 LC_CTYPE locale are left unchanged. Signal handlers are not installed.
 
 Configuration files are still used with this configuration. Set the
-:ref:`Path Configuration <init-path-config>` ("output fields") to ignore these
+:ref:`Python Path Configuration <init-path-config>` ("output fields") to ignore these
 configuration files and avoid the function computing the default path
 configuration.
 
@@ -1221,7 +1274,7 @@ configuration.
 .. _init-python-config:
 
 Python Configuration
---------------------
+====================
 
 :c:func:`PyPreConfig_InitPythonConfig` and :c:func:`PyConfig_InitPythonConfig`
 functions create a configuration to build a customized Python which behaves as
@@ -1235,46 +1288,11 @@ and :ref:`Python UTF-8 Mode <utf8-mode>`
 (:pep:`540`) depending on the LC_CTYPE locale, :envvar:`PYTHONUTF8` and
 :envvar:`PYTHONCOERCECLOCALE` environment variables.
 
-Example of customized Python always running in isolated mode::
-
-    int main(int argc, char **argv)
-    {
-        PyStatus status;
-
-        PyConfig config;
-        PyConfig_InitPythonConfig(&config);
-        config.isolated = 1;
-
-        /* Decode command line arguments.
-           Implicitly preinitialize Python (in isolated mode). */
-        status = PyConfig_SetBytesArgv(&config, argc, argv);
-        if (PyStatus_Exception(status)) {
-            goto fail;
-        }
-
-        status = Py_InitializeFromConfig(&config);
-        if (PyStatus_Exception(status)) {
-            goto fail;
-        }
-        PyConfig_Clear(&config);
-
-        return Py_RunMain();
-
-    fail:
-        PyConfig_Clear(&config);
-        if (PyStatus_IsExit(status)) {
-            return status.exitcode;
-        }
-        /* Display the error message and exit the process with
-           non-zero exit code */
-        Py_ExitStatusException(status);
-    }
-
 
 .. _init-path-config:
 
-Path Configuration
-------------------
+Python Path Configuration
+=========================
 
 :c:type:`PyConfig` contains multiple fields for the path configuration:
 
@@ -1354,7 +1372,7 @@ The ``__PYVENV_LAUNCHER__`` environment variable is used to set
 
 
 Py_RunMain()
-------------
+============
 
 .. c:function:: int Py_RunMain(void)
 
@@ -1374,7 +1392,7 @@ customized Python always running in isolated mode using
 
 
 Py_GetArgcArgv()
-----------------
+================
 
 .. c:function:: void Py_GetArgcArgv(int *argc, wchar_t ***argv)
 
@@ -1384,7 +1402,7 @@ Py_GetArgcArgv()
 
 
 Multi-Phase Initialization Private Provisional API
---------------------------------------------------
+==================================================
 
 This section is a private provisional API introducing multi-phase
 initialization, the core feature of the :pep:`432`:
