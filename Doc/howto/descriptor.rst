@@ -460,7 +460,7 @@ The descriptors prevent invalid instances from being created::
         ...
     TypeError: Expected 'V' to be an int or float
 
-    >>> c = Component('WIDGET', 'metal', 5)  # Allowed:  This inputs are valid
+    >>> c = Component('WIDGET', 'metal', 5)  # Allowed:  The inputs are valid
 
 
 Technical Tutorial
