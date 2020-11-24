@@ -425,6 +425,11 @@ class InstancingTestCase(unittest.TestCase, HelperMixin):
         self.helper(bytesobj)
         self.helper3(bytesobj)
 
+    def testSlice(self):
+        slice_obj = slice(1, None, -2)
+        self.helper(slice_obj)
+        self.helper3(slice_obj)
+
     def testList(self):
         for obj in self.keys:
             listobj = [obj, obj]

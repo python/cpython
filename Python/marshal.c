@@ -64,6 +64,7 @@ module marshal
 #define TYPE_UNKNOWN            '?'
 #define TYPE_SET                '<'
 #define TYPE_FROZENSET          '>'
+#define TYPE_SLICE              ':'
 #define FLAG_REF                '\x80' /* with a type, add obj to index */
 
 #define TYPE_ASCII              'a'
@@ -539,6 +540,13 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         W_TYPE(TYPE_STRING, p);
         w_pstring(view.buf, view.len, p);
         PyBuffer_Release(&view);
+    }
+    else if (PySlice_Check(v)) {
+        W_TYPE(TYPE_SLICE, p);
+        PySliceObject *slice = (PySliceObject *)v;
+        w_object(slice->start, p);
+        w_object(slice->stop,  p);
+        w_object(slice->step,  p);
     }
     else {
         W_TYPE(TYPE_UNKNOWN, p);
@@ -1404,6 +1412,30 @@ r_object(RFILE *p)
             Py_XDECREF(exceptiontable);
         }
         retval = v;
+        break;
+
+    case TYPE_SLICE:
+        idx = r_ref_reserve(flag, p);
+        PyObject *start = r_object(p);
+        if (start == NULL) {
+            return NULL;
+        }
+        PyObject *stop = r_object(p);
+        if (stop == NULL) {
+            Py_DECREF(start);
+            return NULL;
+        }
+        PyObject *step = r_object(p);
+        if (step == NULL) {
+            Py_DECREF(start);
+            Py_DECREF(stop);
+            return NULL;
+        }
+        v = PySlice_New(start, stop, step);
+        retval = r_ref_insert(v, idx, flag, p);
+        Py_DECREF(start);
+        Py_DECREF(stop);
+        Py_DECREF(step);
         break;
 
     case TYPE_REF:

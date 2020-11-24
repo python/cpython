@@ -160,8 +160,14 @@ PyAPI_FUNC(int) _PyCode_CheckLineNumber(int lasti, PyCodeAddressRange *bounds);
  *
  * Return (type(obj), obj, ...): a tuple with variable size (at least 2 items)
  * depending on the type and the value. The type is the first item to not
- * compare bytes and str which can raise a BytesWarning exception. */
+ * compare bytes and str which can raise a BytesWarning exception.
+ *
+ * Note: For slice objects, the tuple will consist from type(obj), and values
+ * of all fields (lower, upper, step) as integers so that it can be reconsturected
+ * using _PyCode_ConstantValue. */
+
 PyAPI_FUNC(PyObject*) _PyCode_ConstantKey(PyObject *obj);
+PyAPI_FUNC(PyObject*) _PyCode_ConstantValue(PyObject *obj);
 
 PyAPI_FUNC(PyObject*) PyCode_Optimize(PyObject *code, PyObject* consts,
                                       PyObject *names, PyObject *lnotab);

@@ -907,6 +907,15 @@ _PyCode_ConstantKey(PyObject *op)
         key = PyTuple_Pack(2, set, op);
         Py_DECREF(set);
         return key;
+    } else if (PySlice_Check(op)) {
+        PySliceObject *slice = (PySliceObject *)op;
+        key = PyTuple_Pack(
+            4,
+            (PyObject *)Py_TYPE(op),
+            slice->start,
+            slice->stop,
+            slice->step
+        );
     }
     else {
         /* for other types, use the object identifier as a unique identifier
@@ -919,6 +928,29 @@ _PyCode_ConstantKey(PyObject *op)
         Py_DECREF(obj_id);
     }
     return key;
+}
+
+PyObject *
+_PyCode_ConstantValue(PyObject *obj)
+{
+    assert(PyTuple_CheckExact(obj));
+    assert(PyTuple_GET_SIZE(obj) > 1);
+    PyObject *possible_identifier = PyTuple_GET_ITEM(obj, 0);
+    if (PyType_CheckExact(possible_identifier)) {
+        PyTypeObject *type = (PyTypeObject *)possible_identifier;
+
+        if (type == &PySlice_Type) {
+            assert(PyTuple_GET_SIZE(obj) == 4);
+            return PySlice_New(
+                PyTuple_GET_ITEM(obj, 1),
+                PyTuple_GET_ITEM(obj, 2),
+                PyTuple_GET_ITEM(obj, 3)
+            );
+        }
+    }
+    PyObject *constant = PyTuple_GET_ITEM(obj, 1);
+    Py_INCREF(constant);
+    return constant;
 }
 
 static PyObject *
@@ -998,6 +1030,50 @@ code_richcompare(PyObject *self, PyObject *other, int op)
 }
 
 static Py_hash_t
+code_slice_const_hash(PySliceObject *r)
+{
+    PyObject *slice_tuple = PyTuple_Pack(3, r->start, r->stop, r->step);
+    if (slice_tuple == NULL) {
+        return -1;
+    }
+    Py_hash_t hash = PyObject_Hash(slice_tuple);
+    Py_DECREF(slice_tuple);
+    return hash;
+}
+
+static Py_hash_t
+code_const_hash(PyObject *consts)
+{
+    assert(PyTuple_CheckExact(consts));
+    Py_ssize_t i, length = PyTuple_GET_SIZE(consts);
+    if (length == -1) {
+        return -1;
+    } else if (length == 0) {
+        // If it is an empty tuple, use
+        // directly its hash!
+        return PyObject_Hash(consts);
+    }
+
+    PyObject *constant;
+    Py_hash_t temp_hash, h = 0;
+    for (i = 0; i < length; i++) {
+        constant = PyTuple_GET_ITEM(consts, i);
+        if (PySlice_Check(constant)) {
+            temp_hash = code_slice_const_hash((PySliceObject *)constant);
+        } else {
+            temp_hash = PyObject_Hash(constant);
+        }
+
+        if (temp_hash == -1) {
+            return -1;
+        }
+        h = h ^ temp_hash;
+    }
+
+    return h;
+}
+
+static Py_hash_t
 code_hash(PyCodeObject *co)
 {
     Py_hash_t h, h0, h1, h2, h3, h4, h5, h6;
@@ -1005,7 +1081,7 @@ code_hash(PyCodeObject *co)
     if (h0 == -1) return -1;
     h1 = PyObject_Hash(co->co_code);
     if (h1 == -1) return -1;
-    h2 = PyObject_Hash(co->co_consts);
+    h2 = code_const_hash(co->co_consts);
     if (h2 == -1) return -1;
     h3 = PyObject_Hash(co->co_names);
     if (h3 == -1) return -1;

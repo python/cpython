@@ -541,6 +541,28 @@ fold_tuple(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 }
 
 static int
+fold_constant_slice(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
+{
+    PyObject *args[3];
+    expr_ty slices[3] = {
+            node->v.Slice.lower,
+            node->v.Slice.upper,
+            node->v.Slice.step
+    };
+    for (int i = 0; i < 3; i++) {
+        expr_ty slice = slices[i];
+        if (slice == NULL) {
+            args[i] = NULL;
+        } else if (slice->kind == Constant_kind && PyLong_CheckExact(slice->v.Constant.value)) {
+            args[i] = slice->v.Constant.value;
+        } else {
+            return 1;
+        }
+    }
+    return make_const(node, PySlice_New(args[0], args[1], args[2]), arena);
+}
+
+static int
 fold_subscr(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 {
     PyObject *newval;
@@ -548,6 +570,12 @@ fold_subscr(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 
     arg = node->v.Subscript.value;
     idx = node->v.Subscript.slice;
+    if (idx->kind == Slice_kind &&
+        !fold_constant_slice(idx, arena, state))
+    {
+        return 0;
+    }
+
     if (node->v.Subscript.ctx != Load ||
             arg->kind != Constant_kind ||
             idx->kind != Constant_kind)

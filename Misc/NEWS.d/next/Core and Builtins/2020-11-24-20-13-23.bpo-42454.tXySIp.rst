@@ -1,0 +1,2 @@
+The AST optimizer now folds constant slices and stores them in the code
+objects. Patch by Batuhan Taskaya.

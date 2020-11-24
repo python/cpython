@@ -7054,9 +7054,13 @@ consts_dict_keys_inorder(PyObject *dict)
          * (see compiler_add_o and _PyCode_ConstantKey). In that case
          * the object we want is always second. */
         if (PyTuple_CheckExact(k)) {
-            k = PyTuple_GET_ITEM(k, 1);
+            k = _PyCode_ConstantValue(k);
+            if (k == NULL) {
+                return NULL;
+            }
+        } else {
+            Py_INCREF(k);
         }
-        Py_INCREF(k);
         assert(i < size);
         assert(i >= 0);
         PyList_SET_ITEM(consts, i, k);
@@ -7107,13 +7111,27 @@ merge_const_one(struct compiler *c, PyObject **obj)
         return 0;
     }
 
+    /* Since tuples and frozensets are the only containers that are
+       allowed to be among code object's constants, we will use the
+       expanded form for them since not every element might not be
+       hashable. */
+    PyObject *c_key;
+    if (PyTuple_CheckExact(key)) {
+        c_key = PyTuple_GET_ITEM(key, 0);
+        if (!PyTuple_CheckExact(c_key) && !PyFrozenSet_CheckExact(c_key)) {
+            c_key = key;
+        }
+    } else {
+        c_key = key;
+    }
+
     // t is borrowed reference
-    PyObject *t = PyDict_SetDefault(c->c_const_cache, key, key);
+    PyObject *t = PyDict_SetDefault(c->c_const_cache, c_key, key);
     Py_DECREF(key);
     if (t == NULL) {
         return 0;
     }
-    if (t == key) {  // obj is new constant.
+    if (t == c_key) {  // obj is new constant.
         return 1;
     }
 
