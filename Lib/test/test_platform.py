@@ -238,7 +238,10 @@ class PlatformTest(unittest.TestCase):
             # On Snow Leopard, sw_vers reports 10.6.0 as 10.6
             if len_diff > 0:
                 expect_list.extend(['0'] * len_diff)
-            self.assertEqual(result_list, expect_list)
+            # For compatibility with older binaries, macOS 11.x may report
+            # itself as '10.16' rather than '11.x.y'.
+            if result_list != ['10', '16']:
+                self.assertEqual(result_list, expect_list)
 
             # res[1] claims to contain
             # (version, dev_stage, non_release_version)
