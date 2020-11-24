@@ -587,8 +587,8 @@ def checkEnvironment():
     Check that we're running on a supported system.
     """
 
-    if sys.version_info[0:2] < (2, 5):
-        fatal("This script must be run with Python 2.5 (or later)")
+    if sys.version_info[0:2] < (2, 7):
+        fatal("This script must be run with Python 2.7 (or later)")
 
     if platform.system() != 'Darwin':
         fatal("This script should be run on a macOS 10.5 (or later) system")
@@ -656,9 +656,6 @@ def checkEnvironment():
         base_path = base_path + ':' + OLD_DEVELOPER_TOOLS
     os.environ['PATH'] = base_path
     print("Setting default PATH: %s"%(os.environ['PATH']))
-    # Ensure we have access to sphinx-build.
-    # You may have to create a link in /usr/bin for it.
-    runCommand('sphinx-build --version')
 
 def parseOptions(args=None):
     """
@@ -1618,8 +1615,17 @@ def buildDMG():
     if os.path.exists(outdir):
         shutil.rmtree(outdir)
 
+    # We used to use the deployment target as the last characters of the 
+    # installer file name. With the introduction of weaklinked installer
+    # variants, we may have two variants with the same file name, i.e.
+    # both ending in '10.9'.  To avoid this, we now use the major/minor
+    # version numbers of the macOS version we are building on, i.e.
+    # '10.9' as before for 10.9+ variant, '11.0' for universal2 11.0-.
+    # it's not ideal but should cause the least disruption to packaging
+    # workflows.
+    build_system_version = '.'.join(platform.mac_ver()[0].split('.')[0:2])
     imagepath = os.path.join(outdir,
-                    'python-%s-macosx%s'%(getFullVersion(),DEPTARGET))
+                    'python-%s-macosx%s'%(getFullVersion(),build_system_version))
     if INCLUDE_TIMESTAMP:
         imagepath = imagepath + '-%04d-%02d-%02d'%(time.localtime()[:3])
     imagepath = imagepath + '.dmg'
