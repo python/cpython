@@ -44,6 +44,7 @@ class SelectTestCase(unittest.TestCase):
         self.assertIsNot(r, x)
         self.assertIsNot(w, x)
 
+    @unittest.skipUnless(hasattr(os, 'popen'), "need os.popen()")
     def test_select(self):
         cmd = 'for i in 0 1 2 3 4 5 6 7 8 9; do echo testing...; sleep 1; done'
         with os.popen(cmd) as p:

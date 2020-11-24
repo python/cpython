@@ -421,7 +421,7 @@ is_jython = sys.platform.startswith('java')
 
 is_android = hasattr(sys, 'getandroidapilevel')
 
-if sys.platform not in ('win32', 'vxworks'):
+if sys.platform != 'win32':
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
 else:
     unix_shell = None
