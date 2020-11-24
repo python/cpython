@@ -1039,7 +1039,9 @@ Class methods
 
 Unlike static methods, class methods prepend the class reference to the
 argument list before calling the function.  This format is the same
-for whether the caller is an object or a class::
+for whether the caller is an object or a class:
+
+.. doctest::
 
     class F:
         @classmethod
@@ -1059,9 +1061,7 @@ keys.  The pure Python equivalent is:
 
 .. testcode::
 
-    class Dict:
-        ...
-
+    class Dict(dict):
         @classmethod
         def fromkeys(cls, iterable, value=None):
             "Emulate dict_fromkeys() in Objects/dictobject.c"
@@ -1070,7 +1070,9 @@ keys.  The pure Python equivalent is:
                 d[key] = value
             return d
 
-Now a new dictionary of unique keys can be constructed like this::
+Now a new dictionary of unique keys can be constructed like this:
+
+.. doctest::
 
     >>> Dict.fromkeys('abracadabra')
     {'a': None, 'r': None, 'b': None, 'c': None, 'd': None}
@@ -1104,6 +1106,12 @@ For example, a classmethod and property could be chained together:
         @property
         def __doc__(cls):
             return f'A doc for {cls.__name__!r}'
+
+.. doctest::
+
+    >>> G().__doc__
+    "A doc for 'G'"
+
 
 Member objects and __slots__
 ----------------------------
