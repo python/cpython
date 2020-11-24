@@ -1113,7 +1113,9 @@ fixed-length array of slot values.  From a user point of view that has
 several effects:
 
 1. Provides immediate detection of bugs due to misspelled attribute
-assignments.  Only attribute names specified in ``__slots__`` are allowed::
+assignments.  Only attribute names specified in ``__slots__`` are allowed:
+
+.. doctest::
 
         class Vehicle:
             __slots__ = ('id_number', 'make', 'model')
@@ -1145,7 +1147,19 @@ attributes stored in ``__slots__``:
         def name(self):                         # Read-only descriptor
             return self._name
 
-    mark = Immutable('Botany', 'Mark Watney')   # Create an immutable instance
+.. doctest::
+
+    >>> mark = Immutable('Botany', 'Mark Watney')
+    >>> mark.dept
+    'Botany'
+    >>> mark.dept = 'Space Pirate'
+    Traceback (most recent call last):
+        ...
+    AttributeError: can't set attribute
+    >>> mark.location = 'Mars'
+    Traceback (most recent call last):
+        ...
+    AttributeError: 'Immutable' object has no attribute 'location'
 
 3. Saves memory.  On a 64-bit Linux build, an instance with two attributes
 takes 48 bytes with ``__slots__`` and 152 bytes without.  This `flyweight
@@ -1153,7 +1167,9 @@ design pattern <https://en.wikipedia.org/wiki/Flyweight_pattern>`_ likely only
 matters when a large number of instances are going to be created.
 
 4. Blocks tools like :func:`functools.cached_property` which require an
-instance dictionary to function correctly::
+instance dictionary to function correctly:
+
+.. doctest::
 
     from functools import cached_property
 
@@ -1289,6 +1305,13 @@ At this point, the metaclass has loaded member objects for *x* and *y*::
      'x': <Member 'x' of 'H'>,
      'y': <Member 'y' of 'H'>}
 
+.. testsetup::
+
+   # We test this separately because the preceding section is not
+   # doctestable due to the hex memory address for the __init__ function
+   assert isinstance(vars(H)['x'], Member)
+   assert isinstance(vars(H)['y'], Member)
+
 When instances are created, they have a ``slot_values`` list where the
 attributes are stored:
 
@@ -1309,3 +1332,20 @@ Misspelled or unassigned attributes will raise an exception:
     Traceback (most recent call last):
         ...
     AttributeError: 'H' object has no attribute 'xz'
+
+.. testsetup::
+
+   # Examples for deleted attributes are not shown because this section
+   # is already a bit lengthy.  But we still test that code here.
+   del h.x
+   assert not hasattr(h, 'x')
+
+   # Also test the code for uninitialized slots
+   class HU(Object, metaclass=Type):
+        slot_names = ['x', 'y']
+   hu = HU()
+   assert not hasattr(hu, 'x')
+   assert not hasattr(hu, 'y')
+
+   assert False, "verify doctest is catching these"
+
