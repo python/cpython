@@ -1050,7 +1050,7 @@ fail:
 static PyObject*
 config_dict_get(PyObject *dict, const char *name)
 {
-    PyObject *item = PyMapping_GetItemString(dict, name);
+    PyObject *item = _PyDict_GetItemStringWithError(dict, name);
     if (item == NULL) {
         PyErr_Format(PyExc_ValueError, "missing config key: %s", name);
         return NULL;
