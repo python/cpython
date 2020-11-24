@@ -1,2 +1,6 @@
-Removed the ``formatter`` module, which was deprecated in 3.4.
-(Contributed by Dong-hee Na and and Terry J. Reedy in :issue:`33955`.)
+Removed the ``formatter`` module, which was deprecated in Python 3.4.
+It was originally scheduled to be removed in Python 3.6,
+but we decided to delay such removals until after Python 2.7 EOL.
+Since Python 2.7 is the end of the life and the module did not have test codes,
+it has been decided to remove the ``formatter`` module
+Patch by Dong-hee Na and and Terry J. Reedy.
