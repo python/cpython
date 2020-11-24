@@ -1,0 +1,3 @@
+The ``Py_TRASHCAN_BEGIN`` macro no longer accesses PyTypeObject attributes,
+but now can get the condition by calling the new private
+:c:func:`_PyTrash_cond()` function which hides implementation details.

@@ -2134,6 +2134,15 @@ _PyTrash_end(PyThreadState *tstate)
 }
 
 
+/* bpo-40170: It's only be used in Py_TRASHCAN_BEGIN macro to hide
+   implementation details. */
+int
+_PyTrash_cond(PyObject *op, destructor dealloc)
+{
+    return Py_TYPE(op)->tp_dealloc == dealloc;
+}
+
+
 void _Py_NO_RETURN
 _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
                        const char *file, int line, const char *function)
