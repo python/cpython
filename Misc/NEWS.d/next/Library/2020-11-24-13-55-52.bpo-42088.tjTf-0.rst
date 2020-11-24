@@ -1,0 +1,2 @@
+The repr of :class:`types.SimpleNamespace` is now ``SimpleNamespace(...)``
+instead of ``namespace(...)``.

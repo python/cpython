@@ -1406,7 +1406,7 @@ class SimpleNamespaceTests(unittest.TestCase):
         ns2 = types.SimpleNamespace()
         ns2.x = "spam"
         ns2._y = 5
-        name = "namespace"
+        name = "SimpleNamespace"
 
         self.assertEqual(repr(ns1), "{name}(x=1, y=2, w=3)".format(name=name))
         self.assertEqual(repr(ns2), "{name}(x='spam', _y=5)".format(name=name))
@@ -1456,7 +1456,7 @@ class SimpleNamespaceTests(unittest.TestCase):
         ns1.spam = ns1
         ns2.spam = ns3
         ns3.spam = ns2
-        name = "namespace"
+        name = "SimpleNamespace"
         repr1 = "{name}(c='cookie', spam={name}(...))".format(name=name)
         repr2 = "{name}(spam={name}(x=1, spam={name}(...)))".format(name=name)
 
