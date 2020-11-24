@@ -1,0 +1,2 @@
+Add ``decorator_with_params`` function to ``functools`` module. Patch
+provided by Yurii Karabas.
