@@ -845,7 +845,7 @@ here is a pure Python equivalent:
         def deleter(self, fdel):
             return type(self)(self.fget, self.fset, fdel, self.__doc__)
 
-.. testsetup::
+.. testcleanup::
 
     # Verify the Property() emulation code
     class CC:
@@ -1127,7 +1127,7 @@ Using the non-data descriptor protocol, a pure Python version of
                 return self.f.__get__(cls)
             return MethodType(self.f, cls)
 
-.. testsetup::
+.. testcleanup::
 
    # Verify the emulation works
    class T:
@@ -1358,7 +1358,7 @@ At this point, the metaclass has loaded member objects for *x* and *y*::
      'x': <Member 'x' of 'H'>,
      'y': <Member 'y' of 'H'>}
 
-.. testsetup::
+.. testcleanup::
 
    # We test this separately because the preceding section is not
    # doctestable due to the hex memory address for the __init__ function
@@ -1386,7 +1386,7 @@ Misspelled or unassigned attributes will raise an exception:
         ...
     AttributeError: 'H' object has no attribute 'xz'
 
-.. testsetup::
+.. testcleanup::
 
    # Examples for deleted attributes are not shown because this section
    # is already a bit lengthy.  But we still test that code here.
