@@ -206,8 +206,8 @@ class MySubprocessProtocol(asyncio.SubprocessProtocol):
         self.disconnects = {fd: loop.create_future() for fd in range(3)}
         self.data = {1: b'', 2: b''}
         self.returncode = None
-        self.got_data = {1: asyncio.Event(loop=loop),
-                         2: asyncio.Event(loop=loop)}
+        self.got_data = {1: asyncio.Event(),
+                         2: asyncio.Event()}
 
     def connection_made(self, transport):
         self.transport = transport
@@ -1740,20 +1740,20 @@ class SubprocessTestsMixin:
         connect = self.loop.subprocess_exec(
                         functools.partial(MySubprocessProtocol, self.loop),
                         sys.executable, prog)
-        with self.assertWarns(DeprecationWarning):
-            transp, proto = self.loop.run_until_complete(connect)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-            self.loop.run_until_complete(proto.connected)
-            self.assertEqual('CONNECTED', proto.state)
 
-            stdin = transp.get_pipe_transport(0)
-            stdin.write(b'Python The Winner')
-            self.loop.run_until_complete(proto.got_data[1].wait())
-            with test_utils.disable_logger():
-                transp.close()
-            self.loop.run_until_complete(proto.completed)
-            self.check_killed(proto.returncode)
-            self.assertEqual(b'Python The Winner', proto.data[1])
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
+        self.loop.run_until_complete(proto.connected)
+        self.assertEqual('CONNECTED', proto.state)
+
+        stdin = transp.get_pipe_transport(0)
+        stdin.write(b'Python The Winner')
+        self.loop.run_until_complete(proto.got_data[1].wait())
+        with test_utils.disable_logger():
+            transp.close()
+        self.loop.run_until_complete(proto.completed)
+        self.check_killed(proto.returncode)
+        self.assertEqual(b'Python The Winner', proto.data[1])
 
     def test_subprocess_interactive(self):
         prog = os.path.join(os.path.dirname(__file__), 'echo.py')
@@ -1762,51 +1762,48 @@ class SubprocessTestsMixin:
                         functools.partial(MySubprocessProtocol, self.loop),
                         sys.executable, prog)
 
-        with self.assertWarns(DeprecationWarning):
-            transp, proto = self.loop.run_until_complete(connect)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-            self.loop.run_until_complete(proto.connected)
-            self.assertEqual('CONNECTED', proto.state)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
+        self.loop.run_until_complete(proto.connected)
+        self.assertEqual('CONNECTED', proto.state)
 
-            stdin = transp.get_pipe_transport(0)
-            stdin.write(b'Python ')
-            self.loop.run_until_complete(proto.got_data[1].wait())
-            proto.got_data[1].clear()
-            self.assertEqual(b'Python ', proto.data[1])
+        stdin = transp.get_pipe_transport(0)
+        stdin.write(b'Python ')
+        self.loop.run_until_complete(proto.got_data[1].wait())
+        proto.got_data[1].clear()
+        self.assertEqual(b'Python ', proto.data[1])
 
-            stdin.write(b'The Winner')
-            self.loop.run_until_complete(proto.got_data[1].wait())
-            self.assertEqual(b'Python The Winner', proto.data[1])
+        stdin.write(b'The Winner')
+        self.loop.run_until_complete(proto.got_data[1].wait())
+        self.assertEqual(b'Python The Winner', proto.data[1])
 
-            with test_utils.disable_logger():
-                transp.close()
-            self.loop.run_until_complete(proto.completed)
-            self.check_killed(proto.returncode)
+        with test_utils.disable_logger():
+            transp.close()
+        self.loop.run_until_complete(proto.completed)
+        self.check_killed(proto.returncode)
 
     def test_subprocess_shell(self):
-        with self.assertWarns(DeprecationWarning):
-            connect = self.loop.subprocess_shell(
-                            functools.partial(MySubprocessProtocol, self.loop),
-                            'echo Python')
-            transp, proto = self.loop.run_until_complete(connect)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-            self.loop.run_until_complete(proto.connected)
+        connect = self.loop.subprocess_shell(
+                        functools.partial(MySubprocessProtocol, self.loop),
+                        'echo Python')
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
+        self.loop.run_until_complete(proto.connected)
 
-            transp.get_pipe_transport(0).close()
-            self.loop.run_until_complete(proto.completed)
-            self.assertEqual(0, proto.returncode)
-            self.assertTrue(all(f.done() for f in proto.disconnects.values()))
-            self.assertEqual(proto.data[1].rstrip(b'\r\n'), b'Python')
-            self.assertEqual(proto.data[2], b'')
-            transp.close()
+        transp.get_pipe_transport(0).close()
+        self.loop.run_until_complete(proto.completed)
+        self.assertEqual(0, proto.returncode)
+        self.assertTrue(all(f.done() for f in proto.disconnects.values()))
+        self.assertEqual(proto.data[1].rstrip(b'\r\n'), b'Python')
+        self.assertEqual(proto.data[2], b'')
+        transp.close()
 
     def test_subprocess_exitcode(self):
         connect = self.loop.subprocess_shell(
                         functools.partial(MySubprocessProtocol, self.loop),
                         'exit 7', stdin=None, stdout=None, stderr=None)
 
-        with self.assertWarns(DeprecationWarning):
-            transp, proto = self.loop.run_until_complete(connect)
+        transp, proto = self.loop.run_until_complete(connect)
         self.assertIsInstance(proto, MySubprocessProtocol)
         self.loop.run_until_complete(proto.completed)
         self.assertEqual(7, proto.returncode)
@@ -1816,8 +1813,8 @@ class SubprocessTestsMixin:
         connect = self.loop.subprocess_shell(
                         functools.partial(MySubprocessProtocol, self.loop),
                         'exit 7', stdin=None, stdout=None, stderr=None)
-        with self.assertWarns(DeprecationWarning):
-            transp, proto = self.loop.run_until_complete(connect)
+
+        transp, proto = self.loop.run_until_complete(connect)
         self.assertIsInstance(proto, MySubprocessProtocol)
         self.assertIsNone(transp.get_pipe_transport(0))
         self.assertIsNone(transp.get_pipe_transport(1))
@@ -1833,15 +1830,14 @@ class SubprocessTestsMixin:
                         functools.partial(MySubprocessProtocol, self.loop),
                         sys.executable, prog)
 
-        with self.assertWarns(DeprecationWarning):
-            transp, proto = self.loop.run_until_complete(connect)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-            self.loop.run_until_complete(proto.connected)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
+        self.loop.run_until_complete(proto.connected)
 
-            transp.kill()
-            self.loop.run_until_complete(proto.completed)
-            self.check_killed(proto.returncode)
-            transp.close()
+        transp.kill()
+        self.loop.run_until_complete(proto.completed)
+        self.check_killed(proto.returncode)
+        transp.close()
 
     def test_subprocess_terminate(self):
         prog = os.path.join(os.path.dirname(__file__), 'echo.py')
@@ -1850,15 +1846,14 @@ class SubprocessTestsMixin:
                         functools.partial(MySubprocessProtocol, self.loop),
                         sys.executable, prog)
 
-        with self.assertWarns(DeprecationWarning):
-            transp, proto = self.loop.run_until_complete(connect)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-            self.loop.run_until_complete(proto.connected)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
+        self.loop.run_until_complete(proto.connected)
 
-            transp.terminate()
-            self.loop.run_until_complete(proto.completed)
-            self.check_terminated(proto.returncode)
-            transp.close()
+        transp.terminate()
+        self.loop.run_until_complete(proto.completed)
+        self.check_terminated(proto.returncode)
+        transp.close()
 
     @unittest.skipIf(sys.platform == 'win32', "Don't have SIGHUP")
     def test_subprocess_send_signal(self):
@@ -1873,15 +1868,15 @@ class SubprocessTestsMixin:
                             functools.partial(MySubprocessProtocol, self.loop),
                             sys.executable, prog)
 
-            with self.assertWarns(DeprecationWarning):
-                transp, proto = self.loop.run_until_complete(connect)
-                self.assertIsInstance(proto, MySubprocessProtocol)
-                self.loop.run_until_complete(proto.connected)
 
-                transp.send_signal(signal.SIGHUP)
-                self.loop.run_until_complete(proto.completed)
-                self.assertEqual(-signal.SIGHUP, proto.returncode)
-                transp.close()
+            transp, proto = self.loop.run_until_complete(connect)
+            self.assertIsInstance(proto, MySubprocessProtocol)
+            self.loop.run_until_complete(proto.connected)
+
+            transp.send_signal(signal.SIGHUP)
+            self.loop.run_until_complete(proto.completed)
+            self.assertEqual(-signal.SIGHUP, proto.returncode)
+            transp.close()
         finally:
             signal.signal(signal.SIGHUP, old_handler)
 
@@ -1892,20 +1887,19 @@ class SubprocessTestsMixin:
                         functools.partial(MySubprocessProtocol, self.loop),
                         sys.executable, prog)
 
-        with self.assertWarns(DeprecationWarning):
-            transp, proto = self.loop.run_until_complete(connect)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-            self.loop.run_until_complete(proto.connected)
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
+        self.loop.run_until_complete(proto.connected)
 
-            stdin = transp.get_pipe_transport(0)
-            stdin.write(b'test')
+        stdin = transp.get_pipe_transport(0)
+        stdin.write(b'test')
 
-            self.loop.run_until_complete(proto.completed)
+        self.loop.run_until_complete(proto.completed)
 
-            transp.close()
-            self.assertEqual(b'OUT:test', proto.data[1])
-            self.assertTrue(proto.data[2].startswith(b'ERR:test'), proto.data[2])
-            self.assertEqual(0, proto.returncode)
+        transp.close()
+        self.assertEqual(b'OUT:test', proto.data[1])
+        self.assertTrue(proto.data[2].startswith(b'ERR:test'), proto.data[2])
+        self.assertEqual(0, proto.returncode)
 
     def test_subprocess_stderr_redirect_to_stdout(self):
         prog = os.path.join(os.path.dirname(__file__), 'echo2.py')
@@ -1914,23 +1908,23 @@ class SubprocessTestsMixin:
                         functools.partial(MySubprocessProtocol, self.loop),
                         sys.executable, prog, stderr=subprocess.STDOUT)
 
-        with self.assertWarns(DeprecationWarning):
-            transp, proto = self.loop.run_until_complete(connect)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-            self.loop.run_until_complete(proto.connected)
 
-            stdin = transp.get_pipe_transport(0)
-            self.assertIsNotNone(transp.get_pipe_transport(1))
-            self.assertIsNone(transp.get_pipe_transport(2))
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
+        self.loop.run_until_complete(proto.connected)
 
-            stdin.write(b'test')
-            self.loop.run_until_complete(proto.completed)
-            self.assertTrue(proto.data[1].startswith(b'OUT:testERR:test'),
-                            proto.data[1])
-            self.assertEqual(b'', proto.data[2])
+        stdin = transp.get_pipe_transport(0)
+        self.assertIsNotNone(transp.get_pipe_transport(1))
+        self.assertIsNone(transp.get_pipe_transport(2))
 
-            transp.close()
-            self.assertEqual(0, proto.returncode)
+        stdin.write(b'test')
+        self.loop.run_until_complete(proto.completed)
+        self.assertTrue(proto.data[1].startswith(b'OUT:testERR:test'),
+                        proto.data[1])
+        self.assertEqual(b'', proto.data[2])
+
+        transp.close()
+        self.assertEqual(0, proto.returncode)
 
     def test_subprocess_close_client_stream(self):
         prog = os.path.join(os.path.dirname(__file__), 'echo3.py')
@@ -1938,33 +1932,33 @@ class SubprocessTestsMixin:
         connect = self.loop.subprocess_exec(
                         functools.partial(MySubprocessProtocol, self.loop),
                         sys.executable, prog)
-        with self.assertWarns(DeprecationWarning):
-            transp, proto = self.loop.run_until_complete(connect)
-            self.assertIsInstance(proto, MySubprocessProtocol)
-            self.loop.run_until_complete(proto.connected)
 
-            stdin = transp.get_pipe_transport(0)
-            stdout = transp.get_pipe_transport(1)
-            stdin.write(b'test')
-            self.loop.run_until_complete(proto.got_data[1].wait())
-            self.assertEqual(b'OUT:test', proto.data[1])
+        transp, proto = self.loop.run_until_complete(connect)
+        self.assertIsInstance(proto, MySubprocessProtocol)
+        self.loop.run_until_complete(proto.connected)
 
-            stdout.close()
-            self.loop.run_until_complete(proto.disconnects[1])
-            stdin.write(b'xxx')
-            self.loop.run_until_complete(proto.got_data[2].wait())
-            if sys.platform != 'win32':
-                self.assertEqual(b'ERR:BrokenPipeError', proto.data[2])
-            else:
-                # After closing the read-end of a pipe, writing to the
-                # write-end using os.write() fails with errno==EINVAL and
-                # GetLastError()==ERROR_INVALID_NAME on Windows!?!  (Using
-                # WriteFile() we get ERROR_BROKEN_PIPE as expected.)
-                self.assertEqual(b'ERR:OSError', proto.data[2])
-            with test_utils.disable_logger():
-                transp.close()
-            self.loop.run_until_complete(proto.completed)
-            self.check_killed(proto.returncode)
+        stdin = transp.get_pipe_transport(0)
+        stdout = transp.get_pipe_transport(1)
+        stdin.write(b'test')
+        self.loop.run_until_complete(proto.got_data[1].wait())
+        self.assertEqual(b'OUT:test', proto.data[1])
+
+        stdout.close()
+        self.loop.run_until_complete(proto.disconnects[1])
+        stdin.write(b'xxx')
+        self.loop.run_until_complete(proto.got_data[2].wait())
+        if sys.platform != 'win32':
+            self.assertEqual(b'ERR:BrokenPipeError', proto.data[2])
+        else:
+            # After closing the read-end of a pipe, writing to the
+            # write-end using os.write() fails with errno==EINVAL and
+            # GetLastError()==ERROR_INVALID_NAME on Windows!?!  (Using
+            # WriteFile() we get ERROR_BROKEN_PIPE as expected.)
+            self.assertEqual(b'ERR:OSError', proto.data[2])
+        with test_utils.disable_logger():
+            transp.close()
+        self.loop.run_until_complete(proto.completed)
+        self.check_killed(proto.returncode)
 
     def test_subprocess_wait_no_same_group(self):
         # start the new process in a new session
