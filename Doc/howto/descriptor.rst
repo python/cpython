@@ -795,7 +795,7 @@ triggers a function call upon access to an attribute.  Its signature is::
 
 The documentation shows a typical use to define a managed attribute ``x``:
 
-.. testcode ::
+.. testcode::
 
     class C:
         def getx(self): return self.__x
@@ -853,7 +853,7 @@ to be recalculated on every access; however, the programmer does not want to
 affect existing client code accessing the attribute directly.  The solution is
 to wrap access to the value attribute in a property data descriptor:
 
-.. testcode ::
+.. testcode::
 
     class Cell:
         ...
@@ -923,7 +923,7 @@ descriptor works in practice:
 
 The function has a :term:`qualified name` attribute to support introspection::
 
-.. doctest
+.. doctest::
 
     >>> D.f.__qualname__
     'D.f'
