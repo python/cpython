@@ -1,3 +1,0 @@
-:exc:`~plistlib.InvalidFileException` and :exc:`RecursionError` are now
-the only errors caused by loading malformed binary Plist file (previously
-ValueError and TypeError could be raised in some specific cases).
