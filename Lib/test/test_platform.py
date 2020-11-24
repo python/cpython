@@ -8,7 +8,7 @@ from unittest import mock
 from test import support
 from test.support import os_helper
 
-FEDORA_os_release = """\
+FEDORA_OS_RELEASE = """\
 NAME=Fedora
 VERSION="32 (Thirty Two)"
 ID=fedora
@@ -30,7 +30,7 @@ REDHAT_SUPPORT_PRODUCT_VERSION=32
 PRIVACY_POLICY_URL="https://fedoraproject.org/wiki/Legal:PrivacyPolicy"
 """
 
-UBUNTU_os_release = """\
+UBUNTU_OS_RELEASE = """\
 NAME="Ubuntu"
 VERSION="20.04.1 LTS (Focal Fossa)"
 ID=ubuntu
@@ -45,9 +45,9 @@ VERSION_CODENAME=focal
 UBUNTU_CODENAME=focal
 """
 
-TEST_os_release = r"""
+TEST_OS_ = r"""
 # test data
-ID_LIKE=egg spam viking
+ID_LIKE="egg spam viking"
 EMPTY=
 # comments and empty lines are ignored
 
@@ -458,19 +458,19 @@ class PlatformTest(unittest.TestCase):
                 platform.freedesktop_os_release()
 
     def test_parse_os_release(self):
-        info = platform._parse_os_release(FEDORA_os_release.splitlines())
+        info = platform._parse_os_release(FEDORA_OS_RELEASE.splitlines())
         self.assertEqual(info["NAME"], "Fedora")
         self.assertEqual(info["ID"], "fedora")
         self.assertNotIn("ID_LIKE", info)
         self.assertEqual(info["VERSION_CODENAME"], "")
 
-        info = platform._parse_os_release(UBUNTU_os_release.splitlines())
+        info = platform._parse_os_release(UBUNTU_OS_RELEASE.splitlines())
         self.assertEqual(info["NAME"], "Ubuntu")
         self.assertEqual(info["ID"], "ubuntu")
         self.assertEqual(info["ID_LIKE"], ("debian",))
         self.assertEqual(info["VERSION_CODENAME"], "focal")
 
-        info = platform._parse_os_release(TEST_os_release.splitlines())
+        info = platform._parse_os_release(TEST_OS_RELEASE.splitlines())
         expected = {
             "ID": "linux",
             "NAME": "Linux",

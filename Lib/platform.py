@@ -1233,12 +1233,13 @@ def platform(aliased=0, terse=0):
 ### freedesktop.org os-release standard
 # https://www.freedesktop.org/software/systemd/man/os-release.html
 
-# NAME=value with optional quotes (' or ")
+# NAME=value with optional quotes (' or "). The regular expression is less
+# strict than shell lexer, but that's ok.
 _os_release_line = re.compile(
     "^(?P<name>[a-zA-Z0-9_]+)=(?P<quote>[\"\']?)(?P<value>.*)(?P=quote)$"
 )
 # /etc takes precedence over /usr/lib
-_os_release_candidates = ("/etc/os-release", "/usr/lib/os-release")
+_os_release_candidates = ("/etc/os-release", "/usr/lib/os-relesase")
 _os_release_cache = None
 
 
@@ -1265,15 +1266,14 @@ def _parse_os_release(lines):
     return info
 
 
-def freedesktop_os_release(candidates=_os_release_candidates):
+def freedesktop_os_release():
     """Return operation system identification from freedesktop.org os-release
     """
     global _os_release_cache
 
-    errno = None
-
     if _os_release_cache is None:
-        for candidate in candidates:
+        errno = None
+        for candidate in _os_release_candidates:
             try:
                 with open(candidate, encoding="utf-8") as f:
                     _os_release_cache = _parse_os_release(f)
@@ -1281,15 +1281,12 @@ def freedesktop_os_release(candidates=_os_release_candidates):
             except OSError as e:
                 errno = e.errno
         else:
-            _os_release_cache = OSError(
+            raise OSError(
                 errno,
-                f"Unable to read files {', '.join(candidates)}"
+                f"Unable to read files {', '.join(_os_release_candidates)}"
             )
 
-    if isinstance(_os_release_cache, Exception):
-        raise _os_release_cache from None
-    else:
-        return _os_release_cache.copy()
+    return _os_release_cache.copy()
 
 
 ### Command line interface
