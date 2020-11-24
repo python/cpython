@@ -326,7 +326,9 @@ restrictions.  If those restrictions aren't met, it raises an exception to
 prevent data corruption at its source.
 
 This :class:`Validator` class is both an :term:`abstract base class` and a
-managed attribute descriptor::
+managed attribute descriptor:
+
+.. testcode::
 
     from abc import ABC, abstractmethod
 
@@ -366,7 +368,7 @@ Here are three practical data validation utilities:
    user-defined `predicate
    <https://en.wikipedia.org/wiki/Predicate_(mathematical_logic)>`_ as well.
 
-::
+.. testcode::
 
     class OneOf(Validator):
 
@@ -422,7 +424,9 @@ Here are three practical data validation utilities:
 Practical use
 -------------
 
-Here's how the data validators can be used in a real class::
+Here's how the data validators can be used in a real class:
+
+.. testcode::
 
     class Component:
 
@@ -437,11 +441,26 @@ Here's how the data validators can be used in a real class::
 
 The descriptors prevent invalid instances from being created::
 
-    Component('WIDGET', 'metal', 5)     # Allowed.
-    Component('Widget', 'metal', 5)     # Blocked: 'Widget' is not all uppercase
-    Component('WIDGET', 'metle', 5)     # Blocked: 'metle' is misspelled
-    Component('WIDGET', 'metal', -5)    # Blocked: -5 is negative
-    Component('WIDGET', 'metal', 'V')   # Blocked: 'V' isn't a number
+    >>> Component('Widget', 'metal', 5)      # Blocked: 'Widget' is not all uppercase
+    Traceback (most recent call last):
+        ...
+    ValueError: Expected <method 'isupper' of 'str' objects> to be true for 'Widget'
+
+    >>> Component('WIDGET', 'metle', 5)      # Blocked: 'metle' is misspelled
+    Traceback (most recent call last):
+        ...
+    ValueError: Expected 'metle' to be one of {'metal', 'plastic', 'wood'}
+
+    >>> Component('WIDGET', 'metal', -5)     # Blocked: -5 is negative
+    Traceback (most recent call last):
+        ...
+    ValueError: Expected -5 to be at least 0
+    >>> Component('WIDGET', 'metal', 'V')    # Blocked: 'V' isn't a number
+    Traceback (most recent call last):
+        ...
+    TypeError: Expected 'V' to be an int or float
+
+    >>> c = Component('WIDGET', 'metal', 5)  # Allowed:  This inputs are valid
 
 
 Technical Tutorial
