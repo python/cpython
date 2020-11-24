@@ -257,7 +257,7 @@ Added negative indexing support to :attr:`PurePath.parents
 platform
 --------
 
-Added :func:`platform.freedesktop_osrelease()` to retrieve operation system
+Added :func:`platform.freedesktop_os_release()` to retrieve operation system
 identification from `freedesktop.org os-release
 <https://www.freedesktop.org/software/systemd/man/os-release.html>`_ standard.
 (Contributed by Christian Heimes in :issue:`28468`)

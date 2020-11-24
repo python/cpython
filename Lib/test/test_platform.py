@@ -8,7 +8,7 @@ from unittest import mock
 from test import support
 from test.support import os_helper
 
-FEDORA_OSRELEASE = """\
+FEDORA_os_release = """\
 NAME=Fedora
 VERSION="32 (Thirty Two)"
 ID=fedora
@@ -30,7 +30,7 @@ REDHAT_SUPPORT_PRODUCT_VERSION=32
 PRIVACY_POLICY_URL="https://fedoraproject.org/wiki/Legal:PrivacyPolicy"
 """
 
-UBUNTU_OSRELEASE = """\
+UBUNTU_os_release = """\
 NAME="Ubuntu"
 VERSION="20.04.1 LTS (Focal Fossa)"
 ID=ubuntu
@@ -45,7 +45,7 @@ VERSION_CODENAME=focal
 UBUNTU_CODENAME=focal
 """
 
-TEST_OSRELEASE = r"""
+TEST_os_release = r"""
 # test data
 ID_LIKE=egg spam viking
 EMPTY=
@@ -56,6 +56,12 @@ EMPTY_SINGLE=''
 DOUBLE_QUOTE="double"
 EMPTY_DOUBLE=""
 QUOTES="double's"
+# invalid lines
+=invalid
+=
+INVALID
+IN-VALID=value
+IN VALID=value
 """
 
 
@@ -64,7 +70,7 @@ class PlatformTest(unittest.TestCase):
         platform._platform_cache.clear()
         platform._sys_version_cache.clear()
         platform._uname_cache = None
-        platform._osrelease_cache = None
+        platform._os_release_cache = None
 
     def test_architecture(self):
         res = platform.architecture()
@@ -433,38 +439,42 @@ class PlatformTest(unittest.TestCase):
                     self.assertEqual(platform.platform(terse=1), expected_terse)
                     self.assertEqual(platform.platform(), expected)
 
-    def test_freedesktop_osrelease(self):
+    def test_freedesktop_os_release(self):
         self.addCleanup(self.clear_caches)
         self.clear_caches()
 
-        if any(os.path.isfile(fn) for fn in platform._osrelease_candidates):
-            info = platform.freedesktop_osrelease()
+        if any(os.path.isfile(fn) for fn in platform._os_release_candidates):
+            info = platform.freedesktop_os_release()
             self.assertIn("NAME", info)
             self.assertIn("ID", info)
 
             info["CPYTHON_TEST"] = "test"
-            self.assertNotIn("CPYTHON_TEST", platform.freedesktop_osrelease())
+            self.assertNotIn(
+                "CPYTHON_TEST",
+                platform.freedesktop_os_release()
+            )
         else:
             with self.assertRaises(OSError):
-                platform.freedesktop_osrelease()
+                platform.freedesktop_os_release()
 
-    def test_parse_osrelease(self):
-        info = platform._parse_osrelease(FEDORA_OSRELEASE.split("\n"))
+    def test_parse_os_release(self):
+        info = platform._parse_os_release(FEDORA_os_release.splitlines())
         self.assertEqual(info["NAME"], "Fedora")
         self.assertEqual(info["ID"], "fedora")
         self.assertNotIn("ID_LIKE", info)
         self.assertEqual(info["VERSION_CODENAME"], "")
 
-        info = platform._parse_osrelease(UBUNTU_OSRELEASE.split("\n"))
+        info = platform._parse_os_release(UBUNTU_os_release.splitlines())
         self.assertEqual(info["NAME"], "Ubuntu")
         self.assertEqual(info["ID"], "ubuntu")
         self.assertEqual(info["ID_LIKE"], ("debian",))
         self.assertEqual(info["VERSION_CODENAME"], "focal")
 
-        info = platform._parse_osrelease(TEST_OSRELEASE.split("\n"))
+        info = platform._parse_os_release(TEST_os_release.splitlines())
         expected = {
             "ID": "linux",
             "NAME": "Linux",
+            "PRETTY_NAME": "Linux",
             "ID_LIKE": ("egg", "spam", "viking"),
             "EMPTY": "",
             "DOUBLE_QUOTE": "double",

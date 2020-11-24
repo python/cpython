@@ -1234,23 +1234,25 @@ def platform(aliased=0, terse=0):
 # https://www.freedesktop.org/software/systemd/man/os-release.html
 
 # NAME=value with optional quotes (' or ")
-_osrelease_line = re.compile(
+_os_release_line = re.compile(
     "^(?P<name>[a-zA-Z0-9_]+)=(?P<quote>[\"\']?)(?P<value>.*)(?P=quote)$"
 )
 # /etc takes precedence over /usr/lib
-_osrelease_candidates = ("/etc/os-release", "/usr/lib/os-release", )
-_osrelease_cache = None
+_os_release_candidates = ("/etc/os-release", "/usr/lib/os-release")
+_os_release_cache = None
 
 
-def _parse_osrelease(lines):
-    # NAME and ID fields are mandatory fields with well-known defaults
-    # in pratice all Linux distributions override NAME and ID.
+def _parse_os_release(lines):
+    # These fields are mandatory fields with well-known defaults
+    # in pratice all Linux distributions override NAME, ID, and PRETTY_NAME.
     info = {
         "NAME": "Linux",
-        "ID": "linux"
+        "ID": "linux",
+        "PRETTY_NAME": "Linux",
     }
+
     for line in lines:
-        mo = _osrelease_line.match(line)
+        mo = _os_release_line.match(line)
         if mo is not None:
             info[mo.group('name')] = mo.group('value')
 
@@ -1259,28 +1261,35 @@ def _parse_osrelease(lines):
         info['ID_LIKE'] = tuple(
             id_like for id_like in info['ID_LIKE'].split(' ') if id_like
         )
+
     return info
 
 
-def freedesktop_osrelease():
+def freedesktop_os_release(candidates=_os_release_candidates):
     """Return operation system identification from freedesktop.org os-release
     """
-    global _osrelease_cache
+    global _os_release_cache
 
-    if _osrelease_cache is None:
-        for candidate in _osrelease_candidates:
+    errno = None
+
+    if _os_release_cache is None:
+        for candidate in candidates:
             try:
-                with open(candidate) as f:
-                    _osrelease_cache = _parse_osrelease(f)
+                with open(candidate, encoding="utf-8") as f:
+                    _os_release_cache = _parse_os_release(f)
                 break
             except OSError as e:
-                e.__traceback__ = None
-                _osrelease_cache = e
+                errno = e.errno
+        else:
+            _os_release_cache = OSError(
+                errno,
+                f"Unable to read files {', '.join(candidates)}"
+            )
 
-    if isinstance(_osrelease_cache, Exception):
-        raise _osrelease_cache
+    if isinstance(_os_release_cache, Exception):
+        raise _os_release_cache from None
     else:
-        return _osrelease_cache.copy()
+        return _os_release_cache.copy()
 
 
 ### Command line interface

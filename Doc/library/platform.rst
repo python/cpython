@@ -258,21 +258,24 @@ Unix Platforms
 Linux Platforms
 ---------------
 
-.. function:: freedesktop_osrelease()
+.. function:: freedesktop_os_release()
 
    Get operating system identification from ``os-release`` file and return
    it as a dict. The ``os-release`` file is a `freedesktop.org standard
    <https://www.freedesktop.org/software/systemd/man/os-release.html>`_ and
-   supported by majority of Linux distributions. All fields except ``NAME``
-   and ``ID`` are optional. If present, the ``ID_LIKE`` parsed and presented
-   as a tuple of strings.
+   is available in most Linux distributions. A noticeable exception is
+   Android and Android-based distributions.
+
+   All fields except ``NAME``, ``ID``, and ``PRETTY_NAME`` are optional.
+   If present, the ``ID_LIKE`` parsed and presented as a tuple of strings.
+   Comments, empty lines, and invalid lines are silently omitted.
 
    Note that fields like ``NAME``, ``VERSION``, and ``VARIANT`` are strings
    suitable for presentation to users. Programs should use fields like
    ``ID`` + ``ID_LIKE``, ``VERSION_ID``, or ``VARIANT_ID`` to identify
    Linux distributions. Vendors may include additional fields.
 
-   Raises :exc:`OSError` when neither ``/etc/os-release`` nor
+   Raises :exc:`OSError` or subclass when neither ``/etc/os-release`` nor
    ``/usr/lib/os-release`` can be read.
 
   .. versionadded:: 3.10
