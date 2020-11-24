@@ -2072,39 +2072,35 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
     Py_ssize_t annotations_len = 0;
 
     if (!compiler_visit_argannotations(c, args->args, &annotations_len))
-        goto error;
+        return 0;
     if (!compiler_visit_argannotations(c, args->posonlyargs, &annotations_len))
-        goto error;
+        return 0;
     if (args->vararg && args->vararg->annotation &&
         !compiler_visit_argannotation(c, args->vararg->arg,
                                      args->vararg->annotation, &annotations_len))
-        goto error;
+        return 0;
     if (!compiler_visit_argannotations(c, args->kwonlyargs, &annotations_len))
-        goto error;
+        return 0;
     if (args->kwarg && args->kwarg->annotation &&
         !compiler_visit_argannotation(c, args->kwarg->arg,
                                      args->kwarg->annotation, &annotations_len))
-        goto error;
+        return 0;
 
     if (!return_str) {
         return_str = PyUnicode_InternFromString("return");
         if (!return_str)
-            goto error;
+            return 0;
     }
     if (!compiler_visit_argannotation(c, return_str, returns, &annotations_len)) {
-        goto error;
+        return 0;
     }
 
     if (annotations_len) {
         ADDOP_I(c, BUILD_TUPLE, annotations_len);
         return 1;
     }
-    else {
-        return -1;
-    }
 
-error:
-    return 0;
+    return -1;
 }
 
 static int
@@ -6449,3 +6445,4 @@ PyCode_Optimize(PyObject *code, PyObject* Py_UNUSED(consts),
     Py_INCREF(code);
     return code;
 }
+

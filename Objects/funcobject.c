@@ -423,13 +423,13 @@ func_get_annotations(PyFunctionObject *op, void *Py_UNUSED(ignored))
         op->func_annotations = PyDict_New();
         if (op->func_annotations == NULL)
             return NULL;
-
     }
     if (PyTuple_CheckExact(op->func_annotations)) {
         PyObject *ann_tuple = op->func_annotations;
         PyObject *ann_dict = PyDict_New();
-        if (ann_dict == NULL)
+        if (ann_dict == NULL) {
             return NULL;
+        }
 
         assert(PyTuple_GET_SIZE(ann_tuple) % 2 == 0);
 
