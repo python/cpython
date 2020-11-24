@@ -43,21 +43,26 @@ Simple example: A descriptor that returns a constant
 ----------------------------------------------------
 
 The :class:`Ten` class is a descriptor that always returns the constant ``10``
-from its :meth:`__get__` method::
+from its :meth:`__get__` method:
 
+.. testcode::
 
     class Ten:
         def __get__(self, obj, objtype=None):
             return 10
 
-To use the descriptor, it must be stored as a class variable in another class::
+To use the descriptor, it must be stored as a class variable in another class:
+
+.. testcode::
 
     class A:
         x = 5                       # Regular class attribute
         y = Ten()                   # Descriptor instance
 
 An interactive session shows the difference between normal attribute lookup
-and descriptor lookup::
+and descriptor lookup:
+
+.. doctest::
 
     >>> a = A()                     # Make an instance of class A
     >>> a.x                         # Normal attribute lookup
