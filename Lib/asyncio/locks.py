@@ -8,6 +8,18 @@ from . import exceptions
 from . import mixins
 
 
+# Used as a sentinel for loop parameter
+_marker = object()
+
+
+def _verify_parameter_is_marker(obj, parameter):
+    if parameter is not _marker:
+        raise TypeError(
+            f'As of 3.10, the *loop* parameter was removed from '
+            f'{type(obj).__name__}() since it is no longer necessary'
+        )
+
+
 class _ContextManagerMixin:
     async def __aenter__(self):
         await self.acquire()
@@ -73,7 +85,8 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
 
     """
 
-    def __init__(self):
+    def __init__(self, *, loop=_marker):
+        _verify_parameter_is_marker(self, loop)
         self._waiters = None
         self._locked = False
 
@@ -162,7 +175,8 @@ class Event(mixins._LoopBoundMixin):
     false.
     """
 
-    def __init__(self):
+    def __init__(self, loop=_marker):
+        _verify_parameter_is_marker(self, loop)
         self._waiters = collections.deque()
         self._value = False
 
@@ -224,7 +238,8 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
     A new Lock object is created and used as the underlying lock.
     """
 
-    def __init__(self, lock=None):
+    def __init__(self, lock=None, *, loop=_marker):
+        _verify_parameter_is_marker(self, loop)
         if lock is None:
             lock = Lock()
         elif lock._loop is not self._get_loop():
@@ -343,7 +358,8 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
     ValueError is raised.
     """
 
-    def __init__(self, value=1):
+    def __init__(self, value=1, *, loop=_marker):
+        _verify_parameter_is_marker(self, loop)
         if value < 0:
             raise ValueError("Semaphore initial value must be >= 0")
         self._value = value
@@ -406,7 +422,8 @@ class BoundedSemaphore(Semaphore):
     above the initial value.
     """
 
-    def __init__(self, value=1):
+    def __init__(self, value=1, *, loop=_marker):
+        _verify_parameter_is_marker(self, loop)
         self._bound_value = value
         super().__init__(value)
 
