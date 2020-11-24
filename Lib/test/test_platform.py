@@ -45,7 +45,7 @@ VERSION_CODENAME=focal
 UBUNTU_CODENAME=focal
 """
 
-TEST_OS_ = r"""
+TEST_OS_RELEASE = r"""
 # test data
 ID_LIKE="egg spam viking"
 EMPTY=
@@ -55,7 +55,8 @@ SINGLE_QUOTE='single'
 EMPTY_SINGLE=''
 DOUBLE_QUOTE="double"
 EMPTY_DOUBLE=""
-QUOTES="double's"
+QUOTES="double\'s"
+SPECIALS="\$\`\\\'\""
 # invalid lines
 =invalid
 =
@@ -482,8 +483,10 @@ class PlatformTest(unittest.TestCase):
             "SINGLE_QUOTE": "single",
             "EMPTY_SINGLE": "",
             "QUOTES": "double's",
+            "SPECIALS": "$`\\'\"",
         }
         self.assertEqual(info, expected)
+        self.assertEqual(len(info["SPECIALS"]), 5)
 
 
 if __name__ == '__main__':

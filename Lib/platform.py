@@ -1238,6 +1238,8 @@ def platform(aliased=0, terse=0):
 _os_release_line = re.compile(
     "^(?P<name>[a-zA-Z0-9_]+)=(?P<quote>[\"\']?)(?P<value>.*)(?P=quote)$"
 )
+# unescape five special characters mentioned in the standard
+_os_release_unescape = re.compile(r"\\([\\\$\"\'`])")
 # /etc takes precedence over /usr/lib
 _os_release_candidates = ("/etc/os-release", "/usr/lib/os-relesase")
 _os_release_cache = None
@@ -1255,7 +1257,9 @@ def _parse_os_release(lines):
     for line in lines:
         mo = _os_release_line.match(line)
         if mo is not None:
-            info[mo.group('name')] = mo.group('value')
+            info[mo.group('name')] = _os_release_unescape.sub(
+                r"\1", mo.group('value')
+            )
 
     # ID_LIKE is a space separated field of ids
     if 'ID_LIKE' in info:
