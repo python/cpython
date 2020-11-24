@@ -578,7 +578,9 @@ If a descriptor is found for ``a.x``, then it is invoked with:
 ``desc.__get__(a, type(a))``.
 
 The logic for a dotted lookup is in :meth:`object.__getattribute__`.  Here is
-a pure Python equivalent::
+a pure Python equivalent:
+
+.. testcode::
 
     def object_getattribute(obj, name):
         "Emulate PyObject_GenericGetAttr() in Objects/object.c"
@@ -600,7 +602,9 @@ a pure Python equivalent::
 
 Interestingly, attribute lookup doesn't call :meth:`object.__getattribute__`
 directly.  Instead, both the dot operator and the :func:`getattr` function
-perform attribute lookup by way of a helper function::
+perform attribute lookup by way of a helper function:
+
+.. testcode::
 
     def getattr_hook(obj, name):
         "Emulate slot_tp_getattr_hook() in Objects/typeobject.c"
@@ -702,7 +706,9 @@ be used to implement an `object relational mapping
 
 The essential idea is that the data is stored in an external database.  The
 Python instances only hold keys to the database's tables.  Descriptors take
-care of lookups or updates::
+care of lookups or updates:
+
+.. testcode::
 
     class Field:
 
@@ -717,8 +723,11 @@ care of lookups or updates::
             conn.execute(self.store, [value, obj.key])
             conn.commit()
 
-We can use the :class:`Field` class to define "models" that describe the schema
-for each table in a database::
+We can use the :class:`Field` class to define `models
+<https://en.wikipedia.org/wiki/Database_model>`_ that describe the schema for
+each table in a database:
+
+.. testcode::
 
     class Movie:
         table = 'Movies'                    # Table name
@@ -739,11 +748,40 @@ for each table in a database::
         def __init__(self, key):
             self.key = key
 
-An interactive session shows how data is retrieved from the database and how
-it can be updated::
+To use the models, first connect to the database::
 
     >>> import sqlite3
     >>> conn = sqlite3.connect('entertainment.db')
+
+An interactive session shows how data is retrieved from the database and how
+it can be updated:
+
+.. testsetup::
+
+    song_data = [
+        ('Country Roads', 'John Denver', 1972),
+        ('Me and Bobby McGee', 'Janice Joplin', 1971),
+        ('Coal Miners Daughter', 'Loretta Lynn', 1970),
+    ]
+
+    movie_data = [
+        ('Star Wars', 'George Lucas', 1977),
+        ('Jaws', 'Steven Spielberg', 1975),
+        ('Aliens', 'James Cameron', 1986),
+    ]
+
+    import sqlite3
+
+    conn = sqlite3.connect(':memory:')
+    conn.execute('CREATE TABLE Music (title text, artist text, year integer);')
+    conn.execute('CREATE INDEX MusicNdx ON Music (title);')
+    conn.executemany('INSERT INTO Music VALUES (?, ?, ?);', song_data)
+    conn.execute('CREATE TABLE Movies (title text, director text, year integer);')
+    conn.execute('CREATE INDEX MovieNdx ON Music (title);')
+    conn.executemany('INSERT INTO Movies VALUES (?, ?, ?);', movie_data)
+    conn.commit()
+
+.. doctest::
 
     >>> Movie('Star Wars').director
     'George Lucas'
