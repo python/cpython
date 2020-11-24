@@ -816,7 +816,9 @@ triggers a function call upon access to an attribute.  Its signature is::
 
     property(fget=None, fset=None, fdel=None, doc=None) -> property
 
-The documentation shows a typical use to define a managed attribute ``x``::
+The documentation shows a typical use to define a managed attribute ``x``:
+
+.. testcode ::
 
     class C:
         def getx(self): return self.__x
@@ -872,7 +874,9 @@ For instance, a spreadsheet class may grant access to a cell value through
 ``Cell('b10').value``. Subsequent improvements to the program require the cell
 to be recalculated on every access; however, the programmer does not want to
 affect existing client code accessing the attribute directly.  The solution is
-to wrap access to the value attribute in a property data descriptor::
+to wrap access to the value attribute in a property data descriptor:
+
+.. testcode ::
 
     class Cell:
         ...
@@ -882,6 +886,9 @@ to wrap access to the value attribute in a property data descriptor::
             "Recalculate the cell before returning value"
             self.recalc()
             return self._value
+
+Either the built-in :func:`property` or our :func:`Property` equivalent would
+work in this example.
 
 
 Functions and methods
@@ -896,7 +903,9 @@ prepended to the other arguments.  By convention, the instance is called
 *self* but could be called *this* or any other variable name.
 
 Methods can be created manually with :class:`types.MethodType` which is
-roughly equivalent to::
+roughly equivalent to:
+
+.. testcode::
 
     class MethodType:
         "Emulate Py_MethodType in Objects/classobject.c"
@@ -913,7 +922,9 @@ roughly equivalent to::
 To support automatic creation of methods, functions include the
 :meth:`__get__` method for binding methods during attribute access.  This
 means that functions are non-data descriptors that return bound methods
-during dotted lookup from an instance.  Here's how it works::
+during dotted lookup from an instance.  Here's how it works:
+
+.. testcode::
 
     class Function:
         ...
@@ -925,13 +936,17 @@ during dotted lookup from an instance.  Here's how it works::
             return MethodType(self, obj)
 
 Running the following class in the interpreter shows how the function
-descriptor works in practice::
+descriptor works in practice:
+
+.. testcode::
 
     class D:
         def f(self, x):
              return x
 
 The function has a :term:`qualified name` attribute to support introspection::
+
+.. doctest
 
     >>> D.f.__qualname__
     'D.f'
@@ -959,7 +974,7 @@ Internally, the bound method stores the underlying function and the bound
 instance::
 
     >>> d.f.__func__
-    <function D.f at 0x1012e5ae8>
+    <function D.f at 0x00C45070>
 
     >>> d.f.__self__
     <__main__.D object at 0x1012e1f98>
@@ -1011,12 +1026,16 @@ It can be called either from an object or the class:  ``s.erf(1.5) --> .9332`` o
 ``Sample.erf(1.5) --> .9332``.
 
 Since static methods return the underlying function with no changes, the
-example calls are unexciting::
+example calls are unexciting:
+
+.. testcode::
 
     class E:
         @staticmethod
         def f(x):
             print(x)
+
+.. doctest::
 
     >>> E.f(3)
     3
@@ -1024,7 +1043,9 @@ example calls are unexciting::
     3
 
 Using the non-data descriptor protocol, a pure Python version of
-:func:`staticmethod` would look like this::
+:func:`staticmethod` would look like this:
+
+.. doctest::
 
     class StaticMethod:
         "Emulate PyStaticMethod_Type() in Objects/funcobject.c"
@@ -1057,7 +1078,9 @@ This behavior is useful whenever the method only needs to have a class
 reference and does rely on data stored in a specific instance.  One use for
 class methods is to create alternate class constructors.  For example, the
 classmethod :func:`dict.fromkeys` creates a new dictionary from a list of
-keys.  The pure Python equivalent is::
+keys.  The pure Python equivalent is:
+
+.. testcode::
 
     class Dict:
         ...
@@ -1076,7 +1099,9 @@ Now a new dictionary of unique keys can be constructed like this::
     {'a': None, 'r': None, 'b': None, 'c': None, 'd': None}
 
 Using the non-data descriptor protocol, a pure Python version of
-:func:`classmethod` would look like this::
+:func:`classmethod` would look like this:
+
+.. testcode::
 
     class ClassMethod:
         "Emulate PyClassMethod_Type() in Objects/funcobject.c"
@@ -1093,7 +1118,9 @@ Using the non-data descriptor protocol, a pure Python version of
 
 The code path for ``hasattr(obj, '__get__')`` was added in Python 3.9 and
 makes it possible for :func:`classmethod` to support chained decorators.
-For example, a classmethod and property could be chained together::
+For example, a classmethod and property could be chained together:
+
+.. testcode::
 
     class G:
         @classmethod
@@ -1121,7 +1148,9 @@ assignments.  Only attribute names specified in ``__slots__`` are allowed::
         AttributeError: 'Vehicle' object has no attribute 'id_nubmer'
 
 2. Helps create immutable objects where descriptors manage access to private
-attributes stored in ``__slots__``::
+attributes stored in ``__slots__``:
+
+.. testcode::
 
     class Immutable:
 
@@ -1169,7 +1198,9 @@ It's not possible to create an exact drop-in pure Python version of
 over object memory allocation.  However, we can build a mostly faithful
 simulation where the actual C structure for slots is emulated by a private
 ``_slotvalues`` list.  Reads and writes to that private structure are managed
-by member descriptors::
+by member descriptors:
+
+.. testcode::
 
     null = object()
 
@@ -1208,6 +1239,8 @@ by member descriptors::
 The :meth:`type.__new__` method takes care of adding member objects to class
 variables::
 
+.. testcode:
+
     class Type(type):
         'Simulate how the type metaclass adds member objects for slots'
 
@@ -1221,7 +1254,9 @@ variables::
 
 The :meth:`object.__new__` method takes care of creating instances that have
 slots instead of an instance dictionary.  Here is a rough simulation in pure
-Python::
+Python:
+
+.. testcode::
 
     class Object:
         'Simulate how object.__new__() allocates memory for __slots__'
@@ -1253,7 +1288,9 @@ Python::
             super().__delattr__(name)
 
 To use the simulation in a real class, just inherit from :class:`Object` and
-set the :term:`metaclass` to :class:`Type`::
+set the :term:`metaclass` to :class:`Type`:
+
+.. testcode::
 
     class H(Object, metaclass=Type):
         'Instance variables stored in slots'
@@ -1266,8 +1303,8 @@ set the :term:`metaclass` to :class:`Type`::
 
 At this point, the metaclass has loaded member objects for *x* and *y*::
 
-    >>> import pprint
-    >>> pprint.pp(dict(vars(H)))
+    >>> from pprint import pp
+    >>> pp(dict(vars(H)))
     {'__module__': '__main__',
      '__doc__': 'Instance variables stored in slots',
      'slot_names': ['x', 'y'],
@@ -1276,7 +1313,9 @@ At this point, the metaclass has loaded member objects for *x* and *y*::
      'y': <Member 'y' of 'H'>}
 
 When instances are created, they have a ``slot_values`` list where the
-attributes are stored::
+attributes are stored:
+
+.. doctest::
 
     >>> h = H(10, 20)
     >>> vars(h)
@@ -1285,7 +1324,9 @@ attributes are stored::
     >>> vars(h)
     {'_slotvalues': [55, 20]}
 
-Misspelled or unassigned attributes will raise an exception::
+Misspelled or unassigned attributes will raise an exception:
+
+.. doctest::
 
     >>> h.xz
     Traceback (most recent call last):
