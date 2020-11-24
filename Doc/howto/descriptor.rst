@@ -88,7 +88,9 @@ Dynamic lookups
 ---------------
 
 Interesting descriptors typically run computations instead of returning
-constants::
+constants:
+
+.. testcode::
 
     import os
 
@@ -136,7 +138,9 @@ the public attribute is accessed.
 
 In the following example, *age* is the public attribute and *_age* is the
 private attribute.  When the public attribute is accessed, the descriptor logs
-the lookup or update::
+the lookup or update:
+
+.. testcode::
 
     import logging
 
@@ -166,7 +170,9 @@ the lookup or update::
 
 
 An interactive session shows that all access to the managed attribute *age* is
-logged, but that the regular attribute *name* is not logged::
+logged, but that the regular attribute *name* is not logged:
+
+.. doctest::
 
     >>> mary = Person('Mary M', 30)         # The initial age update is logged
     INFO:root:Updating 'age' to 30
@@ -206,7 +212,9 @@ variable name was used.
 In this example, the :class:`Person` class has two descriptor instances,
 *name* and *age*.  When the :class:`Person` class is defined, it makes a
 callback to :meth:`__set_name__` in *LoggedAccess* so that the field names can
-be recorded, giving each descriptor its own *public_name* and *private_name*::
+be recorded, giving each descriptor its own *public_name* and *private_name*:
+
+.. testcode::
 
     import logging
 
@@ -241,14 +249,18 @@ be recorded, giving each descriptor its own *public_name* and *private_name*::
 
 An interactive session shows that the :class:`Person` class has called
 :meth:`__set_name__` so that the field names would be recorded.  Here
-we call :func:`vars` to look up the descriptor without triggering it::
+we call :func:`vars` to look up the descriptor without triggering it:
+
+.. doctest::
 
     >>> vars(vars(Person)['name'])
     {'public_name': 'name', 'private_name': '_name'}
     >>> vars(vars(Person)['age'])
     {'public_name': 'age', 'private_name': '_age'}
 
-The new class now logs access to both *name* and *age*::
+The new class now logs access to both *name* and *age*:
+
+.. doctest::
 
     >>> pete = Person('Peter P', 10)
     INFO:root:Updating 'name' to 'Peter P'
@@ -257,7 +269,9 @@ The new class now logs access to both *name* and *age*::
     INFO:root:Updating 'name' to 'Catherine C'
     INFO:root:Updating 'age' to 20
 
-The two *Person* instances contain only the private names::
+The two *Person* instances contain only the private names:
+
+.. doctest::
 
     >>> vars(pete)
     {'_name': 'Peter P', '_age': 10}
