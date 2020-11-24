@@ -1149,7 +1149,7 @@ All of the following opcodes use their arguments.
    * the code associated with the function (at TOS1)
    * the :term:`qualified name` of the function (at TOS)
 
-    .. versionchanged:: 3.10
+   .. versionchanged:: 3.10
       Flag value ``0x04`` is a tuple of strings instead of dictionary
 
 .. opcode:: BUILD_SLICE (argc)
