@@ -115,9 +115,3 @@ def widget_eq(actual, expected):
         if isinstance(expected, (str, tkinter.Widget)):
             return str(actual) == str(expected)
     return False
-
-def show_widget(widget):
-    if not widget.winfo_ismapped():
-        widget.update_idletasks()
-        if not widget.winfo_ismapped():
-            raise RuntimeError(f"Widget {widget} is still not mapped")
