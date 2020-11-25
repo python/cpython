@@ -1227,8 +1227,8 @@ matters when a large number of instances are going to be created.
 4. Blocks tools like :func:`functools.cached_property` which require an
 instance dictionary to function correctly:
 
-.. doctest::
-
+.. testcode::
+   
     from functools import cached_property
 
     class CP:
@@ -1238,6 +1238,8 @@ instance dictionary to function correctly:
         def pi(self):
             return 4 * sum((-1.0)**n / (2.0*n + 1.0)
                            for n in reversed(range(100_000)))
+
+.. doctest:: 
 
     >>> CP().pi
     Traceback (most recent call last):
