@@ -22,7 +22,14 @@ work. One should use importlib as the public-facing version of this module.
 
 # Bootstrap-related code ######################################################
 
+# Modules injected manually by _setup()
+_thread = None
+_warnings = None
+_weakref = None
+
+# Import done by _install_external_importers()
 _bootstrap_external = None
+
 
 def _wrap(new, old):
     """Simple substitute for functools.update_wrapper."""
@@ -754,16 +761,16 @@ class BuiltinImporter:
         spec = cls.find_spec(fullname, path)
         return spec.loader if spec is not None else None
 
-    @classmethod
-    def create_module(self, spec):
+    @staticmethod
+    def create_module(spec):
         """Create a built-in module"""
         if spec.name not in sys.builtin_module_names:
             raise ImportError('{!r} is not a built-in module'.format(spec.name),
                               name=spec.name)
         return _call_with_frames_removed(_imp.create_builtin, spec)
 
-    @classmethod
-    def exec_module(self, module):
+    @staticmethod
+    def exec_module(module):
         """Exec a built-in module"""
         _call_with_frames_removed(_imp.exec_builtin, module)
 
@@ -824,8 +831,8 @@ class FrozenImporter:
         """
         return cls if _imp.is_frozen(fullname) else None
 
-    @classmethod
-    def create_module(cls, spec):
+    @staticmethod
+    def create_module(spec):
         """Use default semantics for module creation."""
 
     @staticmethod

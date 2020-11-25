@@ -1,0 +1,2 @@
+Port the ``_signal`` extension module to the multi-phase initialization API
+(:pep:`489`). Patch by Victor Stinner and Mohamed Koubaa.
