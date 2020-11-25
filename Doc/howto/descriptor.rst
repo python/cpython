@@ -846,7 +846,7 @@ here is a pure Python equivalent:
             return type(self)(self.fget, self.fset, fdel, self.__doc__)
 
 .. testcode::
-   :hide:
+    :hide:
 
     # Verify the Property() emulation
 
@@ -870,11 +870,14 @@ here is a pure Python equivalent:
 
     class CCC:
         @Property
-        def x(self): return self.__x
+        def x(self):
+            return self.__x
         @x.setter
-        def x(self, value): self.__x = value
+        def x(self, value):
+            self.__x = value
         @x.deleter
-        def delx(self): del self.__x
+        def delx(self):
+            del self.__x
 
     ccc = CCC()
     assert not hasattr(ccc, 'x')
