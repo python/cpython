@@ -579,32 +579,15 @@ a pure Python equivalent:
             return cls_var                                  # class variable
         raise AttributeError(name)
 
-Interestingly, attribute lookup doesn't call :meth:`object.__getattribute__`
-directly.  Instead, both the dot operator and the :func:`getattr` function
-perform attribute lookup by way of a helper function:
-
-.. testcode::
-
-    def getattr_hook(obj, name):
-        "Emulate slot_tp_getattr_hook() in Objects/typeobject.c"
-        try:
-            return obj.__getattribute__(name)
-        except AttributeError:
-            if not hasattr(type(obj), '__getattr__'):
-                raise
-        return type(obj).__getattr__(obj, name)             # __getattr__
-
-So if :meth:`__getattr__` exists, it is called whenever :meth:`__getattribute__`
-raises :exc:`AttributeError` (either directly or in one of the descriptor calls).
-
-Also, if a user calls :meth:`object.__getattribute__` directly, the
-:meth:`__getattr__` hook is bypassed entirely.
 
 .. testcode:
     :hide:
 
+    # Test the fidelity of object_getattribute() by comparing it with the
+    # normal object.__getattribute__().  The former will be accessed by
+    # square brackets and the latter by the dot operator.
+
     class Object:
-        "Dotted access uses normal __getattribute__. Square brackets uses the emulation"
 
         def __getitem__(obj, name):
             try:
@@ -614,7 +597,7 @@ Also, if a user calls :meth:`object.__getattribute__` directly, the
                     raise
             return type(obj).__getattr__(obj, name)             # __getattr__
 
-    class A(Object):
+    class DualOperator(Object):
 
         x = 10
 
@@ -638,7 +621,7 @@ Also, if a user calls :meth:`object.__getattribute__` directly, the
         def __getattr__(self, name):
             return ('getattr_hook', self, name)
 
-    class B:
+    class DualOperatorWithSlots:
 
         __getitem__ = Object.__getitem__
 
@@ -660,23 +643,61 @@ Also, if a user calls :meth:`object.__getattribute__` directly, the
             return ('getattr_hook', self, name)
 
 
-    a = A(11)
-    vars(a).update(p3 = '_p3', m7 = '_m7')
-    assert a.x == a['x'] == 10
-    assert a.z == a['z'] == 11
-    assert a.p2 == a['p2'] == 20
-    assert a.p3 == a['p3'] == 30
-    assert a.m5(100) == a.m5(100) == 500
-    assert a.m7 == a['m7'] == '_m7'
-    assert a.g == a['g'] == ('getattr_hook', a, 'g')
+.. doctest::
+    :hide:
 
-    b = B(22)
-    assert b.x == b['x'] == 15
-    assert b.z == b['z'] == 22
-    assert b.p2 == b['p2'] == 30
-    assert b.m5(200) == b['m5'](200) == 1000
-    assert b.g == b['g'] == ('getattr_hook', b, 'g')
-    assert False
+    >>> a = DualOperator(11)
+    >>> vars(a).update(p3 = '_p3', m7 = '_m7')
+    >>> a.x == a['x'] == 10
+    True
+    >>> a.z == a['z'] == 11
+    True
+    >>> a.p2 == a['p2'] == 20
+    True
+    >>> a.p3 == a['p3'] == 30
+    True
+    >>> a.m5(100) == a.m5(100) == 500
+    True
+    >>> a.m7 == a['m7'] == '_m7'
+    True
+    >>> a.g == a['g'] == ('getattr_hook', a, 'g')
+    True
+
+    >>> b = DualOperatorWithSlots(22)
+    True
+    >>> b.x == b['x'] == 15
+    True
+    >>> b.z == b['z'] == 22
+    True
+    >>> b.p2 == b['p2'] == 30
+    True
+    >>> b.m5(200) == b['m5'](200) == 1000
+    True
+    >>> b.g == b['g'] == ('getattr_hook', b, 'g')
+    True
+    >>> False
+    True
+
+Interestingly, attribute lookup doesn't call :meth:`object.__getattribute__`
+directly.  Instead, both the dot operator and the :func:`getattr` function
+perform attribute lookup by way of a helper function:
+
+.. testcode::
+
+    def getattr_hook(obj, name):
+        "Emulate slot_tp_getattr_hook() in Objects/typeobject.c"
+        try:
+            return obj.__getattribute__(name)
+        except AttributeError:
+            if not hasattr(type(obj), '__getattr__'):
+                raise
+        return type(obj).__getattr__(obj, name)             # __getattr__
+
+So if :meth:`__getattr__` exists, it is called whenever :meth:`__getattribute__`
+raises :exc:`AttributeError` (either directly or in one of the descriptor calls).
+
+Also, if a user calls :meth:`object.__getattribute__` directly, the
+:meth:`__getattr__` hook is bypassed entirely.
 
 
 Invocation from a class
