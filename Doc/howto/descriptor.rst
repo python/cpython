@@ -1225,7 +1225,7 @@ for whether the caller is an object or a class:
     ('F', 3)
 
 This behavior is useful whenever the method only needs to have a class
-reference and does rely on data stored in a specific instance.  One use for
+reference and does not rely on data stored in a specific instance.  One use for
 class methods is to create alternate class constructors.  For example, the
 classmethod :func:`dict.fromkeys` creates a new dictionary from a list of
 keys.  The pure Python equivalent is:
