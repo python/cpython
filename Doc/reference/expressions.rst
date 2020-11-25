@@ -77,6 +77,8 @@ When the name is bound to an object, evaluation of the atom yields that object.
 When a name is not bound, an attempt to evaluate it raises a :exc:`NameError`
 exception.
 
+.. _private-name-mangling:
+
 .. index::
    pair: name; mangling
    pair: private; names

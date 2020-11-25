@@ -707,6 +707,12 @@ are always available.  They are listed here in alphabetical order.
    is implemented by calling ``getattr(object, name)`` and seeing whether it
    raises an :exc:`AttributeError` or not.)
 
+   .. note::
+
+      Since :ref:`private name mangling <private-name-mangling>` happens at
+      compilation time, private attributes are not found by :func:`getattr`
+      unless the mangled name is used.
+
 
 .. function:: hash(object)
 
@@ -1510,6 +1516,11 @@ are always available.  They are listed here in alphabetical order.
    new attribute.  The function assigns the value to the attribute, provided the
    object allows it.  For example, ``setattr(x, 'foobar', 123)`` is equivalent to
    ``x.foobar = 123``.
+
+   .. note::
+
+      Since :ref:`private name mangling <private-name-mangling>` only happens at
+      compilation time, private attributes set by :func:`setattr` are not mangled.
 
 
 .. class:: slice(stop)
