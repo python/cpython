@@ -170,7 +170,15 @@ the lookup or update:
 
 
 An interactive session shows that all access to the managed attribute *age* is
-logged, but that the regular attribute *name* is not logged::
+logged, but that the regular attribute *name* is not logged:
+
+.. testcode::
+    :hide:
+
+    import logging, sys
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout, force=True)
+
+.. doctest::
 
     >>> mary = Person('Mary M', 30)         # The initial age update is logged
     INFO:root:Updating 'age' to 30
@@ -256,7 +264,15 @@ we call :func:`vars` to look up the descriptor without triggering it:
     >>> vars(vars(Person)['age'])
     {'public_name': 'age', 'private_name': '_age'}
 
-The new class now logs access to both *name* and *age*::
+The new class now logs access to both *name* and *age*:
+
+.. testcode::
+    :hide:
+
+    import logging, sys
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout, force=True)
+
+.. doctest::
 
     >>> pete = Person('Peter P', 10)
     INFO:root:Updating 'name' to 'Peter P'
@@ -433,7 +449,9 @@ Here's how the data validators can be used in a real class:
             self.kind = kind
             self.quantity = quantity
 
-The descriptors prevent invalid instances from being created::
+The descriptors prevent invalid instances from being created:
+
+.. doctest::
 
     >>> Component('Widget', 'metal', 5)      # Blocked: 'Widget' is not all uppercase
     Traceback (most recent call last):
@@ -1227,7 +1245,10 @@ Now a new dictionary of unique keys can be constructed like this:
 
 .. doctest::
 
-    >>> Dict.fromkeys('abracadabra')
+    >>> d = Dict.fromkeys('abracadabra')
+    >>> type(d) is Dict
+    True
+    >>> d
     {'a': None, 'b': None, 'r': None, 'c': None, 'd': None}
 
 Using the non-data descriptor protocol, a pure Python version of
