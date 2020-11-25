@@ -851,9 +851,12 @@ here is a pure Python equivalent:
     # Verify the Property() emulation
 
     class CC:
-        def getx(self): return self.__x
-        def setx(self, value): self.__x = value
-        def delx(self): del self.__x
+        def getx(self):
+            return self.__x
+        def setx(self, value):
+            self.__x = value
+        def delx(self):
+            del self.__x
         x = Property(getx, setx, delx, "I'm the 'x' property.")
 
     cc = CC()
