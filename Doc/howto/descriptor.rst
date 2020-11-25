@@ -1171,10 +1171,12 @@ several effects:
 1. Provides immediate detection of bugs due to misspelled attribute
 assignments.  Only attribute names specified in ``__slots__`` are allowed:
 
-.. doctest::
+.. testcode::
 
         class Vehicle:
             __slots__ = ('id_number', 'make', 'model')
+
+.. doctest::
 
         >>> auto = Vehicle()
         >>> auto.id_nubmer = 'VYE483814LQEX'
