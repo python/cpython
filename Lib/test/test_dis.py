@@ -131,12 +131,14 @@ dis_bug708901 = """\
              12 STORE_FAST               0 (res)
 
 %3d          14 JUMP_ABSOLUTE           10
-        >>   16 LOAD_CONST               0 (None)
+
+%3d     >>   16 LOAD_CONST               0 (None)
              18 RETURN_VALUE
 """ % (bug708901.__code__.co_firstlineno + 1,
        bug708901.__code__.co_firstlineno + 2,
        bug708901.__code__.co_firstlineno + 1,
-       bug708901.__code__.co_firstlineno + 3)
+       bug708901.__code__.co_firstlineno + 3,
+       bug708901.__code__.co_firstlineno + 1)
 
 
 def bug1333982(x=[]):

@@ -2754,12 +2754,13 @@ compiler_if(struct compiler *c, stmt_ty s)
 static int
 compiler_for(struct compiler *c, stmt_ty s)
 {
-    basicblock *start, *cleanup, *end;
+    basicblock *start, *body, *cleanup, *end;
 
     start = compiler_new_block(c);
+    body = compiler_new_block(c);
     cleanup = compiler_new_block(c);
     end = compiler_new_block(c);
-    if (start == NULL || end == NULL || cleanup == NULL) {
+    if (start == NULL || body == NULL || end == NULL || cleanup == NULL) {
         return 0;
     }
     if (!compiler_push_fblock(c, FOR_LOOP, start, end, NULL)) {
@@ -2769,6 +2770,7 @@ compiler_for(struct compiler *c, stmt_ty s)
     ADDOP(c, GET_ITER);
     compiler_use_next_block(c, start);
     ADDOP_JUMP(c, FOR_ITER, cleanup);
+    compiler_use_next_block(c, body);
     VISIT(c, expr, s->v.For.target);
     VISIT_SEQ(c, stmt, s->v.For.body);
     ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
@@ -5953,7 +5955,7 @@ dump_basicblock(const basicblock *b)
 
 
 static int
-normalize_basic_block(basicblock *bb) ;
+normalize_cfg(basicblock *bb);
 
 static int
 optimize_cfg(struct assembler *a, PyObject *consts);
@@ -5981,10 +5983,8 @@ assemble(struct compiler *c, int addNone)
         ADDOP(c, RETURN_VALUE);
     }
 
-    for (b = c->u->u_blocks; b != NULL; b = b->b_list) {
-        if (normalize_basic_block(b)) {
-            goto error;
-        }
+    if (normalize_cfg(c->u->u_blocks)) {
+        goto error;
     }
 
     if (ensure_exits_have_lineno(c)) {
@@ -6388,7 +6388,8 @@ normalize_basic_block(basicblock *bb) {
             case RAISE_VARARGS:
             case RERAISE:
                 bb->b_exit = 1;
-                /* fall through */
+                bb->b_nofallthrough = 1;
+                break;
             case JUMP_ABSOLUTE:
             case JUMP_FORWARD:
                 bb->b_nofallthrough = 1;
@@ -6397,10 +6398,27 @@ normalize_basic_block(basicblock *bb) {
             case POP_JUMP_IF_TRUE:
             case JUMP_IF_FALSE_OR_POP:
             case JUMP_IF_TRUE_OR_POP:
+            case FOR_ITER:
                 if (i != bb->b_iused-1) {
                     PyErr_SetString(PyExc_SystemError, "malformed control flow graph.");
                     return -1;
                 }
+                /* Skip over empty basic blocks. */
+                while (bb->b_instr[i].i_target->b_iused == 0) {
+                    bb->b_instr[i].i_target = bb->b_instr[i].i_target->b_next;
+                }
+
+        }
+    }
+    return 0;
+}
+
+
+static int
+normalize_cfg(basicblock *b) {
+    for (; b != NULL; b = b->b_list) {
+        if (normalize_basic_block(b)) {
+            return -1;
         }
     }
     return 0;
@@ -6490,15 +6508,7 @@ optimize_cfg(struct assembler *a, PyObject *consts)
 
 static int
 is_exit_without_lineno(basicblock *b) {
-    if (!b->b_exit) {
-        return 0;
-    }
-    for (int i = 0; i < b->b_iused; i++) {
-        if (b->b_instr[i].i_lineno >= 0) {
-            return 0;
-        }
-    }
-    return 1;
+    return b->b_exit && b->b_instr[0].i_lineno < 0;
 }
 
 /* PEP 626 mandates that the f_lineno of a frame is correct
