@@ -449,7 +449,9 @@ Here's how the data validators can be used in a real class:
             self.kind = kind
             self.quantity = quantity
 
-The descriptors prevent invalid instances from being created::
+The descriptors prevent invalid instances from being created:
+
+.. doctest::
 
     >>> Component('Widget', 'metal', 5)      # Blocked: 'Widget' is not all uppercase
     Traceback (most recent call last):
@@ -1243,7 +1245,10 @@ Now a new dictionary of unique keys can be constructed like this:
 
 .. doctest::
 
-    >>> Dict.fromkeys('abracadabra')
+    >>> d = Dict.fromkeys('abracadabra')
+    >>> type(d) is Dict
+    True
+    >>> d
     {'a': None, 'b': None, 'r': None, 'c': None, 'd': None}
 
 Using the non-data descriptor protocol, a pure Python version of
