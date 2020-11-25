@@ -16,7 +16,7 @@ steps:
   displayName: 'Install build dependencies'
 
 - ${{ if ne(parameters.latex, 'true') }}:
-  - script: make check suspicious html PYTHON=python
+  - script: make check html PYTHON=python
     workingDirectory: '$(build.sourcesDirectory)/Doc'
     displayName: 'Build documentation'
 
