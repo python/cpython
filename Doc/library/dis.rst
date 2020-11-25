@@ -1144,11 +1144,13 @@ All of the following opcodes use their arguments.
    * ``0x01`` a tuple of default values for positional-only and
      positional-or-keyword parameters in positional order
    * ``0x02`` a dictionary of keyword-only parameters' default values
-   * ``0x04`` an annotation dictionary
+   * ``0x04`` a tuple of strings containing parameters' annotations
    * ``0x08`` a tuple containing cells for free variables, making a closure
    * the code associated with the function (at TOS1)
    * the :term:`qualified name` of the function (at TOS)
 
+   .. versionchanged:: 3.10
+      Flag value ``0x04`` is a tuple of strings instead of dictionary
 
 .. opcode:: BUILD_SLICE (argc)
 

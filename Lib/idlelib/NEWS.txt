@@ -3,6 +3,8 @@ Released on 2021-10-04?
 ======================================
 
 
+bpo-42426: Fix reporting offset of the RE error in searchengine.
+
 bpo-42416: Get docstrings for IDLE calltips more often
 by using inspect.getdoc.
 

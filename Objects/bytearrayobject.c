@@ -1004,20 +1004,16 @@ bytearray_richcompare(PyObject *self, PyObject *other, int op)
 {
     Py_ssize_t self_size, other_size;
     Py_buffer self_bytes, other_bytes;
-    int cmp, rc;
+    int cmp;
 
-    rc = PyObject_IsInstance(self, (PyObject*)&PyUnicode_Type);
-    if (!rc)
-        rc = PyObject_IsInstance(other, (PyObject*)&PyUnicode_Type);
-    if (rc < 0)
-        return NULL;
-    if (rc) {
-        if (_Py_GetConfig()->bytes_warning && (op == Py_EQ || op == Py_NE)) {
-            if (PyErr_WarnEx(PyExc_BytesWarning,
-                            "Comparison between bytearray and string", 1))
-                return NULL;
+    if (!PyObject_CheckBuffer(self) || !PyObject_CheckBuffer(other)) {
+        if (PyUnicode_Check(self) || PyUnicode_Check(other)) {
+            if (_Py_GetConfig()->bytes_warning && (op == Py_EQ || op == Py_NE)) {
+                if (PyErr_WarnEx(PyExc_BytesWarning,
+                                "Comparison between bytearray and string", 1))
+                    return NULL;
+            }
         }
-
         Py_RETURN_NOTIMPLEMENTED;
     }
 

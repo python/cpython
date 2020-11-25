@@ -85,11 +85,9 @@ get_posixsubprocess_state(PyObject *module)
     return (_posixsubprocessstate *)state;
 }
 
-#define _posixsubprocessstate_global get_posixsubprocess_state(PyState_FindModule(&_posixsubprocessmodule))
-
 /* If gc was disabled, call gc.enable(). Ignore errors. */
 static void
-_enable_gc(int need_to_reenable_gc, PyObject *gc_module)
+_enable_gc(int need_to_reenable_gc, PyObject *gc_module, _posixsubprocessstate *state)
 {
     PyObject *result;
     PyObject *exctype, *val, *tb;
@@ -97,7 +95,7 @@ _enable_gc(int need_to_reenable_gc, PyObject *gc_module)
     if (need_to_reenable_gc) {
         PyErr_Fetch(&exctype, &val, &tb);
         result = PyObject_CallMethodNoArgs(
-            gc_module, _posixsubprocessstate_global->enable);
+            gc_module, state->enable);
         if (result == NULL) {
             /* We might have created a child process at this point, we
              * we have no good way to handle a failure to reenable GC
@@ -758,7 +756,7 @@ do_fork_exec(char *const exec_array[],
 
 
 static PyObject *
-subprocess_fork_exec(PyObject* self, PyObject *args)
+subprocess_fork_exec(PyObject *module, PyObject *args)
 {
     PyObject *gc_module = NULL;
     PyObject *executable_list, *py_fds_to_keep;
@@ -782,6 +780,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     Py_ssize_t arg_num, num_groups = 0;
     int need_after_fork = 0;
     int saved_errno = 0;
+    _posixsubprocessstate *state = get_posixsubprocess_state(module);
 
     if (!PyArg_ParseTuple(
             args, "OOpO!OOiiiiiiiiiiOOOiO:fork_exec",
@@ -827,7 +826,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         if (gc_module == NULL)
             return NULL;
         result = PyObject_CallMethodNoArgs(
-            gc_module, _posixsubprocessstate_global->isenabled);
+            gc_module, state->isenabled);
         if (result == NULL) {
             Py_DECREF(gc_module);
             return NULL;
@@ -839,7 +838,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
             return NULL;
         }
         result = PyObject_CallMethodNoArgs(
-            gc_module, _posixsubprocessstate_global->disable);
+            gc_module, state->disable);
         if (result == NULL) {
             Py_DECREF(gc_module);
             return NULL;
@@ -1073,7 +1072,7 @@ cleanup:
     if (exec_array)
         _Py_FreeCharPArray(exec_array);
 
-    _enable_gc(need_to_reenable_gc, gc_module);
+    _enable_gc(need_to_reenable_gc, gc_module, state);
     Py_XDECREF(gc_module);
 
     return pid == -1 ? NULL : PyLong_FromPid(pid);
@@ -1113,12 +1112,38 @@ Raises: Only on an error in the parent process.\n\
 PyDoc_STRVAR(module_doc,
 "A POSIX helper for the subprocess module.");
 
+static int
+_posixsubprocess_exec(PyObject *module)
+{
+    _posixsubprocessstate *state = get_posixsubprocess_state(module);
+
+    state->disable = PyUnicode_InternFromString("disable");
+    if (state->disable == NULL) {
+        return -1;
+    }
+
+    state->enable = PyUnicode_InternFromString("enable");
+    if (state->enable == NULL) {
+        return -1;
+    }
+
+    state->isenabled = PyUnicode_InternFromString("isenabled");
+    if (state->isenabled == NULL) {
+        return -1;
+    }
+
+    return 0;
+}
 
 static PyMethodDef module_methods[] = {
     {"fork_exec", subprocess_fork_exec, METH_VARARGS, subprocess_fork_exec_doc},
     {NULL, NULL}  /* sentinel */
 };
 
+static PyModuleDef_Slot _posixsubprocess_slots[] = {
+    {Py_mod_exec, _posixsubprocess_exec},
+    {0, NULL}
+};
 
 static int _posixsubprocess_traverse(PyObject *m, visitproc visit, void *arg) {
     Py_VISIT(get_posixsubprocess_state(m)->disable);
@@ -1140,36 +1165,18 @@ static void _posixsubprocess_free(void *m) {
 
 static struct PyModuleDef _posixsubprocessmodule = {
         PyModuleDef_HEAD_INIT,
-        "_posixsubprocess",
-        module_doc,
-        sizeof(_posixsubprocessstate),
-        module_methods,
-        NULL,
-        _posixsubprocess_traverse,
-        _posixsubprocess_clear,
-        _posixsubprocess_free,
+        .m_name = "_posixsubprocess",
+        .m_doc = module_doc,
+        .m_size = sizeof(_posixsubprocessstate),
+        .m_methods = module_methods,
+        .m_slots = _posixsubprocess_slots,
+        .m_traverse = _posixsubprocess_traverse,
+        .m_clear = _posixsubprocess_clear,
+        .m_free = _posixsubprocess_free,
 };
 
 PyMODINIT_FUNC
 PyInit__posixsubprocess(void)
 {
-    PyObject* m;
-
-    m = PyState_FindModule(&_posixsubprocessmodule);
-    if (m != NULL) {
-      Py_INCREF(m);
-      return m;
-    }
-
-    m = PyModule_Create(&_posixsubprocessmodule);
-    if (m == NULL) {
-      return NULL;
-    }
-
-    get_posixsubprocess_state(m)->disable = PyUnicode_InternFromString("disable");
-    get_posixsubprocess_state(m)->enable = PyUnicode_InternFromString("enable");
-    get_posixsubprocess_state(m)->isenabled = PyUnicode_InternFromString("isenabled");
-
-    PyState_AddModule(m, &_posixsubprocessmodule);
-    return m;
+    return PyModuleDef_Init(&_posixsubprocessmodule);
 }
