@@ -845,14 +845,14 @@ here is a pure Python equivalent:
         def deleter(self, fdel):
             return type(self)(self.fget, self.fset, fdel, self.__doc__)
 
-.. testcleanup::
+.. testcode::
+   :hide:
 
-    # Verify the Property() emulation code
     class CC:
         def getx(self): return self.__x
         def setx(self, value): self.__x = value
         def delx(self): del self.__x
-        x = Property(getx, setx, delx, "I'm the 'x' property.")
+            x = Property(getx, setx, delx, "I'm the 'x' property.")
     cc = CC()
     assert not hasattr(cc, 'x')
     cc.x = 33
@@ -1073,16 +1073,18 @@ Unlike static methods, class methods prepend the class reference to the
 argument list before calling the function.  This format is the same
 for whether the caller is an object or a class:
 
-.. doctest::
+.. testcode::
 
     class F:
         @classmethod
         def f(cls, x):
             return cls.__name__, x
 
-    >>> print(F.f(3))
+.. doctest::
+
+    >>> F.f(3)
     ('F', 3)
-    >>> print(F().f(3))
+    >>> F().f(3)
     ('F', 3)
 
 This behavior is useful whenever the method only needs to have a class
@@ -1127,7 +1129,8 @@ Using the non-data descriptor protocol, a pure Python version of
                 return self.f.__get__(cls)
             return MethodType(self.f, cls)
 
-.. testcleanup::
+.. testcode::
+   :hide:
 
    # Verify the emulation works
    class T:
@@ -1358,7 +1361,8 @@ At this point, the metaclass has loaded member objects for *x* and *y*::
      'x': <Member 'x' of 'H'>,
      'y': <Member 'y' of 'H'>}
 
-.. testcleanup::
+.. testcode::
+   :hide:
 
    # We test this separately because the preceding section is not
    # doctestable due to the hex memory address for the __init__ function
@@ -1386,7 +1390,8 @@ Misspelled or unassigned attributes will raise an exception:
         ...
     AttributeError: 'H' object has no attribute 'xz'
 
-.. testcleanup::
+.. testcode::
+   :hide:
 
    # Examples for deleted attributes are not shown because this section
    # is already a bit lengthy.  But we still test that code here.
