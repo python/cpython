@@ -467,7 +467,7 @@ CPython bytecode changes
 
 * The ``MAKE_FUNCTION`` instruction accepts tuple of strings as annotations
   instead of dictionary.
-  (Contributed by Yurii Karabas in :issue:`42202`)
+  (Contributed by Yurii Karabas and Inada Naoki in :issue:`42202`)
 
 Build Changes
 =============
