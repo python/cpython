@@ -2182,7 +2182,7 @@ static PyStructSequence_Desc stat_result_desc = {
 PyDoc_STRVAR(statvfs_result__doc__,
 "statvfs_result: Result from statvfs or fstatvfs.\n\n\
 This object may be accessed either as a tuple of\n\
-  (bsize, frsize, blocks, bfree, bavail, files, ffree, favail, flag, namemax),\n\
+  (bsize, frsize, blocks, bfree, bavail, files, ffree, favail, flag, namemax, fsid),\n\
 or via the attributes f_bsize, f_frsize, f_blocks, f_bfree, and so on.\n\
 \n\
 See os.statvfs for more information.");
@@ -2206,7 +2206,7 @@ static PyStructSequence_Desc statvfs_result_desc = {
     "statvfs_result", /* name */
     statvfs_result__doc__, /* doc */
     statvfs_result_fields,
-    10
+    11
 };
 
 #if defined(HAVE_WAITID) && !defined(__APPLE__)
