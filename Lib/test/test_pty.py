@@ -83,6 +83,11 @@ def expectedFailureIfStdinIsTTY(fun):
             # Actually the file has complex multi-line structure,
             # these is no need to parse it for Gentoo check
             if 'gentoo' in os_release.read_text().lower():
+                # bpo-41818:
+                # Gentoo passes the test,
+                # all other tested Linux distributions fail.
+                # Should not apply @unittest.expectedFailure() on Gentoo
+                # to keep the buildbot fleet happy.
                 return fun
     try:
         tty.tcgetattr(pty.STDIN_FILENO)
