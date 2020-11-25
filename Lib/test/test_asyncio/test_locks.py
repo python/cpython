@@ -51,6 +51,23 @@ class LockTests(test_utils.TestCase):
 
         self.assertFalse(lock.locked())
 
+    def test_lock_doesnt_accept_loop_parameter(self):
+        primitives_cls = [
+            asyncio.Lock,
+            asyncio.Condition,
+            asyncio.Event,
+            asyncio.Semaphore,
+            asyncio.BoundedSemaphore,
+        ]
+
+        for cls in primitives_cls:
+            with self.assertRaisesRegex(
+                TypeError,
+                rf'As of 3.10, the \*loop\* parameter was removed from '
+                rf'{cls.__name__}\(\) since it is no longer necessary'
+            ):
+                cls(loop=self.loop)
+
     def test_lock_by_with_statement(self):
         loop = asyncio.new_event_loop()  # don't use TestLoop quirks
         self.set_event_loop(loop)
