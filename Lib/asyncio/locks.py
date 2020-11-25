@@ -12,8 +12,8 @@ from . import mixins
 _marker = object()
 
 
-def _verify_parameter_is_marker(obj, parameter):
-    if parameter is not _marker:
+def _verify_no_loop(obj, loop):
+    if loop is not _marker:
         raise TypeError(
             f'As of 3.10, the *loop* parameter was removed from '
             f'{type(obj).__name__}() since it is no longer necessary'
@@ -86,7 +86,7 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
     """
 
     def __init__(self, *, loop=_marker):
-        _verify_parameter_is_marker(self, loop)
+        _verify_no_loop(self, loop)
         self._waiters = None
         self._locked = False
 
@@ -176,7 +176,7 @@ class Event(mixins._LoopBoundMixin):
     """
 
     def __init__(self, loop=_marker):
-        _verify_parameter_is_marker(self, loop)
+        _verify_no_loop(self, loop)
         self._waiters = collections.deque()
         self._value = False
 
@@ -239,7 +239,7 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
     """
 
     def __init__(self, lock=None, *, loop=_marker):
-        _verify_parameter_is_marker(self, loop)
+        _verify_no_loop(self, loop)
         if lock is None:
             lock = Lock()
         elif lock._loop is not self._get_loop():
@@ -359,7 +359,7 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
     """
 
     def __init__(self, value=1, *, loop=_marker):
-        _verify_parameter_is_marker(self, loop)
+        _verify_no_loop(self, loop)
         if value < 0:
             raise ValueError("Semaphore initial value must be >= 0")
         self._value = value
@@ -423,7 +423,7 @@ class BoundedSemaphore(Semaphore):
     """
 
     def __init__(self, value=1, *, loop=_marker):
-        _verify_parameter_is_marker(self, loop)
+        _verify_no_loop(self, loop)
         self._bound_value = value
         super().__init__(value)
 
