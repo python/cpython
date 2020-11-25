@@ -272,11 +272,8 @@ The new class now logs access to both *name* and *age*:
 .. testcode::
     :hide:
 
-    # Mock logging to make it work with docttest
-    class logging:
-        @staticmethod
-        def info(message, *args):
-            print('INFO:root:' + message % args)
+    import logging, sys
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 .. doctest::
 
