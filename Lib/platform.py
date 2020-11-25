@@ -1261,12 +1261,6 @@ def _parse_os_release(lines):
                 r"\1", mo.group('value')
             )
 
-    # ID_LIKE is a space separated field of ids
-    if 'ID_LIKE' in info:
-        info['ID_LIKE'] = tuple(
-            id_like for id_like in info['ID_LIKE'].split(' ') if id_like
-        )
-
     return info
 
 

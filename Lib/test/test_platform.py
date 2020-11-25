@@ -468,7 +468,7 @@ class PlatformTest(unittest.TestCase):
         info = platform._parse_os_release(UBUNTU_OS_RELEASE.splitlines())
         self.assertEqual(info["NAME"], "Ubuntu")
         self.assertEqual(info["ID"], "ubuntu")
-        self.assertEqual(info["ID_LIKE"], ("debian",))
+        self.assertEqual(info["ID_LIKE"], "debian")
         self.assertEqual(info["VERSION_CODENAME"], "focal")
 
         info = platform._parse_os_release(TEST_OS_RELEASE.splitlines())
@@ -476,7 +476,7 @@ class PlatformTest(unittest.TestCase):
             "ID": "linux",
             "NAME": "Linux",
             "PRETTY_NAME": "Linux",
-            "ID_LIKE": ("egg", "spam", "viking"),
+            "ID_LIKE": "egg spam viking",
             "EMPTY": "",
             "DOUBLE_QUOTE": "double",
             "EMPTY_DOUBLE": "",
