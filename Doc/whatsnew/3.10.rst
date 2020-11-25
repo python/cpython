@@ -388,6 +388,11 @@ Optimizations
   for more details. (Contributed by Victor Stinner and Pablo Galindo in
   :issue:`38980`)
 
+* Function parameters and their annotations are no longer computed at runtime,
+  but rather at compilation time.  They are stored as a tuple of strings at the
+  bytecode level.  It is now around 100% faster to create a function with parameter
+  annotations.  (Contributed by Yurii Karabas and Inada Naoki in :issue:`42202`)
+
 Deprecated
 ==========
 
@@ -461,6 +466,12 @@ Changes in the Python API
   have been renamed to *exc*.
   (Contributed by Zackery Spytz and Matthias Bussonnier in :issue:`26389`.)
 
+CPython bytecode changes
+========================
+
+* The ``MAKE_FUNCTION`` instruction accepts tuple of strings as annotations
+  instead of dictionary.
+  (Contributed by Yurii Karabas and Inada Naoki in :issue:`42202`)
 
 Build Changes
 =============

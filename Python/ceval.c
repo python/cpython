@@ -3880,7 +3880,7 @@ main_loop:
                 func ->func_closure = POP();
             }
             if (oparg & 0x04) {
-                assert(PyDict_CheckExact(TOP()));
+                assert(PyTuple_CheckExact(TOP()));
                 func->func_annotations = POP();
             }
             if (oparg & 0x02) {
