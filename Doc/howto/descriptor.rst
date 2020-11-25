@@ -1109,7 +1109,7 @@ Now a new dictionary of unique keys can be constructed like this:
 .. doctest::
 
     >>> Dict.fromkeys('abracadabra')
-    {'a': None, 'r': None, 'b': None, 'c': None, 'd': None}
+    {'a': None, 'b': None, 'r': None, 'c': None, 'd': None}
 
 Using the non-data descriptor protocol, a pure Python version of
 :func:`classmethod` would look like this:
