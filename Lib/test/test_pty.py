@@ -5,6 +5,7 @@ from test.support.import_helper import import_module
 import_module('termios')
 
 import errno
+import pathlib
 import pty
 import os
 import sys
@@ -75,6 +76,19 @@ def _readline(fd):
 
 def expectedFailureIfStdinIsTTY(fun):
     # avoid isatty() for now
+    PLATFORM = platform.system()
+    if PLATFORM == "Linux":
+        os_release = pathlib.Path("/etc/os-release")
+        if os_release.exists():
+            # Actually the file has complex multi-line structure,
+            # these is no need to parse it for Gentoo check
+            if 'gentoo' in os_release.read_text().lower():
+                # bpo-41818:
+                # Gentoo passes the test,
+                # all other tested Linux distributions fail.
+                # Should not apply @unittest.expectedFailure() on Gentoo
+                # to keep the buildbot fleet happy.
+                return fun
     try:
         tty.tcgetattr(pty.STDIN_FILENO)
         return unittest.expectedFailure(fun)
