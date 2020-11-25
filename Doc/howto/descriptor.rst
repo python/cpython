@@ -175,11 +175,8 @@ logged, but that the regular attribute *name* is not logged:
 .. testcode::
     :hide:
 
-    # Mock logging to make it work with docttest
-    class logging:
-        @staticmethod
-        def info(message, *args):
-            print('INFO:root:' + message % args)
+    import logging, sys
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout, force=True)
 
 .. doctest::
 
@@ -273,7 +270,7 @@ The new class now logs access to both *name* and *age*:
     :hide:
 
     import logging, sys
-    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout, force=True)
 
 .. doctest::
 
