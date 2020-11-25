@@ -311,6 +311,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.9a2  3425 (simplify bytecodes for **value unpacking)
 #     Python 3.10a1 3430 (Make 'annotations' future by default)
 #     Python 3.10a1 3431 (New line number table format -- PEP 626)
+#     Python 3.10a2 3432 (Function annotation for MAKE_FUNCTION is changed from dict to tuple bpo-42202)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
