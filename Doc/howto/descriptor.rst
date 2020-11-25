@@ -848,11 +848,14 @@ here is a pure Python equivalent:
 .. testcode::
    :hide:
 
+    # Verify the Property() emulation
+
     class CC:
         def getx(self): return self.__x
         def setx(self, value): self.__x = value
         def delx(self): del self.__x
-            x = Property(getx, setx, delx, "I'm the 'x' property.")
+        x = Property(getx, setx, delx, "I'm the 'x' property.")
+
     cc = CC()
     assert not hasattr(cc, 'x')
     cc.x = 33
@@ -861,6 +864,7 @@ here is a pure Python equivalent:
     assert not hasattr(cc, 'x')
 
     # Now do it again but the decorator style
+
     class CCC:
         @Property
         def x(self): return self.__x
@@ -868,6 +872,7 @@ here is a pure Python equivalent:
         def x(self, value): self.__x = value
         @x.deleter
         def delx(self): del self.__x
+
     ccc = CCC()
     assert not hasattr(ccc, 'x')
     ccc.x = 333
@@ -1228,7 +1233,7 @@ matters when a large number of instances are going to be created.
 instance dictionary to function correctly:
 
 .. testcode::
-   
+
     from functools import cached_property
 
     class CP:
@@ -1239,7 +1244,7 @@ instance dictionary to function correctly:
             return 4 * sum((-1.0)**n / (2.0*n + 1.0)
                            for n in reversed(range(100_000)))
 
-.. doctest:: 
+.. doctest::
 
     >>> CP().pi
     Traceback (most recent call last):
@@ -1397,17 +1402,14 @@ Misspelled or unassigned attributes will raise an exception:
 .. testcode::
    :hide:
 
-   # Examples for deleted attributes are not shown because this section
-   # is already a bit lengthy.  But we still test that code here.
-   del h.x
-   assert not hasattr(h, 'x')
+    # Examples for deleted attributes are not shown because this section
+    # is already a bit lengthy.  But we still test that code here.
+    del h.x
+    assert not hasattr(h, 'x')
 
-   # Also test the code for uninitialized slots
-   class HU(Object, metaclass=Type):
-        slot_names = ['x', 'y']
-   hu = HU()
-   assert not hasattr(hu, 'x')
-   assert not hasattr(hu, 'y')
-
-   assert False, "verify doctest is catching these"
-
+    # Also test the code for uninitialized slots
+    class HU(Object, metaclass=Type):
+         slot_names = ['x', 'y']
+    hu = HU()
+    assert not hasattr(hu, 'x')
+    assert not hasattr(hu, 'y')
