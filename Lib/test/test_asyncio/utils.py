@@ -541,31 +541,10 @@ class TestCase(unittest.TestCase):
         self.set_event_loop(loop)
         return loop
 
-    def unpatch_get_running_loop(self):
-        events._get_running_loop = self._get_running_loop
-
     def setUp(self):
-        self._get_running_loop = events._get_running_loop
-
-        def _get_running_loop():
-            frame = sys._getframe(1)
-
-            if frame.f_globals['__name__'] == 'asyncio.mixins':
-                # When we called from LoopBoundedMixin we should
-                # fallback to default implementation of get_running_loop
-                try:
-                    return events.get_running_loop()
-                except RuntimeError:
-                    return None
-
-            return None
-
-        events._get_running_loop = _get_running_loop
         self._thread_cleanup = threading_helper.threading_setup()
 
     def tearDown(self):
-        self.unpatch_get_running_loop()
-
         events.set_event_loop(None)
 
         # Detect CPython bug #23353: ensure that yield/yield-from is not used

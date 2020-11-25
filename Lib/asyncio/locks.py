@@ -19,7 +19,7 @@ class _ContextManagerMixin:
         self.release()
 
 
-class Lock(_ContextManagerMixin, mixins._LoopBoundedMixin):
+class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
     """Primitive lock objects.
 
     A primitive lock is a synchronization primitive that is not owned
@@ -73,7 +73,8 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundedMixin):
 
     """
 
-    def __init__(self):
+    def __init__(self, *, loop=mixins._marker):
+        super().__init__(loop=loop)
         self._waiters = None
         self._locked = False
 
@@ -153,7 +154,7 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundedMixin):
             fut.set_result(True)
 
 
-class Event(mixins._LoopBoundedMixin):
+class Event(mixins._LoopBoundMixin):
     """Asynchronous equivalent to threading.Event.
 
     Class implementing event objects. An event manages a flag that can be set
@@ -162,7 +163,8 @@ class Event(mixins._LoopBoundedMixin):
     false.
     """
 
-    def __init__(self):
+    def __init__(self, *, loop=mixins._marker):
+        super().__init__(loop=loop)
         self._waiters = collections.deque()
         self._value = False
 
@@ -214,7 +216,7 @@ class Event(mixins._LoopBoundedMixin):
             self._waiters.remove(fut)
 
 
-class Condition(_ContextManagerMixin, mixins._LoopBoundedMixin):
+class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
     """Asynchronous equivalent to threading.Condition.
 
     This class implements condition variable objects. A condition variable
@@ -224,7 +226,8 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundedMixin):
     A new Lock object is created and used as the underlying lock.
     """
 
-    def __init__(self, lock=None):
+    def __init__(self, lock=None, *, loop=mixins._marker):
+        super().__init__(loop=loop)
         if lock is None:
             lock = Lock()
         elif lock._loop is not self._get_loop():
@@ -328,7 +331,7 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundedMixin):
         self.notify(len(self._waiters))
 
 
-class Semaphore(_ContextManagerMixin, mixins._LoopBoundedMixin):
+class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
     """A Semaphore implementation.
 
     A semaphore manages an internal counter which is decremented by each
@@ -343,7 +346,8 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundedMixin):
     ValueError is raised.
     """
 
-    def __init__(self, value=1):
+    def __init__(self, value=1, *, loop=mixins._marker):
+        super().__init__(loop=loop)
         if value < 0:
             raise ValueError("Semaphore initial value must be >= 0")
         self._value = value
@@ -406,9 +410,9 @@ class BoundedSemaphore(Semaphore):
     above the initial value.
     """
 
-    def __init__(self, value=1):
+    def __init__(self, value=1, *, loop=mixins._marker):
         self._bound_value = value
-        super().__init__(value)
+        super().__init__(value, loop=loop)
 
     def release(self):
         if self._value >= self._bound_value:
