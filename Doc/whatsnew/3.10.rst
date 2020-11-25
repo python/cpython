@@ -449,6 +449,12 @@ Removed
   :c:func:`PyParser_SimpleParseFileFlags` and :c:func:`PyNode_Compile`
   that were deprecated in 3.9 due to the switch to the new PEG parser.
 
+* Removed the ``formatter`` module, which was deprecated in Python 3.4.
+  It is somewhat obsolete, little used, and not tested. It was originally
+  scheduled to be removed in Python 3.6, but such removals were delayed until
+  after Python 2.7 EOL. Existing users should copy whatever classes they use
+  into their code.
+  (Contributed by Dong-hee Na and Terry J. Reedy in :issue:`42299`.)
 
 Porting to Python 3.10
 ======================
