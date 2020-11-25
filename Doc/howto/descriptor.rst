@@ -1281,7 +1281,7 @@ For example, a classmethod and property could be chained together:
 
 .. doctest::
 
-    >>> G().__doc__
+    >>> G.__doc__
     "A doc for 'G'"
 
 
@@ -1524,7 +1524,7 @@ Misspelled or unassigned attributes will raise an exception:
    :hide:
 
     # Examples for deleted attributes are not shown because this section
-    # is already a bit lengthy.  But we still test that code here.
+    # is already a bit lengthy.  We still test that code here.
     >>> del h.x
     >>> hasattr(h, 'x')
     False
