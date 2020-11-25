@@ -580,7 +580,7 @@ a pure Python equivalent:
         raise AttributeError(name)
 
 
-.. testcode:
+.. testcode::
     :hide:
 
     # Test the fidelity of object_getattribute() by comparing it with the
@@ -664,7 +664,6 @@ a pure Python equivalent:
     True
 
     >>> b = DualOperatorWithSlots(22)
-    True
     >>> b.x == b['x'] == 15
     True
     >>> b.z == b['z'] == 22
@@ -675,8 +674,7 @@ a pure Python equivalent:
     True
     >>> b.g == b['g'] == ('getattr_hook', b, 'g')
     True
-    >>> False
-    True
+
 
 Interestingly, attribute lookup doesn't call :meth:`object.__getattribute__`
 directly.  Instead, both the dot operator and the :func:`getattr` function
@@ -958,14 +956,7 @@ here is a pure Python equivalent:
             del self.__x
         x = Property(getx, setx, delx, "I'm the 'x' property.")
 
-    cc = CC()
-    assert not hasattr(cc, 'x')
-    cc.x = 33
-    assert cc.x == 33
-    del cc.x
-    assert not hasattr(cc, 'x')
-
-    # Now do it again but the decorator style
+    # Now do it again but use the decorator style
 
     class CCC:
         @Property
@@ -978,12 +969,29 @@ here is a pure Python equivalent:
         def x(self):
             del self.__x
 
-    ccc = CCC()
-    assert not hasattr(ccc, 'x')
-    ccc.x = 333
-    assert ccc.x == 333
-    del ccc.x
-    assert not hasattr(ccc, 'x')
+
+.. doctest::
+    :hide:
+
+    >>> cc = CC()
+    >>> hasattr(cc, 'x')
+    False
+    >>> cc.x = 33
+    >>> cc.x
+    33
+    >>> del cc.x
+    >>> hasattr(cc, 'x')
+    False
+
+    >>> ccc = CCC()
+    >>> hasattr(ccc, 'x')
+    False
+    >>> ccc.x = 333
+    >>> ccc.x == 333
+    True
+    >>> del ccc.x
+    >>> hasattr(ccc, 'x')
+    False
 
 The :func:`property` builtin helps whenever a user interface has granted
 attribute access and then subsequent changes require the intervention of a
@@ -1240,18 +1248,24 @@ Using the non-data descriptor protocol, a pure Python version of
             return MethodType(self.f, cls)
 
 .. testcode::
-   :hide:
+    :hide:
 
-   # Verify the emulation works
-   class T:
-       @ClassMethod
-       def cm(cls, x, y):
-           return (cls, x, y)
-   assert T.cm(11, 22) == (T, 11, 22)
+    # Verify the emulation works
+    class T:
+        @ClassMethod
+        def cm(cls, x, y):
+            return (cls, x, y)
 
-   # Also call it from an instance
-   t = T()
-   assert t.cm(11, 22) == (T, 11, 22)
+.. doctest::
+    :hide:
+
+    >>> T.cm(11, 22)
+    (<class 'T'>, 11, 22)
+
+    # Also call it from an instance
+    >>> t = T()
+    >>> t.cm(11, 22)
+    (<class 'T'>, 11, 22)
 
 The code path for ``hasattr(obj, '__get__')`` was added in Python 3.9 and
 makes it possible for :func:`classmethod` to support chained decorators.
@@ -1475,13 +1489,15 @@ At this point, the metaclass has loaded member objects for *x* and *y*::
      'x': <Member 'x' of 'H'>,
      'y': <Member 'y' of 'H'>}
 
-.. testcode::
-   :hide:
+.. doctest::
+    :hide:
 
-   # We test this separately because the preceding section is not
-   # doctestable due to the hex memory address for the __init__ function
-   assert isinstance(vars(H)['x'], Member)
-   assert isinstance(vars(H)['y'], Member)
+    # We test this separately because the preceding section is not
+    # doctestable due to the hex memory address for the __init__ function
+    >>> isinstance(vars(H)['x'], Member)
+    True
+    >>> isinstance(vars(H)['y'], Member)
+    True
 
 When instances are created, they have a ``slot_values`` list where the
 attributes are stored:
@@ -1504,17 +1520,21 @@ Misspelled or unassigned attributes will raise an exception:
         ...
     AttributeError: 'H' object has no attribute 'xz'
 
-.. testcode::
+.. doctest::
    :hide:
 
     # Examples for deleted attributes are not shown because this section
     # is already a bit lengthy.  But we still test that code here.
-    del h.x
-    assert not hasattr(h, 'x')
+    >>> del h.x
+    >>> hasattr(h, 'x')
+    False
 
     # Also test the code for uninitialized slots
-    class HU(Object, metaclass=Type):
-         slot_names = ['x', 'y']
-    hu = HU()
-    assert not hasattr(hu, 'x')
-    assert not hasattr(hu, 'y')
+    >>> class HU(Object, metaclass=Type):
+    ...     slot_names = ['x', 'y']
+    ...
+    >>> hu = HU()
+    >>> hasattr(hu, 'x')
+    False
+    >>> hasattr(hu, 'y')
+    False
