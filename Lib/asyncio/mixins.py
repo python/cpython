@@ -5,9 +5,19 @@ from . import events
 
 _global_lock = threading.Lock()
 
+# Used as a sentinel for loop parameter
+_marker = object()
 
-class _LoopBoundedMixin:
+
+class _LoopBoundMixin:
     _loop = None
+
+    def __init__(self, *, loop=_marker):
+        if loop is not _marker:
+            raise TypeError(
+                f'As of 3.10, the *loop* parameter was removed from '
+                f'{type(self).__name__}() since it is no longer necessary'
+            )
 
     def _get_loop(self):
         loop = events._get_running_loop()
@@ -17,5 +27,5 @@ class _LoopBoundedMixin:
                 if self._loop is None:
                     self._loop = loop
         if loop is not self._loop:
-            raise RuntimeError(f'{type(self).__name__} have already bounded to another loop')
+            raise RuntimeError(f'{self!r} is bound to a different event loop')
         return loop
