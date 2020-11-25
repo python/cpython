@@ -1251,7 +1251,7 @@ instance dictionary to function correctly:
       ...
     TypeError: No '__dict__' attribute on 'CP' instance to cache 'pi' property.
 
-It's not possible to create an exact drop-in pure Python version of
+It is not possible to create an exact drop-in pure Python version of
 ``__slots__`` because it requires direct access to C structures and control
 over object memory allocation.  However, we can build a mostly faithful
 simulation where the actual C structure for slots is emulated by a private
