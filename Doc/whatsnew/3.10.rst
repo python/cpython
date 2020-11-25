@@ -441,11 +441,11 @@ Removed
   that were deprecated in 3.9 due to the switch to the new PEG parser.
 
 * Removed the ``formatter`` module, which was deprecated in Python 3.4.
-  It was originally scheduled to be removed in Python 3.6,
-  but we decided to delay such removals until after Python 2.7 EOL.
-  Since Python 2.7 is the end of the life and the module did not have test codes,
-  it has been decided to remove the ``formatter`` module.
-  (Contributed by Dong-hee Na and Terry J. Reedy in :issue:`42299`.)
+  It is somewhat obsolete, little used, and not tested.  It was originally
+  scheduled to be removed in Python 3.6, but such removals were delayed until
+  after Python 2.7 EOL.  Existing users should copy whatever classes they use
+  into their code.  (Contributed by Dong-hee Na and Terry J. Reedy in
+  :issue:`42299`.)
 
 Porting to Python 3.10
 ======================
