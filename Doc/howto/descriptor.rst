@@ -958,7 +958,7 @@ descriptor works in practice:
         def f(self, x):
              return x
 
-The function has a :term:`qualified name` attribute to support introspection::
+The function has a :term:`qualified name` attribute to support introspection:
 
 .. doctest::
 
