@@ -1,2 +1,0 @@
-Prevented potential DoS attack via CPU and RAM exhaustion when processing
-malformed Apple Property List files in binary format.

@@ -1,3 +1,0 @@
-Run the parser two times. On the first run, disable all the rules that only
-generate better error messages to gain performance. If there's a parse
-failure, run the parser a second time with those enabled.

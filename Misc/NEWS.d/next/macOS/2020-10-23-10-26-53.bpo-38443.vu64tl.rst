@@ -1,2 +1,0 @@
-The ``--enable-universalsdk`` and ``--with-universal-archs`` options for the
-configure script now check that the specified architectures can be used.
