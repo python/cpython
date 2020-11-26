@@ -1,5 +1,6 @@
-:mod:`concurrent.futures` --- Launching parallel tasks
-======================================================
+========================================================
+ :mod:`concurrent.futures` --- Launching parallel tasks
+========================================================
 
 .. module:: concurrent.futures
    :synopsis: Execute computations concurrently using threads or processes.
@@ -21,7 +22,7 @@ defined by the abstract :class:`Executor` class.
 
 
 Executor Objects
-----------------
+================
 
 .. class:: Executor
 
@@ -47,7 +48,7 @@ Executor Objects
        * *func* is executed asynchronously and several calls to
          *func* may be made concurrently.
 
-       The returned iterator raises a :exc:`concurrent.futures.TimeoutError`
+       The returned iterator raises a :exc:`TimeoutError`
        if :meth:`~iterator.__next__` is called and the result isn't available
        after *timeout* seconds from the original call to :meth:`Executor.map`.
        *timeout* can be an int or a float.  If *timeout* is not specified or
@@ -108,7 +109,7 @@ Executor Objects
 
 
 ThreadPoolExecutor
-------------------
+==================
 
 :class:`ThreadPoolExecutor` is an :class:`Executor` subclass that uses a pool of
 threads to execute calls asynchronously.
@@ -184,7 +185,7 @@ And::
 .. _threadpoolexecutor-example:
 
 ThreadPoolExecutor Example
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------
 ::
 
    import concurrent.futures
@@ -216,7 +217,7 @@ ThreadPoolExecutor Example
 
 
 ProcessPoolExecutor
--------------------
+===================
 
 The :class:`ProcessPoolExecutor` class is an :class:`Executor` subclass that
 uses a pool of processes to execute calls asynchronously.
@@ -268,7 +269,7 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
 .. _processpoolexecutor-example:
 
 ProcessPoolExecutor Example
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------
 ::
 
    import concurrent.futures
@@ -306,7 +307,7 @@ ProcessPoolExecutor Example
 
 
 Future Objects
---------------
+==============
 
 The :class:`Future` class encapsulates the asynchronous execution of a callable.
 :class:`Future` instances are created by :meth:`Executor.submit`.
@@ -343,7 +344,7 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        Return the value returned by the call. If the call hasn't yet completed
        then this method will wait up to *timeout* seconds.  If the call hasn't
        completed in *timeout* seconds, then a
-       :exc:`concurrent.futures.TimeoutError` will be raised. *timeout* can be
+       :exc:`TimeoutError` will be raised. *timeout* can be
        an int or float.  If *timeout* is not specified or ``None``, there is no
        limit to the wait time.
 
@@ -357,7 +358,7 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        Return the exception raised by the call.  If the call hasn't yet
        completed then this method will wait up to *timeout* seconds.  If the
        call hasn't completed in *timeout* seconds, then a
-       :exc:`concurrent.futures.TimeoutError` will be raised.  *timeout* can be
+       :exc:`TimeoutError` will be raised.  *timeout* can be
        an int or float.  If *timeout* is not specified or ``None``, there is no
        limit to the wait time.
 
@@ -430,7 +431,7 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
           already done.
 
 Module Functions
-----------------
+================
 
 .. function:: wait(fs, timeout=None, return_when=ALL_COMPLETED)
 
@@ -473,7 +474,7 @@ Module Functions
    they complete (finished or cancelled futures). Any futures given by *fs* that
    are duplicated will be returned once. Any futures that completed before
    :func:`as_completed` is called will be yielded first.  The returned iterator
-   raises a :exc:`concurrent.futures.TimeoutError` if :meth:`~iterator.__next__`
+   raises a :exc:`TimeoutError` if :meth:`~iterator.__next__`
    is called and the result isn't available after *timeout* seconds from the
    original call to :func:`as_completed`.  *timeout* can be an int or float. If
    *timeout* is not specified or ``None``, there is no limit to the wait time.
@@ -487,7 +488,7 @@ Module Functions
 
 
 Exception classes
------------------
+=================
 
 .. currentmodule:: concurrent.futures
 
@@ -497,7 +498,13 @@ Exception classes
 
 .. exception:: TimeoutError
 
-   Raised when a future operation exceeds the given timeout.
+   A deprecated alias of :exc:`TimeoutError`,
+   raised when a future operation exceeds the given timeout.
+
+   .. versionchanged:: 3.10
+
+      This class was made an alias of :exc:`TimeoutError`.
+
 
 .. exception:: BrokenExecutor
 
