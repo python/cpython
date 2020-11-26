@@ -425,7 +425,7 @@ class AbstractEventLoop:
         """Handle an accepted connection.
 
         This is used by servers that accept connections outside of
-        asyncio but that use asyncio to handle connections.
+        asyncio, but use asyncio to handle connections.
 
         This method is a coroutine.  When completed, the coroutine
         returns a (transport, protocol) pair.
