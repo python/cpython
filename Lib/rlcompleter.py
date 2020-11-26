@@ -86,10 +86,16 @@ class Completer:
                 return None
 
         if state == 0:
+            fore = ''
+            if text.rfind('[') > text.rfind(']'):
+                fore, aft = text.rsplit('[')
+                fore += '['
+                text = aft
             if "." in text:
-                self.matches = self.attr_matches(text)
+                matches = self.attr_matches(text)
             else:
-                self.matches = self.global_matches(text)
+                matches = self.global_matches(text)
+            self.matches = [fore + match for match in matches]
         try:
             return self.matches[state]
         except IndexError:
