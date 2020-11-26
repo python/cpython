@@ -193,24 +193,14 @@ class Process:
             stderr = self._read_stream(2)
         else:
             stderr = self._noop()
-        stdin, stdout, stderr = await tasks.gather(stdin, stdout, stderr,
-                                                   loop=self._loop)
+        stdin, stdout, stderr = await tasks.gather(stdin, stdout, stderr)
         await self.wait()
         return (stdout, stderr)
 
 
 async def create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None,
-                                  loop=None, limit=streams._DEFAULT_LIMIT,
-                                  **kwds):
-    if loop is None:
-        loop = events.get_event_loop()
-    else:
-        warnings.warn("The loop argument is deprecated since Python 3.8 "
-                      "and scheduled for removal in Python 3.10.",
-                      DeprecationWarning,
-                      stacklevel=2
-        )
-
+                                  limit=streams._DEFAULT_LIMIT, **kwds):
+    loop = events.get_running_loop()
     protocol_factory = lambda: SubprocessStreamProtocol(limit=limit,
                                                         loop=loop)
     transport, protocol = await loop.subprocess_shell(
@@ -221,18 +211,12 @@ async def create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None,
 
 
 async def create_subprocess_exec(program, *args, stdin=None, stdout=None,
-                                 stderr=None, loop=None,
-                                 limit=streams._DEFAULT_LIMIT, **kwds):
-    if loop is None:
-        loop = events.get_event_loop()
-    else:
-        warnings.warn("The loop argument is deprecated since Python 3.8 "
-                      "and scheduled for removal in Python 3.10.",
-                      DeprecationWarning,
-                      stacklevel=2
-        )
+                                 stderr=None, limit=streams._DEFAULT_LIMIT,
+                                 **kwds):
+    loop = events.get_running_loop()
     protocol_factory = lambda: SubprocessStreamProtocol(limit=limit,
                                                         loop=loop)
+
     transport, protocol = await loop.subprocess_exec(
         protocol_factory,
         program, *args,

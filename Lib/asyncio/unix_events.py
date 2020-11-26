@@ -323,7 +323,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             server._start_serving()
             # Skip one loop iteration so that all 'loop.add_reader'
             # go through.
-            await tasks.sleep(0, loop=self)
+            await tasks.sleep(0)
 
         return server
 
