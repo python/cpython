@@ -1201,9 +1201,9 @@ Below is a table mapping various :mod:`os` functions to their corresponding
    :func:`os.path.relpath` and :meth:`PurePath.relative_to`.
 
 ====================================   ==============================
-os and os.path                         pathlib
+:mod:`os` and :mod:`os.path`           :mod:`pathlib`
 ====================================   ==============================
-:func:`os.path.abspath`                :meth:`Path.resolve`
+:func:`os.path.abspath`                :meth:`Path.resolve` [#]_
 :func:`os.chmod`                       :meth:`Path.chmod`
 :func:`os.mkdir`                       :meth:`Path.mkdir`
 :func:`os.makedirs`                    :meth:`Path.mkdir`
@@ -1222,6 +1222,7 @@ os and os.path                         pathlib
 :func:`os.link`                        :meth:`Path.link_to`
 :func:`os.symlink`                     :meth:`Path.symlink_to`
 :func:`os.readlink`                    :meth:`Path.readlink`
+:func:`os.path.relpath`                :meth:`Path.relative_to` [#]_
 :func:`os.stat`                        :meth:`Path.stat`,
                                        :meth:`Path.owner`,
                                        :meth:`Path.group`
@@ -1232,3 +1233,8 @@ os and os.path                         pathlib
 :func:`os.path.samefile`               :meth:`Path.samefile`
 :func:`os.path.splitext`               :data:`PurePath.suffix`
 ====================================   ==============================
+
+.. rubric:: Footnotes
+
+.. [#] :func:`os.path.abspath` does not resolve symbolic links while :meth:`Path.resolve` does.
+.. [#] :meth:`Path.relative_to` requires ``self`` to be the subpath of the argument, but :func:`os.path.relpath` does not.
