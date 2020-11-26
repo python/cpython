@@ -167,6 +167,12 @@ New Modules
 Improved Modules
 ================
 
+asyncio
+------
+
+The exception :exc:`asyncio.TimeoutError` is now an alias of :exc:`TimeoutError`.
+(Contributed by Andrew Svetlov in :issue:`42413`.)
+
 base64
 ------
 
@@ -178,6 +184,13 @@ codecs
 
 Add a :func:`codecs.unregister` function to unregister a codec search function.
 (Contributed by Hai Shi in :issue:`41842`.)
+
+concurrent.futures
+------------------
+
+The exception :exc:`concurrent.futures.TimeoutError` is now
+an alias of :exc:`TimeoutError`.
+(Contributed by Andrew Svetlov in :issue:`42413`.)
 
 contextlib
 ----------
