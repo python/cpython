@@ -541,8 +541,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         results = await tasks.gather(
             *[ag.aclose() for ag in closing_agens],
-            return_exceptions=True,
-            loop=self)
+            return_exceptions=True)
 
         for result, agen in zip(results, closing_agens):
             if isinstance(result, Exception):
