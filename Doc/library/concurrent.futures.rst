@@ -1,6 +1,5 @@
-========================================================
- :mod:`concurrent.futures` --- Launching parallel tasks
-========================================================
+:mod:`concurrent.futures` --- Launching parallel tasks
+======================================================
 
 .. module:: concurrent.futures
    :synopsis: Execute computations concurrently using threads or processes.
@@ -22,7 +21,7 @@ defined by the abstract :class:`Executor` class.
 
 
 Executor Objects
-================
+----------------
 
 .. class:: Executor
 
@@ -109,7 +108,7 @@ Executor Objects
 
 
 ThreadPoolExecutor
-==================
+------------------
 
 :class:`ThreadPoolExecutor` is an :class:`Executor` subclass that uses a pool of
 threads to execute calls asynchronously.
@@ -185,7 +184,7 @@ And::
 .. _threadpoolexecutor-example:
 
 ThreadPoolExecutor Example
---------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 ::
 
    import concurrent.futures
@@ -217,7 +216,7 @@ ThreadPoolExecutor Example
 
 
 ProcessPoolExecutor
-===================
+-------------------
 
 The :class:`ProcessPoolExecutor` class is an :class:`Executor` subclass that
 uses a pool of processes to execute calls asynchronously.
@@ -269,7 +268,7 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
 .. _processpoolexecutor-example:
 
 ProcessPoolExecutor Example
----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ::
 
    import concurrent.futures
@@ -307,7 +306,7 @@ ProcessPoolExecutor Example
 
 
 Future Objects
-==============
+--------------
 
 The :class:`Future` class encapsulates the asynchronous execution of a callable.
 :class:`Future` instances are created by :meth:`Executor.submit`.
@@ -431,7 +430,7 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
           already done.
 
 Module Functions
-================
+----------------
 
 .. function:: wait(fs, timeout=None, return_when=ALL_COMPLETED)
 
@@ -488,7 +487,7 @@ Module Functions
 
 
 Exception classes
-=================
+-----------------
 
 .. currentmodule:: concurrent.futures
 
