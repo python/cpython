@@ -1172,6 +1172,16 @@ class TestTracebackException(unittest.TestCase):
         exc7 = traceback.TracebackException(*exc_info, limit=-2, capture_locals=True)
         self.assertNotEqual(exc6, exc7)
 
+    def test_comparison_equivalent_exceptions_are_equal(self):
+        excs = []
+        for _ in range(2):
+            try:
+                1/0
+            except:
+                excs.append(traceback.TracebackException(*sys.exc_info()))
+        self.assertEqual(excs[0], excs[1])
+        self.assertEqual(list(excs[0].format()), list(excs[1].format()))
+
     def test_unhashable(self):
         class UnhashableException(Exception):
             def __eq__(self, other):
