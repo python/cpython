@@ -56,7 +56,9 @@ Tuple Objects
 
 .. c:function:: PyObject* PyTuple_GetItem(PyObject *p, Py_ssize_t pos)
 
-   Return the object at position *pos* in the tuple pointed to by *p*.  If *pos* is
+   Return the object at position *pos* in the tuple pointed to by *p*.  The
+   position must be positive, indexing from the end of the tuple is not
+   supported.  If *pos* is
    out of bounds, return *NULL* and sets an :exc:`IndexError` exception.
 
 
