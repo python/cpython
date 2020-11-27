@@ -726,7 +726,6 @@ def gather(*coros_or_futures, return_exceptions=False):
     after catching an exception (raised by one of the awaitables) from
     gather won't cancel any other awaitables.
     """
-
     if not coros_or_futures:
         loop = events.get_event_loop()
         outer = loop.create_future()

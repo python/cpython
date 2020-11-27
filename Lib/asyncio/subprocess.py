@@ -1,7 +1,6 @@
 __all__ = 'create_subprocess_exec', 'create_subprocess_shell'
 
 import subprocess
-import warnings
 
 from . import events
 from . import protocols
@@ -216,7 +215,6 @@ async def create_subprocess_exec(program, *args, stdin=None, stdout=None,
     loop = events.get_running_loop()
     protocol_factory = lambda: SubprocessStreamProtocol(limit=limit,
                                                         loop=loop)
-
     transport, protocol = await loop.subprocess_exec(
         protocol_factory,
         program, *args,
