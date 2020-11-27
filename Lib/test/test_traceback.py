@@ -1123,6 +1123,18 @@ class TestTracebackException(unittest.TestCase):
         self.assertEqual(exc_info[0], exc.exc_type)
         self.assertEqual(str(exc_info[1]), str(exc))
 
+    def test_no_refs_to_exception_and_traceback_objects(self):
+        try:
+            1/0
+        except Exception:
+            exc_info = sys.exc_info()
+
+        refcnt1 = sys.getrefcount(exc_info[1])
+        refcnt2 = sys.getrefcount(exc_info[2])
+        _ = traceback.TracebackException(*exc_info).format()
+        self.assertEqual(sys.getrefcount(exc_info[1]), refcnt1)
+        self.assertEqual(sys.getrefcount(exc_info[2]), refcnt2)
+
     def test_comparison_basic(self):
         try:
             1/0
