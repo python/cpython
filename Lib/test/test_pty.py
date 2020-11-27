@@ -82,9 +82,8 @@ def expectedFailureIfStdinIsTTY(fun):
         pass
     return fun
 
-def expectedFailureOnBSD(fun):
-    PLATFORM = platform.system()
-    if PLATFORM.endswith("BSD") or PLATFORM == "Darwin":
+def expectedFailureIfNotLinux(fun):
+    if platform.system() != "Linux":
         return unittest.expectedFailure(fun)
     return fun
 
@@ -314,7 +313,7 @@ class PtyTest(unittest.TestCase):
 
         os.close(master_fd)
 
-    @expectedFailureOnBSD
+    @expectedFailureIfNotLinux
     def test_master_read(self):
         debug("Calling pty.openpty()")
         master_fd, slave_fd = pty.openpty()
