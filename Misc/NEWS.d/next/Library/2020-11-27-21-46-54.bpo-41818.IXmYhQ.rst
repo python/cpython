@@ -1,0 +1,1 @@
+Change expectedFailureOnBSD() to expectedFailureIfNotLinux() in test_pty.py because test_master_read() should be expected to fail on every platform that is not Linux; that includes Solaris.
