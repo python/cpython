@@ -262,6 +262,9 @@ def expanduser(path):
             # password database, return the path unchanged
             return path
         userhome = pwent.pw_dir
+    # if the current user has no home directory, return the path unchanged
+    if userhome is None:
+        return path
     if isinstance(path, bytes):
         userhome = os.fsencode(userhome)
         root = b'/'
