@@ -1162,7 +1162,7 @@ class TestTracebackException(unittest.TestCase):
         exc3 = traceback.TracebackException(*exc_info, capture_locals=True)
         self.assertNotEqual(exc, exc3)
 
-        # there are no locals in the next-to-innermost frame
+        # there are no locals in the innermost frame
         exc4 = traceback.TracebackException(*exc_info, limit=-1)
         exc5 = traceback.TracebackException(*exc_info, limit=-1, capture_locals=True)
         self.assertEqual(exc4, exc5)
