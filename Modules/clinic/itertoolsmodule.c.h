@@ -66,7 +66,7 @@ itertools__grouper(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     if (!PyObject_TypeCheck(PyTuple_GET_ITEM(args, 0), &groupby_type)) {
-        _PyArg_BadArgument("_grouper", 1, (&groupby_type)->tp_name, PyTuple_GET_ITEM(args, 0));
+        _PyArg_BadArgument("_grouper", "argument 1", (&groupby_type)->tp_name, PyTuple_GET_ITEM(args, 0));
         goto exit;
     }
     parent = PyTuple_GET_ITEM(args, 0);
@@ -104,7 +104,7 @@ itertools_teedataobject(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     }
     it = PyTuple_GET_ITEM(args, 0);
     if (!PyList_Check(PyTuple_GET_ITEM(args, 1))) {
-        _PyArg_BadArgument("teedataobject", 2, "list", PyTuple_GET_ITEM(args, 1));
+        _PyArg_BadArgument("teedataobject", "argument 2", "list", PyTuple_GET_ITEM(args, 1));
         goto exit;
     }
     values = PyTuple_GET_ITEM(args, 1);
@@ -170,14 +170,9 @@ itertools_tee(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[1]);
+        PyObject *iobj = _PyNumber_Index(args[1]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -356,14 +351,9 @@ itertools_combinations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     iterable = fastargs[0];
-    if (PyFloat_Check(fastargs[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(fastargs[1]);
+        PyObject *iobj = _PyNumber_Index(fastargs[1]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -409,14 +399,9 @@ itertools_combinations_with_replacement(PyTypeObject *type, PyObject *args, PyOb
         goto exit;
     }
     iterable = fastargs[0];
-    if (PyFloat_Check(fastargs[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(fastargs[1]);
+        PyObject *iobj = _PyNumber_Index(fastargs[1]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -642,4 +627,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=04c49debcae96003 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d7f58dc477814b45 input=a9049054013a1b77]*/

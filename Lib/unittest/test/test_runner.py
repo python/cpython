@@ -410,14 +410,13 @@ class TestModuleCleanUp(unittest.TestCase):
 
         class Module(object):
             unittest.addModuleCleanup(cleanup, 1, 2, function='hello')
-            with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(TypeError):
                 unittest.addModuleCleanup(function=cleanup, arg='hello')
             with self.assertRaises(TypeError):
                 unittest.addModuleCleanup()
         unittest.case.doModuleCleanups()
         self.assertEqual(cleanups,
-                         [((), {'arg': 'hello'}),
-                          ((1, 2), {'function': 'hello'})])
+                         [((1, 2), {'function': 'hello'})])
 
     def test_run_module_cleanUp(self):
         blowUp = True
@@ -593,7 +592,7 @@ class TestModuleCleanUp(unittest.TestCase):
         class TestableTest(unittest.TestCase):
             def setUp(self2):
                 self2.addCleanup(cleanup, 1, 2, function=3, self=4)
-                with self.assertWarns(DeprecationWarning):
+                with self.assertRaises(TypeError):
                     self2.addCleanup(function=cleanup, arg='hello')
             def testNothing(self):
                 pass
@@ -604,8 +603,7 @@ class TestModuleCleanUp(unittest.TestCase):
             unittest.TestCase.addCleanup(self=TestableTest(), function=cleanup)
         runTests(TestableTest)
         self.assertEqual(cleanups,
-                         [((), {'arg': 'hello'}),
-                          ((1, 2), {'function': 3, 'self': 4})])
+                         [((1, 2), {'function': 3, 'self': 4})])
 
     def test_with_errors_in_addClassCleanup(self):
         ordering = []

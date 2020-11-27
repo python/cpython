@@ -5,13 +5,14 @@ import tempfile
 import unittest
 
 from test import support
+from test.support import os_helper
 
 
 class FileCompareTestCase(unittest.TestCase):
     def setUp(self):
-        self.name = support.TESTFN
-        self.name_same = support.TESTFN + '-same'
-        self.name_diff = support.TESTFN + '-diff'
+        self.name = os_helper.TESTFN
+        self.name_same = os_helper.TESTFN + '-same'
+        self.name_diff = os_helper.TESTFN + '-diff'
         data = 'Contents of file go here.\n'
         for name in [self.name, self.name_same, self.name_diff]:
             with open(name, 'w') as output:
@@ -65,6 +66,8 @@ class DirCompareTestCase(unittest.TestCase):
         for dir in (self.dir, self.dir_same, self.dir_diff, self.dir_ignored):
             shutil.rmtree(dir, True)
             os.mkdir(dir)
+            subdir_path = os.path.join(dir, 'subdir')
+            os.mkdir(subdir_path)
             if self.caseinsensitive and dir is self.dir_same:
                 fn = 'FiLe'     # Verify case-insensitive comparison
             else:
@@ -109,6 +112,11 @@ class DirCompareTestCase(unittest.TestCase):
                     "Comparing mismatched directories fails")
 
 
+    def _assert_lists(self, actual, expected):
+        """Assert that two lists are equal, up to ordering."""
+        self.assertEqual(sorted(actual), sorted(expected))
+
+
     def test_dircmp(self):
         # Check attributes for comparison of two identical directories
         left_dir, right_dir = self.dir, self.dir_same
@@ -116,10 +124,13 @@ class DirCompareTestCase(unittest.TestCase):
         self.assertEqual(d.left, left_dir)
         self.assertEqual(d.right, right_dir)
         if self.caseinsensitive:
-            self.assertEqual([d.left_list, d.right_list],[['file'], ['FiLe']])
+            self._assert_lists(d.left_list, ['file', 'subdir'])
+            self._assert_lists(d.right_list, ['FiLe', 'subdir'])
         else:
-            self.assertEqual([d.left_list, d.right_list],[['file'], ['file']])
-        self.assertEqual(d.common, ['file'])
+            self._assert_lists(d.left_list, ['file', 'subdir'])
+            self._assert_lists(d.right_list, ['file', 'subdir'])
+        self._assert_lists(d.common, ['file', 'subdir'])
+        self._assert_lists(d.common_dirs, ['subdir'])
         self.assertEqual(d.left_only, [])
         self.assertEqual(d.right_only, [])
         self.assertEqual(d.same_files, ['file'])
@@ -127,6 +138,7 @@ class DirCompareTestCase(unittest.TestCase):
         expected_report = [
             "diff {} {}".format(self.dir, self.dir_same),
             "Identical files : ['file']",
+            "Common subdirectories : ['subdir']",
         ]
         self._assert_report(d.report, expected_report)
 
@@ -135,9 +147,10 @@ class DirCompareTestCase(unittest.TestCase):
         d = filecmp.dircmp(left_dir, right_dir)
         self.assertEqual(d.left, left_dir)
         self.assertEqual(d.right, right_dir)
-        self.assertEqual(d.left_list, ['file'])
-        self.assertEqual(d.right_list, ['file', 'file2'])
-        self.assertEqual(d.common, ['file'])
+        self._assert_lists(d.left_list, ['file', 'subdir'])
+        self._assert_lists(d.right_list, ['file', 'file2', 'subdir'])
+        self._assert_lists(d.common, ['file', 'subdir'])
+        self._assert_lists(d.common_dirs, ['subdir'])
         self.assertEqual(d.left_only, [])
         self.assertEqual(d.right_only, ['file2'])
         self.assertEqual(d.same_files, ['file'])
@@ -146,6 +159,7 @@ class DirCompareTestCase(unittest.TestCase):
             "diff {} {}".format(self.dir, self.dir_diff),
             "Only in {} : ['file2']".format(self.dir_diff),
             "Identical files : ['file']",
+            "Common subdirectories : ['subdir']",
         ]
         self._assert_report(d.report, expected_report)
 
@@ -158,9 +172,9 @@ class DirCompareTestCase(unittest.TestCase):
         d = filecmp.dircmp(left_dir, right_dir)
         self.assertEqual(d.left, left_dir)
         self.assertEqual(d.right, right_dir)
-        self.assertEqual(d.left_list, ['file', 'file2'])
-        self.assertEqual(d.right_list, ['file'])
-        self.assertEqual(d.common, ['file'])
+        self._assert_lists(d.left_list, ['file', 'file2', 'subdir'])
+        self._assert_lists(d.right_list, ['file', 'subdir'])
+        self._assert_lists(d.common, ['file', 'subdir'])
         self.assertEqual(d.left_only, ['file2'])
         self.assertEqual(d.right_only, [])
         self.assertEqual(d.same_files, ['file'])
@@ -169,6 +183,7 @@ class DirCompareTestCase(unittest.TestCase):
             "diff {} {}".format(self.dir, self.dir_diff),
             "Only in {} : ['file2']".format(self.dir),
             "Identical files : ['file']",
+            "Common subdirectories : ['subdir']",
         ]
         self._assert_report(d.report, expected_report)
 
@@ -182,24 +197,45 @@ class DirCompareTestCase(unittest.TestCase):
             "diff {} {}".format(self.dir, self.dir_diff),
             "Identical files : ['file']",
             "Differing files : ['file2']",
+            "Common subdirectories : ['subdir']",
         ]
         self._assert_report(d.report, expected_report)
+
+    def test_dircmp_subdirs_type(self):
+        """Check that dircmp.subdirs respects subclassing."""
+        class MyDirCmp(filecmp.dircmp):
+            pass
+        d = MyDirCmp(self.dir, self.dir_diff)
+        sub_dirs = d.subdirs
+        self.assertEqual(list(sub_dirs.keys()), ['subdir'])
+        sub_dcmp = sub_dirs['subdir']
+        self.assertEqual(type(sub_dcmp), MyDirCmp)
 
     def test_report_partial_closure(self):
         left_dir, right_dir = self.dir, self.dir_same
         d = filecmp.dircmp(left_dir, right_dir)
+        left_subdir = os.path.join(left_dir, 'subdir')
+        right_subdir = os.path.join(right_dir, 'subdir')
         expected_report = [
             "diff {} {}".format(self.dir, self.dir_same),
             "Identical files : ['file']",
+            "Common subdirectories : ['subdir']",
+            '',
+            "diff {} {}".format(left_subdir, right_subdir),
         ]
         self._assert_report(d.report_partial_closure, expected_report)
 
     def test_report_full_closure(self):
         left_dir, right_dir = self.dir, self.dir_same
         d = filecmp.dircmp(left_dir, right_dir)
+        left_subdir = os.path.join(left_dir, 'subdir')
+        right_subdir = os.path.join(right_dir, 'subdir')
         expected_report = [
             "diff {} {}".format(self.dir, self.dir_same),
             "Identical files : ['file']",
+            "Common subdirectories : ['subdir']",
+            '',
+            "diff {} {}".format(left_subdir, right_subdir),
         ]
         self._assert_report(d.report_full_closure, expected_report)
 

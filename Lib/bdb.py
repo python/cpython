@@ -38,7 +38,7 @@ class Bdb:
         """Return canonical form of filename.
 
         For real filenames, the canonical form is a case-normalized (on
-        case insenstive filesystems) absolute path.  'Filenames' with
+        case insensitive filesystems) absolute path.  'Filenames' with
         angle brackets, such as "<stdin>", generated in interactive
         mode, are returned unchanged.
         """
@@ -384,7 +384,7 @@ class Bdb:
         return None
 
     def _prune_breaks(self, filename, lineno):
-        """Prune breakpoints for filname:lineno.
+        """Prune breakpoints for filename:lineno.
 
         A list of breakpoints is maintained in the Bdb instance and in
         the Breakpoint class.  If a breakpoint in the Bdb instance no
@@ -548,14 +548,7 @@ class Bdb:
             s += frame.f_code.co_name
         else:
             s += "<lambda>"
-        if '__args__' in frame.f_locals:
-            args = frame.f_locals['__args__']
-        else:
-            args = None
-        if args:
-            s += reprlib.repr(args)
-        else:
-            s += '()'
+        s += '()'
         if '__return__' in frame.f_locals:
             rv = frame.f_locals['__return__']
             s += '->'
@@ -618,26 +611,11 @@ class Bdb:
 
     # This method is more useful to debug a single function call.
 
-    def runcall(*args, **kwds):
+    def runcall(self, func, /, *args, **kwds):
         """Debug a single function call.
 
         Return the result of the function call.
         """
-        if len(args) >= 2:
-            self, func, *args = args
-        elif not args:
-            raise TypeError("descriptor 'runcall' of 'Bdb' object "
-                            "needs an argument")
-        elif 'func' in kwds:
-            func = kwds.pop('func')
-            self, *args = args
-            import warnings
-            warnings.warn("Passing 'func' as keyword argument is deprecated",
-                          DeprecationWarning, stacklevel=2)
-        else:
-            raise TypeError('runcall expected at least 1 positional argument, '
-                            'got %d' % (len(args)-1))
-
         self.reset()
         sys.settrace(self.trace_dispatch)
         res = None
@@ -649,7 +627,6 @@ class Bdb:
             self.quitting = True
             sys.settrace(None)
         return res
-    runcall.__text_signature__ = '($self, func, /, *args, **kwds)'
 
 
 def set_trace():

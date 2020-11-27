@@ -1,7 +1,8 @@
 import test.support
+from test.support import import_helper
 
 # Skip test if _sqlite3 module not installed
-test.support.import_module('_sqlite3')
+import_helper.import_module('_sqlite3')
 
 import unittest
 import sqlite3

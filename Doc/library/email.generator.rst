@@ -36,7 +36,7 @@ something that contains only ASCII characters, using the standard email RFC
 Content Transfer Encoding techniques for encoding email messages for transport
 over channels that are not "8 bit clean".
 
-To accomodate reproducible processing of SMIME-signed messages
+To accommodate reproducible processing of SMIME-signed messages
 :class:`Generator` disables header folding for message parts of type
 ``multipart/signed`` and all subparts.
 

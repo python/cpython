@@ -281,10 +281,14 @@ class PopupViewer:
         self.__window.deiconify()
 
     def __eq__(self, other):
-        return self.__menutext == other.__menutext
+        if isinstance(self, PopupViewer):
+            return self.__menutext == other.__menutext
+        return NotImplemented
 
     def __lt__(self, other):
-        return self.__menutext < other.__menutext
+        if isinstance(self, PopupViewer):
+            return self.__menutext < other.__menutext
+        return NotImplemented
 
 
 def make_view_popups(switchboard, root, extrapath):

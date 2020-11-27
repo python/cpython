@@ -24,8 +24,11 @@ from io import BytesIO, StringIO
 from fileinput import FileInput, hook_encoded
 from pathlib import Path
 
-from test.support import verbose, TESTFN, check_warnings
-from test.support import unlink as safe_unlink
+from test.support import verbose
+from test.support.os_helper import TESTFN
+from test.support.os_helper import unlink as safe_unlink
+from test.support import os_helper
+from test.support import warnings_helper
 from test import support
 from unittest import mock
 
@@ -39,7 +42,7 @@ class BaseTests:
     # temp file's name.
     def writeTmp(self, content, *, mode='w'):  # opening in text mode is the default
         fd, name = tempfile.mkstemp()
-        self.addCleanup(support.unlink, name)
+        self.addCleanup(os_helper.unlink, name)
         with open(fd, mode) as f:
             f.write(content)
         return name
@@ -82,25 +85,17 @@ class LineReader:
 
 class BufferSizesTests(BaseTests, unittest.TestCase):
     def test_buffer_sizes(self):
-        # First, run the tests with default and teeny buffer size.
-        for round, bs in (0, 0), (1, 30):
-            t1 = self.writeTmp(''.join("Line %s of file 1\n" % (i+1) for i in range(15)))
-            t2 = self.writeTmp(''.join("Line %s of file 2\n" % (i+1) for i in range(10)))
-            t3 = self.writeTmp(''.join("Line %s of file 3\n" % (i+1) for i in range(5)))
-            t4 = self.writeTmp(''.join("Line %s of file 4\n" % (i+1) for i in range(1)))
-            if bs:
-                with self.assertWarns(DeprecationWarning):
-                    self.buffer_size_test(t1, t2, t3, t4, bs, round)
-            else:
-                self.buffer_size_test(t1, t2, t3, t4, bs, round)
 
-    def buffer_size_test(self, t1, t2, t3, t4, bs=0, round=0):
+        t1 = self.writeTmp(''.join("Line %s of file 1\n" % (i+1) for i in range(15)))
+        t2 = self.writeTmp(''.join("Line %s of file 2\n" % (i+1) for i in range(10)))
+        t3 = self.writeTmp(''.join("Line %s of file 3\n" % (i+1) for i in range(5)))
+        t4 = self.writeTmp(''.join("Line %s of file 4\n" % (i+1) for i in range(1)))
+
         pat = re.compile(r'LINE (\d+) OF FILE (\d+)')
 
-        start = 1 + round*6
         if verbose:
-            print('%s. Simple iteration (bs=%s)' % (start+0, bs))
-        fi = FileInput(files=(t1, t2, t3, t4), bufsize=bs)
+            print('1. Simple iteration')
+        fi = FileInput(files=(t1, t2, t3, t4))
         lines = list(fi)
         fi.close()
         self.assertEqual(len(lines), 31)
@@ -110,8 +105,8 @@ class BufferSizesTests(BaseTests, unittest.TestCase):
         self.assertEqual(fi.filename(), t4)
 
         if verbose:
-            print('%s. Status variables (bs=%s)' % (start+1, bs))
-        fi = FileInput(files=(t1, t2, t3, t4), bufsize=bs)
+            print('2. Status variables')
+        fi = FileInput(files=(t1, t2, t3, t4))
         s = "x"
         while s and s != 'Line 6 of file 2\n':
             s = fi.readline()
@@ -122,15 +117,15 @@ class BufferSizesTests(BaseTests, unittest.TestCase):
         self.assertFalse(fi.isstdin())
 
         if verbose:
-            print('%s. Nextfile (bs=%s)' % (start+2, bs))
+            print('3. Nextfile')
         fi.nextfile()
         self.assertEqual(fi.readline(), 'Line 1 of file 3\n')
         self.assertEqual(fi.lineno(), 22)
         fi.close()
 
         if verbose:
-            print('%s. Stdin (bs=%s)' % (start+3, bs))
-        fi = FileInput(files=(t1, t2, t3, t4, '-'), bufsize=bs)
+            print('4. Stdin')
+        fi = FileInput(files=(t1, t2, t3, t4, '-'))
         savestdin = sys.stdin
         try:
             sys.stdin = StringIO("Line 1 of stdin\nLine 2 of stdin\n")
@@ -143,8 +138,8 @@ class BufferSizesTests(BaseTests, unittest.TestCase):
             sys.stdin = savestdin
 
         if verbose:
-            print('%s. Boundary conditions (bs=%s)' % (start+4, bs))
-        fi = FileInput(files=(t1, t2, t3, t4), bufsize=bs)
+            print('5. Boundary conditions')
+        fi = FileInput(files=(t1, t2, t3, t4))
         self.assertEqual(fi.lineno(), 0)
         self.assertEqual(fi.filename(), None)
         fi.nextfile()
@@ -152,10 +147,10 @@ class BufferSizesTests(BaseTests, unittest.TestCase):
         self.assertEqual(fi.filename(), None)
 
         if verbose:
-            print('%s. Inplace (bs=%s)' % (start+5, bs))
+            print('6. Inplace')
         savestdout = sys.stdout
         try:
-            fi = FileInput(files=(t1, t2, t3, t4), inplace=1, bufsize=bs)
+            fi = FileInput(files=(t1, t2, t3, t4), inplace=1)
             for line in fi:
                 line = line[:-1].upper()
                 print(line)
@@ -163,7 +158,7 @@ class BufferSizesTests(BaseTests, unittest.TestCase):
         finally:
             sys.stdout = savestdout
 
-        fi = FileInput(files=(t1, t2, t3, t4), bufsize=bs)
+        fi = FileInput(files=(t1, t2, t3, t4))
         for line in fi:
             self.assertEqual(line[-1], '\n')
             m = pat.match(line[:-1])
@@ -242,9 +237,9 @@ class FileInputTests(BaseTests, unittest.TestCase):
             pass
         # try opening in universal newline mode
         t1 = self.writeTmp(b"A\nB\r\nC\rD", mode="wb")
-        with check_warnings(('', DeprecationWarning)):
+        with warnings_helper.check_warnings(('', DeprecationWarning)):
             fi = FileInput(files=t1, mode="U")
-        with check_warnings(('', DeprecationWarning)):
+        with warnings_helper.check_warnings(('', DeprecationWarning)):
             lines = list(fi)
         self.assertEqual(lines, ["A\n", "B\n", "C\n", "D"])
 
@@ -361,7 +356,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
         with FileInput(files=[]) as fi:
             self.assertEqual(fi._files, ('-',))
 
-    @support.ignore_warnings(category=DeprecationWarning)
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test__getitem__(self):
         """Tests invoking FileInput.__getitem__() with the current
            line number"""
@@ -379,7 +374,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
             with FileInput(files=[t]) as fi:
                 self.assertEqual(fi[0], "line1\n")
 
-    @support.ignore_warnings(category=DeprecationWarning)
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test__getitem__invalid_key(self):
         """Tests invoking FileInput.__getitem__() with an index unequal to
            the line number"""
@@ -389,7 +384,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
                 fi[1]
         self.assertEqual(cm.exception.args, ("accessing lines out of order",))
 
-    @support.ignore_warnings(category=DeprecationWarning)
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test__getitem__eof(self):
         """Tests invoking FileInput.__getitem__() with the line number but at
            end-of-input"""
@@ -408,7 +403,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
         os_unlink_replacement = UnconditionallyRaise(OSError)
         try:
             t = self.writeTmp("\n")
-            self.addCleanup(support.unlink, t + '.bak')
+            self.addCleanup(safe_unlink, t + '.bak')
             with FileInput(files=[t], inplace=True) as fi:
                 next(fi) # make sure the file is opened
                 os.unlink = os_unlink_replacement
@@ -533,12 +528,11 @@ class FileInputTests(BaseTests, unittest.TestCase):
 class MockFileInput:
     """A class that mocks out fileinput.FileInput for use during unit tests"""
 
-    def __init__(self, files=None, inplace=False, backup="", bufsize=0,
+    def __init__(self, files=None, inplace=False, backup="", *,
                  mode="r", openhook=None):
         self.files = files
         self.inplace = inplace
         self.backup = backup
-        self.bufsize = bufsize
         self.mode = mode
         self.openhook = openhook
         self._file = None
@@ -641,13 +635,11 @@ class Test_fileinput_input(BaseFileInputGlobalMethodsTest):
         files = object()
         inplace = object()
         backup = object()
-        bufsize = object()
         mode = object()
         openhook = object()
 
         # call fileinput.input() with different values for each argument
         result = fileinput.input(files=files, inplace=inplace, backup=backup,
-                                 bufsize=bufsize,
             mode=mode, openhook=openhook)
 
         # ensure fileinput._state was set to the returned object
@@ -658,7 +650,6 @@ class Test_fileinput_input(BaseFileInputGlobalMethodsTest):
         self.assertIs(files, result.files, "files")
         self.assertIs(inplace, result.inplace, "inplace")
         self.assertIs(backup, result.backup, "backup")
-        self.assertIs(bufsize, result.bufsize, "bufsize")
         self.assertIs(mode, result.mode, "mode")
         self.assertIs(openhook, result.openhook, "openhook")
 

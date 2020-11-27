@@ -22,6 +22,8 @@ import time
 import unittest
 
 from test import support
+from test.support import os_helper
+from test.support import socket_helper
 
 @contextlib.contextmanager
 def kill_on_error(proc):
@@ -57,9 +59,8 @@ class EINTRBaseTest(unittest.TestCase):
 
         # Use faulthandler as watchdog to debug when a test hangs
         # (timeout of 10 minutes)
-        if hasattr(faulthandler, 'dump_traceback_later'):
-            faulthandler.dump_traceback_later(10 * 60, exit=True,
-                                              file=sys.__stderr__)
+        faulthandler.dump_traceback_later(10 * 60, exit=True,
+                                          file=sys.__stderr__)
 
     @staticmethod
     def stop_alarm():
@@ -68,8 +69,7 @@ class EINTRBaseTest(unittest.TestCase):
     def tearDown(self):
         self.stop_alarm()
         signal.signal(signal.SIGALRM, self.orig_handler)
-        if hasattr(faulthandler, 'cancel_dump_traceback_later'):
-            faulthandler.cancel_dump_traceback_later()
+        faulthandler.cancel_dump_traceback_later()
 
     def subprocess(self, *args, **kw):
         cmd_args = (sys.executable, '-c') + args
@@ -285,14 +285,14 @@ class SocketEINTRTest(EINTRBaseTest):
         self._test_send(lambda sock, data: sock.sendmsg([data]))
 
     def test_accept(self):
-        sock = socket.create_server((support.HOST, 0))
+        sock = socket.create_server((socket_helper.HOST, 0))
         self.addCleanup(sock.close)
         port = sock.getsockname()[1]
 
         code = '\n'.join((
             'import socket, time',
             '',
-            'host = %r' % support.HOST,
+            'host = %r' % socket_helper.HOST,
             'port = %s' % port,
             'sleep_time = %r' % self.sleep_time,
             '',
@@ -315,16 +315,16 @@ class SocketEINTRTest(EINTRBaseTest):
     @support.requires_freebsd_version(10, 3)
     @unittest.skipUnless(hasattr(os, 'mkfifo'), 'needs mkfifo()')
     def _test_open(self, do_open_close_reader, do_open_close_writer):
-        filename = support.TESTFN
+        filename = os_helper.TESTFN
 
         # Use a fifo: until the child opens it for reading, the parent will
         # block when trying to open it for writing.
-        support.unlink(filename)
+        os_helper.unlink(filename)
         try:
             os.mkfifo(filename)
         except PermissionError as e:
             self.skipTest('os.mkfifo(): %s' % e)
-        self.addCleanup(support.unlink, filename)
+        self.addCleanup(os_helper.unlink, filename)
 
         code = '\n'.join((
             'import os, time',
@@ -487,16 +487,16 @@ class SelectEINTRTest(EINTRBaseTest):
 
 class FNTLEINTRTest(EINTRBaseTest):
     def _lock(self, lock_func, lock_name):
-        self.addCleanup(support.unlink, support.TESTFN)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         code = '\n'.join((
             "import fcntl, time",
-            "with open('%s', 'wb') as f:" % support.TESTFN,
+            "with open('%s', 'wb') as f:" % os_helper.TESTFN,
             "   fcntl.%s(f, fcntl.LOCK_EX)" % lock_name,
             "   time.sleep(%s)" % self.sleep_time))
         start_time = time.monotonic()
         proc = self.subprocess(code)
         with kill_on_error(proc):
-            with open(support.TESTFN, 'wb') as f:
+            with open(os_helper.TESTFN, 'wb') as f:
                 while True:  # synchronize the subprocess
                     dt = time.monotonic() - start_time
                     if dt > 60.0:

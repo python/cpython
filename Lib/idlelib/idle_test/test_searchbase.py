@@ -4,7 +4,7 @@
 
 import unittest
 from test.support import requires
-from tkinter import Tk
+from tkinter import Text, Tk, Toplevel
 from tkinter.ttk import Frame
 from idlelib import searchengine as se
 from idlelib import searchbase as sdb
@@ -32,6 +32,7 @@ class SearchDialogBaseTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        cls.root.update_idletasks()
         cls.root.destroy()
         del cls.root
 
@@ -46,16 +47,17 @@ class SearchDialogBaseTest(unittest.TestCase):
         # open calls create_widgets, which needs default_command
         self.dialog.default_command = None
 
-        # Since text parameter of .open is not used in base class,
-        # pass dummy 'text' instead of tk.Text().
-        self.dialog.open('text')
+        toplevel = Toplevel(self.root)
+        text = Text(toplevel)
+        self.dialog.open(text)
         self.assertEqual(self.dialog.top.state(), 'normal')
         self.dialog.close()
         self.assertEqual(self.dialog.top.state(), 'withdrawn')
 
-        self.dialog.open('text', searchphrase="hello")
+        self.dialog.open(text, searchphrase="hello")
         self.assertEqual(self.dialog.ent.get(), 'hello')
-        self.dialog.close()
+        toplevel.update_idletasks()
+        toplevel.destroy()
 
     def test_create_widgets(self):
         self.dialog.create_entries = Func()
@@ -74,7 +76,7 @@ class SearchDialogBaseTest(unittest.TestCase):
     def test_make_entry(self):
         equal = self.assertEqual
         self.dialog.row = 0
-        self.dialog.top = self.root
+        self.dialog.frame = Frame(self.root)
         entry, label = self.dialog.make_entry("Test:", 'hello')
         equal(label['text'], 'Test:')
 
@@ -87,7 +89,7 @@ class SearchDialogBaseTest(unittest.TestCase):
         equal(self.dialog.row, 1)
 
     def test_create_entries(self):
-        self.dialog.top = self.root
+        self.dialog.frame = Frame(self.root)
         self.dialog.row = 0
         self.engine.setpat('hello')
         self.dialog.create_entries()
@@ -95,7 +97,7 @@ class SearchDialogBaseTest(unittest.TestCase):
 
     def test_make_frame(self):
         self.dialog.row = 0
-        self.dialog.top = self.root
+        self.dialog.frame = Frame(self.root)
         frame, label = self.dialog.make_frame()
         self.assertEqual(label, '')
         self.assertEqual(str(type(frame)), "<class 'tkinter.ttk.Frame'>")
@@ -106,7 +108,7 @@ class SearchDialogBaseTest(unittest.TestCase):
         self.assertEqual(label['text'], 'testlabel')
 
     def btn_test_setup(self, meth):
-        self.dialog.top = self.root
+        self.dialog.frame = Frame(self.root)
         self.dialog.row = 0
         return meth()
 
@@ -138,18 +140,18 @@ class SearchDialogBaseTest(unittest.TestCase):
                     self.assertEqual(var.get(), state)
 
     def test_make_button(self):
-        self.dialog.top = self.root
-        self.dialog.buttonframe = Frame(self.dialog.top)
+        self.dialog.frame = Frame(self.root)
+        self.dialog.buttonframe = Frame(self.dialog.frame)
         btn = self.dialog.make_button('Test', self.dialog.close)
         self.assertEqual(btn['text'], 'Test')
 
     def test_create_command_buttons(self):
-        self.dialog.top = self.root
+        self.dialog.frame = Frame(self.root)
         self.dialog.create_command_buttons()
         # Look for close button command in buttonframe
         closebuttoncommand = ''
         for child in self.dialog.buttonframe.winfo_children():
-            if child['text'] == 'close':
+            if child['text'] == 'Close':
                 closebuttoncommand = child['command']
         self.assertIn('close', closebuttoncommand)
 
