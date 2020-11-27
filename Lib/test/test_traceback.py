@@ -1132,7 +1132,6 @@ class TestTracebackException(unittest.TestCase):
         refcnt1 = sys.getrefcount(exc_info[1])
         refcnt2 = sys.getrefcount(exc_info[2])
         exc = traceback.TracebackException(*exc_info)
-        _ = exc.format()
         self.assertEqual(sys.getrefcount(exc_info[1]), refcnt1)
         self.assertEqual(sys.getrefcount(exc_info[2]), refcnt2)
 
