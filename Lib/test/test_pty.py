@@ -5,7 +5,6 @@ from test.support.import_helper import import_module
 import_module('termios')
 
 import errno
-import pathlib
 import pty
 import os
 import sys
@@ -75,20 +74,7 @@ def _readline(fd):
     return reader.readline()
 
 def expectedFailureIfStdinIsTTY(fun):
-    # avoid isatty() for now
-    PLATFORM = platform.system()
-    if PLATFORM == "Linux":
-        os_release = pathlib.Path("/etc/os-release")
-        if os_release.exists():
-            # Actually the file has complex multi-line structure,
-            # these is no need to parse it for Gentoo check
-            if 'gentoo' in os_release.read_text().lower():
-                # bpo-41818:
-                # Gentoo passes the test,
-                # all other tested Linux distributions fail.
-                # Should not apply @unittest.expectedFailure() on Gentoo
-                # to keep the buildbot fleet happy.
-                return fun
+    # avoid isatty()
     try:
         tty.tcgetattr(pty.STDIN_FILENO)
         return unittest.expectedFailure(fun)
@@ -165,11 +151,16 @@ class PtyTest(unittest.TestCase):
         new_stdin_winsz = None
         if self.stdin_rows != None and self.stdin_cols != None:
             try:
+                # Modify pty.STDIN_FILENO window size; we need to
+                # check if pty.openpty() is able to set pty slave
+                # window size accordingly.
                 debug("Setting pty.STDIN_FILENO window size")
-                # Set number of columns and rows to be the
-                # floors of 1/5 of respective original values
-                target_stdin_winsz = struct.pack("HHHH", self.stdin_rows//5,
-                                                 self.stdin_cols//5, 0, 0)
+                debug(f"original size: (rows={self.stdin_rows}, cols={self.stdin_cols})")
+                target_stdin_rows = self.stdin_rows + 1
+                target_stdin_cols = self.stdin_cols + 1
+                debug(f"target size: (rows={target_stdin_rows}, cols={target_stdin_cols})")
+                target_stdin_winsz = struct.pack("HHHH", target_stdin_rows,
+                                                 target_stdin_cols, 0, 0)
                 _set_term_winsz(pty.STDIN_FILENO, target_stdin_winsz)
 
                 # Were we able to set the window size
