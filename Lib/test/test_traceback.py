@@ -1156,7 +1156,7 @@ class TestTracebackException(unittest.TestCase):
         exc2 = traceback.TracebackException(*exc_info, limit=2)
 
         self.assertEqual(exc, exc1)      # limit=10 gets all frames
-        self.assertNotEqual(exc, exc2)   # limit=1 truncates the output
+        self.assertNotEqual(exc, exc2)   # limit=2 truncates the output
 
         # locals change the output
         exc3 = traceback.TracebackException(*exc_info, capture_locals=True)
