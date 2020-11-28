@@ -1,0 +1,1 @@
+Fix test_master_read() so that it succeeds on all platforms that either raise OSError or return b"" upon reading from master.
