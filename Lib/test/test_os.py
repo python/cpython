@@ -116,6 +116,10 @@ class MiscTests(unittest.TestCase):
         # than MAX_PATH if long paths support is disabled:
         # see RtlAreLongPathsEnabled().
         min_len = 2000   # characters
+        # On VxWorks, PATH_MAX is defined as 1024 bytes. Creating a path
+        # longer than PATH_MAX will fail.
+        if sys.platform == 'vxworks':
+            min_len = 1000
         dirlen = 200     # characters
         dirname = 'python_test_dir_'
         dirname = dirname + ('a' * (dirlen - len(dirname)))
