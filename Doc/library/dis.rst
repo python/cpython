@@ -861,7 +861,7 @@ All of the following opcodes use their arguments.
 
 .. opcode:: LIST_TO_TUPLE
 
-    Pops a list from the stack and pushes a tuple containing the same values.
+   Pops a list from the stack and pushes a tuple containing the same values.
 
    .. versionadded:: 3.9
 
@@ -889,7 +889,7 @@ All of the following opcodes use their arguments.
 
 .. opcode:: DICT_MERGE
 
-    Like :opcode:`DICT_UPDATE` but raises an exception for duplicate keys.
+   Like :opcode:`DICT_UPDATE` but raises an exception for duplicate keys.
 
    .. versionadded:: 3.9
 
@@ -907,14 +907,14 @@ All of the following opcodes use their arguments.
 
 .. opcode:: IS_OP (invert)
 
-    Performs ``is`` comparison, or ``is not`` if ``invert`` is 1.
+   Performs ``is`` comparison, or ``is not`` if ``invert`` is 1.
 
    .. versionadded:: 3.9
 
 
 .. opcode:: CONTAINS_OP (invert)
 
-    Performs ``in`` comparison, or ``not in`` if ``invert`` is 1.
+   Performs ``in`` comparison, or ``not in`` if ``invert`` is 1.
 
    .. versionadded:: 3.9
 
@@ -955,8 +955,8 @@ All of the following opcodes use their arguments.
 
 .. opcode:: JUMP_IF_NOT_EXC_MATCH (target)
 
-    Tests whether the second value on the stack is an exception matching TOS,
-    and jumps if it is not. Pops two values from the stack.
+   Tests whether the second value on the stack is an exception matching TOS,
+   and jumps if it is not. Pops two values from the stack.
 
    .. versionadded:: 3.9
 
