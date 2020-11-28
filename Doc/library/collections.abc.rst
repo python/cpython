@@ -98,12 +98,20 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 
 
 .. class:: Container
-           Hashable
-           Sized
-           Callable
 
-   ABCs for classes that provide respectively the methods :meth:`__contains__`,
-   :meth:`__hash__`, :meth:`__len__`, and :meth:`__call__`.
+   ABC for classes that provide the :meth:`__contains__` method.
+
+.. class:: Hashable
+
+   ABC for classes that provide the :meth:`__hash__` method.
+
+.. class:: Sized
+
+   ABC for classes that provide the :meth:`__len__` method.
+
+.. class:: Callable
+
+   ABC for classes that provide the :meth:`__call__` method.
 
 .. class:: Iterable
 
@@ -185,7 +193,7 @@ ABC                        Inherits from          Abstract Methods        Mixin 
    expressions.  Custom implementations must provide the :meth:`__await__`
    method.
 
-   :term:`Coroutine` objects and instances of the
+   :term:`Coroutine <coroutine>` objects and instances of the
    :class:`~collections.abc.Coroutine` ABC are all instances of this ABC.
 
    .. note::
@@ -283,7 +291,7 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
    :meth:`_from_iterable` which calls ``cls(iterable)`` to produce a new set.
    If the :class:`Set` mixin is being used in a class with a different
    constructor signature, you will need to override :meth:`_from_iterable`
-   with a classmethod that can construct new instances from
+   with a classmethod or regular method that can construct new instances from
    an iterable argument.
 
 (2)

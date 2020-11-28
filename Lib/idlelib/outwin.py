@@ -6,7 +6,6 @@ import re
 from tkinter import messagebox
 
 from idlelib.editor import EditorWindow
-from idlelib import iomenu
 
 
 file_line_pats = [
@@ -74,11 +73,11 @@ class OutputWindow(EditorWindow):
         ("Go to file/line", "<<goto-file-line>>", None),
     ]
 
+    allow_code_context = False
+
     def __init__(self, *args):
         EditorWindow.__init__(self, *args)
         self.text.bind("<<goto-file-line>>", self.goto_file_line)
-        self.text.unbind("<<toggle-code-context>>")
-        self.update_menu_state('options', '*Code Context', 'disabled')
 
     # Customize EditorWindow
     def ispythonsource(self, filename):
@@ -110,8 +109,7 @@ class OutputWindow(EditorWindow):
         Return:
             Length of text inserted.
         """
-        if isinstance(s, bytes):
-            s = s.decode(iomenu.encoding, "replace")
+        assert isinstance(s, str)
         self.text.insert(mark, s, tags)
         self.text.see(mark)
         self.text.update()

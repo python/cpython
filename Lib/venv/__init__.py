@@ -12,6 +12,8 @@ import sys
 import sysconfig
 import types
 
+
+CORE_VENV_DEPS = ('pip', 'setuptools')
 logger = logging.getLogger(__name__)
 
 
@@ -38,16 +40,21 @@ class EnvBuilder:
     :param with_pip: If True, ensure pip is installed in the virtual
                      environment
     :param prompt: Alternative terminal prefix for the environment.
+    :param upgrade_deps: Update the base venv modules to the latest on PyPI
     """
 
     def __init__(self, system_site_packages=False, clear=False,
-                 symlinks=False, upgrade=False, with_pip=False, prompt=None):
+                 symlinks=False, upgrade=False, with_pip=False, prompt=None,
+                 upgrade_deps=False):
         self.system_site_packages = system_site_packages
         self.clear = clear
         self.symlinks = symlinks
         self.upgrade = upgrade
         self.with_pip = with_pip
+        if prompt == '.':  # see bpo-38901
+            prompt = os.path.basename(os.getcwd())
         self.prompt = prompt
+        self.upgrade_deps = upgrade_deps
 
     def create(self, env_dir):
         """
@@ -74,6 +81,8 @@ class EnvBuilder:
             # restore it and rewrite the configuration
             self.system_site_packages = True
             self.create_configuration(context)
+        if self.upgrade_deps:
+            self.upgrade_dependencies(context)
 
     def clear_directory(self, path):
         for fn in os.listdir(path):
@@ -105,8 +114,7 @@ class EnvBuilder:
         prompt = self.prompt if self.prompt is not None else context.env_name
         context.prompt = '(%s) ' % prompt
         create_if_needed(env_dir)
-        env = os.environ
-        executable = getattr(sys, '_base_executable', sys.executable)
+        executable = sys._base_executable
         dirname, exename = os.path.split(os.path.abspath(executable))
         context.executable = executable
         context.python_dir = dirname
@@ -157,47 +165,66 @@ class EnvBuilder:
             if self.prompt is not None:
                 f.write(f'prompt = {self.prompt!r}\n')
 
-    def symlink_or_copy(self, src, dst, relative_symlinks_ok=False):
-        """
-        Try symlinking a file, and if that fails, fall back to copying.
-        """
-        force_copy = not self.symlinks
-        if not force_copy:
-            try:
-                if not os.path.islink(dst): # can't link to itself!
+    if os.name != 'nt':
+        def symlink_or_copy(self, src, dst, relative_symlinks_ok=False):
+            """
+            Try symlinking a file, and if that fails, fall back to copying.
+            """
+            force_copy = not self.symlinks
+            if not force_copy:
+                try:
+                    if not os.path.islink(dst): # can't link to itself!
+                        if relative_symlinks_ok:
+                            assert os.path.dirname(src) == os.path.dirname(dst)
+                            os.symlink(os.path.basename(src), dst)
+                        else:
+                            os.symlink(src, dst)
+                except Exception:   # may need to use a more specific exception
+                    logger.warning('Unable to symlink %r to %r', src, dst)
+                    force_copy = True
+            if force_copy:
+                shutil.copyfile(src, dst)
+    else:
+        def symlink_or_copy(self, src, dst, relative_symlinks_ok=False):
+            """
+            Try symlinking a file, and if that fails, fall back to copying.
+            """
+            bad_src = os.path.lexists(src) and not os.path.exists(src)
+            if self.symlinks and not bad_src and not os.path.islink(dst):
+                try:
                     if relative_symlinks_ok:
                         assert os.path.dirname(src) == os.path.dirname(dst)
                         os.symlink(os.path.basename(src), dst)
                     else:
                         os.symlink(src, dst)
-            except Exception:   # may need to use a more specific exception
-                logger.warning('Unable to symlink %r to %r', src, dst)
-                force_copy = True
-        if force_copy:
-            if os.name == 'nt':
-                # On Windows, we rewrite symlinks to our base python.exe into
-                # copies of venvlauncher.exe
-                basename, ext = os.path.splitext(os.path.basename(src))
-                srcfn = os.path.join(os.path.dirname(__file__),
-                                     "scripts",
-                                     "nt",
-                                     basename + ext)
-                # Builds or venv's from builds need to remap source file
-                # locations, as we do not put them into Lib/venv/scripts
-                if sysconfig.is_python_build(True) or not os.path.isfile(srcfn):
-                    if basename.endswith('_d'):
-                        ext = '_d' + ext
-                        basename = basename[:-2]
-                    if basename == 'python':
-                        basename = 'venvlauncher'
-                    elif basename == 'pythonw':
-                        basename = 'venvwlauncher'
-                    src = os.path.join(os.path.dirname(src), basename + ext)
-                else:
-                    src = srcfn
-                if not os.path.exists(src):
-                    logger.warning('Unable to copy %r', src)
                     return
+                except Exception:   # may need to use a more specific exception
+                    logger.warning('Unable to symlink %r to %r', src, dst)
+
+            # On Windows, we rewrite symlinks to our base python.exe into
+            # copies of venvlauncher.exe
+            basename, ext = os.path.splitext(os.path.basename(src))
+            srcfn = os.path.join(os.path.dirname(__file__),
+                                 "scripts",
+                                 "nt",
+                                 basename + ext)
+            # Builds or venv's from builds need to remap source file
+            # locations, as we do not put them into Lib/venv/scripts
+            if sysconfig.is_python_build(True) or not os.path.isfile(srcfn):
+                if basename.endswith('_d'):
+                    ext = '_d' + ext
+                    basename = basename[:-2]
+                if basename == 'python':
+                    basename = 'venvlauncher'
+                elif basename == 'pythonw':
+                    basename = 'venvwlauncher'
+                src = os.path.join(os.path.dirname(src), basename + ext)
+            else:
+                src = srcfn
+            if not os.path.exists(src):
+                if not bad_src:
+                    logger.warning('Unable to copy %r', src)
+                return
 
             shutil.copyfile(src, dst)
 
@@ -216,7 +243,7 @@ class EnvBuilder:
             copier(context.executable, path)
             if not os.path.islink(path):
                 os.chmod(path, 0o755)
-            for suffix in ('python', 'python3'):
+            for suffix in ('python', 'python3', f'python3.{sys.version_info[1]}'):
                 path = os.path.join(binpath, suffix)
                 if not os.path.exists(path):
                     # Issue 18807: make copies if
@@ -245,7 +272,7 @@ class EnvBuilder:
 
             for suffix in suffixes:
                 src = os.path.join(dirname, suffix)
-                if os.path.exists(src):
+                if os.path.lexists(src):
                     copier(src, os.path.join(binpath, suffix))
 
             if sysconfig.is_python_build(True):
@@ -363,13 +390,25 @@ class EnvBuilder:
                         f.write(data)
                     shutil.copymode(srcfile, dstfile)
 
+    def upgrade_dependencies(self, context):
+        logger.debug(
+            f'Upgrading {CORE_VENV_DEPS} packages in {context.bin_path}'
+        )
+        if sys.platform == 'win32':
+            python_exe = os.path.join(context.bin_path, 'python.exe')
+        else:
+            python_exe = os.path.join(context.bin_path, 'python')
+        cmd = [python_exe, '-m', 'pip', 'install', '--upgrade']
+        cmd.extend(CORE_VENV_DEPS)
+        subprocess.check_call(cmd)
+
 
 def create(env_dir, system_site_packages=False, clear=False,
-                    symlinks=False, with_pip=False, prompt=None):
+           symlinks=False, with_pip=False, prompt=None, upgrade_deps=False):
     """Create a virtual environment in a directory."""
     builder = EnvBuilder(system_site_packages=system_site_packages,
                          clear=clear, symlinks=symlinks, with_pip=with_pip,
-                         prompt=prompt)
+                         prompt=prompt, upgrade_deps=upgrade_deps)
     builder.create(env_dir)
 
 def main(args=None):
@@ -432,6 +471,11 @@ def main(args=None):
         parser.add_argument('--prompt',
                             help='Provides an alternative prompt prefix for '
                                  'this environment.')
+        parser.add_argument('--upgrade-deps', default=False, action='store_true',
+                            dest='upgrade_deps',
+                            help='Upgrade core dependencies: {} to the latest '
+                                 'version in PyPI'.format(
+                                 ' '.join(CORE_VENV_DEPS)))
         options = parser.parse_args(args)
         if options.upgrade and options.clear:
             raise ValueError('you cannot supply --upgrade and --clear together.')
@@ -440,7 +484,8 @@ def main(args=None):
                              symlinks=options.symlinks,
                              upgrade=options.upgrade,
                              with_pip=options.with_pip,
-                             prompt=options.prompt)
+                             prompt=options.prompt,
+                             upgrade_deps=options.upgrade_deps)
         for d in options.dirs:
             builder.create(d)
 

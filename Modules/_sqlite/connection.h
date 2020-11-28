@@ -85,11 +85,10 @@ typedef struct
      */
     PyObject* text_factory;
 
-    /* remember references to functions/classes used in
-     * create_function/create/aggregate, use these as dictionary keys, so we
-     * can keep the total system refcount constant by clearing that dictionary
-     * in connection_dealloc */
-    PyObject* function_pinboard;
+    /* remember references to object used in trace_callback/progress_handler/authorizer_cb */
+    PyObject* function_pinboard_trace_callback;
+    PyObject* function_pinboard_progress_handler;
+    PyObject* function_pinboard_authorizer_cb;
 
     /* a dictionary of registered collation name => collation callable mappings */
     PyObject* collations;
@@ -107,7 +106,7 @@ typedef struct
     PyObject* NotSupportedError;
 } pysqlite_Connection;
 
-extern PyTypeObject pysqlite_ConnectionType;
+extern PyTypeObject *pysqlite_ConnectionType;
 
 PyObject* pysqlite_connection_alloc(PyTypeObject* type, int aware);
 void pysqlite_connection_dealloc(pysqlite_Connection* self);
@@ -123,6 +122,6 @@ int pysqlite_connection_register_cursor(pysqlite_Connection* connection, PyObjec
 int pysqlite_check_thread(pysqlite_Connection* self);
 int pysqlite_check_connection(pysqlite_Connection* con);
 
-int pysqlite_connection_setup_types(void);
+int pysqlite_connection_setup_types(PyObject *module);
 
 #endif

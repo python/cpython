@@ -22,7 +22,7 @@ class EINTRTests(unittest.TestCase):
             print()
             print("--- run eintr_tester.py ---", flush=True)
             # In verbose mode, the child process inherit stdout and stdout,
-            # to see output in realtime and reduce the risk of loosing output.
+            # to see output in realtime and reduce the risk of losing output.
             args = [sys.executable, "-E", "-X", "faulthandler", *args]
             proc = subprocess.run(args)
             print(f"--- eintr_tester.py completed: "

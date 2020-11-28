@@ -7,8 +7,10 @@ import shutil
 import sys
 import sysconfig
 import threading
+import urllib.request
 import warnings
 from test import support
+from test.support import os_helper
 from test.libregrtest.utils import print_warning
 try:
     import _multiprocessing, multiprocessing.process
@@ -68,7 +70,19 @@ class saved_test_environment:
                  'files', 'locale', 'warnings.showwarning',
                  'shutil_archive_formats', 'shutil_unpack_formats',
                  'asyncio.events._event_loop_policy',
+                 'urllib.requests._url_tempfiles', 'urllib.requests._opener',
                 )
+
+    def get_urllib_requests__url_tempfiles(self):
+        return list(urllib.request._url_tempfiles)
+    def restore_urllib_requests__url_tempfiles(self, tempfiles):
+        for filename in tempfiles:
+            os_helper.unlink(filename)
+
+    def get_urllib_requests__opener(self):
+        return urllib.request._opener
+    def restore_urllib_requests__opener(self, opener):
+        urllib.request._opener = opener
 
     def get_asyncio_events__event_loop_policy(self):
         return support.maybe_get_event_loop_policy()
@@ -228,12 +242,12 @@ class saved_test_environment:
         return sorted(fn + ('/' if os.path.isdir(fn) else '')
                       for fn in os.listdir())
     def restore_files(self, saved_value):
-        fn = support.TESTFN
+        fn = os_helper.TESTFN
         if fn not in saved_value and (fn + '/') not in saved_value:
             if os.path.isfile(fn):
-                support.unlink(fn)
+                os_helper.unlink(fn)
             elif os.path.isdir(fn):
-                support.rmtree(fn)
+                os_helper.rmtree(fn)
 
     _lc = [getattr(locale, lc) for lc in dir(locale)
            if lc.startswith('LC_')]

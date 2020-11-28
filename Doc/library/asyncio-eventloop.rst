@@ -5,6 +5,10 @@
 Event Loop
 ==========
 
+**Source code:** :source:`Lib/asyncio/events.py`,
+:source:`Lib/asyncio/base_events.py`
+
+------------------------------------
 
 .. rubric:: Preface
 
@@ -34,8 +38,10 @@ an event loop:
 
 .. function:: get_event_loop()
 
-   Get the current event loop.  If there is no current event loop set
-   in the current OS thread and :func:`set_event_loop` has not yet
+   Get the current event loop.
+
+   If there is no current event loop set in the current OS thread,
+   the OS thread is main, and :func:`set_event_loop` has not yet
    been called, asyncio will create a new event loop and set it as the
    current one.
 
@@ -167,14 +173,26 @@ Running and stopping the loop
 
    .. versionadded:: 3.6
 
+.. coroutinemethod:: loop.shutdown_default_executor()
+
+   Schedule the closure of the default executor and wait for it to join all of
+   the threads in the :class:`ThreadPoolExecutor`. After calling this method, a
+   :exc:`RuntimeError` will be raised if :meth:`loop.run_in_executor` is called
+   while using the default executor.
+
+   Note that there is no need to call this function when
+   :func:`asyncio.run` is used.
+
+   .. versionadded:: 3.9
+
 
 Scheduling callbacks
 ^^^^^^^^^^^^^^^^^^^^
 
 .. method:: loop.call_soon(callback, *args, context=None)
 
-   Schedule a *callback* to be called with *args* arguments at
-   the next iteration of the event loop.
+   Schedule the *callback* :term:`callback` to be called with
+   *args* arguments at the next iteration of the event loop.
 
    Callbacks are called in the order in which they are registered.
    Each callback will be called exactly once.
@@ -341,7 +359,8 @@ Opening network connections
                           host=None, port=None, \*, ssl=None, \
                           family=0, proto=0, flags=0, sock=None, \
                           local_addr=None, server_hostname=None, \
-                          ssl_handshake_timeout=None)
+                          ssl_handshake_timeout=None, \
+                          happy_eyeballs_delay=None, interleave=None)
 
    Open a streaming transport connection to a given
    address specified by *host* and *port*.
@@ -430,7 +449,18 @@ Opening network connections
 
    .. versionadded:: 3.8
 
-      The *happy_eyeballs_delay* and *interleave* parameters.
+      Added the *happy_eyeballs_delay* and *interleave* parameters.
+
+      Happy Eyeballs Algorithm: Success with Dual-Stack Hosts.
+      When a server's IPv4 path and protocol are working, but the server's
+      IPv6 path and protocol are not working, a dual-stack client
+      application experiences significant connection delay compared to an
+      IPv4-only client.  This is undesirable because it causes the dual-
+      stack client to have a worse user experience.  This document
+      specifies requirements for algorithms that reduce this user-visible
+      delay and provides an algorithm.
+
+      For more information: https://tools.ietf.org/html/rfc6555
 
    .. versionadded:: 3.7
 
@@ -456,6 +486,21 @@ Opening network connections
                         family=0, proto=0, flags=0, \
                         reuse_address=None, reuse_port=None, \
                         allow_broadcast=None, sock=None)
+
+   .. note::
+      The parameter *reuse_address* is no longer supported, as using
+      :py:data:`~sockets.SO_REUSEADDR` poses a significant security concern for
+      UDP. Explicitly passing ``reuse_address=True`` will raise an exception.
+
+      When multiple processes with differing UIDs assign sockets to an
+      identical UDP socket address with ``SO_REUSEADDR``, incoming packets can
+      become randomly distributed among the sockets.
+
+      For supported platforms, *reuse_port* can be used as a replacement for
+      similar functionality. With *reuse_port*,
+      :py:data:`~sockets.SO_REUSEPORT` is used instead, which specifically
+      prevents processes with differing UIDs from assigning sockets to the same
+      socket address.
 
    Create a datagram connection.
 
@@ -485,11 +530,6 @@ Opening network connections
      resolution. If given, these should all be integers from the
      corresponding :mod:`socket` module constants.
 
-   * *reuse_address* tells the kernel to reuse a local socket in
-     ``TIME_WAIT`` state, without waiting for its natural timeout to
-     expire. If not specified will automatically be set to ``True`` on
-     Unix.
-
    * *reuse_port* tells the kernel to allow this endpoint to be bound to the
      same port as other existing endpoints are bound to, so long as they all
      set this flag when being created. This option is not supported on Windows
@@ -504,14 +544,19 @@ Opening network connections
      transport. If specified, *local_addr* and *remote_addr* should be omitted
      (must be :const:`None`).
 
-   On Windows, with :class:`ProactorEventLoop`, this method is not supported.
-
    See :ref:`UDP echo client protocol <asyncio-udp-echo-client-protocol>` and
    :ref:`UDP echo server protocol <asyncio-udp-echo-server-protocol>` examples.
 
    .. versionchanged:: 3.4.4
       The *family*, *proto*, *flags*, *reuse_address*, *reuse_port,
       *allow_broadcast*, and *sock* parameters were added.
+
+   .. versionchanged:: 3.8.1
+      The *reuse_address* parameter is no longer supported due to security
+      concerns.
+
+   .. versionchanged:: 3.8
+      Added support for Windows.
 
 .. coroutinemethod:: loop.create_unix_connection(protocol_factory, \
                         path=None, \*, ssl=None, sock=None, \
@@ -1139,10 +1184,13 @@ Allows customizing how exceptions are handled in the event loop.
    * 'message': Error message;
    * 'exception' (optional): Exception object;
    * 'future' (optional): :class:`asyncio.Future` instance;
+   * 'task' (optional): :class:`asyncio.Task` instance;
    * 'handle' (optional): :class:`asyncio.Handle` instance;
    * 'protocol' (optional): :ref:`Protocol <asyncio-protocol>` instance;
    * 'transport' (optional): :ref:`Transport <asyncio-transport>` instance;
-   * 'socket' (optional): :class:`socket.socket` instance.
+   * 'socket' (optional): :class:`socket.socket` instance;
+   * 'asyncgen' (optional): Asynchronous generator that caused
+                            the exception.
 
    .. note::
 
@@ -1167,7 +1215,7 @@ Enabling debug mode
 
    .. versionchanged:: 3.7
 
-      The new ``-X dev`` command line option can now also be used
+      The new :ref:`Python Development Mode <devmode>` can now also be used
       to enable the debug mode.
 
 .. seealso::
@@ -1217,32 +1265,52 @@ async/await code consider using the high-level
 
    Other parameters:
 
-   * *stdin*: either a file-like object representing a pipe to be
-     connected to the subprocess's standard input stream using
-     :meth:`~loop.connect_write_pipe`, or the
-     :const:`subprocess.PIPE`  constant (default). By default a new
-     pipe will be created and connected.
+   * *stdin* can be any of these:
 
-   * *stdout*: either a file-like object representing the pipe to be
-     connected to the subprocess's standard output stream using
-     :meth:`~loop.connect_read_pipe`, or the
-     :const:`subprocess.PIPE` constant (default). By default a new pipe
-     will be created and connected.
+     * a file-like object representing a pipe to be connected to the
+       subprocess's standard input stream using
+       :meth:`~loop.connect_write_pipe`
+     * the :const:`subprocess.PIPE` constant (default) which will create a new
+       pipe and connect it,
+     * the value ``None`` which will make the subprocess inherit the file
+       descriptor from this process
+     * the :const:`subprocess.DEVNULL` constant which indicates that the
+       special :data:`os.devnull` file will be used
 
-   * *stderr*: either a file-like object representing the pipe to be
-     connected to the subprocess's standard error stream using
-     :meth:`~loop.connect_read_pipe`, or one of
-     :const:`subprocess.PIPE` (default) or :const:`subprocess.STDOUT`
-     constants.
+   * *stdout* can be any of these:
 
-     By default a new pipe will be created and connected. When
-     :const:`subprocess.STDOUT` is specified, the subprocess' standard
-     error stream will be connected to the same pipe as the standard
-     output stream.
+     * a file-like object representing a pipe to be connected to the
+       subprocess's standard output stream using
+       :meth:`~loop.connect_write_pipe`
+     * the :const:`subprocess.PIPE` constant (default) which will create a new
+       pipe and connect it,
+     * the value ``None`` which will make the subprocess inherit the file
+       descriptor from this process
+     * the :const:`subprocess.DEVNULL` constant which indicates that the
+       special :data:`os.devnull` file will be used
+
+   * *stderr* can be any of these:
+
+     * a file-like object representing a pipe to be connected to the
+       subprocess's standard error stream using
+       :meth:`~loop.connect_write_pipe`
+     * the :const:`subprocess.PIPE` constant (default) which will create a new
+       pipe and connect it,
+     * the value ``None`` which will make the subprocess inherit the file
+       descriptor from this process
+     * the :const:`subprocess.DEVNULL` constant which indicates that the
+       special :data:`os.devnull` file will be used
+     * the :const:`subprocess.STDOUT` constant which will connect the standard
+       error stream to the process' standard output stream
 
    * All other keyword arguments are passed to :class:`subprocess.Popen`
-     without interpretation, except for *bufsize*, *universal_newlines*
-     and *shell*, which should not be specified at all.
+     without interpretation, except for *bufsize*, *universal_newlines*,
+     *shell*, *text*, *encoding* and *errors*, which should not be specified
+     at all.
+
+     The ``asyncio`` subprocess API does not support decoding the streams
+     as text. :func:`bytes.decode` can be used to convert the bytes returned
+     from the stream to text.
 
    See the constructor of the :class:`subprocess.Popen` class
    for documentation on other arguments.
@@ -1433,7 +1501,7 @@ asyncio ships with two different event loop implementations:
 :class:`SelectorEventLoop` and :class:`ProactorEventLoop`.
 
 By default asyncio is configured to use :class:`SelectorEventLoop`
-on all platforms.
+on Unix and :class:`ProactorEventLoop` on Windows.
 
 
 .. class:: SelectorEventLoop

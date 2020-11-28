@@ -6,10 +6,10 @@ import socket
 import statistics
 import subprocess
 import sys
-import threading
 import time
 import unittest
 from test import support
+from test.support import os_helper
 from test.support.script_helper import assert_python_ok, spawn_python
 try:
     import _testcapi
@@ -155,7 +155,7 @@ class WakeupFDTests(unittest.TestCase):
             signal.set_wakeup_fd(signal.SIGINT, False)
 
     def test_invalid_fd(self):
-        fd = support.make_bad_fd()
+        fd = os_helper.make_bad_fd()
         self.assertRaises((ValueError, OSError),
                           signal.set_wakeup_fd, fd)
 
@@ -528,7 +528,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
                 while True:
                     write.send(chunk)
                     written += chunk_size
-            except (BlockingIOError, socket.timeout):
+            except (BlockingIOError, TimeoutError):
                 pass
 
         print(f"%s bytes written into the socketpair" % written, flush=True)
@@ -645,7 +645,7 @@ class SiginterruptTest(unittest.TestCase):
                 # wait until the child process is loaded and has started
                 first_line = process.stdout.readline()
 
-                stdout, stderr = process.communicate(timeout=5.0)
+                stdout, stderr = process.communicate(timeout=support.SHORT_TIMEOUT)
             except subprocess.TimeoutExpired:
                 process.kill()
                 return False
@@ -1193,7 +1193,7 @@ class StressTest(unittest.TestCase):
         self.setsig(signal.SIGALRM, second_handler)  # for ITIMER_REAL
 
         expected_sigs = 0
-        deadline = time.monotonic() + 15.0
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
 
         while expected_sigs < N:
             os.kill(os.getpid(), signal.SIGPROF)
@@ -1227,7 +1227,7 @@ class StressTest(unittest.TestCase):
         self.setsig(signal.SIGALRM, handler)  # for ITIMER_REAL
 
         expected_sigs = 0
-        deadline = time.monotonic() + 15.0
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
 
         while expected_sigs < N:
             # Hopefully the SIGALRM will be received somewhere during
@@ -1273,6 +1273,27 @@ class RaiseSignalTest(unittest.TestCase):
         signal.raise_signal(signal.SIGINT)
         self.assertTrue(is_ok)
 
+
+class PidfdSignalTest(unittest.TestCase):
+
+    @unittest.skipUnless(
+        hasattr(signal, "pidfd_send_signal"),
+        "pidfd support not built in",
+    )
+    def test_pidfd_send_signal(self):
+        with self.assertRaises(OSError) as cm:
+            signal.pidfd_send_signal(0, signal.SIGINT)
+        if cm.exception.errno == errno.ENOSYS:
+            self.skipTest("kernel does not support pidfds")
+        elif cm.exception.errno == errno.EPERM:
+            self.skipTest("Not enough privileges to use pidfs")
+        self.assertEqual(cm.exception.errno, errno.EBADF)
+        my_pidfd = os.open(f'/proc/{os.getpid()}', os.O_DIRECTORY)
+        self.addCleanup(os.close, my_pidfd)
+        with self.assertRaisesRegex(TypeError, "^siginfo must be None$"):
+            signal.pidfd_send_signal(my_pidfd, signal.SIGINT, object(), 0)
+        with self.assertRaises(KeyboardInterrupt):
+            signal.pidfd_send_signal(my_pidfd, signal.SIGINT)
 
 def tearDownModule():
     support.reap_children()

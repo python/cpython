@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "pycore_coreconfig.h"
+#include "pycore_initconfig.h"
 #ifdef MS_WINDOWS
 #  include <windows.h>
 /* All sample MSDN wincrypt programs include the header below. It is at least
@@ -25,6 +25,16 @@
 #  include <sanitizer/msan_interface.h>
 #endif
 
+#if defined(__APPLE__) && defined(__has_builtin) 
+#  if __has_builtin(__builtin_available)
+#    define HAVE_GETENTRYPY_GETRANDOM_RUNTIME __builtin_available(macOS 10.12, iOS 10.10, tvOS 10.0, watchOS 3.0, *)
+#  endif
+#endif
+#ifndef HAVE_GETENTRYPY_GETRANDOM_RUNTIME
+#  define HAVE_GETENTRYPY_GETRANDOM_RUNTIME 1
+#endif
+
+
 #ifdef Py_DEBUG
 int _Py_HashSecret_Initialized = 0;
 #else
@@ -38,8 +48,8 @@ static int
 win32_urandom_init(int raise)
 {
     /* Acquire context */
-    if (!CryptAcquireContext(&hCryptProv, NULL, NULL,
-                             PROV_RSA_FULL, CRYPT_VERIFYCONTEXT))
+    if (!CryptAcquireContextW(&hCryptProv, NULL, NULL,
+                              PROV_RSA_FULL, CRYPT_VERIFYCONTEXT))
         goto error;
 
     return 0;
@@ -163,7 +173,7 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
             }
 
             /* getrandom(GRND_NONBLOCK) fails with EAGAIN if the system urandom
-               is not initialiazed yet. For _PyRandom_Init(), we ignore the
+               is not initialized yet. For _PyRandom_Init(), we ignore the
                error and fall back on reading /dev/urandom which never blocks,
                even if the system urandom is not initialized yet:
                see the PEP 524. */
@@ -208,6 +218,16 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
      error.
 
    getentropy() is retried if it failed with EINTR: interrupted by a signal. */
+
+#if defined(__APPLE__) && defined(__has_attribute) && __has_attribute(availability)
+static int
+py_getentropy(char *buffer, Py_ssize_t size, int raise) 
+        __attribute__((availability(macos,introduced=10.12)))
+        __attribute__((availability(ios,introduced=10.0)))
+        __attribute__((availability(tvos,introduced=10.0)))
+        __attribute__((availability(watchos,introduced=3.0)));
+#endif
+
 static int
 py_getentropy(char *buffer, Py_ssize_t size, int raise)
 {
@@ -498,19 +518,21 @@ pyurandom(void *buffer, Py_ssize_t size, int blocking, int raise)
 #else
 
 #if defined(PY_GETRANDOM) || defined(PY_GETENTROPY)
+    if (HAVE_GETENTRYPY_GETRANDOM_RUNTIME) {
 #ifdef PY_GETRANDOM
-    res = py_getrandom(buffer, size, blocking, raise);
+        res = py_getrandom(buffer, size, blocking, raise);
 #else
-    res = py_getentropy(buffer, size, raise);
+        res = py_getentropy(buffer, size, raise);
 #endif
-    if (res < 0) {
-        return -1;
-    }
-    if (res == 1) {
-        return 0;
-    }
-    /* getrandom() or getentropy() function is not available: failed with
-       ENOSYS or EPERM. Fall back on reading from /dev/urandom. */
+        if (res < 0) {
+            return -1;
+        }
+        if (res == 1) {
+            return 0;
+        }
+        /* getrandom() or getentropy() function is not available: failed with
+           ENOSYS or EPERM. Fall back on reading from /dev/urandom. */
+        } /* end of availability block */
 #endif
 
     return dev_urandom(buffer, size, raise);
@@ -547,14 +569,14 @@ _PyOS_URandomNonblock(void *buffer, Py_ssize_t size)
 }
 
 
-_PyInitError
-_Py_HashRandomization_Init(const _PyCoreConfig *config)
+PyStatus
+_Py_HashRandomization_Init(const PyConfig *config)
 {
     void *secret = &_Py_HashSecret;
     Py_ssize_t secret_size = sizeof(_Py_HashSecret_t);
 
     if (_Py_HashSecret_Initialized) {
-        return _Py_INIT_OK();
+        return _PyStatus_OK();
     }
     _Py_HashSecret_Initialized = 1;
 
@@ -579,11 +601,11 @@ _Py_HashRandomization_Init(const _PyCoreConfig *config)
            pyurandom() is non-blocking mode (blocking=0): see the PEP 524. */
         res = pyurandom(secret, secret_size, 0, 0);
         if (res < 0) {
-            return _Py_INIT_ERR("failed to get random numbers "
-                                "to initialize Python");
+            return _PyStatus_ERR("failed to get random numbers "
+                                 "to initialize Python");
         }
     }
-    return _Py_INIT_OK();
+    return _PyStatus_OK();
 }
 
 

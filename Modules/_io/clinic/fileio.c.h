@@ -70,7 +70,7 @@ _io_FileIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     if (fastargs[1]) {
         if (!PyUnicode_Check(fastargs[1])) {
-            _PyArg_BadArgument("FileIO", 2, "str", fastargs[1]);
+            _PyArg_BadArgument("FileIO", "argument 'mode'", "str", fastargs[1]);
             goto exit;
         }
         Py_ssize_t mode_length;
@@ -87,11 +87,6 @@ _io_FileIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[2]) {
-        if (PyFloat_Check(fastargs[2])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         closefd = _PyLong_AsInt(fastargs[2]);
         if (closefd == -1 && PyErr_Occurred()) {
             goto exit;
@@ -200,11 +195,11 @@ _io_FileIO_readinto(fileio *self, PyObject *arg)
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
         PyErr_Clear();
-        _PyArg_BadArgument("readinto", 0, "read-write bytes-like object", arg);
+        _PyArg_BadArgument("readinto", "argument", "read-write bytes-like object", arg);
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("readinto", 0, "contiguous buffer", arg);
+        _PyArg_BadArgument("readinto", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _io_FileIO_readinto_impl(self, &buffer);
@@ -303,7 +298,7 @@ _io_FileIO_write(fileio *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&b, 'C')) {
-        _PyArg_BadArgument("write", 0, "contiguous buffer", arg);
+        _PyArg_BadArgument("write", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _io_FileIO_write_impl(self, &b);
@@ -350,11 +345,6 @@ _io_FileIO_seek(fileio *self, PyObject *const *args, Py_ssize_t nargs)
     pos = args[0];
     if (nargs < 2) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     whence = _PyLong_AsInt(args[1]);
     if (whence == -1 && PyErr_Occurred()) {
@@ -408,7 +398,7 @@ static PyObject *
 _io_FileIO_truncate(fileio *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *posobj = NULL;
+    PyObject *posobj = Py_None;
 
     if (!_PyArg_CheckPositional("truncate", nargs, 0, 1)) {
         goto exit;
@@ -447,4 +437,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=7ee4f3ae584fc6d2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3479912ec0f7e029 input=a9049054013a1b77]*/

@@ -1,7 +1,7 @@
 import unittest
 import tkinter
 from tkinter import font
-from test.support import requires, run_unittest, gc_collect
+from test.support import requires, run_unittest, gc_collect, ALWAYS_EQ
 from tkinter.test.support import AbstractTkTest
 
 requires('gui')
@@ -70,6 +70,7 @@ class FontTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(font1, font2)
         self.assertNotEqual(font1, font1.copy())
         self.assertNotEqual(font1, 0)
+        self.assertEqual(font1, ALWAYS_EQ)
 
     def test_measure(self):
         self.assertIsInstance(self.font.measure('abc'), int)
@@ -99,6 +100,12 @@ class FontTest(AbstractTkTest, unittest.TestCase):
             self.assertIsInstance(name, str)
             self.assertTrue(name)
         self.assertIn(fontname, names)
+
+    def test_repr(self):
+        self.assertEqual(
+            repr(self.font), f'<tkinter.font.Font object {fontname!r}>'
+        )
+
 
 tests_gui = (FontTest, )
 

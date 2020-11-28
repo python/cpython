@@ -99,6 +99,8 @@ hexdigits = "0123456789abcdef"
 
 ENCODING = locale.getpreferredencoding()
 
+FRAME_INFO_OPTIMIZED_OUT = '(frame information optimized out)'
+UNABLE_READ_INFO_PYTHON_FRAME = 'Unable to read information on python frame'
 EVALFRAME = '_PyEval_EvalFrameDefault'
 
 class NullPyObjectPtr(RuntimeError):
@@ -646,19 +648,28 @@ class PyCodeObjectPtr(PyObjectPtr):
         Analogous to PyCode_Addr2Line; translated from pseudocode in
         Objects/lnotab_notes.txt
         '''
-        co_lnotab = self.pyop_field('co_lnotab').proxyval(set())
+        co_linetable = self.pyop_field('co_linetable').proxyval(set())
 
         # Initialize lineno to co_firstlineno as per PyCode_Addr2Line
         # not 0, as lnotab_notes.txt has it:
         lineno = int_from_int(self.field('co_firstlineno'))
 
+        if addrq < 0:
+            return lineno
         addr = 0
-        for addr_incr, line_incr in zip(co_lnotab[::2], co_lnotab[1::2]):
+        for addr_incr, line_incr in zip(co_linetable[::2], co_linetable[1::2]):
+            if addr_incr == 255:
+                break
             addr += ord(addr_incr)
+            line_delta = ord(line_incr)
+            if line_delta == 128:
+                line_delta = 0
+            elif line_delta > 128:
+                line_delta -= 256
+            lineno += line_delta
             if addr > addrq:
                 return lineno
-            lineno += ord(line_incr)
-        return lineno
+        assert False, "Unreachable"
 
 
 class PyDictObjectPtr(PyObjectPtr):
@@ -918,7 +929,7 @@ class PyFrameObjectPtr(PyObjectPtr):
     def filename(self):
         '''Get the path of the current Python source file, as a string'''
         if self.is_optimized_out():
-            return '(frame information optimized out)'
+            return FRAME_INFO_OPTIMIZED_OUT
         return self.co_filename.proxyval(set())
 
     def current_line_num(self):
@@ -949,7 +960,7 @@ class PyFrameObjectPtr(PyObjectPtr):
         '''Get the text of the current source line as a string, with a trailing
         newline character'''
         if self.is_optimized_out():
-            return '(frame information optimized out)'
+            return FRAME_INFO_OPTIMIZED_OUT
 
         lineno = self.current_line_num()
         if lineno is None:
@@ -970,7 +981,7 @@ class PyFrameObjectPtr(PyObjectPtr):
 
     def write_repr(self, out, visited):
         if self.is_optimized_out():
-            out.write('(frame information optimized out)')
+            out.write(FRAME_INFO_OPTIMIZED_OUT)
             return
         lineno = self.current_line_num()
         lineno = str(lineno) if lineno is not None else "?"
@@ -993,7 +1004,7 @@ class PyFrameObjectPtr(PyObjectPtr):
 
     def print_traceback(self):
         if self.is_optimized_out():
-            sys.stdout.write('  (frame information optimized out)\n')
+            sys.stdout.write('  %s\n' % FRAME_INFO_OPTIMIZED_OUT)
             return
         visited = set()
         lineno = self.current_line_num()
@@ -1392,7 +1403,7 @@ class wrapperobject(PyObjectPtr):
 
 
 def int_from_int(gdbval):
-    return int(str(gdbval))
+    return int(gdbval)
 
 
 def stringify(val):
@@ -1563,8 +1574,8 @@ class Frame(object):
         if not caller:
             return False
 
-        if caller in ('_PyCFunction_FastCallDict',
-                      '_PyCFunction_FastCallKeywords'):
+        if (caller.startswith('cfunction_vectorcall_') or
+            caller == 'cfunction_call'):
             arg_name = 'func'
             # Within that frame:
             #   "func" is the local containing the PyObject* of the
@@ -1600,11 +1611,11 @@ class Frame(object):
         # This assumes the _POSIX_THREADS version of Python/ceval_gil.h:
         name = self._gdbframe.name()
         if name:
-            return 'pthread_cond_timedwait' in name
+            return (name == 'take_gil')
 
     def is_gc_collect(self):
-        '''Is this frame "collect" within the garbage-collector?'''
-        return self._gdbframe.name() == 'collect'
+        '''Is this frame gc_collect_main() within the garbage-collector?'''
+        return self._gdbframe.name() in ('collect', 'gc_collect_main')
 
     def get_pyop(self):
         try:
@@ -1744,7 +1755,7 @@ class PyList(gdb.Command):
 
         pyop = frame.get_pyop()
         if not pyop or pyop.is_optimized_out():
-            print('Unable to read information on python frame')
+            print(UNABLE_READ_INFO_PYTHON_FRAME)
             return
 
         filename = pyop.filename()
@@ -1904,7 +1915,7 @@ class PyPrint(gdb.Command):
 
         pyop_frame = frame.get_pyop()
         if not pyop_frame:
-            print('Unable to read information on python frame')
+            print(UNABLE_READ_INFO_PYTHON_FRAME)
             return
 
         pyop_var, scope = pyop_frame.get_var_by_name(name)
@@ -1938,7 +1949,7 @@ class PyLocals(gdb.Command):
 
         pyop_frame = frame.get_pyop()
         if not pyop_frame:
-            print('Unable to read information on python frame')
+            print(UNABLE_READ_INFO_PYTHON_FRAME)
             return
 
         for pyop_name, pyop_value in pyop_frame.iter_locals():

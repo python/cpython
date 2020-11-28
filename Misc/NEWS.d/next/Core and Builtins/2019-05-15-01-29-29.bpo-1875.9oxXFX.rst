@@ -1,3 +1,0 @@
-A :exc:`SyntaxError` is now raised if a code blocks that will be optimized
-away (e.g. if conditions that are always false) contains syntax errors.
-Patch by Pablo Galindo.
