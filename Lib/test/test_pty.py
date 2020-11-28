@@ -17,7 +17,6 @@ import unittest
 import struct
 import tty
 import fcntl
-import platform
 import warnings
 
 TEST_STRING_1 = b"I wish to buy a fish license.\n"
@@ -80,12 +79,6 @@ def expectedFailureIfStdinIsTTY(fun):
         return unittest.expectedFailure(fun)
     except tty.error:
         pass
-    return fun
-
-def expectedFailureOnBSD(fun):
-    PLATFORM = platform.system()
-    if PLATFORM.endswith("BSD") or PLATFORM == "Darwin":
-        return unittest.expectedFailure(fun)
     return fun
 
 def _get_term_winsz(fd):
@@ -314,7 +307,6 @@ class PtyTest(unittest.TestCase):
 
         os.close(master_fd)
 
-    @expectedFailureOnBSD
     def test_master_read(self):
         debug("Calling pty.openpty()")
         master_fd, slave_fd = pty.openpty()
@@ -324,10 +316,13 @@ class PtyTest(unittest.TestCase):
         os.close(slave_fd)
 
         debug("Reading from master_fd")
-        with self.assertRaises(OSError):
-            os.read(master_fd, 1)
+        try:
+            data = os.read(master_fd, 1)
+        except OSError: # Linux
+            data = b""
 
         os.close(master_fd)
+        self.assertEqual(data, b"")
 
 class SmallPtyTests(unittest.TestCase):
     """These tests don't spawn children or hang."""
