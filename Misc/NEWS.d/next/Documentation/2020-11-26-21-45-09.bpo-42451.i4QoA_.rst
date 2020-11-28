@@ -1,2 +1,0 @@
-update PyTuple_GetItem docs to indicate that it does not support negative
-indices
