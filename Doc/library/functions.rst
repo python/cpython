@@ -692,6 +692,12 @@ are always available.  They are listed here in alphabetical order.
    ``x.foobar``.  If the named attribute does not exist, *default* is returned if
    provided, otherwise :exc:`AttributeError` is raised.
 
+   .. note::
+
+      Since :ref:`private name mangling <private-name-mangling>` happens at
+      compilation time, private attributes are not found by :func:`getattr`
+      unless the mangled name is used.
+
 
 .. function:: globals()
 
@@ -706,12 +712,6 @@ are always available.  They are listed here in alphabetical order.
    string is the name of one of the object's attributes, ``False`` if not. (This
    is implemented by calling ``getattr(object, name)`` and seeing whether it
    raises an :exc:`AttributeError` or not.)
-
-   .. note::
-
-      Since :ref:`private name mangling <private-name-mangling>` happens at
-      compilation time, private attributes are not found by :func:`getattr`
-      unless the mangled name is used.
 
 
 .. function:: hash(object)
