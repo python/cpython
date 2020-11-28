@@ -1,0 +1,1 @@
+add shell requirement for test_pipes
