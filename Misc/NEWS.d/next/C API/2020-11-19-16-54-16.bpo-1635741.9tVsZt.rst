@@ -1,1 +1,2 @@
-Port _posixshmem extension module to multiphase initialization (:pep:`489`).
+Port _posixsubprocess extension module to multiphase initialization
+(:pep:`489`).
