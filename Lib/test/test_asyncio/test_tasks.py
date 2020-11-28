@@ -1685,7 +1685,9 @@ class BaseTaskTests:
         b = asyncio.sleep(0.10, 'b')
         fs = {a, b}
 
-        futs = list(asyncio.as_completed(fs))
+        with self.assertWarns(DeprecationWarning) as cm:
+            futs = list(asyncio.as_completed(fs))
+        self.assertEqual(cm.warnings[0].filename, __file__)
         self.assertEqual(len(futs), 2)
 
         x = loop.run_until_complete(futs[1])
@@ -1712,7 +1714,9 @@ class BaseTaskTests:
         b = asyncio.sleep(0.05, 'b')
         fs = {a, b}
 
-        futs = list(asyncio.as_completed(fs))
+        with self.assertWarns(DeprecationWarning) as cm:
+            futs = list(asyncio.as_completed(fs))
+        self.assertEqual(cm.warnings[0].filename, __file__)
         self.assertEqual(len(futs), 2)
         waiter = asyncio.wait(futs)
         # Deprecation from passing coros in futs to asyncio.wait()
@@ -2515,7 +2519,9 @@ class BaseTaskTests:
         # gathering task is done at the same time as the child future
         def child_coro():
             return (yield from fut)
-        gather_future = asyncio.gather(child_coro())
+        with self.assertWarns(DeprecationWarning) as cm:
+            gather_future = asyncio.gather(child_coro())
+        self.assertEqual(cm.warnings[0].filename, __file__)
         gather_task = asyncio.ensure_future(gather_future, loop=loop)
 
         cancel_result = None
@@ -3222,7 +3228,12 @@ class GatherTestsBase:
 
     def _check_success(self, **kwargs):
         a, b, c = [self.one_loop.create_future() for i in range(3)]
-        fut = asyncio.gather(*self.wrap_futures(a, b, c), **kwargs)
+        if self.is_future:
+            fut = asyncio.gather(*self.wrap_futures(a, b, c), **kwargs)
+        else:
+            with self.assertWarns(DeprecationWarning) as cm:
+                fut = asyncio.gather(*self.wrap_futures(a, b, c), **kwargs)
+            self.assertEqual(cm.warnings[0].filename, __file__)
         cb = test_utils.MockCallback()
         fut.add_done_callback(cb)
         b.set_result(1)
@@ -3244,7 +3255,12 @@ class GatherTestsBase:
 
     def test_one_exception(self):
         a, b, c, d, e = [self.one_loop.create_future() for i in range(5)]
-        fut = asyncio.gather(*self.wrap_futures(a, b, c, d, e))
+        if self.is_future:
+            fut = asyncio.gather(*self.wrap_futures(a, b, c, d, e))
+        else:
+            with self.assertWarns(DeprecationWarning) as cm:
+                fut = asyncio.gather(*self.wrap_futures(a, b, c, d, e))
+            self.assertEqual(cm.warnings[0].filename, __file__)
         cb = test_utils.MockCallback()
         fut.add_done_callback(cb)
         exc = ZeroDivisionError()
@@ -3262,8 +3278,14 @@ class GatherTestsBase:
 
     def test_return_exceptions(self):
         a, b, c, d = [self.one_loop.create_future() for i in range(4)]
-        fut = asyncio.gather(*self.wrap_futures(a, b, c, d),
-                             return_exceptions=True)
+        if self.is_future:
+            fut = asyncio.gather(*self.wrap_futures(a, b, c, d),
+                                 return_exceptions=True)
+        else:
+            with self.assertWarns(DeprecationWarning) as cm:
+                fut = asyncio.gather(*self.wrap_futures(a, b, c, d),
+                                    return_exceptions=True)
+            self.assertEqual(cm.warnings[0].filename, __file__)
         cb = test_utils.MockCallback()
         fut.add_done_callback(cb)
         exc = ZeroDivisionError()
@@ -3312,13 +3334,17 @@ class GatherTestsBase:
 
 class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
 
+    is_future = True
+
     def wrap_futures(self, *futures):
         return futures
 
     def _check_empty_sequence(self, seq_or_iter):
         asyncio.set_event_loop(self.one_loop)
         self.addCleanup(asyncio.set_event_loop, None)
-        fut = asyncio.gather(*seq_or_iter)
+        with self.assertWarns(DeprecationWarning) as cm:
+            fut = asyncio.gather(*seq_or_iter)
+        self.assertEqual(cm.warnings[0].filename, __file__)
         self.assertIsInstance(fut, asyncio.Future)
         self.assertIs(fut._loop, self.one_loop)
         self._run_loop(self.one_loop)
@@ -3392,6 +3418,8 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
 
 class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
 
+    is_future = False
+
     def setUp(self):
         super().setUp()
         asyncio.set_event_loop(self.one_loop)
@@ -3409,7 +3437,9 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
             return 'abc'
         gen1 = coro()
         gen2 = coro()
-        fut = asyncio.gather(gen1, gen2)
+        with self.assertWarns(DeprecationWarning) as cm:
+            fut = asyncio.gather(gen1, gen2)
+        self.assertEqual(cm.warnings[0].filename, __file__)
         self.assertIs(fut._loop, self.one_loop)
         self.one_loop.run_until_complete(fut)
 
@@ -3417,7 +3447,9 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
         asyncio.set_event_loop(self.other_loop)
         gen3 = coro()
         gen4 = coro()
-        fut2 = asyncio.gather(gen3, gen4)
+        with self.assertWarns(DeprecationWarning) as cm:
+            fut2 = asyncio.gather(gen3, gen4)
+        self.assertEqual(cm.warnings[0].filename, __file__)
         self.assertIs(fut2._loop, self.other_loop)
         self.other_loop.run_until_complete(fut2)
 
@@ -3427,7 +3459,9 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
             def coro(s):
                 return s
         c = coro('abc')
-        fut = asyncio.gather(c, c, coro('def'), c)
+        with self.assertWarns(DeprecationWarning) as cm:
+            fut = asyncio.gather(c, c, coro('def'), c)
+        self.assertEqual(cm.warnings[0].filename, __file__)
         self._run_loop(self.one_loop)
         self.assertEqual(fut.result(), ['abc', 'abc', 'def', 'abc'])
 

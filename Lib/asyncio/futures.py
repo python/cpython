@@ -76,7 +76,7 @@ class Future:
         the default event loop.
         """
         if loop is None:
-            self._loop = events.get_event_loop()
+            self._loop = events._get_event_loop()
         else:
             self._loop = loop
         self._callbacks = []
@@ -371,7 +371,7 @@ def _chain_future(source, destination):
         raise TypeError('A future is required for source argument')
     if not isfuture(destination) and not isinstance(destination,
                                                     concurrent.futures.Future):
-        raise TypeError('A future is required for destination argument')
+        raise TypeError('A future is required for destination argument %r' % destination)
     source_loop = _get_loop(source) if isfuture(source) else None
     dest_loop = _get_loop(destination) if isfuture(destination) else None
 
@@ -408,7 +408,7 @@ def wrap_future(future, *, loop=None):
     assert isinstance(future, concurrent.futures.Future), \
         f'concurrent.futures.Future is expected, got {future!r}'
     if loop is None:
-        loop = events.get_event_loop()
+        loop = events._get_event_loop()
     new_future = loop.create_future()
     _chain_future(future, new_future)
     return new_future

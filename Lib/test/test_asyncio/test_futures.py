@@ -102,7 +102,13 @@ class DuckTests(test_utils.TestCase):
 class BaseFutureTests:
 
     def _new_future(self,  *args, **kwargs):
-        return self.cls(*args, **kwargs)
+        if kwargs.get('loop') is None:
+            with self.assertWarns(DeprecationWarning) as cm:
+                fut = self.cls(*args, **kwargs)
+            self.assertEqual(cm.warnings[0].filename, __file__)
+            return fut
+        else:
+            return self.cls(*args, **kwargs)
 
     def setUp(self):
         super().setUp()
@@ -475,6 +481,7 @@ class BaseFutureTests:
     def test_wrap_future_use_global_loop(self):
         with mock.patch('asyncio.futures.events') as events:
             events.get_event_loop = lambda: self.loop
+            events._get_event_loop = lambda: self.loop
             def run(arg):
                 return (arg, threading.get_ident())
             ex = concurrent.futures.ThreadPoolExecutor(1)

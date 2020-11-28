@@ -66,7 +66,7 @@ def _all_tasks_compat(loop=None):
     # the completed ones.  Used to implement deprecated "Tasks.all_task()"
     # method.
     if loop is None:
-        loop = events.get_event_loop()
+        loop = events._get_event_loop()
     # Looping over a WeakSet (_all_tasks) isn't safe as it can be updated from another
     # thread while we do so. Therefore we cast it to list prior to filtering. The list
     # cast itself requires iteration, so we repeat it several times ignoring
@@ -570,7 +570,7 @@ def as_completed(fs, *, timeout=None):
     from .queues import Queue  # Import here to avoid circular import problem.
     done = Queue()
 
-    loop = events.get_event_loop()
+    loop = events._get_event_loop()
     todo = {ensure_future(f, loop=loop) for f in set(fs)}
     timeout_handle = None
 
@@ -637,23 +637,28 @@ def ensure_future(coro_or_future, *, loop=None):
 
     If the argument is a Future, it is returned directly.
     """
-    if coroutines.iscoroutine(coro_or_future):
-        if loop is None:
-            loop = events.get_event_loop()
-        task = loop.create_task(coro_or_future)
-        if task._source_traceback:
-            del task._source_traceback[-1]
-        return task
-    elif futures.isfuture(coro_or_future):
-        if loop is not None and loop is not futures._get_loop(coro_or_future):
-            raise ValueError('The future belongs to a different loop than '
-                             'the one specified as the loop argument')
-        return coro_or_future
-    elif inspect.isawaitable(coro_or_future):
-        return ensure_future(_wrap_awaitable(coro_or_future), loop=loop)
-    else:
-        raise TypeError('An asyncio.Future, a coroutine or an awaitable is '
-                        'required')
+    return _ensure_future(coro_or_future, loop=loop)
+
+
+def _ensure_future(coro_or_future, *, loop=None):
+    while True:
+        if coroutines.iscoroutine(coro_or_future):
+            if loop is None:
+                loop = events._get_event_loop(stacklevel=4)
+            task = loop.create_task(coro_or_future)
+            if task._source_traceback:
+                del task._source_traceback[-1]
+            return task
+        elif futures.isfuture(coro_or_future):
+            if loop is not None and loop is not futures._get_loop(coro_or_future):
+                raise ValueError('The future belongs to a different loop than '
+                                'the one specified as the loop argument')
+            return coro_or_future
+        elif inspect.isawaitable(coro_or_future):
+            coro_or_future = _wrap_awaitable(coro_or_future)
+        else:
+            raise TypeError('An asyncio.Future, a coroutine or an awaitable is '
+                            'required')
 
 
 @types.coroutine
@@ -727,7 +732,7 @@ def gather(*coros_or_futures, return_exceptions=False):
     gather won't cancel any other awaitables.
     """
     if not coros_or_futures:
-        loop = events.get_event_loop()
+        loop = events._get_event_loop()
         outer = loop.create_future()
         outer.set_result([])
         return outer
@@ -794,7 +799,7 @@ def gather(*coros_or_futures, return_exceptions=False):
     loop = None
     for arg in coros_or_futures:
         if arg not in arg_to_fut:
-            fut = ensure_future(arg, loop=loop)
+            fut = _ensure_future(arg, loop=loop)
             if loop is None:
                 loop = futures._get_loop(fut)
             if fut is not arg:
@@ -844,7 +849,7 @@ def shield(arg):
         except CancelledError:
             res = None
     """
-    inner = ensure_future(arg)
+    inner = _ensure_future(arg)
     if inner.done():
         # Shortcut.
         return inner

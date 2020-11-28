@@ -41,7 +41,7 @@ async def open_connection(host=None, port=None, *,
     StreamReaderProtocol classes, just copy the code -- there's
     really nothing special here except some convenience.)
     """
-    loop = events.get_running_loop()
+    loop = events._get_event_loop()
     reader = StreamReader(limit=limit, loop=loop)
     protocol = StreamReaderProtocol(reader, loop=loop)
     transport, _ = await loop.create_connection(
@@ -73,7 +73,7 @@ async def start_server(client_connected_cb, host=None, port=None, *,
     The return value is the same as loop.create_server(), i.e. a
     Server object which can be used to stop the service.
     """
-    loop = events.get_running_loop()
+    loop = events._get_event_loop()
 
     def factory():
         reader = StreamReader(limit=limit, loop=loop)
@@ -90,7 +90,7 @@ if hasattr(socket, 'AF_UNIX'):
     async def open_unix_connection(path=None, *,
                                    limit=_DEFAULT_LIMIT, **kwds):
         """Similar to `open_connection` but works with UNIX Domain Sockets."""
-        loop = events.get_running_loop()
+        loop = events._get_event_loop()
 
         reader = StreamReader(limit=limit, loop=loop)
         protocol = StreamReaderProtocol(reader, loop=loop)
@@ -102,7 +102,7 @@ if hasattr(socket, 'AF_UNIX'):
     async def start_unix_server(client_connected_cb, path=None, *,
                                 limit=_DEFAULT_LIMIT, **kwds):
         """Similar to `start_server` but works with UNIX Domain Sockets."""
-        loop = events.get_running_loop()
+        loop = events._get_event_loop()
 
         def factory():
             reader = StreamReader(limit=limit, loop=loop)
@@ -125,7 +125,7 @@ class FlowControlMixin(protocols.Protocol):
 
     def __init__(self, loop=None):
         if loop is None:
-            self._loop = events.get_event_loop()
+            self._loop = events._get_event_loop(stacklevel=4)
         else:
             self._loop = loop
         self._paused = False
@@ -381,7 +381,7 @@ class StreamReader:
 
         self._limit = limit
         if loop is None:
-            self._loop = events.get_event_loop()
+            self._loop = events._get_event_loop()
         else:
             self._loop = loop
         self._buffer = bytearray()

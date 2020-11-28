@@ -43,7 +43,7 @@ class StreamTests(test_utils.TestCase):
     @mock.patch('asyncio.streams.events')
     def test_ctor_global_loop(self, m_events):
         stream = asyncio.StreamReader()
-        self.assertIs(stream._loop, m_events.get_event_loop.return_value)
+        self.assertIs(stream._loop, m_events._get_event_loop.return_value)
 
     def _basetest_open_connection(self, open_connection_fut):
         messages = []
@@ -755,7 +755,9 @@ os.close(fd)
 
         # asyncio issue #184: Ensure that StreamReaderProtocol constructor
         # retrieves the current loop if the loop parameter is not set
-        reader = asyncio.StreamReader()
+        with self.assertWarns(DeprecationWarning) as cm:
+            reader = asyncio.StreamReader()
+        self.assertEqual(cm.warnings[0].filename, __file__)
         self.assertIs(reader._loop, self.loop)
 
     def test_streamreaderprotocol_constructor(self):
@@ -765,7 +767,9 @@ os.close(fd)
         # asyncio issue #184: Ensure that StreamReaderProtocol constructor
         # retrieves the current loop if the loop parameter is not set
         reader = mock.Mock()
-        protocol = asyncio.StreamReaderProtocol(reader)
+        with self.assertWarns(DeprecationWarning) as cm:
+            protocol = asyncio.StreamReaderProtocol(reader)
+        self.assertEqual(cm.warnings[0].filename, __file__)
         self.assertIs(protocol._loop, self.loop)
 
     def test_drain_raises(self):
