@@ -66,8 +66,8 @@ static void call_exc_trace(Py_tracefunc, PyObject *,
                            PyThreadState *, PyFrameObject *);
 static int maybe_call_line_trace(Py_tracefunc, PyObject *,
                                  PyThreadState *, PyFrameObject *,
-                                 int *, int *, int *);
-static void maybe_dtrace_line(PyFrameObject *, int *, int *, int *);
+                                 PyCodeAddressRange *, int *);
+static void maybe_dtrace_line(PyFrameObject *, PyCodeAddressRange *, int *);
 static void dtrace_function_entry(PyFrameObject *);
 static void dtrace_function_return(PyFrameObject *);
 
@@ -203,13 +203,18 @@ UNSIGNAL_PENDING_CALLS(PyInterpreterState *interp)
 
 
 static inline void
-SIGNAL_PENDING_SIGNALS(PyInterpreterState *interp)
+SIGNAL_PENDING_SIGNALS(PyInterpreterState *interp, int force)
 {
     struct _ceval_runtime_state *ceval = &interp->runtime->ceval;
     struct _ceval_state *ceval2 = &interp->ceval;
     _Py_atomic_store_relaxed(&ceval->signals_pending, 1);
-    /* eval_breaker is not set to 1 if thread_can_handle_signals() is false */
-    COMPUTE_EVAL_BREAKER(interp, ceval, ceval2);
+    if (force) {
+        _Py_atomic_store_relaxed(&ceval2->eval_breaker, 1);
+    }
+    else {
+        /* eval_breaker is not set to 1 if thread_can_handle_signals() is false */
+        COMPUTE_EVAL_BREAKER(interp, ceval, ceval2);
+    }
 }
 
 
@@ -559,10 +564,22 @@ PyEval_RestoreThread(PyThreadState *tstate)
 void
 _PyEval_SignalReceived(PyInterpreterState *interp)
 {
+#ifdef MS_WINDOWS
+    // bpo-42296: On Windows, _PyEval_SignalReceived() is called from a signal
+    // handler which can run in a thread different than the Python thread, in
+    // which case _Py_ThreadCanHandleSignals() is wrong. Ignore
+    // _Py_ThreadCanHandleSignals() and always set eval_breaker to 1.
+    //
+    // The next eval_frame_handle_pending() call will call
+    // _Py_ThreadCanHandleSignals() to recompute eval_breaker.
+    int force = 1;
+#else
+    int force = 0;
+#endif
     /* bpo-30703: Function called when the C signal handler of Python gets a
        signal. We cannot queue a callback using _PyEval_AddPendingCall() since
        that function is not async-signal-safe. */
-    SIGNAL_PENDING_SIGNALS(interp);
+    SIGNAL_PENDING_SIGNALS(interp, force);
 }
 
 /* Push one item onto the queue while holding the lock. */
@@ -662,7 +679,7 @@ handle_signals(PyThreadState *tstate)
     UNSIGNAL_PENDING_SIGNALS(tstate->interp);
     if (_PyErr_CheckSignalsTstate(tstate) < 0) {
         /* On failure, re-schedule a call to handle_signals(). */
-        SIGNAL_PENDING_SIGNALS(tstate->interp);
+        SIGNAL_PENDING_SIGNALS(tstate->interp, 0);
         return -1;
     }
     return 0;
@@ -948,6 +965,17 @@ eval_frame_handle_pending(PyThreadState *tstate)
         return -1;
     }
 
+#ifdef MS_WINDOWS
+    // bpo-42296: On Windows, _PyEval_SignalReceived() can be called in a
+    // different thread than the Python thread, in which case
+    // _Py_ThreadCanHandleSignals() is wrong. Recompute eval_breaker in the
+    // current Python thread with the correct _Py_ThreadCanHandleSignals()
+    // value. It prevents to interrupt the eval loop at every instruction if
+    // the current Python thread cannot handle signals (if
+    // _Py_ThreadCanHandleSignals() is false).
+    COMPUTE_EVAL_BREAKER(tstate->interp, ceval, ceval2);
+#endif
+
     return 0;
 }
 
@@ -976,7 +1004,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
        is true when the line being executed has changed.  The
        initial values are such as to make this false the first
        time it is tested. */
-    int instr_ub = -1, instr_lb = 0, instr_prev = -1;
 
     const _Py_CODEUNIT *first_instr;
     PyObject *names;
@@ -1390,6 +1417,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         dtrace_function_entry(f);
 
     co = f->f_code;
+    PyCodeAddressRange bounds;
+    _PyCode_InitAddressRange(co, &bounds);
+    int instr_prev = -1;
+
     names = co->co_names;
     consts = co->co_consts;
     fastlocals = f->f_localsplus;
@@ -1446,11 +1477,18 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     }
 
 #ifdef LLTRACE
-    lltrace = _PyDict_GetItemId(f->f_globals, &PyId___ltrace__) != NULL;
+    {
+        int r = _PyDict_ContainsId(f->f_globals, &PyId___ltrace__);
+        if (r < 0) {
+            goto exit_eval_frame;
+        }
+        lltrace = r;
+    }
 #endif
 
-    if (throwflag) /* support for generator.throw() */
+    if (throwflag) { /* support for generator.throw() */
         goto error;
+    }
 
 #ifdef Py_DEBUG
     /* _PyEval_EvalFrameDefault() must not be called with an exception set,
@@ -1507,7 +1545,7 @@ main_loop:
         f->f_lasti = INSTR_OFFSET();
 
         if (PyDTrace_LINE_ENABLED())
-            maybe_dtrace_line(f, &instr_lb, &instr_ub, &instr_prev);
+            maybe_dtrace_line(f, &bounds, &instr_prev);
 
         /* line-by-line tracing support */
 
@@ -1521,7 +1559,7 @@ main_loop:
             err = maybe_call_line_trace(tstate->c_tracefunc,
                                         tstate->c_traceobj,
                                         tstate, f,
-                                        &instr_lb, &instr_ub, &instr_prev);
+                                        &bounds, &instr_prev);
             /* Reload possibly changed frame fields */
             JUMPTO(f->f_lasti);
             stack_pointer = f->f_valuestack+f->f_stackdepth;
@@ -3172,7 +3210,6 @@ main_loop:
                 if (co_opcache != NULL && /* co_opcache can be NULL after a DEOPT() call. */
                     type->tp_getattro == PyObject_GenericGetAttr)
                 {
-                    PyObject *descr;
                     Py_ssize_t ret;
 
                     if (type->tp_dictoffset > 0) {
@@ -3183,12 +3220,7 @@ main_loop:
                                 goto error;
                             }
                         }
-
-                        descr = _PyType_Lookup(type, name);
-                        if (descr == NULL ||
-                            descr->ob_type->tp_descr_get == NULL ||
-                            !PyDescr_IsData(descr))
-                        {
+                        if (_PyType_Lookup(type, name) == NULL) {
                             dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
                             dict = *dictptr;
 
@@ -3848,7 +3880,7 @@ main_loop:
                 func ->func_closure = POP();
             }
             if (oparg & 0x04) {
-                assert(PyDict_CheckExact(TOP()));
+                assert(PyTuple_CheckExact(TOP()));
                 func->func_annotations = POP();
             }
             if (oparg & 0x02) {
@@ -4038,14 +4070,7 @@ exception_unwind:
                 PUSH(exc);
                 JUMPTO(handler);
                 if (_Py_TracingPossible(ceval2)) {
-                    int needs_new_execution_window = (f->f_lasti < instr_lb || f->f_lasti >= instr_ub);
-                    int needs_line_update = (f->f_lasti == instr_lb || f->f_lasti < instr_prev);
-                    /* Make sure that we trace line after exception if we are in a new execution
-                     * window or we don't need a line update and we are not in the first instruction
-                     * of the line. */
-                    if (needs_new_execution_window || (!needs_line_update && instr_lb > 0)) {
-                        instr_prev = INT_MAX;
-                    }
+                    instr_prev = INT_MAX;
                 }
                 /* Resume normal execution */
                 f->f_state = FRAME_EXECUTING;
@@ -4959,7 +4984,7 @@ _PyEval_CallTracing(PyObject *func, PyObject *args)
 static int
 maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
                       PyThreadState *tstate, PyFrameObject *frame,
-                      int *instr_lb, int *instr_ub, int *instr_prev)
+                      PyCodeAddressRange *bounds, int *instr_prev)
 {
     int result = 0;
     int line = frame->f_lineno;
@@ -4967,21 +4992,17 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
     /* If the last instruction executed isn't in the current
        instruction window, reset the window.
     */
-    if (frame->f_lasti < *instr_lb || frame->f_lasti >= *instr_ub) {
-        PyAddrPair bounds;
-        line = _PyCode_CheckLineNumber(frame->f_code, frame->f_lasti,
-                                       &bounds);
-        *instr_lb = bounds.ap_lower;
-        *instr_ub = bounds.ap_upper;
-    }
+    line = _PyCode_CheckLineNumber(frame->f_lasti, bounds);
     /* If the last instruction falls at the start of a line or if it
        represents a jump backwards, update the frame's line number and
        then call the trace function if we're tracing source lines.
     */
-    if ((frame->f_lasti == *instr_lb || frame->f_lasti < *instr_prev)) {
-        frame->f_lineno = line;
-        if (frame->f_trace_lines) {
-            result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
+    if ((line != frame->f_lineno || frame->f_lasti < *instr_prev)) {
+        if (line != -1) {
+            frame->f_lineno = line;
+            if (frame->f_trace_lines) {
+                result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
+            }
         }
     }
     /* Always emit an opcode event if we're tracing all opcodes. */
@@ -5906,33 +5927,28 @@ dtrace_function_return(PyFrameObject *f)
 /* DTrace equivalent of maybe_call_line_trace. */
 static void
 maybe_dtrace_line(PyFrameObject *frame,
-                  int *instr_lb, int *instr_ub, int *instr_prev)
+                  PyCodeAddressRange *bounds, int *instr_prev)
 {
-    int line = frame->f_lineno;
     const char *co_filename, *co_name;
 
     /* If the last instruction executed isn't in the current
        instruction window, reset the window.
     */
-    if (frame->f_lasti < *instr_lb || frame->f_lasti >= *instr_ub) {
-        PyAddrPair bounds;
-        line = _PyCode_CheckLineNumber(frame->f_code, frame->f_lasti,
-                                       &bounds);
-        *instr_lb = bounds.ap_lower;
-        *instr_ub = bounds.ap_upper;
-    }
+    int line = _PyCode_CheckLineNumber(frame->f_lasti, bounds);
     /* If the last instruction falls at the start of a line or if
        it represents a jump backwards, update the frame's line
        number and call the trace function. */
-    if (frame->f_lasti == *instr_lb || frame->f_lasti < *instr_prev) {
-        frame->f_lineno = line;
-        co_filename = PyUnicode_AsUTF8(frame->f_code->co_filename);
-        if (!co_filename)
-            co_filename = "?";
-        co_name = PyUnicode_AsUTF8(frame->f_code->co_name);
-        if (!co_name)
-            co_name = "?";
-        PyDTrace_LINE(co_filename, co_name, line);
+    if (line != frame->f_lineno || frame->f_lasti < *instr_prev) {
+        if (line != -1) {
+            frame->f_lineno = line;
+            co_filename = PyUnicode_AsUTF8(frame->f_code->co_filename);
+            if (!co_filename)
+                co_filename = "?";
+            co_name = PyUnicode_AsUTF8(frame->f_code->co_name);
+            if (!co_name)
+                co_name = "?";
+            PyDTrace_LINE(co_filename, co_name, line);
+        }
     }
     *instr_prev = frame->f_lasti;
 }

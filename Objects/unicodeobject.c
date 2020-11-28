@@ -40,16 +40,16 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "pycore_abstract.h"       // _PyIndex_Check()
-#include "pycore_bytes_methods.h"  // _Py_bytes_lower()
-#include "pycore_initconfig.h"     // _PyStatus_OK()
-#include "pycore_interp.h"         // PyInterpreterState.fs_codec
-#include "pycore_object.h"         // _PyObject_GC_TRACK()
-#include "pycore_pathconfig.h"     // _Py_DumpPathConfig()
-#include "pycore_pylifecycle.h"    // _Py_SetFileSystemEncoding()
-#include "pycore_pystate.h"        // _PyInterpreterState_GET()
-#include "ucnhash.h"               // _PyUnicode_Name_CAPI
-#include "stringlib/eq.h"          // unicode_eq()
+#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_bytes_methods.h" // _Py_bytes_lower()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_interp.h"        // PyInterpreterState.fs_codec
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_pathconfig.h"    // _Py_DumpPathConfig()
+#include "pycore_pylifecycle.h"   // _Py_SetFileSystemEncoding()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
+#include "stringlib/eq.h"         // unicode_eq()
 
 #ifdef MS_WINDOWS
 #include <windows.h>
@@ -839,7 +839,11 @@ xmlcharrefreplace(_PyBytesWriter *writer, char *str,
 
     /* generate replacement */
     for (i = collstart; i < collend; ++i) {
-        str += sprintf(str, "&#%d;", PyUnicode_READ(kind, data, i));
+        size = sprintf(str, "&#%d;", PyUnicode_READ(kind, data, i));
+        if (size < 0) {
+            return NULL;
+        }
+        str += size;
     }
     return str;
 }
@@ -1894,7 +1898,7 @@ _PyUnicode_Ready(PyObject *unicode)
         _PyUnicode_WSTR_LENGTH(unicode) = 0;
 #endif
     }
-    /* maxchar exeeds 16 bit, wee need 4 bytes for unicode characters */
+    /* maxchar exceeds 16 bit, wee need 4 bytes for unicode characters */
     else {
 #if SIZEOF_WCHAR_T == 2
         /* in case the native representation is 2-bytes, we need to allocate a
@@ -6344,7 +6348,7 @@ PyUnicode_AsUTF16String(PyObject *unicode)
 
 /* --- Unicode Escape Codec ----------------------------------------------- */
 
-static _PyUnicode_Name_CAPI *ucnhash_CAPI = NULL;
+static _PyUnicode_Name_CAPI *ucnhash_capi = NULL;
 
 PyObject *
 _PyUnicode_DecodeUnicodeEscape(const char *s,
@@ -6497,11 +6501,11 @@ _PyUnicode_DecodeUnicodeEscape(const char *s,
 
             /* \N{name} */
         case 'N':
-            if (ucnhash_CAPI == NULL) {
+            if (ucnhash_capi == NULL) {
                 /* load the unicode data module */
-                ucnhash_CAPI = (_PyUnicode_Name_CAPI *)PyCapsule_Import(
+                ucnhash_capi = (_PyUnicode_Name_CAPI *)PyCapsule_Import(
                                                 PyUnicodeData_CAPSULE_NAME, 1);
-                if (ucnhash_CAPI == NULL) {
+                if (ucnhash_capi == NULL) {
                     PyErr_SetString(
                         PyExc_UnicodeError,
                         "\\N escapes not supported (can't load unicodedata module)"
@@ -6523,7 +6527,7 @@ _PyUnicode_DecodeUnicodeEscape(const char *s,
                     s++;
                     ch = 0xffffffff; /* in case 'getcode' messes up */
                     if (namelen <= INT_MAX &&
-                        ucnhash_CAPI->getcode(NULL, start, (int)namelen,
+                        ucnhash_capi->getcode(start, (int)namelen,
                                               &ch, 0)) {
                         assert(ch <= MAX_UNICODE);
                         WRITE_CHAR(ch);

@@ -8,10 +8,11 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_atomic.h"    /* _Py_atomic_address */
-#include "pycore_gil.h"       /* struct _gil_runtime_state  */
-#include "pycore_gc.h"        /* struct _gc_runtime_state */
-#include "pycore_warnings.h"  /* struct _warnings_runtime_state */
+#include "pycore_atomic.h"        // _Py_atomic_address
+#include "pycore_ast.h"           // struct ast_state
+#include "pycore_gil.h"           // struct _gil_runtime_state
+#include "pycore_gc.h"            // struct _gc_runtime_state
+#include "pycore_warnings.h"      // struct _warnings_runtime_state
 
 struct _pending_calls {
     PyThread_type_lock lock;
@@ -163,6 +164,11 @@ struct _Py_exc_state {
 #define _PY_NSMALLPOSINTS           257
 #define _PY_NSMALLNEGINTS           5
 
+// _PyLong_GetZero() and _PyLong_GetOne() must always be available
+#if _PY_NSMALLPOSINTS < 2
+#  error "_PY_NSMALLPOSINTS must be greater than 1"
+#endif
+
 // The PyInterpreterState typedef is in Include/pystate.h.
 struct _is {
 
@@ -184,10 +190,14 @@ struct _is {
     struct _ceval_state ceval;
     struct _gc_runtime_state gc;
 
+    // sys.modules dictionary
     PyObject *modules;
     PyObject *modules_by_index;
+    // Dictionary of the sys module
     PyObject *sysdict;
+    // Dictionary of the builtins module
     PyObject *builtins;
+    // importlib module
     PyObject *importlib;
 
     /* Used in Modules/_threadmodule.c. */
@@ -212,7 +222,7 @@ struct _is {
 
     PyObject *builtins_copy;
     PyObject *import_func;
-    /* Initialized to PyEval_EvalFrameDefault(). */
+    // Initialized to _PyEval_EvalFrameDefault().
     _PyFrameEvalFunction eval_frame;
 
     Py_ssize_t co_extra_user_count;
@@ -233,14 +243,12 @@ struct _is {
 
     PyObject *audit_hooks;
 
-#if _PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS > 0
     /* Small integers are preallocated in this array so that they
        can be shared.
        The integers that are preallocated are those in the range
        -_PY_NSMALLNEGINTS (inclusive) to _PY_NSMALLPOSINTS (not inclusive).
     */
     PyLongObject* small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
-#endif
     struct _Py_bytes_state bytes;
     struct _Py_unicode_state unicode;
     struct _Py_float_state float_state;
@@ -255,15 +263,12 @@ struct _is {
     struct _Py_async_gen_state async_gen;
     struct _Py_context_state context;
     struct _Py_exc_state exc_state;
+
+    struct ast_state ast;
 };
 
-/* Used by _PyImport_Cleanup() */
 extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
-
-extern PyStatus _PyInterpreterState_SetConfig(
-    PyInterpreterState *interp,
-    const PyConfig *config);
-
+extern void _PyInterpreterState_Clear(PyThreadState *tstate);
 
 
 /* cross-interpreter data registry */

@@ -264,7 +264,7 @@ of the following two module creation functions:
       instead; only use this if you are sure you need it.
 
 Before it is returned from in the initialization function, the resulting module
-object is typically populated using functions like :c:func:`PyModule_AddObject`.
+object is typically populated using functions like :c:func:`PyModule_AddObjectRef`.
 
 .. _multi-phase-initialization:
 
@@ -437,26 +437,102 @@ a function called from a module execution slot (if using multi-phase
 initialization), can use the following functions to help initialize the module
 state:
 
+.. c:function:: int PyModule_AddObjectRef(PyObject *module, const char *name, PyObject *value)
+
+   Add an object to *module* as *name*.  This is a convenience function which
+   can be used from the module's initialization function.
+
+   On success, return ``0``. On error, raise an exception and return ``-1``.
+
+   Return ``NULL`` if *value* is ``NULL``. It must be called with an exception
+   raised in this case.
+
+   Example usage::
+
+       static int
+       add_spam(PyObject *module, int value)
+       {
+           PyObject *obj = PyLong_FromLong(value);
+           if (obj == NULL) {
+               return -1;
+           }
+           int res = PyModule_AddObjectRef(module, "spam", obj);
+           Py_DECREF(obj);
+           return res;
+        }
+
+   The example can also be written without checking explicitly if *obj* is
+   ``NULL``::
+
+       static int
+       add_spam(PyObject *module, int value)
+       {
+           PyObject *obj = PyLong_FromLong(value);
+           int res = PyModule_AddObjectRef(module, "spam", obj);
+           Py_XDECREF(obj);
+           return res;
+        }
+
+   Note that ``Py_XDECREF()`` should be used instead of ``Py_DECREF()`` in
+   this case, since *obj* can be ``NULL``.
+
+   .. versionadded:: 3.10
+
+
 .. c:function:: int PyModule_AddObject(PyObject *module, const char *name, PyObject *value)
 
-   Add an object to *module* as *name*.  This is a convenience function which can
-   be used from the module's initialization function.  This steals a reference to
-   *value* on success. Return ``-1`` on error, ``0`` on success.
+   Similar to :c:func:`PyModule_AddObjectRef`, but steals a reference to
+   *value* on success (if it returns ``0``).
+
+   The new :c:func:`PyModule_AddObjectRef` function is recommended, since it is
+   easy to introduce reference leaks by misusing the
+   :c:func:`PyModule_AddObject` function.
 
    .. note::
 
-      Unlike other functions that steal references, ``PyModule_AddObject()`` only
-      decrements the reference count of *value* **on success**.
+      Unlike other functions that steal references, ``PyModule_AddObject()``
+      only decrements the reference count of *value* **on success**.
 
       This means that its return value must be checked, and calling code must
-      :c:func:`Py_DECREF` *value* manually on error. Example usage::
+      :c:func:`Py_DECREF` *value* manually on error.
 
-         Py_INCREF(spam);
-         if (PyModule_AddObject(module, "spam", spam) < 0) {
-             Py_DECREF(module);
-             Py_DECREF(spam);
-             return NULL;
-         }
+   Example usage::
+
+      static int
+      add_spam(PyObject *module, int value)
+      {
+          PyObject *obj = PyLong_FromLong(value);
+          if (obj == NULL) {
+              return -1;
+          }
+          if (PyModule_AddObject(module, "spam", obj) < 0) {
+              Py_DECREF(obj);
+              return -1;
+          }
+          // PyModule_AddObject() stole a reference to obj:
+          // Py_DECREF(obj) is not needed here
+          return 0;
+      }
+
+   The example can also be written without checking explicitly if *obj* is
+   ``NULL``::
+
+      static int
+      add_spam(PyObject *module, int value)
+      {
+          PyObject *obj = PyLong_FromLong(value);
+          if (PyModule_AddObject(module, "spam", obj) < 0) {
+              Py_XDECREF(obj);
+              return -1;
+          }
+          // PyModule_AddObject() stole a reference to obj:
+          // Py_DECREF(obj) is not needed here
+          return 0;
+      }
+
+   Note that ``Py_XDECREF()`` should be used instead of ``Py_DECREF()`` in
+   this case, since *obj* can be ``NULL``.
+
 
 .. c:function:: int PyModule_AddIntConstant(PyObject *module, const char *name, long value)
 

@@ -1,14 +1,17 @@
 import io
 import logging
+import os
 import os.path
 import re
 import sys
 
+from c_common import fsutil
 from c_common.logging import VERBOSITY, Printer
 from c_common.scriptutil import (
     add_verbosity_cli,
     add_traceback_cli,
     add_sepval_cli,
+    add_progress_cli,
     add_files_cli,
     add_commands_cli,
     process_args_by_key,
@@ -17,11 +20,13 @@ from c_common.scriptutil import (
     filter_filenames,
     iter_marks,
 )
-from c_parser.info import KIND, is_type_decl
+from c_parser.info import KIND
+from c_parser.match import is_type_decl
+from .match import filter_forward
 from . import (
     analyze as _analyze,
-    check_all as _check_all,
     datafiles as _datafiles,
+    check_all as _check_all,
 )
 
 
@@ -44,7 +49,7 @@ logger = logging.getLogger(__name__)
 TABLE_SECTIONS = {
     'types': (
         ['kind', 'name', 'data', 'file'],
-        is_type_decl,
+        KIND.is_type_decl,
         (lambda v: (v.kind.value, v.filename or '', v.name)),
     ),
     'typedefs': 'types',
@@ -167,9 +172,7 @@ def _get_check_handlers(fmt, printer, verbosity=VERBOSITY):
             print(f'{data.filename}:{name} - {failure}')
     elif fmt == 'summary':
         def handle_failure(failure, data):
-            parent = data.parent or ''
-            funcname = parent if isinstance(parent, str) else parent.name
-            print(f'{data.filename:35}\t{funcname or "-":35}\t{data.name:40}\t{failure}')
+            print(_fmt_one_summary(data, failure))
     elif fmt == 'full':
         div = ''
         def handle_failure(failure, data):
@@ -230,6 +233,15 @@ def fmt_summary(analysis):
     yield f'grand total: {total}'
 
 
+def _fmt_one_summary(item, extra=None):
+    parent = item.parent or ''
+    funcname = parent if isinstance(parent, str) else parent.name
+    if extra:
+        return f'{item.filename:35}\t{funcname or "-":35}\t{item.name:40}\t{extra}'
+    else:
+        return f'{item.filename:35}\t{funcname or "-":35}\t{item.name}'
+
+
 def fmt_full(analysis):
     # XXX Support sorting.
     items = sorted(analysis, key=lambda v: v.key)
@@ -272,10 +284,12 @@ def _cli_check(parser, checks=None, **kwargs):
             args.checks = [check]
     else:
         process_checks = add_checks_cli(parser, checks=checks)
+    process_progress = add_progress_cli(parser)
     process_output = add_output_cli(parser, default=None)
     process_files = add_files_cli(parser, **kwargs)
     return [
         process_checks,
+        process_progress,
         process_output,
         process_files,
     ]
@@ -285,9 +299,10 @@ def cmd_check(filenames, *,
               checks=None,
               ignored=None,
               fmt=None,
-              relroot=None,
               failfast=False,
               iter_filenames=None,
+              relroot=fsutil.USE_CWD,
+              track_progress=None,
               verbosity=VERBOSITY,
               _analyze=_analyze,
               _CHECKS=CHECKS,
@@ -303,37 +318,54 @@ def cmd_check(filenames, *,
     (handle_failure, handle_after, div
      ) = _get_check_handlers(fmt, printer, verbosity)
 
-    filenames = filter_filenames(filenames, iter_filenames)
+    filenames, relroot = fsutil.fix_filenames(filenames, relroot=relroot)
+    filenames = filter_filenames(filenames, iter_filenames, relroot)
+    if track_progress:
+        filenames = track_progress(filenames)
 
-    logger.info('analyzing...')
+    logger.info('analyzing files...')
     analyzed = _analyze(filenames, **kwargs)
-    if relroot:
-        analyzed.fix_filenames(relroot)
+    analyzed.fix_filenames(relroot, normalize=False)
+    decls = filter_forward(analyzed, markpublic=True)
 
-    logger.info('checking...')
-    numfailed = 0
-    for data, failure in _check_all(analyzed, checks, failfast=failfast):
+    logger.info('checking analysis results...')
+    failed = []
+    for data, failure in _check_all(decls, checks, failfast=failfast):
         if data is None:
             printer.info('stopping after one failure')
             break
-        if div is not None and numfailed > 0:
+        if div is not None and len(failed) > 0:
             printer.info(div)
-        numfailed += 1
+        failed.append(data)
         handle_failure(failure, data)
     handle_after()
 
     printer.info('-------------------------')
-    logger.info(f'total failures: {numfailed}')
+    logger.info(f'total failures: {len(failed)}')
     logger.info('done checking')
 
-    if numfailed > 0:
-        sys.exit(numfailed)
+    if fmt == 'summary':
+        print('Categorized by storage:')
+        print()
+        from .match import group_by_storage
+        grouped = group_by_storage(failed, ignore_non_match=False)
+        for group, decls in grouped.items():
+            print()
+            print(group)
+            for decl in decls:
+                print(' ', _fmt_one_summary(decl))
+            print(f'subtotal: {len(decls)}')
+
+    if len(failed) > 0:
+        sys.exit(len(failed))
 
 
 def _cli_analyze(parser, **kwargs):
+    process_progress = add_progress_cli(parser)
     process_output = add_output_cli(parser)
     process_files = add_files_cli(parser, **kwargs)
     return [
+        process_progress,
         process_output,
         process_files,
     ]
@@ -343,6 +375,8 @@ def _cli_analyze(parser, **kwargs):
 def cmd_analyze(filenames, *,
                 fmt=None,
                 iter_filenames=None,
+                relroot=fsutil.USE_CWD,
+                track_progress=None,
                 verbosity=None,
                 _analyze=_analyze,
                 formats=FORMATS,
@@ -355,57 +389,57 @@ def cmd_analyze(filenames, *,
     except KeyError:
         raise ValueError(f'unsupported fmt {fmt!r}')
 
-    filenames = filter_filenames(filenames, iter_filenames)
-    if verbosity == 2:
-        def iter_filenames(filenames=filenames):
-            marks = iter_marks()
-            for filename in filenames:
-                print(next(marks), end='')
-                yield filename
-        filenames = iter_filenames()
-    elif verbosity > 2:
-        def iter_filenames(filenames=filenames):
-            for filename in filenames:
-                print(f'<{filename}>')
-                yield filename
-        filenames = iter_filenames()
+    filenames, relroot = fsutil.fix_filenames(filenames, relroot=relroot)
+    filenames = filter_filenames(filenames, iter_filenames, relroot)
+    if track_progress:
+        filenames = track_progress(filenames)
 
-    logger.info('analyzing...')
+    logger.info('analyzing files...')
     analyzed = _analyze(filenames, **kwargs)
+    analyzed.fix_filenames(relroot, normalize=False)
+    decls = filter_forward(analyzed, markpublic=True)
 
-    for line in do_fmt(analyzed):
+    for line in do_fmt(decls):
         print(line)
 
 
 def _cli_data(parser, filenames=None, known=None):
     ArgumentParser = type(parser)
     common = ArgumentParser(add_help=False)
-    if filenames is None:
-        common.add_argument('filenames', metavar='FILE', nargs='+')
+    # These flags will get processed by the top-level parse_args().
+    add_verbosity_cli(common)
+    add_traceback_cli(common)
 
     subs = parser.add_subparsers(dest='datacmd')
 
     sub = subs.add_parser('show', parents=[common])
     if known is None:
         sub.add_argument('--known', required=True)
+    if filenames is None:
+        sub.add_argument('filenames', metavar='FILE', nargs='+')
 
-    sub = subs.add_parser('dump')
+    sub = subs.add_parser('dump', parents=[common])
     if known is None:
         sub.add_argument('--known')
     sub.add_argument('--show', action='store_true')
+    process_progress = add_progress_cli(sub)
 
-    sub = subs.add_parser('check')
+    sub = subs.add_parser('check', parents=[common])
     if known is None:
         sub.add_argument('--known', required=True)
 
-    return None
+    def process_args(args):
+        if args.datacmd == 'dump':
+            process_progress(args)
+    return process_args
 
 
 def cmd_data(datacmd, filenames, known=None, *,
              _analyze=_analyze,
              formats=FORMATS,
              extracolumns=None,
-             relroot=None,
+             relroot=fsutil.USE_CWD,
+             track_progress=None,
              **kwargs
              ):
     kwargs.pop('verbosity', None)
@@ -417,7 +451,11 @@ def cmd_data(datacmd, filenames, known=None, *,
         for line in do_fmt(known):
             print(line)
     elif datacmd == 'dump':
+        filenames, relroot = fsutil.fix_filenames(filenames, relroot=relroot)
+        if track_progress:
+            filenames = track_progress(filenames)
         analyzed = _analyze(filenames, **kwargs)
+        analyzed.fix_filenames(relroot, normalize=False)
         if known is None or usestdout:
             outfile = io.StringIO()
             _datafiles.write_known(analyzed, outfile, extracolumns,

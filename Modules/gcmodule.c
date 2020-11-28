@@ -165,12 +165,17 @@ PyStatus
 _PyGC_Init(PyThreadState *tstate)
 {
     GCState *gcstate = &tstate->interp->gc;
+
+    gcstate->garbage = PyList_New(0);
     if (gcstate->garbage == NULL) {
-        gcstate->garbage = PyList_New(0);
-        if (gcstate->garbage == NULL) {
-            return _PyStatus_NO_MEMORY();
-        }
+        return _PyStatus_NO_MEMORY();
     }
+
+    gcstate->callbacks = PyList_New(0);
+    if (gcstate->callbacks == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
+
     return _PyStatus_OK();
 }
 
@@ -1176,8 +1181,9 @@ handle_resurrected_objects(PyGC_Head *unreachable, PyGC_Head* still_unreachable,
 /* This is the main function.  Read this to understand how the
  * collection process works. */
 static Py_ssize_t
-collect(PyThreadState *tstate, int generation,
-        Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable, int nofail)
+gc_collect_main(PyThreadState *tstate, int generation,
+                Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
+                int nofail)
 {
     int i;
     Py_ssize_t m = 0; /* # objects collected */
@@ -1189,6 +1195,11 @@ collect(PyThreadState *tstate, int generation,
     PyGC_Head *gc;
     _PyTime_t t1 = 0;   /* initialize to prevent a compiler warning */
     GCState *gcstate = &tstate->interp->gc;
+
+    // gc_collect_main() must not be called before _PyGC_Init
+    // or after _PyGC_Fini()
+    assert(gcstate->garbage != NULL);
+    assert(!_PyErr_Occurred(tstate));
 
 #ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     if (tstate->interp->config._isolated_interpreter) {
@@ -1395,19 +1406,19 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
  * progress callbacks.
  */
 static Py_ssize_t
-collect_with_callback(PyThreadState *tstate, int generation)
+gc_collect_with_callback(PyThreadState *tstate, int generation)
 {
     assert(!_PyErr_Occurred(tstate));
     Py_ssize_t result, collected, uncollectable;
     invoke_gc_callback(tstate, "start", generation, 0, 0);
-    result = collect(tstate, generation, &collected, &uncollectable, 0);
+    result = gc_collect_main(tstate, generation, &collected, &uncollectable, 0);
     invoke_gc_callback(tstate, "stop", generation, collected, uncollectable);
     assert(!_PyErr_Occurred(tstate));
     return result;
 }
 
 static Py_ssize_t
-collect_generations(PyThreadState *tstate)
+gc_collect_generations(PyThreadState *tstate)
 {
     GCState *gcstate = &tstate->interp->gc;
     /* Find the oldest generation (highest numbered) where the count
@@ -1455,7 +1466,7 @@ collect_generations(PyThreadState *tstate)
             if (i == NUM_GENERATIONS - 1
                 && gcstate->long_lived_pending < gcstate->long_lived_total / 4)
                 continue;
-            n = collect_with_callback(tstate, i);
+            n = gc_collect_with_callback(tstate, i);
             break;
         }
     }
@@ -1541,7 +1552,7 @@ gc_collect_impl(PyObject *module, int generation)
     }
     else {
         gcstate->collecting = 1;
-        n = collect_with_callback(tstate, generation);
+        n = gc_collect_with_callback(tstate, generation);
         gcstate->collecting = 0;
     }
     return n;
@@ -1986,62 +1997,53 @@ static PyMethodDef GcMethods[] = {
     {NULL,      NULL}           /* Sentinel */
 };
 
-static struct PyModuleDef gcmodule = {
-    PyModuleDef_HEAD_INIT,
-    "gc",              /* m_name */
-    gc__doc__,         /* m_doc */
-    -1,                /* m_size */
-    GcMethods,         /* m_methods */
-    NULL,              /* m_reload */
-    NULL,              /* m_traverse */
-    NULL,              /* m_clear */
-    NULL               /* m_free */
-};
-
-PyMODINIT_FUNC
-PyInit_gc(void)
+static int
+gcmodule_exec(PyObject *module)
 {
     GCState *gcstate = get_gc_state();
 
-    PyObject *m = PyModule_Create(&gcmodule);
-
-    if (m == NULL) {
-        return NULL;
+    /* garbage and callbacks are initialized by _PyGC_Init() early in
+     * interpreter lifecycle. */
+    assert(gcstate->garbage != NULL);
+    if (PyModule_AddObjectRef(module, "garbage", gcstate->garbage) < 0) {
+        return -1;
+    }
+    assert(gcstate->callbacks != NULL);
+    if (PyModule_AddObjectRef(module, "callbacks", gcstate->callbacks) < 0) {
+        return -1;
     }
 
-    if (gcstate->garbage == NULL) {
-        gcstate->garbage = PyList_New(0);
-        if (gcstate->garbage == NULL) {
-            return NULL;
-        }
-    }
-    Py_INCREF(gcstate->garbage);
-    if (PyModule_AddObject(m, "garbage", gcstate->garbage) < 0) {
-        return NULL;
-    }
-
-    if (gcstate->callbacks == NULL) {
-        gcstate->callbacks = PyList_New(0);
-        if (gcstate->callbacks == NULL) {
-            return NULL;
-        }
-    }
-    Py_INCREF(gcstate->callbacks);
-    if (PyModule_AddObject(m, "callbacks", gcstate->callbacks) < 0) {
-        return NULL;
-    }
-
-#define ADD_INT(NAME) if (PyModule_AddIntConstant(m, #NAME, NAME) < 0) { return NULL; }
+#define ADD_INT(NAME) if (PyModule_AddIntConstant(module, #NAME, NAME) < 0) { return -1; }
     ADD_INT(DEBUG_STATS);
     ADD_INT(DEBUG_COLLECTABLE);
     ADD_INT(DEBUG_UNCOLLECTABLE);
     ADD_INT(DEBUG_SAVEALL);
     ADD_INT(DEBUG_LEAK);
 #undef ADD_INT
-    return m;
+    return 0;
 }
 
-/* API to invoke gc.collect() from C */
+static PyModuleDef_Slot gcmodule_slots[] = {
+    {Py_mod_exec, gcmodule_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef gcmodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "gc",
+    .m_doc = gc__doc__,
+    .m_size = 0,  // per interpreter state, see: get_gc_state()
+    .m_methods = GcMethods,
+    .m_slots = gcmodule_slots
+};
+
+PyMODINIT_FUNC
+PyInit_gc(void)
+{
+    return PyModuleDef_Init(&gcmodule);
+}
+
+/* Public API to invoke gc.collect() from C */
 Py_ssize_t
 PyGC_Collect(void)
 {
@@ -2061,7 +2063,7 @@ PyGC_Collect(void)
         PyObject *exc, *value, *tb;
         gcstate->collecting = 1;
         _PyErr_Fetch(tstate, &exc, &value, &tb);
-        n = collect_with_callback(tstate, NUM_GENERATIONS - 1);
+        n = gc_collect_with_callback(tstate, NUM_GENERATIONS - 1);
         _PyErr_Restore(tstate, exc, value, tb);
         gcstate->collecting = 0;
     }
@@ -2070,34 +2072,23 @@ PyGC_Collect(void)
 }
 
 Py_ssize_t
-_PyGC_CollectIfEnabled(void)
+_PyGC_CollectNoFail(PyThreadState *tstate)
 {
-    return PyGC_Collect();
-}
-
-Py_ssize_t
-_PyGC_CollectNoFail(void)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    assert(!_PyErr_Occurred(tstate));
-
-    GCState *gcstate = &tstate->interp->gc;
-    Py_ssize_t n;
-
     /* Ideally, this function is only called on interpreter shutdown,
        and therefore not recursively.  Unfortunately, when there are daemon
        threads, a daemon thread can start a cyclic garbage collection
        during interpreter shutdown (and then never finish it).
        See http://bugs.python.org/issue8713#msg195178 for an example.
        */
+    GCState *gcstate = &tstate->interp->gc;
     if (gcstate->collecting) {
-        n = 0;
+        return 0;
     }
-    else {
-        gcstate->collecting = 1;
-        n = collect(tstate, NUM_GENERATIONS - 1, NULL, NULL, 1);
-        gcstate->collecting = 0;
-    }
+
+    Py_ssize_t n;
+    gcstate->collecting = 1;
+    n = gc_collect_main(tstate, NUM_GENERATIONS - 1, NULL, NULL, 1);
+    gcstate->collecting = 0;
     return n;
 }
 
@@ -2240,7 +2231,7 @@ _PyObject_GC_Alloc(int use_calloc, size_t basicsize)
         !_PyErr_Occurred(tstate))
     {
         gcstate->collecting = 1;
-        collect_generations(tstate);
+        gc_collect_generations(tstate);
         gcstate->collecting = 0;
     }
     PyObject *op = FROM_GC(g);

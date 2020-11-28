@@ -504,10 +504,10 @@ Waiting Primitives
                             return_when=ALL_COMPLETED)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   set concurrently and block until the condition specified
+   iterable concurrently and block until the condition specified
    by *return_when*.
 
-   The *aws* set must not be empty.
+   The *aws* iterable must not be empty.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
 
@@ -593,9 +593,9 @@ Waiting Primitives
 .. function:: as_completed(aws, \*, loop=None, timeout=None)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   set concurrently.  Return an iterator of coroutines.
+   iterable concurrently.  Return an iterator of coroutines.
    Each coroutine returned can be awaited to get the earliest next
-   result from the set of the remaining awaitables.
+   result from the iterable of the remaining awaitables.
 
    Raises :exc:`asyncio.TimeoutError` if the timeout occurs before
    all Futures are done.
@@ -618,7 +618,7 @@ Running in Threads
    Asynchronously run function *func* in a separate thread.
 
    Any \*args and \*\*kwargs supplied for this function are directly passed
-   to *func*. Also, the current :class:`contextvars.Context` is propogated,
+   to *func*. Also, the current :class:`contextvars.Context` is propagated,
    allowing context variables from the event loop thread to be accessed in the
    separate thread.
 

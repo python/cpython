@@ -1,0 +1,5 @@
+Simplify the :mod:`importlib` external bootstrap code:
+``importlib._bootstrap_external`` now uses regular imports to import builtin
+modules. When it is imported, the builtin :func:`__import__()` function is
+already fully working and so can be used to import builtin modules like
+:mod:`sys`. Patch by Victor Stinner.

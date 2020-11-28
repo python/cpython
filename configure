@@ -1511,8 +1511,8 @@ Optional Packages:
                           specify the kind of universal binary that should be
                           created. this option is only valid when
                           --enable-universalsdk is set; options are:
-                          ("32-bit", "64-bit", "3-way", "intel", "intel-32",
-                          "intel-64", or "all") see Mac/README.rst
+                          ("universal2", "32-bit", "64-bit", "3-way", "intel",
+                          "intel-32", "intel-64", or "all") see Mac/README.rst
   --with-framework-name=FRAMEWORK
                           specify the name for the python framework on macOS
                           only valid when --enable-framework is set. see
@@ -3430,16 +3430,6 @@ $as_echo "#define _BSD_SOURCE 1" >>confdefs.h
     define_xopen_source=no;;
   Darwin/[12][0-9].*)
     define_xopen_source=no;;
-  # On AIX 4 and 5.1, mbstate_t is defined only when _XOPEN_SOURCE == 500 but
-  # used in wcsnrtombs() and mbsnrtowcs() even if _XOPEN_SOURCE is not defined
-  # or has another value. By not (re)defining it, the defaults come in place.
-  AIX/4)
-    define_xopen_source=no;;
-  AIX/5)
-    if test `uname -r` -eq 1; then
-      define_xopen_source=no
-    fi
-    ;;
   # On QNX 6.3.2, defining _XOPEN_SOURCE prevents netdb.h from
   # defining NI_NUMERICHOST.
   QNX/6.3.2)
@@ -5828,10 +5818,7 @@ $as_echo_n "checking EXPORTSYMS... " >&6; }
 case $ac_sys_system in
 AIX*)
 	EXPORTSYMS="Modules/python.exp"
-	if test $ac_sys_release -ge 5 -o \
-		$ac_sys_release -eq 4 -a `uname -r` -ge 2 ; then
-	    EXPORTSFROM=. # the main executable
-	fi
+	EXPORTSFROM=. # the main executable
 	;;
 esac
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $EXPORTSYMS" >&5
@@ -7002,7 +6989,7 @@ fi
 
 
 
-# The -arch flags for universal builds on OSX
+# The -arch flags for universal builds on macOS
 UNIVERSAL_ARCH_FLAGS=
 
 
@@ -7529,6 +7516,11 @@ $as_echo "$CC" >&6; }
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
                ;;
+            universal2)
+               UNIVERSAL_ARCH_FLAGS="-arch arm64 -arch x86_64"
+               LIPO_32BIT_FLAGS=""
+               ARCH_RUN_32BIT="true"
+		;;
             intel)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract i386"
@@ -7550,7 +7542,7 @@ $as_echo "$CC" >&6; }
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
                ;;
             *)
-               as_fn_error $? "proper usage is --with-universal-arch=32-bit|64-bit|all|intel|3-way" "$LINENO" 5
+               as_fn_error $? "proper usage is --with-universal-arch=universal2|32-bit|64-bit|all|intel|3-way" "$LINENO" 5
                ;;
             esac
 
@@ -7618,6 +7610,31 @@ $as_echo_n "checking which MACOSX_DEPLOYMENT_TARGET to use... " >&6; }
         EXPORT_MACOSX_DEPLOYMENT_TARGET=''
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MACOSX_DEPLOYMENT_TARGET" >&5
 $as_echo "$MACOSX_DEPLOYMENT_TARGET" >&6; }
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking if specified universal architectures work" >&5
+$as_echo_n "checking if specified universal architectures work... " >&6; }
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <stdio.h>
+int
+main ()
+{
+printf("%d", 42);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+             as_fn_error $? "check config.log and use the '--with-universal-archs' option" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
 
         # end of Darwin* tests
         ;;
@@ -8027,7 +8044,8 @@ sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
 sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
-sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h sys/mman.h
+sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h \
+sys/mman.h sys/eventfd.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -9382,7 +9400,7 @@ fi
     		MACOSX_DEFAULT_ARCH="ppc"
     		;;
     	*)
-    		as_fn_error $? "Unexpected output of 'arch' on OSX" "$LINENO" 5
+    		as_fn_error $? "Unexpected output of 'arch' on macOS" "$LINENO" 5
     		;;
     	esac
     else
@@ -9392,9 +9410,12 @@ fi
     		;;
     	ppc)
     		MACOSX_DEFAULT_ARCH="ppc64"
+		;;
+    	arm64)
+    		MACOSX_DEFAULT_ARCH="arm64"
     		;;
     	*)
-    		as_fn_error $? "Unexpected output of 'arch' on OSX" "$LINENO" 5
+    		as_fn_error $? "Unexpected output of 'arch' on macOS" "$LINENO" 5
     		;;
     	esac
 
@@ -11648,7 +11669,7 @@ fi
 DLINCLDIR=.
 
 # the dlopen() function means we might want to use dynload_shlib.o. some
-# platforms, such as AIX, have dlopen(), but don't want to use it.
+# platforms have dlopen(), but don't want to use it.
 for ac_func in dlopen
 do :
   ac_fn_c_check_func "$LINENO" "dlopen" "ac_cv_func_dlopen"
@@ -11730,7 +11751,7 @@ for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
  sched_rr_get_interval \
  sigaction sigaltstack sigfillset siginterrupt sigpending sigrelse \
- sigtimedwait sigwait sigwaitinfo snprintf strftime strlcpy strsignal symlinkat sync \
+ sigtimedwait sigwait sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
  truncate uname unlinkat utimensat utimes vfork waitid waitpid wait3 wait4 \
  wcscoll wcsftime wcsxfrm wmemcmp writev _getpty rtpSpawn
@@ -12031,6 +12052,31 @@ $as_echo "no" >&6; }
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for _dyld_shared_cache_contains_path" >&5
+$as_echo_n "checking for _dyld_shared_cache_contains_path... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <mach-o/dyld.h>
+int
+main ()
+{
+void *x=_dyld_shared_cache_contains_path
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for memfd_create" >&5
 $as_echo_n "checking for memfd_create... " >&6; }
@@ -12055,6 +12101,36 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
 $as_echo "#define HAVE_MEMFD_CREATE 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for eventfd" >&5
+$as_echo_n "checking for eventfd... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#ifdef HAVE_SYS_EVENTFD_H
+#include <sys/eventfd.h>
+#endif
+
+int
+main ()
+{
+int x = eventfd(0, EFD_CLOEXEC)
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_EVENTFD 1" >>confdefs.h
 
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }

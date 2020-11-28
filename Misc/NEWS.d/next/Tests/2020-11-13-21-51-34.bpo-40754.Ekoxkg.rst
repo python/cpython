@@ -1,0 +1,1 @@
+Include ``_testinternalcapi`` module in Windows installer for test suite
