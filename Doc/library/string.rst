@@ -482,8 +482,8 @@ The available presentation types for :class:`float` and
    +---------+----------------------------------------------------------+
    | Type    | Meaning                                                  |
    +=========+==========================================================+
-   | ``'e'`` | Scientific "E" notation. For a given precision ``p >=    |
-   |         | 0``, formats the number in scientific notation with the  |
+   | ``'e'`` | Scientific notation. For a given precision ``p``,        |
+   |         | formats the number in scientific notation with the       |
    |         | letter 'e' separating the coefficient from the exponent. |
    |         | The coefficient has one digit before and ``p`` digits    |
    |         | after the decimal point, for a total of ``p + 1``        |
@@ -492,10 +492,10 @@ The available presentation types for :class:`float` and
    |         | :class:`float`, and shows all coefficient digits         |
    |         | for :class:`~decimal.Decimal`.                           |
    +---------+----------------------------------------------------------+
-   | ``'E'`` | Scientific "E" notation. Same as ``'e'`` except it uses  |
+   | ``'E'`` | Scientific notation. Same as ``'e'`` except it uses      |
    |         | an upper case 'E' as the separator character.            |
    +---------+----------------------------------------------------------+
-   | ``'f'`` | Fixed-point notation. For a given precision ``p >= 0``,  |
+   | ``'f'`` | Fixed-point notation. For a given precision ``p``,       |
    |         | formats the number as a decimal number with exactly      |
    |         | ``p`` digits following the decimal point. With no        |
    |         | precision given, uses a precision of ``6`` digits after  |
