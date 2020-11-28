@@ -255,6 +255,7 @@ class QueueGetTests(_QueueTestBase):
 
     def test_why_are_getters_waiting(self):
         # From issue #268.
+        asyncio.set_event_loop(self.loop)
 
         async def consumer(queue, num_expected):
             for _ in range(num_expected):
@@ -276,8 +277,7 @@ class QueueGetTests(_QueueTestBase):
 
         self.loop.run_until_complete(
             asyncio.gather(producer(q, producer_num_items),
-                           consumer(q, producer_num_items),
-                           loop=self.loop),
+                           consumer(q, producer_num_items)),
             )
 
     def test_cancelled_getters_not_being_held_in_self_getters(self):
@@ -498,6 +498,7 @@ class QueuePutTests(_QueueTestBase):
 
     def test_why_are_putters_waiting(self):
         # From issue #265.
+        asyncio.set_event_loop(self.loop)
 
         async def create_queue():
             q = asyncio.Queue(2)
@@ -519,8 +520,7 @@ class QueuePutTests(_QueueTestBase):
         t1 = putter(1)
         t2 = putter(2)
         t3 = putter(3)
-        self.loop.run_until_complete(
-            asyncio.gather(getter(), t0, t1, t2, t3, loop=self.loop))
+        self.loop.run_until_complete(asyncio.gather(getter(), t0, t1, t2, t3))
 
     def test_cancelled_puts_not_being_held_in_self_putters(self):
         def a_generator():

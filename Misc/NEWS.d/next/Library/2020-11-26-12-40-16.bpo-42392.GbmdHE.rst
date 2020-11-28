@@ -1,0 +1,2 @@
+Remove loop parameter from ``asyncio.subprocess`` and ``asyncio.tasks``
+functions. Patch provided by Yurii Karabas.
