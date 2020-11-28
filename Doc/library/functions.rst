@@ -695,8 +695,8 @@ are always available.  They are listed here in alphabetical order.
    .. note::
 
       Since :ref:`private name mangling <private-name-mangling>` happens at
-      compilation time, private attributes are not found by :func:`getattr`
-      unless the mangled name is used.
+      compilation time, attributes with two leading underscores are not found
+      by :func:`getattr` unless the mangled name is used.
 
 
 .. function:: globals()
@@ -1520,7 +1520,8 @@ are always available.  They are listed here in alphabetical order.
    .. note::
 
       Since :ref:`private name mangling <private-name-mangling>` only happens at
-      compilation time, private attributes set by :func:`setattr` are not mangled.
+      compilation time, attributes with two leading underscores set by
+      :func:`setattr` are not mangled.
 
 
 .. class:: slice(stop)
