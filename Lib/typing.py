@@ -114,6 +114,7 @@ __all__ = [
     'Text',
     'TYPE_CHECKING',
     'TypeAlias',
+    '_PosArgs',  # Not meant to be imported, just for pickling.
 ]
 
 # The pseudo-submodules 're' and 'io' are part of the public
@@ -921,7 +922,7 @@ class _CallableType(_SpecialGenericAlias, _root=True):
             return self.copy_with((_TypingEllipsis, result))
         msg = "Callable[[arg, ...], result]: each arg must be a type."
         args = tuple(_type_check(arg, msg) for arg in args)
-        params = (tuple[args], result)
+        params = (_PosArgs[args], result)
         return self.copy_with(params)
 
 
@@ -1711,6 +1712,8 @@ Reversible = _alias(collections.abc.Reversible, 1)
 Sized = _alias(collections.abc.Sized, 0)  # Not generic.
 Container = _alias(collections.abc.Container, 1)
 Collection = _alias(collections.abc.Collection, 1)
+# Only used for Callable
+_PosArgs = _TupleType(tuple, -1, inst=False, name='_PosArgs')
 Callable = _CallableType(collections.abc.Callable, 2)
 Callable.__doc__ = \
     """Callable type; Callable[[int], str] is a function of (int) -> str.

@@ -429,8 +429,8 @@ ga_getattro(PyObject *self, PyObject *name)
 static PyObject *
 ga_richcompare(PyObject *a, PyObject *b, int op)
 {
-    if (!Py_IS_TYPE(a, &Py_GenericAliasType) ||
-        !Py_IS_TYPE(b, &Py_GenericAliasType) ||
+    if (!PyObject_TypeCheck(a, &Py_GenericAliasType) ||
+        !PyObject_TypeCheck(b, &Py_GenericAliasType) ||
         (op != Py_EQ && op != Py_NE))
     {
         Py_RETURN_NOTIMPLEMENTED;

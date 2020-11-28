@@ -24,8 +24,11 @@ __all__ = ["Awaitable", "Coroutine",
            "MappingView", "KeysView", "ItemsView", "ValuesView",
            "Sequence", "MutableSequence",
            "ByteString",
-           # To allow for pickling, not actually meant to be imported.
+           # The following classse are to allow pickling, not actually
+           # meant to be imported.
            "_CallableGenericAlias",
+           "_PosArgs",
+           "_PosArgsGenericAlias"
            ]
 
 # This module has been renamed from collections.abc to _collections_abc to
@@ -415,6 +418,35 @@ class Collection(Sized, Iterable, Container):
         return NotImplemented
 
 
+class _PosArgsGenericAlias(GenericAlias):
+    """ Internal class specifically to represent positional arguments in
+    ``_CallableGenericAlias``.
+    """
+    def __repr__(self):
+        return f"{__name__}._PosArgsGenericAlias" \
+               f"[{', '.join(_type_repr(t) for t in self.__args__)}]"
+
+    def __eq__(self, other):
+        o_cls = other.__class__
+        if not (o_cls.__module__ == "typing" and o_cls.__name__
+                == "_GenericAlias" or isinstance(other, GenericAlias)):
+            return NotImplemented
+        return (self.__origin__ == other.__origin__
+                and self.__args__ == other.__args__)
+
+    def __hash__(self):
+        return hash((self.__origin__, self.__args__))
+
+# Only used for _CallableGenericAlias
+class _PosArgs:
+    """ Internal class specifically to represent positional arguments in
+    ``_CallableGenericAlias``.
+    """
+    def __class_getitem__(cls, item):
+        return _PosArgsGenericAlias(tuple, item)
+
+# _PosArgs = type("_PosArgs", (tuple, ), {})
+
 class _CallableGenericAlias(GenericAlias):
     """ Internal class specifically for consistency between the ``__args__`` of
     ``collections.abc.Callable``'s and ``typing.Callable``'s ``GenericAlias``.
@@ -432,21 +464,10 @@ class _CallableGenericAlias(GenericAlias):
                             f"or Ellipsis. Got {_type_repr(t_args)}")
 
         ga_args = (_args if t_args is Ellipsis
-                   else (tuple[tuple(t_args)], t_result))
+                   else (_PosArgs[tuple(t_args)], t_result))
 
         return super().__new__(cls, origin, ga_args)
 
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __eq__(self, other):
-        if not isinstance(other, GenericAlias):
-            return NotImplemented
-        return (self.__origin__ == other.__origin__
-                and self.__args__ == other.__args__)
-
-    def __hash__(self):
-        return super().__hash__()
 
     def __repr__(self):
         t_args = self.__args__[0]
@@ -458,6 +479,12 @@ class _CallableGenericAlias(GenericAlias):
                        f'[{", ".join(_type_repr(a) for a in t_args.__args__)}]')
 
         return f"{origin}[{t_args_repr}, {_type_repr(self.__args__[-1])}]"
+
+    def __reduce__(self):
+        args = self.__args__
+        if not (len(args) == 2 and args[0] is ...):
+            args = list(t for t in args[0].__args__), args[-1]
+        return _CallableGenericAlias, (Callable, args)
 
 
 def _type_repr(obj):

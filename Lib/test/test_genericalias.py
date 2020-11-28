@@ -303,30 +303,38 @@ class BaseTest(unittest.TestCase):
 
     def test_abc_callable(self):
         alias = Callable[[int, str], float]
-        with self.subTest("Testing collections.abc.Callable's subscription"):
+        with self.subTest("Testing subscription"):
             self.assertIs(alias.__origin__, Callable)
-            self.assertEqual(alias.__args__, (tuple[int, str], float))
+            self.assertEqual(alias.__args__, (_PosArgs[int, str], float))
             self.assertEqual(alias.__parameters__, ())
 
-        with self.subTest("Testing collections.abc.Callable's instance checks"):
+        with self.subTest("Testing nstance checks"):
             self.assertIsInstance(alias, GenericAlias)
 
         invalid_params = ('Callable[int]', 'Callable[int, str]')
-        with self.subTest("Testing collections.abc.Callable's parameter "
-                          "validation"):
+        with self.subTest("Testing parameter validation"):
             for bad in invalid_params:
                 with self.subTest(f'Testing expression {bad}'):
                     with self.assertRaises(TypeError):
                         eval(bad)
 
-        with self.subTest("Testing collections.abc.Callable's weakref"):
+        with self.subTest("Testing weakref"):
             self.assertEqual(ref(alias)(), alias)
+
+        with self.subTest("Testing picling"):
+            s = pickle.dumps(alias)
+            loaded = pickle.loads(s)
+            self.assertEqual(alias.__origin__, loaded.__origin__)
+            self.assertEqual(alias.__args__, loaded.__args__)
+            self.assertEqual(alias.__parameters__, loaded.__parameters__)
 
         # bpo-42195
         with self.subTest("Testing collections.abc.Callable's consistency "
                           "with typing.Callable"):
-            self.assertEqual(typing.Callable[[int, str], dict].__args__,
-                              Callable[[int, str], dict].__args__)
+            c1 = typing.Callable[[int, str], dict]
+            c2 = Callable[[int, str], dict]
+            self.assertEqual(c1.__args__, c2.__args__)
+            self.assertEqual(hash(c1.__args__), hash(c2.__args__))
 
 if __name__ == "__main__":
     unittest.main()

@@ -296,7 +296,7 @@ is_unionable(PyObject *obj)
         is_new_type(obj) ||
         is_special_form(obj) ||
         PyType_Check(obj) ||
-        type == &Py_GenericAliasType ||
+        PyObject_TypeCheck(obj, &Py_GenericAliasType) ||
         type == &_Py_UnionType);
 }
 
