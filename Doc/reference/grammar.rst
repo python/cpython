@@ -14,8 +14,7 @@ group indicates a positive lookahead (i.e., is required to match but
 not consumed), while ``!`` indicates a negative lookahead (i.e., is
 required _not_ to match).  We use the ``|`` separator to mean PEG's
 "ordered choice" (written as ``/`` in traditional PEG grammars). See
-`PEP 617<https://www.python.org/dev/peps/pep-0617/#syntax>` for more
-details on the grammar's syntax.
+:pep:`617` for more details on the grammar's syntax.
 
 .. literalinclude:: ../../Grammar/python.gram
   :language: peg
