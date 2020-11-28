@@ -490,7 +490,9 @@ The available presentation types for :class:`float` and
    |         | significant digits. With no precision given, uses a      |
    |         | precision of ``6`` digits after the decimal point for    |
    |         | :class:`float`, and shows all coefficient digits         |
-   |         | for :class:`~decimal.Decimal`.                           |
+   |         | for :class:`~decimal.Decimal`. If no digits follow the   |
+   |         | decimal point, the decimal point is also removed unless  |
+   |         | the ``#`` option is used.                                |
    +---------+----------------------------------------------------------+
    | ``'E'`` | Scientific notation. Same as ``'e'`` except it uses      |
    |         | an upper case 'E' as the separator character.            |
@@ -501,7 +503,9 @@ The available presentation types for :class:`float` and
    |         | precision given, uses a precision of ``6`` digits after  |
    |         | the decimal point for :class:`float`, and uses a         |
    |         | precision large enough to show all coefficient digits    |
-   |         | for :class:`~decimal.Decimal`.                           |
+   |         | for :class:`~decimal.Decimal`. If no digits follow the   |
+   |         | decimal point, the decimal point is also removed unless  |
+   |         | the ``#`` option is used.                                |
    +---------+----------------------------------------------------------+
    | ``'F'`` | Fixed-point notation. Same as ``'f'``, but converts      |
    |         | ``nan`` to  ``NAN`` and ``inf`` to ``INF``.              |
