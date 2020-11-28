@@ -1132,11 +1132,7 @@ class PyBuildExt(build_ext):
     def detect_socket(self):
         # socket(2)
         kwargs = {'depends': ['socketmodule.h']}
-        if VXWORKS:
-            if not self.compiler.find_library_file(self.lib_dirs, 'net'):
-                return
-            kwargs['libraries'] = ['net']
-        elif MACOS:
+        if MACOS:
             # Issue #35569: Expose RFC 3542 socket options.
             kwargs['extra_compile_args'] = ['-D__APPLE_USE_RFC_3542']
 
