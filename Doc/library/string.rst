@@ -384,7 +384,7 @@ following:
 
 The ``'#'`` option causes the "alternate form" to be used for the
 conversion.  The alternate form is defined differently for different
-types.  This option is only valid for integer, float, and complex
+types.  This option is only valid for integer, float and complex
 types. For integers, when binary, octal, or hexadecimal output
 is used, this option adds the prefix respective ``'0b'``, ``'0o'``, or
 ``'0x'`` to the output value. For float and complex the
