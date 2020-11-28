@@ -683,6 +683,8 @@ class TestCopyTree(BaseTest, unittest.TestCase):
     # Issue #3002: copyfile and copytree block indefinitely on named pipes
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
     @os_helper.skip_unless_symlink
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
     def test_copytree_named_pipe(self):
         os.mkdir(TESTFN)
         try:
@@ -1206,6 +1208,8 @@ class TestCopy(BaseTest, unittest.TestCase):
 
     # Issue #3002: copyfile and copytree block indefinitely on named pipes
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
     def test_copyfile_named_pipe(self):
         try:
             os.mkfifo(TESTFN)
