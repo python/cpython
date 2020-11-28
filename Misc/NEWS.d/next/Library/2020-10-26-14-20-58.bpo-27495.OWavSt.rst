@@ -1,0 +1,1 @@
+Update the `pprint` module to always order the contents of `set` and `frozenset` objects.
