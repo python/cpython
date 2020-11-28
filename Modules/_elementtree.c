@@ -128,6 +128,9 @@ elementtree_clear(PyObject *m)
     Py_CLEAR(st->comment_factory);
     Py_CLEAR(st->pi_factory);
     Py_CLEAR(st->element_type);
+    Py_CLEAR(st->element_iter_type);
+    Py_CLEAR(st->tree_builder_type);
+    Py_CLEAR(st->xmlparser_type);
     return 0;
 }
 
@@ -141,6 +144,9 @@ elementtree_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->comment_factory);
     Py_VISIT(st->pi_factory);
     Py_VISIT(st->element_type);
+    Py_VISIT(st->element_iter_type);
+    Py_VISIT(st->tree_builder_type);
+    Py_VISIT(st->xmlparser_type);
     return 0;
 }
 
