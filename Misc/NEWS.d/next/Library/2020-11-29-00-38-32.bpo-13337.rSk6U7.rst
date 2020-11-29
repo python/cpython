@@ -1,0 +1,1 @@
+Adds an `ignore_case` flag to the `doctest` library.
