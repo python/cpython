@@ -384,10 +384,10 @@ following:
 
 The ``'#'`` option causes the "alternate form" to be used for the
 conversion.  The alternate form is defined differently for different
-types.  This option is only valid for integer, float, complex and
-Decimal types. For integers, when binary, octal, or hexadecimal output
+types.  This option is only valid for integer, float and complex
+types. For integers, when binary, octal, or hexadecimal output
 is used, this option adds the prefix respective ``'0b'``, ``'0o'``, or
-``'0x'`` to the output value. For floats, complex and Decimal the
+``'0x'`` to the output value. For float and complex the
 alternate form causes the result of the conversion to always contain a
 decimal-point character, even if no digits follow it. Normally, a
 decimal-point character appears in the result of these conversions
@@ -476,20 +476,36 @@ with the floating point presentation types listed below (except
 ``'n'`` and ``None``). When doing so, :func:`float` is used to convert the
 integer to a floating point number before formatting.
 
-The available presentation types for floating point and decimal values are:
+The available presentation types for :class:`float` and
+:class:`~decimal.Decimal` values are:
 
    +---------+----------------------------------------------------------+
    | Type    | Meaning                                                  |
    +=========+==========================================================+
-   | ``'e'`` | Exponent notation. Prints the number in scientific       |
-   |         | notation using the letter 'e' to indicate the exponent.  |
-   |         | The default precision is ``6``.                          |
+   | ``'e'`` | Scientific notation. For a given precision ``p``,        |
+   |         | formats the number in scientific notation with the       |
+   |         | letter 'e' separating the coefficient from the exponent. |
+   |         | The coefficient has one digit before and ``p`` digits    |
+   |         | after the decimal point, for a total of ``p + 1``        |
+   |         | significant digits. With no precision given, uses a      |
+   |         | precision of ``6`` digits after the decimal point for    |
+   |         | :class:`float`, and shows all coefficient digits         |
+   |         | for :class:`~decimal.Decimal`. If no digits follow the   |
+   |         | decimal point, the decimal point is also removed unless  |
+   |         | the ``#`` option is used.                                |
    +---------+----------------------------------------------------------+
-   | ``'E'`` | Exponent notation. Same as ``'e'`` except it uses an     |
-   |         | upper case 'E' as the separator character.               |
+   | ``'E'`` | Scientific notation. Same as ``'e'`` except it uses      |
+   |         | an upper case 'E' as the separator character.            |
    +---------+----------------------------------------------------------+
-   | ``'f'`` | Fixed-point notation. Displays the number as a           |
-   |         | fixed-point number.  The default precision is ``6``.     |
+   | ``'f'`` | Fixed-point notation. For a given precision ``p``,       |
+   |         | formats the number as a decimal number with exactly      |
+   |         | ``p`` digits following the decimal point. With no        |
+   |         | precision given, uses a precision of ``6`` digits after  |
+   |         | the decimal point for :class:`float`, and uses a         |
+   |         | precision large enough to show all coefficient digits    |
+   |         | for :class:`~decimal.Decimal`. If no digits follow the   |
+   |         | decimal point, the decimal point is also removed unless  |
+   |         | the ``#`` option is used.                                |
    +---------+----------------------------------------------------------+
    | ``'F'`` | Fixed-point notation. Same as ``'f'``, but converts      |
    |         | ``nan`` to  ``NAN`` and ``inf`` to ``INF``.              |
@@ -518,7 +534,10 @@ The available presentation types for floating point and decimal values are:
    |         | the precision.                                           |
    |         |                                                          |
    |         | A precision of ``0`` is treated as equivalent to a       |
-   |         | precision of ``1``.  The default precision is ``6``.     |
+   |         | precision of ``1``. With no precision given, uses a      |
+   |         | precision of ``6`` significant digits for                |
+   |         | :class:`float`, and shows all coefficient digits         |
+   |         | for :class:`~decimal.Decimal`.                           |
    +---------+----------------------------------------------------------+
    | ``'G'`` | General format. Same as ``'g'`` except switches to       |
    |         | ``'E'`` if the number gets too large. The                |
