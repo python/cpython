@@ -62,8 +62,7 @@ Creating Subprocesses
 =====================
 
 .. coroutinefunction:: create_subprocess_exec(program, \*args, stdin=None, \
-                          stdout=None, stderr=None, loop=None, \
-                          limit=None, \*\*kwds)
+                          stdout=None, stderr=None, limit=None, \*\*kwds)
 
    Create a subprocess.
 
@@ -76,13 +75,9 @@ Creating Subprocesses
    See the documentation of :meth:`loop.subprocess_exec` for other
    parameters.
 
-   .. deprecated-removed:: 3.8 3.10
-
-      The *loop* parameter.
 
 .. coroutinefunction:: create_subprocess_shell(cmd, stdin=None, \
-                          stdout=None, stderr=None, loop=None, \
-                          limit=None, \*\*kwds)
+                          stdout=None, stderr=None, limit=None, \*\*kwds)
 
    Run the *cmd* shell command.
 
@@ -103,10 +98,6 @@ Creating Subprocesses
       vulnerabilities. The :func:`shlex.quote` function can be used to properly
       escape whitespace and special shell characters in strings that are going
       to be used to construct shell commands.
-
-   .. deprecated-removed:: 3.8 3.10
-
-      The *loop* parameter.
 
 .. note::
 

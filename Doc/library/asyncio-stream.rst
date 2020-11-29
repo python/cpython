@@ -49,8 +49,8 @@ and work with streams:
 
 
 .. coroutinefunction:: open_connection(host=None, port=None, \*, \
-                          loop=None, limit=None, ssl=None, family=0, \
-                          proto=0, flags=0, sock=None, local_addr=None, \
+                          limit=None, ssl=None, family=0, proto=0, \
+                          flags=0, sock=None, local_addr=None, \
                           server_hostname=None, ssl_handshake_timeout=None)
 
    Establish a network connection and return a pair of
@@ -58,9 +58,6 @@ and work with streams:
 
    The returned *reader* and *writer* objects are instances of
    :class:`StreamReader` and :class:`StreamWriter` classes.
-
-   The *loop* argument is optional and can always be determined
-   automatically when this function is awaited from a coroutine.
 
    *limit* determines the buffer size limit used by the
    returned :class:`StreamReader` instance.  By default the *limit*
@@ -74,7 +71,7 @@ and work with streams:
       The *ssl_handshake_timeout* parameter.
 
 .. coroutinefunction:: start_server(client_connected_cb, host=None, \
-                          port=None, \*, loop=None, limit=None, \
+                          port=None, \*, limit=None, \
                           family=socket.AF_UNSPEC, \
                           flags=socket.AI_PASSIVE, sock=None, \
                           backlog=100, ssl=None, reuse_address=None, \
@@ -92,9 +89,6 @@ and work with streams:
    :ref:`coroutine function <coroutine>`; if it is a coroutine function,
    it will be automatically scheduled as a :class:`Task`.
 
-   The *loop* argument is optional and can always be determined
-   automatically when this method is awaited from a coroutine.
-
    *limit* determines the buffer size limit used by the
    returned :class:`StreamReader` instance.  By default the *limit*
    is set to 64 KiB.
@@ -109,9 +103,9 @@ and work with streams:
 
 .. rubric:: Unix Sockets
 
-.. coroutinefunction:: open_unix_connection(path=None, \*, loop=None, \
-                        limit=None, ssl=None, sock=None, \
-                        server_hostname=None, ssl_handshake_timeout=None)
+.. coroutinefunction:: open_unix_connection(path=None, \*, limit=None, \
+                        ssl=None, sock=None, server_hostname=None, \
+                        ssl_handshake_timeout=None)
 
    Establish a Unix socket connection and return a pair of
    ``(reader, writer)``.
@@ -132,9 +126,8 @@ and work with streams:
 
 
 .. coroutinefunction:: start_unix_server(client_connected_cb, path=None, \
-                          \*, loop=None, limit=None, sock=None, \
-                          backlog=100, ssl=None, ssl_handshake_timeout=None, \
-                          start_serving=True)
+                          \*, limit=None, sock=None, backlog=100, ssl=None, \
+                          ssl_handshake_timeout=None, start_serving=True)
 
    Start a Unix socket server.
 
