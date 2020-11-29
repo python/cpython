@@ -782,12 +782,6 @@ which incur interpreter overhead.
            return starmap(func, repeat(args))
        return starmap(func, repeat(args, times))
 
-   def pairwise(iterable):
-       "s -> (s0,s1), (s1,s2), (s2, s3), ..."
-       a, b = tee(iterable)
-       next(b, None)
-       return zip(a, b)
-
    def grouper(iterable, n, fillvalue=None):
        "Collect data into fixed-length chunks or blocks"
        # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
