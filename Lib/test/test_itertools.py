@@ -2290,7 +2290,7 @@ Samuele
 ...     "Count how many times the predicate is true"
 ...     return sum(map(pred, iterable))
 
->>> def padnone(iterable):
+>>> def pad_none(iterable):
 ...     "Returns the sequence elements and then returns None indefinitely"
 ...     return chain(iterable, repeat(None))
 
@@ -2460,7 +2460,7 @@ True
 >>> list(pairwise('a'))
 []
 
->>> list(islice(padnone('abc'), 0, 6))
+>>> list(islice(pad_none('abc'), 0, 6))
 ['a', 'b', 'c', None, None, None]
 
 >>> list(ncycles('abc', 3))
