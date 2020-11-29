@@ -73,18 +73,21 @@ static PyObject *
 pairwise_new_impl(PyTypeObject *type, PyObject *iterable)
 /*[clinic end generated code: output=9f0267062d384456 input=a1ad925c82e0e901]*/
 {
+    PyObject *it;
     pairwiseobject *po;
+
+    it = PyObject_GetIter(iterable);
+    if (it == NULL) {
+        return NULL;
+    }
 
     po = (pairwiseobject *)type->tp_alloc(type, 0);
     if (po == NULL) {
+        Py_DECREF(it);
         return NULL;
     }
+    po->it = it;
     po->old = NULL;
-    po->it = PyObject_GetIter(iterable);
-    if (po->it == NULL) {
-        Py_DECREF(po);
-        return NULL;
-    }
     return (PyObject *)po;
 }
 
