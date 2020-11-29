@@ -1,0 +1,2 @@
+allow cross building on macOS
+
