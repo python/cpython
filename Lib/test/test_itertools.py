@@ -2451,15 +2451,6 @@ True
 >>> take(5, map(int, repeatfunc(random.random)))
 [0, 0, 0, 0, 0]
 
->>> list(pairwise('abcd'))
-[('a', 'b'), ('b', 'c'), ('c', 'd')]
-
->>> list(pairwise([]))
-[]
-
->>> list(pairwise('a'))
-[]
-
 >>> list(islice(padnone('abc'), 0, 6))
 ['a', 'b', 'c', None, None, None]
 
