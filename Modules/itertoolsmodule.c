@@ -4835,7 +4835,7 @@ itertoolsmodule_exec(PyObject *m)
         &groupby_type,
         &_grouper_type,
         &tee_type,
-        &teedataobject_type,
+        &teedataobject_type
     };
 
     Py_SET_TYPE(&teedataobject_type, &PyType_Type);
