@@ -2,16 +2,36 @@
 preserve
 [clinic start generated code]*/
 
-PyDoc_STRVAR(itertools_pairwise__doc__,
-"pairwise($type, iterable, /)\n"
+PyDoc_STRVAR(pairwise_new__doc__,
+"pairwise(iterable, /)\n"
 "--\n"
 "\n"
 "Return a pairwise object.\n"
 "\n"
 "\"s -> (s0,s1), (s1,s2), (s2, s3), ...\"");
 
-#define ITERTOOLS_PAIRWISE_METHODDEF    \
-    {"pairwise", (PyCFunction)itertools_pairwise, METH_O|METH_CLASS, itertools_pairwise__doc__},
+static PyObject *
+pairwise_new_impl(PyTypeObject *type, PyObject *iterable);
+
+static PyObject *
+pairwise_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *iterable;
+
+    if ((type == &pairwise_type) &&
+        !_PyArg_NoKeywords("pairwise", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("pairwise", PyTuple_GET_SIZE(args), 1, 1)) {
+        goto exit;
+    }
+    iterable = PyTuple_GET_ITEM(args, 0);
+    return_value = pairwise_new_impl(type, iterable);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(itertools_groupby__doc__,
 "groupby(iterable, key=None)\n"
@@ -638,4 +658,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4b7af6880c7f7a4b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=540324a5db73ac98 input=a9049054013a1b77]*/
