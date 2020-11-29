@@ -1612,16 +1612,20 @@ class OutputChecker:
 
         # Ignore case if flag
         # Lowercase got and want
+        true_line = "True\n"
+        false_line = "False\n"
         if (optionflags & IGNORE_CASE):
             got = got.lower()
             want = want.lower()
+            true_line = "true\n"
+            false_line = "false\n"
 
         # The values True and False replaced 1 and 0 as the return
         # value for boolean comparisons in Python 2.3.
         if not (optionflags & DONT_ACCEPT_TRUE_FOR_1):
-            if (got,want) == ("True\n", "1\n"):
+            if (got, want) == (true_line, "1\n"):
                 return True
-            if (got,want) == ("False\n", "0\n"):
+            if (got, want) == (false_line, "0\n"):
                 return True
 
         # <BLANKLINE> can be used as a special sequence to signify a
