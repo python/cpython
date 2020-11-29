@@ -2312,15 +2312,6 @@ Samuele
 ...     else:
 ...         return starmap(func, repeat(args, times))
 
->>> def pairwise(iterable):
-...     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
-...     a, b = tee(iterable)
-...     try:
-...         next(b)
-...     except StopIteration:
-...         pass
-...     return zip(a, b)
-
 >>> def grouper(n, iterable, fillvalue=None):
 ...     "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
 ...     args = [iter(iterable)] * n
