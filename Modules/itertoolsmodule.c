@@ -79,12 +79,12 @@ pairwise_new_impl(PyTypeObject *type, PyObject *iterable)
     if (po == NULL) {
         return NULL;
     }
+    po->old = NULL;
     po->it = PyObject_GetIter(iterable);
     if (po->it == NULL) {
         Py_DECREF(po);
         return NULL;
     }
-    po->old = NULL;
     return (PyObject *)po;
 }
 
