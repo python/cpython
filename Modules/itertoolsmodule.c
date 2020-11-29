@@ -105,6 +105,32 @@ pairwise_traverse(pairwiseobject *po, visitproc visit, void *arg)
     return 0;
 }
 
+static PyObject *
+pairwise_next(pairwiseobject *po)
+{
+    PyObject *new, *result;
+
+    if (po->it == NULL) {
+        return NULL;
+    }
+    if (po->old == NULL) {
+        po->old = PyIter_Next(po->it);
+        if (po->old == NULL) {
+            Py_CLEAR(po->it);
+            return NULL;
+        }
+    }
+    new = PyIter_Next(po->it);
+    if (new == NULL) {
+        Py_CLEAR(po->it);
+        Py_CLEAR(po->old);
+        return NULL;
+    }
+    result = PyTuple_Pack(2, po->old, new);
+    Py_SETREF(po->old, new);
+    return result;
+}
+
 static PyTypeObject pairwise_type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "itertools.pairwise",           /* tp_name */
@@ -134,7 +160,7 @@ static PyTypeObject pairwise_type = {
     0,                              /* tp_richcompare */
     0,                              /* tp_weaklistoffset */
     PyObject_SelfIter,              /* tp_iter */
-    0, /*  (iternextfunc)enum_next, */       /* tp_iternext */
+    (iternextfunc)pairwise_next,    /* tp_iternext */
     0,                              /* tp_methods */
     0,                              /* tp_members */
     0,                              /* tp_getset */
