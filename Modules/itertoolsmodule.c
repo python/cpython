@@ -27,8 +27,9 @@ class itertools.accumulate "accumulateobject *" "&accumulate_type"
 class itertools.compress "compressobject *" "&compress_type"
 class itertools.filterfalse "filterfalseobject *" "&filterfalse_type"
 class itertools.count "countobject *" "&count_type"
+class itertools.pairwise "pairwiseobject *" "&pairwise_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ea05c93c6d94726a]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6498ed21fbe1bf94]*/
 
 static PyTypeObject groupby_type;
 static PyTypeObject _grouper_type;
@@ -45,8 +46,108 @@ static PyTypeObject accumulate_type;
 static PyTypeObject compress_type;
 static PyTypeObject filterfalse_type;
 static PyTypeObject count_type;
+static PyTypeObject pairwise_type;
 
 #include "clinic/itertoolsmodule.c.h"
+
+/* pairwise object ***********************************************************/
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *it;
+    PyObject *old;
+} pairwiseobject;
+
+/*[clinic input]
+@classmethod
+itertools.pairwise
+    iterable: object
+    /
+Return a pairwise object.
+
+"s -> (s0,s1), (s1,s2), (s2, s3), ..."
+
+[clinic start generated code]*/
+
+static PyObject *
+itertools_pairwise(PyTypeObject *type, PyObject *iterable)
+/*[clinic end generated code: output=aea36fd59aecff87 input=65db24d29d90acbe]*/
+{
+    pairwiseobject *po;
+
+    po = (pairwiseobject *)type->tp_alloc(type, 0);
+    if (po == NULL) {
+        return NULL;
+    }
+    po->it = PyObject_GetIter(iterable);
+    if (po->it == NULL) {
+        Py_DECREF(po);
+        return NULL;
+    }
+    po->old = NULL;
+    return (PyObject *)po;
+}
+
+static void
+pairwise_dealloc(pairwiseobject *po)
+{
+    PyObject_GC_UnTrack(po);
+    Py_XDECREF(po->it);
+    Py_XDECREF(po->old);
+    Py_TYPE(po)->tp_free(po);
+}
+
+static int
+pairwise_traverse(pairwiseobject *po, visitproc visit, void *arg)
+{
+    Py_VISIT(po->it);
+    Py_VISIT(po->old);
+    return 0;
+}
+
+static PyTypeObject pairwise_type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "itertools.pairwise",           /* tp_name */
+    sizeof(pairwiseobject),         /* tp_basicsize */
+    0,                              /* tp_itemsize */
+    /* methods */
+    (destructor)pairwise_dealloc,   /* tp_dealloc */
+    0,                              /* tp_vectorcall_offset */
+    0,                              /* tp_getattr */
+    0,                              /* tp_setattr */
+    0,                              /* tp_as_async */
+    0,                              /* tp_repr */
+    0,                              /* tp_as_number */
+    0,                              /* tp_as_sequence */
+    0,                              /* tp_as_mapping */
+    0,                              /* tp_hash */
+    0,                              /* tp_call */
+    0,                              /* tp_str */
+    PyObject_GenericGetAttr,        /* tp_getattro */
+    0,                              /* tp_setattro */
+    0,                              /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_BASETYPE,        /* tp_flags */
+    itertools_pairwise__doc__,      /* tp_doc */
+    (traverseproc)pairwise_traverse,    /* tp_traverse */
+    0,                              /* tp_clear */
+    0,                              /* tp_richcompare */
+    0,                              /* tp_weaklistoffset */
+    PyObject_SelfIter,              /* tp_iter */
+    0, /*  (iternextfunc)enum_next, */       /* tp_iternext */
+    0,                              /* tp_methods */
+    0,                              /* tp_members */
+    0,                              /* tp_getset */
+    0,                              /* tp_base */
+    0,                              /* tp_dict */
+    0,                              /* tp_descr_get */
+    0,                              /* tp_descr_set */
+    0,                              /* tp_dictoffset */
+    0,                              /* tp_init */
+    PyType_GenericAlloc,            /* tp_alloc */
+    itertools_pairwise,             /* tp_new */
+    PyObject_GC_Del,                /* tp_free */
+};
 
 
 /* groupby object ************************************************************/
@@ -4701,7 +4802,8 @@ itertoolsmodule_exec(PyObject *m)
         &groupby_type,
         &_grouper_type,
         &tee_type,
-        &teedataobject_type
+        &teedataobject_type,
+        &pairwise_type
     };
 
     Py_SET_TYPE(&teedataobject_type, &PyType_Type);

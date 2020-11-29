@@ -2,6 +2,17 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(itertools_pairwise__doc__,
+"pairwise($type, iterable, /)\n"
+"--\n"
+"\n"
+"Return a pairwise object.\n"
+"\n"
+"\"s -> (s0,s1), (s1,s2), (s2, s3), ...\"");
+
+#define ITERTOOLS_PAIRWISE_METHODDEF    \
+    {"pairwise", (PyCFunction)itertools_pairwise, METH_O|METH_CLASS, itertools_pairwise__doc__},
+
 PyDoc_STRVAR(itertools_groupby__doc__,
 "groupby(iterable, key=None)\n"
 "--\n"
@@ -627,4 +638,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d7f58dc477814b45 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4b7af6880c7f7a4b input=a9049054013a1b77]*/
