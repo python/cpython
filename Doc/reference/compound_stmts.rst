@@ -797,7 +797,7 @@ The :keyword:`!async for` statement
    async_for_stmt: "async" `for_stmt`
 
 An :term:`asynchronous iterable` provides an *iter* method that returns an
-:term:`asynchronous iterator, which can call asynchronous code in its *next*
+:term:`asynchronous iterator`, which can call asynchronous code in its *next*
 method.
 
 The ``async for`` statement allows convenient iteration over asynchronous
