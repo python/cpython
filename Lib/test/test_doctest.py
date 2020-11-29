@@ -1314,6 +1314,12 @@ output to match any substring in the actual output:
     ...                 # doctest: +NORMALIZE_WHITESPACE
     [0,    1, ...,   18,    19]
 
+The IGNORE_CASE flag causes the test runner to ignore case when
+matching the expected output to the actual output
+    >>> print("Hello World") # doctest: +IGNORE_CASE
+    hello world
+    
+
 The SKIP flag causes an example to be skipped entirely.  I.e., the
 example is not run.  It can be useful in contexts where doctest
 examples serve as both documentation and test cases, and an example
