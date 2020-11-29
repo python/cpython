@@ -4828,7 +4828,7 @@ itertoolsmodule_exec(PyObject *m)
         &filterfalse_type,
         &count_type,
         &ziplongest_type,
-        &pairwise_type
+        &pairwise_type,
         &permutations_type,
         &product_type,
         &repeat_type,
