@@ -112,14 +112,15 @@ static PyObject *
 pairwise_next(pairwiseobject *po)
 {
     PyObject *it = po->it;
+    PyObject *old = po->old;
     PyObject *new, *result;
 
     if (it == NULL) {
         return NULL;
     }
-    if (po->old == NULL) {
-        po->old = (*Py_TYPE(it)->tp_iternext)(it);
-        if (po->old == NULL) {
+    if (old == NULL) {
+        po->old = old = (*Py_TYPE(it)->tp_iternext)(it);
+        if (old == NULL) {
             Py_CLEAR(po->it);
             return NULL;
         }
@@ -130,7 +131,7 @@ pairwise_next(pairwiseobject *po)
         Py_CLEAR(po->old);
         return NULL;
     }
-    result = PyTuple_Pack(2, po->old, new);
+    result = PyTuple_Pack(2, old, new);
     Py_SETREF(po->old, new);
     return result;
 }
