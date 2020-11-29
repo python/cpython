@@ -321,7 +321,7 @@ class BaseTest(unittest.TestCase):
         with self.subTest("Testing weakref"):
             self.assertEqual(ref(alias)(), alias)
 
-        with self.subTest("Testing picling"):
+        with self.subTest("Testing pickling"):
             s = pickle.dumps(alias)
             loaded = pickle.loads(s)
             self.assertEqual(alias.__origin__, loaded.__origin__)
