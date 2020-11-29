@@ -108,19 +108,20 @@ pairwise_traverse(pairwiseobject *po, visitproc visit, void *arg)
 static PyObject *
 pairwise_next(pairwiseobject *po)
 {
+    PyObject *it = po->it;
     PyObject *new, *result;
 
-    if (po->it == NULL) {
+    if (it == NULL) {
         return NULL;
     }
     if (po->old == NULL) {
-        po->old = PyIter_Next(po->it);
+        po->old = (*Py_TYPE(it)->tp_iternext)(it);
         if (po->old == NULL) {
             Py_CLEAR(po->it);
             return NULL;
         }
     }
-    new = PyIter_Next(po->it);
+    new = (*Py_TYPE(it)->tp_iternext)(it);
     if (new == NULL) {
         Py_CLEAR(po->it);
         Py_CLEAR(po->old);
