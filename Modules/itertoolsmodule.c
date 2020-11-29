@@ -60,7 +60,7 @@ typedef struct {
 
 /*[clinic input]
 @classmethod
-itertools.pairwise
+itertools.pairwise.__new__ as pairwise_new
     iterable: object
     /
 Return a pairwise object.
@@ -70,8 +70,8 @@ Return a pairwise object.
 [clinic start generated code]*/
 
 static PyObject *
-itertools_pairwise(PyTypeObject *type, PyObject *iterable)
-/*[clinic end generated code: output=aea36fd59aecff87 input=65db24d29d90acbe]*/
+pairwise_new_impl(PyTypeObject *type, PyObject *iterable)
+/*[clinic end generated code: output=9f0267062d384456 input=a1ad925c82e0e901]*/
 {
     pairwiseobject *po;
 
@@ -154,7 +154,7 @@ static PyTypeObject pairwise_type = {
     0,                              /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,        /* tp_flags */
-    itertools_pairwise__doc__,      /* tp_doc */
+    pairwise_new__doc__,            /* tp_doc */
     (traverseproc)pairwise_traverse,    /* tp_traverse */
     0,                              /* tp_clear */
     0,                              /* tp_richcompare */
@@ -171,7 +171,7 @@ static PyTypeObject pairwise_type = {
     0,                              /* tp_dictoffset */
     0,                              /* tp_init */
     PyType_GenericAlloc,            /* tp_alloc */
-    itertools_pairwise,             /* tp_new */
+    pairwise_new,                   /* tp_new */
     PyObject_GC_Del,                /* tp_free */
 };
 
