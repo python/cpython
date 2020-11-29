@@ -1615,8 +1615,8 @@ class OutputChecker:
         true_line = "True\n"
         false_line = "False\n"
         if (optionflags & IGNORE_CASE):
-            got = got.lower()
-            want = want.lower()
+            got = got.casefold()
+            want = want.casefold()
             true_line = "true\n"
             false_line = "false\n"
 
