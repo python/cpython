@@ -59,9 +59,6 @@ and work with streams:
    The returned *reader* and *writer* objects are instances of
    :class:`StreamReader` and :class:`StreamWriter` classes.
 
-   The *loop* argument is optional and can always be determined
-   automatically when this function is awaited from a coroutine.
-
    *limit* determines the buffer size limit used by the
    returned :class:`StreamReader` instance.  By default the *limit*
    is set to 64 KiB.
@@ -91,9 +88,6 @@ and work with streams:
    *client_connected_cb* can be a plain callable or a
    :ref:`coroutine function <coroutine>`; if it is a coroutine function,
    it will be automatically scheduled as a :class:`Task`.
-
-   The *loop* argument is optional and can always be determined
-   automatically when this method is awaited from a coroutine.
 
    *limit* determines the buffer size limit used by the
    returned :class:`StreamReader` instance.  By default the *limit*
