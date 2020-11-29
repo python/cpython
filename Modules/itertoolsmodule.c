@@ -81,7 +81,6 @@ pairwise_new_impl(PyTypeObject *type, PyObject *iterable)
     if (it == NULL) {
         return NULL;
     }
-
     po = (pairwiseobject *)type->tp_alloc(type, 0);
     if (po == NULL) {
         Py_DECREF(it);
@@ -132,6 +131,7 @@ pairwise_next(pairwiseobject *po)
         Py_CLEAR(po->old);
         return NULL;
     }
+    /* Future optimization: Reuse the result tuple as we do in enumerate() */
     result = PyTuple_Pack(2, old, new);
     Py_SETREF(po->old, new);
     return result;
