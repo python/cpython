@@ -1,4 +1,5 @@
 
+
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
@@ -4827,6 +4828,7 @@ itertoolsmodule_exec(PyObject *m)
         &filterfalse_type,
         &count_type,
         &ziplongest_type,
+        &pairwise_type
         &permutations_type,
         &product_type,
         &repeat_type,
@@ -4834,7 +4836,6 @@ itertoolsmodule_exec(PyObject *m)
         &_grouper_type,
         &tee_type,
         &teedataobject_type,
-        &pairwise_type
     };
 
     Py_SET_TYPE(&teedataobject_type, &PyType_Type);
