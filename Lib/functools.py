@@ -12,7 +12,7 @@
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'total_ordering', 'cache', 'cmp_to_key', 'lru_cache', 'reduce',
            'partial', 'partialmethod', 'singledispatch', 'singledispatchmethod',
-           'cached_property', 'decorator_with_params']
+           'cached_property', 'decorator_factory']
 
 from abc import get_cache_token
 from collections import namedtuple
@@ -981,16 +981,16 @@ class cached_property:
     __class_getitem__ = classmethod(GenericAlias)
 
 
-def decorator_with_params(deco):
-    """Transform function into decorator with parameters"""
+def decorator_factory(func):
+    """Transform function into decorator"""
 
-    @wraps(deco)
-    def decorator(func=None, /, *args, **kwargs):
-        if func is not None:
-            return deco(func, *args, **kwargs)
+    @wraps(func)
+    def decorator(fn=None, /, *args, **kwargs):
+        if fn is not None:
+            return func(fn, *args, **kwargs)
 
         def wrapper(f):
-            return deco(f, *args, **kwargs)
+            return func(f, *args, **kwargs)
 
         return wrapper
 

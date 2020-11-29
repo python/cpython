@@ -2615,9 +2615,9 @@ class TestCachedProperty(unittest.TestCase):
         self.assertEqual(CachedCostItem.cost.__doc__, "The cost of the item.")
 
 
-class TestDecoratorWithParams(unittest.TestCase):
+class TestDecoratorFactory(unittest.TestCase):
     def test_wrapping_attributes(self):
-        @py_functools.decorator_with_params
+        @py_functools.decorator_factory
         def function(func, /, a, b):
             """This is function"""
             return "Test"
@@ -2627,7 +2627,7 @@ class TestDecoratorWithParams(unittest.TestCase):
             self.assertEqual(function.__doc__, "This is function")
 
     def test_default_values(self):
-        @py_functools.decorator_with_params
+        @py_functools.decorator_factory
         def decorator(func, /, a=1):
             def wrapper(*args, **kwargs):
                 return a
@@ -2646,7 +2646,7 @@ class TestDecoratorWithParams(unittest.TestCase):
         self.assertEqual(b(), 2)
 
     def test_params_without_default_value(self):
-        @py_functools.decorator_with_params
+        @py_functools.decorator_factory
         def decorator(func, /, a):
             return func
 
@@ -2656,7 +2656,7 @@ class TestDecoratorWithParams(unittest.TestCase):
                 pass
 
     def test_wraps_correct_function(self):
-        @py_functools.decorator_with_params
+        @py_functools.decorator_factory
         def decorator(func, /):
             return func
 
