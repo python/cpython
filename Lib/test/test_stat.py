@@ -2,6 +2,7 @@ import unittest
 import os
 import socket
 import sys
+from test.support import os_helper
 from test.support import socket_helper
 from test.support.import_helper import import_fresh_module
 from test.support.os_helper import TESTFN
@@ -181,9 +182,8 @@ class TestFilemode:
             os.mkfifo(fifo_path, 0o700)
         except PermissionError as e:
             self.skipTest('os.mkfifo(): %s' % e)
+        self.addCleanup(os_helper.unlink, fifo_path)
         st_mode, modestr = self.get_mode(fifo_path)
-        if sys.platform == "vxworks":
-            os.remove(fifo_path)
         self.assertEqual(modestr, 'prwx------')
         self.assertS_IS("FIFO", st_mode)
 
