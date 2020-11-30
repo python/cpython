@@ -60,11 +60,10 @@ class WidgetTest(AbstractTkTest, unittest.TestCase):
         super().setUp()
         self.widget = ttk.Button(self.root, width=0, text="Text")
         self.widget.pack()
-        self.widget.wait_visibility()
 
 
     def test_identify(self):
-        self.widget.update_idletasks()
+        self.widget.update()
         self.assertEqual(self.widget.identify(
             int(self.widget.winfo_width() / 2),
             int(self.widget.winfo_height() / 2)
@@ -326,8 +325,7 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_identify(self):
         self.entry.pack()
-        self.entry.wait_visibility()
-        self.entry.update_idletasks()
+        self.entry.update()
 
         # bpo-27313: macOS Cocoa widget differs from X, allow either
         if sys.platform == 'darwin':
@@ -449,7 +447,7 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         self.combo.bind('<<ComboboxSelected>>',
             lambda evt: success.append(True))
         self.combo.pack()
-        self.combo.wait_visibility()
+        self.combo.update()
 
         height = self.combo.winfo_height()
         self._show_drop_down_listbox()
@@ -465,7 +463,7 @@ class ComboboxTest(EntryTest, unittest.TestCase):
 
         self.combo['postcommand'] = lambda: success.append(True)
         self.combo.pack()
-        self.combo.wait_visibility()
+        self.combo.update()
 
         self._show_drop_down_listbox()
         self.assertTrue(success)
@@ -665,7 +663,6 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         self.assertRaises(tkinter.TclError, self.paned.sashpos, 1)
 
         self.paned.pack(expand=True, fill='both')
-        self.paned.wait_visibility()
 
         curr_pos = self.paned.sashpos(0)
         self.paned.sashpos(0, 1000)
@@ -933,7 +930,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.nb.add(self.child1, text='a')
 
         self.nb.pack()
-        self.nb.wait_visibility()
+        self.nb.update()
         if sys.platform == 'darwin':
             tb_idx = "@20,5"
         else:
@@ -1041,7 +1038,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_select(self):
         self.nb.pack()
-        self.nb.wait_visibility()
+        self.nb.update()
 
         success = []
         tab_changed = []
@@ -1084,7 +1081,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_traversal(self):
         self.nb.pack()
-        self.nb.wait_visibility()
+        self.nb.update()
 
         self.nb.select(0)
 
@@ -1342,7 +1339,6 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
     def test_bbox(self):
         self.tv.pack()
         self.assertEqual(self.tv.bbox(''), '')
-        self.tv.wait_visibility()
         self.tv.update()
 
         item_id = self.tv.insert('', 'end')
@@ -1536,7 +1532,6 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         success = [] # no success for now
 
         self.tv.pack()
-        self.tv.wait_visibility()
         self.tv.heading('#0', command=lambda: success.append(True))
         self.tv.column('#0', width=100)
         self.tv.update()
@@ -1784,7 +1779,6 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
             lambda evt: events.append(2))
 
         self.tv.pack()
-        self.tv.wait_visibility()
         self.tv.update()
 
         pos_y = set()
