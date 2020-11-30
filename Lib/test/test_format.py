@@ -275,9 +275,9 @@ class FormatTest(unittest.TestCase):
         test_exc_common('% %s', 1, ValueError,
                         "unsupported format character '%' (0x25) at index 2")
         test_exc_common('%d', '1', TypeError,
-                        "%d format: a number is required, not str")
+                        "%d format: a real number is required, not str")
         test_exc_common('%d', b'1', TypeError,
-                        "%d format: a number is required, not bytes")
+                        "%d format: a real number is required, not bytes")
         test_exc_common('%x', '1', TypeError,
                         "%x format: an integer is required, not str")
         test_exc_common('%x', 3.14, TypeError,
