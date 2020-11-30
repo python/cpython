@@ -75,8 +75,8 @@ static KeywordToken *reserved_keywords[] = {
 #define statements_type 1006
 #define statement_type 1007
 #define statement_newline_type 1008
-#define simple_stmt_type 1009
-#define small_stmt_type 1010
+#define simple_stmts_type 1009
+#define simple_stmt_type 1010
 #define compound_stmt_type 1011
 #define assignment_type 1012
 #define augassign_type 1013
@@ -391,8 +391,8 @@ static asdl_expr_seq* type_expressions_rule(Parser *p);
 static asdl_stmt_seq* statements_rule(Parser *p);
 static asdl_stmt_seq* statement_rule(Parser *p);
 static asdl_stmt_seq* statement_newline_rule(Parser *p);
-static asdl_stmt_seq* simple_stmt_rule(Parser *p);
-static stmt_ty small_stmt_rule(Parser *p);
+static asdl_stmt_seq* simple_stmts_rule(Parser *p);
+static stmt_ty simple_stmt_rule(Parser *p);
 static stmt_ty compound_stmt_rule(Parser *p);
 static stmt_ty assignment_rule(Parser *p);
 static AugOperator* augassign_rule(Parser *p);
@@ -1213,7 +1213,7 @@ statements_rule(Parser *p)
     return _res;
 }
 
-// statement: compound_stmt | simple_stmt
+// statement: compound_stmt | simple_stmts
 static asdl_stmt_seq*
 statement_rule(Parser *p)
 {
@@ -1248,18 +1248,18 @@ statement_rule(Parser *p)
         D(fprintf(stderr, "%*c%s statement[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "compound_stmt"));
     }
-    { // simple_stmt
+    { // simple_stmts
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> statement[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "simple_stmt"));
+        D(fprintf(stderr, "%*c> statement[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "simple_stmts"));
         asdl_stmt_seq* a;
         if (
-            (a = (asdl_stmt_seq*)simple_stmt_rule(p))  // simple_stmt
+            (a = (asdl_stmt_seq*)simple_stmts_rule(p))  // simple_stmts
         )
         {
-            D(fprintf(stderr, "%*c+ statement[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "simple_stmt"));
+            D(fprintf(stderr, "%*c+ statement[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "simple_stmts"));
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -1270,7 +1270,7 @@ statement_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s statement[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "simple_stmt"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "simple_stmts"));
     }
     _res = NULL;
   done:
@@ -1278,7 +1278,7 @@ statement_rule(Parser *p)
     return _res;
 }
 
-// statement_newline: compound_stmt NEWLINE | simple_stmt | NEWLINE | $
+// statement_newline: compound_stmt NEWLINE | simple_stmts | NEWLINE | $
 static asdl_stmt_seq*
 statement_newline_rule(Parser *p)
 {
@@ -1325,24 +1325,24 @@ statement_newline_rule(Parser *p)
         D(fprintf(stderr, "%*c%s statement_newline[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "compound_stmt NEWLINE"));
     }
-    { // simple_stmt
+    { // simple_stmts
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> statement_newline[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "simple_stmt"));
-        asdl_stmt_seq* simple_stmt_var;
+        D(fprintf(stderr, "%*c> statement_newline[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "simple_stmts"));
+        asdl_stmt_seq* simple_stmts_var;
         if (
-            (simple_stmt_var = simple_stmt_rule(p))  // simple_stmt
+            (simple_stmts_var = simple_stmts_rule(p))  // simple_stmts
         )
         {
-            D(fprintf(stderr, "%*c+ statement_newline[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "simple_stmt"));
-            _res = simple_stmt_var;
+            D(fprintf(stderr, "%*c+ statement_newline[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "simple_stmts"));
+            _res = simple_stmts_var;
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s statement_newline[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "simple_stmt"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "simple_stmts"));
     }
     { // NEWLINE
         if (p->error_indicator) {
@@ -1407,9 +1407,9 @@ statement_newline_rule(Parser *p)
     return _res;
 }
 
-// simple_stmt: small_stmt !';' NEWLINE | ';'.small_stmt+ ';'? NEWLINE
+// simple_stmts: simple_stmt !';' NEWLINE | ';'.simple_stmt+ ';'? NEWLINE
 static asdl_stmt_seq*
-simple_stmt_rule(Parser *p)
+simple_stmts_rule(Parser *p)
 {
     D(p->level++);
     if (p->error_indicator) {
@@ -1418,23 +1418,23 @@ simple_stmt_rule(Parser *p)
     }
     asdl_stmt_seq* _res = NULL;
     int _mark = p->mark;
-    { // small_stmt !';' NEWLINE
+    { // simple_stmt !';' NEWLINE
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "small_stmt !';' NEWLINE"));
+        D(fprintf(stderr, "%*c> simple_stmts[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "simple_stmt !';' NEWLINE"));
         stmt_ty a;
         Token * newline_var;
         if (
-            (a = small_stmt_rule(p))  // small_stmt
+            (a = simple_stmt_rule(p))  // simple_stmt
             &&
             _PyPegen_lookahead_with_int(0, _PyPegen_expect_token, p, 13)  // token=';'
             &&
             (newline_var = _PyPegen_expect_token(p, NEWLINE))  // token='NEWLINE'
         )
         {
-            D(fprintf(stderr, "%*c+ simple_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "small_stmt !';' NEWLINE"));
+            D(fprintf(stderr, "%*c+ simple_stmts[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "simple_stmt !';' NEWLINE"));
             _res = ( asdl_stmt_seq * ) _PyPegen_singleton_seq ( p , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -1444,28 +1444,28 @@ simple_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "small_stmt !';' NEWLINE"));
+        D(fprintf(stderr, "%*c%s simple_stmts[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "simple_stmt !';' NEWLINE"));
     }
-    { // ';'.small_stmt+ ';'? NEWLINE
+    { // ';'.simple_stmt+ ';'? NEWLINE
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "';'.small_stmt+ ';'? NEWLINE"));
+        D(fprintf(stderr, "%*c> simple_stmts[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "';'.simple_stmt+ ';'? NEWLINE"));
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
         asdl_stmt_seq* a;
         Token * newline_var;
         if (
-            (a = (asdl_stmt_seq*)_gather_12_rule(p))  // ';'.small_stmt+
+            (a = (asdl_stmt_seq*)_gather_12_rule(p))  // ';'.simple_stmt+
             &&
             (_opt_var = _PyPegen_expect_token(p, 13), 1)  // ';'?
             &&
             (newline_var = _PyPegen_expect_token(p, NEWLINE))  // token='NEWLINE'
         )
         {
-            D(fprintf(stderr, "%*c+ simple_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "';'.small_stmt+ ';'? NEWLINE"));
+            D(fprintf(stderr, "%*c+ simple_stmts[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "';'.simple_stmt+ ';'? NEWLINE"));
             _res = a;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -1475,8 +1475,8 @@ simple_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "';'.small_stmt+ ';'? NEWLINE"));
+        D(fprintf(stderr, "%*c%s simple_stmts[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "';'.simple_stmt+ ';'? NEWLINE"));
     }
     _res = NULL;
   done:
@@ -1484,7 +1484,7 @@ simple_stmt_rule(Parser *p)
     return _res;
 }
 
-// small_stmt:
+// simple_stmt:
 //     | assignment
 //     | star_expressions
 //     | &'return' return_stmt
@@ -1499,7 +1499,7 @@ simple_stmt_rule(Parser *p)
 //     | &'global' global_stmt
 //     | &'nonlocal' nonlocal_stmt
 static stmt_ty
-small_stmt_rule(Parser *p)
+simple_stmt_rule(Parser *p)
 {
     D(p->level++);
     if (p->error_indicator) {
@@ -1507,7 +1507,7 @@ small_stmt_rule(Parser *p)
         return NULL;
     }
     stmt_ty _res = NULL;
-    if (_PyPegen_is_memoized(p, small_stmt_type, &_res)) {
+    if (_PyPegen_is_memoized(p, simple_stmt_type, &_res)) {
         D(p->level--);
         return _res;
     }
@@ -1526,18 +1526,18 @@ small_stmt_rule(Parser *p)
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> small_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "assignment"));
+        D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "assignment"));
         stmt_ty assignment_var;
         if (
             (assignment_var = assignment_rule(p))  // assignment
         )
         {
-            D(fprintf(stderr, "%*c+ small_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "assignment"));
+            D(fprintf(stderr, "%*c+ simple_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "assignment"));
             _res = assignment_var;
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s small_stmt[%d-%d]: %s failed!\n", p->level, ' ',
+        D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "assignment"));
     }
     { // star_expressions
@@ -1545,13 +1545,13 @@ small_stmt_rule(Parser *p)
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> small_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_expressions"));
+        D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_expressions"));
         expr_ty e;
         if (
             (e = star_expressions_rule(p))  // star_expressions
         )
         {
-            D(fprintf(stderr, "%*c+ small_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "star_expressions"));
+            D(fprintf(stderr, "%*c+ simple_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "star_expressions"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 D(p->level--);
@@ -1570,7 +1570,7 @@ small_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s small_stmt[%d-%d]: %s failed!\n", p->level, ' ',
+        D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "star_expressions"));
     }
     { // &'return' return_stmt
@@ -1578,7 +1578,7 @@ small_stmt_rule(Parser *p)
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> small_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'return' return_stmt"));
+        D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'return' return_stmt"));
         stmt_ty return_stmt_var;
         if (
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 500)  // token='return'
@@ -1586,12 +1586,12 @@ small_stmt_rule(Parser *p)
             (return_stmt_var = return_stmt_rule(p))  // return_stmt
         )
         {
-            D(fprintf(stderr, "%*c+ small_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&'return' return_stmt"));
+            D(fprintf(stderr, "%*c+ simple_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&'return' return_stmt"));
             _res = return_stmt_var;
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s small_stmt[%d-%d]: %s failed!\n", p->level, ' ',
+        D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'return' return_stmt"));
     }
     { // &('import' | 'from') import_stmt
@@ -1599,7 +1599,7 @@ small_stmt_rule(Parser *p)
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> small_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&('import' | 'from') import_stmt"));
+        D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&('import' | 'from') import_stmt"));
         stmt_ty import_stmt_var;
         if (
             _PyPegen_lookahead(1, _tmp_14_rule, p)
@@ -1607,12 +1607,12 @@ small_stmt_rule(Parser *p)
             (import_stmt_var = import_stmt_rule(p))  // import_stmt
         )
         {
-            D(fprintf(stderr, "%*c+ small_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&('import' | 'from') import_stmt"));
+            D(fprintf(stderr, "%*c+ simple_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&('import' | 'from') import_stmt"));
             _res = import_stmt_var;
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s small_stmt[%d-%d]: %s failed!\n", p->level, ' ',
+        D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&('import' | 'from') import_stmt"));
     }
     { // &'raise' raise_stmt
@@ -1620,7 +1620,7 @@ small_stmt_rule(Parser *p)
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> small_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'raise' raise_stmt"));
+        D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'raise' raise_stmt"));
         stmt_ty raise_stmt_var;
         if (
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 501)  // token='raise'
@@ -1628,12 +1628,12 @@ small_stmt_rule(Parser *p)
             (raise_stmt_var = raise_stmt_rule(p))  // raise_stmt
         )
         {
-            D(fprintf(stderr, "%*c+ small_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&'raise' raise_stmt"));
+            D(fprintf(stderr, "%*c+ simple_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&'raise' raise_stmt"));
             _res = raise_stmt_var;
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s small_stmt[%d-%d]: %s failed!\n", p->level, ' ',
+        D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'raise' raise_stmt"));
     }
     { // 'pass'
@@ -1641,13 +1641,13 @@ small_stmt_rule(Parser *p)
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> small_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'pass'"));
+        D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'pass'"));
         Token * _keyword;
         if (
             (_keyword = _PyPegen_expect_token(p, 502))  // token='pass'
         )
         {
-            D(fprintf(stderr, "%*c+ small_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'pass'"));
+            D(fprintf(stderr, "%*c+ simple_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'pass'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 D(p->level--);
@@ -1666,7 +1666,7 @@ small_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s small_stmt[%d-%d]: %s failed!\n", p->level, ' ',
+        D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'pass'"));
     }
     { // &'del' del_stmt
@@ -1674,7 +1674,7 @@ small_stmt_rule(Parser *p)
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> small_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'del' del_stmt"));
+        D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'del' del_stmt"));
         stmt_ty del_stmt_var;
         if (
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 503)  // token='del'
@@ -1682,12 +1682,12 @@ small_stmt_rule(Parser *p)
             (del_stmt_var = del_stmt_rule(p))  // del_stmt
         )
         {
-            D(fprintf(stderr, "%*c+ small_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&'del' del_stmt"));
+            D(fprintf(stderr, "%*c+ simple_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&'del' del_stmt"));
             _res = del_stmt_var;
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s small_stmt[%d-%d]: %s failed!\n", p->level, ' ',
+        D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'del' del_stmt"));
     }
     { // &'yield' yield_stmt
@@ -1695,7 +1695,7 @@ small_stmt_rule(Parser *p)
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> small_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'yield' yield_stmt"));
+        D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'yield' yield_stmt"));
         stmt_ty yield_stmt_var;
         if (
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 504)  // token='yield'
@@ -1703,12 +1703,12 @@ small_stmt_rule(Parser *p)
             (yield_stmt_var = yield_stmt_rule(p))  // yield_stmt
         )
         {
-            D(fprintf(stderr, "%*c+ small_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&'yield' yield_stmt"));
+            D(fprintf(stderr, "%*c+ simple_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&'yield' yield_stmt"));
             _res = yield_stmt_var;
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s small_stmt[%d-%d]: %s failed!\n", p->level, ' ',
+        D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'yield' yield_stmt"));
     }
     { // &'assert' assert_stmt
@@ -1716,7 +1716,7 @@ small_stmt_rule(Parser *p)
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> small_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'assert' assert_stmt"));
+        D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'assert' assert_stmt"));
         stmt_ty assert_stmt_var;
         if (
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 505)  // token='assert'
@@ -1724,12 +1724,12 @@ small_stmt_rule(Parser *p)
             (assert_stmt_var = assert_stmt_rule(p))  // assert_stmt
         )
         {
-            D(fprintf(stderr, "%*c+ small_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&'assert' assert_stmt"));
+            D(fprintf(stderr, "%*c+ simple_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&'assert' assert_stmt"));
             _res = assert_stmt_var;
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s small_stmt[%d-%d]: %s failed!\n", p->level, ' ',
+        D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'assert' assert_stmt"));
     }
     { // 'break'
@@ -1737,13 +1737,13 @@ small_stmt_rule(Parser *p)
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> small_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'break'"));
+        D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'break'"));
         Token * _keyword;
         if (
             (_keyword = _PyPegen_expect_token(p, 506))  // token='break'
         )
         {
-            D(fprintf(stderr, "%*c+ small_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'break'"));
+            D(fprintf(stderr, "%*c+ simple_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'break'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 D(p->level--);
@@ -1762,7 +1762,7 @@ small_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s small_stmt[%d-%d]: %s failed!\n", p->level, ' ',
+        D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'break'"));
     }
     { // 'continue'
@@ -1770,13 +1770,13 @@ small_stmt_rule(Parser *p)
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> small_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'continue'"));
+        D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'continue'"));
         Token * _keyword;
         if (
             (_keyword = _PyPegen_expect_token(p, 507))  // token='continue'
         )
         {
-            D(fprintf(stderr, "%*c+ small_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'continue'"));
+            D(fprintf(stderr, "%*c+ simple_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'continue'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 D(p->level--);
@@ -1795,7 +1795,7 @@ small_stmt_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s small_stmt[%d-%d]: %s failed!\n", p->level, ' ',
+        D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'continue'"));
     }
     { // &'global' global_stmt
@@ -1803,7 +1803,7 @@ small_stmt_rule(Parser *p)
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> small_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'global' global_stmt"));
+        D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'global' global_stmt"));
         stmt_ty global_stmt_var;
         if (
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 508)  // token='global'
@@ -1811,12 +1811,12 @@ small_stmt_rule(Parser *p)
             (global_stmt_var = global_stmt_rule(p))  // global_stmt
         )
         {
-            D(fprintf(stderr, "%*c+ small_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&'global' global_stmt"));
+            D(fprintf(stderr, "%*c+ simple_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&'global' global_stmt"));
             _res = global_stmt_var;
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s small_stmt[%d-%d]: %s failed!\n", p->level, ' ',
+        D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'global' global_stmt"));
     }
     { // &'nonlocal' nonlocal_stmt
@@ -1824,7 +1824,7 @@ small_stmt_rule(Parser *p)
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> small_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'nonlocal' nonlocal_stmt"));
+        D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'nonlocal' nonlocal_stmt"));
         stmt_ty nonlocal_stmt_var;
         if (
             _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 509)  // token='nonlocal'
@@ -1832,17 +1832,17 @@ small_stmt_rule(Parser *p)
             (nonlocal_stmt_var = nonlocal_stmt_rule(p))  // nonlocal_stmt
         )
         {
-            D(fprintf(stderr, "%*c+ small_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&'nonlocal' nonlocal_stmt"));
+            D(fprintf(stderr, "%*c+ simple_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&'nonlocal' nonlocal_stmt"));
             _res = nonlocal_stmt_var;
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s small_stmt[%d-%d]: %s failed!\n", p->level, ' ',
+        D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'nonlocal' nonlocal_stmt"));
     }
     _res = NULL;
   done:
-    _PyPegen_insert_memo(p, _mark, small_stmt_type, _res);
+    _PyPegen_insert_memo(p, _mark, simple_stmt_type, _res);
     D(p->level--);
     return _res;
 }
@@ -6235,7 +6235,7 @@ class_def_raw_rule(Parser *p)
     return _res;
 }
 
-// block: NEWLINE INDENT statements DEDENT | simple_stmt | invalid_block
+// block: NEWLINE INDENT statements DEDENT | simple_stmts | invalid_block
 static asdl_stmt_seq*
 block_rule(Parser *p)
 {
@@ -6283,24 +6283,24 @@ block_rule(Parser *p)
         D(fprintf(stderr, "%*c%s block[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NEWLINE INDENT statements DEDENT"));
     }
-    { // simple_stmt
+    { // simple_stmts
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "simple_stmt"));
-        asdl_stmt_seq* simple_stmt_var;
+        D(fprintf(stderr, "%*c> block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "simple_stmts"));
+        asdl_stmt_seq* simple_stmts_var;
         if (
-            (simple_stmt_var = simple_stmt_rule(p))  // simple_stmt
+            (simple_stmts_var = simple_stmts_rule(p))  // simple_stmts
         )
         {
-            D(fprintf(stderr, "%*c+ block[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "simple_stmt"));
-            _res = simple_stmt_var;
+            D(fprintf(stderr, "%*c+ block[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "simple_stmts"));
+            _res = simple_stmts_var;
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s block[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "simple_stmt"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "simple_stmts"));
     }
     if (p->call_invalid_rules) { // invalid_block
         if (p->error_indicator) {
@@ -16274,7 +16274,7 @@ _loop1_11_rule(Parser *p)
     return _seq;
 }
 
-// _loop0_13: ';' small_stmt
+// _loop0_13: ';' simple_stmt
 static asdl_seq *
 _loop0_13_rule(Parser *p)
 {
@@ -16295,18 +16295,18 @@ _loop0_13_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
-    { // ';' small_stmt
+    { // ';' simple_stmt
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _loop0_13[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "';' small_stmt"));
+        D(fprintf(stderr, "%*c> _loop0_13[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "';' simple_stmt"));
         Token * _literal;
         stmt_ty elem;
         while (
             (_literal = _PyPegen_expect_token(p, 13))  // token=';'
             &&
-            (elem = small_stmt_rule(p))  // small_stmt
+            (elem = simple_stmt_rule(p))  // simple_stmt
         )
         {
             _res = elem;
@@ -16332,7 +16332,7 @@ _loop0_13_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_13[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "';' small_stmt"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "';' simple_stmt"));
     }
     asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);
     if (!_seq) {
@@ -16349,7 +16349,7 @@ _loop0_13_rule(Parser *p)
     return _seq;
 }
 
-// _gather_12: small_stmt _loop0_13
+// _gather_12: simple_stmt _loop0_13
 static asdl_seq *
 _gather_12_rule(Parser *p)
 {
@@ -16360,27 +16360,27 @@ _gather_12_rule(Parser *p)
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
-    { // small_stmt _loop0_13
+    { // simple_stmt _loop0_13
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _gather_12[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "small_stmt _loop0_13"));
+        D(fprintf(stderr, "%*c> _gather_12[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "simple_stmt _loop0_13"));
         stmt_ty elem;
         asdl_seq * seq;
         if (
-            (elem = small_stmt_rule(p))  // small_stmt
+            (elem = simple_stmt_rule(p))  // simple_stmt
             &&
             (seq = _loop0_13_rule(p))  // _loop0_13
         )
         {
-            D(fprintf(stderr, "%*c+ _gather_12[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "small_stmt _loop0_13"));
+            D(fprintf(stderr, "%*c+ _gather_12[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "simple_stmt _loop0_13"));
             _res = _PyPegen_seq_insert_in_front(p, elem, seq);
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _gather_12[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "small_stmt _loop0_13"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "simple_stmt _loop0_13"));
     }
     _res = NULL;
   done:
