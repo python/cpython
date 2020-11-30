@@ -1315,7 +1315,7 @@ output to match any substring in the actual output:
     [0,    1, ...,   18,    19]
 
 The IGNORE_CASE flag causes the test runner to ignore case when
-matching the expected output to the actual output,
+matching the expected output to the actual output.
     >>> print("Hello World") # doctest: +IGNORE_CASE
     hello world
 
