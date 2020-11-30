@@ -253,3 +253,41 @@ Unix Platforms
    using :program:`gcc`.
 
    The file is read and scanned in chunks of *chunksize* bytes.
+
+
+Linux Platforms
+---------------
+
+.. function:: freedesktop_os_release()
+
+   Get operating system identification from ``os-release`` file and return
+   it as a dict. The ``os-release`` file is a `freedesktop.org standard
+   <https://www.freedesktop.org/software/systemd/man/os-release.html>`_ and
+   is available in most Linux distributions. A noticeable exception is
+   Android and Android-based distributions.
+
+   Raises :exc:`OSError` or subclass when neither ``/etc/os-release`` nor
+   ``/usr/lib/os-release`` can be read.
+
+   On success, the function returns a dictionary where keys and values are
+   strings. Values have their special characters like ``"`` and ``$``
+   unquoted. The fields ``NAME``, ``ID``, and ``PRETTY_NAME`` are always
+   defined according to the standard. All other fields are optional. Vendors
+   may include additional fields.
+
+   Note that fields like ``NAME``, ``VERSION``, and ``VARIANT`` are strings
+   suitable for presentation to users. Programs should use fields like
+   ``ID``, ``ID_LIKE``, ``VERSION_ID``, or ``VARIANT_ID`` to identify
+   Linux distributions.
+
+   Example::
+
+      def get_like_distro():
+          info = platform.freedesktop_os_release()
+          ids = [info["ID"]]
+          if "ID_LIKE" in info:
+              # ids are space separated and ordered by precedence
+              ids.extend(info["ID_LIKE"].split())
+          return ids
+
+  .. versionadded:: 3.10
