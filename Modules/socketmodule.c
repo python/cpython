@@ -758,6 +758,8 @@ internal_select(PySocketSockObject *s, int writing, _PyTime_t interval,
 
     Py_BEGIN_ALLOW_THREADS;
     n = poll(&pollfd, 1, (int)ms);
+    if (pollfd.revents & (POLLERR | POLLNVAL))
+    	n = -1;
     Py_END_ALLOW_THREADS;
 #else
     if (interval >= 0) {
