@@ -21,7 +21,6 @@ __all__ = [
 ]
 
 from builtins import abs as _abs
-from collections.abc import AsyncIterable, AsyncIterator
 
 
 # Comparison Operations *******************************************************#
@@ -418,12 +417,14 @@ def aiter(obj, sentinel=_NOT_PROVIDED):
 
     Like the iter() builtin but for async iterables and callables.
     """
+    from collections.abc import AsyncIterable, AsyncIterator
     if sentinel is _NOT_PROVIDED:
         if not isinstance(obj, AsyncIterable):
             raise TypeError(f'aiter expected an AsyncIterable, got {type(obj)}')
-        if isinstance(obj, AsyncIterator):
-            return obj
-        return (i async for i in obj)
+        ait = type(obj).__aiter__(obj)
+        if not isinstance(ait, AsyncIterator):
+            raise TypeError(f'obj.__aiter__() returned non-AsyncIterator: {type(ait)}')
+        return ait
 
     if not callable(obj):
         raise TypeError(f'aiter expected an async callable, got {type(obj)}')
@@ -445,11 +446,12 @@ async def anext(async_iterator, default=_NOT_PROVIDED):
     If default is given and the iterator is exhausted,
     it is returned instead of raising StopAsyncIteration.
     """
+    from collections.abc import AsyncIterator
     if not isinstance(async_iterator, AsyncIterator):
         raise TypeError(f'anext expected an AsyncIterator, got {type(async_iterator)}')
-    anxt = async_iterator.__anext__
+    anxt = type(async_iterator).__anext__
     try:
-        return await anxt()
+        return await anxt(async_iterator)
     except StopAsyncIteration:
         if default is _NOT_PROVIDED:
             raise
