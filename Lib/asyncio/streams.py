@@ -283,9 +283,13 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
     def __del__(self):
         # Prevent reports about unhandled exceptions.
         # Better than self._closed._log_traceback = False hack
-        closed = self._closed
-        if closed.done() and not closed.cancelled():
-            closed.exception()
+        try:
+            closed = self._closed
+        except AttributeError:
+            pass  # failed constructor
+        else:
+            if closed.done() and not closed.cancelled():
+                closed.exception()
 
 
 class StreamWriter:

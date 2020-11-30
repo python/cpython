@@ -102,13 +102,7 @@ class DuckTests(test_utils.TestCase):
 class BaseFutureTests:
 
     def _new_future(self,  *args, **kwargs):
-        if kwargs.get('loop') is None:
-            with self.assertWarns(DeprecationWarning) as cm:
-                fut = self.cls(*args, **kwargs)
-            self.assertEqual(cm.warnings[0].filename, __file__)
-            return fut
-        else:
-            return self.cls(*args, **kwargs)
+        return self.cls(*args, **kwargs)
 
     def setUp(self):
         super().setUp()
@@ -145,9 +139,28 @@ class BaseFutureTests:
         f.cancel()
         self.assertTrue(f.cancelled())
 
-    def test_init_constructor_default_loop(self):
+    def test_constructor_without_loop(self):
         asyncio.set_event_loop(self.loop)
-        f = self._new_future()
+        asyncio.set_event_loop(None)
+        with self.assertWarns(DeprecationWarning) as cm:
+            with self.assertRaisesRegex(RuntimeError, 'There is no current event loop'):
+                self._new_future()
+        self.assertEqual(cm.warnings[0].filename, __file__)
+
+    def test_constructor_with_running_loop(self):
+        asyncio.set_event_loop(None)
+        async def test():
+            return self._new_future()
+        f = self.loop.run_until_complete(test())
+        self.assertIs(f._loop, self.loop)
+        self.assertIs(f.get_loop(), self.loop)
+
+    def test_constructor_with_global_loop(self):
+        asyncio.set_event_loop(self.loop)
+        self.addCleanup(asyncio.set_event_loop, None)
+        with self.assertWarns(DeprecationWarning) as cm:
+            f = self._new_future()
+        self.assertEqual(cm.warnings[0].filename, __file__)
         self.assertIs(f._loop, self.loop)
         self.assertIs(f.get_loop(), self.loop)
 

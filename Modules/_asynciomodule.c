@@ -332,7 +332,7 @@ get_event_loop(int stacklevel)
     }
 
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "There is no running event loop set",
+                     "There is no current event loop",
                      stacklevel))
     {
         return NULL;

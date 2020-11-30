@@ -767,7 +767,7 @@ def _get_event_loop(stacklevel=3):
     if current_loop is not None:
         return current_loop
     import warnings
-    warnings.warn("There is no running event loop set",
+    warnings.warn('There is no current event loop',
                   DeprecationWarning, stacklevel=stacklevel)
     return get_event_loop_policy().get_event_loop()
 
