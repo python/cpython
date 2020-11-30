@@ -254,6 +254,14 @@ Added negative indexing support to :attr:`PurePath.parents
 <pathlib.PurePath.parents>`.
 (Contributed by Yaroslav Pankovych in :issue:`21041`)
 
+platform
+--------
+
+Added :func:`platform.freedesktop_os_release()` to retrieve operation system
+identification from `freedesktop.org os-release
+<https://www.freedesktop.org/software/systemd/man/os-release.html>`_ standard file.
+(Contributed by Christian Heimes in :issue:`28468`)
+
 py_compile
 ----------
 
