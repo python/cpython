@@ -64,15 +64,15 @@ typedef struct {
 itertools.pairwise.__new__ as pairwise_new
     iterable: object
     /
-Return a pairwise object.
+Return an iterator of overlapping pairs taken from the input iterator.
 
-"s -> (s0,s1), (s1,s2), (s2, s3), ..."
+    s -> (s0,s1), (s1,s2), (s2, s3), ...
 
 [clinic start generated code]*/
 
 static PyObject *
 pairwise_new_impl(PyTypeObject *type, PyObject *iterable)
-/*[clinic end generated code: output=9f0267062d384456 input=a1ad925c82e0e901]*/
+/*[clinic end generated code: output=9f0267062d384456 input=6e7c3cddb431a8d6]*/
 {
     PyObject *it;
     pairwiseobject *po;
@@ -4799,6 +4799,7 @@ groupby(iterable[, keyfunc]) --> sub-iterators grouped by value of keyfunc(v)\n\
 filterfalse(pred, seq) --> elements of seq where pred(elem) is False\n\
 islice(seq, [start,] stop [, step]) --> elements from\n\
        seq[start:stop:step]\n\
+pairwise(s) --> (s[0],s[1]), (s[1],s[2]), (s[2], s[3]), ...\n\
 starmap(fun, seq) --> fun(*seq[0]), fun(*seq[1]), ...\n\
 tee(it, n=2) --> (it1, it2 , ... itn) splits one iterator into n\n\
 takewhile(pred, seq) --> seq[0], seq[1], until pred fails\n\
