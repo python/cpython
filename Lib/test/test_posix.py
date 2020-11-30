@@ -1933,7 +1933,7 @@ class TestPosixSpawnP(unittest.TestCase, _PosixSpawnMixin):
 class TestPosixWeaklinking(unittest.TestCase):
     # These test cases verify that weak linking support on macOS works
     # as expected. These cases only test new behaviour introduced by weak linking,
-    # regular behaviour is tested by the normal test cases. 
+    # regular behaviour is tested by the normal test cases.
     #
     # See the section on Weak Linking in Mac/README.txt for more information.
     def setUp(self):
