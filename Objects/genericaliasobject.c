@@ -564,11 +564,49 @@ static PyGetSetDef ga_properties[] = {
     {0}
 };
 
+// Helper to create inheritable or non-inheritable gaobjects
+static inline gaobject *
+create_ga(PyTypeObject *type, PyObject *origin, PyObject *args) {
+    if (!PyTuple_Check(args)) {
+        args = PyTuple_Pack(1, args);
+        if (args == NULL) {
+            return NULL;
+        }
+    }
+    else {
+        Py_INCREF(args);
+    }
+
+    gaobject *alias;
+    int gc_should_track = 0;
+    if (type != NULL) {
+        assert(type->tp_alloc != NULL);
+        alias = (gaobject *)type->tp_alloc(type, 0);
+    }
+    else {
+        alias = PyObject_GC_New(gaobject, &Py_GenericAliasType);
+        gc_should_track = 1;
+    }
+
+    if (alias == NULL) {
+        Py_DECREF(args);
+        return NULL;
+    }
+
+    Py_INCREF(origin);
+    alias->origin = origin;
+    alias->args = args;
+    alias->parameters = NULL;
+    alias->weakreflist = NULL;
+    if (gc_should_track) {
+        _PyObject_GC_TRACK(alias);
+    }
+    return alias;
+}
+
 static PyObject *
 ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    gaobject *self;
-
     assert(type != NULL && type->tp_alloc != NULL);
     if (!_PyArg_NoKwnames("GenericAlias", kwds)) {
         return NULL;
@@ -576,32 +614,18 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!_PyArg_CheckPositional("GenericAlias", PyTuple_GET_SIZE(args), 2, 2)) {
         return NULL;
     }
-    
-    self = (gaobject *)type->tp_alloc(type, 0);
-    if (self == NULL) {
-        return NULL;
-    }
 
     PyObject *origin = PyTuple_GET_ITEM(args, 0);
     PyObject *arguments = PyTuple_GET_ITEM(args, 1);
 
-    // almost the same as Py_GenericAlias' code, but to assign to self
-    if (!PyTuple_Check(arguments)) {
-        arguments = PyTuple_Pack(1, arguments);
-        if (arguments == NULL) {
-            return NULL;
-        }
+    PyObject *self = (PyObject *)create_ga(type, origin, arguments);
+    if (self == NULL) {
+        Py_DECREF(origin);
+        Py_DECREF(arguments);
+        return NULL;
     }
-    else {
-        Py_INCREF(arguments);
-    }
-
-    Py_INCREF(origin);
-    self->origin = origin;
-    self->args = arguments;
-    self->parameters = NULL;
-    self->weakreflist = NULL;
-    return (PyObject *) self;
+    
+    return self;
 }
 
 static PyNumberMethods ga_as_number = {
@@ -641,27 +665,5 @@ PyTypeObject Py_GenericAliasType = {
 PyObject *
 Py_GenericAlias(PyObject *origin, PyObject *args)
 {
-    if (!PyTuple_Check(args)) {
-        args = PyTuple_Pack(1, args);
-        if (args == NULL) {
-            return NULL;
-        }
-    }
-    else {
-        Py_INCREF(args);
-    }
-
-    gaobject *alias = PyObject_GC_New(gaobject, &Py_GenericAliasType);
-    if (alias == NULL) {
-        Py_DECREF(args);
-        return NULL;
-    }
-
-    Py_INCREF(origin);
-    alias->origin = origin;
-    alias->args = args;
-    alias->parameters = NULL;
-    alias->weakreflist = NULL;
-    _PyObject_GC_TRACK(alias);
-    return (PyObject *)alias;
+    return (PyObject *)create_ga(NULL, origin, args);
 }
