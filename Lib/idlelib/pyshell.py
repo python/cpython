@@ -757,7 +757,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def runcode(self, code):
         "Override base class method"
         if self.tkconsole.executing:
-            self.interp.restart_subprocess()
+            self.restart_subprocess()
         self.checklinecache()
         debugger = self.debugger
         try:
