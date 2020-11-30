@@ -2638,12 +2638,17 @@ class TestDecoratorFactory(unittest.TestCase):
         def a():
             pass
 
-        @decorator(a=2)
+        @decorator()
         def b():
             pass
 
+        @decorator(a=2)
+        def c():
+            pass
+
         self.assertEqual(a(), 1)
-        self.assertEqual(b(), 2)
+        self.assertEqual(b(), 1)
+        self.assertEqual(c(), 2)
 
     def test_params_without_default_value(self):
         @py_functools.decorator_factory

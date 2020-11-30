@@ -985,9 +985,9 @@ def decorator_factory(func):
     """Transform function into decorator"""
 
     @wraps(func)
-    def decorator(fn=None, /, *args, **kwargs):
-        if fn is not None:
-            return func(fn, *args, **kwargs)
+    def decorator(*args, **kwargs):
+        if args and callable(args[0]):
+            return func(*args, **kwargs)
 
         def wrapper(f):
             return func(f, *args, **kwargs)
