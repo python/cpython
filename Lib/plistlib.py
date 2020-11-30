@@ -112,6 +112,9 @@ PLISTHEADER = b"""\
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 """
 
+# CF$UID KEY
+CFUID = "CF$UID"
+
 
 # Regex to find any control chars, except for \t \n and \r
 _controlCharPat = re.compile(
@@ -242,14 +245,14 @@ class _PlistParser:
                              (self.current_key,self.parser.CurrentLineNumber))
         d = self.stack.pop()
         # Unmarshal CF$UID to UID and replace the dict node
-        if len(d) == 1 and "CF$UID" in d and isinstance(d["CF$UID"], int):
-            uid = UID(d["CF$UID"])
+        if len(d) == 1 and CFUID in d and isinstance(d[CFUID], int):
+            uid = UID(d[CFUID])
             if self.previous_dict_key:
                 self.stack[-1][self.previous_dict_key] = uid
             elif not self.stack:
                 self.root = uid
             else:
-                assert isinstance(self.stack[-1], type([]))
+                # self.stack[-1] can only be a list
                 self.stack[-1][-1] = uid
 
     def end_key(self):

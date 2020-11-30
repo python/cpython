@@ -42,7 +42,10 @@ or :class:`datetime.datetime` objects.
    by NSKeyedArchiver and NSKeyedUnarchiver.
 
 .. versionchanged:: 3.9
-   Old API removed.  Support added for reading and writing :class:`UID` tokens in XML
+   Old API removed.
+
+.. versionchanged:: 3.10
+   Support added for reading and writing :class:`UID` tokens in XML
    plists.
 
 .. seealso::
@@ -50,7 +53,7 @@ or :class:`datetime.datetime` objects.
    `PList manual page <https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/PropertyLists/>`_
       Apple's documentation of the file format.
    `Property list <https://en.wikipedia.org/wiki/Property_list>`_
-      Wikipedia's description of the format and archiers.
+      Wikipedia's description of the format and archivers.
 
 
 This module defines the following functions:
