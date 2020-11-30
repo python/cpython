@@ -550,12 +550,18 @@ The available presentation types for :class:`float` and
    | ``'%'`` | Percentage. Multiplies the number by 100 and displays    |
    |         | in fixed (``'f'``) format, followed by a percent sign.   |
    +---------+----------------------------------------------------------+
-   | None    | Similar to ``'g'``, except that fixed-point notation,    |
-   |         | when used, has at least one digit past the decimal point.|
-   |         | The default precision is as high as needed to represent  |
-   |         | the particular value. The overall effect is to match the |
-   |         | output of :func:`str` as altered by the other format     |
-   |         | modifiers.                                               |
+   | None    | For :class:`float` this is the same as ``'g'``, except   |
+   |         | that when fixed-point notation is used to format the     |
+   |         | result, it always includes at least one digit past the   |
+   |         | decimal point. The precision used is as large as needed  |
+   |         | to represent the given value faithfully.                 |
+   |         |                                                          |
+   |         | For :class:`~decimal.Decimal`, this is the same as       |
+   |         | either ``'g'`` or ``'G'`` depending on the value of      |
+   |         | ``context.capitals`` for the current decimal context.    |
+   |         |
+   |         | The overall effect is to match the output of :func:`str` |
+   |         | as altered by the other format modifiers.                |
    +---------+----------------------------------------------------------+
 
 
