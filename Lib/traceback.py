@@ -628,5 +628,5 @@ class TracebackException:
                 yield _context_message
         if self.stack:
             yield 'Traceback (most recent call last):\n'
-        yield from self.stack.format()
+            yield from self.stack.format()
         yield from self.format_exception_only()
