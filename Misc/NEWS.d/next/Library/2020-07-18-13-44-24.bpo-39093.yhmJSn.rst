@@ -1,0 +1,1 @@
+Fixed crash when Tcl interpreter was deallocated in wrong thread

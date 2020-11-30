@@ -1,9 +1,21 @@
 import unittest
+import subprocess
+import sys
+import threading
 import tkinter
 from test import support
 from tkinter.test.support import AbstractTkTest
 
 support.requires('gui')
+
+def test_thread_gc():
+    root = tkinter.Tk()
+    root.destroy()
+    ev = threading.Event()
+    threading.Thread(target=lambda obj: ev.wait(), args=(root,)).start()
+    del root
+    ev.set()
+    print("passed")
 
 class MiscTest(AbstractTkTest, unittest.TestCase):
 
@@ -25,6 +37,25 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         t = tkinter.Toplevel(self.root, name='top')
         f = tkinter.Frame(t, name='child')
         self.assertEqual(repr(f), '<tkinter.Frame object .top.child>')
+
+    def test_thread_gc(self):
+        p = subprocess.Popen([sys.executable, "-c",
+                              "from tkinter.test.test_tkinter import test_misc; "
+                              "test_misc.test_thread_gc()"],
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate()
+        stderr = stderr.strip()
+        try:
+            self.assertTrue(b"Exception ignored in: <class 'RuntimeWarning'>" in stderr)
+            self.assertTrue(b"RuntimeWarning: Deallocation of Tkapp attempted in wrong "
+                            b"thread. Skipping deletion of Tcl interpreter (this will "
+                            b"cause a memory leak)." in stderr)
+        except AssertionError:
+            # If there is an error in the subprocess
+            # we need to be able to debug it
+            print(stderr.decode("utf-8"), file=sys.stderr)
+            raise
+        self.assertEqual(stdout.strip(), b"passed")
 
     def test_generated_names(self):
         t = tkinter.Toplevel(self.root)
