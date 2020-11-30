@@ -564,7 +564,7 @@ The available presentation types for :class:`float` and
    |         | For :class:`~decimal.Decimal`, this is the same as       |
    |         | either ``'g'`` or ``'G'`` depending on the value of      |
    |         | ``context.capitals`` for the current decimal context.    |
-   |         |
+   |         |                                                          |
    |         | The overall effect is to match the output of :func:`str` |
    |         | as altered by the other format modifiers.                |
    +---------+----------------------------------------------------------+
