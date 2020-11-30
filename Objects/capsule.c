@@ -192,63 +192,52 @@ PyCapsule_SetContext(PyObject *o, void *context)
 
 
 void *
-PyCapsule_Import(const char *name, int no_block)
+PyCapsule_Import(const char *name, int Py_UNUSED(no_block))
 {
     PyObject *object = NULL;
     void *return_value = NULL;
     char *trace;
-    size_t name_length = (strlen(name) + 1) * sizeof(char);
-    char *name_dup = (char *)PyMem_MALLOC(name_length);
+    char *name_dup = _PyMem_Strdup(name);
 
     if (!name_dup) {
         return PyErr_NoMemory();
     }
 
-    memcpy(name_dup, name, name_length);
-
     trace = name_dup;
-    while (trace) {
+    while (1) {
         char *dot = strchr(trace, '.');
         if (dot) {
-            *dot++ = '\0';
+            *dot = '\0';
         }
-
-        if (object == NULL) {
-            if (no_block) {
-                object = PyImport_ImportModuleNoBlock(trace);
-            } else {
-                object = PyImport_ImportModule(trace);
-                if (!object) {
-                    PyErr_Format(PyExc_ImportError, "PyCapsule_Import could not import module \"%s\"", trace);
-                }
-            }
-        } else {
-            PyObject *object2 = PyObject_GetAttrString(object, trace);
-            Py_DECREF(object);
-            object = object2;
+        if (object) {
+            Py_SETREF(object, PyObject_GetAttrString(object, trace));
+        }
+        if (!dot) {
+            break;
         }
         if (!object) {
-            goto EXIT;
+            object = PyImport_ImportModule(name_dup);
+            if (!object) {
+                break;
+            }
         }
-
-        trace = dot;
+        *dot = '.';
+        trace = dot + 1;
     }
 
     /* compare attribute name to module.name by hand */
     if (PyCapsule_IsValid(object, name)) {
         PyCapsule *capsule = (PyCapsule *)object;
         return_value = capsule->pointer;
-    } else {
+    }
+    else if (object || trace == name_dup) {
         PyErr_Format(PyExc_AttributeError,
             "PyCapsule_Import \"%s\" is not valid",
             name);
     }
 
-EXIT:
     Py_XDECREF(object);
-    if (name_dup) {
-        PyMem_FREE(name_dup);
-    }
+    PyMem_Free(name_dup);
     return return_value;
 }
 

@@ -1,0 +1,3 @@
+:c:func:`PyCapsule_Import` now imports submodules if needed.  Previously
+names like ``package.module.attribute`` worked only if ``package.module``
+was already imported.
