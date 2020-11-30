@@ -1,0 +1,1 @@
+In the socket library, fix the bug where it was possible for Socket.recv to hang even when there's a timeout specified.
