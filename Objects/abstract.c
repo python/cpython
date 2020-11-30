@@ -1,6 +1,7 @@
 /* Abstract Object Interface (many thanks to Jim Fulton) */
 
 #include "Python.h"
+#include "pycore_unionobject.h"      // _Py_UnionType && _Py_Union()
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
@@ -746,10 +747,10 @@ done:
 int
 PyNumber_Check(PyObject *o)
 {
-    return o && Py_TYPE(o)->tp_as_number &&
-           (Py_TYPE(o)->tp_as_number->nb_index ||
-            Py_TYPE(o)->tp_as_number->nb_int ||
-            Py_TYPE(o)->tp_as_number->nb_float);
+    if (o == NULL)
+        return 0;
+    PyNumberMethods *nb = Py_TYPE(o)->tp_as_number;
+    return nb && (nb->nb_index || nb->nb_int || nb->nb_float || PyComplex_Check(o));
 }
 
 /* Binary operators */
@@ -839,7 +840,6 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
                 Py_TYPE(w)->tp_name);
             return NULL;
         }
-
         return binop_type_error(v, w, op_name);
     }
     return result;
@@ -1382,7 +1382,7 @@ PyNumber_Long(PyObject *o)
         if (!PyLong_Check(result)) {
             PyErr_Format(PyExc_TypeError,
                          "__int__ returned non-int (type %.200s)",
-                         result->ob_type->tp_name);
+                         Py_TYPE(result)->tp_name);
             Py_DECREF(result);
             return NULL;
         }
@@ -1391,7 +1391,7 @@ PyNumber_Long(PyObject *o)
                 "__int__ returned non-int (type %.200s).  "
                 "The ability to return an instance of a strict subclass of int "
                 "is deprecated, and may be removed in a future version of Python.",
-                result->ob_type->tp_name)) {
+                Py_TYPE(result)->tp_name)) {
             Py_DECREF(result);
             return NULL;
         }
@@ -1429,7 +1429,7 @@ PyNumber_Long(PyObject *o)
         return NULL;
 
     if (PyUnicode_Check(o))
-        /* The below check is done in PyLong_FromUnicode(). */
+        /* The below check is done in PyLong_FromUnicodeObject(). */
         return PyLong_FromUnicodeObject(o, 10);
 
     if (PyBytes_Check(o))
@@ -1461,7 +1461,7 @@ PyNumber_Long(PyObject *o)
     }
 
     return type_error("int() argument must be a string, a bytes-like object "
-                      "or a number, not '%.200s'", o);
+                      "or a real number, not '%.200s'", o);
 }
 
 PyObject *
@@ -2336,9 +2336,7 @@ abstract_get_bases(PyObject *cls)
     _Py_IDENTIFIER(__bases__);
     PyObject *bases;
 
-    Py_ALLOW_RECURSION
     (void)_PyObject_LookupAttrId(cls, &PyId___bases__, &bases);
-    Py_END_ALLOW_RECURSION
     if (bases != NULL && !PyTuple_Check(bases)) {
         Py_DECREF(bases);
         return NULL;
@@ -2412,7 +2410,6 @@ object_isinstance(PyObject *inst, PyObject *cls)
     PyObject *icls;
     int retval;
     _Py_IDENTIFIER(__class__);
-
     if (PyType_Check(cls)) {
         retval = PyObject_TypeCheck(inst, (PyTypeObject *)cls);
         if (retval == 0) {
@@ -2432,7 +2429,7 @@ object_isinstance(PyObject *inst, PyObject *cls)
     }
     else {
         if (!check_class(cls,
-            "isinstance() arg 2 must be a type or tuple of types"))
+            "isinstance() arg 2 must be a type, a tuple of types or a union"))
             return -1;
         retval = _PyObject_LookupAttrId(inst, &PyId___class__, &icls);
         if (icls != NULL) {
@@ -2525,10 +2522,14 @@ recursive_issubclass(PyObject *derived, PyObject *cls)
     if (!check_class(derived,
                      "issubclass() arg 1 must be a class"))
         return -1;
-    if (!check_class(cls,
-                    "issubclass() arg 2 must be a class"
-                    " or tuple of classes"))
+
+    PyTypeObject *type = Py_TYPE(cls);
+    int is_union = (PyType_Check(type) && type == &_Py_UnionType);
+    if (!is_union && !check_class(cls,
+                            "issubclass() arg 2 must be a class,"
+                            " a tuple of classes, or a union.")) {
         return -1;
+    }
 
     return abstract_issubclass(derived, cls);
 }
@@ -2668,6 +2669,31 @@ PyIter_Next(PyObject *iter)
     return result;
 }
 
+PySendResult
+PyIter_Send(PyObject *iter, PyObject *arg, PyObject **result)
+{
+    _Py_IDENTIFIER(send);
+    assert(arg != NULL);
+    assert(result != NULL);
+    if (PyType_HasFeature(Py_TYPE(iter), Py_TPFLAGS_HAVE_AM_SEND)) {
+        assert (Py_TYPE(iter)->tp_as_async != NULL);
+        assert (Py_TYPE(iter)->tp_as_async->am_send != NULL);
+        return Py_TYPE(iter)->tp_as_async->am_send(iter, arg, result);
+    }
+    if (arg == Py_None && PyIter_Check(iter)) {
+        *result = Py_TYPE(iter)->tp_iternext(iter);
+    }
+    else {
+        *result = _PyObject_CallMethodIdOneArg(iter, &PyId_send, arg);
+    }
+    if (*result != NULL) {
+        return PYGEN_NEXT;
+    }
+    if (_PyGen_FetchStopIterationValue(result) == 0) {
+        return PYGEN_RETURN;
+    }
+    return PYGEN_ERROR;
+}
 
 /*
  * Flatten a sequence of bytes() objects into a C array of

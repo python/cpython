@@ -510,22 +510,19 @@ formatlong(PyObject *v, int flags, int prec, int type)
             iobj = _PyNumber_Index(v);
         else
             iobj = PyNumber_Long(v);
-        if (iobj == NULL) {
-            if (!PyErr_ExceptionMatches(PyExc_TypeError))
-                return NULL;
-        }
-        else if (!PyLong_Check(iobj))
-            Py_CLEAR(iobj);
         if (iobj != NULL) {
+            assert(PyLong_Check(iobj));
             result = _PyUnicode_FormatLong(iobj, flags & F_ALT, prec, type);
             Py_DECREF(iobj);
             return result;
         }
+        if (!PyErr_ExceptionMatches(PyExc_TypeError))
+            return NULL;
     }
     PyErr_Format(PyExc_TypeError,
         "%%%c format: %s is required, not %.200s", type,
         (type == 'o' || type == 'x' || type == 'X') ? "an integer"
-                                                    : "a number",
+                                                    : "a real number",
         Py_TYPE(v)->tp_name);
     return NULL;
 }
@@ -542,26 +539,16 @@ byte_converter(PyObject *arg, char *p)
         return 1;
     }
     else {
-        PyObject *iobj;
-        long ival;
         int overflow;
-        /* make sure number is a type of integer */
-        if (PyLong_Check(arg)) {
-            ival = PyLong_AsLongAndOverflow(arg, &overflow);
-        }
-        else {
-            iobj = PyNumber_Index(arg);
-            if (iobj == NULL) {
-                if (!PyErr_ExceptionMatches(PyExc_TypeError))
-                    return 0;
+        long ival = PyLong_AsLongAndOverflow(arg, &overflow);
+        if (ival == -1 && PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
                 goto onError;
             }
-            ival = PyLong_AsLongAndOverflow(iobj, &overflow);
-            Py_DECREF(iobj);
+            return 0;
         }
-        if (!overflow && ival == -1 && PyErr_Occurred())
-            goto onError;
-        if (overflow || !(0 <= ival && ival <= 255)) {
+        if (!(0 <= ival && ival <= 255)) {
+            /* this includes an overflow in converting to C long */
             PyErr_SetString(PyExc_OverflowError,
                             "%c arg not in range(256)");
             return 0;
@@ -1551,36 +1538,19 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
     int c;
     Py_ssize_t len_a, len_b;
     Py_ssize_t min_len;
-    int rc;
 
     /* Make sure both arguments are strings. */
     if (!(PyBytes_Check(a) && PyBytes_Check(b))) {
         if (_Py_GetConfig()->bytes_warning && (op == Py_EQ || op == Py_NE)) {
-            rc = PyObject_IsInstance((PyObject*)a,
-                                     (PyObject*)&PyUnicode_Type);
-            if (!rc)
-                rc = PyObject_IsInstance((PyObject*)b,
-                                         (PyObject*)&PyUnicode_Type);
-            if (rc < 0)
-                return NULL;
-            if (rc) {
+            if (PyUnicode_Check(a) || PyUnicode_Check(b)) {
                 if (PyErr_WarnEx(PyExc_BytesWarning,
                                  "Comparison between bytes and string", 1))
                     return NULL;
             }
-            else {
-                rc = PyObject_IsInstance((PyObject*)a,
-                                         (PyObject*)&PyLong_Type);
-                if (!rc)
-                    rc = PyObject_IsInstance((PyObject*)b,
-                                             (PyObject*)&PyLong_Type);
-                if (rc < 0)
+            if (PyLong_Check(a) || PyLong_Check(b)) {
+                if (PyErr_WarnEx(PyExc_BytesWarning,
+                                 "Comparison between bytes and int", 1))
                     return NULL;
-                if (rc) {
-                    if (PyErr_WarnEx(PyExc_BytesWarning,
-                                     "Comparison between bytes and int", 1))
-                        return NULL;
-                }
             }
         }
         Py_RETURN_NOTIMPLEMENTED;
@@ -2593,24 +2563,27 @@ static PyNumberMethods bytes_as_number = {
 };
 
 static PyObject *
-bytes_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+bytes_subtype_new(PyTypeObject *, PyObject *);
+
+/*[clinic input]
+@classmethod
+bytes.__new__ as bytes_new
+
+    source as x: object = NULL
+    encoding: str = NULL
+    errors: str = NULL
+
+[clinic start generated code]*/
 
 static PyObject *
-bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
+               const char *errors)
+/*[clinic end generated code: output=1e0c471be311a425 input=f0a966d19b7262b4]*/
 {
-    PyObject *x = NULL;
-    const char *encoding = NULL;
-    const char *errors = NULL;
-    PyObject *new = NULL;
+    PyObject *bytes;
     PyObject *func;
     Py_ssize_t size;
-    static char *kwlist[] = {"source", "encoding", "errors", 0};
 
-    if (type != &PyBytes_Type)
-        return bytes_subtype_new(type, args, kwds);
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oss:bytes", kwlist, &x,
-                                     &encoding, &errors))
-        return NULL;
     if (x == NULL) {
         if (encoding != NULL || errors != NULL) {
             PyErr_SetString(PyExc_TypeError,
@@ -2619,78 +2592,73 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                             "errors without a string argument");
             return NULL;
         }
-        return PyBytes_FromStringAndSize(NULL, 0);
+        bytes = PyBytes_FromStringAndSize(NULL, 0);
     }
-
-    if (encoding != NULL) {
+    else if (encoding != NULL) {
         /* Encode via the codec registry */
         if (!PyUnicode_Check(x)) {
             PyErr_SetString(PyExc_TypeError,
                             "encoding without a string argument");
             return NULL;
         }
-        new = PyUnicode_AsEncodedString(x, encoding, errors);
-        if (new == NULL)
-            return NULL;
-        assert(PyBytes_Check(new));
-        return new;
+        bytes = PyUnicode_AsEncodedString(x, encoding, errors);
     }
-
-    if (errors != NULL) {
+    else if (errors != NULL) {
         PyErr_SetString(PyExc_TypeError,
                         PyUnicode_Check(x) ?
                         "string argument without an encoding" :
                         "errors without a string argument");
         return NULL;
     }
-
     /* We'd like to call PyObject_Bytes here, but we need to check for an
        integer argument before deferring to PyBytes_FromObject, something
        PyObject_Bytes doesn't do. */
-    func = _PyObject_LookupSpecial(x, &PyId___bytes__);
-    if (func != NULL) {
-        new = _PyObject_CallNoArg(func);
+    else if ((func = _PyObject_LookupSpecial(x, &PyId___bytes__)) != NULL) {
+        bytes = _PyObject_CallNoArg(func);
         Py_DECREF(func);
-        if (new == NULL)
+        if (bytes == NULL)
             return NULL;
-        if (!PyBytes_Check(new)) {
+        if (!PyBytes_Check(bytes)) {
             PyErr_Format(PyExc_TypeError,
-                         "__bytes__ returned non-bytes (type %.200s)",
-                         Py_TYPE(new)->tp_name);
-            Py_DECREF(new);
+                        "__bytes__ returned non-bytes (type %.200s)",
+                        Py_TYPE(bytes)->tp_name);
+            Py_DECREF(bytes);
             return NULL;
         }
-        return new;
     }
     else if (PyErr_Occurred())
         return NULL;
-
-    if (PyUnicode_Check(x)) {
+    else if (PyUnicode_Check(x)) {
         PyErr_SetString(PyExc_TypeError,
                         "string argument without an encoding");
         return NULL;
     }
     /* Is it an integer? */
-    if (_PyIndex_Check(x)) {
+    else if (_PyIndex_Check(x)) {
         size = PyNumber_AsSsize_t(x, PyExc_OverflowError);
         if (size == -1 && PyErr_Occurred()) {
             if (!PyErr_ExceptionMatches(PyExc_TypeError))
                 return NULL;
             PyErr_Clear();  /* fall through */
+            bytes = PyBytes_FromObject(x);
         }
         else {
             if (size < 0) {
                 PyErr_SetString(PyExc_ValueError, "negative count");
                 return NULL;
             }
-            new = _PyBytes_FromSize(size, 1);
-            if (new == NULL)
-                return NULL;
-            return new;
+            bytes = _PyBytes_FromSize(size, 1);
         }
     }
+    else {
+        bytes = PyBytes_FromObject(x);
+    }
 
-    return PyBytes_FromObject(x);
+    if (bytes != NULL && type != &PyBytes_Type) {
+        Py_SETREF(bytes, bytes_subtype_new(type, bytes));
+    }
+
+    return bytes;
 }
 
 static PyObject*
@@ -2902,15 +2870,12 @@ PyBytes_FromObject(PyObject *x)
 }
 
 static PyObject *
-bytes_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+bytes_subtype_new(PyTypeObject *type, PyObject *tmp)
 {
-    PyObject *tmp, *pnew;
+    PyObject *pnew;
     Py_ssize_t n;
 
     assert(PyType_IsSubtype(type, &PyBytes_Type));
-    tmp = bytes_new(&PyBytes_Type, args, kwds);
-    if (tmp == NULL)
-        return NULL;
     assert(PyBytes_Check(tmp));
     n = PyBytes_GET_SIZE(tmp);
     pnew = type->tp_alloc(type, n);
@@ -2920,7 +2885,6 @@ bytes_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         ((PyBytesObject *)pnew)->ob_shash =
             ((PyBytesObject *)tmp)->ob_shash;
     }
-    Py_DECREF(tmp);
     return pnew;
 }
 
@@ -3158,7 +3122,6 @@ static PyObject *
 striter_next(striterobject *it)
 {
     PyBytesObject *seq;
-    PyObject *item;
 
     assert(it != NULL);
     seq = it->it_seq;
@@ -3167,11 +3130,8 @@ striter_next(striterobject *it)
     assert(PyBytes_Check(seq));
 
     if (it->it_index < PyBytes_GET_SIZE(seq)) {
-        item = PyLong_FromLong(
-            (unsigned char)seq->ob_sval[it->it_index]);
-        if (item != NULL)
-            ++it->it_index;
-        return item;
+        return PyLong_FromLong(
+            (unsigned char)seq->ob_sval[it->it_index++]);
     }
 
     it->it_seq = NULL;

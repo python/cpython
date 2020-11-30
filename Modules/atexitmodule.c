@@ -309,7 +309,7 @@ static PyMethodDef atexit_methods[] = {
 /* Initialization function. */
 
 PyDoc_STRVAR(atexit__doc__,
-"allow programmer to define multiple exit functions to be executed\
+"allow programmer to define multiple exit functions to be executed\n\
 upon normal program termination.\n\
 \n\
 Two public functions, register and unregister, are defined.\n\

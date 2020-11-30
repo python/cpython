@@ -22,10 +22,13 @@ except ImportError:
     _testbuffer = None
 
 from test import support
+from test.support import os_helper
 from test.support import (
-    TestFailed, TESTFN, run_with_locale, no_tracing,
-    _2G, _4G, bigmemtest, forget,
+    TestFailed, run_with_locale, no_tracing,
+    _2G, _4G, bigmemtest
     )
+from test.support.import_helper import forget
+from test.support.os_helper import TESTFN
 from test.support import threading_helper
 from test.support.warnings_helper import save_restore_warnings_filters
 
@@ -1173,6 +1176,24 @@ class AbstractUnpickleTests(unittest.TestCase):
             self.assertIs(type(unpickled), collections.UserDict)
             self.assertEqual(unpickled, collections.UserDict({1: 2}))
 
+    def test_bad_reduce(self):
+        self.assertEqual(self.loads(b'cbuiltins\nint\n)R.'), 0)
+        self.check_unpickling_error(TypeError, b'N)R.')
+        self.check_unpickling_error(TypeError, b'cbuiltins\nint\nNR.')
+
+    def test_bad_newobj(self):
+        error = (pickle.UnpicklingError, TypeError)
+        self.assertEqual(self.loads(b'cbuiltins\nint\n)\x81.'), 0)
+        self.check_unpickling_error(error, b'cbuiltins\nlen\n)\x81.')
+        self.check_unpickling_error(error, b'cbuiltins\nint\nN\x81.')
+
+    def test_bad_newobj_ex(self):
+        error = (pickle.UnpicklingError, TypeError)
+        self.assertEqual(self.loads(b'cbuiltins\nint\n)}\x92.'), 0)
+        self.check_unpickling_error(error, b'cbuiltins\nlen\n)}\x92.')
+        self.check_unpickling_error(error, b'cbuiltins\nint\nN}\x92.')
+        self.check_unpickling_error(error, b'cbuiltins\nint\n)N\x92.')
+
     def test_bad_stack(self):
         badpickles = [
             b'.',                       # STOP
@@ -1947,6 +1968,17 @@ class AbstractPickleTests(unittest.TestCase):
                 detail = (proto, C, B, x, y, type(y))
                 self.assertEqual(B(x), B(y), detail)
                 self.assertEqual(x.__dict__, y.__dict__, detail)
+
+    def test_newobj_overridden_new(self):
+        # Test that Python class with C implemented __new__ is pickleable
+        for proto in protocols:
+            x = MyIntWithNew2(1)
+            x.foo = 42
+            s = self.dumps(x, proto)
+            y = self.loads(s)
+            self.assertIs(type(y), MyIntWithNew2)
+            self.assertEqual(int(y), 1)
+            self.assertEqual(y.foo, 42)
 
     def test_newobj_not_class(self):
         # Issue 24552
@@ -3068,6 +3100,13 @@ myclasses = [MyInt, MyFloat,
              MyStr, MyUnicode,
              MyTuple, MyList, MyDict, MySet, MyFrozenSet]
 
+class MyIntWithNew(int):
+    def __new__(cls, value):
+        raise AssertionError
+
+class MyIntWithNew2(MyIntWithNew):
+    __new__ = int.__new__
+
 
 class SlotList(MyList):
     __slots__ = ["foo"]
@@ -3100,7 +3139,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
             f.close()
             self.assertRaises(ValueError, self.dump, 123, f)
         finally:
-            support.unlink(TESTFN)
+            os_helper.unlink(TESTFN)
 
     def test_load_closed_file(self):
         f = open(TESTFN, "wb")
@@ -3108,7 +3147,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
             f.close()
             self.assertRaises(ValueError, self.dump, 123, f)
         finally:
-            support.unlink(TESTFN)
+            os_helper.unlink(TESTFN)
 
     def test_load_from_and_dump_to_file(self):
         stream = io.BytesIO()
@@ -3139,7 +3178,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
                 self.assertRaises(TypeError, self.dump, 123, f, proto)
         finally:
             f.close()
-            support.unlink(TESTFN)
+            os_helper.unlink(TESTFN)
 
     def test_incomplete_input(self):
         s = io.BytesIO(b"X''.")

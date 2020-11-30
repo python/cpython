@@ -55,6 +55,7 @@ raised for division by zero and mod by zero.
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_bit_length()
 #include "pycore_dtoa.h"
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "_math.h"
 
 #include "clinic/mathmodule.c.h"
@@ -850,7 +851,7 @@ math_gcd(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
             Py_DECREF(res);
             return NULL;
         }
-        if (res == _PyLong_One) {
+        if (res == _PyLong_GetOne()) {
             /* Fast path: just check arguments.
                It is okay to use identity comparison here. */
             Py_DECREF(x);
@@ -923,7 +924,7 @@ math_lcm(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
             Py_DECREF(res);
             return NULL;
         }
-        if (res == _PyLong_Zero) {
+        if (res == _PyLong_GetZero()) {
             /* Fast path: just check arguments.
                It is okay to use identity comparison here. */
             Py_DECREF(x);
@@ -1837,7 +1838,7 @@ math_isqrt(PyObject *module, PyObject *n)
     }
 
     if (a_too_large) {
-        Py_SETREF(a, PyNumber_Subtract(a, _PyLong_One));
+        Py_SETREF(a, PyNumber_Subtract(a, _PyLong_GetOne()));
     }
     Py_DECREF(n);
     return a;
@@ -2404,40 +2405,108 @@ math_fmod_impl(PyObject *module, double x, double y)
 }
 
 /*
-Given an *n* length *vec* of values and a value *max*, compute:
+Given a *vec* of values, compute the vector norm:
 
-    max * sqrt(sum((x / max) ** 2 for x in vec))
+    sqrt(sum(x ** 2 for x in vec))
 
-The value of the *max* variable must be non-negative and
-equal to the absolute value of the largest magnitude
-entry in the vector.  If n==0, then *max* should be 0.0.
+The *max* variable should be equal to the largest fabs(x).
+The *n* variable is the length of *vec*.
+If n==0, then *max* should be 0.0.
 If an infinity is present in the vec, *max* should be INF.
-
 The *found_nan* variable indicates whether some member of
 the *vec* is a NaN.
 
-To improve accuracy and to increase the number of cases where
-vector_norm() is commutative, we use a variant of Neumaier
-summation specialized to exploit that we always know that
-|csum| >= |x|.
+To avoid overflow/underflow and to achieve high accuracy giving results
+that are almost always correctly rounded, four techniques are used:
 
-The *csum* variable tracks the cumulative sum and *frac* tracks
-the cumulative fractional errors at each step.  Since this
-variant assumes that |csum| >= |x| at each step, we establish
-the precondition by starting the accumulation from 1.0 which
-represents the largest possible value of (x/max)**2.
+* lossless scaling using a power-of-two scaling factor
+* accurate squaring using Veltkamp-Dekker splitting [1]
+* compensated summation using a variant of the Neumaier algorithm [2]
+* differential correction of the square root [3]
 
-After the loop is finished, the initial 1.0 is subtracted out
-for a net zero effect on the final sum.  Since *csum* will be
-greater than 1.0, the subtraction of 1.0 will not cause
-fractional digits to be dropped from *csum*.
+The usual presentation of the Neumaier summation algorithm has an
+expensive branch depending on which operand has the larger
+magnitude.  We avoid this cost by arranging the calculation so that
+fabs(csum) is always as large as fabs(x).
+
+To establish the invariant, *csum* is initialized to 1.0 which is
+always larger than x**2 after scaling or after division by *max*.
+After the loop is finished, the initial 1.0 is subtracted out for a
+net zero effect on the final sum.  Since *csum* will be greater than
+1.0, the subtraction of 1.0 will not cause fractional digits to be
+dropped from *csum*.
+
+To get the full benefit from compensated summation, the largest
+addend should be in the range: 0.5 <= |x| <= 1.0.  Accordingly,
+scaling or division by *max* should not be skipped even if not
+otherwise needed to prevent overflow or loss of precision.
+
+The assertion that hi*hi <= 1.0 is a bit subtle.  Each vector element
+gets scaled to a magnitude below 1.0.  The Veltkamp-Dekker splitting
+algorithm gives a *hi* value that is correctly rounded to half
+precision.  When a value at or below 1.0 is correctly rounded, it
+never goes above 1.0.  And when values at or below 1.0 are squared,
+they remain at or below 1.0, thus preserving the summation invariant.
+
+Another interesting assertion is that csum+lo*lo == csum. In the loop,
+each scaled vector element has a magnitude less than 1.0.  After the
+Veltkamp split, *lo* has a maximum value of 2**-27.  So the maximum
+value of *lo* squared is 2**-54.  The value of ulp(1.0)/2.0 is 2**-53.
+Given that csum >= 1.0, we have:
+    lo**2 <= 2**-54 < 2**-53 == 1/2*ulp(1.0) <= ulp(csum)/2
+Since lo**2 is less than 1/2 ulp(csum), we have csum+lo*lo == csum.
+
+To minimize loss of information during the accumulation of fractional
+values, each term has a separate accumulator.  This also breaks up
+sequential dependencies in the inner loop so the CPU can maximize
+floating point throughput. [4]  On a 2.6 GHz Haswell, adding one
+dimension has an incremental cost of only 5ns -- for example when
+moving from hypot(x,y) to hypot(x,y,z).
+
+The square root differential correction is needed because a
+correctly rounded square root of a correctly rounded sum of
+squares can still be off by as much as one ulp.
+
+The differential correction starts with a value *x* that is
+the difference between the square of *h*, the possibly inaccurately
+rounded square root, and the accurately computed sum of squares.
+The correction is the first order term of the Maclaurin series
+expansion of sqrt(h**2 + x) == h + x/(2*h) + O(x**2). [5]
+
+Essentially, this differential correction is equivalent to one
+refinement step in Newton's divide-and-average square root
+algorithm, effectively doubling the number of accurate bits.
+This technique is used in Dekker's SQRT2 algorithm and again in
+Borges' ALGORITHM 4 and 5.
+
+Without proof for all cases, hypot() cannot claim to be always
+correctly rounded.  However for n <= 1000, prior to the final addition
+that rounds the overall result, the internal accuracy of "h" together
+with its correction of "x / (2.0 * h)" is at least 100 bits. [6]
+Also, hypot() was tested against a Decimal implementation with
+prec=300.  After 100 million trials, no incorrectly rounded examples
+were found.  In addition, perfect commutativity (all permutations are
+exactly equal) was verified for 1 billion random inputs with n=5. [7]
+
+References:
+
+1. Veltkamp-Dekker splitting: http://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
+2. Compensated summation:  http://www.ti3.tu-harburg.de/paper/rump/Ru08b.pdf
+3. Square root differential correction:  https://arxiv.org/pdf/1904.09481.pdf
+4. Data dependency graph:  https://bugs.python.org/file49439/hypot.png
+5. https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
+6. Analysis of internal accuracy:  https://bugs.python.org/file49484/best_frac.py
+7. Commutativity test:  https://bugs.python.org/file49448/test_hypot_commutativity.py
 
 */
 
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
-    double x, csum = 1.0, oldcsum, frac = 0.0;
+    const double T27 = 134217729.0;     /* ldexp(1.0, 27) + 1.0) */
+    double x, scale, oldcsum, csum = 1.0, frac1 = 0.0, frac2 = 0.0, frac3 = 0.0;
+    double t, hi, lo, h;
+    int max_e;
     Py_ssize_t i;
 
     if (Py_IS_INFINITY(max)) {
@@ -2449,17 +2518,83 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
     if (max == 0.0 || n <= 1) {
         return max;
     }
+    frexp(max, &max_e);
+    if (max_e >= -1023) {
+        scale = ldexp(1.0, -max_e);
+        assert(max * scale >= 0.5);
+        assert(max * scale < 1.0);
+        for (i=0 ; i < n ; i++) {
+            x = vec[i];
+            assert(Py_IS_FINITE(x) && fabs(x) <= max);
+
+            x *= scale;
+            assert(fabs(x) < 1.0);
+
+            t = x * T27;
+            hi = t - (t - x);
+            lo = x - hi;
+            assert(hi + lo == x);
+
+            x = hi * hi;
+            assert(x <= 1.0);
+            assert(fabs(csum) >= fabs(x));
+            oldcsum = csum;
+            csum += x;
+            frac1 += (oldcsum - csum) + x;
+
+            x = 2.0 * hi * lo;
+            assert(fabs(csum) >= fabs(x));
+            oldcsum = csum;
+            csum += x;
+            frac2 += (oldcsum - csum) + x;
+
+            assert(csum + lo * lo == csum);
+            frac3 += lo * lo;
+        }
+        h = sqrt(csum - 1.0 + (frac1 + frac2 + frac3));
+
+        x = h;
+        t = x * T27;
+        hi = t - (t - x);
+        lo = x - hi;
+        assert (hi + lo == x);
+
+        x = -hi * hi;
+        assert(fabs(csum) >= fabs(x));
+        oldcsum = csum;
+        csum += x;
+        frac1 += (oldcsum - csum) + x;
+
+        x = -2.0 * hi * lo;
+        assert(fabs(csum) >= fabs(x));
+        oldcsum = csum;
+        csum += x;
+        frac2 += (oldcsum - csum) + x;
+
+        x = -lo * lo;
+        assert(fabs(csum) >= fabs(x));
+        oldcsum = csum;
+        csum += x;
+        frac3 += (oldcsum - csum) + x;
+
+        x = csum - 1.0 + (frac1 + frac2 + frac3);
+        return (h + x / (2.0 * h)) / scale;
+    }
+    /* When max_e < -1023, ldexp(1.0, -max_e) overflows.
+       So instead of multiplying by a scale, we just divide by *max*.
+    */
     for (i=0 ; i < n ; i++) {
         x = vec[i];
         assert(Py_IS_FINITE(x) && fabs(x) <= max);
         x /= max;
         x = x*x;
+        assert(x <= 1.0);
+        assert(fabs(csum) >= fabs(x));
         oldcsum = csum;
         csum += x;
-        assert(csum >= x);
-        frac += (oldcsum - csum) + x;
+        frac1 += (oldcsum - csum) + x;
     }
-    return max * sqrt(csum - 1.0 + frac);
+    return max * sqrt(csum - 1.0 + frac1);
 }
 
 #define NUM_STACK_ELEMS 16
@@ -3161,7 +3296,7 @@ math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
     factor = n;
     Py_INCREF(factor);
     for (i = 1; i < factors; ++i) {
-        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_One));
+        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_GetOne()));
         if (factor == NULL) {
             goto error;
         }
@@ -3283,7 +3418,7 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
     factor = n;
     Py_INCREF(factor);
     for (i = 1; i < factors; ++i) {
-        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_One));
+        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_GetOne()));
         if (factor == NULL) {
             goto error;
         }

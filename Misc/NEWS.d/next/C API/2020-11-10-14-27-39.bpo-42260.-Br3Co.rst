@@ -1,0 +1,7 @@
+:c:func:`Py_GetPath`, :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`,
+:c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome` and
+:c:func:`Py_GetProgramName` functions now return ``NULL`` if called before
+:c:func:`Py_Initialize` (before Python is initialized). Use the new
+:ref:`Python Initialization Configuration API <init-config>` to get the
+:ref:`Python Path Configuration.  <init-path-config>`. Patch by Victor
+Stinner.

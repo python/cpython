@@ -3,8 +3,9 @@ import math
 import string
 import sys
 from test import support
+from test.support import import_helper
 # Skip this test if the _testcapi module isn't available.
-_testcapi = support.import_module('_testcapi')
+_testcapi = import_helper.import_module('_testcapi')
 from _testcapi import getargs_keywords, getargs_keyword_only
 
 # > How about the following counterproposal. This also changes some of
@@ -975,6 +976,7 @@ class String_TestCase(unittest.TestCase):
         buf = bytearray()
         self.assertRaises(ValueError, getargs_et_hash, 'abc\xe9', 'latin1', buf)
 
+    @support.requires_legacy_unicode_capi
     def test_u(self):
         from _testcapi import getargs_u
         self.assertEqual(getargs_u('abc\xe9'), 'abc\xe9')
@@ -984,6 +986,7 @@ class String_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_u, memoryview(b'memoryview'))
         self.assertRaises(TypeError, getargs_u, None)
 
+    @support.requires_legacy_unicode_capi
     def test_u_hash(self):
         from _testcapi import getargs_u_hash
         self.assertEqual(getargs_u_hash('abc\xe9'), 'abc\xe9')
@@ -993,6 +996,7 @@ class String_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_u_hash, memoryview(b'memoryview'))
         self.assertRaises(TypeError, getargs_u_hash, None)
 
+    @support.requires_legacy_unicode_capi
     def test_Z(self):
         from _testcapi import getargs_Z
         self.assertEqual(getargs_Z('abc\xe9'), 'abc\xe9')
@@ -1002,6 +1006,7 @@ class String_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_Z, memoryview(b'memoryview'))
         self.assertIsNone(getargs_Z(None))
 
+    @support.requires_legacy_unicode_capi
     def test_Z_hash(self):
         from _testcapi import getargs_Z_hash
         self.assertEqual(getargs_Z_hash('abc\xe9'), 'abc\xe9')

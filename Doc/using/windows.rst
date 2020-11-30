@@ -103,9 +103,9 @@ paths longer than this would not resolve and errors would result.
 
 In the latest versions of Windows, this limitation can be expanded to
 approximately 32,000 characters. Your administrator will need to activate the
-"Enable Win32 long paths" group policy, or set the registry value
-``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem@LongPathsEnabled``
-to ``1``.
+"Enable Win32 long paths" group policy, or set ``LongPathsEnabled`` to ``1``
+in the registry key
+``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem``.
 
 This allows the :func:`open` function, the :mod:`os` module and most other
 path functionality to accept and return paths longer than 260 characters.
@@ -614,21 +614,14 @@ Page).  Python uses it for the default encoding of text files (e.g.
 This may cause issues because UTF-8 is widely used on the internet
 and most Unix systems, including WSL (Windows Subsystem for Linux).
 
-You can use UTF-8 mode to change the default text encoding to UTF-8.
-You can enable UTF-8 mode via the ``-X utf8`` command line option, or
-the ``PYTHONUTF8=1`` environment variable.  See :envvar:`PYTHONUTF8` for
-enabling UTF-8 mode, and :ref:`setting-envvars` for how to modify
-environment variables.
+You can use the :ref:`Python UTF-8 Mode <utf8-mode>` to change the default text
+encoding to UTF-8. You can enable the :ref:`Python UTF-8 Mode <utf8-mode>` via
+the ``-X utf8`` command line option, or the ``PYTHONUTF8=1`` environment
+variable.  See :envvar:`PYTHONUTF8` for enabling UTF-8 mode, and
+:ref:`setting-envvars` for how to modify environment variables.
 
-When UTF-8 mode is enabled:
-
-* :func:`locale.getpreferredencoding` returns ``'UTF-8'`` instead of
-  the system encoding.  This function is used for the default text
-  encoding in many places, including :func:`open`, :class:`Popen`,
-  :meth:`Path.read_text`, etc.
-* :data:`sys.stdin`, :data:`sys.stdout`, and :data:`sys.stderr`
-  all use UTF-8 as their text encoding.
-* You can still use the system encoding via the "mbcs" codec.
+When the :ref:`Python UTF-8 Mode <utf8-mode>` is enabled, you can still use the
+system encoding (the ANSI Code Page) via the "mbcs" codec.
 
 Note that adding ``PYTHONUTF8=1`` to the default environment variables
 will affect all Python 3.7+ applications on your system.
@@ -641,7 +634,8 @@ temporarily or use the ``-X utf8`` command line option.
    on Windows for:
 
    * Console I/O including standard I/O (see :pep:`528` for details).
-   * The filesystem encoding (see :pep:`529` for details).
+   * The :term:`filesystem encoding <filesystem encoding and error handler>`
+     (see :pep:`529` for details).
 
 
 .. _launcher:

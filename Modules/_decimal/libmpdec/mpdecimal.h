@@ -61,12 +61,6 @@ extern "C" {
   #define MPD_HIDE_SYMBOLS_END
 #endif
 
-#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
-  #define UNUSED __attribute__((unused))
-#else
-  #define UNUSED
-#endif
-
 #if defined(_MSC_VER)
   #include "vccompat.h"
   #define EXTINLINE extern inline
@@ -127,6 +121,9 @@ const char *mpd_version(void);
   #elif defined(__x86_64__)
     #define CONFIG_64
     #define ASM
+  #elif defined(__arm64__)
+    #define CONFIG_64
+    #define ANSI
   #else
     #error "unknown architecture for universal build."
   #endif
@@ -372,6 +369,31 @@ typedef struct mpd_t {
 
 
 typedef unsigned char uchar;
+
+
+/******************************************************************************/
+/*                                    Triple                                  */
+/******************************************************************************/
+
+/* status cases for getting a triple */
+enum mpd_triple_class {
+  MPD_TRIPLE_NORMAL,
+  MPD_TRIPLE_INF,
+  MPD_TRIPLE_QNAN,
+  MPD_TRIPLE_SNAN,
+  MPD_TRIPLE_ERROR,
+};
+
+typedef struct {
+  enum mpd_triple_class tag;
+  uint8_t sign;
+  uint64_t hi;
+  uint64_t lo;
+  int64_t exp;
+} mpd_uint128_triple_t;
+
+int mpd_from_uint128_triple(mpd_t *result, const mpd_uint128_triple_t *triple, uint32_t *status);
+mpd_uint128_triple_t mpd_as_uint128_triple(const mpd_t *a);
 
 
 /******************************************************************************/

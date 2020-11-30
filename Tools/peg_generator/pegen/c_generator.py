@@ -74,6 +74,7 @@ class FunctionCall:
     function: str
     arguments: List[Any] = field(default_factory=list)
     assigned_variable: Optional[str] = None
+    assigned_variable_type: Optional[str] = None
     return_type: Optional[str] = None
     nodetype: Optional[NodeTypes] = None
     force_true: bool = False
@@ -87,7 +88,10 @@ class FunctionCall:
         if self.force_true:
             parts.append(", 1")
         if self.assigned_variable:
-            parts = ["(", self.assigned_variable, " = ", *parts, ")"]
+            if self.assigned_variable_type:
+                parts = ["(", self.assigned_variable, " = ", '(', self.assigned_variable_type, ')', *parts, ")"]
+            else:
+                parts = ["(", self.assigned_variable, " = ", *parts, ")"]
         if self.comment:
             parts.append(f"  // {self.comment}")
         return "".join(parts)
@@ -210,6 +214,8 @@ class CCallMakerVisitor(GrammarVisitor):
         call = self.generate_call(node.item)
         if node.name:
             call.assigned_variable = node.name
+        if node.type:
+            call.assigned_variable_type = node.type
         return call
 
     def lookahead_call_helper(self, node: Lookahead, positive: int) -> FunctionCall:
@@ -440,7 +446,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             num_groups = max(groups) + 1 if groups else 1
             for keywords_length in range(num_groups):
                 if keywords_length not in groups.keys():
-                    self.print("NULL,")
+                    self.print("(KeywordToken[]) {{NULL, -1}},")
                 else:
                     self.print("(KeywordToken[]) {")
                     with self.indent():
@@ -496,6 +502,9 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 )
                 self.print("p->mark = _mark;")
                 self.print(f"void *_raw = {node.name}_raw(p);")
+                self.print("if (p->error_indicator)")
+                with self.indent():
+                    self.print("return NULL;")
                 self.print("if (_raw == NULL || p->mark <= _resmark)")
                 with self.indent():
                     self.print("break;")
@@ -568,9 +577,9 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                     self.print("PyMem_Free(_children);")
                     self.add_return("NULL")
                 self.print("}")
-            self.print("asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);")
+            self.print("asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);")
             self.out_of_memory_return(f"!_seq", cleanup_code="PyMem_Free(_children);")
-            self.print("for (int i = 0; i < _n; i++) asdl_seq_SET(_seq, i, _children[i]);")
+            self.print("for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);")
             self.print("PyMem_Free(_children);")
             if node.name:
                 self.print(f"_PyPegen_insert_memo(p, _start_mark, {node.name}_type, _seq);")
@@ -730,7 +739,10 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
     def visit_Alt(
         self, node: Alt, is_loop: bool, is_gather: bool, rulename: Optional[str]
     ) -> None:
-        self.print(f"{{ // {node}")
+        if len(node.items) == 1 and str(node.items[0]).startswith('invalid_'):
+            self.print(f"if (p->call_invalid_rules) {{ // {node}")
+        else:
+            self.print(f"{{ // {node}")
         with self.indent():
             self._check_for_errors()
             node_str = str(node).replace('"', '\\"')
@@ -782,4 +794,5 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         name = node.name if node.name else call.assigned_variable
         if name is not None:
             name = self.dedupe(name)
-        return name, call.return_type
+        return_type = call.return_type if node.type is None else node.type
+        return name, return_type

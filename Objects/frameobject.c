@@ -249,36 +249,22 @@ explain_incompatible_block_stack(int64_t to_stack)
 static int *
 marklines(PyCodeObject *code, int len)
 {
+    PyCodeAddressRange bounds;
+    _PyCode_InitAddressRange(code, &bounds);
+    assert (bounds.ar_end == 0);
+
     int *linestarts = PyMem_New(int, len);
     if (linestarts == NULL) {
         return NULL;
     }
-    Py_ssize_t size = PyBytes_GET_SIZE(code->co_lnotab) / 2;
-    unsigned char *p = (unsigned char*)PyBytes_AS_STRING(code->co_lnotab);
-    int line = code->co_firstlineno;
-    int addr = 0;
-    int index = 0;
-    while (--size >= 0) {
-        addr += *p++;
-        if (index*2 < addr) {
-            linestarts[index++] = line;
-        }
-        while (index*2 < addr) {
-            linestarts[index++] = -1;
-            if (index >= len) {
-                break;
-            }
-        }
-        line += (signed char)*p;
-        p++;
+    for (int i = 0; i < len; i++) {
+        linestarts[i] = -1;
     }
-    if (index < len) {
-        linestarts[index++] = line;
+
+    while (PyLineTable_NextAddressRange(&bounds)) {
+        assert(bounds.ar_start/2 < len);
+        linestarts[bounds.ar_start/2] = bounds.ar_line;
     }
-    while (index < len) {
-        linestarts[index++] = -1;
-    }
-    assert(index == len);
     return linestarts;
 }
 
@@ -300,17 +286,20 @@ first_line_not_before(int *lines, int len, int line)
 static void
 frame_stack_pop(PyFrameObject *f)
 {
-    PyObject *v = (*--f->f_stacktop);
+    assert(f->f_stackdepth >= 0);
+    f->f_stackdepth--;
+    PyObject *v = f->f_valuestack[f->f_stackdepth];
     Py_DECREF(v);
 }
 
 static void
 frame_block_unwind(PyFrameObject *f)
 {
+    assert(f->f_stackdepth >= 0);
     assert(f->f_iblock > 0);
     f->f_iblock--;
     PyTryBlock *b = &f->f_blockstack[f->f_iblock];
-    intptr_t delta = (f->f_stacktop - f->f_valuestack) - b->b_level;
+    intptr_t delta = f->f_stackdepth - b->b_level;
     while (delta > 0) {
         frame_stack_pop(f);
         delta--;
@@ -352,33 +341,36 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
 
-    /* Upon the 'call' trace event of a new frame, f->f_lasti is -1 and
-     * f->f_trace is NULL, check first on the first condition.
-     * Forbidding jumps from the 'call' event of a new frame is a side effect
-     * of allowing to set f_lineno only from trace functions. */
-    if (f->f_lasti == -1) {
-        PyErr_Format(PyExc_ValueError,
+    /*
+     * This code preserves the historical restrictions on
+     * setting the line number of a frame.
+     * Jumps are forbidden on a 'return' trace event (except after a yield).
+     * Jumps from 'call' trace events are also forbidden.
+     * In addition, jumps are forbidden when not tracing,
+     * as this is a debugging feature.
+     */
+    switch(f->f_state) {
+        case FRAME_CREATED:
+            PyErr_Format(PyExc_ValueError,
                      "can't jump from the 'call' trace event of a new frame");
-        return -1;
-    }
-
-    /* You can only do this from within a trace function, not via
-     * _getframe or similar hackery. */
-    if (!f->f_trace) {
-        PyErr_Format(PyExc_ValueError,
-                     "f_lineno can only be set by a trace function");
-        return -1;
-    }
-
-    /* Forbid jumps upon a 'return' trace event (except after executing a
-     * YIELD_VALUE or YIELD_FROM opcode, f_stacktop is not NULL in that case)
-     * and upon an 'exception' trace event.
-     * Jumps from 'call' trace events have already been forbidden above for new
-     * frames, so this check does not change anything for 'call' events. */
-    if (f->f_stacktop == NULL) {
-        PyErr_SetString(PyExc_ValueError,
+            return -1;
+        case FRAME_RETURNED:
+        case FRAME_UNWINDING:
+        case FRAME_RAISED:
+        case FRAME_CLEARED:
+            PyErr_SetString(PyExc_ValueError,
                 "can only jump from a 'line' trace event");
-        return -1;
+            return -1;
+        case FRAME_EXECUTING:
+        case FRAME_SUSPENDED:
+            /* You can only do this from within a trace function, not via
+            * _getframe or similar hackery. */
+            if (!f->f_trace) {
+                PyErr_Format(PyExc_ValueError,
+                            "f_lineno can only be set by a trace function");
+                return -1;
+            }
+            break;
     }
 
     int new_lineno;
@@ -585,11 +577,10 @@ frame_dealloc(PyFrameObject *f)
     }
 
     /* Free stack */
-    if (f->f_stacktop != NULL) {
-        for (PyObject **p = valuestack; p < f->f_stacktop; p++) {
-            Py_XDECREF(*p);
-        }
+    for (int i = 0; i < f->f_stackdepth; i++) {
+        Py_XDECREF(f->f_valuestack[i]);
     }
+    f->f_stackdepth = 0;
 
     Py_XDECREF(f->f_back);
     Py_DECREF(f->f_builtins);
@@ -647,10 +638,8 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
     }
 
     /* stack */
-    if (f->f_stacktop != NULL) {
-        for (PyObject **p = f->f_valuestack; p < f->f_stacktop; p++) {
-            Py_VISIT(*p);
-        }
+    for (int i = 0; i < f->f_stackdepth; i++) {
+        Py_VISIT(f->f_valuestack[i]);
     }
     return 0;
 }
@@ -663,9 +652,7 @@ frame_tp_clear(PyFrameObject *f)
      * frame may also point to this frame, believe itself to still be
      * active, and try cleaning up this frame again.
      */
-    PyObject **oldtop = f->f_stacktop;
-    f->f_stacktop = NULL;
-    f->f_executing = 0;
+    f->f_state = FRAME_CLEARED;
 
     Py_CLEAR(f->f_trace);
 
@@ -676,18 +663,17 @@ frame_tp_clear(PyFrameObject *f)
     }
 
     /* stack */
-    if (oldtop != NULL) {
-        for (PyObject **p = f->f_valuestack; p < oldtop; p++) {
-            Py_CLEAR(*p);
-        }
+    for (int i = 0; i < f->f_stackdepth; i++) {
+        Py_CLEAR(f->f_valuestack[i]);
     }
+    f->f_stackdepth = 0;
     return 0;
 }
 
 static PyObject *
 frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
-    if (f->f_executing) {
+    if (_PyFrame_IsExecuting(f)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot clear an executing frame");
         return NULL;
@@ -898,7 +884,7 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
         return NULL;
     }
 
-    f->f_stacktop = f->f_valuestack;
+    f->f_stackdepth = 0;
     f->f_builtins = builtins;
     Py_XINCREF(back);
     f->f_back = back;
@@ -925,9 +911,9 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
     }
 
     f->f_lasti = -1;
-    f->f_lineno = code->co_firstlineno;
+    f->f_lineno = 0;
     f->f_iblock = 0;
-    f->f_executing = 0;
+    f->f_state = FRAME_CREATED;
     f->f_gen = NULL;
     f->f_trace_opcodes = 0;
     f->f_trace_lines = 1;

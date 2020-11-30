@@ -57,7 +57,7 @@ Tuple Objects
 .. c:function:: PyObject* PyTuple_GetItem(PyObject *p, Py_ssize_t pos)
 
    Return the object at position *pos* in the tuple pointed to by *p*.  If *pos* is
-   out of bounds, return ``NULL`` and set an :exc:`IndexError` exception.
+   negative or out of bounds, return ``NULL`` and set an :exc:`IndexError` exception.
 
 
 .. c:function:: PyObject* PyTuple_GET_ITEM(PyObject *p, Py_ssize_t pos)
@@ -161,7 +161,7 @@ type.
 .. c:type:: PyStructSequence_Field
 
    Describes a field of a struct sequence. As a struct sequence is modeled as a
-   tuple, all fields are typed as :c:type:`PyObject\*`.  The index in the
+   tuple, all fields are typed as :c:type:`PyObject*`.  The index in the
    :attr:`fields` array of the :c:type:`PyStructSequence_Desc` determines which
    field of the struct sequence is described.
 

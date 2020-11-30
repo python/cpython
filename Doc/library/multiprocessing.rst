@@ -14,7 +14,8 @@ Introduction
 :mod:`multiprocessing` is a package that supports spawning processes using an
 API similar to the :mod:`threading` module.  The :mod:`multiprocessing` package
 offers both local and remote concurrency, effectively side-stepping the
-:term:`Global Interpreter Lock` by using subprocesses instead of threads.  Due
+:term:`Global Interpreter Lock <global interpreter lock>` by using
+subprocesses instead of threads.  Due
 to this, the :mod:`multiprocessing` module allows the programmer to fully
 leverage multiple processors on a given machine.  It runs on both Unix and
 Windows.
@@ -97,7 +98,7 @@ to start a process.  These *start methods* are
   *spawn*
     The parent process starts a fresh python interpreter process.  The
     child process will only inherit those resources necessary to run
-    the process objects :meth:`~Process.run` method.  In particular,
+    the process object's :meth:`~Process.run` method.  In particular,
     unnecessary file descriptors and handles from the parent process
     will not be inherited.  Starting a process using this method is
     rather slow compared to using *fork* or *forkserver*.
@@ -860,7 +861,7 @@ For an example of the usage of queues for interprocess communication see
 
       A better name for this method might be
       ``allow_exit_without_flush()``.  It is likely to cause enqueued
-      data to lost, and you almost certainly will not need to use it.
+      data to be lost, and you almost certainly will not need to use it.
       It is really only there if you need the current process to exit
       immediately without waiting to flush enqueued data to the
       underlying pipe, and you don't care about lost data.
@@ -2173,7 +2174,8 @@ with the :class:`Pool` class.
 
    .. method:: apply_async(func[, args[, kwds[, callback[, error_callback]]]])
 
-      A variant of the :meth:`apply` method which returns a result object.
+      A variant of the :meth:`apply` method which returns a
+      :class:`~multiprocessing.pool.AsyncResult` object.
 
       If *callback* is specified then it should be a callable which accepts a
       single argument.  When the result becomes ready *callback* is applied to
@@ -2203,7 +2205,8 @@ with the :class:`Pool` class.
 
    .. method:: map_async(func, iterable[, chunksize[, callback[, error_callback]]])
 
-      A variant of the :meth:`.map` method which returns a result object.
+      A variant of the :meth:`.map` method which returns a
+      :class:`~multiprocessing.pool.AsyncResult` object.
 
       If *callback* is specified then it should be a callable which accepts a
       single argument.  When the result becomes ready *callback* is applied to
@@ -2566,9 +2569,9 @@ Address Formats
   filesystem.
 
 * An ``'AF_PIPE'`` address is a string of the form
-   :samp:`r'\\\\.\\pipe\\{PipeName}'`.  To use :func:`Client` to connect to a named
-   pipe on a remote computer called *ServerName* one should use an address of the
-   form :samp:`r'\\\\{ServerName}\\pipe\\{PipeName}'` instead.
+  :samp:`r'\\\\.\\pipe\\{PipeName}'`.  To use :func:`Client` to connect to a named
+  pipe on a remote computer called *ServerName* one should use an address of the
+  form :samp:`r'\\\\{ServerName}\\pipe\\{PipeName}'` instead.
 
 Note that any string beginning with two backslashes is assumed by default to be
 an ``'AF_PIPE'`` address rather than an ``'AF_UNIX'`` address.

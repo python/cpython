@@ -252,8 +252,10 @@ parse_internal_render_format_spec(PyObject *format_spec,
         ++pos;
     }
     if (end-pos && READ_spec(pos) == ',') {
-        invalid_comma_and_underscore();
-        return 0;
+        if (format->thousands_separators == LT_UNDERSCORE_LOCALE) {
+            invalid_comma_and_underscore();
+            return 0;
+        }
     }
 
     /* Parse field precision */

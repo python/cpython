@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_object.h"
+#include "pycore_unionobject.h"   // _Py_union_as_number
 #include "structmember.h"         // PyMemberDef
 
 typedef struct {
@@ -9,6 +10,7 @@ typedef struct {
     PyObject *origin;
     PyObject *args;
     PyObject *parameters;
+    PyObject* weakreflist;
 } gaobject;
 
 static void
@@ -17,10 +19,13 @@ ga_dealloc(PyObject *self)
     gaobject *alias = (gaobject *)self;
 
     _PyObject_GC_UNTRACK(self);
+    if (alias->weakreflist != NULL) {
+        PyObject_ClearWeakRefs((PyObject *)alias);
+    }
     Py_XDECREF(alias->origin);
     Py_XDECREF(alias->args);
     Py_XDECREF(alias->parameters);
-    self->ob_type->tp_free(self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static int
@@ -487,11 +492,50 @@ ga_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
                          alias->origin, alias->args);
 }
 
+static PyObject *
+ga_dir(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    gaobject *alias = (gaobject *)self;
+    PyObject *dir = PyObject_Dir(alias->origin);
+    if (dir == NULL) {
+        return NULL;
+    }
+
+    PyObject *dir_entry = NULL;
+    for (const char * const *p = attr_exceptions; ; p++) {
+        if (*p == NULL) {
+            break;
+        }
+        else {
+            dir_entry = PyUnicode_FromString(*p);
+            if (dir_entry == NULL) {
+                goto error;
+            }
+            int contains = PySequence_Contains(dir, dir_entry);
+            if (contains < 0) {
+                goto error;
+            }
+            if (contains == 0 && PyList_Append(dir, dir_entry) < 0) {
+                goto error;
+            }
+
+            Py_CLEAR(dir_entry);
+        }
+    }
+    return dir;
+
+error:
+    Py_DECREF(dir);
+    Py_XDECREF(dir_entry);
+    return NULL;
+}
+
 static PyMethodDef ga_methods[] = {
     {"__mro_entries__", ga_mro_entries, METH_O},
     {"__instancecheck__", ga_instancecheck, METH_O},
     {"__subclasscheck__", ga_subclasscheck, METH_O},
     {"__reduce__", ga_reduce, METH_NOARGS},
+    {"__dir__", ga_dir, METH_NOARGS},
     {0}
 };
 
@@ -534,6 +578,10 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return Py_GenericAlias(origin, arguments);
 }
 
+static PyNumberMethods ga_as_number = {
+        .nb_or = (binaryfunc)_Py_union_type_or, // Add __or__ function
+};
+
 // TODO:
 // - argument clinic?
 // - __doc__?
@@ -543,10 +591,11 @@ PyTypeObject Py_GenericAliasType = {
     .tp_name = "types.GenericAlias",
     .tp_doc = "Represent a PEP 585 generic type\n"
               "\n"
-              "E.g. for t = list[int], t.origin is list and t.args is (int,).",
+              "E.g. for t = list[int], t.__origin__ is list and t.__args__ is (int,).",
     .tp_basicsize = sizeof(gaobject),
     .tp_dealloc = ga_dealloc,
     .tp_repr = ga_repr,
+    .tp_as_number = &ga_as_number,  // allow X | Y of GenericAlias objs
     .tp_as_mapping = &ga_as_mapping,
     .tp_hash = ga_hash,
     .tp_call = ga_call,
@@ -554,6 +603,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = ga_traverse,
     .tp_richcompare = ga_richcompare,
+    .tp_weaklistoffset = offsetof(gaobject, weakreflist),
     .tp_methods = ga_methods,
     .tp_members = ga_members,
     .tp_alloc = PyType_GenericAlloc,
@@ -585,6 +635,7 @@ Py_GenericAlias(PyObject *origin, PyObject *args)
     alias->origin = origin;
     alias->args = args;
     alias->parameters = NULL;
+    alias->weakreflist = NULL;
     _PyObject_GC_TRACK(alias);
     return (PyObject *)alias;
 }

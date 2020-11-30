@@ -21,6 +21,7 @@ from unittest import TestCase, skipUnless
 from test import support
 from test.support import threading_helper
 from test.support import socket_helper
+from test.support import warnings_helper
 from test.support.socket_helper import HOST, HOSTv6
 
 TIMEOUT = support.LOOPBACK_TIMEOUT
@@ -623,7 +624,7 @@ class TestFTPClass(TestCase):
 
         f = io.StringIO(RETR_DATA.replace('\r\n', '\n'))
         # storlines() expects a binary file, not a text file
-        with support.check_warnings(('', BytesWarning), quiet=True):
+        with warnings_helper.check_warnings(('', BytesWarning), quiet=True):
             self.assertRaises(TypeError, self.client.storlines, 'stor foo', f)
 
     def test_nlst(self):
@@ -1035,7 +1036,7 @@ class TestTimeouts(TestCase):
         self.evt.set()
         try:
             conn, addr = self.sock.accept()
-        except socket.timeout:
+        except TimeoutError:
             pass
         else:
             conn.sendall(b"1 Hola mundo\n")
@@ -1106,10 +1107,11 @@ class TestTimeouts(TestCase):
 
 class MiscTestCase(TestCase):
     def test__all__(self):
-        blacklist = {'MSG_OOB', 'FTP_PORT', 'MAXLINE', 'CRLF', 'B_CRLF',
-                     'Error', 'parse150', 'parse227', 'parse229', 'parse257',
-                     'print_line', 'ftpcp', 'test'}
-        support.check__all__(self, ftplib, blacklist=blacklist)
+        not_exported = {
+            'MSG_OOB', 'FTP_PORT', 'MAXLINE', 'CRLF', 'B_CRLF', 'Error',
+            'parse150', 'parse227', 'parse229', 'parse257', 'print_line',
+            'ftpcp', 'test'}
+        support.check__all__(self, ftplib, not_exported=not_exported)
 
 
 def test_main():

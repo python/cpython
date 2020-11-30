@@ -17,7 +17,9 @@ import importlib.machinery
 import importlib.util
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
+from test.support import import_helper
 from test.support import threading_helper
+from test.support import warnings_helper
 from test.support.script_helper import assert_python_failure, assert_python_ok
 try:
     import _posixsubprocess
@@ -25,7 +27,7 @@ except ImportError:
     _posixsubprocess = None
 
 # Skip this test if the _testcapi module isn't available.
-_testcapi = support.import_module('_testcapi')
+_testcapi = import_helper.import_module('_testcapi')
 
 import _testinternalcapi
 
@@ -399,6 +401,13 @@ class CAPITest(unittest.TestCase):
             del L
             self.assertEqual(PyList.num, 0)
 
+    def test_heap_ctype_doc_and_text_signature(self):
+        self.assertEqual(_testcapi.HeapDocCType.__doc__, "somedoc")
+        self.assertEqual(_testcapi.HeapDocCType.__text_signature__, "(arg1, arg2)")
+
+    def test_null_type_doc(self):
+        self.assertEqual(_testcapi.NullTpDocType.__doc__, None)
+
     def test_subclass_of_heap_gc_ctype_with_tpdealloc_decrefs_once(self):
         class HeapGcCTypeSubclass(_testcapi.HeapGcCType):
             def __init__(self):
@@ -515,6 +524,14 @@ class CAPITest(unittest.TestCase):
 
         # Test that subtype_dealloc decref the newly assigned __class__ only once
         self.assertEqual(new_type_refcnt, sys.getrefcount(_testcapi.HeapCTypeSubclass))
+
+    def test_heaptype_with_setattro(self):
+        obj = _testcapi.HeapCTypeSetattr()
+        self.assertEqual(obj.pvalue, 10)
+        obj.value = 12
+        self.assertEqual(obj.pvalue, 12)
+        del obj.value
+        self.assertEqual(obj.pvalue, 0)
 
     def test_pynumber_tobase(self):
         from _testcapi import pynumber_tobase
@@ -690,6 +707,11 @@ class Test_testcapi(unittest.TestCase):
     locals().update((name, getattr(_testcapi, name))
                     for name in dir(_testcapi)
                     if name.startswith('test_') and not name.endswith('_code'))
+
+    # Suppress warning from PyUnicode_FromUnicode().
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
+    def test_widechar(self):
+        _testcapi.test_widechar()
 
 
 class Test_testinternalcapi(unittest.TestCase):

@@ -703,7 +703,7 @@ static PyMappingMethods PyContext_as_mapping = {
 
 PyTypeObject PyContext_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "Context",
+    "_contextvars.Context",
     sizeof(PyContext),
     .tp_methods = PyContext_methods,
     .tp_as_mapping = &PyContext_as_mapping,
@@ -1056,7 +1056,7 @@ static PyMethodDef PyContextVar_methods[] = {
 
 PyTypeObject PyContextVar_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "ContextVar",
+    "_contextvars.ContextVar",
     sizeof(PyContextVar),
     .tp_methods = PyContextVar_methods,
     .tp_members = PyContextVar_members,
@@ -1197,7 +1197,7 @@ static PyMethodDef PyContextTokenType_methods[] = {
 
 PyTypeObject PyContextToken_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "Token",
+    "_contextvars.Token",
     sizeof(PyContextToken),
     .tp_methods = PyContextTokenType_methods,
     .tp_getset = PyContextTokenType_getsetlist,
