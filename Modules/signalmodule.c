@@ -120,7 +120,11 @@ static volatile struct {
 #else
 #define INVALID_FD (-1)
 static volatile struct {
+#ifdef __VXWORKS__
+    int fd;
+#else
     sig_atomic_t fd;
+#endif
     int warn_on_full_buffer;
 } wakeup = {.fd = INVALID_FD, .warn_on_full_buffer = 1};
 #endif
