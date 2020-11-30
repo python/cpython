@@ -1315,9 +1315,23 @@ output to match any substring in the actual output:
     [0,    1, ...,   18,    19]
 
 The IGNORE_CASE flag causes the test runner to ignore case when
-matching the expected output to the actual output
+matching the expected output to the actual output,
     >>> print("Hello World") # doctest: +IGNORE_CASE
     hello world
+
+It can resolve the issues with POSIX and Windows NAN and other types.
+On Windows this should fail without the flag.
+    >>> float("NaN") # doctest: +IGNORE_CASE
+    nan
+
+On POSIX this should fail.
+    >>> float("NaN") # doctest: +IGNORE_CASE
+    NaN
+
+    >>> float("nan") # doctest: +IGNORE_CASE
+    nan
+    >>> float("nan") # doctest: +IGNORE_CASE
+    NaN
 
 
 The SKIP flag causes an example to be skipped entirely.  I.e., the
