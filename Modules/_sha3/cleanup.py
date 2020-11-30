@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# Usage: ./python Modules/_sha3/cleanup.py
 # Copyright (C) 2012   Christian Heimes (christian@python.org)
 # Licensed to PSF under a Contributor Agreement.
 #

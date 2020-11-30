@@ -1,5 +1,3 @@
-#!/usr/bin/env python3.8
-
 """pegen -- PEG Generator.
 
 Search the web for PEG Parsers for reference.

@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 """Generate C code from an ASDL description."""
 
 import os

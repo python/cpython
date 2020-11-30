@@ -1,5 +1,4 @@
-#!/usr/bin/python
-# Usage: typeslots.py < Include/typeslots.h typeslots.inc
+# Usage: ./python typeslots.py < Include/typeslots.h typeslots.inc
 
 import sys, re
 
