@@ -5657,6 +5657,8 @@ test_refcount(PyObject* self, PyObject* ignored)
     assert(Py_REFCNT(obj) == 2);
     Py_DECREF(xref);
 
+    assert(Py_XNewRef(NULL) == NULL);
+
     Py_INCREF(obj);
     PyObject *borrowed = _Py_Borrow(obj);
     assert(borrowed == obj);
@@ -5666,6 +5668,8 @@ test_refcount(PyObject* self, PyObject* ignored)
     PyObject *xborrowed = _Py_XBorrow(obj);
     assert(xborrowed == obj);
     assert(Py_REFCNT(obj) == 1);
+
+    assert(_Py_XBorrow(NULL) == NULL);
 
     Py_DECREF(obj);
     Py_RETURN_NONE;
