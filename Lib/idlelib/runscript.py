@@ -43,9 +43,6 @@ class ScriptBinding:
         # cli_args is list of strings that extends sys.argv
         self.cli_args = []
 
-        if macosx.isCocoaTk():
-            self.editwin.text_frame.bind('<<run-module-event-2>>', self._run_module_event)
-
     def check_module_event(self, event):
         if isinstance(self.editwin, outwin.OutputWindow):
             self.editwin.text.bell()
@@ -107,24 +104,10 @@ class ScriptBinding:
         finally:
             shell.set_warning_stream(saved_stream)
 
-    def run_module_event(self, event):
-        if macosx.isCocoaTk():
-            # Tk-Cocoa in MacOSX is broken until at least
-            # Tk 8.5.9, and without this rather
-            # crude workaround IDLE would hang when a user
-            # tries to run a module using the keyboard shortcut
-            # (the menu item works fine).
-            self.editwin.text_frame.after(200,
-                lambda: self.editwin.text_frame.event_generate(
-                        '<<run-module-event-2>>'))
-            return 'break'
-        else:
-            return self._run_module_event(event)
-
     def run_custom_event(self, event):
-        return self._run_module_event(event, customize=True)
+        return self.run_module_event(event, customize=True)
 
-    def _run_module_event(self, event, *, customize=False):
+    def run_module_event(self, event, *, customize=False):
         """Run the module after setting up the environment.
 
         First check the syntax.  Next get customization.  If OK, make
