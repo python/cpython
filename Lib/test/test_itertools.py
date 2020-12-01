@@ -1024,6 +1024,25 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(next(it), (1, 2))
         self.assertRaises(RuntimeError, next, it)
 
+    def test_pairwise(self):
+        self.assertEqual(list(pairwise('')), [])
+        self.assertEqual(list(pairwise('a')), [])
+        self.assertEqual(list(pairwise('ab')),
+                              [('a', 'b')]),
+        self.assertEqual(list(pairwise('abcde')),
+                              [('a', 'b'), ('b', 'c'), ('c', 'd'), ('d', 'e')])
+        self.assertEqual(list(pairwise(range(10_000))),
+                         list(zip(range(10_000), range(1, 10_000))))
+
+        with self.assertRaises(TypeError):
+            pairwise()                                      # too few arguments
+        with self.assertRaises(TypeError):
+            pairwise('abc', 10)                             # too many arguments
+        with self.assertRaises(TypeError):
+            pairwise(iterable='abc')                        # keyword arguments
+        with self.assertRaises(TypeError):
+            pairwise(None)                                  # non-iterable argument
+
     def test_product(self):
         for args, result in [
             ([], [()]),                     # zero iterables
@@ -1787,6 +1806,10 @@ class TestGC(unittest.TestCase):
         a = []
         self.makecycle(islice([a]*2, None), a)
 
+    def test_pairwise(self):
+        a = []
+        self.makecycle(pairwise([a]*5), a)
+
     def test_permutations(self):
         a = []
         self.makecycle(permutations([1,2,a,3], 3), a)
@@ -1994,6 +2017,17 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(TypeError, islice, X(s), 10)
             self.assertRaises(TypeError, islice, N(s), 10)
             self.assertRaises(ZeroDivisionError, list, islice(E(s), 10))
+
+    def test_pairwise(self):
+        for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):
+            for g in (G, I, Ig, S, L, R):
+                seq = list(g(s))
+                expected = list(zip(seq, seq[1:]))
+                actual = list(pairwise(g(s)))
+                self.assertEqual(actual, expected)
+            self.assertRaises(TypeError, pairwise, X(s))
+            self.assertRaises(TypeError, pairwise, N(s))
+            self.assertRaises(ZeroDivisionError, list, pairwise(E(s)))
 
     def test_starmap(self):
         for s in (range(10), range(0), range(100), (7,11), range(20,50,5)):
@@ -2312,15 +2346,6 @@ Samuele
 ...     else:
 ...         return starmap(func, repeat(args, times))
 
->>> def pairwise(iterable):
-...     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
-...     a, b = tee(iterable)
-...     try:
-...         next(b)
-...     except StopIteration:
-...         pass
-...     return zip(a, b)
-
 >>> def grouper(n, iterable, fillvalue=None):
 ...     "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
 ...     args = [iter(iterable)] * n
@@ -2450,15 +2475,6 @@ True
 >>> import random
 >>> take(5, map(int, repeatfunc(random.random)))
 [0, 0, 0, 0, 0]
-
->>> list(pairwise('abcd'))
-[('a', 'b'), ('b', 'c'), ('c', 'd')]
-
->>> list(pairwise([]))
-[]
-
->>> list(pairwise('a'))
-[]
 
 >>> list(islice(pad_none('abc'), 0, 6))
 ['a', 'b', 'c', None, None, None]

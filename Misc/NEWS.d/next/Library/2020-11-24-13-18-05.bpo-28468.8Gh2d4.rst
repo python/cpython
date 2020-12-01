@@ -1,0 +1,2 @@
+Add :func:`platform.freedesktop_os_release` function to parse freedesktop.org
+``os-release`` files.
