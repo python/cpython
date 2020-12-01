@@ -266,7 +266,6 @@ Below are some examples of typical usage of the :mod:`bz2` module.
 Using :func:`compress` and :func:`decompress` to demonstrate round-trip compression:
 
     >>> import bz2
-
     >>> data = b"""\
     ... Donec rhoncus quis sapien sit amet molestie. Fusce scelerisque vel augue
     ... nec ullamcorper. Nam rutrum pretium placerat. Aliquam vel tristique lorem,
@@ -275,11 +274,9 @@ Using :func:`compress` and :func:`decompress` to demonstrate round-trip compress
     ... Aliquam pharetra lacus non risus vehicula rutrum. Maecenas aliquam leo
     ... felis. Pellentesque semper nunc sit amet nibh ullamcorper, ac elementum
     ... dolor luctus. Curabitur lacinia mi ornare consectetur vestibulum."""
-
     >>> c = bz2.compress(data)
     >>> len(data) / len(c)  # Data compression ratio
     1.513595166163142
-
     >>> d = bz2.decompress(c)
     >>> data == d  # Check equality to original object after round-trip
     True
@@ -287,7 +284,6 @@ Using :func:`compress` and :func:`decompress` to demonstrate round-trip compress
 Using :class:`BZ2Compressor` for incremental compression:
 
     >>> import bz2
-
     >>> def gen_data(chunks=10, chunksize=1000):
     ...     """Yield incremental blocks of chunksize bytes."""
     ...     for _ in range(chunks):
@@ -310,7 +306,6 @@ while ordered, repetitive data usually yields a high compression ratio.
 Writing and reading a bzip2-compressed file in binary mode:
 
     >>> import bz2
-
     >>> data = b"""\
     ... Donec rhoncus quis sapien sit amet molestie. Fusce scelerisque vel augue
     ... nec ullamcorper. Nam rutrum pretium placerat. Aliquam vel tristique lorem,
@@ -319,14 +314,11 @@ Writing and reading a bzip2-compressed file in binary mode:
     ... Aliquam pharetra lacus non risus vehicula rutrum. Maecenas aliquam leo
     ... felis. Pellentesque semper nunc sit amet nibh ullamcorper, ac elementum
     ... dolor luctus. Curabitur lacinia mi ornare consectetur vestibulum."""
-
     >>> with bz2.open("myfile.bz2", "wb") as f:
     ...     # Write compressed data to file
     ...     unused = f.write(data)
-
     >>> with bz2.open("myfile.bz2", "rb") as f:
     ...     # Decompress data from file
     ...     content = f.read()
-
     >>> content == data  # Check equality to original object after round-trip
     True
