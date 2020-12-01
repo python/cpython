@@ -336,6 +336,7 @@ The :mod:`abc` module also provides the following functions:
    .. versionadded:: 3.4
 
 .. function:: update_abstractmethods(cls)
+
    A function to recalculate an abstract class's abstraction status. This
    function should be called if a class's abstract methods have been
    implemented or changed after it was created. Usually, this function should
