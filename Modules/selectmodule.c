@@ -742,7 +742,7 @@ poll_dealloc(pollObject *self)
     if (self->ufds != NULL)
         PyMem_Free(self->ufds);
     Py_XDECREF(self->dict);
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(type);
 }
 
@@ -1130,7 +1130,7 @@ devpoll_dealloc(devpollObject *self)
     PyObject *type = (PyObject *)Py_TYPE(self);
     (void)devpoll_internal_close(self);
     PyMem_Free(self->fds);
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(type);
 }
 

@@ -1059,7 +1059,7 @@ PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
         obj = _PyObject_GC_Malloc(size);
     }
     else {
-        obj = (PyObject *)PyObject_MALLOC(size);
+        obj = (PyObject *)PyObject_Malloc(size);
     }
 
     if (obj == NULL) {
@@ -2707,7 +2707,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
                 goto error;
             /* Silently truncate the docstring if it contains null bytes. */
             len = strlen(doc_str);
-            tp_doc = (char *)PyObject_MALLOC(len + 1);
+            tp_doc = (char *)PyObject_Malloc(len + 1);
             if (tp_doc == NULL) {
                 PyErr_NoMemory();
                 goto error;
@@ -3047,7 +3047,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
                 continue;
             }
             size_t len = strlen(slot->pfunc)+1;
-            char *tp_doc = PyObject_MALLOC(len);
+            char *tp_doc = PyObject_Malloc(len);
             if (tp_doc == NULL) {
                 type->tp_doc = NULL;
                 PyErr_NoMemory();

@@ -459,7 +459,7 @@ later:
 - implement a fuller MutableMapping API in C?
 - move the MutableMapping implementation to abstract.c?
 - optimize mutablemapping_update
-- use PyObject_MALLOC (small object allocator) for odict nodes?
+- use PyObject_Malloc (small object allocator) for odict nodes?
 - support subclasses better (e.g. in odict_richcompare)
 
 */

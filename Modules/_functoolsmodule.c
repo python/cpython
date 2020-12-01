@@ -478,7 +478,7 @@ keyobject_dealloc(keyobject *ko)
 {
     Py_DECREF(ko->cmp);
     Py_XDECREF(ko->object);
-    PyObject_FREE(ko);
+    PyObject_Free(ko);
 }
 
 static int
@@ -742,7 +742,7 @@ lru_list_elem_dealloc(lru_list_elem *link)
 {
     Py_XDECREF(link->key);
     Py_XDECREF(link->result);
-    PyObject_Del(link);
+    PyObject_Free(link);
 }
 
 static PyTypeObject lru_list_elem_type = {

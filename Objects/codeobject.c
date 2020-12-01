@@ -669,7 +669,7 @@ code_dealloc(PyCodeObject *co)
         PyObject_GC_Del(co->co_zombieframe);
     if (co->co_weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject*)co);
-    PyObject_DEL(co);
+    PyObject_Free(co);
 }
 
 static PyObject *
