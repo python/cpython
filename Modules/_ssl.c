@@ -2295,7 +2295,7 @@ PySSL_dealloc(PySSLSocket *self)
     Py_XDECREF(self->ctx);
     Py_XDECREF(self->server_hostname);
     Py_XDECREF(self->owner);
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 

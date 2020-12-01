@@ -1765,7 +1765,7 @@ ctxmanager_dealloc(PyDecContextManagerObject *self)
 {
     Py_XDECREF(self->local);
     Py_XDECREF(self->global);
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 static PyObject *

@@ -260,7 +260,7 @@ capsule_dealloc(PyObject *o)
     if (capsule->destructor) {
         capsule->destructor(o);
     }
-    PyObject_DEL(o);
+    PyObject_Free(o);
 }
 
 
