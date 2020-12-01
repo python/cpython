@@ -1818,7 +1818,7 @@ class GenericTests(BaseTestCase):
         ## with self.assertRaises(TypeError):
         ##     T2[int, str]
 
-        self.assertEqual(repr(C1[[int], int]).split('.')[-1], 'C1[[int], int]')
+        self.assertEqual(repr(C1[int]).split('.')[-1], 'C1[int]')
         self.assertEqual(C2.__parameters__, ())
         self.assertIsInstance(C2(), collections.abc.Callable)
         self.assertIsSubclass(C2, collections.abc.Callable)
@@ -1858,8 +1858,8 @@ class GenericTests(BaseTestCase):
         self.assertEqual(MyTup[int]().__orig_class__, MyTup[int])
         class MyCall(Callable[..., T]):
             def __call__(self): return None
-        self.assertIs(MyCall[[T], T]().__class__, MyCall)
-        self.assertEqual(MyCall[[T], T]().__orig_class__, MyCall[[T], T])
+        self.assertIs(MyCall[T]().__class__, MyCall)
+        self.assertEqual(MyCall[T]().__orig_class__, MyCall[T])
         class MyDict(typing.Dict[T, T]): ...
         self.assertIs(MyDict[int]().__class__, MyDict)
         self.assertEqual(MyDict[int]().__orig_class__, MyDict[int])

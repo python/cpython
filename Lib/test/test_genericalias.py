@@ -6,6 +6,7 @@ from collections import (
     defaultdict, deque, OrderedDict, Counter, UserDict, UserList
 )
 from collections.abc import *
+from collections.abc import _PosArgs
 from concurrent.futures import Future
 from concurrent.futures.thread import _WorkItem
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
@@ -308,7 +309,7 @@ class BaseTest(unittest.TestCase):
             self.assertEqual(alias.__args__, (_PosArgs[int, str], float))
             self.assertEqual(alias.__parameters__, ())
 
-        with self.subTest("Testing nstance checks"):
+        with self.subTest("Testing instance checks"):
             self.assertIsInstance(alias, GenericAlias)
 
         invalid_params = ('Callable[int]', 'Callable[int, str]')

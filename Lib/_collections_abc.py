@@ -24,11 +24,6 @@ __all__ = ["Awaitable", "Coroutine",
            "MappingView", "KeysView", "ItemsView", "ValuesView",
            "Sequence", "MutableSequence",
            "ByteString",
-           # The following classse are to allow pickling, not actually
-           # meant to be imported.
-           "_CallableGenericAlias",
-           "_PosArgs",
-           "_PosArgsGenericAlias"
            ]
 
 # This module has been renamed from collections.abc to _collections_abc to
@@ -422,17 +417,19 @@ class _PosArgsGenericAlias(GenericAlias):
     """ Internal class specifically to represent positional arguments in
     ``_CallableGenericAlias``.
     """
+    __slots__ = ()
+
     def __repr__(self):
         return f"{__name__}._PosArgsGenericAlias" \
                f"[{', '.join(_type_repr(t) for t in self.__args__)}]"
 
     def __eq__(self, other):
         o_cls = other.__class__
-        if not (o_cls.__module__ == "typing" and o_cls.__name__
-                == "_GenericAlias" or isinstance(other, GenericAlias)):
-            return NotImplemented
-        return (self.__origin__ == other.__origin__
-                and self.__args__ == other.__args__)
+        if ((o_cls.__module__ == "typing" and o_cls.__name__
+                == "_GenericAlias") or isinstance(other, GenericAlias)):
+            return (self.__origin__ == other.__origin__
+                    and self.__args__ == other.__args__)
+        return NotImplemented
 
     def __hash__(self):
         return hash((self.__origin__, self.__args__))
@@ -445,39 +442,37 @@ class _PosArgs:
     def __class_getitem__(cls, item):
         return _PosArgsGenericAlias(tuple, item)
 
-# _PosArgs = type("_PosArgs", (tuple, ), {})
 
 class _CallableGenericAlias(GenericAlias):
     """ Internal class specifically for consistency between the ``__args__`` of
     ``collections.abc.Callable``'s and ``typing.Callable``'s ``GenericAlias``.
     """
 
-    def __new__(cls, *args, **kwargs):
-        if not isinstance(args, tuple) or len(args) != 2:
-            raise TypeError("Callable must be used as Callable[[arg, ...], result]")
-        origin, _args = args
+    def __new__(cls, origin, _args, **kwargs):
         if not isinstance(_args, tuple) or len(_args) != 2:
             raise TypeError("Callable must be used as Callable[[arg, ...], result]")
         t_args, t_result = _args
         if not isinstance(t_args, (list, EllipsisType)):
-            raise TypeError("Callable[args, result]: args must be a list "
-                            f"or Ellipsis. Got {_type_repr(t_args)}")
+            raise TypeError(f"Callable[args, result]: args must be a list or Ellipsis. "
+                            f"Got {_type_repr(t_args)}")
 
-        ga_args = (_args if t_args is Ellipsis
-                   else (_PosArgs[tuple(t_args)], t_result))
+        if t_args is Ellipsis:
+            ga_args = _args
+        else:
+            ga_args = _PosArgs[tuple(t_args)], t_result
 
         return super().__new__(cls, origin, ga_args)
 
 
     def __repr__(self):
-        t_args = self.__args__[0]
-        origin = _type_repr(self.__origin__)
-
-        if len(self.__args__) == 2 and t_args is Ellipsis:
+        if len(self.__args__) == 2 and self.__args__[0] is Ellipsis:
             return super().__repr__()
-        t_args_repr = ('[]' if t_args.__args__ == ((),) else
-                       f'[{", ".join(_type_repr(a) for a in t_args.__args__)}]')
-
+        t_args = self.__args__[0]
+        if t_args.__args__ == ((),):
+            t_args_repr = '[]'
+        else:
+            t_args_repr = f'[{", ".join(_type_repr(a) for a in t_args.__args__)}]'
+        origin = _type_repr(self.__origin__)
         return f"{origin}[{t_args_repr}, {_type_repr(self.__args__[-1])}]"
 
     def __reduce__(self):
@@ -490,7 +485,7 @@ class _CallableGenericAlias(GenericAlias):
 def _type_repr(obj):
     """Return the repr() of an object, special-casing types (internal helper).
 
-    Borrowed from :mod:`typing` without importing since collections.abc
+    Copied from :mod:`typing` since collections.abc
     shouldn't depend on that module.
     """
     if isinstance(obj, GenericAlias):

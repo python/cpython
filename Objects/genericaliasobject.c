@@ -614,17 +614,14 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!_PyArg_CheckPositional("GenericAlias", PyTuple_GET_SIZE(args), 2, 2)) {
         return NULL;
     }
-
     PyObject *origin = PyTuple_GET_ITEM(args, 0);
     PyObject *arguments = PyTuple_GET_ITEM(args, 1);
-
     PyObject *self = (PyObject *)create_ga(type, origin, arguments);
     if (self == NULL) {
         Py_DECREF(origin);
         Py_DECREF(arguments);
         return NULL;
     }
-    
     return self;
 }
 
