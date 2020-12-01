@@ -638,7 +638,7 @@ r_string(Py_ssize_t n, RFILE *p)
         return res;
     }
     if (p->buf == NULL) {
-        p->buf = PyMem_MALLOC(n);
+        p->buf = PyMem_Malloc(n);
         if (p->buf == NULL) {
             PyErr_NoMemory();
             return NULL;
@@ -646,7 +646,7 @@ r_string(Py_ssize_t n, RFILE *p)
         p->buf_size = n;
     }
     else if (p->buf_size < n) {
-        char *tmp = PyMem_REALLOC(p->buf, n);
+        char *tmp = PyMem_Realloc(p->buf, n);
         if (tmp == NULL) {
             PyErr_NoMemory();
             return NULL;
@@ -1453,7 +1453,7 @@ PyMarshal_ReadShortFromFile(FILE *fp)
     rf.buf = NULL;
     res = r_short(&rf);
     if (rf.buf != NULL)
-        PyMem_FREE(rf.buf);
+        PyMem_Free(rf.buf);
     return res;
 }
 
@@ -1468,7 +1468,7 @@ PyMarshal_ReadLongFromFile(FILE *fp)
     rf.buf = NULL;
     res = r_long(&rf);
     if (rf.buf != NULL)
-        PyMem_FREE(rf.buf);
+        PyMem_Free(rf.buf);
     return res;
 }
 
@@ -1501,11 +1501,11 @@ PyMarshal_ReadLastObjectFromFile(FILE *fp)
     off_t filesize;
     filesize = getfilesize(fp);
     if (filesize > 0 && filesize <= REASONABLE_FILE_LIMIT) {
-        char* pBuf = (char *)PyMem_MALLOC(filesize);
+        char* pBuf = (char *)PyMem_Malloc(filesize);
         if (pBuf != NULL) {
             size_t n = fread(pBuf, 1, (size_t)filesize, fp);
             PyObject* v = PyMarshal_ReadObjectFromString(pBuf, n);
-            PyMem_FREE(pBuf);
+            PyMem_Free(pBuf);
             return v;
         }
 
@@ -1534,7 +1534,7 @@ PyMarshal_ReadObjectFromFile(FILE *fp)
     result = r_object(&rf);
     Py_DECREF(rf.refs);
     if (rf.buf != NULL)
-        PyMem_FREE(rf.buf);
+        PyMem_Free(rf.buf);
     return result;
 }
 
@@ -1555,7 +1555,7 @@ PyMarshal_ReadObjectFromString(const char *str, Py_ssize_t len)
     result = r_object(&rf);
     Py_DECREF(rf.refs);
     if (rf.buf != NULL)
-        PyMem_FREE(rf.buf);
+        PyMem_Free(rf.buf);
     return result;
 }
 
@@ -1684,7 +1684,7 @@ marshal_load(PyObject *module, PyObject *file)
             result = read_object(&rf);
             Py_DECREF(rf.refs);
             if (rf.buf != NULL)
-                PyMem_FREE(rf.buf);
+                PyMem_Free(rf.buf);
         } else
             result = NULL;
     }
