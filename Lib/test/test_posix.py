@@ -647,6 +647,7 @@ class PosixTester(unittest.TestCase):
         else:
             fifo_path = os_helper.TESTFN
         os_helper.unlink(fifo_path)
+        self.addCleanup(os_helper.unlink, fifo_path)
         try:
             posix.mkfifo(fifo_path, stat.S_IRUSR | stat.S_IWUSR)
         except PermissionError as e:
