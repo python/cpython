@@ -22,6 +22,26 @@ footer = """
    remaining private.*/
 #define EXCEPT_HANDLER 257
 
+/*
+Store comparaison operators in an enum.
+give each of them a new name : PY_OP --> PYCmp_OP.
+PyCmp_LT <- PY_LT : Less Than (<)
+PyCmp_LE <- PY_LE : Less or Equal than (<=)
+PyCmp_EQ <- PY_EQ : EQual (==)
+PyCmp_NE <- PY_NE : Not Equal (!=)
+PyCmp_GT <- PY_GT : Greater Than (>)
+PyCmp_GE <- PY_GE : Greater or Equal than (>=)
+PyCmp_IN : a is IN sequence b (a in b)
+PyCmp_NOT_IN : a is NOT IN sequence b (a not in b)
+PyCmp_IS : a IS b (a is b)
+PyCmp_IS_NOT : a IS NOT b (a is not b)
+PyCmp_EXC_MATCH : EXCact MATCH of exception a and b
+PyCmp_BAD : BAD operator : not suppoerted.
+
+This enum is used by function cmpop in compile.c to map
+elements from cmpop_ty enum defined in Python-ast.h
+
+*/
 
 enum cmp_op {PyCmp_LT=Py_LT, PyCmp_LE=Py_LE, PyCmp_EQ=Py_EQ, PyCmp_NE=Py_NE,
                 PyCmp_GT=Py_GT, PyCmp_GE=Py_GE, PyCmp_IN, PyCmp_NOT_IN,
@@ -51,9 +71,9 @@ def main(opcode_py, outfile='Include/opcode.h'):
         for name in opcode['opname']:
             if name in opmap:
                 fobj.write("#define %-23s %3s\n" % (name, opmap[name]))
-            if name == 'POP_EXCEPT': # Special entry for HAVE_ARGUMENT
+            if name == 'POP_EXCEPT':  # Special entry for HAVE_ARGUMENT
                 fobj.write("#define %-23s %3d\n" %
-                            ('HAVE_ARGUMENT', opcode['HAVE_ARGUMENT']))
+                           ('HAVE_ARGUMENT', opcode['HAVE_ARGUMENT']))
         fobj.write(footer)
 
     print("%s regenerated from %s" % (outfile, opcode_py))
