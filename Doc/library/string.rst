@@ -510,7 +510,7 @@ The available presentation types for :class:`float` and
    | ``'F'`` | Fixed-point notation. Same as ``'f'``, but converts      |
    |         | ``nan`` to  ``NAN`` and ``inf`` to ``INF``.              |
    +---------+----------------------------------------------------------+
-   | ``'g'`` | General format. For a given precision ``p >= 1``,        |
+   | ``'g'`` | General format.  For a given precision ``p >= 1``,       |
    |         | this rounds the number to ``p`` significant digits and   |
    |         | then formats the result in either fixed-point format     |
    |         | or in scientific notation, depending on its magnitude.   |
