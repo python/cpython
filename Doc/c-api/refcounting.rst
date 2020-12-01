@@ -105,17 +105,14 @@ objects.
    The object must not be ``NULL``; if you aren't sure that it isn't
    ``NULL``, use :c:func:`_Py_XBorrow`.
 
-   This function can be used as an expression to update an old C extension to
+   This function is intended to be used when updating an old C extension to
    newer C API functions which return a :term:`strong reference`. For example,
    replace ``frame->f_code`` with ``_Py_Borrow(PyFrame_GetCode(frame))``.
 
    If the object can be destroyed before the last usage of the borrowed
-   reference, the :term:`borrowed reference` must be converted in-place to a
-   :term:`strong reference` by calling :c:func:`Py_INCREF`, or the
-   :c:func:`Py_NewRef` function can be used to create a new :term:`strong
-   reference`.
+   reference, the :c:func:`_Py_Borrow` function should be avoided.
 
-   In other terms, the :c:func:`_Py_Borrow` function should be avoided whenever
+   More generally, the :c:func:`_Py_Borrow` function should be avoided whenever
    possible.
 
    .. versionadded:: 3.10
