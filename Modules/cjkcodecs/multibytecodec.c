@@ -691,7 +691,7 @@ static struct PyMethodDef multibytecodec_methods[] = {
 static void
 multibytecodec_dealloc(MultibyteCodecObject *self)
 {
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 static PyTypeObject MultibyteCodec_Type = {

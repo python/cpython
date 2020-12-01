@@ -2290,7 +2290,7 @@ _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
     }
 
     PyGC_Head *g = AS_GC(op);
-    g = (PyGC_Head *)PyObject_REALLOC(g,  sizeof(PyGC_Head) + basicsize);
+    g = (PyGC_Head *)PyObject_Realloc(g,  sizeof(PyGC_Head) + basicsize);
     if (g == NULL)
         return (PyVarObject *)PyErr_NoMemory();
     op = (PyVarObject *) FROM_GC(g);
@@ -2309,7 +2309,7 @@ PyObject_GC_Del(void *op)
     if (gcstate->generations[0].count > 0) {
         gcstate->generations[0].count--;
     }
-    PyObject_FREE(g);
+    PyObject_Free(g);
 }
 
 int

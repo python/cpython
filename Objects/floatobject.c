@@ -237,7 +237,7 @@ float_dealloc(PyFloatObject *op)
         assert(state->numfree != -1);
 #endif
         if (state->numfree >= PyFloat_MAXFREELIST)  {
-            PyObject_FREE(op);
+            PyObject_Free(op);
             return;
         }
         state->numfree++;
@@ -2032,7 +2032,7 @@ _PyFloat_ClearFreeList(PyThreadState *tstate)
     PyFloatObject *f = state->free_list;
     while (f != NULL) {
         PyFloatObject *next = (PyFloatObject*) Py_TYPE(f);
-        PyObject_FREE(f);
+        PyObject_Free(f);
         f = next;
     }
     state->free_list = NULL;

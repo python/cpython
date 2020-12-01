@@ -443,7 +443,7 @@ Pdata_dealloc(Pdata *self)
         Py_DECREF(self->data[i]);
     }
     PyMem_Free(self->data);
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 static PyTypeObject Pdata_Type = {
