@@ -211,7 +211,7 @@ _PyModule_CreateInitialized(struct PyModuleDef* module, int module_api_version)
         return NULL;
 
     if (module->m_size > 0) {
-        m->md_state = PyMem_MALLOC(module->m_size);
+        m->md_state = PyMem_Malloc(module->m_size);
         if (!m->md_state) {
             PyErr_NoMemory();
             Py_DECREF(m);
@@ -377,7 +377,7 @@ PyModule_ExecDef(PyObject *module, PyModuleDef *def)
         if (md->md_state == NULL) {
             /* Always set a state pointer; this serves as a marker to skip
              * multiple initialization (importlib.reload() is no-op) */
-            md->md_state = PyMem_MALLOC(def->m_size);
+            md->md_state = PyMem_Malloc(def->m_size);
             if (!md->md_state) {
                 PyErr_NoMemory();
                 return -1;
@@ -681,7 +681,7 @@ module_dealloc(PyModuleObject *m)
     Py_XDECREF(m->md_dict);
     Py_XDECREF(m->md_name);
     if (m->md_state != NULL)
-        PyMem_FREE(m->md_state);
+        PyMem_Free(m->md_state);
     Py_TYPE(m)->tp_free((PyObject *)m);
 }
 

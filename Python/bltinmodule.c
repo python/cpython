@@ -2089,7 +2089,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         Py_DECREF(stdin_encoding);
         Py_DECREF(stdin_errors);
         Py_XDECREF(po);
-        PyMem_FREE(s);
+        PyMem_Free(s);
 
         if (result != NULL) {
             if (PySys_Audit("builtins.input/result", "O", result) < 0) {
