@@ -178,11 +178,11 @@ class TestFilemode:
             fifo_path = os.path.join("/fifos/", TESTFN)
         else:
             fifo_path = TESTFN
+        self.addCleanup(os_helper.unlink, fifo_path)
         try:
             os.mkfifo(fifo_path, 0o700)
         except PermissionError as e:
             self.skipTest('os.mkfifo(): %s' % e)
-        self.addCleanup(os_helper.unlink, fifo_path)
         st_mode, modestr = self.get_mode(fifo_path)
         self.assertEqual(modestr, 'prwx------')
         self.assertS_IS("FIFO", st_mode)
