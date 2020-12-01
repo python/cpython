@@ -97,6 +97,39 @@ objects.
    :c:func:`Py_DECREF`, and the same warning applies.
 
 
+.. c:function:: PyObject* _Py_Borrow(PyObject *o)
+
+   :term:`Borrow a reference <borrowed reference>` to an object: decrement the
+   object reference count and return the object.
+
+   The object must not be ``NULL``; if you aren't sure that it isn't
+   ``NULL``, use :c:func:`_Py_XBorrow`.
+
+   This function can be used as an expression to update an old C extension to
+   newer C API functions which return a :term:`strong reference`. For example,
+   replace ``frame->f_code`` with ``_Py_Borrow(PyFrame_GetCode(frame))``.
+
+   If the object can be destroyed before the last usage of the borrowed
+   reference, the :term:`borrowed reference` must be converted in-place to a
+   :term:`strong reference` by calling :c:func:`Py_INCREF`, or the
+   :c:func:`Py_NewRef` function can be used to create a new :term:`strong
+   reference`.
+
+   In other terms, the :c:func:`_Py_Borrow` function should be avoided whenever
+   possible.
+
+   .. versionadded:: 3.10
+
+
+.. c:function:: PyObject* _Py_XBorrow(PyObject *o)
+
+   Similar to :c:func:`_Py_Borrow`, but the object *o* can be NULL.
+
+   If the object *o* is ``NULL``, the function just returns ``NULL``.
+
+   .. versionadded:: 3.10
+
+
 .. c:function:: void Py_CLEAR(PyObject *o)
 
    Decrement the reference count for object *o*.  The object may be ``NULL``, in

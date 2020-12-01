@@ -552,6 +552,11 @@ New Features
 * The :c:func:`PyType_GetSlot` function can accept static types.
   (Contributed by Hai Shi and Petr Viktorin in :issue:`41073`.)
 
+* Added :c:func:`_Py_Borrow` and :c:func:`_Py_XBorrow` private functions to
+  :ref:`borrow a reference <borrowed reference>` to an object: decrement the
+  object reference count and return the object.
+  (Contributed by Victor Stinner in :issue:`42522`.)
+
 
 Porting to Python 3.10
 ----------------------

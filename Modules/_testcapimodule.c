@@ -5636,6 +5636,42 @@ test_set_type_size(PyObject* self, PyObject* ignored)
 }
 
 
+static PyObject*
+test_refcount(PyObject* self, PyObject* ignored)
+{
+    // Test Py_NewRef(), Py_XNewRef(), _Py_Borrow() and _Py_XBorrow()
+    // functions.
+    PyObject *obj = PyList_New(0);
+    if (obj == NULL) {
+        return NULL;
+    }
+    assert(Py_REFCNT(obj) == 1);
+
+    PyObject *ref = Py_NewRef(obj);
+    assert(ref == obj);
+    assert(Py_REFCNT(obj) == 2);
+    Py_DECREF(ref);
+
+    PyObject *xref = Py_XNewRef(obj);
+    assert(xref == obj);
+    assert(Py_REFCNT(obj) == 2);
+    Py_DECREF(xref);
+
+    Py_INCREF(obj);
+    PyObject *borrowed = _Py_Borrow(obj);
+    assert(borrowed == obj);
+    assert(Py_REFCNT(obj) == 1);
+
+    Py_INCREF(obj);
+    PyObject *xborrowed = _Py_XBorrow(obj);
+    assert(xborrowed == obj);
+    assert(Py_REFCNT(obj) == 1);
+
+    Py_DECREF(obj);
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",       raise_memoryerror,               METH_NOARGS},
@@ -5908,6 +5944,7 @@ static PyMethodDef TestMethods[] = {
     {"pynumber_tobase", pynumber_tobase, METH_VARARGS},
     {"without_gc", without_gc, METH_O},
     {"test_set_type_size", test_set_type_size, METH_NOARGS},
+    {"test_refcount", test_refcount, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

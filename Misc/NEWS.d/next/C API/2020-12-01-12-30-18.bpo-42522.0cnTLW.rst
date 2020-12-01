@@ -1,0 +1,3 @@
+Added :c:func:`_Py_Borrow` and :c:func:`_Py_XBorrow` functions to :ref:`borrow
+a reference <borrowed reference>` to an object: decrement the object reference
+count and return the object. Patch by Victor Stinner.

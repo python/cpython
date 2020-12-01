@@ -551,6 +551,21 @@ static inline PyObject* _Py_XNewRef(PyObject *obj)
 #define Py_NewRef(obj) _Py_NewRef(obj)
 #define Py_XNewRef(obj) _Py_XNewRef(obj)
 
+// Borrow a reference to an object:
+// decrement the object reference count and return the object.
+static inline PyObject* _Py_Borrow(PyObject *obj)
+{
+    Py_DECREF(obj);
+    return obj;
+}
+
+// Similar to _Py_Borrow(), but the object can be NULL.
+static inline PyObject* _Py_XBorrow(PyObject *obj)
+{
+    Py_XDECREF(obj);
+    return obj;
+}
+
 
 /*
 _Py_NoneStruct is an object of undefined type which can be used in contexts
