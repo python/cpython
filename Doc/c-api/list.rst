@@ -22,13 +22,13 @@ List Objects
 .. c:function:: int PyList_Check(PyObject *p)
 
    Return true if *p* is a list object or an instance of a subtype of the list
-   type.
+   type.  This function always succeeds.
 
 
 .. c:function:: int PyList_CheckExact(PyObject *p)
 
    Return true if *p* is a list object, but not an instance of a subtype of
-   the list type.
+   the list type.  This function always succeeds.
 
 
 .. c:function:: PyObject* PyList_New(Py_ssize_t len)

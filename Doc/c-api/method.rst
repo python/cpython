@@ -22,6 +22,7 @@ to bind a :c:data:`PyCFunction` to a class object. It replaces the former call
 
    Return true if *o* is an instance method object (has type
    :c:data:`PyInstanceMethod_Type`).  The parameter must not be ``NULL``.
+   This function always succeeds.
 
 
 .. c:function:: PyObject* PyInstanceMethod_New(PyObject *func)
@@ -64,7 +65,7 @@ no longer available.
 .. c:function:: int PyMethod_Check(PyObject *o)
 
    Return true if *o* is a method object (has type :c:data:`PyMethod_Type`).  The
-   parameter must not be ``NULL``.
+   parameter must not be ``NULL``.  This function always succeeds.
 
 
 .. c:function:: PyObject* PyMethod_New(PyObject *func, PyObject *self)

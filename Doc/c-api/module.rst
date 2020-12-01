@@ -19,12 +19,13 @@ Module Objects
 .. c:function:: int PyModule_Check(PyObject *p)
 
    Return true if *p* is a module object, or a subtype of a module object.
+   This function always succeeds.
 
 
 .. c:function:: int PyModule_CheckExact(PyObject *p)
 
    Return true if *p* is a module object, but not a subtype of
-   :c:data:`PyModule_Type`.
+   :c:data:`PyModule_Type`.  This function always succeeds.
 
 
 .. c:function:: PyObject* PyModule_NewObject(PyObject *name)

@@ -94,13 +94,13 @@ Complex Numbers as Python Objects
 .. c:function:: int PyComplex_Check(PyObject *p)
 
    Return true if its argument is a :c:type:`PyComplexObject` or a subtype of
-   :c:type:`PyComplexObject`.
+   :c:type:`PyComplexObject`.  This function always succeeds.
 
 
 .. c:function:: int PyComplex_CheckExact(PyObject *p)
 
    Return true if its argument is a :c:type:`PyComplexObject`, but not a subtype of
-   :c:type:`PyComplexObject`.
+   :c:type:`PyComplexObject`.  This function always succeeds.
 
 
 .. c:function:: PyObject* PyComplex_FromCComplex(Py_complex v)
