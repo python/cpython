@@ -1,0 +1,1 @@
+:class:`~traceback.TracebackException` no longer holds a reference to the exception's traceback object. Consequently, instances of TracebackException for equivalent but non-equal exceptions now compare as equal.
