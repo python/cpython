@@ -904,7 +904,7 @@ PyTclObject_dealloc(PyTclObject *self)
     PyObject *tp = (PyObject *) Py_TYPE(self);
     Tcl_DecrRefCount(self->value);
     Py_XDECREF(self->string);
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 
@@ -2823,7 +2823,7 @@ Tktt_Dealloc(PyObject *self)
 
     Py_XDECREF(func);
 
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 
@@ -3096,7 +3096,7 @@ Tkapp_Dealloc(PyObject *self)
     ENTER_TCL
     Tcl_DeleteInterp(Tkapp_Interp(self));
     LEAVE_TCL
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
     DisableEventHook();
 }

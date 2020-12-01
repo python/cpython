@@ -571,7 +571,7 @@ pattern_dealloc(PatternObject* self)
     Py_XDECREF(self->pattern);
     Py_XDECREF(self->groupindex);
     Py_XDECREF(self->indexgroup);
-    PyObject_DEL(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 
@@ -1944,7 +1944,7 @@ match_dealloc(MatchObject* self)
     Py_XDECREF(self->regs);
     Py_XDECREF(self->string);
     Py_DECREF(self->pattern);
-    PyObject_DEL(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 
@@ -2450,7 +2450,7 @@ scanner_dealloc(ScannerObject* self)
 
     state_fini(&self->state);
     Py_XDECREF(self->pattern);
-    PyObject_DEL(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 

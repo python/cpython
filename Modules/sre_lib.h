@@ -986,7 +986,7 @@ entrance:
                    ctx->pattern[1], ctx->pattern[2]));
 
             /* install new repeat context */
-            ctx->u.rep = (SRE_REPEAT*) PyObject_MALLOC(sizeof(*ctx->u.rep));
+            ctx->u.rep = (SRE_REPEAT*) PyObject_Malloc(sizeof(*ctx->u.rep));
             if (!ctx->u.rep) {
                 PyErr_NoMemory();
                 RETURN_FAILURE;
@@ -1000,7 +1000,7 @@ entrance:
             state->ptr = ctx->ptr;
             DO_JUMP(JUMP_REPEAT, jump_repeat, ctx->pattern+ctx->pattern[0]);
             state->repeat = ctx->u.rep->prev;
-            PyObject_FREE(ctx->u.rep);
+            PyObject_Free(ctx->u.rep);
 
             if (ret) {
                 RETURN_ON_ERROR(ret);
