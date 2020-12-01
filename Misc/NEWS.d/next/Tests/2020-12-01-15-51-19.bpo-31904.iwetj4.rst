@@ -1,0 +1,5 @@
+Create fake home directory in temporary directory in test_security(),
+test_file_not_found_in_home() and test_home_not_set() of test_netrc.py.
+Previously fake home was created under the current directory. However,
+if they are not run up by reression test, the current directory could
+be not under /tmp, it probably has permission problem.
