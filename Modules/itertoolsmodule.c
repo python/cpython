@@ -1,4 +1,5 @@
 
+
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
@@ -27,8 +28,9 @@ class itertools.accumulate "accumulateobject *" "&accumulate_type"
 class itertools.compress "compressobject *" "&compress_type"
 class itertools.filterfalse "filterfalseobject *" "&filterfalse_type"
 class itertools.count "countobject *" "&count_type"
+class itertools.pairwise "pairwiseobject *" "&pairwise_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ea05c93c6d94726a]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6498ed21fbe1bf94]*/
 
 static PyTypeObject groupby_type;
 static PyTypeObject _grouper_type;
@@ -45,8 +47,139 @@ static PyTypeObject accumulate_type;
 static PyTypeObject compress_type;
 static PyTypeObject filterfalse_type;
 static PyTypeObject count_type;
+static PyTypeObject pairwise_type;
 
 #include "clinic/itertoolsmodule.c.h"
+
+/* pairwise object ***********************************************************/
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *it;
+    PyObject *old;
+} pairwiseobject;
+
+/*[clinic input]
+@classmethod
+itertools.pairwise.__new__ as pairwise_new
+    iterable: object
+    /
+Return an iterator of overlapping pairs taken from the input iterator.
+
+    s -> (s0,s1), (s1,s2), (s2, s3), ...
+
+[clinic start generated code]*/
+
+static PyObject *
+pairwise_new_impl(PyTypeObject *type, PyObject *iterable)
+/*[clinic end generated code: output=9f0267062d384456 input=6e7c3cddb431a8d6]*/
+{
+    PyObject *it;
+    pairwiseobject *po;
+
+    it = PyObject_GetIter(iterable);
+    if (it == NULL) {
+        return NULL;
+    }
+    po = (pairwiseobject *)type->tp_alloc(type, 0);
+    if (po == NULL) {
+        Py_DECREF(it);
+        return NULL;
+    }
+    po->it = it;
+    po->old = NULL;
+    return (PyObject *)po;
+}
+
+static void
+pairwise_dealloc(pairwiseobject *po)
+{
+    PyObject_GC_UnTrack(po);
+    Py_XDECREF(po->it);
+    Py_XDECREF(po->old);
+    Py_TYPE(po)->tp_free(po);
+}
+
+static int
+pairwise_traverse(pairwiseobject *po, visitproc visit, void *arg)
+{
+    Py_VISIT(po->it);
+    Py_VISIT(po->old);
+    return 0;
+}
+
+static PyObject *
+pairwise_next(pairwiseobject *po)
+{
+    PyObject *it = po->it;
+    PyObject *old = po->old;
+    PyObject *new, *result;
+
+    if (it == NULL) {
+        return NULL;
+    }
+    if (old == NULL) {
+        po->old = old = (*Py_TYPE(it)->tp_iternext)(it);
+        if (old == NULL) {
+            Py_CLEAR(po->it);
+            return NULL;
+        }
+    }
+    new = (*Py_TYPE(it)->tp_iternext)(it);
+    if (new == NULL) {
+        Py_CLEAR(po->it);
+        Py_CLEAR(po->old);
+        return NULL;
+    }
+    /* Future optimization: Reuse the result tuple as we do in enumerate() */
+    result = PyTuple_Pack(2, old, new);
+    Py_SETREF(po->old, new);
+    return result;
+}
+
+static PyTypeObject pairwise_type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "itertools.pairwise",           /* tp_name */
+    sizeof(pairwiseobject),         /* tp_basicsize */
+    0,                              /* tp_itemsize */
+    /* methods */
+    (destructor)pairwise_dealloc,   /* tp_dealloc */
+    0,                              /* tp_vectorcall_offset */
+    0,                              /* tp_getattr */
+    0,                              /* tp_setattr */
+    0,                              /* tp_as_async */
+    0,                              /* tp_repr */
+    0,                              /* tp_as_number */
+    0,                              /* tp_as_sequence */
+    0,                              /* tp_as_mapping */
+    0,                              /* tp_hash */
+    0,                              /* tp_call */
+    0,                              /* tp_str */
+    PyObject_GenericGetAttr,        /* tp_getattro */
+    0,                              /* tp_setattro */
+    0,                              /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_BASETYPE,        /* tp_flags */
+    pairwise_new__doc__,            /* tp_doc */
+    (traverseproc)pairwise_traverse,    /* tp_traverse */
+    0,                              /* tp_clear */
+    0,                              /* tp_richcompare */
+    0,                              /* tp_weaklistoffset */
+    PyObject_SelfIter,              /* tp_iter */
+    (iternextfunc)pairwise_next,    /* tp_iternext */
+    0,                              /* tp_methods */
+    0,                              /* tp_members */
+    0,                              /* tp_getset */
+    0,                              /* tp_base */
+    0,                              /* tp_dict */
+    0,                              /* tp_descr_get */
+    0,                              /* tp_descr_set */
+    0,                              /* tp_dictoffset */
+    0,                              /* tp_init */
+    PyType_GenericAlloc,            /* tp_alloc */
+    pairwise_new,                   /* tp_new */
+    PyObject_GC_Del,                /* tp_free */
+};
 
 
 /* groupby object ************************************************************/
@@ -4666,6 +4799,7 @@ groupby(iterable[, keyfunc]) --> sub-iterators grouped by value of keyfunc(v)\n\
 filterfalse(pred, seq) --> elements of seq where pred(elem) is False\n\
 islice(seq, [start,] stop [, step]) --> elements from\n\
        seq[start:stop:step]\n\
+pairwise(s) --> (s[0],s[1]), (s[1],s[2]), (s[2], s[3]), ...\n\
 starmap(fun, seq) --> fun(*seq[0]), fun(*seq[1]), ...\n\
 tee(it, n=2) --> (it1, it2 , ... itn) splits one iterator into n\n\
 takewhile(pred, seq) --> seq[0], seq[1], until pred fails\n\
@@ -4695,6 +4829,7 @@ itertoolsmodule_exec(PyObject *m)
         &filterfalse_type,
         &count_type,
         &ziplongest_type,
+        &pairwise_type,
         &permutations_type,
         &product_type,
         &repeat_type,
