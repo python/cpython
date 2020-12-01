@@ -1149,11 +1149,19 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     do_a = do_args
 
     def do_retval(self, arg):
-        """retval
-        Print the return value for the last return of a function.
+        """retval [variable]
+        Print or store the return value for the last return of a function.
+
+        When used without argument, prints the return value
+
+        When used with an argument, store the return value into a local variable
+
         """
         if '__return__' in self.curframe_locals:
-            self.message(repr(self.curframe_locals['__return__']))
+            if arg:
+                self.curframe_locals[arg] = self.curframe_locals['__return__']
+            else:
+                self.message(repr(self.curframe_locals['__return__']))
         else:
             self.error('Not yet returned!')
     do_rv = do_retval
