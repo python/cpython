@@ -34,7 +34,7 @@ lock_dealloc(lockobject *self)
             PyThread_release_lock(self->lock_lock);
         PyThread_free_lock(self->lock_lock);
     }
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 /* Helper to acquire an interruptible lock with a timeout.  If the lock acquire
