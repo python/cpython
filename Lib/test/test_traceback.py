@@ -1123,6 +1123,18 @@ class TestTracebackException(unittest.TestCase):
         self.assertEqual(exc_info[0], exc.exc_type)
         self.assertEqual(str(exc_info[1]), str(exc))
 
+    def test_no_refs_to_exception_and_traceback_objects(self):
+        try:
+            1/0
+        except Exception:
+            exc_info = sys.exc_info()
+
+        refcnt1 = sys.getrefcount(exc_info[1])
+        refcnt2 = sys.getrefcount(exc_info[2])
+        exc = traceback.TracebackException(*exc_info)
+        self.assertEqual(sys.getrefcount(exc_info[1]), refcnt1)
+        self.assertEqual(sys.getrefcount(exc_info[2]), refcnt2)
+
     def test_comparison_basic(self):
         try:
             1/0
@@ -1171,6 +1183,16 @@ class TestTracebackException(unittest.TestCase):
         exc6 = traceback.TracebackException(*exc_info, limit=-2)
         exc7 = traceback.TracebackException(*exc_info, limit=-2, capture_locals=True)
         self.assertNotEqual(exc6, exc7)
+
+    def test_comparison_equivalent_exceptions_are_equal(self):
+        excs = []
+        for _ in range(2):
+            try:
+                1/0
+            except:
+                excs.append(traceback.TracebackException(*sys.exc_info()))
+        self.assertEqual(excs[0], excs[1])
+        self.assertEqual(list(excs[0].format()), list(excs[1].format()))
 
     def test_unhashable(self):
         class UnhashableException(Exception):
