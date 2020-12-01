@@ -344,7 +344,7 @@ The :mod:`abc` module also provides the following functions:
 
    Returns *cls*, to allow usage as a class decorator.
 
-   If *cls* is not an instance of ABCMeta, does nothing.
+   If *cls* is not an instance of :class:`ABCMeta`, does nothing.
 
    .. note::
 
