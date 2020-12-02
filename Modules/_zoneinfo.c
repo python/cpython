@@ -172,7 +172,7 @@ static void
 update_strong_cache(const PyTypeObject *const type, PyObject *key,
                     PyObject *zone);
 static PyObject *
-zone_from_strong_cache(const PyTypeObject *const type, PyObject *key);
+zone_from_strong_cache(const PyTypeObject *const type, PyObject *const key);
 
 static PyObject *
 zoneinfo_new_instance(PyTypeObject *type, PyObject *key)
@@ -1220,19 +1220,19 @@ calendarrule_new(uint8_t month, uint8_t week, uint8_t day, int8_t hour,
     // optimize out the first comparison if day is an unsigned integer anyway,
     // we will leave this comparison in place and disable the compiler warning.
 #ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wtautological-compare"
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wtautological-compare"
 #endif
 #if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wtype-limits"
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wtype-limits"
 #endif
     if (day < 0 || day > 6) {
 #if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
-#pragma GCC diagnostic pop
+# pragma GCC diagnostic pop
 #endif
 #ifdef __clang__
-#pragma clang diagnostic pop
+# pragma clang diagnostic pop
 #endif
         PyErr_Format(PyExc_ValueError, "Day must be in [0, 6]");
         return -1;
