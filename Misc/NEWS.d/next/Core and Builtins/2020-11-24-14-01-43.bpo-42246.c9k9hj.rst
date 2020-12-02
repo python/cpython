@@ -1,0 +1,2 @@
+PEP 626: After a return, the f_lineno attribute of a frame is always the
+last line executed.
