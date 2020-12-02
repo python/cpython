@@ -1,0 +1,1 @@
+Check if NonCallableMock.__new__'s spec_arg is not None instead of calling its __bool__ function
