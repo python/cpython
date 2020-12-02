@@ -61,7 +61,7 @@ helper, :class:`auto`.
     the bitwise operations without losing their :class:`Flag` membership.
 
 .. function:: unique
-   :noindex:
+    :noindex:
 
     Enum class decorator that ensures only one name is bound to any one value.
 
