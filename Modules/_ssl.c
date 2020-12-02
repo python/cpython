@@ -6416,7 +6416,7 @@ sslmodule_legacy(PyObject *module)
 #ifdef HAVE_OPENSSL_CRYPTO_LOCK
     /* note that this will start threading if not already started */
     if (!_setup_ssl_threads()) {
-        return NULL;
+        return 0;
     }
 #elif OPENSSL_VERSION_1_1
     /* OpenSSL 1.1.0 builtin thread support is enabled */
