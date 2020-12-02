@@ -413,56 +413,25 @@ class Collection(Sized, Iterable, Container):
         return NotImplemented
 
 
-class _PosArgsGenericAlias(GenericAlias):
-    """ Internal class specifically to represent positional arguments in
-    ``_CallableGenericAlias``.
-    """
-    __slots__ = ()
-
-    def __repr__(self):
-        return f"{__name__}._PosArgsGenericAlias" \
-               f"[{', '.join(_type_repr(t) for t in self.__args__)}]"
-
-    def __eq__(self, other):
-        o_cls = other.__class__
-        if ((o_cls.__module__ == "typing" and o_cls.__name__
-                == "_GenericAlias") or isinstance(other, GenericAlias)):
-            return (self.__origin__ == other.__origin__
-                    and self.__args__ == other.__args__)
-        return NotImplemented
-
-    def __hash__(self):
-        return hash((self.__origin__, self.__args__))
-
-# Only used for _CallableGenericAlias
-class _PosArgs:
-    """ Internal class specifically to represent positional arguments in
-    ``_CallableGenericAlias``.
-    """
-    def __class_getitem__(cls, item):
-        return _PosArgsGenericAlias(tuple, item)
-
-
 class _CallableGenericAlias(GenericAlias):
     """ Internal class specifically for consistency between the ``__args__`` of
     ``collections.abc.Callable``'s and ``typing.Callable``'s ``GenericAlias``.
     """
-
-    def __new__(cls, origin, _args, **kwargs):
-        if not isinstance(_args, tuple) or len(_args) != 2:
+    __slots__ = ()
+    def __new__(cls, origin, args, **kwargs):
+        if not isinstance(args, tuple) or len(args) != 2:
             raise TypeError("Callable must be used as Callable[[arg, ...], result]")
-        t_args, t_result = _args
+        t_args, t_result = args
         if not isinstance(t_args, (list, EllipsisType)):
             raise TypeError(f"Callable[args, result]: args must be a list or Ellipsis. "
                             f"Got {_type_repr(t_args)}")
 
         if t_args is Ellipsis:
-            ga_args = _args
+            ga_args = args
         else:
-            ga_args = _PosArgs[tuple(t_args)], t_result
+            ga_args = tuple(t_args) + (t_result,)
 
         return super().__new__(cls, origin, ga_args)
-
 
     def __repr__(self):
         if len(self.__args__) == 2 and self.__args__[0] is Ellipsis:

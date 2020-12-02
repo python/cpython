@@ -879,19 +879,14 @@ class _CallableGenericAlias(_GenericAlias, _root=True):
         assert self._name == 'Callable'
         if len(self.__args__) == 2 and self.__args__[0] is Ellipsis:
             return super().__repr__()
-        t_args = self.__args__[0]
-        if t_args.__args__ == ((),):
-            t_args_repr = '[]'
-        else:
-            t_args_repr = f'[{", ".join(_type_repr(a) for a in t_args.__args__)}]'
         return (f'typing.Callable'
-                f'[{t_args_repr}, '
+                f'[[{", ".join([_type_repr(a) for a in self.__args__[:-1]])}], '
                 f'{_type_repr(self.__args__[-1])}]')
 
     def __reduce__(self):
         args = self.__args__
         if not (len(args) == 2 and args[0] is ...):
-            args = list(t for t in args[0].__args__), args[-1]
+            args = list(args[:-1]), args[-1]
         return operator.getitem, (Callable, args)
 
 
@@ -911,7 +906,7 @@ class _CallableType(_SpecialGenericAlias, _root=True):
             if not isinstance(args, list):
                 raise TypeError(f"Callable[args, result]: args must be a list."
                                 f" Got {args}")
-            params = (tuple(args), result)
+            params = tuple(args) + (result,)
         return self.__getitem_inner__(params)
 
     @_tp_cache
@@ -923,7 +918,7 @@ class _CallableType(_SpecialGenericAlias, _root=True):
             return self.copy_with((_TypingEllipsis, result))
         msg = "Callable[[arg, ...], result]: each arg must be a type."
         args = tuple(_type_check(arg, msg) for arg in args)
-        params = (_PosArgs[args], result)
+        params = args + (result,)
         return self.copy_with(params)
 
 
@@ -1556,6 +1551,8 @@ def get_args(tp):
         return (tp.__origin__,) + tp.__metadata__
     if isinstance(tp, _GenericAlias):
         res = tp.__args__
+        if tp.__origin__ is collections.abc.Callable and res[0] is not Ellipsis:
+            res = (list(res[:-1]), res[-1])
         return res
     if isinstance(tp, GenericAlias):
         return tp.__args__
@@ -1713,8 +1710,6 @@ Reversible = _alias(collections.abc.Reversible, 1)
 Sized = _alias(collections.abc.Sized, 0)  # Not generic.
 Container = _alias(collections.abc.Container, 1)
 Collection = _alias(collections.abc.Collection, 1)
-# Only used for Callable
-_PosArgs = _TupleType(tuple, -1, inst=False, name='_PosArgs')
 Callable = _CallableType(collections.abc.Callable, 2)
 Callable.__doc__ = \
     """Callable type; Callable[[int], str] is a function of (int) -> str.
