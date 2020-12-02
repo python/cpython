@@ -378,13 +378,22 @@ class IntTestCases(unittest.TestCase):
                 int(ExceptionalTrunc())
 
             for trunc_result_base in (object, Classic):
-                class Integral(trunc_result_base):
-                    def __int__(self):
+                class Index(trunc_result_base):
+                    def __index__(self):
                         return 42
 
                 class TruncReturnsNonInt(base):
                     def __trunc__(self):
-                        return Integral()
+                        return Index()
+                self.assertEqual(int(TruncReturnsNonInt()), 42)
+
+                class Intable(trunc_result_base):
+                    def __int__(self):
+                        return 42
+
+                class TruncReturnsNonIndex(base):
+                    def __trunc__(self):
+                        return Intable()
                 self.assertEqual(int(TruncReturnsNonInt()), 42)
 
                 class NonIntegral(trunc_result_base):
@@ -417,6 +426,21 @@ class IntTestCases(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     int(TruncReturnsBadInt())
 
+    def test_int_subclass_with_index(self):
+        class MyIndex(int):
+            def __index__(self):
+                return 42
+
+        class BadIndex(int):
+            def __index__(self):
+                return 42.0
+
+        my_int = MyIndex(7)
+        self.assertEqual(my_int, 7)
+        self.assertEqual(int(my_int), 7)
+
+        self.assertEqual(int(BadIndex()), 0)
+
     def test_int_subclass_with_int(self):
         class MyInt(int):
             def __int__(self):
@@ -430,9 +454,19 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(my_int, 7)
         self.assertEqual(int(my_int), 42)
 
-        self.assertRaises(TypeError, int, BadInt())
+        my_int = BadInt(7)
+        self.assertEqual(my_int, 7)
+        self.assertRaises(TypeError, int, my_int)
 
     def test_int_returns_int_subclass(self):
+        class BadIndex:
+            def __index__(self):
+                return True
+
+        class BadIndex2(int):
+            def __index__(self):
+                return True
+
         class BadInt:
             def __int__(self):
                 return True
@@ -441,6 +475,10 @@ class IntTestCases(unittest.TestCase):
             def __int__(self):
                 return True
 
+        class TruncReturnsBadIndex:
+            def __trunc__(self):
+                return BadIndex()
+
         class TruncReturnsBadInt:
             def __trunc__(self):
                 return BadInt()
@@ -448,6 +486,17 @@ class IntTestCases(unittest.TestCase):
         class TruncReturnsIntSubclass:
             def __trunc__(self):
                 return True
+
+        bad_int = BadIndex()
+        with self.assertWarns(DeprecationWarning):
+            n = int(bad_int)
+        self.assertEqual(n, 1)
+        self.assertIs(type(n), int)
+
+        bad_int = BadIndex2()
+        n = int(bad_int)
+        self.assertEqual(n, 0)
+        self.assertIs(type(n), int)
 
         bad_int = BadInt()
         with self.assertWarns(DeprecationWarning):
@@ -461,11 +510,14 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(n, 1)
         self.assertIs(type(n), int)
 
-        bad_int = TruncReturnsBadInt()
+        bad_int = TruncReturnsBadIndex()
         with self.assertWarns(DeprecationWarning):
             n = int(bad_int)
         self.assertEqual(n, 1)
         self.assertIs(type(n), int)
+
+        bad_int = TruncReturnsBadInt()
+        self.assertRaises(TypeError, int, bad_int)
 
         good_int = TruncReturnsIntSubclass()
         n = int(good_int)
@@ -507,6 +559,14 @@ class IntTestCases(unittest.TestCase):
         # lone surrogate in Unicode string
         check('123\ud800')
         check('123\ud800', 10)
+
+    def test_issue31619(self):
+        self.assertEqual(int('1_0_1_0_1_0_1_0_1_0_1_0_1_0_1_0_1_0_1_0_1_0_1_0_1_0_1_0_1_0_1', 2),
+                         0b1010101010101010101010101010101)
+        self.assertEqual(int('1_2_3_4_5_6_7_0_1_2_3', 8), 0o12345670123)
+        self.assertEqual(int('1_2_3_4_5_6_7_8_9', 16), 0x123456789)
+        self.assertEqual(int('1_2_3_4_5_6_7', 32), 1144132807)
+
 
 if __name__ == "__main__":
     unittest.main()

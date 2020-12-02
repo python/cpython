@@ -37,30 +37,31 @@ PyDoc_STRVAR(_weakref__remove_dead_weakref__doc__,
 "Atomically remove key from dict if it points to a dead weakref.");
 
 #define _WEAKREF__REMOVE_DEAD_WEAKREF_METHODDEF    \
-    {"_remove_dead_weakref", (PyCFunction)_weakref__remove_dead_weakref, METH_FASTCALL, _weakref__remove_dead_weakref__doc__},
+    {"_remove_dead_weakref", (PyCFunction)(void(*)(void))_weakref__remove_dead_weakref, METH_FASTCALL, _weakref__remove_dead_weakref__doc__},
 
 static PyObject *
 _weakref__remove_dead_weakref_impl(PyObject *module, PyObject *dct,
                                    PyObject *key);
 
 static PyObject *
-_weakref__remove_dead_weakref(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+_weakref__remove_dead_weakref(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *dct;
     PyObject *key;
 
-    if (!_PyArg_ParseStack(args, nargs, "O!O:_remove_dead_weakref",
-        &PyDict_Type, &dct, &key)) {
+    if (!_PyArg_CheckPositional("_remove_dead_weakref", nargs, 2, 2)) {
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("_remove_dead_weakref", kwnames)) {
+    if (!PyDict_Check(args[0])) {
+        _PyArg_BadArgument("_remove_dead_weakref", "argument 1", "dict", args[0]);
         goto exit;
     }
+    dct = args[0];
+    key = args[1];
     return_value = _weakref__remove_dead_weakref_impl(module, dct, key);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b686303486bdfefd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c543dc2cd6ece975 input=a9049054013a1b77]*/

@@ -1,16 +1,16 @@
+import errno
 import os
+import random
 import signal
 import socket
+import statistics
 import subprocess
 import sys
 import time
 import unittest
 from test import support
+from test.support import os_helper
 from test.support.script_helper import assert_python_ok, spawn_python
-try:
-    import threading
-except ImportError:
-    threading = None
 try:
     import _testcapi
 except ImportError:
@@ -19,7 +19,6 @@ except ImportError:
 
 class GenericTests(unittest.TestCase):
 
-    @unittest.skipIf(threading is None, "test needs threading module")
     def test_enums(self):
         for name in dir(signal):
             sig = getattr(signal, name)
@@ -45,6 +44,8 @@ class PosixTests(unittest.TestCase):
         self.assertRaises(ValueError, signal.signal, 4242,
                           self.trivial_signal_handler)
 
+        self.assertRaises(ValueError, signal.strsignal, 4242)
+
     def test_setting_signal_handler_to_none_raises_error(self):
         self.assertRaises(TypeError, signal.signal,
                           signal.SIGUSR1, None)
@@ -57,18 +58,55 @@ class PosixTests(unittest.TestCase):
         signal.signal(signal.SIGHUP, hup)
         self.assertEqual(signal.getsignal(signal.SIGHUP), hup)
 
+    def test_strsignal(self):
+        self.assertIn("Interrupt", signal.strsignal(signal.SIGINT))
+        self.assertIn("Terminated", signal.strsignal(signal.SIGTERM))
+        self.assertIn("Hangup", signal.strsignal(signal.SIGHUP))
+
     # Issue 3864, unknown if this affects earlier versions of freebsd also
-    @unittest.skipIf(sys.platform=='freebsd6',
-        'inter process signals not reliable (do not mix well with threading) '
-        'on freebsd6')
     def test_interprocess_signal(self):
         dirname = os.path.dirname(__file__)
         script = os.path.join(dirname, 'signalinterproctester.py')
         assert_python_ok(script)
 
+    def test_valid_signals(self):
+        s = signal.valid_signals()
+        self.assertIsInstance(s, set)
+        self.assertIn(signal.Signals.SIGINT, s)
+        self.assertIn(signal.Signals.SIGALRM, s)
+        self.assertNotIn(0, s)
+        self.assertNotIn(signal.NSIG, s)
+        self.assertLess(len(s), signal.NSIG)
+
+    @unittest.skipUnless(sys.executable, "sys.executable required.")
+    def test_keyboard_interrupt_exit_code(self):
+        """KeyboardInterrupt triggers exit via SIGINT."""
+        process = subprocess.run(
+                [sys.executable, "-c",
+                 "import os, signal, time\n"
+                 "os.kill(os.getpid(), signal.SIGINT)\n"
+                 "for _ in range(999): time.sleep(0.01)"],
+                stderr=subprocess.PIPE)
+        self.assertIn(b"KeyboardInterrupt", process.stderr)
+        self.assertEqual(process.returncode, -signal.SIGINT)
+        # Caveat: The exit code is insufficient to guarantee we actually died
+        # via a signal.  POSIX shells do more than look at the 8 bit value.
+        # Writing an automation friendly test of an interactive shell
+        # to confirm that our process died via a SIGINT proved too complex.
+
 
 @unittest.skipUnless(sys.platform == "win32", "Windows specific")
 class WindowsSignalTests(unittest.TestCase):
+
+    def test_valid_signals(self):
+        s = signal.valid_signals()
+        self.assertIsInstance(s, set)
+        self.assertGreaterEqual(len(s), 6)
+        self.assertIn(signal.Signals.SIGINT, s)
+        self.assertNotIn(0, s)
+        self.assertNotIn(signal.NSIG, s)
+        self.assertLess(len(s), signal.NSIG)
+
     def test_issue9324(self):
         # Updated for issue #10003, adding SIGBREAK
         handler = lambda x, y: None
@@ -90,11 +128,34 @@ class WindowsSignalTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             signal.signal(7, handler)
 
+    @unittest.skipUnless(sys.executable, "sys.executable required.")
+    def test_keyboard_interrupt_exit_code(self):
+        """KeyboardInterrupt triggers an exit using STATUS_CONTROL_C_EXIT."""
+        # We don't test via os.kill(os.getpid(), signal.CTRL_C_EVENT) here
+        # as that requires setting up a console control handler in a child
+        # in its own process group.  Doable, but quite complicated.  (see
+        # @eryksun on https://github.com/python/cpython/pull/11862)
+        process = subprocess.run(
+                [sys.executable, "-c", "raise KeyboardInterrupt"],
+                stderr=subprocess.PIPE)
+        self.assertIn(b"KeyboardInterrupt", process.stderr)
+        STATUS_CONTROL_C_EXIT = 0xC000013A
+        self.assertEqual(process.returncode, STATUS_CONTROL_C_EXIT)
+
 
 class WakeupFDTests(unittest.TestCase):
 
+    def test_invalid_call(self):
+        # First parameter is positional-only
+        with self.assertRaises(TypeError):
+            signal.set_wakeup_fd(signum=signal.SIGINT)
+
+        # warn_on_full_buffer is a keyword-only parameter
+        with self.assertRaises(TypeError):
+            signal.set_wakeup_fd(signal.SIGINT, False)
+
     def test_invalid_fd(self):
-        fd = support.make_bad_fd()
+        fd = os_helper.make_bad_fd()
         self.assertRaises((ValueError, OSError),
                           signal.set_wakeup_fd, fd)
 
@@ -224,7 +285,7 @@ class WakeupSignalTests(unittest.TestCase):
         signal.set_wakeup_fd(r)
         try:
             with captured_stderr() as err:
-                _testcapi.raise_signal(signal.SIGALRM)
+                signal.raise_signal(signal.SIGALRM)
         except ZeroDivisionError:
             # An ignored exception should have been printed out on stderr
             err = err.getvalue()
@@ -318,10 +379,9 @@ class WakeupSignalTests(unittest.TestCase):
 
     def test_signum(self):
         self.check_wakeup("""def test():
-            import _testcapi
             signal.signal(signal.SIGUSR1, handler)
-            _testcapi.raise_signal(signal.SIGUSR1)
-            _testcapi.raise_signal(signal.SIGALRM)
+            signal.raise_signal(signal.SIGUSR1)
+            signal.raise_signal(signal.SIGALRM)
         """, signal.SIGUSR1, signal.SIGALRM)
 
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
@@ -335,8 +395,8 @@ class WakeupSignalTests(unittest.TestCase):
             signal.signal(signum2, handler)
 
             signal.pthread_sigmask(signal.SIG_BLOCK, (signum1, signum2))
-            _testcapi.raise_signal(signum1)
-            _testcapi.raise_signal(signum2)
+            signal.raise_signal(signum1)
+            signal.raise_signal(signum2)
             # Unblocking the 2 signals calls the C signal handler twice
             signal.pthread_sigmask(signal.SIG_UNBLOCK, (signum1, signum2))
         """,  signal.SIGUSR1, signal.SIGUSR2, ordered=False)
@@ -363,11 +423,10 @@ class WakeupSocketSignalTests(unittest.TestCase):
         signal.signal(signum, handler)
 
         read, write = socket.socketpair()
-        read.setblocking(False)
         write.setblocking(False)
         signal.set_wakeup_fd(write.fileno())
 
-        _testcapi.raise_signal(signum)
+        signal.raise_signal(signum)
 
         data = read.recv(1)
         if not data:
@@ -416,7 +475,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
         write.close()
 
         with captured_stderr() as err:
-            _testcapi.raise_signal(signum)
+            signal.raise_signal(signum)
 
         err = err.getvalue()
         if ('Exception ignored when trying to {action} to the signal wakeup fd'
@@ -425,8 +484,122 @@ class WakeupSocketSignalTests(unittest.TestCase):
         """.format(action=action)
         assert_python_ok('-c', code)
 
+    @unittest.skipIf(_testcapi is None, 'need _testcapi')
+    def test_warn_on_full_buffer(self):
+        # Use a subprocess to have only one thread.
+        if os.name == 'nt':
+            action = 'send'
+        else:
+            action = 'write'
+        code = """if 1:
+        import errno
+        import signal
+        import socket
+        import sys
+        import time
+        import _testcapi
+        from test.support import captured_stderr
+
+        signum = signal.SIGINT
+
+        # This handler will be called, but we intentionally won't read from
+        # the wakeup fd.
+        def handler(signum, frame):
+            pass
+
+        signal.signal(signum, handler)
+
+        read, write = socket.socketpair()
+
+        # Fill the socketpair buffer
+        if sys.platform == 'win32':
+            # bpo-34130: On Windows, sometimes non-blocking send fails to fill
+            # the full socketpair buffer, so use a timeout of 50 ms instead.
+            write.settimeout(0.050)
+        else:
+            write.setblocking(False)
+
+        written = 0
+        if sys.platform == "vxworks":
+            CHUNK_SIZES = (1,)
+        else:
+            # Start with large chunk size to reduce the
+            # number of send needed to fill the buffer.
+            CHUNK_SIZES = (2 ** 16, 2 ** 8, 1)
+        for chunk_size in CHUNK_SIZES:
+            chunk = b"x" * chunk_size
+            try:
+                while True:
+                    write.send(chunk)
+                    written += chunk_size
+            except (BlockingIOError, TimeoutError):
+                pass
+
+        print(f"%s bytes written into the socketpair" % written, flush=True)
+
+        write.setblocking(False)
+        try:
+            write.send(b"x")
+        except BlockingIOError:
+            # The socketpair buffer seems full
+            pass
+        else:
+            raise AssertionError("%s bytes failed to fill the socketpair "
+                                 "buffer" % written)
+
+        # By default, we get a warning when a signal arrives
+        msg = ('Exception ignored when trying to {action} '
+               'to the signal wakeup fd')
+        signal.set_wakeup_fd(write.fileno())
+
+        with captured_stderr() as err:
+            signal.raise_signal(signum)
+
+        err = err.getvalue()
+        if msg not in err:
+            raise AssertionError("first set_wakeup_fd() test failed, "
+                                 "stderr: %r" % err)
+
+        # And also if warn_on_full_buffer=True
+        signal.set_wakeup_fd(write.fileno(), warn_on_full_buffer=True)
+
+        with captured_stderr() as err:
+            signal.raise_signal(signum)
+
+        err = err.getvalue()
+        if msg not in err:
+            raise AssertionError("set_wakeup_fd(warn_on_full_buffer=True) "
+                                 "test failed, stderr: %r" % err)
+
+        # But not if warn_on_full_buffer=False
+        signal.set_wakeup_fd(write.fileno(), warn_on_full_buffer=False)
+
+        with captured_stderr() as err:
+            signal.raise_signal(signum)
+
+        err = err.getvalue()
+        if err != "":
+            raise AssertionError("set_wakeup_fd(warn_on_full_buffer=False) "
+                                 "test failed, stderr: %r" % err)
+
+        # And then check the default again, to make sure warn_on_full_buffer
+        # settings don't leak across calls.
+        signal.set_wakeup_fd(write.fileno())
+
+        with captured_stderr() as err:
+            signal.raise_signal(signum)
+
+        err = err.getvalue()
+        if msg not in err:
+            raise AssertionError("second set_wakeup_fd() test failed, "
+                                 "stderr: %r" % err)
+
+        """.format(action=action)
+        assert_python_ok('-c', code)
+
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
+@unittest.skipUnless(hasattr(signal, 'siginterrupt'), "needs signal.siginterrupt()")
 class SiginterruptTest(unittest.TestCase):
 
     def readpipe_interrupted(self, interrupt):
@@ -477,7 +650,7 @@ class SiginterruptTest(unittest.TestCase):
                 # wait until the child process is loaded and has started
                 first_line = process.stdout.readline()
 
-                stdout, stderr = process.communicate(timeout=5.0)
+                stdout, stderr = process.communicate(timeout=support.SHORT_TIMEOUT)
             except subprocess.TimeoutExpired:
                 process.kill()
                 return False
@@ -512,6 +685,8 @@ class SiginterruptTest(unittest.TestCase):
 
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
+@unittest.skipUnless(hasattr(signal, 'getitimer') and hasattr(signal, 'setitimer'),
+                         "needs signal.getitimer() and signal.setitimer()")
 class ItimerTest(unittest.TestCase):
     def setUp(self):
         self.hndl_called = False
@@ -561,7 +736,7 @@ class ItimerTest(unittest.TestCase):
         self.assertEqual(self.hndl_called, True)
 
     # Issue 3864, unknown if this affects earlier versions of freebsd also
-    @unittest.skipIf(sys.platform in ('freebsd6', 'netbsd5'),
+    @unittest.skipIf(sys.platform in ('netbsd5',),
         'itimer not reliable (does not mix well with threading) on some BSDs.')
     def test_itimer_virtual(self):
         self.itimer = signal.ITIMER_VIRTUAL
@@ -583,9 +758,6 @@ class ItimerTest(unittest.TestCase):
         # and the handler should have been called
         self.assertEqual(self.hndl_called, True)
 
-    # Issue 3864, unknown if this affects earlier versions of freebsd also
-    @unittest.skipIf(sys.platform=='freebsd6',
-        'itimer not reliable (does not mix well with threading) on freebsd6')
     def test_itimer_prof(self):
         self.itimer = signal.ITIMER_PROF
         signal.signal(signal.SIGPROF, self.sig_prof)
@@ -604,6 +776,15 @@ class ItimerTest(unittest.TestCase):
         # profiling itimer should be (0.0, 0.0) now
         self.assertEqual(signal.getitimer(self.itimer), (0.0, 0.0))
         # and the handler should have been called
+        self.assertEqual(self.hndl_called, True)
+
+    def test_setitimer_tiny(self):
+        # bpo-30807: C setitimer() takes a microsecond-resolution interval.
+        # Check that float -> timeval conversion doesn't round
+        # the interval down to zero, which would disable the timer.
+        self.itimer = signal.ITIMER_REAL
+        signal.setitimer(self.itimer, 1e-6)
+        time.sleep(1)
         self.assertEqual(self.hndl_called, True)
 
 
@@ -662,16 +843,6 @@ class PendingSignalsTests(unittest.TestCase):
                 1/0
 
             signal.signal(signum, handler)
-
-            if sys.platform == 'freebsd6':
-                # Issue #12392 and #12469: send a signal to the main thread
-                # doesn't work before the creation of the first thread on
-                # FreeBSD 6
-                def noop():
-                    pass
-                thread = threading.Thread(target=noop)
-                thread.start()
-                thread.join()
 
             tid = threading.get_ident()
             try:
@@ -796,7 +967,6 @@ class PendingSignalsTests(unittest.TestCase):
                          'need signal.sigwait()')
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                          'need signal.pthread_sigmask()')
-    @unittest.skipIf(threading is None, "test needs threading module")
     def test_sigwait_thread(self):
         # Check that calling sigwait() from a thread doesn't suspend the whole
         # process. A new interpreter is spawned to avoid problems when mixing
@@ -834,6 +1004,21 @@ class PendingSignalsTests(unittest.TestCase):
         self.assertRaises(TypeError, signal.pthread_sigmask, 1)
         self.assertRaises(TypeError, signal.pthread_sigmask, 1, 2, 3)
         self.assertRaises(OSError, signal.pthread_sigmask, 1700, [])
+        with self.assertRaises(ValueError):
+            signal.pthread_sigmask(signal.SIG_BLOCK, [signal.NSIG])
+        with self.assertRaises(ValueError):
+            signal.pthread_sigmask(signal.SIG_BLOCK, [0])
+        with self.assertRaises(ValueError):
+            signal.pthread_sigmask(signal.SIG_BLOCK, [1<<1000])
+
+    @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
+                         'need signal.pthread_sigmask()')
+    def test_pthread_sigmask_valid_signals(self):
+        s = signal.pthread_sigmask(signal.SIG_BLOCK, signal.valid_signals())
+        self.addCleanup(signal.pthread_sigmask, signal.SIG_SETMASK, s)
+        # Get current blocked set
+        s = signal.pthread_sigmask(signal.SIG_UNBLOCK, signal.valid_signals())
+        self.assertLessEqual(s, signal.valid_signals())
 
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                          'need signal.pthread_sigmask()')
@@ -912,9 +1097,6 @@ class PendingSignalsTests(unittest.TestCase):
         """
         assert_python_ok('-c', code)
 
-    @unittest.skipIf(sys.platform == 'freebsd6',
-        "issue #12392: send a signal to the main thread doesn't work "
-        "before the creation of the first thread on FreeBSD 6")
     @unittest.skipUnless(hasattr(signal, 'pthread_kill'),
                          'need signal.pthread_kill()')
     def test_pthread_kill_main_thread(self):
@@ -940,6 +1122,185 @@ class PendingSignalsTests(unittest.TestCase):
                 raise Exception("Child error (exit code %s): %s" %
                                 (exitcode, stdout))
 
+
+class StressTest(unittest.TestCase):
+    """
+    Stress signal delivery, especially when a signal arrives in
+    the middle of recomputing the signal state or executing
+    previously tripped signal handlers.
+    """
+
+    def setsig(self, signum, handler):
+        old_handler = signal.signal(signum, handler)
+        self.addCleanup(signal.signal, signum, old_handler)
+
+    def measure_itimer_resolution(self):
+        N = 20
+        times = []
+
+        def handler(signum=None, frame=None):
+            if len(times) < N:
+                times.append(time.perf_counter())
+                # 1 µs is the smallest possible timer interval,
+                # we want to measure what the concrete duration
+                # will be on this platform
+                signal.setitimer(signal.ITIMER_REAL, 1e-6)
+
+        self.addCleanup(signal.setitimer, signal.ITIMER_REAL, 0)
+        self.setsig(signal.SIGALRM, handler)
+        handler()
+        while len(times) < N:
+            time.sleep(1e-3)
+
+        durations = [times[i+1] - times[i] for i in range(len(times) - 1)]
+        med = statistics.median(durations)
+        if support.verbose:
+            print("detected median itimer() resolution: %.6f s." % (med,))
+        return med
+
+    def decide_itimer_count(self):
+        # Some systems have poor setitimer() resolution (for example
+        # measured around 20 ms. on FreeBSD 9), so decide on a reasonable
+        # number of sequential timers based on that.
+        reso = self.measure_itimer_resolution()
+        if reso <= 1e-4:
+            return 10000
+        elif reso <= 1e-2:
+            return 100
+        else:
+            self.skipTest("detected itimer resolution (%.3f s.) too high "
+                          "(> 10 ms.) on this platform (or system too busy)"
+                          % (reso,))
+
+    @unittest.skipUnless(hasattr(signal, "setitimer"),
+                         "test needs setitimer()")
+    def test_stress_delivery_dependent(self):
+        """
+        This test uses dependent signal handlers.
+        """
+        N = self.decide_itimer_count()
+        sigs = []
+
+        def first_handler(signum, frame):
+            # 1e-6 is the minimum non-zero value for `setitimer()`.
+            # Choose a random delay so as to improve chances of
+            # triggering a race condition.  Ideally the signal is received
+            # when inside critical signal-handling routines such as
+            # Py_MakePendingCalls().
+            signal.setitimer(signal.ITIMER_REAL, 1e-6 + random.random() * 1e-5)
+
+        def second_handler(signum=None, frame=None):
+            sigs.append(signum)
+
+        # Here on Linux, SIGPROF > SIGALRM > SIGUSR1.  By using both
+        # ascending and descending sequences (SIGUSR1 then SIGALRM,
+        # SIGPROF then SIGALRM), we maximize chances of hitting a bug.
+        self.setsig(signal.SIGPROF, first_handler)
+        self.setsig(signal.SIGUSR1, first_handler)
+        self.setsig(signal.SIGALRM, second_handler)  # for ITIMER_REAL
+
+        expected_sigs = 0
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
+
+        while expected_sigs < N:
+            os.kill(os.getpid(), signal.SIGPROF)
+            expected_sigs += 1
+            # Wait for handlers to run to avoid signal coalescing
+            while len(sigs) < expected_sigs and time.monotonic() < deadline:
+                time.sleep(1e-5)
+
+            os.kill(os.getpid(), signal.SIGUSR1)
+            expected_sigs += 1
+            while len(sigs) < expected_sigs and time.monotonic() < deadline:
+                time.sleep(1e-5)
+
+        # All ITIMER_REAL signals should have been delivered to the
+        # Python handler
+        self.assertEqual(len(sigs), N, "Some signals were lost")
+
+    @unittest.skipUnless(hasattr(signal, "setitimer"),
+                         "test needs setitimer()")
+    def test_stress_delivery_simultaneous(self):
+        """
+        This test uses simultaneous signal handlers.
+        """
+        N = self.decide_itimer_count()
+        sigs = []
+
+        def handler(signum, frame):
+            sigs.append(signum)
+
+        self.setsig(signal.SIGUSR1, handler)
+        self.setsig(signal.SIGALRM, handler)  # for ITIMER_REAL
+
+        expected_sigs = 0
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
+
+        while expected_sigs < N:
+            # Hopefully the SIGALRM will be received somewhere during
+            # initial processing of SIGUSR1.
+            signal.setitimer(signal.ITIMER_REAL, 1e-6 + random.random() * 1e-5)
+            os.kill(os.getpid(), signal.SIGUSR1)
+
+            expected_sigs += 2
+            # Wait for handlers to run to avoid signal coalescing
+            while len(sigs) < expected_sigs and time.monotonic() < deadline:
+                time.sleep(1e-5)
+
+        # All ITIMER_REAL signals should have been delivered to the
+        # Python handler
+        self.assertEqual(len(sigs), N, "Some signals were lost")
+
+class RaiseSignalTest(unittest.TestCase):
+
+    def test_sigint(self):
+        with self.assertRaises(KeyboardInterrupt):
+            signal.raise_signal(signal.SIGINT)
+
+    @unittest.skipIf(sys.platform != "win32", "Windows specific test")
+    def test_invalid_argument(self):
+        try:
+            SIGHUP = 1 # not supported on win32
+            signal.raise_signal(SIGHUP)
+            self.fail("OSError (Invalid argument) expected")
+        except OSError as e:
+            if e.errno == errno.EINVAL:
+                pass
+            else:
+                raise
+
+    def test_handler(self):
+        is_ok = False
+        def handler(a, b):
+            nonlocal is_ok
+            is_ok = True
+        old_signal = signal.signal(signal.SIGINT, handler)
+        self.addCleanup(signal.signal, signal.SIGINT, old_signal)
+
+        signal.raise_signal(signal.SIGINT)
+        self.assertTrue(is_ok)
+
+
+class PidfdSignalTest(unittest.TestCase):
+
+    @unittest.skipUnless(
+        hasattr(signal, "pidfd_send_signal"),
+        "pidfd support not built in",
+    )
+    def test_pidfd_send_signal(self):
+        with self.assertRaises(OSError) as cm:
+            signal.pidfd_send_signal(0, signal.SIGINT)
+        if cm.exception.errno == errno.ENOSYS:
+            self.skipTest("kernel does not support pidfds")
+        elif cm.exception.errno == errno.EPERM:
+            self.skipTest("Not enough privileges to use pidfs")
+        self.assertEqual(cm.exception.errno, errno.EBADF)
+        my_pidfd = os.open(f'/proc/{os.getpid()}', os.O_DIRECTORY)
+        self.addCleanup(os.close, my_pidfd)
+        with self.assertRaisesRegex(TypeError, "^siginfo must be None$"):
+            signal.pidfd_send_signal(my_pidfd, signal.SIGINT, object(), 0)
+        with self.assertRaises(KeyboardInterrupt):
+            signal.pidfd_send_signal(my_pidfd, signal.SIGINT)
 
 def tearDownModule():
     support.reap_children()

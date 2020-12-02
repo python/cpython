@@ -4,6 +4,7 @@ import sys
 import unittest
 from copy import copy
 from test.support import run_unittest
+from unittest import mock
 
 from distutils.errors import DistutilsPlatformError, DistutilsByteCompileError
 from distutils.util import (get_platform, convert_path, change_root,
@@ -77,13 +78,6 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
                        '[MSC v.1310 32 bit (Amd64)]')
         sys.platform = 'win32'
         self.assertEqual(get_platform(), 'win-amd64')
-
-        # windows XP, itanium
-        os.name = 'nt'
-        sys.version = ('2.4.4 (#71, Oct 18 2006, 08:34:43) '
-                       '[MSC v.1310 32 bit (Itanium)]')
-        sys.platform = 'win32'
-        self.assertEqual(get_platform(), 'win-ia64')
 
         # macbook
         os.name = 'posix'
@@ -241,19 +235,34 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
 
     def test_check_environ(self):
         util._environ_checked = 0
-        if 'HOME' in os.environ:
-            del os.environ['HOME']
+        os.environ.pop('HOME', None)
 
-        # posix without HOME
-        if os.name == 'posix':  # this test won't run on windows
-            check_environ()
-            import pwd
-            self.assertEqual(os.environ['HOME'], pwd.getpwuid(os.getuid())[5])
-        else:
-            check_environ()
+        check_environ()
 
         self.assertEqual(os.environ['PLAT'], get_platform())
         self.assertEqual(util._environ_checked, 1)
+
+    @unittest.skipUnless(os.name == 'posix', 'specific to posix')
+    def test_check_environ_getpwuid(self):
+        util._environ_checked = 0
+        os.environ.pop('HOME', None)
+
+        import pwd
+
+        # only set pw_dir field, other fields are not used
+        result = pwd.struct_passwd((None, None, None, None, None,
+                                    '/home/distutils', None))
+        with mock.patch.object(pwd, 'getpwuid', return_value=result):
+            check_environ()
+            self.assertEqual(os.environ['HOME'], '/home/distutils')
+
+        util._environ_checked = 0
+        os.environ.pop('HOME', None)
+
+        # bpo-10496: Catch pwd.getpwuid() error
+        with mock.patch.object(pwd, 'getpwuid', side_effect=KeyError):
+            check_environ()
+            self.assertNotIn('HOME', os.environ)
 
     def test_split_quoted(self):
         self.assertEqual(split_quoted('""one"" "two" \'three\' \\four'),

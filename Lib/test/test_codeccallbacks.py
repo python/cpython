@@ -1,9 +1,9 @@
 import codecs
 import html.entities
 import sys
-import test.support
 import unicodedata
 import unittest
+
 
 class PosReturn:
     # this can be used for configurable callbacks
@@ -210,42 +210,6 @@ class CodecCallbackTest(unittest.TestCase):
 
         charmap[ord("?")] = "XYZ" # wrong type in mapping
         self.assertRaises(TypeError, codecs.charmap_encode, sin, "replace", charmap)
-
-    def test_decodeunicodeinternal(self):
-        with test.support.check_warnings(('unicode_internal codec has been '
-                                          'deprecated', DeprecationWarning)):
-            self.assertRaises(
-                UnicodeDecodeError,
-                b"\x00\x00\x00\x00\x00".decode,
-                "unicode-internal",
-            )
-            if len('\0'.encode('unicode-internal')) == 4:
-                def handler_unicodeinternal(exc):
-                    if not isinstance(exc, UnicodeDecodeError):
-                        raise TypeError("don't know how to handle %r" % exc)
-                    return ("\x01", 1)
-
-                self.assertEqual(
-                    b"\x00\x00\x00\x00\x00".decode("unicode-internal", "ignore"),
-                    "\u0000"
-                )
-
-                self.assertEqual(
-                    b"\x00\x00\x00\x00\x00".decode("unicode-internal", "replace"),
-                    "\u0000\ufffd"
-                )
-
-                self.assertEqual(
-                    b"\x00\x00\x00\x00\x00".decode("unicode-internal", "backslashreplace"),
-                    "\u0000\\x00"
-                )
-
-                codecs.register_error("test.hui", handler_unicodeinternal)
-
-                self.assertEqual(
-                    b"\x00\x00\x00\x00\x00".decode("unicode-internal", "test.hui"),
-                    "\u0000\u0001\u0000"
-                )
 
     def test_callbacks(self):
         def handler1(exc):
@@ -794,16 +758,13 @@ class CodecCallbackTest(unittest.TestCase):
                 ("ascii", b"\xff"),
                 ("utf-8", b"\xff"),
                 ("utf-7", b"+x-"),
-                ("unicode-internal", b"\x00"),
             ):
-                with test.support.check_warnings():
-                    # unicode-internal has been deprecated
-                    self.assertRaises(
-                        TypeError,
-                        bytes.decode,
-                        enc,
-                        "test.badhandler"
-                    )
+                self.assertRaises(
+                    TypeError,
+                    bytes.decode,
+                    enc,
+                    "test.badhandler"
+                )
 
     def test_lookup(self):
         self.assertEqual(codecs.strict_errors, codecs.lookup_error("strict"))
@@ -1013,7 +974,6 @@ class CodecCallbackTest(unittest.TestCase):
             ("utf-32", b"\xff"),
             ("unicode-escape", b"\\u123g"),
             ("raw-unicode-escape", b"\\u123g"),
-            ("unicode-internal", b"\xff"),
         ]
 
         def replacing(exc):
@@ -1024,26 +984,73 @@ class CodecCallbackTest(unittest.TestCase):
                 raise TypeError("don't know how to handle %r" % exc)
         codecs.register_error("test.replacing", replacing)
 
-        with test.support.check_warnings():
-            # unicode-internal has been deprecated
-            for (encoding, data) in baddata:
-                with self.assertRaises(TypeError):
-                    data.decode(encoding, "test.replacing")
+        for (encoding, data) in baddata:
+            with self.assertRaises(TypeError):
+                data.decode(encoding, "test.replacing")
 
         def mutating(exc):
             if isinstance(exc, UnicodeDecodeError):
-                exc.object[:] = b""
+                exc.object = b""
                 return ("\u4242", 0)
             else:
                 raise TypeError("don't know how to handle %r" % exc)
         codecs.register_error("test.mutating", mutating)
         # If the decoder doesn't pick up the modified input the following
         # will lead to an endless loop
-        with test.support.check_warnings():
-            # unicode-internal has been deprecated
-            for (encoding, data) in baddata:
-                with self.assertRaises(TypeError):
-                    data.decode(encoding, "test.replacing")
+        for (encoding, data) in baddata:
+            self.assertEqual(data.decode(encoding, "test.mutating"), "\u4242")
+
+    # issue32583
+    def test_crashing_decode_handler(self):
+        # better generating one more character to fill the extra space slot
+        # so in debug build it can steadily fail
+        def forward_shorter_than_end(exc):
+            if isinstance(exc, UnicodeDecodeError):
+                # size one character, 0 < forward < exc.end
+                return ('\ufffd', exc.start+1)
+            else:
+                raise TypeError("don't know how to handle %r" % exc)
+        codecs.register_error(
+            "test.forward_shorter_than_end", forward_shorter_than_end)
+
+        self.assertEqual(
+            b'\xd8\xd8\xd8\xd8\xd8\x00\x00\x00'.decode(
+                'utf-16-le', 'test.forward_shorter_than_end'),
+            '\ufffd\ufffd\ufffd\ufffd\xd8\x00'
+        )
+        self.assertEqual(
+            b'\xd8\xd8\xd8\xd8\x00\xd8\x00\x00'.decode(
+                'utf-16-be', 'test.forward_shorter_than_end'),
+            '\ufffd\ufffd\ufffd\ufffd\xd8\x00'
+        )
+        self.assertEqual(
+            b'\x11\x11\x11\x11\x11\x00\x00\x00\x00\x00\x00'.decode(
+                'utf-32-le', 'test.forward_shorter_than_end'),
+            '\ufffd\ufffd\ufffd\u1111\x00'
+        )
+        self.assertEqual(
+            b'\x11\x11\x11\x00\x00\x11\x11\x00\x00\x00\x00'.decode(
+                'utf-32-be', 'test.forward_shorter_than_end'),
+            '\ufffd\ufffd\ufffd\u1111\x00'
+        )
+
+        def replace_with_long(exc):
+            if isinstance(exc, UnicodeDecodeError):
+                exc.object = b"\x00" * 8
+                return ('\ufffd', exc.start)
+            else:
+                raise TypeError("don't know how to handle %r" % exc)
+        codecs.register_error("test.replace_with_long", replace_with_long)
+
+        self.assertEqual(
+            b'\x00'.decode('utf-16', 'test.replace_with_long'),
+            '\ufffd\x00\x00\x00\x00'
+        )
+        self.assertEqual(
+            b'\x00'.decode('utf-32', 'test.replace_with_long'),
+            '\ufffd\x00\x00'
+        )
+
 
     def test_fake_error_class(self):
         handlers = [

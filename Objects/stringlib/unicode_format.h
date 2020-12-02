@@ -410,18 +410,22 @@ get_field_object(SubString *input, PyObject *args, PyObject *kwargs,
     if (index == -1) {
         /* look up in kwargs */
         PyObject *key = SubString_new_object(&first);
-        if (key == NULL)
+        if (key == NULL) {
             goto error;
-
-        /* Use PyObject_GetItem instead of PyDict_GetItem because this
-           code is no longer just used with kwargs. It might be passed
-           a non-dict when called through format_map. */
-        if ((kwargs == NULL) || (obj = PyObject_GetItem(kwargs, key)) == NULL) {
+        }
+        if (kwargs == NULL) {
             PyErr_SetObject(PyExc_KeyError, key);
             Py_DECREF(key);
             goto error;
         }
+        /* Use PyObject_GetItem instead of PyDict_GetItem because this
+           code is no longer just used with kwargs. It might be passed
+           a non-dict when called through format_map. */
+        obj = PyObject_GetItem(kwargs, key);
         Py_DECREF(key);
+        if (obj == NULL) {
+            goto error;
+        }
     }
     else {
         /* If args is NULL, we have a format string with a positional field
@@ -436,8 +440,13 @@ get_field_object(SubString *input, PyObject *args, PyObject *kwargs,
 
         /* look up in args */
         obj = PySequence_GetItem(args, index);
-        if (obj == NULL)
-            goto error;
+        if (obj == NULL) {
+            PyErr_Format(PyExc_IndexError,
+                         "Replacement index %zd out of range for positional "
+                         "args tuple",
+                         index);
+             goto error;
+        }
     }
 
     /* iterate over the rest of the field_name */
@@ -819,7 +828,7 @@ output_markup(SubString *field_name, SubString *format_spec,
         tmp = NULL;
     }
 
-    /* if needed, recurively compute the format_spec */
+    /* if needed, recursively compute the format_spec */
     if (format_spec_needs_expanding) {
         tmp = build_string(format_spec, args, kwargs, recursion_depth-1,
                            auto_number);
@@ -974,7 +983,7 @@ static void
 formatteriter_dealloc(formatteriterobject *it)
 {
     Py_XDECREF(it->str);
-    PyObject_FREE(it);
+    PyObject_Free(it);
 }
 
 /* returns a tuple:
@@ -1062,10 +1071,10 @@ static PyTypeObject PyFormatterIter_Type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)formatteriter_dealloc,  /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1138,7 +1147,7 @@ static void
 fieldnameiter_dealloc(fieldnameiterobject *it)
 {
     Py_XDECREF(it->str);
-    PyObject_FREE(it);
+    PyObject_Free(it);
 }
 
 /* returns a tuple:
@@ -1198,10 +1207,10 @@ static PyTypeObject PyFieldNameIter_Type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)fieldnameiter_dealloc,  /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */

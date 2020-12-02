@@ -1,0 +1,1 @@
+skip some tests related to fifo on VxWorks

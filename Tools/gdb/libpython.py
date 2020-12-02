@@ -99,6 +99,10 @@ hexdigits = "0123456789abcdef"
 
 ENCODING = locale.getpreferredencoding()
 
+FRAME_INFO_OPTIMIZED_OUT = '(frame information optimized out)'
+UNABLE_READ_INFO_PYTHON_FRAME = 'Unable to read information on python frame'
+EVALFRAME = '_PyEval_EvalFrameDefault'
+
 class NullPyObjectPtr(RuntimeError):
     pass
 
@@ -268,12 +272,13 @@ class PyObjectPtr(object):
 
     def safe_tp_name(self):
         try:
-            return self.type().field('tp_name').string()
-        except NullPyObjectPtr:
-            # NULL tp_name?
-            return 'unknown'
-        except RuntimeError:
-            # Can't even read the object at all?
+            ob_type = self.type()
+            tp_name = ob_type.field('tp_name')
+            return tp_name.string()
+        # NullPyObjectPtr: NULL tp_name?
+        # RuntimeError: Can't even read the object at all?
+        # UnicodeDecodeError: Failed to decode tp_name bytestring
+        except (NullPyObjectPtr, RuntimeError, UnicodeDecodeError):
             return 'unknown'
 
     def proxyval(self, visited):
@@ -347,7 +352,9 @@ class PyObjectPtr(object):
         try:
             tp_name = t.field('tp_name').string()
             tp_flags = int(t.field('tp_flags'))
-        except RuntimeError:
+        # RuntimeError: NULL pointers
+        # UnicodeDecodeError: string() fails to decode the bytestring
+        except (RuntimeError, UnicodeDecodeError):
             # Handle any kind of error e.g. NULL ptrs by simply using the base
             # class
             return cls
@@ -615,7 +622,10 @@ class PyCFunctionObjectPtr(PyObjectPtr):
 
     def proxyval(self, visited):
         m_ml = self.field('m_ml') # m_ml is a (PyMethodDef*)
-        ml_name = m_ml['ml_name'].string()
+        try:
+            ml_name = m_ml['ml_name'].string()
+        except UnicodeDecodeError:
+            ml_name = '<ml_name:UnicodeDecodeError>'
 
         pyop_m_self = self.pyop_field('m_self')
         if pyop_m_self.is_null():
@@ -638,19 +648,28 @@ class PyCodeObjectPtr(PyObjectPtr):
         Analogous to PyCode_Addr2Line; translated from pseudocode in
         Objects/lnotab_notes.txt
         '''
-        co_lnotab = self.pyop_field('co_lnotab').proxyval(set())
+        co_linetable = self.pyop_field('co_linetable').proxyval(set())
 
         # Initialize lineno to co_firstlineno as per PyCode_Addr2Line
         # not 0, as lnotab_notes.txt has it:
         lineno = int_from_int(self.field('co_firstlineno'))
 
+        if addrq < 0:
+            return lineno
         addr = 0
-        for addr_incr, line_incr in zip(co_lnotab[::2], co_lnotab[1::2]):
+        for addr_incr, line_incr in zip(co_linetable[::2], co_linetable[1::2]):
+            if addr_incr == 255:
+                break
             addr += ord(addr_incr)
+            line_delta = ord(line_incr)
+            if line_delta == 128:
+                line_delta = 0
+            elif line_delta > 128:
+                line_delta -= 256
+            lineno += line_delta
             if addr > addrq:
                 return lineno
-            lineno += ord(line_incr)
-        return lineno
+        assert False, "Unreachable"
 
 
 class PyDictObjectPtr(PyObjectPtr):
@@ -728,7 +747,7 @@ class PyDictObjectPtr(PyObjectPtr):
         else:
             offset = 8 * dk_size
 
-        ent_addr = keys['dk_indices']['as_1'].address
+        ent_addr = keys['dk_indices'].address
         ent_addr = ent_addr.cast(_type_unsigned_char_ptr()) + offset
         ent_ptr_t = gdb.lookup_type('PyDictKeyEntry').pointer()
         ent_addr = ent_addr.cast(ent_ptr_t)
@@ -910,7 +929,7 @@ class PyFrameObjectPtr(PyObjectPtr):
     def filename(self):
         '''Get the path of the current Python source file, as a string'''
         if self.is_optimized_out():
-            return '(frame information optimized out)'
+            return FRAME_INFO_OPTIMIZED_OUT
         return self.co_filename.proxyval(set())
 
     def current_line_num(self):
@@ -926,35 +945,50 @@ class PyFrameObjectPtr(PyObjectPtr):
         if long(f_trace) != 0:
             # we have a non-NULL f_trace:
             return self.f_lineno
-        else:
-            #try:
+
+        try:
             return self.co.addr2line(self.f_lasti)
-            #except ValueError:
-            #    return self.f_lineno
+        except Exception:
+            # bpo-34989: addr2line() is a complex function, it can fail in many
+            # ways. For example, it fails with a TypeError on "FakeRepr" if
+            # gdb fails to load debug symbols. Use a catch-all "except
+            # Exception" to make the whole function safe. The caller has to
+            # handle None anyway for optimized Python.
+            return None
 
     def current_line(self):
         '''Get the text of the current source line as a string, with a trailing
         newline character'''
         if self.is_optimized_out():
-            return '(frame information optimized out)'
+            return FRAME_INFO_OPTIMIZED_OUT
+
+        lineno = self.current_line_num()
+        if lineno is None:
+            return '(failed to get frame line number)'
+
         filename = self.filename()
         try:
-            f = open(os_fsencode(filename), 'r')
+            with open(os_fsencode(filename), 'r') as fp:
+                lines = fp.readlines()
         except IOError:
             return None
-        with f:
-            all_lines = f.readlines()
-            # Convert from 1-based current_line_num to 0-based list offset:
-            return all_lines[self.current_line_num()-1]
+
+        try:
+            # Convert from 1-based current_line_num to 0-based list offset
+            return lines[lineno - 1]
+        except IndexError:
+            return None
 
     def write_repr(self, out, visited):
         if self.is_optimized_out():
-            out.write('(frame information optimized out)')
+            out.write(FRAME_INFO_OPTIMIZED_OUT)
             return
-        out.write('Frame 0x%x, for file %s, line %i, in %s ('
+        lineno = self.current_line_num()
+        lineno = str(lineno) if lineno is not None else "?"
+        out.write('Frame 0x%x, for file %s, line %s, in %s ('
                   % (self.as_address(),
                      self.co_filename.proxyval(visited),
-                     self.current_line_num(),
+                     lineno,
                      self.co_name.proxyval(visited)))
         first = True
         for pyop_name, pyop_value in self.iter_locals():
@@ -970,12 +1004,14 @@ class PyFrameObjectPtr(PyObjectPtr):
 
     def print_traceback(self):
         if self.is_optimized_out():
-            sys.stdout.write('  (frame information optimized out)\n')
+            sys.stdout.write('  %s\n' % FRAME_INFO_OPTIMIZED_OUT)
             return
         visited = set()
-        sys.stdout.write('  File "%s", line %i, in %s\n'
+        lineno = self.current_line_num()
+        lineno = str(lineno) if lineno is not None else "?"
+        sys.stdout.write('  File "%s", line %s, in %s\n'
                   % (self.co_filename.proxyval(visited),
-                     self.current_line_num(),
+                     lineno,
                      self.co_name.proxyval(visited)))
 
 class PySetObjectPtr(PyObjectPtr):
@@ -1153,7 +1189,7 @@ class PyUnicodeObjectPtr(PyObjectPtr):
     def proxyval(self, visited):
         global _is_pep393
         if _is_pep393 is None:
-            fields = gdb.lookup_type('PyUnicodeObject').target().fields()
+            fields = gdb.lookup_type('PyUnicodeObject').fields()
             _is_pep393 = 'data' in [f.name for f in fields]
         if _is_pep393:
             # Python 3.3 and newer
@@ -1338,13 +1374,13 @@ class wrapperobject(PyObjectPtr):
         try:
             name = self.field('descr')['d_base']['name'].string()
             return repr(name)
-        except (NullPyObjectPtr, RuntimeError):
+        except (NullPyObjectPtr, RuntimeError, UnicodeDecodeError):
             return '<unknown name>'
 
     def safe_tp_name(self):
         try:
             return self.field('self')['ob_type']['tp_name'].string()
-        except (NullPyObjectPtr, RuntimeError):
+        except (NullPyObjectPtr, RuntimeError, UnicodeDecodeError):
             return '<unknown tp_name>'
 
     def safe_self_addresss(self):
@@ -1367,7 +1403,7 @@ class wrapperobject(PyObjectPtr):
 
 
 def int_from_int(gdbval):
-    return int(str(gdbval))
+    return int(gdbval)
 
 
 def stringify(val):
@@ -1492,18 +1528,18 @@ class Frame(object):
     #   - everything else
 
     def is_python_frame(self):
-        '''Is this a PyEval_EvalFrameEx frame, or some other important
+        '''Is this a _PyEval_EvalFrameDefault frame, or some other important
         frame? (see is_other_python_frame for what "important" means in this
         context)'''
-        if self.is_evalframeex():
+        if self.is_evalframe():
             return True
         if self.is_other_python_frame():
             return True
         return False
 
-    def is_evalframeex(self):
-        '''Is this a PyEval_EvalFrameEx frame?'''
-        if self._gdbframe.name() == 'PyEval_EvalFrameEx':
+    def is_evalframe(self):
+        '''Is this a _PyEval_EvalFrameDefault frame?'''
+        if self._gdbframe.name() == EVALFRAME:
             '''
             I believe we also need to filter on the inline
             struct frame_id.inline_depth, only regarding frames with
@@ -1512,7 +1548,7 @@ class Frame(object):
             So we reject those with type gdb.INLINE_FRAME
             '''
             if self._gdbframe.type() == gdb.NORMAL_FRAME:
-                # We have a PyEval_EvalFrameEx frame:
+                # We have a _PyEval_EvalFrameDefault frame:
                 return True
 
         return False
@@ -1538,8 +1574,8 @@ class Frame(object):
         if not caller:
             return False
 
-        if caller in ('_PyCFunction_FastCallDict',
-                      '_PyCFunction_FastCallKeywords'):
+        if (caller.startswith('cfunction_vectorcall_') or
+            caller == 'cfunction_call'):
             arg_name = 'func'
             # Within that frame:
             #   "func" is the local containing the PyObject* of the
@@ -1550,15 +1586,22 @@ class Frame(object):
                 # Use the prettyprinter for the func:
                 func = frame.read_var(arg_name)
                 return str(func)
+            except ValueError:
+                return ('PyCFunction invocation (unable to read %s: '
+                        'missing debuginfos?)' % arg_name)
             except RuntimeError:
                 return 'PyCFunction invocation (unable to read %s)' % arg_name
 
         if caller == 'wrapper_call':
+            arg_name = 'wp'
             try:
-                func = frame.read_var('wp')
+                func = frame.read_var(arg_name)
                 return str(func)
+            except ValueError:
+                return ('<wrapper_call invocation (unable to read %s: '
+                        'missing debuginfos?)>' % arg_name)
             except RuntimeError:
-                return '<wrapper_call invocation>'
+                return '<wrapper_call invocation (unable to read %s)>' % arg_name
 
         # This frame isn't worth reporting:
         return False
@@ -1568,11 +1611,11 @@ class Frame(object):
         # This assumes the _POSIX_THREADS version of Python/ceval_gil.h:
         name = self._gdbframe.name()
         if name:
-            return 'pthread_cond_timedwait' in name
+            return (name == 'take_gil')
 
     def is_gc_collect(self):
-        '''Is this frame "collect" within the garbage-collector?'''
-        return self._gdbframe.name() == 'collect'
+        '''Is this frame gc_collect_main() within the garbage-collector?'''
+        return self._gdbframe.name() in ('collect', 'gc_collect_main')
 
     def get_pyop(self):
         try:
@@ -1626,7 +1669,7 @@ class Frame(object):
         frame = cls.get_selected_frame()
 
         while frame:
-            if frame.is_evalframeex():
+            if frame.is_evalframe():
                 return frame
             frame = frame.older()
 
@@ -1634,7 +1677,7 @@ class Frame(object):
         return None
 
     def print_summary(self):
-        if self.is_evalframeex():
+        if self.is_evalframe():
             pyop = self.get_pyop()
             if pyop:
                 line = pyop.get_truncated_repr(MAX_OUTPUT_LEN)
@@ -1653,7 +1696,7 @@ class Frame(object):
                 sys.stdout.write('#%i\n' % self.get_index())
 
     def print_traceback(self):
-        if self.is_evalframeex():
+        if self.is_evalframe():
             pyop = self.get_pyop()
             if pyop:
                 pyop.print_traceback()
@@ -1712,11 +1755,14 @@ class PyList(gdb.Command):
 
         pyop = frame.get_pyop()
         if not pyop or pyop.is_optimized_out():
-            print('Unable to read information on python frame')
+            print(UNABLE_READ_INFO_PYTHON_FRAME)
             return
 
         filename = pyop.filename()
         lineno = pyop.current_line_num()
+        if lineno is None:
+            print('Unable to read python frame line number')
+            return
 
         if start is None:
             start = lineno - 5
@@ -1869,7 +1915,7 @@ class PyPrint(gdb.Command):
 
         pyop_frame = frame.get_pyop()
         if not pyop_frame:
-            print('Unable to read information on python frame')
+            print(UNABLE_READ_INFO_PYTHON_FRAME)
             return
 
         pyop_var, scope = pyop_frame.get_var_by_name(name)
@@ -1903,7 +1949,7 @@ class PyLocals(gdb.Command):
 
         pyop_frame = frame.get_pyop()
         if not pyop_frame:
-            print('Unable to read information on python frame')
+            print(UNABLE_READ_INFO_PYTHON_FRAME)
             return
 
         for pyop_name, pyop_value in pyop_frame.iter_locals():

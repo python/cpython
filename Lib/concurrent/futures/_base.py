@@ -7,6 +7,7 @@ import collections
 import logging
 import threading
 import time
+import types
 
 FIRST_COMPLETED = 'FIRST_COMPLETED'
 FIRST_EXCEPTION = 'FIRST_EXCEPTION'
@@ -51,6 +52,10 @@ class CancelledError(Error):
 
 class TimeoutError(Error):
     """The operation exceeded the given deadline."""
+    pass
+
+class InvalidStateError(Error):
+    """The operation is not allowed in this state."""
     pass
 
 class _Waiter(object):
@@ -170,6 +175,29 @@ def _create_and_install_waiters(fs, return_when):
 
     return waiter
 
+
+def _yield_finished_futures(fs, waiter, ref_collect):
+    """
+    Iterate on the list *fs*, yielding finished futures one by one in
+    reverse order.
+    Before yielding a future, *waiter* is removed from its waiters
+    and the future is removed from each set in the collection of sets
+    *ref_collect*.
+
+    The aim of this function is to avoid keeping stale references after
+    the future is yielded and before the iterator resumes.
+    """
+    while fs:
+        f = fs[-1]
+        for futures_set in ref_collect:
+            futures_set.remove(f)
+        with f._condition:
+            f._waiters.remove(waiter)
+        del f
+        # Careful not to keep a reference to the popped value
+        yield fs.pop()
+
+
 def as_completed(fs, timeout=None):
     """An iterator over the given futures that yields each as it completes.
 
@@ -189,28 +217,30 @@ def as_completed(fs, timeout=None):
             before the given timeout.
     """
     if timeout is not None:
-        end_time = timeout + time.time()
+        end_time = timeout + time.monotonic()
 
     fs = set(fs)
+    total_futures = len(fs)
     with _AcquireFutures(fs):
         finished = set(
                 f for f in fs
                 if f._state in [CANCELLED_AND_NOTIFIED, FINISHED])
         pending = fs - finished
         waiter = _create_and_install_waiters(fs, _AS_COMPLETED)
-
+    finished = list(finished)
     try:
-        yield from finished
+        yield from _yield_finished_futures(finished, waiter,
+                                           ref_collect=(fs,))
 
         while pending:
             if timeout is None:
                 wait_timeout = None
             else:
-                wait_timeout = end_time - time.time()
+                wait_timeout = end_time - time.monotonic()
                 if wait_timeout < 0:
                     raise TimeoutError(
                             '%d (of %d) futures unfinished' % (
-                            len(pending), len(fs)))
+                            len(pending), total_futures))
 
             waiter.event.wait(wait_timeout)
 
@@ -219,11 +249,13 @@ def as_completed(fs, timeout=None):
                 waiter.finished_futures = []
                 waiter.event.clear()
 
-            for future in finished:
-                yield future
-                pending.remove(future)
+            # reverse to keep finishing order
+            finished.reverse()
+            yield from _yield_finished_futures(finished, waiter,
+                                               ref_collect=(fs, pending))
 
     finally:
+        # Remove waiter from unfinished futures
         for f in fs:
             with f._condition:
                 f._waiters.remove(waiter)
@@ -373,7 +405,10 @@ class Future(object):
             if self._state not in [CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED]:
                 self._done_callbacks.append(fn)
                 return
-        fn(self)
+        try:
+            fn(self)
+        except Exception:
+            LOGGER.exception('exception calling callback for %r', self)
 
     def result(self, timeout=None):
         """Return the result of the call that the future represents.
@@ -486,6 +521,8 @@ class Future(object):
         Should only be used by Executor implementations and unit tests.
         """
         with self._condition:
+            if self._state in {CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED}:
+                raise InvalidStateError('{}: {!r}'.format(self._state, self))
             self._result = result
             self._state = FINISHED
             for waiter in self._waiters:
@@ -499,6 +536,8 @@ class Future(object):
         Should only be used by Executor implementations and unit tests.
         """
         with self._condition:
+            if self._state in {CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED}:
+                raise InvalidStateError('{}: {!r}'.format(self._state, self))
             self._exception = exception
             self._state = FINISHED
             for waiter in self._waiters:
@@ -506,10 +545,12 @@ class Future(object):
             self._condition.notify_all()
         self._invoke_callbacks()
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
 class Executor(object):
     """This is an abstract base class for concrete asynchronous executors."""
 
-    def submit(self, fn, *args, **kwargs):
+    def submit(self, fn, /, *args, **kwargs):
         """Submits a callable to be executed with the given arguments.
 
         Schedules the callable to be executed as fn(*args, **kwargs) and returns
@@ -543,7 +584,7 @@ class Executor(object):
             Exception: If fn(*args) raises for any values.
         """
         if timeout is not None:
-            end_time = timeout + time.time()
+            end_time = timeout + time.monotonic()
 
         fs = [self.submit(fn, *args) for args in zip(*iterables)]
 
@@ -551,17 +592,20 @@ class Executor(object):
         # before the first iterator value is required.
         def result_iterator():
             try:
-                for future in fs:
+                # reverse to keep finishing order
+                fs.reverse()
+                while fs:
+                    # Careful not to keep a reference to the popped future
                     if timeout is None:
-                        yield future.result()
+                        yield fs.pop().result()
                     else:
-                        yield future.result(end_time - time.time())
+                        yield fs.pop().result(end_time - time.monotonic())
             finally:
                 for future in fs:
                     future.cancel()
         return result_iterator()
 
-    def shutdown(self, wait=True):
+    def shutdown(self, wait=True, *, cancel_futures=False):
         """Clean-up the resources associated with the Executor.
 
         It is safe to call this method several times. Otherwise, no other
@@ -571,6 +615,9 @@ class Executor(object):
             wait: If True then shutdown will not return until all running
                 futures have finished executing and the resources used by the
                 executor have been reclaimed.
+            cancel_futures: If True then shutdown will cancel all pending
+                futures. Futures that are completed or running will not be
+                cancelled.
         """
         pass
 
@@ -580,3 +627,9 @@ class Executor(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.shutdown(wait=True)
         return False
+
+
+class BrokenExecutor(RuntimeError):
+    """
+    Raised when a executor has become non-functional after a severe failure.
+    """

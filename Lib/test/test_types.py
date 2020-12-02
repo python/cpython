@@ -2,6 +2,7 @@
 
 from test.support import run_with_locale
 import collections.abc
+from collections import namedtuple
 import inspect
 import pickle
 import locale
@@ -9,6 +10,12 @@ import sys
 import types
 import unittest.mock
 import weakref
+import typing
+
+class Example:
+    pass
+
+class Forward: ...
 
 class TypesTests(unittest.TestCase):
 
@@ -466,7 +473,7 @@ class TypesTests(unittest.TestCase):
 
         # No format code means use g, but must have a decimal
         # and a number after the decimal.  This is tricky, because
-        # a totaly empty format specifier means something else.
+        # a totally empty format specifier means something else.
         # So, just use a sign flag
         test(1e200, '+g', '+1e+200')
         test(1e200, '+', '+1e+200')
@@ -594,6 +601,149 @@ class TypesTests(unittest.TestCase):
         self.assertIsInstance(''.join, types.BuiltinMethodType)
         self.assertIsInstance([].append, types.BuiltinMethodType)
 
+        self.assertIsInstance(int.__dict__['from_bytes'], types.ClassMethodDescriptorType)
+        self.assertIsInstance(int.from_bytes, types.BuiltinMethodType)
+        self.assertIsInstance(int.__new__, types.BuiltinMethodType)
+
+    def test_or_types_operator(self):
+        self.assertEqual(int | str, typing.Union[int, str])
+        self.assertNotEqual(int | list, typing.Union[int, str])
+        self.assertEqual(str | int, typing.Union[int, str])
+        self.assertEqual(int | None, typing.Union[int, None])
+        self.assertEqual(None | int, typing.Union[int, None])
+        self.assertEqual(int | str | list, typing.Union[int, str, list])
+        self.assertEqual(int | (str | list), typing.Union[int, str, list])
+        self.assertEqual(str | (int | list), typing.Union[int, str, list])
+        self.assertEqual(typing.List | typing.Tuple, typing.Union[typing.List, typing.Tuple])
+        self.assertEqual(typing.List[int] | typing.Tuple[int], typing.Union[typing.List[int], typing.Tuple[int]])
+        self.assertEqual(typing.List[int] | None, typing.Union[typing.List[int], None])
+        self.assertEqual(None | typing.List[int], typing.Union[None, typing.List[int]])
+        self.assertEqual(str | float | int | complex | int, (int | str) | (float | complex))
+        self.assertEqual(typing.Union[str, int, typing.List[int]], str | int | typing.List[int])
+        self.assertEqual(int | int, int)
+        self.assertEqual(
+            BaseException |
+            bool |
+            bytes |
+            complex |
+            float |
+            int |
+            list |
+            map |
+            set,
+            typing.Union[
+                BaseException,
+                bool,
+                bytes,
+                complex,
+                float,
+                int,
+                list,
+                map,
+                set,
+            ])
+        with self.assertRaises(TypeError):
+            int | 3
+        with self.assertRaises(TypeError):
+            3 | int
+        with self.assertRaises(TypeError):
+            Example() | int
+        with self.assertRaises(TypeError):
+            (int | str) < typing.Union[str, int]
+        with self.assertRaises(TypeError):
+            (int | str) < (int | bool)
+        with self.assertRaises(TypeError):
+            (int | str) <= (int | str)
+        with self.assertRaises(TypeError):
+            # Check that we don't crash if typing.Union does not have a tuple in __args__
+            x = typing.Union[str, int]
+            x.__args__ = [str, int]
+            (int | str ) == x
+
+    def test_or_type_operator_with_TypeVar(self):
+        TV = typing.TypeVar('T')
+        assert TV | str == typing.Union[TV, str]
+        assert str | TV == typing.Union[str, TV]
+
+    def test_or_type_operator_with_forward(self):
+        T = typing.TypeVar('T')
+        ForwardAfter = T | 'Forward'
+        ForwardBefore = 'Forward' | T
+        def forward_after(x: ForwardAfter[int]) -> None: ...
+        def forward_before(x: ForwardBefore[int]) -> None: ...
+        assert typing.get_args(typing.get_type_hints(forward_after, localns=locals())['x']) == (int, Forward)
+        assert typing.get_args(typing.get_type_hints(forward_before, localns=locals())['x']) == (int, Forward)
+
+    def test_or_type_operator_with_Protocol(self):
+        class Proto(typing.Protocol):
+            def meth(self) -> int:
+                ...
+        assert Proto | str == typing.Union[Proto, str]
+
+    def test_or_type_operator_with_Alias(self):
+        assert list | str == typing.Union[list, str]
+        assert typing.List | str == typing.Union[typing.List, str]
+
+    def test_or_type_operator_with_NamedTuple(self):
+        NT=namedtuple('A', ['B', 'C', 'D'])
+        assert NT | str == typing.Union[NT,str]
+
+    def test_or_type_operator_with_TypedDict(self):
+        class Point2D(typing.TypedDict):
+            x: int
+            y: int
+            label: str
+        assert Point2D | str == typing.Union[Point2D, str]
+
+    def test_or_type_operator_with_NewType(self):
+        UserId = typing.NewType('UserId', int)
+        assert UserId | str == typing.Union[UserId, str]
+
+    def test_or_type_operator_with_IO(self):
+        assert typing.IO | str == typing.Union[typing.IO, str]
+
+    def test_or_type_operator_with_SpecialForm(self):
+        assert typing.Any | str == typing.Union[typing.Any, str]
+        assert typing.NoReturn | str == typing.Union[typing.NoReturn, str]
+        assert typing.Optional[int] | str == typing.Union[typing.Optional[int], str]
+        assert typing.Optional[int] | str == typing.Union[int, str, None]
+        assert typing.Union[int, bool] | str == typing.Union[int, bool, str]
+
+    def test_or_type_repr(self):
+        assert repr(int | None) == "int | None"
+        assert repr(int | typing.GenericAlias(list, int)) == "int | list[int]"
+
+    def test_or_type_operator_with_genericalias(self):
+        a = list[int]
+        b = list[str]
+        c = dict[float, str]
+        # equivalence with typing.Union
+        self.assertEqual(a | b | c, typing.Union[a, b, c])
+        # de-duplicate
+        self.assertEqual(a | c | b | b | a | c, a | b | c)
+        # order shouldn't matter
+        self.assertEqual(a | b, b | a)
+        self.assertEqual(repr(a | b | c),
+                         "list[int] | list[str] | dict[float, str]")
+
+        class BadType(type):
+            def __eq__(self, other):
+                return 1 / 0
+
+        bt = BadType('bt', (), {})
+        # Comparison should fail and errors should propagate out for bad types.
+        with self.assertRaises(ZeroDivisionError):
+            list[int] | list[bt]
+
+    def test_ellipsis_type(self):
+        self.assertIsInstance(Ellipsis, types.EllipsisType)
+
+    def test_notimplemented_type(self):
+        self.assertIsInstance(NotImplemented, types.NotImplementedType)
+
+    def test_none_type(self):
+        self.assertIsInstance(None, types.NoneType)
+
 
 class MappingProxyTests(unittest.TestCase):
     mappingproxy = types.MappingProxyType
@@ -618,8 +768,13 @@ class MappingProxyTests(unittest.TestCase):
         self.assertEqual(attrs, {
              '__contains__',
              '__getitem__',
+             '__class_getitem__',
+             '__ior__',
              '__iter__',
              '__len__',
+             '__or__',
+             '__reversed__',
+             '__ror__',
              'copy',
              'get',
              'items',
@@ -760,6 +915,14 @@ class MappingProxyTests(unittest.TestCase):
         self.assertEqual(set(view.values()), set(values))
         self.assertEqual(set(view.items()), set(items))
 
+    def test_reversed(self):
+        d = {'a': 1, 'b': 2, 'foo': 0, 'c': 3, 'd': 4}
+        mp = self.mappingproxy(d)
+        del d['foo']
+        r = reversed(mp)
+        self.assertEqual(list(r), list('dcba'))
+        self.assertRaises(StopIteration, next, r)
+
     def test_copy(self):
         original = {'key1': 27, 'key2': 51, 'key3': 93}
         view = self.mappingproxy(original)
@@ -769,6 +932,22 @@ class MappingProxyTests(unittest.TestCase):
         original['key1'] = 70
         self.assertEqual(view['key1'], 70)
         self.assertEqual(copy['key1'], 27)
+
+    def test_union(self):
+        mapping = {'a': 0, 'b': 1, 'c': 2}
+        view = self.mappingproxy(mapping)
+        with self.assertRaises(TypeError):
+            view | [('r', 2), ('d', 2)]
+        with self.assertRaises(TypeError):
+            [('r', 2), ('d', 2)] | view
+        with self.assertRaises(TypeError):
+            view |= [('r', 2), ('d', 2)]
+        other = {'c': 3, 'p': 0}
+        self.assertDictEqual(view | other, {'a': 0, 'b': 1, 'c': 3, 'p': 0})
+        self.assertDictEqual(other | view, {'c': 2, 'p': 0, 'a': 0, 'b': 1})
+        self.assertEqual(view, {'a': 0, 'b': 1, 'c': 2})
+        self.assertDictEqual(mapping, {'a': 0, 'b': 1, 'c': 2})
+        self.assertDictEqual(other, {'c': 3, 'p': 0})
 
 
 class ClassCreationTests(unittest.TestCase):
@@ -844,6 +1023,68 @@ class ClassCreationTests(unittest.TestCase):
         self.assertEqual(C.y, 1)
         self.assertEqual(C.z, 2)
 
+    def test_new_class_with_mro_entry(self):
+        class A: pass
+        class C:
+            def __mro_entries__(self, bases):
+                return (A,)
+        c = C()
+        D = types.new_class('D', (c,), {})
+        self.assertEqual(D.__bases__, (A,))
+        self.assertEqual(D.__orig_bases__, (c,))
+        self.assertEqual(D.__mro__, (D, A, object))
+
+    def test_new_class_with_mro_entry_none(self):
+        class A: pass
+        class B: pass
+        class C:
+            def __mro_entries__(self, bases):
+                return ()
+        c = C()
+        D = types.new_class('D', (A, c, B), {})
+        self.assertEqual(D.__bases__, (A, B))
+        self.assertEqual(D.__orig_bases__, (A, c, B))
+        self.assertEqual(D.__mro__, (D, A, B, object))
+
+    def test_new_class_with_mro_entry_error(self):
+        class A: pass
+        class C:
+            def __mro_entries__(self, bases):
+                return A
+        c = C()
+        with self.assertRaises(TypeError):
+            types.new_class('D', (c,), {})
+
+    def test_new_class_with_mro_entry_multiple(self):
+        class A1: pass
+        class A2: pass
+        class B1: pass
+        class B2: pass
+        class A:
+            def __mro_entries__(self, bases):
+                return (A1, A2)
+        class B:
+            def __mro_entries__(self, bases):
+                return (B1, B2)
+        D = types.new_class('D', (A(), B()), {})
+        self.assertEqual(D.__bases__, (A1, A2, B1, B2))
+
+    def test_new_class_with_mro_entry_multiple_2(self):
+        class A1: pass
+        class A2: pass
+        class A3: pass
+        class B1: pass
+        class B2: pass
+        class A:
+            def __mro_entries__(self, bases):
+                return (A1, A2, A3)
+        class B:
+            def __mro_entries__(self, bases):
+                return (B1, B2)
+        class C: pass
+        D = types.new_class('D', (A(), C, B()), {})
+        self.assertEqual(D.__bases__, (A1, A2, A3, C, B1, B2))
+
     # Many of the following tests are derived from test_descr.py
     def test_prepare_class(self):
         # Basic test of metaclass derivation
@@ -863,6 +1104,50 @@ class ClassCreationTests(unittest.TestCase):
         self.assertIs(meta, A)
         self.assertIs(ns, expected_ns)
         self.assertEqual(len(kwds), 0)
+
+    def test_bad___prepare__(self):
+        # __prepare__() must return a mapping.
+        class BadMeta(type):
+            @classmethod
+            def __prepare__(*args):
+                return None
+        with self.assertRaisesRegex(TypeError,
+                                    r'^BadMeta\.__prepare__\(\) must '
+                                    r'return a mapping, not NoneType$'):
+            class Foo(metaclass=BadMeta):
+                pass
+        # Also test the case in which the metaclass is not a type.
+        class BadMeta:
+            @classmethod
+            def __prepare__(*args):
+                return None
+        with self.assertRaisesRegex(TypeError,
+                                    r'^<metaclass>\.__prepare__\(\) must '
+                                    r'return a mapping, not NoneType$'):
+            class Bar(metaclass=BadMeta()):
+                pass
+
+    def test_resolve_bases(self):
+        class A: pass
+        class B: pass
+        class C:
+            def __mro_entries__(self, bases):
+                if A in bases:
+                    return ()
+                return (A,)
+        c = C()
+        self.assertEqual(types.resolve_bases(()), ())
+        self.assertEqual(types.resolve_bases((c,)), (A,))
+        self.assertEqual(types.resolve_bases((C,)), (C,))
+        self.assertEqual(types.resolve_bases((A, C)), (A, C))
+        self.assertEqual(types.resolve_bases((c, A)), (A,))
+        self.assertEqual(types.resolve_bases((A, c)), (A,))
+        x = (A,)
+        y = (C,)
+        z = (A, C)
+        t = (A, C, B)
+        for bases in [x, y, z, t]:
+            self.assertIs(types.resolve_bases(bases), bases)
 
     def test_metaclass_derivation(self):
         # issue1294232: correct metaclass calculation
@@ -1047,6 +1332,8 @@ class SimpleNamespaceTests(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             types.SimpleNamespace(1, 2, 3)
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace(**{1: 2})
 
         self.assertEqual(len(ns1.__dict__), 0)
         self.assertEqual(vars(ns1), {})
@@ -1121,8 +1408,8 @@ class SimpleNamespaceTests(unittest.TestCase):
         ns2._y = 5
         name = "namespace"
 
-        self.assertEqual(repr(ns1), "{name}(w=3, x=1, y=2)".format(name=name))
-        self.assertEqual(repr(ns2), "{name}(_y=5, x='spam')".format(name=name))
+        self.assertEqual(repr(ns1), "{name}(x=1, y=2, w=3)".format(name=name))
+        self.assertEqual(repr(ns2), "{name}(x='spam', _y=5)".format(name=name))
 
     def test_equal(self):
         ns1 = types.SimpleNamespace(x=1)
@@ -1171,7 +1458,7 @@ class SimpleNamespaceTests(unittest.TestCase):
         ns3.spam = ns2
         name = "namespace"
         repr1 = "{name}(c='cookie', spam={name}(...))".format(name=name)
-        repr2 = "{name}(spam={name}(spam={name}(...), x=1))".format(name=name)
+        repr2 = "{name}(spam={name}(x=1, spam={name}(...)))".format(name=name)
 
         self.assertEqual(repr(ns1), repr1)
         self.assertEqual(repr(ns2), repr2)

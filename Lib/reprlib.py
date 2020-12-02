@@ -4,10 +4,7 @@ __all__ = ["Repr", "repr", "recursive_repr"]
 
 import builtins
 from itertools import islice
-try:
-    from _thread import get_ident
-except ImportError:
-    from _dummy_thread import get_ident
+from _thread import get_ident
 
 def recursive_repr(fillvalue='...'):
     'Decorator to make a repr function return fillvalue for a recursive call'

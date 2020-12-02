@@ -7,6 +7,8 @@ machinery = test_util.import_importlib('importlib.machinery')
 import os.path
 import sys
 from test import support
+from test.support import import_helper
+from test.support import os_helper
 import types
 import unittest
 import warnings
@@ -200,7 +202,7 @@ class ReloadTests:
     def test_reload_modules(self):
         for mod in ('tokenize', 'time', 'marshal'):
             with self.subTest(module=mod):
-                with support.CleanImport(mod):
+                with import_helper.CleanImport(mod):
                     module = self.init.import_module(mod)
                     self.init.reload(module)
 
@@ -221,7 +223,7 @@ class ReloadTests:
                 self.assertEqual(reloaded.spam, 3)
 
     def test_reload_missing_loader(self):
-        with support.CleanImport('types'):
+        with import_helper.CleanImport('types'):
             import types
             loader = types.__loader__
             del types.__loader__
@@ -232,7 +234,7 @@ class ReloadTests:
             self.assertEqual(reloaded.__loader__.path, loader.path)
 
     def test_reload_loader_replaced(self):
-        with support.CleanImport('types'):
+        with import_helper.CleanImport('types'):
             import types
             types.__loader__ = None
             self.init.invalidate_caches()
@@ -244,9 +246,9 @@ class ReloadTests:
 
     def test_reload_location_changed(self):
         name = 'spam'
-        with support.temp_cwd(None) as cwd:
+        with os_helper.temp_cwd(None) as cwd:
             with test_util.uncache('spam'):
-                with support.DirsOnSysPath(cwd):
+                with import_helper.DirsOnSysPath(cwd):
                     # Start as a plain module.
                     self.init.invalidate_caches()
                     path = os.path.join(cwd, name + '.py')
@@ -257,7 +259,7 @@ class ReloadTests:
                                 '__cached__': cached,
                                 '__doc__': None,
                                 }
-                    support.create_empty_file(path)
+                    os_helper.create_empty_file(path)
                     module = self.init.import_module(name)
                     ns = vars(module).copy()
                     loader = ns.pop('__loader__')
@@ -295,9 +297,9 @@ class ReloadTests:
 
     def test_reload_namespace_changed(self):
         name = 'spam'
-        with support.temp_cwd(None) as cwd:
+        with os_helper.temp_cwd(None) as cwd:
             with test_util.uncache('spam'):
-                with support.DirsOnSysPath(cwd):
+                with import_helper.DirsOnSysPath(cwd):
                     # Start as a namespace package.
                     self.init.invalidate_caches()
                     bad_path = os.path.join(cwd, name, '__init.py')
@@ -305,6 +307,7 @@ class ReloadTests:
                     expected = {'__name__': name,
                                 '__package__': name,
                                 '__doc__': None,
+                                '__file__': None,
                                 }
                     os.mkdir(name)
                     with open(bad_path, 'w') as init_file:
@@ -316,8 +319,9 @@ class ReloadTests:
                     spec = ns.pop('__spec__')
                     ns.pop('__builtins__', None)  # An implementation detail.
                     self.assertEqual(spec.name, name)
-                    self.assertIs(spec.loader, None)
-                    self.assertIsNot(loader, None)
+                    self.assertIsNotNone(spec.loader)
+                    self.assertIsNotNone(loader)
+                    self.assertEqual(spec.loader, loader)
                     self.assertEqual(set(path),
                                      set([os.path.dirname(bad_path)]))
                     with self.assertRaises(AttributeError):
@@ -361,7 +365,7 @@ class ReloadTests:
 
     def test_module_missing_spec(self):
         #Test that reload() throws ModuleNotFounderror when reloading
-        # a module who's missing a spec. (bpo-29851)
+        # a module whose missing a spec. (bpo-29851)
         name = 'spam'
         with test_util.uncache(name):
             module = sys.modules[name] = types.ModuleType(name)
@@ -404,7 +408,7 @@ class InvalidateCacheTests:
         # There should be no issues if the method is not defined.
         key = 'gobbledeegook'
         sys.path_importer_cache[key] = None
-        self.addCleanup(lambda: sys.path_importer_cache.__delitem__(key))
+        self.addCleanup(lambda: sys.path_importer_cache.pop(key, None))
         self.init.invalidate_caches()  # Shouldn't trigger an exception.
 
 

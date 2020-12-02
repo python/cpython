@@ -15,42 +15,33 @@ from distutils.spawn import spawn
 from distutils import log
 from distutils.errors import DistutilsByteCompileError
 
-def get_platform ():
-    """Return a string that identifies the current platform.  This is used
-    mainly to distinguish platform-specific build directories and
-    platform-specific built distributions.  Typically includes the OS name
-    and version and the architecture (as supplied by 'os.uname()'),
-    although the exact information included depends on the OS; eg. for IRIX
-    the architecture isn't particularly important (IRIX only runs on SGI
-    hardware), but for Linux the kernel version isn't particularly
-    important.
+def get_host_platform():
+    """Return a string that identifies the current platform.  This is used mainly to
+    distinguish platform-specific build directories and platform-specific built
+    distributions.  Typically includes the OS name and version and the
+    architecture (as supplied by 'os.uname()'), although the exact information
+    included depends on the OS; eg. on Linux, the kernel version isn't
+    particularly important.
 
     Examples of returned values:
        linux-i586
        linux-alpha (?)
        solaris-2.6-sun4u
-       irix-5.3
-       irix64-6.2
 
     Windows will return one of:
        win-amd64 (64bit Windows on AMD64 (aka x86_64, Intel64, EM64T, etc)
-       win-ia64 (64bit Windows on Itanium)
        win32 (all others - specifically, sys.platform is returned)
 
     For other non-POSIX platforms, currently just returns 'sys.platform'.
+
     """
     if os.name == 'nt':
-        # sniff sys.version for architecture.
-        prefix = " bit ("
-        i = sys.version.find(prefix)
-        if i == -1:
-            return sys.platform
-        j = sys.version.find(")", i)
-        look = sys.version[i+len(prefix):j].lower()
-        if look == 'amd64':
+        if 'amd64' in sys.version.lower():
             return 'win-amd64'
-        if look == 'itanium':
-            return 'win-ia64'
+        if '(arm)' in sys.version.lower():
+            return 'win-arm32'
+        if '(arm64)' in sys.version.lower():
+            return 'win-arm64'
         return sys.platform
 
     # Set for cross builds explicitly
@@ -66,8 +57,8 @@ def get_platform ():
 
     (osname, host, release, version, machine) = os.uname()
 
-    # Convert the OS name to lowercase, remove '/' characters
-    # (to accommodate BSD/OS), and translate spaces (for "Power Macintosh")
+    # Convert the OS name to lowercase, remove '/' characters, and translate
+    # spaces (for "Power Macintosh")
     osname = osname.lower().replace('/', '')
     machine = machine.replace(' ', '_')
     machine = machine.replace('/', '-')
@@ -87,10 +78,9 @@ def get_platform ():
             bitness = {2147483647:"32bit", 9223372036854775807:"64bit"}
             machine += ".%s" % bitness[sys.maxsize]
         # fall through to standard osname-release-machine representation
-    elif osname[:4] == "irix":              # could be "irix64"!
-        return "%s-%s" % (osname, release)
     elif osname[:3] == "aix":
-        return "%s-%s.%s" % (osname, version, release)
+        from _aix_support import aix_platform
+        return aix_platform()
     elif osname[:6] == "cygwin":
         osname = "cygwin"
         rel_re = re.compile (r'[\d.]+', re.ASCII)
@@ -105,8 +95,16 @@ def get_platform ():
 
     return "%s-%s-%s" % (osname, release, machine)
 
-# get_platform ()
-
+def get_platform():
+    if os.name == 'nt':
+        TARGET_TO_PLAT = {
+            'x86' : 'win32',
+            'x64' : 'win-amd64',
+            'arm' : 'win-arm32',
+        }
+        return TARGET_TO_PLAT.get(os.environ.get('VSCMD_ARG_TGT_ARCH')) or get_host_platform()
+    else:
+        return get_host_platform()
 
 def convert_path (pathname):
     """Return 'pathname' as a name that will work on the native filesystem,
@@ -172,8 +170,13 @@ def check_environ ():
         return
 
     if os.name == 'posix' and 'HOME' not in os.environ:
-        import pwd
-        os.environ['HOME'] = pwd.getpwuid(os.getuid())[5]
+        try:
+            import pwd
+            os.environ['HOME'] = pwd.getpwuid(os.getuid())[5]
+        except (ImportError, KeyError):
+            # bpo-10496: if the current user identifier doesn't exist in the
+            # password database, do nothing
+            pass
 
     if 'PLAT' not in os.environ:
         os.environ['PLAT'] = get_platform()
@@ -388,34 +391,33 @@ def byte_compile (py_files,
             else:
                 script = open(script_name, "w")
 
-            script.write("""\
+            with script:
+                script.write("""\
 from distutils.util import byte_compile
 files = [
 """)
 
-            # XXX would be nice to write absolute filenames, just for
-            # safety's sake (script should be more robust in the face of
-            # chdir'ing before running it).  But this requires abspath'ing
-            # 'prefix' as well, and that breaks the hack in build_lib's
-            # 'byte_compile()' method that carefully tacks on a trailing
-            # slash (os.sep really) to make sure the prefix here is "just
-            # right".  This whole prefix business is rather delicate -- the
-            # problem is that it's really a directory, but I'm treating it
-            # as a dumb string, so trailing slashes and so forth matter.
+                # XXX would be nice to write absolute filenames, just for
+                # safety's sake (script should be more robust in the face of
+                # chdir'ing before running it).  But this requires abspath'ing
+                # 'prefix' as well, and that breaks the hack in build_lib's
+                # 'byte_compile()' method that carefully tacks on a trailing
+                # slash (os.sep really) to make sure the prefix here is "just
+                # right".  This whole prefix business is rather delicate -- the
+                # problem is that it's really a directory, but I'm treating it
+                # as a dumb string, so trailing slashes and so forth matter.
 
-            #py_files = map(os.path.abspath, py_files)
-            #if prefix:
-            #    prefix = os.path.abspath(prefix)
+                #py_files = map(os.path.abspath, py_files)
+                #if prefix:
+                #    prefix = os.path.abspath(prefix)
 
-            script.write(",\n".join(map(repr, py_files)) + "]\n")
-            script.write("""
+                script.write(",\n".join(map(repr, py_files)) + "]\n")
+                script.write("""
 byte_compile(files, optimize=%r, force=%r,
              prefix=%r, base_dir=%r,
              verbose=%r, dry_run=0,
              direct=1)
 """ % (optimize, force, prefix, base_dir, verbose))
-
-            script.close()
 
         cmd = [sys.executable]
         cmd.extend(subprocess._optim_args_from_interpreter_flags())

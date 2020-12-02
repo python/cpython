@@ -51,8 +51,10 @@ Directory and files operations
 .. function:: copyfile(src, dst, *, follow_symlinks=True)
 
    Copy the contents (no metadata) of the file named *src* to a file named
-   *dst* and return *dst*.  *src* and *dst* are path names given as strings.
-   *dst* must be the complete target file name; look at :func:`shutil.copy`
+   *dst* and return *dst* in the most efficient way possible.
+   *src* and *dst* are path-like objects or path names given as strings.
+
+   *dst* must be the complete target file name; look at :func:`~shutil.copy`
    for a copy that accepts a target directory path.  If *src* and *dst*
    specify the same file, :exc:`SameFileError` is raised.
 
@@ -65,6 +67,8 @@ Directory and files operations
    a new symbolic link will be created instead of copying the
    file *src* points to.
 
+   .. audit-event:: shutil.copyfile src,dst shutil.copyfile
+
    .. versionchanged:: 3.3
       :exc:`IOError` used to be raised instead of :exc:`OSError`.
       Added *follow_symlinks* argument.
@@ -74,6 +78,10 @@ Directory and files operations
       Raise :exc:`SameFileError` instead of :exc:`Error`.  Since the former is
       a subclass of the latter, this change is backward compatible.
 
+   .. versionchanged:: 3.8
+      Platform-specific fast-copy syscalls may be used internally in order to
+      copy the file more efficiently. See
+      :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
 .. exception:: SameFileError
 
@@ -86,13 +94,16 @@ Directory and files operations
 .. function:: copymode(src, dst, *, follow_symlinks=True)
 
    Copy the permission bits from *src* to *dst*.  The file contents, owner, and
-   group are unaffected.  *src* and *dst* are path names given as strings.
+   group are unaffected.  *src* and *dst* are path-like objects or path names
+   given as strings.
    If *follow_symlinks* is false, and both *src* and *dst* are symbolic links,
    :func:`copymode` will attempt to modify the mode of *dst* itself (rather
    than the file it points to).  This functionality is not available on every
    platform; please see :func:`copystat` for more information.  If
    :func:`copymode` cannot modify symbolic links on the local platform, and it
    is asked to do so, it will do nothing and return.
+
+   .. audit-event:: shutil.copymode src,dst shutil.copymode
 
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument.
@@ -102,7 +113,8 @@ Directory and files operations
    Copy the permission bits, last access time, last modification time, and
    flags from *src* to *dst*.  On Linux, :func:`copystat` also copies the
    "extended attributes" where possible.  The file contents, owner, and
-   group are unaffected.  *src* and *dst* are path names given as strings.
+   group are unaffected.  *src* and *dst* are path-like objects or path
+   names given as strings.
 
    If *follow_symlinks* is false, and *src* and *dst* both
    refer to symbolic links, :func:`copystat` will operate on
@@ -138,15 +150,17 @@ Directory and files operations
       Please see :data:`os.supports_follow_symlinks`
       for more information.
 
+   .. audit-event:: shutil.copystat src,dst shutil.copystat
+
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument and support for Linux extended attributes.
 
 .. function:: copy(src, dst, *, follow_symlinks=True)
 
    Copies the file *src* to the file or directory *dst*.  *src* and *dst*
-   should be strings.  If *dst* specifies a directory, the file will be
-   copied into *dst* using the base filename from *src*.  Returns the
-   path to the newly created file.
+   should be :term:`path-like objects <path-like object>` or strings.  If
+   *dst* specifies a directory, the file will be copied into *dst* using the
+   base filename from *src*.  Returns the path to the newly created file.
 
    If *follow_symlinks* is false, and *src* is a symbolic link,
    *dst* will be created as a symbolic link.  If *follow_symlinks*
@@ -159,14 +173,23 @@ Directory and files operations
    To preserve all file metadata from the original, use
    :func:`~shutil.copy2` instead.
 
+   .. audit-event:: shutil.copyfile src,dst shutil.copy
+
+   .. audit-event:: shutil.copymode src,dst shutil.copy
+
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument.
       Now returns path to the newly created file.
 
+   .. versionchanged:: 3.8
+      Platform-specific fast-copy syscalls may be used internally in order to
+      copy the file more efficiently. See
+      :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+
 .. function:: copy2(src, dst, *, follow_symlinks=True)
 
    Identical to :func:`~shutil.copy` except that :func:`copy2`
-   also attempts to preserve all file metadata.
+   also attempts to preserve file metadata.
 
    When *follow_symlinks* is false, and *src* is a symbolic
    link, :func:`copy2` attempts to copy all metadata from the
@@ -174,16 +197,26 @@ Directory and files operations
    However, this functionality is not available on all platforms.
    On platforms where some or all of this functionality is
    unavailable, :func:`copy2` will preserve all the metadata
-   it can; :func:`copy2` never returns failure.
+   it can; :func:`copy2` never raises an exception because it
+   cannot preserve file metadata.
 
    :func:`copy2` uses :func:`copystat` to copy the file metadata.
    Please see :func:`copystat` for more information
    about platform support for modifying symbolic link metadata.
 
+   .. audit-event:: shutil.copyfile src,dst shutil.copy2
+
+   .. audit-event:: shutil.copystat src,dst shutil.copy2
+
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument, try to copy extended
       file system attributes too (currently Linux only).
       Now returns path to the newly created file.
+
+   .. versionchanged:: 3.8
+      Platform-specific fast-copy syscalls may be used internally in order to
+      copy the file more efficiently. See
+      :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
 .. function:: ignore_patterns(\*patterns)
 
@@ -193,14 +226,16 @@ Directory and files operations
 
 
 .. function:: copytree(src, dst, symlinks=False, ignore=None, \
-              copy_function=copy2, ignore_dangling_symlinks=False)
+              copy_function=copy2, ignore_dangling_symlinks=False, \
+              dirs_exist_ok=False)
 
-   Recursively copy an entire directory tree rooted at *src*, returning the
-   destination directory.  The destination
-   directory, named by *dst*, must not already exist; it will be created as
-   well as missing parent directories.  Permissions and times of directories
-   are copied with :func:`copystat`, individual files are copied using
-   :func:`shutil.copy2`.
+   Recursively copy an entire directory tree rooted at *src* to a directory
+   named *dst* and return the destination directory. *dirs_exist_ok* dictates
+   whether to raise an exception in case *dst* or any missing parent directory
+   already exists.
+
+   Permissions and times of directories are copied with :func:`copystat`,
+   individual files are copied using :func:`~shutil.copy2`.
 
    If *symlinks* is true, symbolic links in the source tree are represented as
    symbolic links in the new tree and the metadata of the original links will
@@ -228,8 +263,10 @@ Directory and files operations
 
    If *copy_function* is given, it must be a callable that will be used to copy
    each file. It will be called with the source path and the destination path
-   as arguments. By default, :func:`shutil.copy2` is used, but any function
-   that supports the same signature (like :func:`shutil.copy`) can be used.
+   as arguments. By default, :func:`~shutil.copy2` is used, but any function
+   that supports the same signature (like :func:`~shutil.copy`) can be used.
+
+   .. audit-event:: shutil.copytree src,dst shutil.copytree
 
    .. versionchanged:: 3.3
       Copy metadata when *symlinks* is false.
@@ -241,6 +278,13 @@ Directory and files operations
       Added the *ignore_dangling_symlinks* argument to silent dangling symlinks
       errors when *symlinks* is false.
 
+   .. versionchanged:: 3.8
+      Platform-specific fast-copy syscalls may be used internally in order to
+      copy the file more efficiently. See
+      :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+
+   .. versionadded:: 3.8
+      The *dirs_exist_ok* parameter.
 
 .. function:: rmtree(path, ignore_errors=False, onerror=None)
 
@@ -271,9 +315,15 @@ Directory and files operations
    *excinfo*, will be the exception information returned by
    :func:`sys.exc_info`.  Exceptions raised by *onerror* will not be caught.
 
+   .. audit-event:: shutil.rmtree path shutil.rmtree
+
    .. versionchanged:: 3.3
       Added a symlink attack resistant version that is used automatically
       if platform supports fd-based functions.
+
+   .. versionchanged:: 3.8
+      On Windows, will no longer delete the contents of a directory junction
+      before removing the junction.
 
    .. attribute:: rmtree.avoids_symlink_attacks
 
@@ -299,12 +349,14 @@ Directory and files operations
    will be created in or as *dst* and *src* will be removed.
 
    If *copy_function* is given, it must be a callable that takes two arguments
-   *src* and *dst*, and will be used to copy *src* to *dest* if
+   *src* and *dst*, and will be used to copy *src* to *dst* if
    :func:`os.rename` cannot be used.  If the source is a directory,
    :func:`copytree` is called, passing it the :func:`copy_function`. The
    default *copy_function* is :func:`copy2`.  Using :func:`~shutil.copy` as the
    *copy_function* allows the move to succeed when it is not possible to also
    copy the metadata, at the expense of not copying any of the metadata.
+
+   .. audit-event:: shutil.move src,dst shutil.move
 
    .. versionchanged:: 3.3
       Added explicit symlink handling for foreign filesystems, thus adapting
@@ -314,15 +366,27 @@ Directory and files operations
    .. versionchanged:: 3.5
       Added the *copy_function* keyword argument.
 
+   .. versionchanged:: 3.8
+      Platform-specific fast-copy syscalls may be used internally in order to
+      copy the file more efficiently. See
+      :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+
+   .. versionchanged:: 3.9
+      Accepts a :term:`path-like object` for both *src* and *dst*.
+
 .. function:: disk_usage(path)
 
    Return disk usage statistics about the given path as a :term:`named tuple`
    with the attributes *total*, *used* and *free*, which are the amount of
-   total, used and free space, in bytes.
+   total, used and free space, in bytes. *path* may be a file or a
+   directory.
 
    .. versionadded:: 3.3
 
-   Availability: Unix, Windows.
+   .. versionchanged:: 3.8
+     On Windows, *path* can now be a file or directory.
+
+   .. availability:: Unix, Windows.
 
 .. function:: chown(path, user=None, group=None)
 
@@ -333,7 +397,9 @@ Directory and files operations
 
    See also :func:`os.chown`, the underlying function.
 
-   Availability: Unix.
+   .. audit-event:: shutil.chown path,user,group shutil.chown
+
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -362,6 +428,9 @@ Directory and files operations
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.8
+      The :class:`bytes` type is now accepted.  If *cmd* type is
+      :class:`bytes`, the result type is also :class:`bytes`.
 
 .. exception:: Error
 
@@ -369,6 +438,31 @@ Directory and files operations
    operation. For :func:`copytree`, the exception argument is a list of 3-tuples
    (*srcname*, *dstname*, *exception*).
 
+.. _shutil-platform-dependent-efficient-copy-operations:
+
+Platform-dependent efficient copy operations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Starting from Python 3.8 all functions involving a file copy (:func:`copyfile`,
+:func:`copy`, :func:`copy2`, :func:`copytree`, and :func:`move`) may use
+platform-specific "fast-copy" syscalls in order to copy the file more
+efficiently (see :issue:`33671`).
+"fast-copy" means that the copying operation occurs within the kernel, avoiding
+the use of userspace buffers in Python as in "``outfd.write(infd.read())``".
+
+On macOS `fcopyfile`_ is used to copy the file content (not metadata).
+
+On Linux :func:`os.sendfile` is used.
+
+On Windows :func:`shutil.copyfile` uses a bigger default buffer size (1 MiB
+instead of 64 KiB) and a :func:`memoryview`-based variant of
+:func:`shutil.copyfileobj` is used.
+
+If the fast-copy operation fails and no data was written in the destination
+file then shutil will silently fallback on using less efficient
+:func:`copyfileobj` function internally.
+
+.. versionchanged:: 3.8
 
 .. _shutil-copytree-example:
 
@@ -476,12 +570,14 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    available), or "xztar" (if the :mod:`lzma` module is available).
 
    *root_dir* is a directory that will be the root directory of the
-   archive; for example, we typically chdir into *root_dir* before creating the
-   archive.
+   archive, all paths in the archive will be relative to it; for example,
+   we typically chdir into *root_dir* before creating the archive.
 
    *base_dir* is the directory where we start archiving from;
    i.e. *base_dir* will be the common prefix of all files and
-   directories in the archive.
+   directories in the archive.  *base_dir* must be given relative
+   to *root_dir*.  See :ref:`shutil-archiving-example-with-basedir` for how to
+   use *base_dir* and *root_dir* together.
 
    *root_dir* and *base_dir* both default to the current directory.
 
@@ -496,6 +592,12 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    The *verbose* argument is unused and deprecated.
 
+   .. audit-event:: shutil.make_archive base_name,format,root_dir,base_dir shutil.make_archive
+
+   .. versionchanged:: 3.8
+      The modern pax (POSIX.1-2001) format is now used instead of
+      the legacy GNU format for archives created with ``format="tar"``.
+
 
 .. function:: get_archive_formats()
 
@@ -505,7 +607,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    By default :mod:`shutil` provides these formats:
 
    - *zip*: ZIP file (if the :mod:`zlib` module is available).
-   - *tar*: uncompressed tar file.
+   - *tar*: Uncompressed tar file. Uses POSIX.1-2001 pax format for new archives.
    - *gztar*: gzip'ed tar-file (if the :mod:`zlib` module is available).
    - *bztar*: bzip2'ed tar-file (if the :mod:`bz2` module is available).
    - *xztar*: xz'ed tar-file (if the :mod:`lzma` module is available).
@@ -549,6 +651,8 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    will use the archive file name extension and see if an unpacker was
    registered for that extension.  In case none is found,
    a :exc:`ValueError` is raised.
+
+   .. audit-event:: shutil.unpack_archive filename,extract_dir,format shutil.unpack_archive
 
    .. versionchanged:: 3.7
       Accepts a :term:`path-like object` for *filename* and *extract_dir*.
@@ -625,6 +729,48 @@ The resulting archive contains:
     -rw-r--r-- tarek/staff   37192 2010-02-06 18:23:10 ./known_hosts
 
 
+.. _shutil-archiving-example-with-basedir:
+
+Archiving example with *base_dir*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In this example, similar to the `one above <shutil-archiving-example_>`_,
+we show how to use :func:`make_archive`, but this time with the usage of
+*base_dir*.  We now have the following directory structure:
+
+.. code-block:: shell-session
+
+    $ tree tmp
+    tmp
+    └── root
+        └── structure
+            ├── content
+                └── please_add.txt
+            └── do_not_add.txt
+
+In the final archive, :file:`please_add.txt` should be included, but
+:file:`do_not_add.txt` should not.  Therefore we use the following::
+
+    >>> from shutil import make_archive
+    >>> import os
+    >>> archive_name = os.path.expanduser(os.path.join('~', 'myarchive'))
+    >>> make_archive(
+    ...     archive_name,
+    ...     'tar',
+    ...     root_dir='tmp/root',
+    ...     base_dir='structure/content',
+    ... )
+    '/Users/tarek/my_archive.tar'
+
+Listing the files in the resulting archive gives us:
+
+.. code-block:: shell-session
+
+    $ python -m tarfile -l /Users/tarek/myarchive.tar
+    structure/content/
+    structure/content/please_add.txt
+
+
 Querying the size of the output terminal
 ----------------------------------------
 
@@ -653,6 +799,8 @@ Querying the size of the output terminal
 
    .. versionadded:: 3.3
 
+.. _`fcopyfile`:
+   http://www.manpagez.com/man/3/copyfile/
+
 .. _`Other Environment Variables`:
    http://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html#tag_002_003
-

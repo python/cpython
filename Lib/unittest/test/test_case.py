@@ -8,6 +8,7 @@ import logging
 import warnings
 import weakref
 import inspect
+import types
 
 from copy import deepcopy
 from test import support
@@ -425,6 +426,20 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         expected = ['a1', 'a2', 'b1']
         self.assertEqual(events, expected)
 
+    def test_subtests_debug(self):
+        # Test debug() with a test that uses subTest() (bpo-34900)
+        events = []
+
+        class Foo(unittest.TestCase):
+            def test_a(self):
+                events.append('test case')
+                with self.subTest():
+                    events.append('subtest 1')
+
+        Foo('test_a').debug()
+
+        self.assertEqual(events, ['test case', 'subtest 1'])
+
     # "This class attribute gives the exception raised by the test() method.
     # If a test framework needs to use a specialized exception, possibly to
     # carry additional information, it must subclass this exception in
@@ -596,6 +611,15 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                  'Tests shortDescription() for a method with a longer '
                  'docstring.')
 
+    def testShortDescriptionWhitespaceTrimming(self):
+        """
+            Tests shortDescription() whitespace is trimmed, so that the first
+            line of nonwhite-space text becomes the docstring.
+        """
+        self.assertEqual(
+            self.shortDescription(),
+            'Tests shortDescription() whitespace is trimmed, so that the first')
+
     def testAddTypeEqualityFunc(self):
         class SadSnake(object):
             """Dummy class for test_addTypeEqualityFunc."""
@@ -606,7 +630,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.addTypeEqualityFunc(SadSnake, AllSnakesCreatedEqual)
         self.assertEqual(s1, s2)
         # No this doesn't clean up and remove the SadSnake equality func
-        # from this TestCase instance but since its a local nothing else
+        # from this TestCase instance but since it's local nothing else
         # will ever notice that.
 
     def testAssertIs(self):
@@ -942,7 +966,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                           [], [divmod, 'x', 1, 5j, 2j, frozenset()])
         # comparing dicts
         self.assertCountEqual([{'a': 1}, {'b': 2}], [{'b': 2}, {'a': 1}])
-        # comparing heterogenous non-hashable sequences
+        # comparing heterogeneous non-hashable sequences
         self.assertCountEqual([1, 'x', divmod, []], [divmod, [], 'x', 1])
         self.assertRaises(self.failureException, self.assertCountEqual,
                           [], [divmod, [], 'x', 1, 5j, 2j, set()])
@@ -1222,7 +1246,7 @@ test case
         with self.assertRaises(self.failureException):
             self.assertRaises(ExceptionMock, lambda: 0)
         # Failure when the function is None
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(TypeError):
             self.assertRaises(ExceptionMock, None)
         # Failure when another exception is raised
         with self.assertRaises(ExceptionMock):
@@ -1253,8 +1277,7 @@ test case
             with self.assertRaises(ExceptionMock, msg='foobar'):
                 pass
         # Invalid keyword argument
-        with self.assertWarnsRegex(DeprecationWarning, 'foobar'), \
-             self.assertRaises(AssertionError):
+        with self.assertRaisesRegex(TypeError, 'foobar'):
             with self.assertRaises(ExceptionMock, foobar=42):
                 pass
         # Failure when another exception is raised
@@ -1295,7 +1318,7 @@ test case
 
         self.assertRaisesRegex(ExceptionMock, re.compile('expect$'), Stub)
         self.assertRaisesRegex(ExceptionMock, 'expect$', Stub)
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(TypeError):
             self.assertRaisesRegex(ExceptionMock, 'expect$', None)
 
     def testAssertNotRaisesRegex(self):
@@ -1312,8 +1335,7 @@ test case
             with self.assertRaisesRegex(Exception, 'expect', msg='foobar'):
                 pass
         # Invalid keyword argument
-        with self.assertWarnsRegex(DeprecationWarning, 'foobar'), \
-             self.assertRaises(AssertionError):
+        with self.assertRaisesRegex(TypeError, 'foobar'):
             with self.assertRaisesRegex(Exception, 'expect', foobar=42):
                 pass
 
@@ -1328,6 +1350,20 @@ test case
         class MyWarn(Warning):
             pass
         self.assertRaises(TypeError, self.assertWarnsRegex, MyWarn, lambda: True)
+
+    def testAssertWarnsModifySysModules(self):
+        # bpo-29620: handle modified sys.modules during iteration
+        class Foo(types.ModuleType):
+            @property
+            def __warningregistry__(self):
+                sys.modules['@bar@'] = 'bar'
+
+        sys.modules['@foo@'] = Foo('foo')
+        try:
+            self.assertWarns(UserWarning, warnings.warn, 'expected')
+        finally:
+            del sys.modules['@foo@']
+            del sys.modules['@bar@']
 
     def testAssertRaisesRegexMismatch(self):
         def Stub():
@@ -1388,7 +1424,7 @@ test case
         with self.assertRaises(self.failureException):
             self.assertWarns(RuntimeWarning, lambda: 0)
         # Failure when the function is None
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(TypeError):
             self.assertWarns(RuntimeWarning, None)
         # Failure when another warning is triggered
         with warnings.catch_warnings():
@@ -1433,8 +1469,7 @@ test case
             with self.assertWarns(RuntimeWarning, msg='foobar'):
                 pass
         # Invalid keyword argument
-        with self.assertWarnsRegex(DeprecationWarning, 'foobar'), \
-             self.assertRaises(AssertionError):
+        with self.assertRaisesRegex(TypeError, 'foobar'):
             with self.assertWarns(RuntimeWarning, foobar=42):
                 pass
         # Failure when another warning is triggered
@@ -1475,7 +1510,7 @@ test case
             self.assertWarnsRegex(RuntimeWarning, "o+",
                                   lambda: 0)
         # Failure when the function is None
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(TypeError):
             self.assertWarnsRegex(RuntimeWarning, "o+", None)
         # Failure when another warning is triggered
         with warnings.catch_warnings():
@@ -1518,8 +1553,7 @@ test case
             with self.assertWarnsRegex(RuntimeWarning, 'o+', msg='foobar'):
                 pass
         # Invalid keyword argument
-        with self.assertWarnsRegex(DeprecationWarning, 'foobar'), \
-             self.assertRaises(AssertionError):
+        with self.assertRaisesRegex(TypeError, 'foobar'):
             with self.assertWarnsRegex(RuntimeWarning, 'o+', foobar=42):
                 pass
         # Failure when another warning is triggered
@@ -1639,6 +1673,18 @@ test case
                 with self.assertLogs(level='WARNING'):
                     log_foo.info("1")
 
+    def testAssertLogsFailureLevelTooHigh_FilterInRootLogger(self):
+        # Failure due to level too high - message propagated to root
+        with self.assertNoStderr():
+            oldLevel = log_foo.level
+            log_foo.setLevel(logging.INFO)
+            try:
+                with self.assertRaises(self.failureException):
+                    with self.assertLogs(level='WARNING'):
+                        log_foo.info("1")
+            finally:
+                log_foo.setLevel(oldLevel)
+
     def testAssertLogsFailureMismatchingLogger(self):
         # Failure due to mismatching logger (and the logged message is
         # passed through)
@@ -1646,6 +1692,81 @@ test case
             with self.assertRaises(self.failureException):
                 with self.assertLogs('foo'):
                     log_quux.error("1")
+
+    def testAssertLogsUnexpectedException(self):
+        # Check unexpected exception will go through.
+        with self.assertRaises(ZeroDivisionError):
+            with self.assertLogs():
+                raise ZeroDivisionError("Unexpected")
+
+    def testAssertNoLogsDefault(self):
+        with self.assertRaises(self.failureException) as cm:
+            with self.assertNoLogs():
+                log_foo.info("1")
+                log_foobar.debug("2")
+        self.assertEqual(
+            str(cm.exception),
+            "Unexpected logs found: ['INFO:foo:1']",
+        )
+
+    def testAssertNoLogsFailureFoundLogs(self):
+        with self.assertRaises(self.failureException) as cm:
+            with self.assertNoLogs():
+                log_quux.error("1")
+                log_foo.error("foo")
+
+        self.assertEqual(
+            str(cm.exception),
+            "Unexpected logs found: ['ERROR:quux:1', 'ERROR:foo:foo']",
+        )
+
+    def testAssertNoLogsPerLogger(self):
+        with self.assertNoStderr():
+            with self.assertLogs(log_quux):
+                with self.assertNoLogs(logger=log_foo):
+                    log_quux.error("1")
+
+    def testAssertNoLogsFailurePerLogger(self):
+        # Failure due to unexpected logs for the given logger or its
+        # children.
+        with self.assertRaises(self.failureException) as cm:
+            with self.assertLogs(log_quux):
+                with self.assertNoLogs(logger=log_foo):
+                    log_quux.error("1")
+                    log_foobar.info("2")
+        self.assertEqual(
+            str(cm.exception),
+            "Unexpected logs found: ['INFO:foo.bar:2']",
+        )
+
+    def testAssertNoLogsPerLevel(self):
+        # Check per-level filtering
+        with self.assertNoStderr():
+            with self.assertNoLogs(level="ERROR"):
+                log_foo.info("foo")
+                log_quux.debug("1")
+
+    def testAssertNoLogsFailurePerLevel(self):
+        # Failure due to unexpected logs at the specified level.
+        with self.assertRaises(self.failureException) as cm:
+            with self.assertNoLogs(level="DEBUG"):
+                log_foo.debug("foo")
+                log_quux.debug("1")
+        self.assertEqual(
+            str(cm.exception),
+            "Unexpected logs found: ['DEBUG:foo:foo', 'DEBUG:quux:1']",
+        )
+
+    def testAssertNoLogsUnexpectedException(self):
+        # Check unexpected exception will go through.
+        with self.assertRaises(ZeroDivisionError):
+            with self.assertNoLogs():
+                raise ZeroDivisionError("Unexpected")
+
+    def testAssertNoLogsYieldsNone(self):
+        with self.assertNoLogs() as value:
+            pass
+        self.assertIsNone(value)
 
     def testDeprecatedMethodNames(self):
         """

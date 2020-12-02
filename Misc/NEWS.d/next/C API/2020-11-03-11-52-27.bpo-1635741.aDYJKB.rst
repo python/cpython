@@ -1,0 +1,3 @@
+Added :c:func:`PyModule_AddObjectRef` function: similar to
+:c:func:`PyModule_AddObject` but don't steal a reference to the value on
+success. Patch by Victor Stinner.

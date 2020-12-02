@@ -23,12 +23,13 @@ __all__ = ['RawValue', 'RawArray', 'Value', 'Array', 'copy', 'synchronized']
 #
 
 typecode_to_type = {
-    'c': ctypes.c_char,  'u': ctypes.c_wchar,
-    'b': ctypes.c_byte,  'B': ctypes.c_ubyte,
-    'h': ctypes.c_short, 'H': ctypes.c_ushort,
-    'i': ctypes.c_int,   'I': ctypes.c_uint,
-    'l': ctypes.c_long,  'L': ctypes.c_ulong,
-    'f': ctypes.c_float, 'd': ctypes.c_double
+    'c': ctypes.c_char,     'u': ctypes.c_wchar,
+    'b': ctypes.c_byte,     'B': ctypes.c_ubyte,
+    'h': ctypes.c_short,    'H': ctypes.c_ushort,
+    'i': ctypes.c_int,      'I': ctypes.c_uint,
+    'l': ctypes.c_long,     'L': ctypes.c_ulong,
+    'q': ctypes.c_longlong, 'Q': ctypes.c_ulonglong,
+    'f': ctypes.c_float,    'd': ctypes.c_double
     }
 
 #
@@ -77,7 +78,7 @@ def Value(typecode_or_type, *args, lock=True, ctx=None):
         ctx = ctx or get_context()
         lock = ctx.RLock()
     if not hasattr(lock, 'acquire'):
-        raise AttributeError("'%r' has no method 'acquire'" % lock)
+        raise AttributeError("%r has no method 'acquire'" % lock)
     return synchronized(obj, lock, ctx=ctx)
 
 def Array(typecode_or_type, size_or_initializer, *, lock=True, ctx=None):
@@ -91,7 +92,7 @@ def Array(typecode_or_type, size_or_initializer, *, lock=True, ctx=None):
         ctx = ctx or get_context()
         lock = ctx.RLock()
     if not hasattr(lock, 'acquire'):
-        raise AttributeError("'%r' has no method 'acquire'" % lock)
+        raise AttributeError("%r has no method 'acquire'" % lock)
     return synchronized(obj, lock, ctx=ctx)
 
 def copy(obj):

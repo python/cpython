@@ -18,9 +18,38 @@
 
    Note: Use of these macros is based on judgement, not hard rules,
          and therefore subject to change.
+                            __  __            _
+                         ___\ \/ /_ __   __ _| |_
+                        / _ \\  /| '_ \ / _` | __|
+                       |  __//  \| |_) | (_| | |_
+                        \___/_/\_\ .__/ \__,_|\__|
+                                 |_| XML parser
+
+   Copyright (c) 1997-2000 Thai Open Source Software Center Ltd
+   Copyright (c) 2000-2017 Expat development team
+   Licensed under the MIT license:
+
+   Permission is  hereby granted,  free of charge,  to any  person obtaining
+   a  copy  of  this  software   and  associated  documentation  files  (the
+   "Software"),  to  deal in  the  Software  without restriction,  including
+   without  limitation the  rights  to use,  copy,  modify, merge,  publish,
+   distribute, sublicense, and/or sell copies of the Software, and to permit
+   persons  to whom  the Software  is  furnished to  do so,  subject to  the
+   following conditions:
+
+   The above copyright  notice and this permission notice  shall be included
+   in all copies or substantial portions of the Software.
+
+   THE  SOFTWARE  IS  PROVIDED  "AS  IS",  WITHOUT  WARRANTY  OF  ANY  KIND,
+   EXPRESS  OR IMPLIED,  INCLUDING  BUT  NOT LIMITED  TO  THE WARRANTIES  OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+   NO EVENT SHALL THE AUTHORS OR  COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+   DAMAGES OR  OTHER LIABILITY, WHETHER  IN AN  ACTION OF CONTRACT,  TORT OR
+   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+   USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#if defined(__GNUC__) && defined(__i386__) && !defined(__MINGW32__)
+#if defined(__GNUC__) && defined(__i386__) && ! defined(__MINGW32__)
 /* We'll use this version by default only where we know it helps.
 
    regparm() generates warnings on Solaris boxes.   See SF bug #692878.
@@ -30,8 +59,8 @@
    #define FASTCALL __attribute__((stdcall, regparm(3)))
    and let's try this:
 */
-#define FASTCALL __attribute__((regparm(3)))
-#define PTRFASTCALL __attribute__((regparm(3)))
+#  define FASTCALL __attribute__((regparm(3)))
+#  define PTRFASTCALL __attribute__((regparm(3)))
 #endif
 
 /* Using __fastcall seems to have an unexpected negative effect under
@@ -45,29 +74,50 @@
 /* Make sure all of these are defined if they aren't already. */
 
 #ifndef FASTCALL
-#define FASTCALL
+#  define FASTCALL
 #endif
 
 #ifndef PTRCALL
-#define PTRCALL
+#  define PTRCALL
 #endif
 
 #ifndef PTRFASTCALL
-#define PTRFASTCALL
+#  define PTRFASTCALL
 #endif
 
 #ifndef XML_MIN_SIZE
-#if !defined(__cplusplus) && !defined(inline)
-#ifdef __GNUC__
-#define inline __inline
-#endif /* __GNUC__ */
-#endif
+#  if ! defined(__cplusplus) && ! defined(inline)
+#    ifdef __GNUC__
+#      define inline __inline
+#    endif /* __GNUC__ */
+#  endif
 #endif /* XML_MIN_SIZE */
 
 #ifdef __cplusplus
-#define inline inline
+#  define inline inline
 #else
-#ifndef inline
-#define inline
+#  ifndef inline
+#    define inline
+#  endif
 #endif
+
+#ifndef UNUSED_P
+#  define UNUSED_P(p) (void)p
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef XML_ENABLE_VISIBILITY
+#  if XML_ENABLE_VISIBILITY
+__attribute__((visibility("default")))
+#  endif
+#endif
+void
+_INTERNAL_trim_to_complete_utf8_characters(const char *from,
+                                           const char **fromLimRef);
+
+#ifdef __cplusplus
+}
 #endif

@@ -2,10 +2,14 @@
    Test cases for pyclbr.py
    Nick Mathewson
 '''
+
 import sys
+from textwrap import dedent
 from types import FunctionType, MethodType, BuiltinFunctionType
 import pyclbr
 from unittest import TestCase, main as unittest_main
+from test.test_importlib import util as test_importlib_util
+
 
 StaticMethodType = type(staticmethod(lambda: None))
 ClassMethodType = type(classmethod(lambda c: None))
@@ -139,16 +143,75 @@ class PyclbrTest(TestCase):
 
     def test_easy(self):
         self.checkModule('pyclbr')
-        self.checkModule('ast')
+        # XXX: Metaclasses are not supported
+        # self.checkModule('ast')
         self.checkModule('doctest', ignore=("TestResults", "_SpoofOut",
                                             "DocTestCase", '_DocTestSuite'))
         self.checkModule('difflib', ignore=("Match",))
 
     def test_decorators(self):
-        # XXX: See comment in pyclbr_input.py for a test that would fail
-        #      if it were not commented out.
-        #
         self.checkModule('test.pyclbr_input', ignore=['om'])
+
+    def test_nested(self):
+        mb = pyclbr
+        # Set arguments for descriptor creation and _creat_tree call.
+        m, p, f, t, i = 'test', '', 'test.py', {}, None
+        source = dedent("""\
+        def f0():
+            def f1(a,b,c):
+                def f2(a=1, b=2, c=3): pass
+                return f1(a,b,d)
+            class c1: pass
+        class C0:
+            "Test class."
+            def F1():
+                "Method."
+                return 'return'
+            class C1():
+                class C2:
+                    "Class nested within nested class."
+                    def F3(): return 1+1
+
+        """)
+        actual = mb._create_tree(m, p, f, source, t, i)
+
+        # Create descriptors, linked together, and expected dict.
+        f0 = mb.Function(m, 'f0', f, 1)
+        f1 = mb._nest_function(f0, 'f1', 2)
+        f2 = mb._nest_function(f1, 'f2', 3)
+        c1 = mb._nest_class(f0, 'c1', 5)
+        C0 = mb.Class(m, 'C0', None, f, 6)
+        F1 = mb._nest_function(C0, 'F1', 8)
+        C1 = mb._nest_class(C0, 'C1', 11)
+        C2 = mb._nest_class(C1, 'C2', 12)
+        F3 = mb._nest_function(C2, 'F3', 14)
+        expected = {'f0':f0, 'C0':C0}
+
+        def compare(parent1, children1, parent2, children2):
+            """Return equality of tree pairs.
+
+            Each parent,children pair define a tree.  The parents are
+            assumed equal.  Comparing the children dictionaries as such
+            does not work due to comparison by identity and double
+            linkage.  We separate comparing string and number attributes
+            from comparing the children of input children.
+            """
+            self.assertEqual(children1.keys(), children2.keys())
+            for ob in children1.values():
+                self.assertIs(ob.parent, parent1)
+            for ob in children2.values():
+                self.assertIs(ob.parent, parent2)
+            for key in children1.keys():
+                o1, o2 = children1[key], children2[key]
+                t1 = type(o1), o1.name, o1.file, o1.module, o1.lineno
+                t2 = type(o2), o2.name, o2.file, o2.module, o2.lineno
+                self.assertEqual(t1, t2)
+                if type(o1) is mb.Class:
+                    self.assertEqual(o1.methods, o2.methods)
+                # Skip superclasses for now as not part of example
+                compare(o1, o1.children, o2, o2.children)
+
+        compare(None, actual, None, expected)
 
     def test_others(self):
         cm = self.checkModule
@@ -156,8 +219,8 @@ class PyclbrTest(TestCase):
         # These were once about the 10 longest modules
         cm('random', ignore=('Random',))  # from _random import Random as CoreGenerator
         cm('cgi', ignore=('log',))      # set with = in module
-        cm('pickle', ignore=('partial',))
-        cm('aifc', ignore=('openfp', '_aifc_params'))  # set with = in module
+        cm('pickle', ignore=('partial', 'PickleBuffer'))
+        cm('aifc', ignore=('_aifc_params',))  # set with = in module
         cm('sre_parse', ignore=('dump', 'groups', 'pos')) # from sre_constants import *; property
         cm('pdb')
         cm('pydoc', ignore=('input', 'output',)) # properties
@@ -166,10 +229,29 @@ class PyclbrTest(TestCase):
         cm('email.parser')
         cm('test.test_pyclbr')
 
-    def test_issue_14798(self):
+
+class ReadmoduleTests(TestCase):
+
+    def setUp(self):
+        self._modules = pyclbr._modules.copy()
+
+    def tearDown(self):
+        pyclbr._modules = self._modules
+
+
+    def test_dotted_name_not_a_package(self):
         # test ImportError is raised when the first part of a dotted name is
-        # not a package
-        self.assertRaises(ImportError, pyclbr.readmodule_ex, 'asyncore.foo')
+        # not a package.
+        #
+        # Issue #14798.
+        self.assertRaises(ImportError, pyclbr.readmodule_ex, 'asyncio.foo')
+
+    def test_module_has_no_spec(self):
+        module_name = "doesnotexist"
+        assert module_name not in pyclbr._modules
+        with test_importlib_util.uncache(module_name):
+            with self.assertRaises(ModuleNotFoundError):
+                pyclbr.readmodule_ex(module_name)
 
 
 if __name__ == "__main__":

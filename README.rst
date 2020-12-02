@@ -1,21 +1,28 @@
-This is Python version 3.7.0 alpha 1
-====================================
+This is Python version 3.10.0 alpha 2
+=====================================
 
-.. image:: https://travis-ci.org/python/cpython.svg?branch=master
+.. image:: https://travis-ci.com/python/cpython.svg?branch=master
    :alt: CPython build status on Travis CI
-   :target: https://travis-ci.org/python/cpython
+   :target: https://travis-ci.com/python/cpython
 
-.. image:: https://ci.appveyor.com/api/projects/status/4mew1a93xdkbf5ua/branch/master?svg=true
-   :alt: CPython build status on Appveyor
-   :target: https://ci.appveyor.com/project/python/cpython/branch/master
+.. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
+   :alt: CPython build status on GitHub Actions
+   :target: https://github.com/python/cpython/actions
+
+.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%20CI?branchName=master
+   :alt: CPython build status on Azure DevOps
+   :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=master
 
 .. image:: https://codecov.io/gh/python/cpython/branch/master/graph/badge.svg
    :alt: CPython code coverage on Codecov
    :target: https://codecov.io/gh/python/cpython
 
-Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013, 2014, 2015, 2016, 2017 Python Software Foundation.  All rights
-reserved.
+.. image:: https://img.shields.io/badge/zulip-join_chat-brightgreen.svg
+   :alt: Python Zulip chat
+   :target: https://python.zulipchat.com
+
+
+Copyright (c) 2001-2020 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -28,7 +35,7 @@ General Information
 - Source code: https://github.com/python/cpython
 - Issue tracker: https://bugs.python.org
 - Documentation: https://docs.python.org
-- Developer's Guide: https://docs.python.org/devguide/
+- Developer's Guide: https://devguide.python.org/
 
 Contributing to CPython
 -----------------------
@@ -36,7 +43,7 @@ Contributing to CPython
 For more complete instructions on contributing to CPython development,
 see the `Developer Guide`_.
 
-.. _Developer Guide: https://docs.python.org/devguide/
+.. _Developer Guide: https://devguide.python.org/
 
 Using Python
 ------------
@@ -56,16 +63,23 @@ On Unix, Linux, BSD, macOS, and Cygwin::
     make test
     sudo make install
 
-This will install Python as python3.
+This will install Python as ``python3``.
 
 You can pass many options to the configure script; run ``./configure --help``
-to find out more.  On macOS and Cygwin, the executable is called ``python.exe``;
-elsewhere it's just ``python``.
+to find out more.  On macOS case-insensitive file systems and on Cygwin,
+the executable is called ``python.exe``; elsewhere it's just ``python``.
 
-On macOS, if you have configured Python with ``--enable-framework``, you
-should use ``make frameworkinstall`` to do the installation.  Note that this
-installs the Python executable in a place that is not normally on your PATH,
-you may want to set up a symlink in ``/usr/local/bin``.
+Building a complete Python installation requires the use of various
+additional third-party libraries, depending on your build platform and
+configure options.  Not all standard library modules are buildable or
+useable on all platforms.  Refer to the
+`Install dependencies <https://devguide.python.org/setup/#install-dependencies>`_
+section of the `Developer Guide`_ for current detailed information on
+dependencies for various Linux distributions and macOS.
+
+On macOS, there are additional configure and build options related
+to macOS framework and universal builds.  Refer to `Mac/README.rst
+<https://github.com/python/cpython/blob/master/Mac/README.rst>`_.
 
 On Windows, see `PCbuild/readme.txt
 <https://github.com/python/cpython/blob/master/PCbuild/readme.txt>`_.
@@ -80,7 +94,7 @@ For example::
     make test
 
 (This will fail if you *also* built at the top-level directory.  You should do
-a ``make clean`` at the toplevel first.)
+a ``make clean`` at the top-level first.)
 
 To get an optimized build of Python, ``configure --enable-optimizations``
 before you run ``make``.  This sets the default make targets up to enable
@@ -88,29 +102,30 @@ Profile Guided Optimization (PGO) and may be used to auto-enable Link Time
 Optimization (LTO) on some platforms.  For more details, see the sections
 below.
 
-
 Profile Guided Optimization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-PGO takes advantage of recent versions of the GCC or Clang compilers.  If ran,
-``make profile-opt`` will do several steps.
+PGO takes advantage of recent versions of the GCC or Clang compilers.  If used,
+either via ``configure --enable-optimizations`` or by manually running
+``make profile-opt`` regardless of configure flags, the optimized build
+process will perform the following steps:
 
-First, the entire Python directory is cleaned of temporary files that may have
-resulted in a previous compilation.
+The entire Python directory is cleaned of temporary files that may have
+resulted from a previous compilation.
 
-Then, an instrumented version of the interpreter is built, using suitable
-compiler flags for each flavour. Note that this is just an intermediary step
-and the binary resulted after this step is not good for real life workloads, as
-it has profiling instructions embedded inside.
+An instrumented version of the interpreter is built, using suitable compiler
+flags for each flavour. Note that this is just an intermediary step.  The
+binary resulting from this step is not good for real life workloads as it has
+profiling instructions embedded inside.
 
-After this instrumented version of the interpreter is built, the Makefile will
-automatically run a training workload. This is necessary in order to profile
-the interpreter execution. Note also that any output, both stdout and stderr,
-that may appear at this step is suppressed.
+After the instrumented interpreter is built, the Makefile will run a training
+workload.  This is necessary in order to profile the interpreter execution.
+Note also that any output, both stdout and stderr, that may appear at this step
+is suppressed.
 
-Finally, the last step is to rebuild the interpreter, using the information
-collected in the previous one. The end result will be a Python binary that is
-optimized and suitable for distribution or production installation.
+The final step is to build the actual interpreter, using the information
+collected from the instrumented one.  The end result will be a Python binary
+that is optimized; suitable for distribution or production installation.
 
 
 Link Time Optimization
@@ -126,20 +141,20 @@ What's New
 ----------
 
 We have a comprehensive overview of the changes in the `What's New in Python
-3.7 <https://docs.python.org/3.7/whatsnew/3.7.html>`_ document.  For a more
+3.10 <https://docs.python.org/3.10/whatsnew/3.10.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
-<https://github.com/python/cpython/blob/master/Misc/NEWS>`_, but a full
+<https://github.com/python/cpython/blob/master/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
 <https://github.com/python/cpython/commits/master>`_.
 
-If you want to install multiple versions of Python see the section below
+If you want to install multiple versions of Python, see the section below
 entitled "Installing multiple versions".
 
 
 Documentation
 -------------
 
-`Documentation for Python 3.7 <https://docs.python.org/3.7/>`_ is online,
+`Documentation for Python 3.10 <https://docs.python.org/3.10/>`_ is online,
 updated daily.
 
 It can also be downloaded in many formats for faster access.  The documentation
@@ -172,14 +187,17 @@ something is wrong.
 By default, tests are prevented from overusing resources like disk space and
 memory.  To enable these tests, run ``make testall``.
 
-If any tests fail, you can re-run the failing test(s) in verbose mode::
+If any tests fail, you can re-run the failing test(s) in verbose mode.  For
+example, if ``test_os`` and ``test_gdb`` failed, you can run::
 
-    make test TESTOPTS="-v test_that_failed"
+    make test TESTOPTS="-v test_os test_gdb"
 
 If the failure persists and appears to be a problem with Python rather than
 your environment, you can `file a bug report <https://bugs.python.org>`_ and
 include relevant output from that command to show the issue.
 
+See `Running & Writing Tests <https://devguide.python.org/runtests/>`_
+for more on running tests.
 
 Installing multiple versions
 ----------------------------
@@ -195,8 +213,8 @@ intend to install multiple versions using the same prefix you must decide which
 version (if any) is your "primary" version.  Install that version using ``make
 install``.  Install all other versions using ``make altinstall``.
 
-For example, if you want to install Python 2.7, 3.6, and 3.7 with 3.7 being the
-primary version, you would execute ``make install`` in your 3.7 build directory
+For example, if you want to install Python 2.7, 3.6, and 3.10 with 3.10 being the
+primary version, you would execute ``make install`` in your 3.10 build directory
 and ``make altinstall`` in the others.
 
 
@@ -226,14 +244,13 @@ All current PEPs, as well as guidelines for submitting a new PEP, are listed at
 Release Schedule
 ----------------
 
-See :pep:`537` for Python 3.7 release details.
+See :pep:`619` for Python 3.10 release details.
 
 
 Copyright and License Information
 ---------------------------------
 
-Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013, 2014, 2015, 2016 Python Software Foundation.  All rights reserved.
+Copyright (c) 2001-2020 Python Software Foundation.  All rights reserved.
 
 Copyright (c) 2000 BeOpen.com.  All rights reserved.
 
@@ -242,8 +259,9 @@ rights reserved.
 
 Copyright (c) 1991-1995 Stichting Mathematisch Centrum.  All rights reserved.
 
-See the file "LICENSE" for information on the history of this software, terms &
-conditions for usage, and a DISCLAIMER OF ALL WARRANTIES.
+See the `LICENSE <https://github.com/python/cpython/blob/master/LICENSE>`_ for
+information on the history of this software, terms & conditions for usage, and a
+DISCLAIMER OF ALL WARRANTIES.
 
 This Python distribution contains *no* GNU General Public License (GPL) code,
 so it may be used in proprietary projects.  There are interfaces to some GNU

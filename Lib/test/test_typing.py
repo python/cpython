@@ -3,31 +3,34 @@ import collections
 import pickle
 import re
 import sys
-from unittest import TestCase, main, skipUnless, SkipTest
+from unittest import TestCase, main, skipUnless, skip
 from copy import copy, deepcopy
 
 from typing import Any, NoReturn
 from typing import TypeVar, AnyStr
 from typing import T, KT, VT  # Not in __all__.
-from typing import Union, Optional
-from typing import Tuple, List, MutableMapping
+from typing import Union, Optional, Literal
+from typing import Tuple, List, Dict, MutableMapping
 from typing import Callable
-from typing import Generic, ClassVar, GenericMeta
-from typing import cast
+from typing import Generic, ClassVar, Final, final, Protocol
+from typing import cast, runtime_checkable
 from typing import get_type_hints
+from typing import get_origin, get_args
+from typing import is_typeddict
 from typing import no_type_check, no_type_check_decorator
 from typing import Type
 from typing import NewType
-from typing import NamedTuple
+from typing import NamedTuple, TypedDict
 from typing import IO, TextIO, BinaryIO
 from typing import Pattern, Match
+from typing import Annotated, ForwardRef
+from typing import TypeAlias
 import abc
 import typing
 import weakref
-try:
-    import collections.abc as collections_abc
-except ImportError:
-    import collections as collections_abc  # Fallback for PY3.2.
+import types
+
+from test import mod_generics_cache
 
 
 class BaseTestCase(TestCase):
@@ -220,6 +223,13 @@ class TypeVarTests(BaseTestCase):
         with self.assertRaises(TypeError):
             TypeVar('X', str, float, bound=Employee)
 
+    def test_missing__name__(self):
+        # See bpo-39942
+        code = ("import typing\n"
+                "T = typing.TypeVar('T')\n"
+                )
+        exec(code, {})
+
     def test_no_bivariant(self):
         with self.assertRaises(ValueError):
             TypeVar('T', covariant=True, contravariant=True)
@@ -237,8 +247,6 @@ class UnionTests(BaseTestCase):
         with self.assertRaises(TypeError):
             issubclass(Union, int)
         with self.assertRaises(TypeError):
-            issubclass(int, Union[int, str])
-        with self.assertRaises(TypeError):
             issubclass(Union[int, str], int)
 
     def test_union_any(self):
@@ -255,10 +263,11 @@ class UnionTests(BaseTestCase):
     def test_union_object(self):
         u = Union[object]
         self.assertEqual(u, object)
-        u = Union[int, object]
-        self.assertEqual(u, object)
-        u = Union[object, int]
-        self.assertEqual(u, object)
+        u1 = Union[int, object]
+        u2 = Union[object, int]
+        self.assertEqual(u1, u2)
+        self.assertNotEqual(u1, object)
+        self.assertNotEqual(u2, object)
 
     def test_unordered(self):
         u1 = Union[int, float]
@@ -269,13 +278,11 @@ class UnionTests(BaseTestCase):
         t = Union[Employee]
         self.assertIs(t, Employee)
 
-    def test_base_class_disappears(self):
-        u = Union[Employee, Manager, int]
-        self.assertEqual(u, Union[int, Employee])
-        u = Union[Manager, int, Employee]
-        self.assertEqual(u, Union[int, Employee])
+    def test_base_class_kept(self):
         u = Union[Employee, Manager]
-        self.assertIs(u, Employee)
+        self.assertNotEqual(u, Employee)
+        self.assertIn(Employee, u.__args__)
+        self.assertIn(Manager, u.__args__)
 
     def test_union_union(self):
         u = Union[int, float]
@@ -293,6 +300,8 @@ class UnionTests(BaseTestCase):
         self.assertEqual(repr(u), repr(int))
         u = Union[List[int], int]
         self.assertEqual(repr(u), 'typing.Union[typing.List[int], int]')
+        u = Union[list[int], dict[str, float]]
+        self.assertEqual(repr(u), 'typing.Union[list[int], dict[str, float]]')
 
     def test_cannot_subclass(self):
         with self.assertRaises(TypeError):
@@ -319,7 +328,8 @@ class UnionTests(BaseTestCase):
     def test_union_generalization(self):
         self.assertFalse(Union[str, typing.Iterable[int]] == str)
         self.assertFalse(Union[str, typing.Iterable[int]] == typing.Iterable[int])
-        self.assertTrue(Union[str, typing.Iterable] == typing.Iterable)
+        self.assertIn(str, Union[str, typing.Iterable[int]].__args__)
+        self.assertIn(typing.Iterable[int], Union[str, typing.Iterable[int]].__args__)
 
     def test_union_compare_other(self):
         self.assertNotEqual(Union, object)
@@ -339,14 +349,10 @@ class UnionTests(BaseTestCase):
         with self.assertRaises(TypeError):
             Union[()]
 
-    def test_union_instance_type_error(self):
-        with self.assertRaises(TypeError):
-            isinstance(42, Union[int, str])
-
     def test_no_eval_union(self):
         u = Union[int, str]
         def f(x: u): ...
-        self.assertIs(get_type_hints(f)['x'], u)
+        self.assertIs(get_type_hints(f, globals(), locals())['x'], u)
 
     def test_function_repr_union(self):
         def fun() -> int: ...
@@ -360,10 +366,8 @@ class UnionTests(BaseTestCase):
     def test_etree(self):
         # See https://github.com/python/typing/issues/229
         # (Only relevant for Python 2.)
-        try:
-            from xml.etree.cElementTree import Element
-        except ImportError:
-            raise SkipTest("cElementTree not found")
+        from xml.etree.ElementTree import Element
+
         Union[Element, str]  # Shouldn't crash
 
         def Elem(*args):
@@ -405,6 +409,7 @@ class TupleTests(BaseTestCase):
         self.assertEqual(repr(Tuple[()]), 'typing.Tuple[()]')
         self.assertEqual(repr(Tuple[int, float]), 'typing.Tuple[int, float]')
         self.assertEqual(repr(Tuple[int, ...]), 'typing.Tuple[int, ...]')
+        self.assertEqual(repr(Tuple[list[int]]), 'typing.Tuple[list[int]]')
 
     def test_errors(self):
         with self.assertRaises(TypeError):
@@ -477,6 +482,8 @@ class CallableTests(BaseTestCase):
         self.assertEqual(repr(ct2), 'typing.Callable[[str, float], int]')
         ctv = Callable[..., str]
         self.assertEqual(repr(ctv), 'typing.Callable[..., str]')
+        ct3 = Callable[[str, float], list[int]]
+        self.assertEqual(repr(ct3), 'typing.Callable[[str, float], list[int]]')
 
     def test_callable_with_ellipsis(self):
 
@@ -489,6 +496,98 @@ class CallableTests(BaseTestCase):
     def test_ellipsis_in_generic(self):
         # Shouldn't crash; see https://github.com/python/typing/issues/259
         typing.List[Callable[..., str]]
+
+
+class LiteralTests(BaseTestCase):
+    def test_basics(self):
+        # All of these are allowed.
+        Literal[1]
+        Literal[1, 2, 3]
+        Literal["x", "y", "z"]
+        Literal[None]
+        Literal[True]
+        Literal[1, "2", False]
+        Literal[Literal[1, 2], Literal[4, 5]]
+        Literal[b"foo", u"bar"]
+
+    def test_illegal_parameters_do_not_raise_runtime_errors(self):
+        # Type checkers should reject these types, but we do not
+        # raise errors at runtime to maintain maximium flexibility.
+        Literal[int]
+        Literal[3j + 2, ..., ()]
+        Literal[{"foo": 3, "bar": 4}]
+        Literal[T]
+
+    def test_literals_inside_other_types(self):
+        List[Literal[1, 2, 3]]
+        List[Literal[("foo", "bar", "baz")]]
+
+    def test_repr(self):
+        self.assertEqual(repr(Literal[1]), "typing.Literal[1]")
+        self.assertEqual(repr(Literal[1, True, "foo"]), "typing.Literal[1, True, 'foo']")
+        self.assertEqual(repr(Literal[int]), "typing.Literal[int]")
+        self.assertEqual(repr(Literal), "typing.Literal")
+        self.assertEqual(repr(Literal[None]), "typing.Literal[None]")
+        self.assertEqual(repr(Literal[1, 2, 3, 3]), "typing.Literal[1, 2, 3]")
+
+    def test_cannot_init(self):
+        with self.assertRaises(TypeError):
+            Literal()
+        with self.assertRaises(TypeError):
+            Literal[1]()
+        with self.assertRaises(TypeError):
+            type(Literal)()
+        with self.assertRaises(TypeError):
+            type(Literal[1])()
+
+    def test_no_isinstance_or_issubclass(self):
+        with self.assertRaises(TypeError):
+            isinstance(1, Literal[1])
+        with self.assertRaises(TypeError):
+            isinstance(int, Literal[1])
+        with self.assertRaises(TypeError):
+            issubclass(1, Literal[1])
+        with self.assertRaises(TypeError):
+            issubclass(int, Literal[1])
+
+    def test_no_subclassing(self):
+        with self.assertRaises(TypeError):
+            class Foo(Literal[1]): pass
+        with self.assertRaises(TypeError):
+            class Bar(Literal): pass
+
+    def test_no_multiple_subscripts(self):
+        with self.assertRaises(TypeError):
+            Literal[1][1]
+
+    def test_equal(self):
+        self.assertNotEqual(Literal[0], Literal[False])
+        self.assertNotEqual(Literal[True], Literal[1])
+        self.assertNotEqual(Literal[1], Literal[2])
+        self.assertNotEqual(Literal[1, True], Literal[1])
+        self.assertEqual(Literal[1], Literal[1])
+        self.assertEqual(Literal[1, 2], Literal[2, 1])
+        self.assertEqual(Literal[1, 2, 3], Literal[1, 2, 3, 3])
+
+    def test_hash(self):
+        self.assertEqual(hash(Literal[1]), hash(Literal[1]))
+        self.assertEqual(hash(Literal[1, 2]), hash(Literal[2, 1]))
+        self.assertEqual(hash(Literal[1, 2, 3]), hash(Literal[1, 2, 3, 3]))
+
+    def test_args(self):
+        self.assertEqual(Literal[1, 2, 3].__args__, (1, 2, 3))
+        self.assertEqual(Literal[1, 2, 3, 3].__args__, (1, 2, 3))
+        self.assertEqual(Literal[1, Literal[2], Literal[3, 4]].__args__, (1, 2, 3, 4))
+        # Mutable arguments will not be deduplicated
+        self.assertEqual(Literal[[], []].__args__, ([], []))
+
+    def test_flatten(self):
+        l1 = Literal[Literal[1], Literal[2], Literal[3]]
+        l2 = Literal[Literal[1, 2], 3]
+        l3 = Literal[Literal[1, 2, 3]]
+        for l in l1, l2, l3:
+            self.assertEqual(l, Literal[1, 2, 3])
+            self.assertEqual(l.__args__, (1, 2, 3))
 
 
 XK = TypeVar('XK', str, bytes)
@@ -525,7 +624,727 @@ class MySimpleMapping(SimpleMapping[XK, XV]):
             return default
 
 
+class Coordinate(Protocol):
+    x: int
+    y: int
+
+@runtime_checkable
+class Point(Coordinate, Protocol):
+    label: str
+
+class MyPoint:
+    x: int
+    y: int
+    label: str
+
+class XAxis(Protocol):
+    x: int
+
+class YAxis(Protocol):
+    y: int
+
+@runtime_checkable
+class Position(XAxis, YAxis, Protocol):
+    pass
+
+@runtime_checkable
+class Proto(Protocol):
+    attr: int
+    def meth(self, arg: str) -> int:
+        ...
+
+class Concrete(Proto):
+    pass
+
+class Other:
+    attr: int = 1
+    def meth(self, arg: str) -> int:
+        if arg == 'this':
+            return 1
+        return 0
+
+class NT(NamedTuple):
+    x: int
+    y: int
+
+@runtime_checkable
+class HasCallProtocol(Protocol):
+    __call__: typing.Callable
+
+
 class ProtocolTests(BaseTestCase):
+    def test_basic_protocol(self):
+        @runtime_checkable
+        class P(Protocol):
+            def meth(self):
+                pass
+
+        class C: pass
+
+        class D:
+            def meth(self):
+                pass
+
+        def f():
+            pass
+
+        self.assertIsSubclass(D, P)
+        self.assertIsInstance(D(), P)
+        self.assertNotIsSubclass(C, P)
+        self.assertNotIsInstance(C(), P)
+        self.assertNotIsSubclass(types.FunctionType, P)
+        self.assertNotIsInstance(f, P)
+
+    def test_everything_implements_empty_protocol(self):
+        @runtime_checkable
+        class Empty(Protocol):
+            pass
+
+        class C:
+            pass
+
+        def f():
+            pass
+
+        for thing in (object, type, tuple, C, types.FunctionType):
+            self.assertIsSubclass(thing, Empty)
+        for thing in (object(), 1, (), typing, f):
+            self.assertIsInstance(thing, Empty)
+
+    def test_function_implements_protocol(self):
+        def f():
+            pass
+
+        self.assertIsInstance(f, HasCallProtocol)
+
+    def test_no_inheritance_from_nominal(self):
+        class C: pass
+
+        class BP(Protocol): pass
+
+        with self.assertRaises(TypeError):
+            class P(C, Protocol):
+                pass
+        with self.assertRaises(TypeError):
+            class P(Protocol, C):
+                pass
+        with self.assertRaises(TypeError):
+            class P(BP, C, Protocol):
+                pass
+
+        class D(BP, C): pass
+
+        class E(C, BP): pass
+
+        self.assertNotIsInstance(D(), E)
+        self.assertNotIsInstance(E(), D)
+
+    def test_no_instantiation(self):
+        class P(Protocol): pass
+
+        with self.assertRaises(TypeError):
+            P()
+
+        class C(P): pass
+
+        self.assertIsInstance(C(), C)
+        T = TypeVar('T')
+
+        class PG(Protocol[T]): pass
+
+        with self.assertRaises(TypeError):
+            PG()
+        with self.assertRaises(TypeError):
+            PG[int]()
+        with self.assertRaises(TypeError):
+            PG[T]()
+
+        class CG(PG[T]): pass
+
+        self.assertIsInstance(CG[int](), CG)
+
+    def test_cannot_instantiate_abstract(self):
+        @runtime_checkable
+        class P(Protocol):
+            @abc.abstractmethod
+            def ameth(self) -> int:
+                raise NotImplementedError
+
+        class B(P):
+            pass
+
+        class C(B):
+            def ameth(self) -> int:
+                return 26
+
+        with self.assertRaises(TypeError):
+            B()
+        self.assertIsInstance(C(), P)
+
+    def test_subprotocols_extending(self):
+        class P1(Protocol):
+            def meth1(self):
+                pass
+
+        @runtime_checkable
+        class P2(P1, Protocol):
+            def meth2(self):
+                pass
+
+        class C:
+            def meth1(self):
+                pass
+
+            def meth2(self):
+                pass
+
+        class C1:
+            def meth1(self):
+                pass
+
+        class C2:
+            def meth2(self):
+                pass
+
+        self.assertNotIsInstance(C1(), P2)
+        self.assertNotIsInstance(C2(), P2)
+        self.assertNotIsSubclass(C1, P2)
+        self.assertNotIsSubclass(C2, P2)
+        self.assertIsInstance(C(), P2)
+        self.assertIsSubclass(C, P2)
+
+    def test_subprotocols_merging(self):
+        class P1(Protocol):
+            def meth1(self):
+                pass
+
+        class P2(Protocol):
+            def meth2(self):
+                pass
+
+        @runtime_checkable
+        class P(P1, P2, Protocol):
+            pass
+
+        class C:
+            def meth1(self):
+                pass
+
+            def meth2(self):
+                pass
+
+        class C1:
+            def meth1(self):
+                pass
+
+        class C2:
+            def meth2(self):
+                pass
+
+        self.assertNotIsInstance(C1(), P)
+        self.assertNotIsInstance(C2(), P)
+        self.assertNotIsSubclass(C1, P)
+        self.assertNotIsSubclass(C2, P)
+        self.assertIsInstance(C(), P)
+        self.assertIsSubclass(C, P)
+
+    def test_protocols_issubclass(self):
+        T = TypeVar('T')
+
+        @runtime_checkable
+        class P(Protocol):
+            def x(self): ...
+
+        @runtime_checkable
+        class PG(Protocol[T]):
+            def x(self): ...
+
+        class BadP(Protocol):
+            def x(self): ...
+
+        class BadPG(Protocol[T]):
+            def x(self): ...
+
+        class C:
+            def x(self): ...
+
+        self.assertIsSubclass(C, P)
+        self.assertIsSubclass(C, PG)
+        self.assertIsSubclass(BadP, PG)
+
+        with self.assertRaises(TypeError):
+            issubclass(C, PG[T])
+        with self.assertRaises(TypeError):
+            issubclass(C, PG[C])
+        with self.assertRaises(TypeError):
+            issubclass(C, BadP)
+        with self.assertRaises(TypeError):
+            issubclass(C, BadPG)
+        with self.assertRaises(TypeError):
+            issubclass(P, PG[T])
+        with self.assertRaises(TypeError):
+            issubclass(PG, PG[int])
+
+    def test_protocols_issubclass_non_callable(self):
+        class C:
+            x = 1
+
+        @runtime_checkable
+        class PNonCall(Protocol):
+            x = 1
+
+        with self.assertRaises(TypeError):
+            issubclass(C, PNonCall)
+        self.assertIsInstance(C(), PNonCall)
+        PNonCall.register(C)
+        with self.assertRaises(TypeError):
+            issubclass(C, PNonCall)
+        self.assertIsInstance(C(), PNonCall)
+
+        # check that non-protocol subclasses are not affected
+        class D(PNonCall): ...
+
+        self.assertNotIsSubclass(C, D)
+        self.assertNotIsInstance(C(), D)
+        D.register(C)
+        self.assertIsSubclass(C, D)
+        self.assertIsInstance(C(), D)
+        with self.assertRaises(TypeError):
+            issubclass(D, PNonCall)
+
+    def test_protocols_isinstance(self):
+        T = TypeVar('T')
+
+        @runtime_checkable
+        class P(Protocol):
+            def meth(x): ...
+
+        @runtime_checkable
+        class PG(Protocol[T]):
+            def meth(x): ...
+
+        class BadP(Protocol):
+            def meth(x): ...
+
+        class BadPG(Protocol[T]):
+            def meth(x): ...
+
+        class C:
+            def meth(x): ...
+
+        self.assertIsInstance(C(), P)
+        self.assertIsInstance(C(), PG)
+        with self.assertRaises(TypeError):
+            isinstance(C(), PG[T])
+        with self.assertRaises(TypeError):
+            isinstance(C(), PG[C])
+        with self.assertRaises(TypeError):
+            isinstance(C(), BadP)
+        with self.assertRaises(TypeError):
+            isinstance(C(), BadPG)
+
+    def test_protocols_isinstance_py36(self):
+        class APoint:
+            def __init__(self, x, y, label):
+                self.x = x
+                self.y = y
+                self.label = label
+
+        class BPoint:
+            label = 'B'
+
+            def __init__(self, x, y):
+                self.x = x
+                self.y = y
+
+        class C:
+            def __init__(self, attr):
+                self.attr = attr
+
+            def meth(self, arg):
+                return 0
+
+        class Bad: pass
+
+        self.assertIsInstance(APoint(1, 2, 'A'), Point)
+        self.assertIsInstance(BPoint(1, 2), Point)
+        self.assertNotIsInstance(MyPoint(), Point)
+        self.assertIsInstance(BPoint(1, 2), Position)
+        self.assertIsInstance(Other(), Proto)
+        self.assertIsInstance(Concrete(), Proto)
+        self.assertIsInstance(C(42), Proto)
+        self.assertNotIsInstance(Bad(), Proto)
+        self.assertNotIsInstance(Bad(), Point)
+        self.assertNotIsInstance(Bad(), Position)
+        self.assertNotIsInstance(Bad(), Concrete)
+        self.assertNotIsInstance(Other(), Concrete)
+        self.assertIsInstance(NT(1, 2), Position)
+
+    def test_protocols_isinstance_init(self):
+        T = TypeVar('T')
+
+        @runtime_checkable
+        class P(Protocol):
+            x = 1
+
+        @runtime_checkable
+        class PG(Protocol[T]):
+            x = 1
+
+        class C:
+            def __init__(self, x):
+                self.x = x
+
+        self.assertIsInstance(C(1), P)
+        self.assertIsInstance(C(1), PG)
+
+    def test_protocol_checks_after_subscript(self):
+        class P(Protocol[T]): pass
+        class C(P[T]): pass
+        class Other1: pass
+        class Other2: pass
+        CA = C[Any]
+
+        self.assertNotIsInstance(Other1(), C)
+        self.assertNotIsSubclass(Other2, C)
+
+        class D1(C[Any]): pass
+        class D2(C[Any]): pass
+        CI = C[int]
+
+        self.assertIsInstance(D1(), C)
+        self.assertIsSubclass(D2, C)
+
+    def test_protocols_support_register(self):
+        @runtime_checkable
+        class P(Protocol):
+            x = 1
+
+        class PM(Protocol):
+            def meth(self): pass
+
+        class D(PM): pass
+
+        class C: pass
+
+        D.register(C)
+        P.register(C)
+        self.assertIsInstance(C(), P)
+        self.assertIsInstance(C(), D)
+
+    def test_none_on_non_callable_doesnt_block_implementation(self):
+        @runtime_checkable
+        class P(Protocol):
+            x = 1
+
+        class A:
+            x = 1
+
+        class B(A):
+            x = None
+
+        class C:
+            def __init__(self):
+                self.x = None
+
+        self.assertIsInstance(B(), P)
+        self.assertIsInstance(C(), P)
+
+    def test_none_on_callable_blocks_implementation(self):
+        @runtime_checkable
+        class P(Protocol):
+            def x(self): ...
+
+        class A:
+            def x(self): ...
+
+        class B(A):
+            x = None
+
+        class C:
+            def __init__(self):
+                self.x = None
+
+        self.assertNotIsInstance(B(), P)
+        self.assertNotIsInstance(C(), P)
+
+    def test_non_protocol_subclasses(self):
+        class P(Protocol):
+            x = 1
+
+        @runtime_checkable
+        class PR(Protocol):
+            def meth(self): pass
+
+        class NonP(P):
+            x = 1
+
+        class NonPR(PR): pass
+
+        class C:
+            x = 1
+
+        class D:
+            def meth(self): pass
+
+        self.assertNotIsInstance(C(), NonP)
+        self.assertNotIsInstance(D(), NonPR)
+        self.assertNotIsSubclass(C, NonP)
+        self.assertNotIsSubclass(D, NonPR)
+        self.assertIsInstance(NonPR(), PR)
+        self.assertIsSubclass(NonPR, PR)
+
+    def test_custom_subclasshook(self):
+        class P(Protocol):
+            x = 1
+
+        class OKClass: pass
+
+        class BadClass:
+            x = 1
+
+        class C(P):
+            @classmethod
+            def __subclasshook__(cls, other):
+                return other.__name__.startswith("OK")
+
+        self.assertIsInstance(OKClass(), C)
+        self.assertNotIsInstance(BadClass(), C)
+        self.assertIsSubclass(OKClass, C)
+        self.assertNotIsSubclass(BadClass, C)
+
+    def test_issubclass_fails_correctly(self):
+        @runtime_checkable
+        class P(Protocol):
+            x = 1
+
+        class C: pass
+
+        with self.assertRaises(TypeError):
+            issubclass(C(), P)
+
+    def test_defining_generic_protocols(self):
+        T = TypeVar('T')
+        S = TypeVar('S')
+
+        @runtime_checkable
+        class PR(Protocol[T, S]):
+            def meth(self): pass
+
+        class P(PR[int, T], Protocol[T]):
+            y = 1
+
+        with self.assertRaises(TypeError):
+            PR[int]
+        with self.assertRaises(TypeError):
+            P[int, str]
+        with self.assertRaises(TypeError):
+            PR[int, 1]
+        with self.assertRaises(TypeError):
+            PR[int, ClassVar]
+
+        class C(PR[int, T]): pass
+
+        self.assertIsInstance(C[str](), C)
+
+    def test_defining_generic_protocols_old_style(self):
+        T = TypeVar('T')
+        S = TypeVar('S')
+
+        @runtime_checkable
+        class PR(Protocol, Generic[T, S]):
+            def meth(self): pass
+
+        class P(PR[int, str], Protocol):
+            y = 1
+
+        with self.assertRaises(TypeError):
+            issubclass(PR[int, str], PR)
+        self.assertIsSubclass(P, PR)
+        with self.assertRaises(TypeError):
+            PR[int]
+        with self.assertRaises(TypeError):
+            PR[int, 1]
+
+        class P1(Protocol, Generic[T]):
+            def bar(self, x: T) -> str: ...
+
+        class P2(Generic[T], Protocol):
+            def bar(self, x: T) -> str: ...
+
+        @runtime_checkable
+        class PSub(P1[str], Protocol):
+            x = 1
+
+        class Test:
+            x = 1
+
+            def bar(self, x: str) -> str:
+                return x
+
+        self.assertIsInstance(Test(), PSub)
+        with self.assertRaises(TypeError):
+            PR[int, ClassVar]
+
+    def test_init_called(self):
+        T = TypeVar('T')
+
+        class P(Protocol[T]): pass
+
+        class C(P[T]):
+            def __init__(self):
+                self.test = 'OK'
+
+        self.assertEqual(C[int]().test, 'OK')
+
+    def test_protocols_bad_subscripts(self):
+        T = TypeVar('T')
+        S = TypeVar('S')
+        with self.assertRaises(TypeError):
+            class P(Protocol[T, T]): pass
+        with self.assertRaises(TypeError):
+            class P(Protocol[int]): pass
+        with self.assertRaises(TypeError):
+            class P(Protocol[T], Protocol[S]): pass
+        with self.assertRaises(TypeError):
+            class P(typing.Mapping[T, S], Protocol[T]): pass
+
+    def test_generic_protocols_repr(self):
+        T = TypeVar('T')
+        S = TypeVar('S')
+
+        class P(Protocol[T, S]): pass
+
+        self.assertTrue(repr(P[T, S]).endswith('P[~T, ~S]'))
+        self.assertTrue(repr(P[int, str]).endswith('P[int, str]'))
+
+    def test_generic_protocols_eq(self):
+        T = TypeVar('T')
+        S = TypeVar('S')
+
+        class P(Protocol[T, S]): pass
+
+        self.assertEqual(P, P)
+        self.assertEqual(P[int, T], P[int, T])
+        self.assertEqual(P[T, T][Tuple[T, S]][int, str],
+                         P[Tuple[int, str], Tuple[int, str]])
+
+    def test_generic_protocols_special_from_generic(self):
+        T = TypeVar('T')
+
+        class P(Protocol[T]): pass
+
+        self.assertEqual(P.__parameters__, (T,))
+        self.assertEqual(P[int].__parameters__, ())
+        self.assertEqual(P[int].__args__, (int,))
+        self.assertIs(P[int].__origin__, P)
+
+    def test_generic_protocols_special_from_protocol(self):
+        @runtime_checkable
+        class PR(Protocol):
+            x = 1
+
+        class P(Protocol):
+            def meth(self):
+                pass
+
+        T = TypeVar('T')
+
+        class PG(Protocol[T]):
+            x = 1
+
+            def meth(self):
+                pass
+
+        self.assertTrue(P._is_protocol)
+        self.assertTrue(PR._is_protocol)
+        self.assertTrue(PG._is_protocol)
+        self.assertFalse(P._is_runtime_protocol)
+        self.assertTrue(PR._is_runtime_protocol)
+        self.assertTrue(PG[int]._is_protocol)
+        self.assertEqual(typing._get_protocol_attrs(P), {'meth'})
+        self.assertEqual(typing._get_protocol_attrs(PR), {'x'})
+        self.assertEqual(frozenset(typing._get_protocol_attrs(PG)),
+                         frozenset({'x', 'meth'}))
+
+    def test_no_runtime_deco_on_nominal(self):
+        with self.assertRaises(TypeError):
+            @runtime_checkable
+            class C: pass
+
+        class Proto(Protocol):
+            x = 1
+
+        with self.assertRaises(TypeError):
+            @runtime_checkable
+            class Concrete(Proto):
+                pass
+
+    def test_none_treated_correctly(self):
+        @runtime_checkable
+        class P(Protocol):
+            x = None  # type: int
+
+        class B(object): pass
+
+        self.assertNotIsInstance(B(), P)
+
+        class C:
+            x = 1
+
+        class D:
+            x = None
+
+        self.assertIsInstance(C(), P)
+        self.assertIsInstance(D(), P)
+
+        class CI:
+            def __init__(self):
+                self.x = 1
+
+        class DI:
+            def __init__(self):
+                self.x = None
+
+        self.assertIsInstance(C(), P)
+        self.assertIsInstance(D(), P)
+
+    def test_protocols_in_unions(self):
+        class P(Protocol):
+            x = None  # type: int
+
+        Alias = typing.Union[typing.Iterable, P]
+        Alias2 = typing.Union[P, typing.Iterable]
+        self.assertEqual(Alias, Alias2)
+
+    def test_protocols_pickleable(self):
+        global P, CP  # pickle wants to reference the class by name
+        T = TypeVar('T')
+
+        @runtime_checkable
+        class P(Protocol[T]):
+            x = 1
+
+        class CP(P[int]):
+            pass
+
+        c = CP()
+        c.foo = 42
+        c.bar = 'abc'
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            z = pickle.dumps(c, proto)
+            x = pickle.loads(z)
+            self.assertEqual(x.foo, 42)
+            self.assertEqual(x.bar, 'abc')
+            self.assertEqual(x.x, 1)
+            self.assertEqual(x.__dict__, {'foo': 42, 'bar': 'abc'})
+            s = pickle.dumps(P)
+            D = pickle.loads(s)
+
+            class E:
+                x = 1
+
+            self.assertIsInstance(E(), D)
 
     def test_supports_int(self):
         self.assertIsSubclass(int, typing.SupportsInt)
@@ -570,9 +1389,12 @@ class ProtocolTests(BaseTestCase):
         self.assertIsSubclass(list, typing.Reversible)
         self.assertNotIsSubclass(int, typing.Reversible)
 
-    def test_protocol_instance_type_error(self):
-        with self.assertRaises(TypeError):
-            isinstance(0, typing.SupportsAbs)
+    def test_supports_index(self):
+        self.assertIsSubclass(int, typing.SupportsIndex)
+        self.assertNotIsSubclass(str, typing.SupportsIndex)
+
+    def test_bundled_protocol_instance_works(self):
+        self.assertIsInstance(0, typing.SupportsAbs)
         class C1(typing.SupportsInt):
             def __int__(self) -> int:
                 return 42
@@ -581,6 +1403,28 @@ class ProtocolTests(BaseTestCase):
         c = C2()
         self.assertIsInstance(c, C1)
 
+    def test_collections_protocols_allowed(self):
+        @runtime_checkable
+        class Custom(collections.abc.Iterable, Protocol):
+            def close(self): ...
+
+        class A: pass
+        class B:
+            def __iter__(self):
+                return []
+            def close(self):
+                return 0
+
+        self.assertIsSubclass(B, Custom)
+        self.assertNotIsSubclass(A, Custom)
+
+    def test_builtin_protocol_allowlist(self):
+        with self.assertRaises(TypeError):
+            class CustomProtocol(TestCase, Protocol):
+                pass
+
+        class CustomContextManager(typing.ContextManager, Protocol):
+            pass
 
 class GenericTests(BaseTestCase):
 
@@ -596,17 +1440,20 @@ class GenericTests(BaseTestCase):
         Y[str]
         with self.assertRaises(TypeError):
             Y[str, str]
-        self.assertIsSubclass(SimpleMapping[str, int], SimpleMapping)
+        SM1 = SimpleMapping[str, int]
+        with self.assertRaises(TypeError):
+            issubclass(SM1, SimpleMapping)
+        self.assertIsInstance(SM1(), SimpleMapping)
 
     def test_generic_errors(self):
         T = TypeVar('T')
         S = TypeVar('S')
         with self.assertRaises(TypeError):
-            Generic[T]()
-        with self.assertRaises(TypeError):
             Generic[T][T]
         with self.assertRaises(TypeError):
             Generic[T][S]
+        with self.assertRaises(TypeError):
+            class C(Generic[T], Generic[T]): ...
         with self.assertRaises(TypeError):
             isinstance([], List[int])
         with self.assertRaises(TypeError):
@@ -626,11 +1473,31 @@ class GenericTests(BaseTestCase):
         with self.assertRaises(TypeError):
             Generic[T, S, T]
 
+    def test_init_subclass(self):
+        class X(typing.Generic[T]):
+            def __init_subclass__(cls, **kwargs):
+                super().__init_subclass__(**kwargs)
+                cls.attr = 42
+        class Y(X):
+            pass
+        self.assertEqual(Y.attr, 42)
+        with self.assertRaises(AttributeError):
+            X.attr
+        X.attr = 1
+        Y.attr = 2
+        class Z(Y):
+            pass
+        class W(X[int]):
+            pass
+        self.assertEqual(Y.attr, 2)
+        self.assertEqual(Z.attr, 42)
+        self.assertEqual(W.attr, 42)
+
     def test_repr(self):
         self.assertEqual(repr(SimpleMapping),
-                         __name__ + '.' + 'SimpleMapping')
+                         f"<class '{__name__}.SimpleMapping'>")
         self.assertEqual(repr(MySimpleMapping),
-                         __name__ + '.' + 'MySimpleMapping')
+                         f"<class '{__name__}.MySimpleMapping'>")
 
     def test_chain_repr(self):
         T = TypeVar('T')
@@ -682,7 +1549,7 @@ class GenericTests(BaseTestCase):
     def test_new_repr_bare(self):
         T = TypeVar('T')
         self.assertEqual(repr(Generic[T]), 'typing.Generic[~T]')
-        self.assertEqual(repr(typing._Protocol[T]), 'typing.Protocol[~T]')
+        self.assertEqual(repr(typing.Protocol[T]), 'typing.Protocol[~T]')
         class C(typing.Dict[Any, Any]): ...
         # this line should just work
         repr(C.__mro__)
@@ -733,11 +1600,13 @@ class GenericTests(BaseTestCase):
 
     def test_abc_registry_kept(self):
         T = TypeVar('T')
-        class C(Generic[T]): ...
+        class C(collections.abc.Mapping, Generic[T]): ...
         C.register(int)
         self.assertIsInstance(1, C)
         C[int]
         self.assertIsInstance(1, C)
+        C._abc_registry_clear()
+        C._abc_caches_clear()  # To keep refleak hunting mode clean
 
     def test_false_subclasses(self):
         class MyMapping(MutableMapping[str, str]): pass
@@ -758,18 +1627,17 @@ class GenericTests(BaseTestCase):
                 return 0
         # this should just work
         MM().update()
-        self.assertIsInstance(MM(), collections_abc.MutableMapping)
+        self.assertIsInstance(MM(), collections.abc.MutableMapping)
         self.assertIsInstance(MM(), MutableMapping)
         self.assertNotIsInstance(MM(), List)
         self.assertNotIsInstance({}, MM)
 
     def test_multiple_bases(self):
-        class MM1(MutableMapping[str, str], collections_abc.MutableMapping):
+        class MM1(MutableMapping[str, str], collections.abc.MutableMapping):
             pass
-        with self.assertRaises(TypeError):
-            # consistent MRO not possible
-            class MM2(collections_abc.MutableMapping, MutableMapping[str, str]):
-                pass
+        class MM2(collections.abc.MutableMapping, MutableMapping[str, str]):
+            pass
+        self.assertEqual(MM2.__bases__, (collections.abc.MutableMapping, Generic))
 
     def test_orig_bases(self):
         T = TypeVar('T')
@@ -824,22 +1692,19 @@ class GenericTests(BaseTestCase):
         self.assertEqual(D[int].__parameters__, ())
         self.assertEqual(C[int].__args__, (int,))
         self.assertEqual(D[int].__args__, (int,))
-        self.assertEqual(C.__bases__, (List,))
-        self.assertEqual(D.__bases__, (C, List))
+        self.assertEqual(C.__bases__, (list, Generic))
+        self.assertEqual(D.__bases__, (C, list, Generic))
         self.assertEqual(C.__orig_bases__, (List[T][U][V],))
         self.assertEqual(D.__orig_bases__, (C, List[T][U][V]))
 
     def test_subscript_meta(self):
         T = TypeVar('T')
-        self.assertEqual(Type[GenericMeta], Type[GenericMeta])
-        self.assertEqual(Union[T, int][GenericMeta], Union[GenericMeta, int])
-        self.assertEqual(Callable[..., GenericMeta].__args__, (Ellipsis, GenericMeta))
+        class Meta(type): ...
+        self.assertEqual(Type[Meta], Type[Meta])
+        self.assertEqual(Union[T, int][Meta], Union[Meta, int])
+        self.assertEqual(Callable[..., Meta].__args__, (Ellipsis, Meta))
 
     def test_generic_hashes(self):
-        try:
-            from test import mod_generics_cache
-        except ImportError:  # for Python 3.4 and previous versions
-            import mod_generics_cache
         class A(Generic[T]):
             ...
 
@@ -896,7 +1761,7 @@ class GenericTests(BaseTestCase):
         self.assertEqual(Union[T, U][int, Union[int, str]], Union[int, str])
         class Base: ...
         class Derived(Base): ...
-        self.assertEqual(Union[T, Base][Derived], Base)
+        self.assertEqual(Union[T, Base][Union[Base, Derived]], Union[Base, Derived])
         with self.assertRaises(TypeError):
             Union[T, int][1]
 
@@ -912,19 +1777,25 @@ class GenericTests(BaseTestCase):
         self.assertEqual(repr(Union[Tuple, Callable]).replace('typing.', ''),
                          'Union[Tuple, Callable]')
         self.assertEqual(repr(Union[Tuple, Tuple[int]]).replace('typing.', ''),
-                         'Tuple')
+                         'Union[Tuple, Tuple[int]]')
         self.assertEqual(repr(Callable[..., Optional[T]][int]).replace('typing.', ''),
-                         'Callable[..., Union[int, NoneType]]')
+                         'Callable[..., Optional[int]]')
         self.assertEqual(repr(Callable[[], List[T]][int]).replace('typing.', ''),
                          'Callable[[], List[int]]')
 
     def test_generic_forward_ref(self):
         def foobar(x: List[List['CC']]): ...
+        def foobar2(x: list[list[ForwardRef('CC')]]): ...
         class CC: ...
         self.assertEqual(
             get_type_hints(foobar, globals(), locals()),
             {'x': List[List[CC]]}
         )
+        self.assertEqual(
+            get_type_hints(foobar2, globals(), locals()),
+            {'x': list[list[CC]]}
+        )
+
         T = TypeVar('T')
         AT = Tuple[T, ...]
         def barfoo(x: AT): ...
@@ -946,20 +1817,23 @@ class GenericTests(BaseTestCase):
         self.assertEqual(T1[int, T].__origin__, T1)
 
         self.assertEqual(T2.__parameters__, (T,))
-        with self.assertRaises(TypeError):
-            T1[int]
-        with self.assertRaises(TypeError):
-            T2[int, str]
+        # These don't work because of tuple.__class_item__
+        ## with self.assertRaises(TypeError):
+        ##     T1[int]
+        ## with self.assertRaises(TypeError):
+        ##     T2[int, str]
 
         self.assertEqual(repr(C1[int]).split('.')[-1], 'C1[int]')
         self.assertEqual(C2.__parameters__, ())
-        self.assertIsInstance(C2(), collections_abc.Callable)
-        self.assertIsSubclass(C2, collections_abc.Callable)
-        self.assertIsSubclass(C1, collections_abc.Callable)
+        self.assertIsInstance(C2(), collections.abc.Callable)
+        self.assertIsSubclass(C2, collections.abc.Callable)
+        self.assertIsSubclass(C1, collections.abc.Callable)
         self.assertIsInstance(T1(), tuple)
         self.assertIsSubclass(T2, tuple)
-        self.assertIsSubclass(Tuple[int, ...], typing.Sequence)
-        self.assertIsSubclass(Tuple[int, ...], typing.Iterable)
+        with self.assertRaises(TypeError):
+            issubclass(Tuple[int, ...], typing.Sequence)
+        with self.assertRaises(TypeError):
+            issubclass(Tuple[int, ...], typing.Iterable)
 
     def test_fail_with_bare_union(self):
         with self.assertRaises(TypeError):
@@ -978,9 +1852,7 @@ class GenericTests(BaseTestCase):
         with self.assertRaises(TypeError):
             Tuple[Generic[T]]
         with self.assertRaises(TypeError):
-            List[typing._Protocol]
-        with self.assertRaises(TypeError):
-            isinstance(1, Generic)
+            List[typing.Protocol]
 
     def test_type_erasure_special(self):
         T = TypeVar('T')
@@ -988,22 +1860,22 @@ class GenericTests(BaseTestCase):
         self.clear_caches()
         class MyTup(Tuple[T, T]): ...
         self.assertIs(MyTup[int]().__class__, MyTup)
-        self.assertIs(MyTup[int]().__orig_class__, MyTup[int])
+        self.assertEqual(MyTup[int]().__orig_class__, MyTup[int])
         class MyCall(Callable[..., T]):
             def __call__(self): return None
         self.assertIs(MyCall[T]().__class__, MyCall)
-        self.assertIs(MyCall[T]().__orig_class__, MyCall[T])
+        self.assertEqual(MyCall[T]().__orig_class__, MyCall[T])
         class MyDict(typing.Dict[T, T]): ...
         self.assertIs(MyDict[int]().__class__, MyDict)
-        self.assertIs(MyDict[int]().__orig_class__, MyDict[int])
+        self.assertEqual(MyDict[int]().__orig_class__, MyDict[int])
         class MyDef(typing.DefaultDict[str, T]): ...
         self.assertIs(MyDef[int]().__class__, MyDef)
-        self.assertIs(MyDef[int]().__orig_class__, MyDef[int])
+        self.assertEqual(MyDef[int]().__orig_class__, MyDef[int])
         # ChainMap was added in 3.3
         if sys.version_info >= (3, 3):
             class MyChain(typing.ChainMap[str, T]): ...
             self.assertIs(MyChain[int]().__class__, MyChain)
-            self.assertIs(MyChain[int]().__orig_class__, MyChain[int])
+            self.assertEqual(MyChain[int]().__orig_class__, MyChain[int])
 
     def test_all_repr_eq_any(self):
         objs = (getattr(typing, el) for el in typing.__all__)
@@ -1016,21 +1888,6 @@ class GenericTests(BaseTestCase):
                 for base in obj.__mro__:
                     self.assertNotEqual(repr(base), '')
                     self.assertEqual(base, base)
-
-    def test_substitution_helper(self):
-        T = TypeVar('T')
-        KT = TypeVar('KT')
-        VT = TypeVar('VT')
-        class Map(Generic[KT, VT]):
-            def meth(self, k: KT, v: VT): ...
-        StrMap = Map[str, T]
-        obj = StrMap[int]()
-
-        new_args = typing._subs_tree(obj.__orig_class__)
-        new_annots = {k: typing._replace_arg(v, type(obj).__parameters__, new_args)
-                      for k, v in obj.meth.__annotations__.items()}
-
-        self.assertEqual(new_annots, {'k': str, 'v': int})
 
     def test_pickle(self):
         global C  # pickle wants to reference the class by name
@@ -1051,8 +1908,17 @@ class GenericTests(BaseTestCase):
             self.assertEqual(x.foo, 42)
             self.assertEqual(x.bar, 'abc')
             self.assertEqual(x.__dict__, {'foo': 42, 'bar': 'abc'})
-        simples = [Any, Union, Tuple, Callable, ClassVar, List, typing.Iterable]
-        for s in simples:
+        samples = [Any, Union, Tuple, Callable, ClassVar,
+                   Union[int, str], ClassVar[List], Tuple[int, ...], Callable[[str], bytes],
+                   typing.DefaultDict, typing.FrozenSet[int]]
+        for s in samples:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                z = pickle.dumps(s, proto)
+                x = pickle.loads(z)
+                self.assertEqual(s, x)
+        more_samples = [List, typing.Iterable, typing.Type, List[int],
+                        typing.Type[typing.Mapping], typing.AbstractSet[Tuple[int, str]]]
+        for s in more_samples:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                 z = pickle.dumps(s, proto)
                 x = pickle.loads(z)
@@ -1070,6 +1936,50 @@ class GenericTests(BaseTestCase):
             self.assertEqual(t, copy(t))
             self.assertEqual(t, deepcopy(t))
 
+    def test_immutability_by_copy_and_pickle(self):
+        # Special forms like Union, Any, etc., generic aliases to containers like List,
+        # Mapping, etc., and type variabcles are considered immutable by copy and pickle.
+        global TP, TPB, TPV  # for pickle
+        TP = TypeVar('TP')
+        TPB = TypeVar('TPB', bound=int)
+        TPV = TypeVar('TPV', bytes, str)
+        for X in [TP, TPB, TPV, List, typing.Mapping, ClassVar, typing.Iterable,
+                  Union, Any, Tuple, Callable]:
+            self.assertIs(copy(X), X)
+            self.assertIs(deepcopy(X), X)
+            self.assertIs(pickle.loads(pickle.dumps(X)), X)
+        # Check that local type variables are copyable.
+        TL = TypeVar('TL')
+        TLB = TypeVar('TLB', bound=int)
+        TLV = TypeVar('TLV', bytes, str)
+        for X in [TL, TLB, TLV]:
+            self.assertIs(copy(X), X)
+            self.assertIs(deepcopy(X), X)
+
+    def test_copy_generic_instances(self):
+        T = TypeVar('T')
+        class C(Generic[T]):
+            def __init__(self, attr: T) -> None:
+                self.attr = attr
+
+        c = C(42)
+        self.assertEqual(copy(c).attr, 42)
+        self.assertEqual(deepcopy(c).attr, 42)
+        self.assertIsNot(copy(c), c)
+        self.assertIsNot(deepcopy(c), c)
+        c.attr = 1
+        self.assertEqual(copy(c).attr, 1)
+        self.assertEqual(deepcopy(c).attr, 1)
+        ci = C[int](42)
+        self.assertEqual(copy(ci).attr, 42)
+        self.assertEqual(deepcopy(ci).attr, 42)
+        self.assertIsNot(copy(ci), ci)
+        self.assertIsNot(deepcopy(ci), ci)
+        ci.attr = 1
+        self.assertEqual(copy(ci).attr, 1)
+        self.assertEqual(deepcopy(ci).attr, 1)
+        self.assertEqual(ci.__orig_class__, C[int])
+
     def test_weakref_all(self):
         T = TypeVar('T')
         things = [Any, Union[T, int], Callable[..., T], Tuple[Any, Any],
@@ -1085,7 +1995,6 @@ class GenericTests(BaseTestCase):
 
         c = C()
         c_int = C[int]()
-        self.assertEqual(C.__slots__, C[str].__slots__)
 
         c.potato = 0
         c_int.potato = 0
@@ -1096,8 +2005,6 @@ class GenericTests(BaseTestCase):
 
         def foo(x: C['C']): ...
         self.assertEqual(get_type_hints(foo, globals(), locals())['x'], C[C])
-        self.assertEqual(get_type_hints(foo, globals(), locals())['x'].__slots__,
-                         C.__slots__)
         self.assertEqual(copy(C[int]), deepcopy(C[int]))
 
     def test_parameterized_slots_dict(self):
@@ -1107,7 +2014,6 @@ class GenericTests(BaseTestCase):
 
         d = D()
         d_int = D[int]()
-        self.assertEqual(D.__slots__, D[str].__slots__)
 
         d.banana = 'yes'
         d_int.banana = 'yes'
@@ -1124,30 +2030,22 @@ class GenericTests(BaseTestCase):
                 pass
 
     def test_repr_2(self):
-        PY32 = sys.version_info[:2] < (3, 3)
-
         class C(Generic[T]):
             pass
 
         self.assertEqual(C.__module__, __name__)
-        if not PY32:
-            self.assertEqual(C.__qualname__,
-                             'GenericTests.test_repr_2.<locals>.C')
-        self.assertEqual(repr(C).split('.')[-1], 'C')
+        self.assertEqual(C.__qualname__,
+                         'GenericTests.test_repr_2.<locals>.C')
         X = C[int]
         self.assertEqual(X.__module__, __name__)
-        if not PY32:
-            self.assertTrue(X.__qualname__.endswith('.<locals>.C'))
         self.assertEqual(repr(X).split('.')[-1], 'C[int]')
 
         class Y(C[int]):
             pass
 
         self.assertEqual(Y.__module__, __name__)
-        if not PY32:
-            self.assertEqual(Y.__qualname__,
-                             'GenericTests.test_repr_2.<locals>.Y')
-        self.assertEqual(repr(Y).split('.')[-1], 'Y')
+        self.assertEqual(Y.__qualname__,
+                         'GenericTests.test_repr_2.<locals>.Y')
 
     def test_eq_1(self):
         self.assertEqual(Generic, Generic)
@@ -1179,6 +2077,31 @@ class GenericTests(BaseTestCase):
             pass
 
         self.assertEqual(C.__parameters__, (VT, T, KT))
+
+    def test_multiple_inheritance_special(self):
+        S = TypeVar('S')
+        class B(Generic[S]): ...
+        class C(List[int], B): ...
+        self.assertEqual(C.__mro__, (C, list, B, Generic, object))
+
+    def test_init_subclass_super_called(self):
+        class FinalException(Exception):
+            pass
+
+        class Final:
+            def __init_subclass__(cls, **kwargs) -> None:
+                for base in cls.__bases__:
+                    if base is not Final and issubclass(base, Final):
+                        raise FinalException(base)
+                super().__init_subclass__(**kwargs)
+        class Test(Generic[T], Final):
+            pass
+        with self.assertRaises(FinalException):
+            class Subclass(Test):
+                pass
+        with self.assertRaises(FinalException):
+            class Subclass(Test[int]):
+                pass
 
     def test_nested(self):
 
@@ -1252,6 +2175,75 @@ class GenericTests(BaseTestCase):
         with self.assertRaises(Exception):
             D[T]
 
+    def test_new_with_args(self):
+
+        class A(Generic[T]):
+            pass
+
+        class B:
+            def __new__(cls, arg):
+                # call object
+                obj = super().__new__(cls)
+                obj.arg = arg
+                return obj
+
+        # mro: C, A, Generic, B, object
+        class C(A, B):
+            pass
+
+        c = C('foo')
+        self.assertEqual(c.arg, 'foo')
+
+    def test_new_with_args2(self):
+
+        class A:
+            def __init__(self, arg):
+                self.from_a = arg
+                # call object
+                super().__init__()
+
+        # mro: C, Generic, A, object
+        class C(Generic[T], A):
+            def __init__(self, arg):
+                self.from_c = arg
+                # call Generic
+                super().__init__(arg)
+
+        c = C('foo')
+        self.assertEqual(c.from_a, 'foo')
+        self.assertEqual(c.from_c, 'foo')
+
+    def test_new_no_args(self):
+
+        class A(Generic[T]):
+            pass
+
+        with self.assertRaises(TypeError):
+            A('foo')
+
+        class B:
+            def __new__(cls):
+                # call object
+                obj = super().__new__(cls)
+                obj.from_b = 'b'
+                return obj
+
+        # mro: C, A, Generic, B, object
+        class C(A, B):
+            def __init__(self, arg):
+                self.arg = arg
+
+            def __new__(cls, arg):
+                # call A
+                obj = super().__new__(cls)
+                obj.from_c = 'c'
+                return obj
+
+        c = C('foo')
+        self.assertEqual(c.arg, 'foo')
+        self.assertEqual(c.from_b, 'b')
+        self.assertEqual(c.from_c, 'c')
+
 
 class ClassVarTests(BaseTestCase):
 
@@ -1291,6 +2283,55 @@ class ClassVarTests(BaseTestCase):
             isinstance(1, ClassVar[int])
         with self.assertRaises(TypeError):
             issubclass(int, ClassVar)
+
+
+class FinalTests(BaseTestCase):
+
+    def test_basics(self):
+        Final[int]  # OK
+        with self.assertRaises(TypeError):
+            Final[1]
+        with self.assertRaises(TypeError):
+            Final[int, str]
+        with self.assertRaises(TypeError):
+            Final[int][str]
+        with self.assertRaises(TypeError):
+            Optional[Final[int]]
+
+    def test_repr(self):
+        self.assertEqual(repr(Final), 'typing.Final')
+        cv = Final[int]
+        self.assertEqual(repr(cv), 'typing.Final[int]')
+        cv = Final[Employee]
+        self.assertEqual(repr(cv), 'typing.Final[%s.Employee]' % __name__)
+        cv = Final[tuple[int]]
+        self.assertEqual(repr(cv), 'typing.Final[tuple[int]]')
+
+    def test_cannot_subclass(self):
+        with self.assertRaises(TypeError):
+            class C(type(Final)):
+                pass
+        with self.assertRaises(TypeError):
+            class C(type(Final[int])):
+                pass
+
+    def test_cannot_init(self):
+        with self.assertRaises(TypeError):
+            Final()
+        with self.assertRaises(TypeError):
+            type(Final)()
+        with self.assertRaises(TypeError):
+            type(Final[Optional[int]])()
+
+    def test_no_isinstance(self):
+        with self.assertRaises(TypeError):
+            isinstance(1, Final[int])
+        with self.assertRaises(TypeError):
+            issubclass(int, Final)
+
+    def test_final_unmodified(self):
+        def func(x): ...
+        self.assertIs(func, final(func))
 
 
 class CastTests(BaseTestCase):
@@ -1350,22 +2391,81 @@ class ForwardRefTests(BaseTestCase):
         self.assertEqual(right_hints['node'], Optional[Node[T]])
 
     def test_forwardref_instance_type_error(self):
-        fr = typing._ForwardRef('int')
+        fr = typing.ForwardRef('int')
         with self.assertRaises(TypeError):
             isinstance(42, fr)
 
     def test_forwardref_subclass_type_error(self):
-        fr = typing._ForwardRef('int')
+        fr = typing.ForwardRef('int')
         with self.assertRaises(TypeError):
             issubclass(int, fr)
 
     def test_forward_equality(self):
-        fr = typing._ForwardRef('int')
-        self.assertEqual(fr, typing._ForwardRef('int'))
+        fr = typing.ForwardRef('int')
+        self.assertEqual(fr, typing.ForwardRef('int'))
         self.assertNotEqual(List['int'], List[int])
 
+    def test_forward_equality_gth(self):
+        c1 = typing.ForwardRef('C')
+        c1_gth = typing.ForwardRef('C')
+        c2 = typing.ForwardRef('C')
+        c2_gth = typing.ForwardRef('C')
+
+        class C:
+            pass
+        def foo(a: c1_gth, b: c2_gth):
+            pass
+
+        self.assertEqual(get_type_hints(foo, globals(), locals()), {'a': C, 'b': C})
+        self.assertEqual(c1, c2)
+        self.assertEqual(c1, c1_gth)
+        self.assertEqual(c1_gth, c2_gth)
+        self.assertEqual(List[c1], List[c1_gth])
+        self.assertNotEqual(List[c1], List[C])
+        self.assertNotEqual(List[c1_gth], List[C])
+        self.assertEqual(Union[c1, c1_gth], Union[c1])
+        self.assertEqual(Union[c1, c1_gth, int], Union[c1, int])
+
+    def test_forward_equality_hash(self):
+        c1 = typing.ForwardRef('int')
+        c1_gth = typing.ForwardRef('int')
+        c2 = typing.ForwardRef('int')
+        c2_gth = typing.ForwardRef('int')
+
+        def foo(a: c1_gth, b: c2_gth):
+            pass
+        get_type_hints(foo, globals(), locals())
+
+        self.assertEqual(hash(c1), hash(c2))
+        self.assertEqual(hash(c1_gth), hash(c2_gth))
+        self.assertEqual(hash(c1), hash(c1_gth))
+
+    def test_forward_equality_namespace(self):
+        class A:
+            pass
+        def namespace1():
+            a = typing.ForwardRef('A')
+            def fun(x: a):
+                pass
+            get_type_hints(fun, globals(), locals())
+            return a
+
+        def namespace2():
+            a = typing.ForwardRef('A')
+
+            class A:
+                pass
+            def fun(x: a):
+                pass
+
+            get_type_hints(fun, globals(), locals())
+            return a
+
+        self.assertEqual(namespace1(), namespace1())
+        self.assertNotEqual(namespace1(), namespace2())
+
     def test_forward_repr(self):
-        self.assertEqual(repr(List['int']), "typing.List[_ForwardRef('int')]")
+        self.assertEqual(repr(List['int']), "typing.List[ForwardRef('int')]")
 
     def test_union_forward(self):
 
@@ -1382,6 +2482,75 @@ class ForwardRefTests(BaseTestCase):
 
         self.assertEqual(get_type_hints(foo, globals(), locals()),
                          {'a': Tuple[T]})
+
+        def foo(a: tuple[ForwardRef('T')]):
+            pass
+
+        self.assertEqual(get_type_hints(foo, globals(), locals()),
+                         {'a': tuple[T]})
+
+    def test_double_forward(self):
+        def foo(a: 'List[\'int\']'):
+            pass
+        self.assertEqual(get_type_hints(foo, globals(), locals()),
+                         {'a': List[int]})
+
+    def test_forward_recursion_actually(self):
+        def namespace1():
+            a = typing.ForwardRef('A')
+            A = a
+            def fun(x: a): pass
+
+            ret = get_type_hints(fun, globals(), locals())
+            return a
+
+        def namespace2():
+            a = typing.ForwardRef('A')
+            A = a
+            def fun(x: a): pass
+
+            ret = get_type_hints(fun, globals(), locals())
+            return a
+
+        def cmp(o1, o2):
+            return o1 == o2
+
+        r1 = namespace1()
+        r2 = namespace2()
+        self.assertIsNot(r1, r2)
+        self.assertRaises(RecursionError, cmp, r1, r2)
+
+    def test_union_forward_recursion(self):
+        ValueList = List['Value']
+        Value = Union[str, ValueList]
+
+        class C:
+            foo: List[Value]
+        class D:
+            foo: Union[Value, ValueList]
+        class E:
+            foo: Union[List[Value], ValueList]
+        class F:
+            foo: Union[Value, List[Value], ValueList]
+
+        self.assertEqual(get_type_hints(C, globals(), locals()), get_type_hints(C, globals(), locals()))
+        self.assertEqual(get_type_hints(C, globals(), locals()),
+                         {'foo': List[Union[str, List[Union[str, List['Value']]]]]})
+        self.assertEqual(get_type_hints(D, globals(), locals()),
+                         {'foo': Union[str, List[Union[str, List['Value']]]]})
+        self.assertEqual(get_type_hints(E, globals(), locals()),
+                         {'foo': Union[
+                             List[Union[str, List[Union[str, List['Value']]]]],
+                             List[Union[str, List['Value']]]
+                         ]
+                          })
+        self.assertEqual(get_type_hints(F, globals(), locals()),
+                         {'foo': Union[
+                             str,
+                             List[Union[str, List['Value']]],
+                             List[Union[str, List[Union[str, List['Value']]]]]
+                         ]
+                          })
 
     def test_callable_forward(self):
 
@@ -1458,11 +2627,35 @@ class ForwardRefTests(BaseTestCase):
         # verify that @no_type_check never affects bases
         self.assertEqual(get_type_hints(C.meth), {'x': int})
 
+    def test_no_type_check_forward_ref_as_string(self):
+        class C:
+            foo: typing.ClassVar[int] = 7
+        class D:
+            foo: ClassVar[int] = 7
+        class E:
+            foo: 'typing.ClassVar[int]' = 7
+        class F:
+            foo: 'ClassVar[int]' = 7
+
+        expected_result = {'foo': typing.ClassVar[int]}
+        for clazz in [C, D, E, F]:
+            self.assertEqual(get_type_hints(clazz), expected_result)
+
+    def test_nested_classvar_fails_forward_ref_check(self):
+        class E:
+            foo: 'typing.ClassVar[typing.ClassVar[int]]' = 7
+        class F:
+            foo: ClassVar['ClassVar[int]'] = 7
+
+        for clazz in [E, F]:
+            with self.assertRaises(TypeError):
+                get_type_hints(clazz)
+
     def test_meta_no_type_check(self):
 
         @no_type_check_decorator
-        def magic_decorator(deco):
-            return deco
+        def magic_decorator(func):
+            return func
 
         self.assertEqual(magic_decorator.__name__, 'magic_decorator')
 
@@ -1494,6 +2687,11 @@ class ForwardRefTests(BaseTestCase):
         hints = get_type_hints(ns['C'].foo)
         self.assertEqual(hints, {'a': ns['C'], 'return': ns['D']})
 
+    def test_final_forward_ref(self):
+        self.assertEqual(gth(Loop, globals())['attr'], Final[Loop])
+        self.assertNotEqual(gth(Loop, globals())['attr'], Final[int])
+        self.assertNotEqual(gth(Loop, globals())['attr'], Final)
+
 
 class OverloadTests(BaseTestCase):
 
@@ -1521,8 +2719,6 @@ class OverloadTests(BaseTestCase):
         blah()
 
 
-ASYNCIO = sys.version_info[:2] >= (3, 5)
-
 ASYNCIO_TESTS = """
 import asyncio
 
@@ -1545,29 +2741,31 @@ class AsyncIteratorWrapper(typing.AsyncIterator[T_a]):
     def __aiter__(self) -> typing.AsyncIterator[T_a]:
         return self
 
-    @asyncio.coroutine
-    def __anext__(self) -> T_a:
-        data = yield from self.value
+    async def __anext__(self) -> T_a:
+        data = await self.value
         if data:
             return data
         else:
             raise StopAsyncIteration
+
+class ACM:
+    async def __aenter__(self) -> int:
+        return 42
+    async def __aexit__(self, etype, eval, tb):
+        return None
 """
 
-if ASYNCIO:
-    try:
-        exec(ASYNCIO_TESTS)
-    except ImportError:
-        ASYNCIO = False
+try:
+    exec(ASYNCIO_TESTS)
+except ImportError:
+    ASYNCIO = False  # multithreading is not enabled
 else:
-    # fake names for the sake of static analysis
-    asyncio = None
-    AwaitableWrapper = AsyncIteratorWrapper = object
+    ASYNCIO = True
 
-PY36 = sys.version_info[:2] >= (3, 6)
+# Definitions needed for features introduced in Python 3.6
 
-PY36_TESTS = """
 from test import ann_module, ann_module2, ann_module3
+from typing import AsyncContextManager
 
 class A:
     y: float
@@ -1579,6 +2777,9 @@ class CSub(B):
     z: ClassVar['CSub'] = B()
 class G(Generic[T]):
     lst: ClassVar[List[T]] = []
+
+class Loop:
+    attr: Final['Loop']
 
 class NoneAndForward:
     parent: 'NoneAndForward'
@@ -1604,17 +2805,44 @@ class XRepr(NamedTuple):
         return f'{self.x} -> {self.y}'
     def __add__(self, other):
         return 0
-"""
 
-if PY36:
-    exec(PY36_TESTS)
-else:
-    # fake names for the sake of static analysis
-    ann_module = ann_module2 = ann_module3 = None
-    A = B = CSub = G = CoolEmployee = CoolEmployeeWithDefault = object
-    XMeth = XRepr = NoneAndForward = object
+Label = TypedDict('Label', [('label', str)])
+
+class Point2D(TypedDict):
+    x: int
+    y: int
+
+class LabelPoint2D(Point2D, Label): ...
+
+class Options(TypedDict, total=False):
+    log_level: int
+    log_path: str
+
+class HasForeignBaseClass(mod_generics_cache.A):
+    some_xrepr: 'XRepr'
+    other_a: 'mod_generics_cache.A'
+
+async def g_with(am: AsyncContextManager[int]):
+    x: int
+    async with am as x:
+        return x
+
+try:
+    g_with(ACM()).send(None)
+except StopIteration as e:
+    assert e.args[0] == 42
 
 gth = get_type_hints
+
+class ForRefExample:
+    @ann_module.dec
+    def func(self: 'ForRefExample'):
+        pass
+
+    @ann_module.dec
+    @ann_module.dec
+    def nested(self: 'ForRefExample'):
+        pass
 
 
 class GetTypeHintTests(BaseTestCase):
@@ -1627,16 +2855,23 @@ class GetTypeHintTests(BaseTestCase):
         with self.assertRaises(TypeError):
             gth(None)
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_get_type_hints_modules(self):
         ann_module_type_hints = {1: 2, 'f': Tuple[int, int], 'x': int, 'y': str}
         self.assertEqual(gth(ann_module), ann_module_type_hints)
         self.assertEqual(gth(ann_module2), {})
         self.assertEqual(gth(ann_module3), {})
 
-    @skipUnless(PY36, 'Python 3.6 required')
+    @skip("known bug")
+    def test_get_type_hints_modules_forwardref(self):
+        # FIXME: This currently exposes a bug in typing. Cached forward references
+        # don't account for the case where there are multiple types of the same
+        # name coming from different modules in the same program.
+        mgc_hints = {'default_a': Optional[mod_generics_cache.A],
+                     'default_b': Optional[mod_generics_cache.B]}
+        self.assertEqual(gth(mod_generics_cache), mgc_hints)
+
     def test_get_type_hints_classes(self):
-        self.assertEqual(gth(ann_module.C, ann_module.__dict__),
+        self.assertEqual(gth(ann_module.C),  # gth will find the right globalns
                          {'y': Optional[ann_module.C]})
         self.assertIsInstance(gth(ann_module.j_class), dict)
         self.assertEqual(gth(ann_module.M), {'123': 123, 'o': type})
@@ -1647,10 +2882,18 @@ class GetTypeHintTests(BaseTestCase):
                          {'y': Optional[ann_module.C]})
         self.assertEqual(gth(ann_module.S), {'x': str, 'y': str})
         self.assertEqual(gth(ann_module.foo), {'x': int})
-        self.assertEqual(gth(NoneAndForward, globals()),
+        self.assertEqual(gth(NoneAndForward),
                          {'parent': NoneAndForward, 'meaning': type(None)})
+        self.assertEqual(gth(HasForeignBaseClass),
+                         {'some_xrepr': XRepr, 'other_a': mod_generics_cache.A,
+                          'some_b': mod_generics_cache.B})
+        self.assertEqual(gth(XRepr),
+                         {'x': int, 'y': int})
+        self.assertEqual(gth(mod_generics_cache.B),
+                         {'my_inner_a1': mod_generics_cache.B.A,
+                          'my_inner_a2': mod_generics_cache.A,
+                          'my_outer_a': mod_generics_cache.A})
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_respect_no_type_check(self):
         @no_type_check
         class NoTpCheck:
@@ -1689,7 +2932,6 @@ class GetTypeHintTests(BaseTestCase):
         b.__annotations__ = {'x': 'A'}
         self.assertEqual(gth(b, locals()), {'x': A})
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_get_type_hints_ClassVar(self):
         self.assertEqual(gth(ann_module2.CV, ann_module2.__dict__),
                          {'var': typing.ClassVar[ann_module2.CV]})
@@ -1699,6 +2941,140 @@ class GetTypeHintTests(BaseTestCase):
                          {'z': ClassVar[CSub], 'y': int, 'b': int,
                           'x': ClassVar[Optional[B]]})
         self.assertEqual(gth(G), {'lst': ClassVar[List[T]]})
+
+    def test_get_type_hints_wrapped_decoratored_func(self):
+        expects = {'self': ForRefExample}
+        self.assertEqual(gth(ForRefExample.func), expects)
+        self.assertEqual(gth(ForRefExample.nested), expects)
+
+    def test_get_type_hints_annotated(self):
+        def foobar(x: List['X']): ...
+        X = Annotated[int, (1, 10)]
+        self.assertEqual(
+            get_type_hints(foobar, globals(), locals()),
+            {'x': List[int]}
+        )
+        self.assertEqual(
+            get_type_hints(foobar, globals(), locals(), include_extras=True),
+            {'x': List[Annotated[int, (1, 10)]]}
+        )
+
+        def foobar(x: list[ForwardRef('X')]): ...
+        X = Annotated[int, (1, 10)]
+        self.assertEqual(
+            get_type_hints(foobar, globals(), locals()),
+            {'x': list[int]}
+        )
+        self.assertEqual(
+            get_type_hints(foobar, globals(), locals(), include_extras=True),
+            {'x': list[Annotated[int, (1, 10)]]}
+        )
+
+        BA = Tuple[Annotated[T, (1, 0)], ...]
+        def barfoo(x: BA): ...
+        self.assertEqual(get_type_hints(barfoo, globals(), locals())['x'], Tuple[T, ...])
+        self.assertIs(
+            get_type_hints(barfoo, globals(), locals(), include_extras=True)['x'],
+            BA
+        )
+
+        BA = tuple[Annotated[T, (1, 0)], ...]
+        def barfoo(x: BA): ...
+        self.assertEqual(get_type_hints(barfoo, globals(), locals())['x'], tuple[T, ...])
+        self.assertIs(
+            get_type_hints(barfoo, globals(), locals(), include_extras=True)['x'],
+            BA
+        )
+
+        def barfoo2(x: typing.Callable[..., Annotated[List[T], "const"]],
+                    y: typing.Union[int, Annotated[T, "mutable"]]): ...
+        self.assertEqual(
+            get_type_hints(barfoo2, globals(), locals()),
+            {'x': typing.Callable[..., List[T]], 'y': typing.Union[int, T]}
+        )
+
+        BA2 = typing.Callable[..., List[T]]
+        def barfoo3(x: BA2): ...
+        self.assertIs(
+            get_type_hints(barfoo3, globals(), locals(), include_extras=True)["x"],
+            BA2
+        )
+
+    def test_get_type_hints_annotated_refs(self):
+
+        Const = Annotated[T, "Const"]
+
+        class MySet(Generic[T]):
+
+            def __ior__(self, other: "Const[MySet[T]]") -> "MySet[T]":
+                ...
+
+            def __iand__(self, other: Const["MySet[T]"]) -> "MySet[T]":
+                ...
+
+        self.assertEqual(
+            get_type_hints(MySet.__iand__, globals(), locals()),
+            {'other': MySet[T], 'return': MySet[T]}
+        )
+
+        self.assertEqual(
+            get_type_hints(MySet.__iand__, globals(), locals(), include_extras=True),
+            {'other': Const[MySet[T]], 'return': MySet[T]}
+        )
+
+        self.assertEqual(
+            get_type_hints(MySet.__ior__, globals(), locals()),
+            {'other': MySet[T], 'return': MySet[T]}
+        )
+
+
+class GetUtilitiesTestCase(TestCase):
+    def test_get_origin(self):
+        T = TypeVar('T')
+        class C(Generic[T]): pass
+        self.assertIs(get_origin(C[int]), C)
+        self.assertIs(get_origin(C[T]), C)
+        self.assertIs(get_origin(int), None)
+        self.assertIs(get_origin(ClassVar[int]), ClassVar)
+        self.assertIs(get_origin(Union[int, str]), Union)
+        self.assertIs(get_origin(Literal[42, 43]), Literal)
+        self.assertIs(get_origin(Final[List[int]]), Final)
+        self.assertIs(get_origin(Generic), Generic)
+        self.assertIs(get_origin(Generic[T]), Generic)
+        self.assertIs(get_origin(List[Tuple[T, T]][int]), list)
+        self.assertIs(get_origin(Annotated[T, 'thing']), Annotated)
+        self.assertIs(get_origin(List), list)
+        self.assertIs(get_origin(Tuple), tuple)
+        self.assertIs(get_origin(Callable), collections.abc.Callable)
+        self.assertIs(get_origin(list[int]), list)
+        self.assertIs(get_origin(list), None)
+
+    def test_get_args(self):
+        T = TypeVar('T')
+        class C(Generic[T]): pass
+        self.assertEqual(get_args(C[int]), (int,))
+        self.assertEqual(get_args(C[T]), (T,))
+        self.assertEqual(get_args(int), ())
+        self.assertEqual(get_args(ClassVar[int]), (int,))
+        self.assertEqual(get_args(Union[int, str]), (int, str))
+        self.assertEqual(get_args(Literal[42, 43]), (42, 43))
+        self.assertEqual(get_args(Final[List[int]]), (List[int],))
+        self.assertEqual(get_args(Union[int, Tuple[T, int]][str]),
+                         (int, Tuple[str, int]))
+        self.assertEqual(get_args(typing.Dict[int, Tuple[T, T]][Optional[int]]),
+                         (int, Tuple[Optional[int], Optional[int]]))
+        self.assertEqual(get_args(Callable[[], T][int]), ([], int))
+        self.assertEqual(get_args(Callable[..., int]), (..., int))
+        self.assertEqual(get_args(Union[int, Callable[[Tuple[T, ...]], str]]),
+                         (int, Callable[[Tuple[T, ...]], str]))
+        self.assertEqual(get_args(Tuple[int, ...]), (int, ...))
+        self.assertEqual(get_args(Tuple[()]), ((),))
+        self.assertEqual(get_args(Annotated[T, 'one', 2, ['three']]), (T, 'one', 2, ['three']))
+        self.assertEqual(get_args(List), ())
+        self.assertEqual(get_args(Tuple), ())
+        self.assertEqual(get_args(Callable), ())
+        self.assertEqual(get_args(list[int]), (int,))
+        self.assertEqual(get_args(list), ())
 
 
 class CollectionsAbcTests(BaseTestCase):
@@ -1834,6 +3210,17 @@ class CollectionsAbcTests(BaseTestCase):
     def test_dict(self):
         self.assertIsSubclass(dict, typing.Dict)
 
+    def test_dict_subscribe(self):
+        K = TypeVar('K')
+        V = TypeVar('V')
+        self.assertEqual(Dict[K, V][str, int], Dict[str, int])
+        self.assertEqual(Dict[K, int][str], Dict[str, int])
+        self.assertEqual(Dict[str, V][int], Dict[str, int])
+        self.assertEqual(Dict[K, List[V]][str, int], Dict[str, List[int]])
+        self.assertEqual(Dict[K, List[int]][str], Dict[str, List[int]])
+        self.assertEqual(Dict[K, list[V]][str, int], Dict[str, list[int]])
+        self.assertEqual(Dict[K, list[int]][str], Dict[str, list[int]])
+
     def test_no_list_instantiation(self):
         with self.assertRaises(TypeError):
             typing.List()
@@ -1889,6 +3276,22 @@ class CollectionsAbcTests(BaseTestCase):
 
         self.assertIsSubclass(MyDefDict, collections.defaultdict)
         self.assertNotIsSubclass(collections.defaultdict, MyDefDict)
+
+    def test_ordereddict_instantiation(self):
+        self.assertIs(type(typing.OrderedDict()), collections.OrderedDict)
+        self.assertIs(type(typing.OrderedDict[KT, VT]()), collections.OrderedDict)
+        self.assertIs(type(typing.OrderedDict[str, int]()), collections.OrderedDict)
+
+    def test_ordereddict_subclass(self):
+
+        class MyOrdDict(typing.OrderedDict[str, int]):
+            pass
+
+        od = MyOrdDict()
+        self.assertIsInstance(od, MyOrdDict)
+
+        self.assertIsSubclass(MyOrdDict, collections.OrderedDict)
+        self.assertNotIsSubclass(collections.OrderedDict, MyOrdDict)
 
     @skipUnless(sys.version_info >= (3, 3), 'ChainMap was added in 3.3')
     def test_chainmap_instantiation(self):
@@ -1988,7 +3391,6 @@ class CollectionsAbcTests(BaseTestCase):
         with self.assertRaises(TypeError):
             typing.Generator[int, int, int]()
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_async_generator(self):
         ns = {}
         exec("async def f():\n"
@@ -1996,7 +3398,6 @@ class CollectionsAbcTests(BaseTestCase):
         g = ns['f']()
         self.assertIsSubclass(type(g), typing.AsyncGenerator)
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_no_async_generator_instantiation(self):
         with self.assertRaises(TypeError):
             typing.AsyncGenerator()
@@ -2053,13 +3454,14 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertIsSubclass(MMC, typing.Mapping)
 
         self.assertIsInstance(MMB[KT, VT](), typing.Mapping)
-        self.assertIsInstance(MMB[KT, VT](), collections_abc.Mapping)
+        self.assertIsInstance(MMB[KT, VT](), collections.abc.Mapping)
 
-        self.assertIsSubclass(MMA, collections_abc.Mapping)
-        self.assertIsSubclass(MMB, collections_abc.Mapping)
-        self.assertIsSubclass(MMC, collections_abc.Mapping)
+        self.assertIsSubclass(MMA, collections.abc.Mapping)
+        self.assertIsSubclass(MMB, collections.abc.Mapping)
+        self.assertIsSubclass(MMC, collections.abc.Mapping)
 
-        self.assertIsSubclass(MMB[str, str], typing.Mapping)
+        with self.assertRaises(TypeError):
+            issubclass(MMB[str, str], typing.Mapping)
         self.assertIsSubclass(MMC, MMA)
 
         class I(typing.Iterable): ...
@@ -2069,12 +3471,10 @@ class CollectionsAbcTests(BaseTestCase):
         def g(): yield 0
         self.assertIsSubclass(G, typing.Generator)
         self.assertIsSubclass(G, typing.Iterable)
-        if hasattr(collections_abc, 'Generator'):
-            self.assertIsSubclass(G, collections_abc.Generator)
-        self.assertIsSubclass(G, collections_abc.Iterable)
+        self.assertIsSubclass(G, collections.abc.Generator)
+        self.assertIsSubclass(G, collections.abc.Iterable)
         self.assertNotIsSubclass(type(g), G)
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_subclassing_async_generator(self):
         class G(typing.AsyncGenerator[int, int]):
             def asend(self, value):
@@ -2087,15 +3487,15 @@ class CollectionsAbcTests(BaseTestCase):
         g = ns['g']
         self.assertIsSubclass(G, typing.AsyncGenerator)
         self.assertIsSubclass(G, typing.AsyncIterable)
-        self.assertIsSubclass(G, collections_abc.AsyncGenerator)
-        self.assertIsSubclass(G, collections_abc.AsyncIterable)
+        self.assertIsSubclass(G, collections.abc.AsyncGenerator)
+        self.assertIsSubclass(G, collections.abc.AsyncIterable)
         self.assertNotIsSubclass(type(g), G)
 
         instance = G()
         self.assertIsInstance(instance, typing.AsyncGenerator)
         self.assertIsInstance(instance, typing.AsyncIterable)
-        self.assertIsInstance(instance, collections_abc.AsyncGenerator)
-        self.assertIsInstance(instance, collections_abc.AsyncIterable)
+        self.assertIsInstance(instance, collections.abc.AsyncGenerator)
+        self.assertIsInstance(instance, collections.abc.AsyncIterable)
         self.assertNotIsInstance(type(g), G)
         self.assertNotIsInstance(g, G)
 
@@ -2132,23 +3532,23 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertIsSubclass(D, B)
 
         class M(): ...
-        collections_abc.MutableMapping.register(M)
+        collections.abc.MutableMapping.register(M)
         self.assertIsSubclass(M, typing.Mapping)
 
     def test_collections_as_base(self):
 
-        class M(collections_abc.Mapping): ...
+        class M(collections.abc.Mapping): ...
         self.assertIsSubclass(M, typing.Mapping)
         self.assertIsSubclass(M, typing.Iterable)
 
-        class S(collections_abc.MutableSequence): ...
+        class S(collections.abc.MutableSequence): ...
         self.assertIsSubclass(S, typing.MutableSequence)
         self.assertIsSubclass(S, typing.Iterable)
 
-        class I(collections_abc.Iterable): ...
+        class I(collections.abc.Iterable): ...
         self.assertIsSubclass(I, typing.Iterable)
 
-        class A(collections_abc.Mapping, metaclass=abc.ABCMeta): ...
+        class A(collections.abc.Mapping, metaclass=abc.ABCMeta): ...
         class B: ...
         A.register(B)
         self.assertIsSubclass(B, typing.Mapping)
@@ -2156,8 +3556,6 @@ class CollectionsAbcTests(BaseTestCase):
 
 class OtherABCTests(BaseTestCase):
 
-    @skipUnless(hasattr(typing, 'ContextManager'),
-                'requires typing.ContextManager')
     def test_contextmanager(self):
         @contextlib.contextmanager
         def manager():
@@ -2166,6 +3564,24 @@ class OtherABCTests(BaseTestCase):
         cm = manager()
         self.assertIsInstance(cm, typing.ContextManager)
         self.assertNotIsInstance(42, typing.ContextManager)
+
+    @skipUnless(ASYNCIO, 'Python 3.5 required')
+    def test_async_contextmanager(self):
+        class NotACM:
+            pass
+        self.assertIsInstance(ACM(), typing.AsyncContextManager)
+        self.assertNotIsInstance(NotACM(), typing.AsyncContextManager)
+        @contextlib.contextmanager
+        def manager():
+            yield 42
+
+        cm = manager()
+        self.assertNotIsInstance(cm, typing.AsyncContextManager)
+        self.assertEqual(typing.AsyncContextManager[int].__args__, (int,))
+        with self.assertRaises(TypeError):
+            isinstance(42, typing.AsyncContextManager[int])
+        with self.assertRaises(TypeError):
+            typing.AsyncContextManager[int, str]
 
 
 class TypeTests(BaseTestCase):
@@ -2227,6 +3643,9 @@ class NewTypeTests(BaseTestCase):
 
 
 class NamedTupleTests(BaseTestCase):
+    class NestedEmployee(NamedTuple):
+        name: str
+        cool: int
 
     def test_basics(self):
         Emp = NamedTuple('Emp', [('name', str), ('id', int)])
@@ -2243,7 +3662,6 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(Emp._fields, ('name', 'id'))
         self.assertEqual(Emp.__annotations__,
                          collections.OrderedDict([('name', str), ('id', int)]))
-        self.assertIs(Emp._field_types, Emp.__annotations__)
 
     def test_namedtuple_pyversion(self):
         if sys.version_info[:2] < (3, 6):
@@ -2253,7 +3671,6 @@ class NamedTupleTests(BaseTestCase):
                 class NotYet(NamedTuple):
                     whatever = 0
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_annotation_usage(self):
         tim = CoolEmployee('Tim', 9000)
         self.assertIsInstance(tim, CoolEmployee)
@@ -2262,11 +3679,9 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(tim.cool, 9000)
         self.assertEqual(CoolEmployee.__name__, 'CoolEmployee')
         self.assertEqual(CoolEmployee._fields, ('name', 'cool'))
-        self.assertEqual(CoolEmployee.__annotations__,
+        self.assertEqual(gth(CoolEmployee),
                          collections.OrderedDict(name=str, cool=int))
-        self.assertIs(CoolEmployee._field_types, CoolEmployee.__annotations__)
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_annotation_usage_with_default(self):
         jelle = CoolEmployeeWithDefault('Jelle')
         self.assertIsInstance(jelle, CoolEmployeeWithDefault)
@@ -2278,17 +3693,15 @@ class NamedTupleTests(BaseTestCase):
 
         self.assertEqual(CoolEmployeeWithDefault.__name__, 'CoolEmployeeWithDefault')
         self.assertEqual(CoolEmployeeWithDefault._fields, ('name', 'cool'))
-        self.assertEqual(CoolEmployeeWithDefault._field_types, dict(name=str, cool=int))
+        self.assertEqual(gth(CoolEmployeeWithDefault),
+                         dict(name=str, cool=int))
         self.assertEqual(CoolEmployeeWithDefault._field_defaults, dict(cool=0))
 
         with self.assertRaises(TypeError):
-            exec("""
-class NonDefaultAfterDefault(NamedTuple):
-    x: int = 3
-    y: int
-""")
+            class NonDefaultAfterDefault(NamedTuple):
+                x: int = 3
+                y: int
 
-    @skipUnless(PY36, 'Python 3.6 required')
     def test_annotation_usage_with_methods(self):
         self.assertEqual(XMeth(1).double(), 2)
         self.assertEqual(XMeth(42).x, XMeth(42)[0])
@@ -2296,22 +3709,24 @@ class NonDefaultAfterDefault(NamedTuple):
         self.assertEqual(XRepr(1, 2) + XRepr(3), 0)
 
         with self.assertRaises(AttributeError):
-            exec("""
-class XMethBad(NamedTuple):
-    x: int
-    def _fields(self):
-        return 'no chance for this'
-""")
+            class XMethBad(NamedTuple):
+                x: int
+                def _fields(self):
+                    return 'no chance for this'
 
         with self.assertRaises(AttributeError):
-            exec("""
-class XMethBad2(NamedTuple):
-    x: int
-    def _source(self):
-        return 'no chance for this as well'
-""")
+            class XMethBad2(NamedTuple):
+                x: int
+                def _source(self):
+                    return 'no chance for this as well'
 
-    @skipUnless(PY36, 'Python 3.6 required')
+    def test_multiple_inheritance(self):
+        class A:
+            pass
+        with self.assertRaises(TypeError):
+            class X(NamedTuple, A):
+                x: int
+
     def test_namedtuple_keyword_usage(self):
         LocalEmployee = NamedTuple("LocalEmployee", name=str, age=int)
         nick = LocalEmployee('Nick', 25)
@@ -2320,20 +3735,215 @@ class XMethBad2(NamedTuple):
         self.assertEqual(LocalEmployee.__name__, 'LocalEmployee')
         self.assertEqual(LocalEmployee._fields, ('name', 'age'))
         self.assertEqual(LocalEmployee.__annotations__, dict(name=str, age=int))
-        self.assertIs(LocalEmployee._field_types, LocalEmployee.__annotations__)
         with self.assertRaises(TypeError):
             NamedTuple('Name', [('x', int)], y=str)
         with self.assertRaises(TypeError):
             NamedTuple('Name', x=1, y='a')
 
-    def test_pickle(self):
+    def test_namedtuple_special_keyword_names(self):
+        NT = NamedTuple("NT", cls=type, self=object, typename=str, fields=list)
+        self.assertEqual(NT.__name__, 'NT')
+        self.assertEqual(NT._fields, ('cls', 'self', 'typename', 'fields'))
+        a = NT(cls=str, self=42, typename='foo', fields=[('bar', tuple)])
+        self.assertEqual(a.cls, str)
+        self.assertEqual(a.self, 42)
+        self.assertEqual(a.typename, 'foo')
+        self.assertEqual(a.fields, [('bar', tuple)])
+
+    def test_namedtuple_errors(self):
+        with self.assertRaises(TypeError):
+            NamedTuple.__new__()
+        with self.assertRaises(TypeError):
+            NamedTuple()
+        with self.assertRaises(TypeError):
+            NamedTuple('Emp', [('name', str)], None)
+        with self.assertRaises(ValueError):
+            NamedTuple('Emp', [('_name', str)])
+        with self.assertRaises(TypeError):
+            NamedTuple(typename='Emp', name=str, id=int)
+        with self.assertRaises(TypeError):
+            NamedTuple('Emp', fields=[('name', str), ('id', int)])
+
+    def test_copy_and_pickle(self):
         global Emp  # pickle wants to reference the class by name
-        Emp = NamedTuple('Emp', [('name', str), ('id', int)])
-        jane = Emp('jane', 37)
+        Emp = NamedTuple('Emp', [('name', str), ('cool', int)])
+        for cls in Emp, CoolEmployee, self.NestedEmployee:
+            with self.subTest(cls=cls):
+                jane = cls('jane', 37)
+                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                    z = pickle.dumps(jane, proto)
+                    jane2 = pickle.loads(z)
+                    self.assertEqual(jane2, jane)
+                    self.assertIsInstance(jane2, cls)
+
+                jane2 = copy(jane)
+                self.assertEqual(jane2, jane)
+                self.assertIsInstance(jane2, cls)
+
+                jane2 = deepcopy(jane)
+                self.assertEqual(jane2, jane)
+                self.assertIsInstance(jane2, cls)
+
+
+class TypedDictTests(BaseTestCase):
+    def test_basics_functional_syntax(self):
+        Emp = TypedDict('Emp', {'name': str, 'id': int})
+        self.assertIsSubclass(Emp, dict)
+        self.assertIsSubclass(Emp, typing.MutableMapping)
+        self.assertNotIsSubclass(Emp, collections.abc.Sequence)
+        jim = Emp(name='Jim', id=1)
+        self.assertIs(type(jim), dict)
+        self.assertEqual(jim['name'], 'Jim')
+        self.assertEqual(jim['id'], 1)
+        self.assertEqual(Emp.__name__, 'Emp')
+        self.assertEqual(Emp.__module__, __name__)
+        self.assertEqual(Emp.__bases__, (dict,))
+        self.assertEqual(Emp.__annotations__, {'name': str, 'id': int})
+        self.assertEqual(Emp.__total__, True)
+
+    def test_basics_keywords_syntax(self):
+        Emp = TypedDict('Emp', name=str, id=int)
+        self.assertIsSubclass(Emp, dict)
+        self.assertIsSubclass(Emp, typing.MutableMapping)
+        self.assertNotIsSubclass(Emp, collections.abc.Sequence)
+        jim = Emp(name='Jim', id=1)
+        self.assertIs(type(jim), dict)
+        self.assertEqual(jim['name'], 'Jim')
+        self.assertEqual(jim['id'], 1)
+        self.assertEqual(Emp.__name__, 'Emp')
+        self.assertEqual(Emp.__module__, __name__)
+        self.assertEqual(Emp.__bases__, (dict,))
+        self.assertEqual(Emp.__annotations__, {'name': str, 'id': int})
+        self.assertEqual(Emp.__total__, True)
+
+    def test_typeddict_special_keyword_names(self):
+        TD = TypedDict("TD", cls=type, self=object, typename=str, _typename=int, fields=list, _fields=dict)
+        self.assertEqual(TD.__name__, 'TD')
+        self.assertEqual(TD.__annotations__, {'cls': type, 'self': object, 'typename': str, '_typename': int, 'fields': list, '_fields': dict})
+        a = TD(cls=str, self=42, typename='foo', _typename=53, fields=[('bar', tuple)], _fields={'baz', set})
+        self.assertEqual(a['cls'], str)
+        self.assertEqual(a['self'], 42)
+        self.assertEqual(a['typename'], 'foo')
+        self.assertEqual(a['_typename'], 53)
+        self.assertEqual(a['fields'], [('bar', tuple)])
+        self.assertEqual(a['_fields'], {'baz', set})
+
+    def test_typeddict_create_errors(self):
+        with self.assertRaises(TypeError):
+            TypedDict.__new__()
+        with self.assertRaises(TypeError):
+            TypedDict()
+        with self.assertRaises(TypeError):
+            TypedDict('Emp', [('name', str)], None)
+
+        with self.assertRaises(TypeError):
+            TypedDict(_typename='Emp', name=str, id=int)
+        with self.assertRaises(TypeError):
+            TypedDict('Emp', _fields={'name': str, 'id': int})
+
+    def test_typeddict_errors(self):
+        Emp = TypedDict('Emp', {'name': str, 'id': int})
+        self.assertEqual(TypedDict.__module__, 'typing')
+        jim = Emp(name='Jim', id=1)
+        with self.assertRaises(TypeError):
+            isinstance({}, Emp)
+        with self.assertRaises(TypeError):
+            isinstance(jim, Emp)
+        with self.assertRaises(TypeError):
+            issubclass(dict, Emp)
+        with self.assertRaises(TypeError):
+            TypedDict('Hi', x=1)
+        with self.assertRaises(TypeError):
+            TypedDict('Hi', [('x', int), ('y', 1)])
+        with self.assertRaises(TypeError):
+            TypedDict('Hi', [('x', int)], y=int)
+
+    def test_py36_class_syntax_usage(self):
+        self.assertEqual(LabelPoint2D.__name__, 'LabelPoint2D')
+        self.assertEqual(LabelPoint2D.__module__, __name__)
+        self.assertEqual(gth(LabelPoint2D), {'x': int, 'y': int, 'label': str})
+        self.assertEqual(LabelPoint2D.__bases__, (dict,))
+        self.assertEqual(LabelPoint2D.__total__, True)
+        self.assertNotIsSubclass(LabelPoint2D, typing.Sequence)
+        not_origin = Point2D(x=0, y=1)
+        self.assertEqual(not_origin['x'], 0)
+        self.assertEqual(not_origin['y'], 1)
+        other = LabelPoint2D(x=0, y=1, label='hi')
+        self.assertEqual(other['label'], 'hi')
+
+    def test_pickle(self):
+        global EmpD  # pickle wants to reference the class by name
+        EmpD = TypedDict('EmpD', name=str, id=int)
+        jane = EmpD({'name': 'jane', 'id': 37})
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             z = pickle.dumps(jane, proto)
             jane2 = pickle.loads(z)
             self.assertEqual(jane2, jane)
+            self.assertEqual(jane2, {'name': 'jane', 'id': 37})
+            ZZ = pickle.dumps(EmpD, proto)
+            EmpDnew = pickle.loads(ZZ)
+            self.assertEqual(EmpDnew({'name': 'jane', 'id': 37}), jane)
+
+    def test_optional(self):
+        EmpD = TypedDict('EmpD', name=str, id=int)
+
+        self.assertEqual(typing.Optional[EmpD], typing.Union[None, EmpD])
+        self.assertNotEqual(typing.List[EmpD], typing.Tuple[EmpD])
+
+    def test_total(self):
+        D = TypedDict('D', {'x': int}, total=False)
+        self.assertEqual(D(), {})
+        self.assertEqual(D(x=1), {'x': 1})
+        self.assertEqual(D.__total__, False)
+
+        self.assertEqual(Options(), {})
+        self.assertEqual(Options(log_level=2), {'log_level': 2})
+        self.assertEqual(Options.__total__, False)
+
+    def test_optional_keys(self):
+        class Point2Dor3D(Point2D, total=False):
+            z: int
+
+        assert Point2Dor3D.__required_keys__ == frozenset(['x', 'y'])
+        assert Point2Dor3D.__optional_keys__ == frozenset(['z'])
+
+    def test_keys_inheritance(self):
+        class BaseAnimal(TypedDict):
+            name: str
+
+        class Animal(BaseAnimal, total=False):
+            voice: str
+            tail: bool
+
+        class Cat(Animal):
+            fur_color: str
+
+        assert BaseAnimal.__required_keys__ == frozenset(['name'])
+        assert BaseAnimal.__optional_keys__ == frozenset([])
+        assert gth(BaseAnimal) == {'name': str}
+
+        assert Animal.__required_keys__ == frozenset(['name'])
+        assert Animal.__optional_keys__ == frozenset(['tail', 'voice'])
+        assert gth(Animal) == {
+            'name': str,
+            'tail': bool,
+            'voice': str,
+        }
+
+        assert Cat.__required_keys__ == frozenset(['name', 'fur_color'])
+        assert Cat.__optional_keys__ == frozenset(['tail', 'voice'])
+        assert gth(Cat) == {
+            'fur_color': str,
+            'name': str,
+            'tail': bool,
+            'voice': str,
+        }
+
+    def test_is_typeddict(self):
+        assert is_typeddict(Point2D) is True
+        assert is_typeddict(Union[str, int]) is False
+        # classes, not instances
+        assert is_typeddict(Point2D()) is False
 
 
 class IOTests(BaseTestCase):
@@ -2343,7 +3953,7 @@ class IOTests(BaseTestCase):
         def stuff(a: IO) -> AnyStr:
             return a.readline()
 
-        a = stuff.__annotations__['a']
+        a = gth(stuff)['a']
         self.assertEqual(a.__parameters__, (AnyStr,))
 
     def test_textio(self):
@@ -2351,7 +3961,7 @@ class IOTests(BaseTestCase):
         def stuff(a: TextIO) -> str:
             return a.readline()
 
-        a = stuff.__annotations__['a']
+        a = gth(stuff)['a']
         self.assertEqual(a.__parameters__, ())
 
     def test_binaryio(self):
@@ -2359,7 +3969,7 @@ class IOTests(BaseTestCase):
         def stuff(a: BinaryIO) -> bytes:
             return a.readline()
 
-        a = stuff.__annotations__['a']
+        a = gth(stuff)['a']
         self.assertEqual(a.__parameters__, ())
 
     def test_io_submodule(self):
@@ -2396,15 +4006,8 @@ class RETests(BaseTestCase):
         self.assertNotEqual(Pattern[str], str)
 
     def test_errors(self):
-        with self.assertRaises(TypeError):
-            # Doesn't fit AnyStr.
-            Pattern[int]
-        with self.assertRaises(TypeError):
-            # Can't change type vars?
-            Match[T]
         m = Match[Union[str, bytes]]
         with self.assertRaises(TypeError):
-            # Too complicated?
             m[str]
         with self.assertRaises(TypeError):
             # We don't support isinstance().
@@ -2414,12 +4017,12 @@ class RETests(BaseTestCase):
             issubclass(Pattern[bytes], Pattern[str])
 
     def test_repr(self):
-        self.assertEqual(repr(Pattern), 'Pattern[~AnyStr]')
-        self.assertEqual(repr(Pattern[str]), 'Pattern[str]')
-        self.assertEqual(repr(Pattern[bytes]), 'Pattern[bytes]')
-        self.assertEqual(repr(Match), 'Match[~AnyStr]')
-        self.assertEqual(repr(Match[str]), 'Match[str]')
-        self.assertEqual(repr(Match[bytes]), 'Match[bytes]')
+        self.assertEqual(repr(Pattern), 'typing.Pattern')
+        self.assertEqual(repr(Pattern[str]), 'typing.Pattern[str]')
+        self.assertEqual(repr(Pattern[bytes]), 'typing.Pattern[bytes]')
+        self.assertEqual(repr(Match), 'typing.Match')
+        self.assertEqual(repr(Match[str]), 'typing.Match[str]')
+        self.assertEqual(repr(Match[bytes]), 'typing.Match[bytes]')
 
     def test_re_submodule(self):
         from typing.re import Match, Pattern, __all__, __name__
@@ -2435,7 +4038,219 @@ class RETests(BaseTestCase):
                 pass
 
         self.assertEqual(str(ex.exception),
-                         "Cannot subclass typing._TypeAlias")
+                         "type 're.Match' is not an acceptable base type")
+
+
+class AnnotatedTests(BaseTestCase):
+
+    def test_repr(self):
+        self.assertEqual(
+            repr(Annotated[int, 4, 5]),
+            "typing.Annotated[int, 4, 5]"
+        )
+        self.assertEqual(
+            repr(Annotated[List[int], 4, 5]),
+            "typing.Annotated[typing.List[int], 4, 5]"
+        )
+
+    def test_flatten(self):
+        A = Annotated[Annotated[int, 4], 5]
+        self.assertEqual(A, Annotated[int, 4, 5])
+        self.assertEqual(A.__metadata__, (4, 5))
+        self.assertEqual(A.__origin__, int)
+
+    def test_specialize(self):
+        L = Annotated[List[T], "my decoration"]
+        LI = Annotated[List[int], "my decoration"]
+        self.assertEqual(L[int], Annotated[List[int], "my decoration"])
+        self.assertEqual(L[int].__metadata__, ("my decoration",))
+        self.assertEqual(L[int].__origin__, List[int])
+        with self.assertRaises(TypeError):
+            LI[int]
+        with self.assertRaises(TypeError):
+            L[int, float]
+
+    def test_hash_eq(self):
+        self.assertEqual(len({Annotated[int, 4, 5], Annotated[int, 4, 5]}), 1)
+        self.assertNotEqual(Annotated[int, 4, 5], Annotated[int, 5, 4])
+        self.assertNotEqual(Annotated[int, 4, 5], Annotated[str, 4, 5])
+        self.assertNotEqual(Annotated[int, 4], Annotated[int, 4, 4])
+        self.assertEqual(
+            {Annotated[int, 4, 5], Annotated[int, 4, 5], Annotated[T, 4, 5]},
+            {Annotated[int, 4, 5], Annotated[T, 4, 5]}
+        )
+
+    def test_instantiate(self):
+        class C:
+            classvar = 4
+
+            def __init__(self, x):
+                self.x = x
+
+            def __eq__(self, other):
+                if not isinstance(other, C):
+                    return NotImplemented
+                return other.x == self.x
+
+        A = Annotated[C, "a decoration"]
+        a = A(5)
+        c = C(5)
+        self.assertEqual(a, c)
+        self.assertEqual(a.x, c.x)
+        self.assertEqual(a.classvar, c.classvar)
+
+    def test_instantiate_generic(self):
+        MyCount = Annotated[typing.Counter[T], "my decoration"]
+        self.assertEqual(MyCount([4, 4, 5]), {4: 2, 5: 1})
+        self.assertEqual(MyCount[int]([4, 4, 5]), {4: 2, 5: 1})
+
+    def test_cannot_instantiate_forward(self):
+        A = Annotated["int", (5, 6)]
+        with self.assertRaises(TypeError):
+            A(5)
+
+    def test_cannot_instantiate_type_var(self):
+        A = Annotated[T, (5, 6)]
+        with self.assertRaises(TypeError):
+            A(5)
+
+    def test_cannot_getattr_typevar(self):
+        with self.assertRaises(AttributeError):
+            Annotated[T, (5, 7)].x
+
+    def test_attr_passthrough(self):
+        class C:
+            classvar = 4
+
+        A = Annotated[C, "a decoration"]
+        self.assertEqual(A.classvar, 4)
+        A.x = 5
+        self.assertEqual(C.x, 5)
+
+    def test_hash_eq(self):
+        self.assertEqual(len({Annotated[int, 4, 5], Annotated[int, 4, 5]}), 1)
+        self.assertNotEqual(Annotated[int, 4, 5], Annotated[int, 5, 4])
+        self.assertNotEqual(Annotated[int, 4, 5], Annotated[str, 4, 5])
+        self.assertNotEqual(Annotated[int, 4], Annotated[int, 4, 4])
+        self.assertEqual(
+            {Annotated[int, 4, 5], Annotated[int, 4, 5], Annotated[T, 4, 5]},
+            {Annotated[int, 4, 5], Annotated[T, 4, 5]}
+        )
+
+    def test_cannot_subclass(self):
+        with self.assertRaisesRegex(TypeError, "Cannot subclass .*Annotated"):
+            class C(Annotated):
+                pass
+
+    def test_cannot_check_instance(self):
+        with self.assertRaises(TypeError):
+            isinstance(5, Annotated[int, "positive"])
+
+    def test_cannot_check_subclass(self):
+        with self.assertRaises(TypeError):
+            issubclass(int, Annotated[int, "positive"])
+
+    def test_pickle(self):
+        samples = [typing.Any, typing.Union[int, str],
+                   typing.Optional[str], Tuple[int, ...],
+                   typing.Callable[[str], bytes]]
+
+        for t in samples:
+            x = Annotated[t, "a"]
+
+            for prot in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(protocol=prot, type=t):
+                    pickled = pickle.dumps(x, prot)
+                    restored = pickle.loads(pickled)
+                    self.assertEqual(x, restored)
+
+        global _Annotated_test_G
+
+        class _Annotated_test_G(Generic[T]):
+            x = 1
+
+        G = Annotated[_Annotated_test_G[int], "A decoration"]
+        G.foo = 42
+        G.bar = 'abc'
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            z = pickle.dumps(G, proto)
+            x = pickle.loads(z)
+            self.assertEqual(x.foo, 42)
+            self.assertEqual(x.bar, 'abc')
+            self.assertEqual(x.x, 1)
+
+    def test_subst(self):
+        dec = "a decoration"
+        dec2 = "another decoration"
+
+        S = Annotated[T, dec2]
+        self.assertEqual(S[int], Annotated[int, dec2])
+
+        self.assertEqual(S[Annotated[int, dec]], Annotated[int, dec, dec2])
+        L = Annotated[List[T], dec]
+
+        self.assertEqual(L[int], Annotated[List[int], dec])
+        with self.assertRaises(TypeError):
+            L[int, int]
+
+        self.assertEqual(S[L[int]], Annotated[List[int], dec, dec2])
+
+        D = Annotated[typing.Dict[KT, VT], dec]
+        self.assertEqual(D[str, int], Annotated[typing.Dict[str, int], dec])
+        with self.assertRaises(TypeError):
+            D[int]
+
+        It = Annotated[int, dec]
+        with self.assertRaises(TypeError):
+            It[None]
+
+        LI = L[int]
+        with self.assertRaises(TypeError):
+            LI[None]
+
+    def test_annotated_in_other_types(self):
+        X = List[Annotated[T, 5]]
+        self.assertEqual(X[int], List[Annotated[int, 5]])
+
+
+class TypeAliasTests(BaseTestCase):
+    def test_canonical_usage_with_variable_annotation(self):
+        Alias: TypeAlias = Employee
+
+    def test_canonical_usage_with_type_comment(self):
+        Alias = Employee  # type: TypeAlias
+
+    def test_cannot_instantiate(self):
+        with self.assertRaises(TypeError):
+            TypeAlias()
+
+    def test_no_isinstance(self):
+        with self.assertRaises(TypeError):
+            isinstance(42, TypeAlias)
+
+    def test_no_issubclass(self):
+        with self.assertRaises(TypeError):
+            issubclass(Employee, TypeAlias)
+
+        with self.assertRaises(TypeError):
+            issubclass(TypeAlias, Employee)
+
+    def test_cannot_subclass(self):
+        with self.assertRaises(TypeError):
+            class C(TypeAlias):
+                pass
+
+        with self.assertRaises(TypeError):
+            class C(type(TypeAlias)):
+                pass
+
+    def test_repr(self):
+        self.assertEqual(repr(TypeAlias), 'typing.TypeAlias')
+
+    def test_cannot_subscript(self):
+        with self.assertRaises(TypeError):
+            TypeAlias[int]
 
 
 class AllTests(BaseTestCase):
@@ -2461,6 +4276,30 @@ class AllTests(BaseTestCase):
         # Check previously missing classes.
         self.assertIn('SupportsBytes', a)
         self.assertIn('SupportsComplex', a)
+
+    def test_all_exported_names(self):
+        import typing
+
+        actual_all = set(typing.__all__)
+        computed_all = {
+            k for k, v in vars(typing).items()
+            # explicitly exported, not a thing with __module__
+            if k in actual_all or (
+                # avoid private names
+                not k.startswith('_') and
+                # avoid things in the io / re typing submodules
+                k not in typing.io.__all__ and
+                k not in typing.re.__all__ and
+                k not in {'io', 're'} and
+                # there's a few types and metaclasses that aren't exported
+                not k.endswith(('Meta', '_contra', '_co')) and
+                not k.upper() == k and
+                # but export all things that have __module__ == 'typing'
+                getattr(v, '__module__', None) == typing.__name__
+            )
+        }
+        self.assertSetEqual(computed_all, actual_all)
+
 
 
 if __name__ == '__main__':

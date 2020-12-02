@@ -1,6 +1,7 @@
 /* enumerate object */
 
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_GetOne()
 
 #include "clinic/enumobject.c.h"
 
@@ -103,30 +104,40 @@ enum_next_long(enumobject *en, PyObject* next_item)
     PyObject *result = en->en_result;
     PyObject *next_index;
     PyObject *stepped_up;
+    PyObject *old_index;
+    PyObject *old_item;
 
     if (en->en_longindex == NULL) {
         en->en_longindex = PyLong_FromSsize_t(PY_SSIZE_T_MAX);
-        if (en->en_longindex == NULL)
-            return NULL;
-    }
-    next_index = en->en_longindex;
-    assert(next_index != NULL);
-    stepped_up = PyNumber_Add(next_index, _PyLong_One);
-    if (stepped_up == NULL)
-        return NULL;
-    en->en_longindex = stepped_up;
-
-    if (result->ob_refcnt == 1) {
-        Py_INCREF(result);
-        Py_DECREF(PyTuple_GET_ITEM(result, 0));
-        Py_DECREF(PyTuple_GET_ITEM(result, 1));
-    } else {
-        result = PyTuple_New(2);
-        if (result == NULL) {
-            Py_DECREF(next_index);
+        if (en->en_longindex == NULL) {
             Py_DECREF(next_item);
             return NULL;
         }
+    }
+    next_index = en->en_longindex;
+    assert(next_index != NULL);
+    stepped_up = PyNumber_Add(next_index, _PyLong_GetOne());
+    if (stepped_up == NULL) {
+        Py_DECREF(next_item);
+        return NULL;
+    }
+    en->en_longindex = stepped_up;
+
+    if (Py_REFCNT(result) == 1) {
+        Py_INCREF(result);
+        old_index = PyTuple_GET_ITEM(result, 0);
+        old_item = PyTuple_GET_ITEM(result, 1);
+        PyTuple_SET_ITEM(result, 0, next_index);
+        PyTuple_SET_ITEM(result, 1, next_item);
+        Py_DECREF(old_index);
+        Py_DECREF(old_item);
+        return result;
+    }
+    result = PyTuple_New(2);
+    if (result == NULL) {
+        Py_DECREF(next_index);
+        Py_DECREF(next_item);
+        return NULL;
     }
     PyTuple_SET_ITEM(result, 0, next_index);
     PyTuple_SET_ITEM(result, 1, next_item);
@@ -140,6 +151,8 @@ enum_next(enumobject *en)
     PyObject *next_item;
     PyObject *result = en->en_result;
     PyObject *it = en->en_sit;
+    PyObject *old_index;
+    PyObject *old_item;
 
     next_item = (*Py_TYPE(it)->tp_iternext)(it);
     if (next_item == NULL)
@@ -155,17 +168,21 @@ enum_next(enumobject *en)
     }
     en->en_index++;
 
-    if (result->ob_refcnt == 1) {
+    if (Py_REFCNT(result) == 1) {
         Py_INCREF(result);
-        Py_DECREF(PyTuple_GET_ITEM(result, 0));
-        Py_DECREF(PyTuple_GET_ITEM(result, 1));
-    } else {
-        result = PyTuple_New(2);
-        if (result == NULL) {
-            Py_DECREF(next_index);
-            Py_DECREF(next_item);
-            return NULL;
-        }
+        old_index = PyTuple_GET_ITEM(result, 0);
+        old_item = PyTuple_GET_ITEM(result, 1);
+        PyTuple_SET_ITEM(result, 0, next_index);
+        PyTuple_SET_ITEM(result, 1, next_item);
+        Py_DECREF(old_index);
+        Py_DECREF(old_item);
+        return result;
+    }
+    result = PyTuple_New(2);
+    if (result == NULL) {
+        Py_DECREF(next_index);
+        Py_DECREF(next_item);
+        return NULL;
     }
     PyTuple_SET_ITEM(result, 0, next_index);
     PyTuple_SET_ITEM(result, 1, next_item);
@@ -173,7 +190,7 @@ enum_next(enumobject *en)
 }
 
 static PyObject *
-enum_reduce(enumobject *en)
+enum_reduce(enumobject *en, PyObject *Py_UNUSED(ignored))
 {
     if (en->en_longindex != NULL)
         return Py_BuildValue("O(OO)", Py_TYPE(en), en->en_sit, en->en_longindex);
@@ -185,6 +202,8 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyMethodDef enum_methods[] = {
     {"__reduce__", (PyCFunction)enum_reduce, METH_NOARGS, reduce_doc},
+    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -195,10 +214,10 @@ PyTypeObject PyEnum_Type = {
     0,                              /* tp_itemsize */
     /* methods */
     (destructor)enum_dealloc,       /* tp_dealloc */
-    0,                              /* tp_print */
+    0,                              /* tp_vectorcall_offset */
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */
-    0,                              /* tp_reserved */
+    0,                              /* tp_as_async */
     0,                              /* tp_repr */
     0,                              /* tp_as_number */
     0,                              /* tp_as_sequence */
@@ -296,6 +315,24 @@ reversed_new_impl(PyTypeObject *type, PyObject *seq)
     return (PyObject *)ro;
 }
 
+static PyObject *
+reversed_vectorcall(PyObject *type, PyObject * const*args,
+                size_t nargsf, PyObject *kwnames)
+{
+    assert(PyType_Check(type));
+
+    if (!_PyArg_NoKwnames("reversed", kwnames)) {
+        return NULL;
+    }
+
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("reversed", nargs, 1, 1)) {
+        return NULL;
+    }
+
+    return reversed_new_impl((PyTypeObject *)type, args[0]);
+}
+
 static void
 reversed_dealloc(reversedobject *ro)
 {
@@ -333,7 +370,7 @@ reversed_next(reversedobject *ro)
 }
 
 static PyObject *
-reversed_len(reversedobject *ro)
+reversed_len(reversedobject *ro, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t position, seqsize;
 
@@ -349,7 +386,7 @@ reversed_len(reversedobject *ro)
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-reversed_reduce(reversedobject *ro)
+reversed_reduce(reversedobject *ro, PyObject *Py_UNUSED(ignored))
 {
     if (ro->seq)
         return Py_BuildValue("O(O)n", Py_TYPE(ro), ro->seq, ro->index);
@@ -392,10 +429,10 @@ PyTypeObject PyReversed_Type = {
     0,                              /* tp_itemsize */
     /* methods */
     (destructor)reversed_dealloc,   /* tp_dealloc */
-    0,                              /* tp_print */
+    0,                              /* tp_vectorcall_offset */
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */
-    0,                              /* tp_reserved */
+    0,                              /* tp_as_async */
     0,                              /* tp_repr */
     0,                              /* tp_as_number */
     0,                              /* tp_as_sequence */
@@ -427,4 +464,5 @@ PyTypeObject PyReversed_Type = {
     PyType_GenericAlloc,            /* tp_alloc */
     reversed_new,                   /* tp_new */
     PyObject_GC_Del,                /* tp_free */
+    .tp_vectorcall = (vectorcallfunc)reversed_vectorcall,
 };

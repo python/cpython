@@ -231,6 +231,7 @@ class Telnet:
         self.host = host
         self.port = port
         self.timeout = timeout
+        sys.audit("telnetlib.Telnet.open", self, host, port)
         self.sock = socket.create_connection((host, port), timeout)
 
     def __del__(self):
@@ -286,6 +287,7 @@ class Telnet:
         """
         if IAC in buffer:
             buffer = buffer.replace(IAC, IAC+IAC)
+        sys.audit("telnetlib.Telnet.write", self, buffer)
         self.msg("send %r", buffer)
         self.sock.sendall(buffer)
 
@@ -585,12 +587,12 @@ class Telnet:
         """Read until one from a list of a regular expressions matches.
 
         The first argument is a list of regular expressions, either
-        compiled (re.RegexObject instances) or uncompiled (strings).
+        compiled (re.Pattern instances) or uncompiled (strings).
         The optional second argument is a timeout, in seconds; default
         is no timeout.
 
         Return a tuple of three items: the index in the list of the
-        first regular expression that matches; the match object
+        first regular expression that matches; the re.Match object
         returned; and the text read up till and including the match.
 
         If EOF is read and no text was read, raise EOFError.

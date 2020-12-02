@@ -313,7 +313,7 @@ Miscellaneous
 
 .. function:: is_check_supported(check)
 
-   Returns true if the given integrity check is supported on this system.
+   Return ``True`` if the given integrity check is supported on this system.
 
    :const:`CHECK_NONE` and :const:`CHECK_CRC32` are always supported.
    :const:`CHECK_CRC64` and :const:`CHECK_SHA256` may be unavailable if you are

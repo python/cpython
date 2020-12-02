@@ -2,9 +2,11 @@
 =====================================================
 
 .. module:: zipimport
-   :synopsis: support for importing Python modules from ZIP archives.
+   :synopsis: Support for importing Python modules from ZIP archives.
 
 .. moduleauthor:: Just van Rossum <just@letterror.com>
+
+**Source code:** :source:`Lib/zipimport.py`
 
 --------------
 
@@ -28,7 +30,8 @@ Any files may be present in the ZIP archive, but only files :file:`.py` and
 corresponding :file:`.pyc` file, meaning that if a ZIP archive
 doesn't contain :file:`.pyc` files, importing may be rather slow.
 
-ZIP archives with an archive comment are currently not supported.
+.. versionchanged:: 3.8
+   Previously, ZIP archives with an archive comment were not supported.
 
 .. seealso::
 
@@ -38,11 +41,12 @@ ZIP archives with an archive comment are currently not supported.
 
    :pep:`273` - Import Modules from Zip Archives
       Written by James C. Ahlstrom, who also provided an implementation. Python 2.3
-      follows the specification in PEP 273, but uses an implementation written by Just
-      van Rossum that uses the import hooks described in PEP 302.
+      follows the specification in :pep:`273`, but uses an implementation written by Just
+      van Rossum that uses the import hooks described in :pep:`302`.
 
-   :pep:`302` - New Import Hooks
-      The PEP to add the import hooks that help this module work.
+   :mod:`importlib` - The implementation of the import machinery
+      Package providing the relevant protocols for all importers to
+      implement.
 
 
 This module defines an exception:
@@ -70,13 +74,48 @@ zipimporter Objects
    :exc:`ZipImportError` is raised if *archivepath* doesn't point to a valid ZIP
    archive.
 
-   .. method:: find_module(fullname[, path])
+   .. method:: create_module(spec)
+
+      Implementation of :meth:`importlib.abc.Loader.create_module` that returns
+      :const:`None` to explicitly request the default semantics.
+
+      .. versionadded:: 3.10
+
+
+   .. method:: exec_module(module)
+
+      Implementation of :meth:`importlib.abc.Loader.exec_module`.
+
+      .. versionadded:: 3.10
+
+
+   .. method:: find_loader(fullname, path=None)
+
+      An implementation of :meth:`importlib.abc.PathEntryFinder.find_loader`.
+
+      .. deprecated:: 3.10
+
+         Use :meth:`find_spec` instead.
+
+
+   .. method:: find_module(fullname, path=None)
 
       Search for a module specified by *fullname*. *fullname* must be the fully
       qualified (dotted) module name. It returns the zipimporter instance itself
       if the module was found, or :const:`None` if it wasn't. The optional
       *path* argument is ignored---it's there for compatibility with the
       importer protocol.
+
+      .. deprecated:: 3.10
+
+         Use :meth:`find_spec` instead.
+
+
+   .. method:: find_spec(fullname, target=None)
+
+      An implementation of :meth:`importlib.abc.PathEntryFinder.find_spec`.
+
+      .. versionadded:: 3.10
 
 
    .. method:: get_code(fullname)
@@ -122,6 +161,10 @@ zipimporter Objects
       Load the module specified by *fullname*. *fullname* must be the fully
       qualified (dotted) module name. It returns the imported module, or raises
       :exc:`ZipImportError` if it wasn't found.
+
+      .. deprecated:: 3.10
+
+         Use :meth:`exec_module` instead.
 
 
    .. attribute:: archive

@@ -14,6 +14,7 @@ import os
 import threading
 import collections
 import time
+import types
 import weakref
 import errno
 
@@ -48,8 +49,7 @@ class Queue(object):
         self._sem = ctx.BoundedSemaphore(maxsize)
         # For use by concurrent.futures
         self._ignore_epipe = False
-
-        self._after_fork()
+        self._reset()
 
         if sys.platform != 'win32':
             register_after_fork(self, Queue._after_fork)
@@ -62,11 +62,17 @@ class Queue(object):
     def __setstate__(self, state):
         (self._ignore_epipe, self._maxsize, self._reader, self._writer,
          self._rlock, self._wlock, self._sem, self._opid) = state
-        self._after_fork()
+        self._reset()
 
     def _after_fork(self):
         debug('Queue._after_fork()')
-        self._notempty = threading.Condition(threading.Lock())
+        self._reset(after_fork=True)
+
+    def _reset(self, after_fork=False):
+        if after_fork:
+            self._notempty._at_fork_reinit()
+        else:
+            self._notempty = threading.Condition(threading.Lock())
         self._buffer = collections.deque()
         self._thread = None
         self._jointhread = None
@@ -78,7 +84,8 @@ class Queue(object):
         self._poll = self._reader.poll
 
     def put(self, obj, block=True, timeout=None):
-        assert not self._closed
+        if self._closed:
+            raise ValueError(f"Queue {self!r} is closed")
         if not self._sem.acquire(block, timeout):
             raise Full
 
@@ -89,19 +96,21 @@ class Queue(object):
             self._notempty.notify()
 
     def get(self, block=True, timeout=None):
+        if self._closed:
+            raise ValueError(f"Queue {self!r} is closed")
         if block and timeout is None:
             with self._rlock:
                 res = self._recv_bytes()
             self._sem.release()
         else:
             if block:
-                deadline = time.time() + timeout
+                deadline = time.monotonic() + timeout
             if not self._rlock.acquire(block, timeout):
                 raise Empty
             try:
                 if block:
-                    timeout = deadline - time.time()
-                    if timeout < 0 or not self._poll(timeout):
+                    timeout = deadline - time.monotonic()
+                    if not self._poll(timeout):
                         raise Empty
                 elif not self._poll():
                     raise Empty
@@ -140,7 +149,7 @@ class Queue(object):
 
     def join_thread(self):
         debug('Queue.join_thread()')
-        assert self._closed
+        assert self._closed, "Queue {0!r} not closed".format(self)
         if self._jointhread:
             self._jointhread()
 
@@ -160,23 +169,17 @@ class Queue(object):
         self._thread = threading.Thread(
             target=Queue._feed,
             args=(self._buffer, self._notempty, self._send_bytes,
-                  self._wlock, self._writer.close, self._ignore_epipe),
+                  self._wlock, self._writer.close, self._ignore_epipe,
+                  self._on_queue_feeder_error, self._sem),
             name='QueueFeederThread'
-            )
+        )
         self._thread.daemon = True
 
         debug('doing self._thread.start()')
         self._thread.start()
         debug('... done self._thread.start()')
 
-        # On process exit we will wait for data to be flushed to pipe.
-        #
-        # However, if this process created the queue then all
-        # processes which use the queue will be descendants of this
-        # process.  Therefore waiting for the queue to be flushed
-        # is pointless once all the child processes have been joined.
-        created_by_this_process = (self._opid == os.getpid())
-        if not self._joincancelled and not created_by_this_process:
+        if not self._joincancelled:
             self._jointhread = Finalize(
                 self._thread, Queue._finalize_join,
                 [weakref.ref(self._thread)],
@@ -208,7 +211,8 @@ class Queue(object):
             notempty.notify()
 
     @staticmethod
-    def _feed(buffer, notempty, send_bytes, writelock, close, ignore_epipe):
+    def _feed(buffer, notempty, send_bytes, writelock, close, ignore_epipe,
+              onerror, queue_sem):
         debug('starting thread to feed data to pipe')
         nacquire = notempty.acquire
         nrelease = notempty.release
@@ -221,8 +225,8 @@ class Queue(object):
         else:
             wacquire = None
 
-        try:
-            while 1:
+        while 1:
+            try:
                 nacquire()
                 try:
                     if not buffer:
@@ -249,21 +253,34 @@ class Queue(object):
                                 wrelease()
                 except IndexError:
                     pass
-        except Exception as e:
-            if ignore_epipe and getattr(e, 'errno', 0) == errno.EPIPE:
-                return
-            # Since this runs in a daemon thread the resources it uses
-            # may be become unusable while the process is cleaning up.
-            # We ignore errors which happen after the process has
-            # started to cleanup.
-            try:
+            except Exception as e:
+                if ignore_epipe and getattr(e, 'errno', 0) == errno.EPIPE:
+                    return
+                # Since this runs in a daemon thread the resources it uses
+                # may be become unusable while the process is cleaning up.
+                # We ignore errors which happen after the process has
+                # started to cleanup.
                 if is_exiting():
                     info('error in queue thread: %s', e)
+                    return
                 else:
-                    import traceback
-                    traceback.print_exc()
-            except Exception:
-                pass
+                    # Since the object has not been sent in the queue, we need
+                    # to decrease the size of the queue. The error acts as
+                    # if the object had been silently removed from the queue
+                    # and this step is necessary to have a properly working
+                    # queue.
+                    queue_sem.release()
+                    onerror(e, obj)
+
+    @staticmethod
+    def _on_queue_feeder_error(e, obj):
+        """
+        Private API hook called when feeding data in the background thread
+        raises an exception.  For overriding by concurrent.futures.
+        """
+        import traceback
+        traceback.print_exc()
+
 
 _sentinel = object()
 
@@ -290,7 +307,8 @@ class JoinableQueue(Queue):
         self._cond, self._unfinished_tasks = state[-2:]
 
     def put(self, obj, block=True, timeout=None):
-        assert not self._closed
+        if self._closed:
+            raise ValueError(f"Queue {self!r} is closed")
         if not self._sem.acquire(block, timeout):
             raise Full
 
@@ -328,6 +346,10 @@ class SimpleQueue(object):
         else:
             self._wlock = ctx.Lock()
 
+    def close(self):
+        self._reader.close()
+        self._writer.close()
+
     def empty(self):
         return not self._poll()
 
@@ -354,3 +376,5 @@ class SimpleQueue(object):
         else:
             with self._wlock:
                 self._writer.send_bytes(obj)
+
+    __class_getitem__ = classmethod(types.GenericAlias)

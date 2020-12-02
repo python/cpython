@@ -1,18 +1,19 @@
-try:
-    import _thread
-except ImportError:
-    _thread = None
 import importlib
 import importlib.util
 import os
 import os.path
+import py_compile
 import sys
 from test import support
+from test.support import import_helper
+from test.support import os_helper
+from test.support import script_helper
 import unittest
 import warnings
 with warnings.catch_warnings():
     warnings.simplefilter('ignore', DeprecationWarning)
     import imp
+import _imp
 
 
 def requires_load_dynamic(meth):
@@ -23,7 +24,6 @@ def requires_load_dynamic(meth):
                            'imp.load_dynamic() required')(meth)
 
 
-@unittest.skipIf(_thread is None, '_thread module is required')
 class LockTests(unittest.TestCase):
 
     """Very basic test of import lock functions."""
@@ -109,15 +109,15 @@ class ImportTests(unittest.TestCase):
             self.assertEqual(file.encoding, 'cp1252')
         finally:
             del sys.path[0]
-            support.unlink(temp_mod_name + '.py')
-            support.unlink(temp_mod_name + '.pyc')
+            os_helper.unlink(temp_mod_name + '.py')
+            os_helper.unlink(temp_mod_name + '.pyc')
 
     def test_issue5604(self):
         # Test cannot cover imp.load_compiled function.
         # Martin von Loewis note what shared library cannot have non-ascii
         # character because init_xxx function cannot be compiled
         # and issue never happens for dynamic modules.
-        # But sources modified to follow generic way for processing pathes.
+        # But sources modified to follow generic way for processing paths.
 
         # the return encoding could be uppercase or None
         fs_encoding = sys.getfilesystemencoding()
@@ -194,10 +194,10 @@ class ImportTests(unittest.TestCase):
         finally:
             del sys.path[0]
             for ext in ('.py', '.pyc'):
-                support.unlink(temp_mod_name + ext)
-                support.unlink(init_file_name + ext)
-            support.rmtree(test_package_name)
-            support.rmtree('__pycache__')
+                os_helper.unlink(temp_mod_name + ext)
+                os_helper.unlink(init_file_name + ext)
+            os_helper.rmtree(test_package_name)
+            os_helper.rmtree('__pycache__')
 
     def test_issue9319(self):
         path = os.path.dirname(__file__)
@@ -206,7 +206,7 @@ class ImportTests(unittest.TestCase):
 
     def test_load_from_source(self):
         # Verify that the imp module can correctly load and find .py files
-        # XXX (ncoghlan): It would be nice to use support.CleanImport
+        # XXX (ncoghlan): It would be nice to use import_helper.CleanImport
         # here, but that breaks because the os module registers some
         # handlers in copy_reg on import. Since CleanImport doesn't
         # revert that registration, the module is left in a broken
@@ -215,7 +215,7 @@ class ImportTests(unittest.TestCase):
         # workaround
         orig_path = os.path
         orig_getenv = os.getenv
-        with support.EnvironmentVarGuard():
+        with os_helper.EnvironmentVarGuard():
             x = imp.find_module("os")
             self.addCleanup(x[0].close)
             new_os = imp.load_module("os", *x)
@@ -301,11 +301,11 @@ class ImportTests(unittest.TestCase):
     @unittest.skipIf(sys.dont_write_bytecode,
         "test meaningful only when writing bytecode")
     def test_bug7732(self):
-        with support.temp_cwd():
-            source = support.TESTFN + '.py'
+        with os_helper.temp_cwd():
+            source = os_helper.TESTFN + '.py'
             os.mkdir(source)
             self.assertRaisesRegex(ImportError, '^No module',
-                imp.find_module, support.TESTFN, ["."])
+                imp.find_module, os_helper.TESTFN, ["."])
 
     def test_multiple_calls_to_get_data(self):
         # Issue #18755: make sure multiple calls to get_data() can succeed.
@@ -314,6 +314,70 @@ class ImportTests(unittest.TestCase):
         loader.get_data(imp.__file__)  # File should be closed
         loader.get_data(imp.__file__)  # Will need to create a newly opened file
 
+    def test_load_source(self):
+        # Create a temporary module since load_source(name) modifies
+        # sys.modules[name] attributes like __loader___
+        modname = f"tmp{__name__}"
+        mod = type(sys.modules[__name__])(modname)
+        with support.swap_item(sys.modules, modname, mod):
+            with self.assertRaisesRegex(ValueError, 'embedded null'):
+                imp.load_source(modname, __file__ + "\0")
+
+    @support.cpython_only
+    def test_issue31315(self):
+        # There shouldn't be an assertion failure in imp.create_dynamic(),
+        # when spec.name is not a string.
+        create_dynamic = support.get_attribute(imp, 'create_dynamic')
+        class BadSpec:
+            name = None
+            origin = 'foo'
+        with self.assertRaises(TypeError):
+            create_dynamic(BadSpec())
+
+    def test_issue_35321(self):
+        # Both _frozen_importlib and _frozen_importlib_external
+        # should have a spec origin of "frozen" and
+        # no need to clean up imports in this case.
+
+        import _frozen_importlib_external
+        self.assertEqual(_frozen_importlib_external.__spec__.origin, "frozen")
+
+        import _frozen_importlib
+        self.assertEqual(_frozen_importlib.__spec__.origin, "frozen")
+
+    def test_source_hash(self):
+        self.assertEqual(_imp.source_hash(42, b'hi'), b'\xc6\xe7Z\r\x03:}\xab')
+        self.assertEqual(_imp.source_hash(43, b'hi'), b'\x85\x9765\xf8\x9a\x8b9')
+
+    def test_pyc_invalidation_mode_from_cmdline(self):
+        cases = [
+            ([], "default"),
+            (["--check-hash-based-pycs", "default"], "default"),
+            (["--check-hash-based-pycs", "always"], "always"),
+            (["--check-hash-based-pycs", "never"], "never"),
+        ]
+        for interp_args, expected in cases:
+            args = interp_args + [
+                "-c",
+                "import _imp; print(_imp.check_hash_based_pycs)",
+            ]
+            res = script_helper.assert_python_ok(*args)
+            self.assertEqual(res.out.strip().decode('utf-8'), expected)
+
+    def test_find_and_load_checked_pyc(self):
+        # issue 34056
+        with os_helper.temp_cwd():
+            with open('mymod.py', 'wb') as fp:
+                fp.write(b'x = 42\n')
+            py_compile.compile(
+                'mymod.py',
+                doraise=True,
+                invalidation_mode=py_compile.PycInvalidationMode.CHECKED_HASH,
+            )
+            file, path, description = imp.find_module('mymod', path=['.'])
+            mod = imp.load_module('mymod', file, path, description)
+        self.assertEqual(mod.x, 42)
+
 
 class ReloadTests(unittest.TestCase):
 
@@ -321,24 +385,24 @@ class ReloadTests(unittest.TestCase):
     reload()."""
 
     def test_source(self):
-        # XXX (ncoghlan): It would be nice to use test.support.CleanImport
+        # XXX (ncoghlan): It would be nice to use test.import_helper.CleanImport
         # here, but that breaks because the os module registers some
         # handlers in copy_reg on import. Since CleanImport doesn't
         # revert that registration, the module is left in a broken
         # state after reversion. Reinitialising the module contents
         # and just reverting os.environ to its previous state is an OK
         # workaround
-        with support.EnvironmentVarGuard():
+        with os_helper.EnvironmentVarGuard():
             import os
             imp.reload(os)
 
     def test_extension(self):
-        with support.CleanImport('time'):
+        with import_helper.CleanImport('time'):
             import time
             imp.reload(time)
 
     def test_builtin(self):
-        with support.CleanImport('marshal'):
+        with import_helper.CleanImport('marshal'):
             import marshal
             imp.reload(marshal)
 
@@ -381,10 +445,10 @@ class PEP3147Tests(unittest.TestCase):
 
 
 class NullImporterTests(unittest.TestCase):
-    @unittest.skipIf(support.TESTFN_UNENCODABLE is None,
+    @unittest.skipIf(os_helper.TESTFN_UNENCODABLE is None,
                      "Need an undecodeable filename")
     def test_unencodeable(self):
-        name = support.TESTFN_UNENCODABLE
+        name = os_helper.TESTFN_UNENCODABLE
         os.mkdir(name)
         try:
             self.assertRaises(ImportError, imp.NullImporter, name)

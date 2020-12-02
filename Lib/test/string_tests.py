@@ -505,6 +505,7 @@ class BaseTest:
         EQ("", "", "replace", "A", "")
         EQ("", "", "replace", "A", "A")
         EQ("", "", "replace", "", "", 100)
+        EQ("A", "", "replace", "", "A", 100)
         EQ("", "", "replace", "", "", sys.maxsize)
 
         # interleave (from=="", 'to' gets inserted everywhere)
@@ -680,6 +681,42 @@ class BaseTest:
         self.checkraises(OverflowError, A2_16, "replace", "", A2_16)
         self.checkraises(OverflowError, A2_16, "replace", "A", A2_16)
         self.checkraises(OverflowError, A2_16, "replace", "AA", A2_16+A2_16)
+
+    def test_removeprefix(self):
+        self.checkequal('am', 'spam', 'removeprefix', 'sp')
+        self.checkequal('spamspam', 'spamspamspam', 'removeprefix', 'spam')
+        self.checkequal('spam', 'spam', 'removeprefix', 'python')
+        self.checkequal('spam', 'spam', 'removeprefix', 'spider')
+        self.checkequal('spam', 'spam', 'removeprefix', 'spam and eggs')
+
+        self.checkequal('', '', 'removeprefix', '')
+        self.checkequal('', '', 'removeprefix', 'abcde')
+        self.checkequal('abcde', 'abcde', 'removeprefix', '')
+        self.checkequal('', 'abcde', 'removeprefix', 'abcde')
+
+        self.checkraises(TypeError, 'hello', 'removeprefix')
+        self.checkraises(TypeError, 'hello', 'removeprefix', 42)
+        self.checkraises(TypeError, 'hello', 'removeprefix', 42, 'h')
+        self.checkraises(TypeError, 'hello', 'removeprefix', 'h', 42)
+        self.checkraises(TypeError, 'hello', 'removeprefix', ("he", "l"))
+
+    def test_removesuffix(self):
+        self.checkequal('sp', 'spam', 'removesuffix', 'am')
+        self.checkequal('spamspam', 'spamspamspam', 'removesuffix', 'spam')
+        self.checkequal('spam', 'spam', 'removesuffix', 'python')
+        self.checkequal('spam', 'spam', 'removesuffix', 'blam')
+        self.checkequal('spam', 'spam', 'removesuffix', 'eggs and spam')
+
+        self.checkequal('', '', 'removesuffix', '')
+        self.checkequal('', '', 'removesuffix', 'abcde')
+        self.checkequal('abcde', 'abcde', 'removesuffix', '')
+        self.checkequal('', 'abcde', 'removesuffix', 'abcde')
+
+        self.checkraises(TypeError, 'hello', 'removesuffix')
+        self.checkraises(TypeError, 'hello', 'removesuffix', 42)
+        self.checkraises(TypeError, 'hello', 'removesuffix', 42, 'h')
+        self.checkraises(TypeError, 'hello', 'removesuffix', 'h', 42)
+        self.checkraises(TypeError, 'hello', 'removesuffix', ("lo", "l"))
 
     def test_capitalize(self):
         self.checkequal(' hello ', ' hello ', 'capitalize')
@@ -909,6 +946,21 @@ class BaseTest:
         self.checkequal(False, 'abc\n', 'isalnum')
         self.checkraises(TypeError, 'abc', 'isalnum', 42)
 
+    def test_isascii(self):
+        self.checkequal(True, '', 'isascii')
+        self.checkequal(True, '\x00', 'isascii')
+        self.checkequal(True, '\x7f', 'isascii')
+        self.checkequal(True, '\x00\x7f', 'isascii')
+        self.checkequal(False, '\x80', 'isascii')
+        self.checkequal(False, '\xe9', 'isascii')
+        # bytes.isascii() and bytearray.isascii() has optimization which
+        # check 4 or 8 bytes at once.  So check some alignments.
+        for p in range(8):
+            self.checkequal(True, ' '*p + '\x7f', 'isascii')
+            self.checkequal(False, ' '*p + '\x80', 'isascii')
+            self.checkequal(True, ' '*p + '\x7f' + ' '*8, 'isascii')
+            self.checkequal(False, ' '*p + '\x80' + ' '*8, 'isascii')
+
     def test_isdigit(self):
         self.checkequal(False, '', 'isdigit')
         self.checkequal(False, 'a', 'isdigit')
@@ -962,7 +1014,7 @@ class CommonTest(BaseTest):
     def test_capitalize_nonascii(self):
         # check that titlecased chars are lowered correctly
         # \u1ffc is the titlecased char
-        self.checkequal('\u03a9\u0399\u1ff3\u1ff3\u1ff3',
+        self.checkequal('\u1ffc\u1ff3\u1ff3\u1ff3',
                         '\u1ff3\u1ff3\u1ffc\u1ffc', 'capitalize')
         # check with cased non-letter chars
         self.checkequal('\u24c5\u24e8\u24e3\u24d7\u24de\u24dd',
@@ -1120,7 +1172,7 @@ class MixinStrUnicodeUserStringTest:
     def test_extended_getslice(self):
         # Test extended slicing by comparing with list slicing.
         s = string.ascii_letters + string.digits
-        indices = (0, None, 1, 3, 41, -1, -2, -37)
+        indices = (0, None, 1, 3, 41, sys.maxsize, -1, -2, -37)
         for start in indices:
             for stop in indices:
                 # Skip step 0 (invalid)

@@ -1,17 +1,36 @@
+"""Grep dialog for Find in Files functionality.
+
+   Inherits from SearchDialogBase for GUI and uses searchengine
+   to prepare search pattern.
+"""
 import fnmatch
 import os
 import sys
 
 from tkinter import StringVar, BooleanVar
-from tkinter.ttk import Checkbutton
+from tkinter.ttk import Checkbutton  # Frame imported in ...Base
 
 from idlelib.searchbase import SearchDialogBase
 from idlelib import searchengine
 
 # Importing OutputWindow here fails due to import loop
-# EditorWindow -> GrepDialop -> OutputWindow -> EditorWindow
+# EditorWindow -> GrepDialog -> OutputWindow -> EditorWindow
+
 
 def grep(text, io=None, flist=None):
+    """Open the Find in Files dialog.
+
+    Module-level function to access the singleton GrepDialog
+    instance and open the dialog.  If text is selected, it is
+    used as the search phrase; otherwise, the previous entry
+    is used.
+
+    Args:
+        text: Text widget that contains the selected text for
+              default search phrase.
+        io: iomenu.IOBinding instance with default path to search.
+        flist: filelist.FileList instance for OutputWindow parent.
+    """
     root = text._root()
     engine = searchengine.get(root)
     if not hasattr(engine, "_grepdialog"):
@@ -20,19 +39,65 @@ def grep(text, io=None, flist=None):
     searchphrase = text.get("sel.first", "sel.last")
     dialog.open(text, searchphrase, io)
 
+
+def walk_error(msg):
+    "Handle os.walk error."
+    print(msg)
+
+
+def findfiles(folder, pattern, recursive):
+    """Generate file names in dir that match pattern.
+
+    Args:
+        folder: Root directory to search.
+        pattern: File pattern to match.
+        recursive: True to include subdirectories.
+    """
+    for dirpath, _, filenames in os.walk(folder, onerror=walk_error):
+        yield from (os.path.join(dirpath, name)
+                    for name in filenames
+                    if fnmatch.fnmatch(name, pattern))
+        if not recursive:
+            break
+
+
 class GrepDialog(SearchDialogBase):
+    "Dialog for searching multiple files."
 
     title = "Find in Files Dialog"
     icon = "Grep"
     needwrapbutton = 0
 
     def __init__(self, root, engine, flist):
-        SearchDialogBase.__init__(self, root, engine)
+        """Create search dialog for searching for a phrase in the file system.
+
+        Uses SearchDialogBase as the basis for the GUI and a
+        searchengine instance to prepare the search.
+
+        Attributes:
+            flist: filelist.Filelist instance for OutputWindow parent.
+            globvar: String value of Entry widget for path to search.
+            globent: Entry widget for globvar.  Created in
+                create_entries().
+            recvar: Boolean value of Checkbutton widget for
+                traversing through subdirectories.
+        """
+        super().__init__(root, engine)
         self.flist = flist
         self.globvar = StringVar(root)
         self.recvar = BooleanVar(root)
 
     def open(self, text, searchphrase, io=None):
+        """Make dialog visible on top of others and ready to use.
+
+        Extend the SearchDialogBase open() to set the initial value
+        for globvar.
+
+        Args:
+            text: Multicall object containing the text information.
+            searchphrase: String phrase to search.
+            io: iomenu.IOBinding instance containing file path.
+        """
         SearchDialogBase.open(self, text, searchphrase)
         if io:
             path = io.filename or ""
@@ -45,20 +110,30 @@ class GrepDialog(SearchDialogBase):
         self.globvar.set(os.path.join(dir, "*" + tail))
 
     def create_entries(self):
+        "Create base entry widgets and add widget for search path."
         SearchDialogBase.create_entries(self)
         self.globent = self.make_entry("In files:", self.globvar)[0]
 
     def create_other_buttons(self):
+        "Add check button to recurse down subdirectories."
         btn = Checkbutton(
                 self.make_frame()[0], variable=self.recvar,
                 text="Recurse down subdirectories")
         btn.pack(side="top", fill="both")
 
     def create_command_buttons(self):
+        "Create base command buttons and add button for Search Files."
         SearchDialogBase.create_command_buttons(self)
-        self.make_button("Search Files", self.default_command, 1)
+        self.make_button("Search Files", self.default_command, isdef=True)
 
     def default_command(self, event=None):
+        """Grep for search pattern in file path. The default command is bound
+        to <Return>.
+
+        If entry values are populated, set OutputWindow as stdout
+        and perform search.  The search dialog is closed automatically
+        when the search begins.
+        """
         prog = self.engine.getprog()
         if not prog:
             return
@@ -75,71 +150,59 @@ class GrepDialog(SearchDialogBase):
             sys.stdout = save
 
     def grep_it(self, prog, path):
-        dir, base = os.path.split(path)
-        list = self.findfiles(dir, base, self.recvar.get())
-        list.sort()
+        """Search for prog within the lines of the files in path.
+
+        For the each file in the path directory, open the file and
+        search each line for the matching pattern.  If the pattern is
+        found,  write the file and line information to stdout (which
+        is an OutputWindow).
+
+        Args:
+            prog: The compiled, cooked search pattern.
+            path: String containing the search path.
+        """
+        folder, filepat = os.path.split(path)
+        if not folder:
+            folder = os.curdir
+        filelist = sorted(findfiles(folder, filepat, self.recvar.get()))
         self.close()
         pat = self.engine.getpat()
-        print("Searching %r in %s ..." % (pat, path))
+        print(f"Searching {pat!r} in {path} ...")
         hits = 0
         try:
-            for fn in list:
+            for fn in filelist:
                 try:
                     with open(fn, errors='replace') as f:
                         for lineno, line in enumerate(f, 1):
                             if line[-1:] == '\n':
                                 line = line[:-1]
                             if prog.search(line):
-                                sys.stdout.write("%s: %s: %s\n" %
-                                                 (fn, lineno, line))
+                                sys.stdout.write(f"{fn}: {lineno}: {line}\n")
                                 hits += 1
                 except OSError as msg:
                     print(msg)
-            print(("Hits found: %s\n"
-                  "(Hint: right-click to open locations.)"
-                  % hits) if hits else "No hits.")
+            print(f"Hits found: {hits}\n(Hint: right-click to open locations.)"
+                  if hits else "No hits.")
         except AttributeError:
             # Tk window has been closed, OutputWindow.text = None,
             # so in OW.write, OW.text.insert fails.
             pass
 
-    def findfiles(self, dir, base, rec):
-        try:
-            names = os.listdir(dir or os.curdir)
-        except OSError as msg:
-            print(msg)
-            return []
-        list = []
-        subdirs = []
-        for name in names:
-            fn = os.path.join(dir, name)
-            if os.path.isdir(fn):
-                subdirs.append(fn)
-            else:
-                if fnmatch.fnmatch(name, base):
-                    list.append(fn)
-        if rec:
-            for subdir in subdirs:
-                list.extend(self.findfiles(subdir, base, rec))
-        return list
-
-    def close(self, event=None):
-        if self.top:
-            self.top.grab_release()
-            self.top.withdraw()
-
 
 def _grep_dialog(parent):  # htest #
     from tkinter import Toplevel, Text, SEL, END
-    from tkinter.ttk import Button
+    from tkinter.ttk import Frame, Button
     from idlelib.pyshell import PyShellFileList
+
     top = Toplevel(parent)
     top.title("Test GrepDialog")
     x, y = map(int, parent.geometry().split('+')[1:])
-    top.geometry("+%d+%d" % (x, y + 175))
+    top.geometry(f"+{x}+{y + 175}")
 
     flist = PyShellFileList(top)
-    text = Text(top, height=5)
+    frame = Frame(top)
+    frame.pack()
+    text = Text(frame, height=5)
     text.pack()
 
     def show_grep_dialog():
@@ -147,12 +210,12 @@ def _grep_dialog(parent):  # htest #
         grep(text, flist=flist)
         text.tag_remove(SEL, "1.0", END)
 
-    button = Button(top, text="Show GrepDialog", command=show_grep_dialog)
+    button = Button(frame, text="Show GrepDialog", command=show_grep_dialog)
     button.pack()
 
 if __name__ == "__main__":
-    import unittest
-    unittest.main('idlelib.idle_test.test_grep', verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_grep', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
     run(_grep_dialog)

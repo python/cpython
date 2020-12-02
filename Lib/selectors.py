@@ -57,6 +57,7 @@ if sys.version_info >= (3, 5):
     SelectorKey.data.__doc__ = ('''Optional opaque data associated to this file object.
     For example, this could be used to store a per-client session ID.''')
 
+
 class _SelectorMapping(Mapping):
     """Mapping of file objects to selector keys."""
 
@@ -252,7 +253,6 @@ class _BaseSelectorImpl(BaseSelector):
         return key
 
     def modify(self, fileobj, events, data=None):
-        # TODO: Subclasses can probably optimize this even further.
         try:
             key = self._fd_to_key[self._fileobj_lookup(fileobj)]
         except KeyError:
@@ -342,6 +342,8 @@ class SelectSelector(_BaseSelectorImpl):
 class _PollLikeSelector(_BaseSelectorImpl):
     """Base class shared between poll, epoll and devpoll selectors."""
     _selector_cls = None
+    _EVENT_READ = None
+    _EVENT_WRITE = None
 
     def __init__(self):
         super().__init__()
@@ -356,7 +358,7 @@ class _PollLikeSelector(_BaseSelectorImpl):
             poller_events |= self._EVENT_WRITE
         try:
             self._selector.register(key.fd, poller_events)
-        except Exception:
+        except:
             super().unregister(fileobj)
             raise
         return key
@@ -369,6 +371,33 @@ class _PollLikeSelector(_BaseSelectorImpl):
             # This can happen if the FD was closed since it
             # was registered.
             pass
+        return key
+
+    def modify(self, fileobj, events, data=None):
+        try:
+            key = self._fd_to_key[self._fileobj_lookup(fileobj)]
+        except KeyError:
+            raise KeyError(f"{fileobj!r} is not registered") from None
+
+        changed = False
+        if events != key.events:
+            selector_events = 0
+            if events & EVENT_READ:
+                selector_events |= self._EVENT_READ
+            if events & EVENT_WRITE:
+                selector_events |= self._EVENT_WRITE
+            try:
+                self._selector.modify(key.fd, selector_events)
+            except:
+                super().unregister(fileobj)
+                raise
+            changed = True
+        if data != key.data:
+            changed = True
+
+        if changed:
+            key = key._replace(events=events, data=data)
+            self._fd_to_key[key.fd] = key
         return key
 
     def select(self, timeout=None):
@@ -496,7 +525,7 @@ if hasattr(select, 'kqueue'):
                     kev = select.kevent(key.fd, select.KQ_FILTER_WRITE,
                                         select.KQ_EV_ADD)
                     self._selector.control([kev], 0, 0)
-            except Exception:
+            except:
                 super().unregister(fileobj)
                 raise
             return key
@@ -524,7 +553,10 @@ if hasattr(select, 'kqueue'):
 
         def select(self, timeout=None):
             timeout = None if timeout is None else max(timeout, 0)
-            max_ev = len(self._fd_to_key)
+            # If max_ev is 0, kqueue will ignore the timeout. For consistent
+            # behavior with the other selector classes, we prevent that here
+            # (using max). See https://bugs.python.org/issue29255
+            max_ev = max(len(self._fd_to_key), 1)
             ready = []
             try:
                 kev_list = self._selector.control(None, max_ev, timeout)
@@ -549,16 +581,39 @@ if hasattr(select, 'kqueue'):
             super().close()
 
 
+def _can_use(method):
+    """Check if we can use the selector depending upon the
+    operating system. """
+    # Implementation based upon https://github.com/sethmlarson/selectors2/blob/master/selectors2.py
+    selector = getattr(select, method, None)
+    if selector is None:
+        # select module does not implement method
+        return False
+    # check if the OS and Kernel actually support the method. Call may fail with
+    # OSError: [Errno 38] Function not implemented
+    try:
+        selector_obj = selector()
+        if method == 'poll':
+            # check that poll actually works
+            selector_obj.poll(0)
+        else:
+            # close epoll, kqueue, and devpoll fd
+            selector_obj.close()
+        return True
+    except OSError:
+        return False
+
+
 # Choose the best implementation, roughly:
 #    epoll|kqueue|devpoll > poll > select.
 # select() also can't accept a FD > FD_SETSIZE (usually around 1024)
-if 'KqueueSelector' in globals():
+if _can_use('kqueue'):
     DefaultSelector = KqueueSelector
-elif 'EpollSelector' in globals():
+elif _can_use('epoll'):
     DefaultSelector = EpollSelector
-elif 'DevpollSelector' in globals():
+elif _can_use('devpoll'):
     DefaultSelector = DevpollSelector
-elif 'PollSelector' in globals():
+elif _can_use('poll'):
     DefaultSelector = PollSelector
 else:
     DefaultSelector = SelectSelector

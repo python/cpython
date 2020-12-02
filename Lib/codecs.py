@@ -5,9 +5,10 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
 
-"""#"
+"""
 
-import builtins, sys
+import builtins
+import sys
 
 ### Registry and builtin stateless codec functions
 
@@ -82,7 +83,7 @@ BOM64_BE = BOM_UTF32_BE
 class CodecInfo(tuple):
     """Codec details when looking up the codec registry"""
 
-    # Private API to allow Python 3.4 to blacklist the known non-Unicode
+    # Private API to allow Python 3.4 to denylist the known non-Unicode
     # codecs in the standard library. A more general mechanism to
     # reliably distinguish test encodings from other codecs will hopefully
     # be defined for Python 3.5
@@ -479,14 +480,16 @@ class StreamReader(Codec):
             self.charbuffer = self._empty_charbuffer.join(self.linebuffer)
             self.linebuffer = None
 
+        if chars < 0:
+            # For compatibility with other read() methods that take a
+            # single argument
+            chars = size
+
         # read until we get the required number of characters (if available)
         while True:
             # can the request be satisfied from the character buffer?
             if chars >= 0:
                 if len(self.charbuffer) >= chars:
-                    break
-            elif size >= 0:
-                if len(self.charbuffer) >= size:
                     break
             # we need more data
             if size < 0:
@@ -739,7 +742,7 @@ class StreamReaderWriter:
         """
         return getattr(self.stream, name)
 
-    # these are needed to make "with codecs.open(...)" work properly
+    # these are needed to make "with StreamReaderWriter(...)" work properly
 
     def __enter__(self):
         return self
@@ -835,7 +838,7 @@ class StreamRecoder:
 
     def writelines(self, list):
 
-        data = ''.join(list)
+        data = b''.join(list)
         data, bytesdecoded = self.decode(data, self.errors)
         return self.writer.write(data)
 
@@ -843,6 +846,12 @@ class StreamRecoder:
 
         self.reader.reset()
         self.writer.reset()
+
+    def seek(self, offset, whence=0):
+        # Seeks must be propagated to both the readers and writers
+        # as they might need to reset their internal buffers.
+        self.reader.seek(offset, whence)
+        self.writer.seek(offset, whence)
 
     def __getattr__(self, name,
                     getattr=getattr):
@@ -859,7 +868,7 @@ class StreamRecoder:
 
 ### Shortcuts
 
-def open(filename, mode='r', encoding=None, errors='strict', buffering=1):
+def open(filename, mode='r', encoding=None, errors='strict', buffering=-1):
 
     """ Open an encoded file using the given mode and return
         a wrapped version providing transparent encoding/decoding.
@@ -880,7 +889,8 @@ def open(filename, mode='r', encoding=None, errors='strict', buffering=1):
         encoding error occurs.
 
         buffering has the same meaning as for the builtin open() API.
-        It defaults to line buffered.
+        It defaults to -1 which means that the default buffer size will
+        be used.
 
         The returned wrapped file object provides an extra attribute
         .encoding which allows querying the used encoding. This
@@ -895,11 +905,16 @@ def open(filename, mode='r', encoding=None, errors='strict', buffering=1):
     file = builtins.open(filename, mode, buffering)
     if encoding is None:
         return file
-    info = lookup(encoding)
-    srw = StreamReaderWriter(file, info.streamreader, info.streamwriter, errors)
-    # Add attributes to simplify introspection
-    srw.encoding = encoding
-    return srw
+
+    try:
+        info = lookup(encoding)
+        srw = StreamReaderWriter(file, info.streamreader, info.streamwriter, errors)
+        # Add attributes to simplify introspection
+        srw.encoding = encoding
+        return srw
+    except:
+        file.close()
+        raise
 
 def EncodedFile(file, data_encoding, file_encoding=None, errors='strict'):
 

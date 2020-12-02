@@ -42,17 +42,12 @@ An explanation of some terminology and conventions is in order.
   library; for 32-bit systems, it is typically in 2038.
 
 .. index::
-   single: Year 2000
-   single: Y2K
+   single: 2-digit years
 
-.. _time-y2kissues:
-
-* **Year 2000 (Y2K) issues**: Python depends on the platform's C library, which
-  generally doesn't have year 2000 issues, since all dates and times are
-  represented internally as seconds since the epoch.  Function :func:`strptime`
-  can parse 2-digit years when given ``%y`` format code.  When 2-digit years are
-  parsed, they are converted according to the POSIX and ISO C standards: values
-  69--99 are mapped to 1969--1999, and values 0--68 are mapped to 2000--2068.
+* Function :func:`strptime` can parse 2-digit years when given ``%y`` format
+  code. When 2-digit years are parsed, they are converted according to the POSIX
+  and ISO C standards: values 69--99 are mapped to 1969--1999, and values 0--68
+  are mapped to 2000--2068.
 
 .. index::
    single: UTC
@@ -118,148 +113,109 @@ An explanation of some terminology and conventions is in order.
   +-------------------------+-------------------------+-------------------------+
 
 
-The module defines the following functions and data items:
+.. _time-functions:
 
-.. data:: altzone
-
-   The offset of the local DST timezone, in seconds west of UTC, if one is defined.
-   This is negative if the local DST timezone is east of UTC (as in Western Europe,
-   including the UK).  Only use this if ``daylight`` is nonzero.
-
+Functions
+---------
 
 .. function:: asctime([t])
 
    Convert a tuple or :class:`struct_time` representing a time as returned by
    :func:`gmtime` or :func:`localtime` to a string of the following
-   form: ``'Sun Jun 20 23:21:05 1993'``.  If *t* is not provided, the current time
-   as returned by :func:`localtime` is used. Locale information is not used by
-   :func:`asctime`.
+   form: ``'Sun Jun 20 23:21:05 1993'``. The day field is two characters long
+   and is space padded if the day is a single digit,
+   e.g.: ``'Wed Jun  9 04:26:40 1993'``.
+
+   If *t* is not provided, the current time as returned by :func:`localtime`
+   is used. Locale information is not used by :func:`asctime`.
 
    .. note::
 
       Unlike the C function of the same name, :func:`asctime` does not add a
       trailing newline.
 
+.. function:: pthread_getcpuclockid(thread_id)
 
-.. function:: clock()
+   Return the *clk_id* of the thread-specific CPU-time clock for the specified *thread_id*.
 
-   .. index::
-      single: CPU time
-      single: processor time
-      single: benchmarking
+   Use :func:`threading.get_ident` or the :attr:`~threading.Thread.ident`
+   attribute of :class:`threading.Thread` objects to get a suitable value
+   for *thread_id*.
 
-   On Unix, return the current processor time as a floating point number expressed
-   in seconds.  The precision, and in fact the very definition of the meaning of
-   "processor time", depends on that of the C function of the same name.
+   .. warning::
+      Passing an invalid or expired *thread_id* may result in
+      undefined behavior, such as segmentation fault.
 
-   On Windows, this function returns wall-clock seconds elapsed since the first
-   call to this function, as a floating point number, based on the Win32 function
-   :c:func:`QueryPerformanceCounter`. The resolution is typically better than one
-   microsecond.
+   .. availability:: Unix (see the man page for :manpage:`pthread_getcpuclockid(3)` for
+      further information).
 
-   .. deprecated:: 3.3
-      The behaviour of this function depends on the platform: use
-      :func:`perf_counter` or :func:`process_time` instead, depending on your
-      requirements, to have a well defined behaviour.
-
+   .. versionadded:: 3.7
 
 .. function:: clock_getres(clk_id)
 
-   Return the resolution (precision) of the specified clock *clk_id*.
+   Return the resolution (precision) of the specified clock *clk_id*.  Refer to
+   :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
 
-   Availability: Unix.
-
-   .. versionadded:: 3.3
-
-
-.. function:: clock_gettime(clk_id)
-
-   Return the time of the specified clock *clk_id*.
-
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
 
-.. function:: clock_settime(clk_id, time)
+.. function:: clock_gettime(clk_id) -> float
 
-   Set the time of the specified clock *clk_id*.
+   Return the time of the specified clock *clk_id*.  Refer to
+   :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
 
-   Availability: Unix.
+   Use :func:`clock_gettime_ns` to avoid the precision loss caused by the
+   :class:`float` type.
 
-   .. versionadded:: 3.3
-
-
-.. data:: CLOCK_HIGHRES
-
-   The Solaris OS has a CLOCK_HIGHRES timer that attempts to use an optimal
-   hardware source, and may give close to nanosecond resolution.  CLOCK_HIGHRES
-   is the nonadjustable, high-resolution clock.
-
-   Availability: Solaris.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
 
-.. data:: CLOCK_MONOTONIC
+.. function:: clock_gettime_ns(clk_id) -> int
 
-   Clock that cannot be set and represents monotonic time since some unspecified
-   starting point.
+   Similar to :func:`clock_gettime` but return time as nanoseconds.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
-   .. versionadded:: 3.3
-
-
-.. data:: CLOCK_MONOTONIC_RAW
-
-   Similar to :data:`CLOCK_MONOTONIC`, but provides access to a raw
-   hardware-based time that is not subject to NTP adjustments.
-
-   Availability: Linux 2.6.28 or later.
-
-   .. versionadded:: 3.3
+   .. versionadded:: 3.7
 
 
-.. data:: CLOCK_PROCESS_CPUTIME_ID
+.. function:: clock_settime(clk_id, time: float)
 
-   High-resolution per-process timer from the CPU.
+   Set the time of the specified clock *clk_id*.  Currently,
+   :data:`CLOCK_REALTIME` is the only accepted value for *clk_id*.
 
-   Availability: Unix.
+   Use :func:`clock_settime_ns` to avoid the precision loss caused by the
+   :class:`float` type.
+
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
 
-.. data:: CLOCK_REALTIME
+.. function:: clock_settime_ns(clk_id, time: int)
 
-   System-wide real-time clock.  Setting this clock requires appropriate
-   privileges.
+   Similar to :func:`clock_settime` but set time with nanoseconds.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
-   .. versionadded:: 3.3
-
-
-.. data:: CLOCK_THREAD_CPUTIME_ID
-
-   Thread-specific CPU-time clock.
-
-   Availability: Unix.
-
-   .. versionadded:: 3.3
+   .. versionadded:: 3.7
 
 
 .. function:: ctime([secs])
 
-   Convert a time expressed in seconds since the epoch to a string representing
-   local time. If *secs* is not provided or :const:`None`, the current time as
-   returned by :func:`.time` is used.  ``ctime(secs)`` is equivalent to
-   ``asctime(localtime(secs))``. Locale information is not used by :func:`ctime`.
+   Convert a time expressed in seconds since the epoch to a string of a form:
+   ``'Sun Jun 20 23:21:05 1993'`` representing local time. The day field
+   is two characters long and is space padded if the day is a single digit,
+   e.g.: ``'Wed Jun  9 04:26:40 1993'``.
 
-
-.. data:: daylight
-
-   Nonzero if a DST timezone is defined.
+   If *secs* is not provided or :const:`None`, the current time as
+   returned by :func:`.time` is used. ``ctime(secs)`` is equivalent to
+   ``asctime(localtime(secs))``. Locale information is not used by
+   :func:`ctime`.
 
 
 .. function:: get_clock_info(name)
@@ -268,10 +224,10 @@ The module defines the following functions and data items:
    Supported clock names and the corresponding functions to read their value
    are:
 
-   * ``'clock'``: :func:`time.clock`
    * ``'monotonic'``: :func:`time.monotonic`
    * ``'perf_counter'``: :func:`time.perf_counter`
    * ``'process_time'``: :func:`time.process_time`
+   * ``'thread_time'``: :func:`time.thread_time`
    * ``'time'``: :func:`time.time`
 
    The result has the following attributes:
@@ -279,7 +235,7 @@ The module defines the following functions and data items:
    - *adjustable*: ``True`` if the clock can be changed automatically (e.g. by
      a NTP daemon) or manually by the system administrator, ``False`` otherwise
    - *implementation*: The name of the underlying C function used to get
-     the clock value
+     the clock value.  Refer to :ref:`time-clock-id-constants` for possible values.
    - *monotonic*: ``True`` if the clock cannot go backward,
      ``False`` otherwise
    - *resolution*: The resolution of the clock in seconds (:class:`float`)
@@ -316,27 +272,35 @@ The module defines the following functions and data items:
    The earliest date for which it can generate a time is platform-dependent.
 
 
-.. function:: monotonic()
+.. function:: monotonic() -> float
 
    Return the value (in fractional seconds) of a monotonic clock, i.e. a clock
    that cannot go backwards.  The clock is not affected by system clock updates.
    The reference point of the returned value is undefined, so that only the
    difference between the results of consecutive calls is valid.
 
-   On Windows versions older than Vista, :func:`monotonic` detects
-   :c:func:`GetTickCount` integer overflow (32 bits, roll-over after 49.7 days).
-   It increases an internal epoch (reference time) by 2\ :sup:`32` each time
-   that an overflow is detected.  The epoch is stored in the process-local state
-   and so the value of :func:`monotonic` may be different in two Python
-   processes running for more than 49 days. On more recent versions of Windows
-   and on other operating systems, :func:`monotonic` is system-wide.
+   Use :func:`monotonic_ns` to avoid the precision loss caused by the
+   :class:`float` type.
 
    .. versionadded:: 3.3
+
    .. versionchanged:: 3.5
-      The function is now always available.
+      The function is now always available and always system-wide.
+
+   .. versionchanged:: 3.10
+      On macOS, the function is now system-wide.
 
 
-.. function:: perf_counter()
+.. function:: monotonic_ns() -> int
+
+   Similar to :func:`monotonic`, but return time as nanoseconds.
+
+   .. versionadded:: 3.7
+
+.. function:: perf_counter() -> float
+
+   .. index::
+      single: benchmarking
 
    Return the value (in fractional seconds) of a performance counter, i.e. a
    clock with the highest available resolution to measure a short duration.  It
@@ -344,10 +308,27 @@ The module defines the following functions and data items:
    point of the returned value is undefined, so that only the difference between
    the results of consecutive calls is valid.
 
+   Use :func:`perf_counter_ns` to avoid the precision loss caused by the
+   :class:`float` type.
+
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.10
+      On Windows, the function is now system-wide.
 
-.. function:: process_time()
+.. function:: perf_counter_ns() -> int
+
+   Similar to :func:`perf_counter`, but return time as nanoseconds.
+
+   .. versionadded:: 3.7
+
+
+.. function:: process_time() -> float
+
+   .. index::
+      single: CPU time
+      single: processor time
+      single: benchmarking
 
    Return the value (in fractional seconds) of the sum of the system and user
    CPU time of the current process.  It does not include time elapsed during
@@ -355,7 +336,16 @@ The module defines the following functions and data items:
    returned value is undefined, so that only the difference between the results
    of consecutive calls is valid.
 
+   Use :func:`process_time_ns` to avoid the precision loss caused by the
+   :class:`float` type.
+
    .. versionadded:: 3.3
+
+.. function:: process_time_ns() -> int
+
+   Similar to :func:`process_time` but return time as nanoseconds.
+
+   .. versionadded:: 3.7
 
 .. function:: sleep(secs)
 
@@ -372,6 +362,9 @@ The module defines the following functions and data items:
       by a signal, except if the signal handler raises an exception (see
       :pep:`475` for the rationale).
 
+
+.. index::
+   single: % (percent); datetime format
 
 .. function:: strftime(format[, t])
 
@@ -504,6 +497,9 @@ The module defines the following functions and data items:
    it is 3.
 
 
+.. index::
+   single: % (percent); datetime format
+
 .. function:: strptime(string[, format])
 
    Parse a string representing a time according to a format.  The return value
@@ -582,7 +578,7 @@ The module defines the following functions and data items:
    :class:`struct_time`, or having elements of the wrong type, a
    :exc:`TypeError` is raised.
 
-.. function:: time()
+.. function:: time() -> float
 
    Return the time in seconds since the epoch_ as a floating point
    number. The specific date of the epoch and the handling of
@@ -607,17 +603,45 @@ The module defines the following functions and data items:
    :class:`struct_time` object is returned, from which the components
    of the calendar date may be accessed as attributes.
 
-.. data:: timezone
-
-   The offset of the local (non-DST) timezone, in seconds west of UTC (negative in
-   most of Western Europe, positive in the US, zero in the UK).
+   Use :func:`time_ns` to avoid the precision loss caused by the :class:`float`
+   type.
 
 
-.. data:: tzname
+.. function:: time_ns() -> int
 
-   A tuple of two strings: the first is the name of the local non-DST timezone, the
-   second is the name of the local DST timezone.  If no DST timezone is defined,
-   the second string should not be used.
+   Similar to :func:`~time.time` but returns time as an integer number of nanoseconds
+   since the epoch_.
+
+   .. versionadded:: 3.7
+
+
+.. function:: thread_time() -> float
+
+   .. index::
+      single: CPU time
+      single: processor time
+      single: benchmarking
+
+   Return the value (in fractional seconds) of the sum of the system and user
+   CPU time of the current thread.  It does not include time elapsed during
+   sleep.  It is thread-specific by definition.  The reference point of the
+   returned value is undefined, so that only the difference between the results
+   of consecutive calls in the same thread is valid.
+
+   Use :func:`thread_time_ns` to avoid the precision loss caused by the
+   :class:`float` type.
+
+   .. availability::  Windows, Linux, Unix systems supporting
+      ``CLOCK_THREAD_CPUTIME_ID``.
+
+   .. versionadded:: 3.7
+
+
+.. function:: thread_time_ns() -> int
+
+   Similar to :func:`thread_time` but return time as nanoseconds.
+
+   .. versionadded:: 3.7
 
 
 .. function:: tzset()
@@ -630,7 +654,7 @@ The module defines the following functions and data items:
    nonzero if there is a time, past, present or future when daylight saving time
    applies).
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. note::
 
@@ -706,6 +730,167 @@ The module defines the following functions and data items:
       >>> time.tzset()
       >>> time.tzname
       ('EET', 'EEST')
+
+
+.. _time-clock-id-constants:
+
+Clock ID Constants
+------------------
+
+These constants are used as parameters for :func:`clock_getres` and
+:func:`clock_gettime`.
+
+.. data:: CLOCK_BOOTTIME
+
+   Identical to :data:`CLOCK_MONOTONIC`, except it also includes any time that
+   the system is suspended.
+
+   This allows applications to get a suspend-aware monotonic  clock  without
+   having to deal with the complications of :data:`CLOCK_REALTIME`, which may
+   have  discontinuities if the time is changed using ``settimeofday()`` or
+   similar.
+
+   .. availability:: Linux 2.6.39 or later.
+
+   .. versionadded:: 3.7
+
+
+.. data:: CLOCK_HIGHRES
+
+   The Solaris OS has a ``CLOCK_HIGHRES`` timer that attempts to use an optimal
+   hardware source, and may give close to nanosecond resolution.
+   ``CLOCK_HIGHRES`` is the nonadjustable, high-resolution clock.
+
+   .. availability:: Solaris.
+
+   .. versionadded:: 3.3
+
+
+.. data:: CLOCK_MONOTONIC
+
+   Clock that cannot be set and represents monotonic time since some unspecified
+   starting point.
+
+   .. availability:: Unix.
+
+   .. versionadded:: 3.3
+
+
+.. data:: CLOCK_MONOTONIC_RAW
+
+   Similar to :data:`CLOCK_MONOTONIC`, but provides access to a raw
+   hardware-based time that is not subject to NTP adjustments.
+
+   .. availability:: Linux 2.6.28 and newer, macOS 10.12 and newer.
+
+   .. versionadded:: 3.3
+
+
+.. data:: CLOCK_PROCESS_CPUTIME_ID
+
+   High-resolution per-process timer from the CPU.
+
+   .. availability:: Unix.
+
+   .. versionadded:: 3.3
+
+
+.. data:: CLOCK_PROF
+
+   High-resolution per-process timer from the CPU.
+
+   .. availability:: FreeBSD, NetBSD 7 or later, OpenBSD.
+
+   .. versionadded:: 3.7
+
+.. data:: CLOCK_TAI
+
+   `International Atomic Time <https://www.nist.gov/pml/time-and-frequency-division/nist-time-frequently-asked-questions-faq#tai>`_
+
+   The system must have a current leap second table in order for this to give
+   the correct answer.  PTP or NTP software can maintain a leap second table.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.9
+
+.. data:: CLOCK_THREAD_CPUTIME_ID
+
+   Thread-specific CPU-time clock.
+
+   .. availability::  Unix.
+
+   .. versionadded:: 3.3
+
+
+.. data:: CLOCK_UPTIME
+
+   Time whose absolute value is the time the system has been running and not
+   suspended, providing accurate uptime measurement, both absolute and
+   interval.
+
+   .. availability:: FreeBSD, OpenBSD 5.5 or later.
+
+   .. versionadded:: 3.7
+
+
+.. data:: CLOCK_UPTIME_RAW
+
+   Clock that increments monotonically, tracking the time since an arbitrary
+   point, unaffected by frequency or time adjustments and not incremented while
+   the system is asleep.
+
+   .. availability:: macOS 10.12 and newer.
+
+   .. versionadded:: 3.8
+
+The following constant is the only parameter that can be sent to
+:func:`clock_settime`.
+
+
+.. data:: CLOCK_REALTIME
+
+   System-wide real-time clock.  Setting this clock requires appropriate
+   privileges.
+
+   .. availability:: Unix.
+
+   .. versionadded:: 3.3
+
+
+.. _time-timezone-constants:
+
+Timezone Constants
+-------------------
+
+.. data:: altzone
+
+   The offset of the local DST timezone, in seconds west of UTC, if one is defined.
+   This is negative if the local DST timezone is east of UTC (as in Western Europe,
+   including the UK).  Only use this if ``daylight`` is nonzero.  See note below.
+
+.. data:: daylight
+
+   Nonzero if a DST timezone is defined.  See note below.
+
+.. data:: timezone
+
+   The offset of the local (non-DST) timezone, in seconds west of UTC (negative in
+   most of Western Europe, positive in the US, zero in the UK).  See note below.
+
+.. data:: tzname
+
+   A tuple of two strings: the first is the name of the local non-DST timezone, the
+   second is the name of the local DST timezone.  If no DST timezone is defined,
+   the second string should not be used.  See note below.
+
+.. note::
+
+   For the above Timezone constants (:data:`altzone`, :data:`daylight`, :data:`timezone`,
+   and :data:`tzname`), the value is determined by the timezone rules in effect
+   at module load time or the last time :func:`tzset` is called and may be incorrect
+   for times in the past.  It is recommended to use the :attr:`tm_gmtoff` and
+   :attr:`tm_zone` results from :func:`localtime` to obtain timezone information.
 
 
 .. seealso::

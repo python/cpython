@@ -1,7 +1,7 @@
 import unittest
 import tkinter
 from tkinter import font
-from test.support import requires, run_unittest
+from test.support import requires, run_unittest, gc_collect, ALWAYS_EQ
 from tkinter.test.support import AbstractTkTest
 
 requires('gui')
@@ -35,6 +35,16 @@ class FontTest(AbstractTkTest, unittest.TestCase):
             self.assertIsInstance(self.font.cget(key), sizetype)
             self.assertIsInstance(self.font[key], sizetype)
 
+    def test_unicode_family(self):
+        family = 'MS \u30b4\u30b7\u30c3\u30af'
+        try:
+            f = font.Font(root=self.root, family=family, exists=True)
+        except tkinter.TclError:
+            f = font.Font(root=self.root, family=family, exists=False)
+        self.assertEqual(f.cget('family'), family)
+        del f
+        gc_collect()
+
     def test_actual(self):
         options = self.font.actual()
         self.assertGreaterEqual(set(options),
@@ -60,6 +70,7 @@ class FontTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(font1, font2)
         self.assertNotEqual(font1, font1.copy())
         self.assertNotEqual(font1, 0)
+        self.assertEqual(font1, ALWAYS_EQ)
 
     def test_measure(self):
         self.assertIsInstance(self.font.measure('abc'), int)
@@ -89,6 +100,12 @@ class FontTest(AbstractTkTest, unittest.TestCase):
             self.assertIsInstance(name, str)
             self.assertTrue(name)
         self.assertIn(fontname, names)
+
+    def test_repr(self):
+        self.assertEqual(
+            repr(self.font), f'<tkinter.font.Font object {fontname!r}>'
+        )
+
 
 tests_gui = (FontTest, )
 

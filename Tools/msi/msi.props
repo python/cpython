@@ -15,7 +15,7 @@
     </PropertyGroup>
 
     <Import Project="wix.props" />
-    <Import Project="..\..\PCBuild\tcltk.props" />
+    <Import Project="..\..\PCbuild\tcltk.props" />
 
     <PropertyGroup>
         <!--
@@ -48,14 +48,15 @@
     </ItemGroup>
 
     <PropertyGroup>
-        <IntermediateOutputPath>$(Py_IntDir)\$(Configuration)_$(Platform)_Setup\$(OutputName)</IntermediateOutputPath>
+        <IntermediateOutputPath>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)$(ArchName)_$(Configuration)\msi_$(OutputName)</IntermediateOutputPath>
         <IntermediateOutputPath Condition="'$(OutputSuffix)' != ''">$(IntermediateOutputPath)_$(OutputSuffix)</IntermediateOutputPath>
         <OutputPath Condition="'$(OutputPath)' == ''">$(BuildPath)</OutputPath>
         <OutputPath Condition="!HasTrailingSlash($(OutputPath))">$(OutputPath)\</OutputPath>
         <OutDir>$(OutputPath)</OutDir>
         <ReuseCabinetCache>true</ReuseCabinetCache>
-        <CRTRedist Condition="'$(CRTRedist)' == ''">$(ExternalsDir)\windows-installer\redist</CRTRedist>
-        <CRTRedist Condition="!Exists($(CRTRedist))"></CRTRedist>
+        <CRTRedist Condition="'$(CRTRedist)' == ''">$(ExternalsDir)\windows-installer\redist-1\$(Platform)</CRTRedist>
+        <CRTRedist>$([System.IO.Path]::GetFullPath($(CRTRedist)))</CRTRedist>
+        <TclTkLibraryDir Condition="$(TclTkLibraryDir) == ''">$(tcltkDir)lib</TclTkLibraryDir>
         <DocFilename>python$(MajorVersionNumber)$(MinorVersionNumber)$(MicroVersionNumber)$(ReleaseLevelName).chm</DocFilename>
 
         <InstallerVersion>$(MajorVersionNumber).$(MinorVersionNumber).$(Field3Value).0</InstallerVersion>
@@ -87,6 +88,7 @@
             PyArchExt=$(PyArchExt);
             PyTestExt=$(PyTestExt);
             OptionalFeatureName=$(OutputName);
+            ssltag=-1_1;
         </DefineConstants>
         <DefineConstants Condition="'$(CRTRedist)' != ''">
             $(DefineConstants);CRTRedist=$(CRTRedist);
@@ -120,13 +122,10 @@
         <LinkerBindInputPaths Include="$(PySourcePath)">
             <BindName>src</BindName>
         </LinkerBindInputPaths>
-        <LinkerBindInputPaths Include="$(tcltkDir)">
+        <LinkerBindInputPaths Include="$(TclTkLibraryDir)">
             <BindName>tcltk</BindName>
         </LinkerBindInputPaths>
-        <LinkerBindInputPaths Include="$(CRTRedist)" Condition="'$(CRTRedist)' != ''">
-            <BindName>redist</BindName>
-        </LinkerBindInputPaths>
-        <LinkerBindInputPaths Include="$(VS140COMNTOOLS)\..\..\VC\redist\$(Platform)\Microsoft.VC140.CRT">
+        <LinkerBindInputPaths Include="$(CRTRedist)">
             <BindName>redist</BindName>
         </LinkerBindInputPaths>
         <LinkerBindInputPaths Include="$(BuildPath32)">

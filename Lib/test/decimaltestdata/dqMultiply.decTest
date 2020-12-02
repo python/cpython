@@ -355,7 +355,7 @@ dqmul756 multiply  1e-4277 -1e-3311 -> -0E-6176 Underflow Subnormal Inexact Roun
 dqmul757 multiply -1e-4277  1e-3311 -> -0E-6176 Underflow Subnormal Inexact Rounded Clamped
 dqmul758 multiply -1e-4277 -1e-3311 ->  0E-6176 Underflow Subnormal Inexact Rounded Clamped
 
--- 'subnormal' boundary (all hard underflow or overflow in base arithemtic)
+-- 'subnormal' boundary (all hard underflow or overflow in base arithmetic)
 dqmul760 multiply 1e-6069 1e-101 -> 1E-6170 Subnormal
 dqmul761 multiply 1e-6069 1e-102 -> 1E-6171 Subnormal
 dqmul762 multiply 1e-6069 1e-103 -> 1E-6172 Subnormal

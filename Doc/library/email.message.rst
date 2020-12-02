@@ -92,7 +92,7 @@ message objects.
 
    .. method:: __str__()
 
-      Equivalent to `as_string(policy=self.policy.clone(utf8=True)`.  Allows
+      Equivalent to ``as_string(policy=self.policy.clone(utf8=True))``.  Allows
       ``str(msg)`` to produce a string containing the serialized message in a
       readable format.
 
@@ -130,8 +130,8 @@ message objects.
 
    .. method:: is_multipart()
 
-      Return ``True`` if the message's payload is a list of sub-\
-      :class:`EmailMessage` objects, otherwise return ``False``.  When
+      Return ``True`` if the message's payload is a list of
+      sub-\ :class:`EmailMessage` objects, otherwise return ``False``.  When
       :meth:`is_multipart` returns ``False``, the payload should be a string
       object (which might be a CTE encoded binary payload).  Note that
       :meth:`is_multipart` returning ``True`` does not necessarily mean that
@@ -178,7 +178,7 @@ message objects.
 
    .. method:: __contains__(name)
 
-      Return true if the message object has a field named *name*. Matching is
+      Return ``True`` if the message object has a field named *name*. Matching is
       done without regard to case and *name* does not include the trailing
       colon.  Used for the ``in`` operator.  For example::
 
@@ -379,7 +379,7 @@ message objects.
 
       Note that existing parameter values of headers may be accessed through
       the :attr:`~email.headerregistry.BaseHeader.params` attribute of the
-      header value (for example, ``msg['Content-Type'].params['charset']``.
+      header value (for example, ``msg['Content-Type'].params['charset']``).
 
       .. versionchanged:: 3.4 ``replace`` keyword was added.
 
@@ -487,7 +487,6 @@ message objects.
          from email import message_from_binary_file
          with open('../Lib/test/test_email/data/msg_16.txt', 'rb') as f:
              msg = message_from_binary_file(f)
-         from email.iterators import _structure
 
       .. doctest::
 
@@ -509,6 +508,7 @@ message objects.
 
       .. doctest::
 
+         >>> from email.iterators import _structure
          >>> for part in msg.walk():
          ...     print(part.get_content_maintype() == 'multipart',
          ...           part.is_multipart())
@@ -679,7 +679,7 @@ message objects.
       specified by the current :mod:`~email.policy`.  If the added part
       has no :mailheader:`Content-Disposition` header, add one with the value
       ``attachment``.  This method can be used both for explicit attachments
-      (:mailheader:`Content-Disposition: attachment` and ``inline`` attachments
+      (:mailheader:`Content-Disposition: attachment`) and ``inline`` attachments
       (:mailheader:`Content-Disposition: inline`), by passing appropriate
       options to the ``content_manager``.
 

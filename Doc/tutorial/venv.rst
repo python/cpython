@@ -50,6 +50,12 @@ This will create the ``tutorial-env`` directory if it doesn't exist,
 and also create directories inside it containing a copy of the Python
 interpreter, the standard library, and various supporting files.
 
+A common directory location for a virtual environment is ``.venv``.
+This name keeps the directory typically hidden in your shell and thus
+out of the way while giving it a name that explains why the directory
+exists. It also prevents clashing with ``.env`` environment variable
+definition files that some tooling supports.
+
 Once you've created a virtual environment, you may activate it.
 
 On Windows, run::
@@ -88,7 +94,7 @@ Managing Packages with pip
 
 You can install, upgrade, and remove packages using a program called
 :program:`pip`.  By default ``pip`` will install packages from the Python
-Package Index, <https://pypi.python.org/pypi>.  You can browse the Python
+Package Index, <https://pypi.org>.  You can browse the Python
 Package Index by going to it in your web browser, or you can use ``pip``'s
 limited search feature:
 
@@ -110,7 +116,7 @@ You can install the latest version of a package by specifying a package's name:
 
 .. code-block:: bash
 
-  (tutorial-env) $ pip install novas
+  (tutorial-env) $ python -m pip install novas
   Collecting novas
     Downloading novas-3.1.1.3.tar.gz (136kB)
   Installing collected packages: novas
@@ -122,7 +128,7 @@ package name  followed by ``==`` and the version number:
 
 .. code-block:: bash
 
-  (tutorial-env) $ pip install requests==2.6.0
+  (tutorial-env) $ python -m pip install requests==2.6.0
   Collecting requests==2.6.0
     Using cached requests-2.6.0-py2.py3-none-any.whl
   Installing collected packages: requests
@@ -135,7 +141,7 @@ install --upgrade`` to upgrade the package to the latest version:
 
 .. code-block:: bash
 
-  (tutorial-env) $ pip install --upgrade requests
+  (tutorial-env) $ python -m pip install --upgrade requests
   Collecting requests
   Installing collected packages: requests
     Found existing installation: requests 2.6.0
@@ -193,7 +199,7 @@ necessary packages with ``install -r``:
 
 .. code-block:: bash
 
-  (tutorial-env) $ pip install -r requirements.txt
+  (tutorial-env) $ python -m pip install -r requirements.txt
   Collecting novas==3.1.1.3 (from -r requirements.txt (line 1))
     ...
   Collecting numpy==1.9.2 (from -r requirements.txt (line 2))

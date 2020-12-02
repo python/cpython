@@ -150,18 +150,19 @@ The :mod:`csv` module defines the following classes:
                       dialect='excel', *args, **kwds)
 
    Create an object that operates like a regular reader but maps the
-   information in each row to an :mod:`OrderedDict <collections.OrderedDict>`
-   whose keys are given by the optional *fieldnames* parameter.
+   information in each row to a :class:`dict` whose keys are given by the
+   optional *fieldnames* parameter.
 
    The *fieldnames* parameter is a :term:`sequence`.  If *fieldnames* is
    omitted, the values in the first row of file *f* will be used as the
-   fieldnames.  Regardless of how the fieldnames are determined, the ordered
+   fieldnames.  Regardless of how the fieldnames are determined, the
    dictionary preserves their original ordering.
 
    If a row has more fields than fieldnames, the remaining data is put in a
    list and stored with the fieldname specified by *restkey* (which defaults
    to ``None``).  If a non-blank row has fewer fields than fieldnames, the
-   missing values are filled-in with ``None``.
+   missing values are filled-in with the value of *restval* (which defaults
+   to ``None``).
 
    All other optional or keyword arguments are passed to the underlying
    :class:`reader` instance.
@@ -169,10 +170,13 @@ The :mod:`csv` module defines the following classes:
    .. versionchanged:: 3.6
       Returned rows are now of type :class:`OrderedDict`.
 
+   .. versionchanged:: 3.8
+      Returned rows are now of type :class:`dict`.
+
    A short usage example::
 
        >>> import csv
-       >>> with open('names.csv') as csvfile:
+       >>> with open('names.csv', newline='') as csvfile:
        ...     reader = csv.DictReader(csvfile)
        ...     for row in reader:
        ...         print(row['first_name'], row['last_name'])
@@ -181,7 +185,7 @@ The :mod:`csv` module defines the following classes:
        John Cleese
 
        >>> print(row)
-       OrderedDict([('first_name', 'John'), ('last_name', 'Cleese')])
+       {'first_name': 'John', 'last_name': 'Cleese'}
 
 
 .. class:: DictWriter(f, fieldnames, restval='', extrasaction='raise', \
@@ -203,15 +207,13 @@ The :mod:`csv` module defines the following classes:
    :class:`writer` instance.
 
    Note that unlike the :class:`DictReader` class, the *fieldnames* parameter
-   of the :class:`DictWriter` is not optional.  Since Python's :class:`dict`
-   objects are not ordered, there is not enough information available to deduce
-   the order in which the row should be written to file *f*.
+   of the :class:`DictWriter` class is not optional.
 
    A short usage example::
 
        import csv
 
-       with open('names.csv', 'w') as csvfile:
+       with open('names.csv', 'w', newline='') as csvfile:
            fieldnames = ['first_name', 'last_name']
            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
@@ -270,7 +272,7 @@ The :mod:`csv` module defines the following classes:
 
 An example for :class:`Sniffer` use::
 
-   with open('example.csv') as csvfile:
+   with open('example.csv', newline='') as csvfile:
        dialect = csv.Sniffer().sniff(csvfile.read(1024))
        csvfile.seek(0)
        reader = csv.reader(csvfile, dialect)
@@ -445,15 +447,17 @@ read CSV files (assuming they support complex numbers at all).
 .. method:: csvwriter.writerow(row)
 
    Write the *row* parameter to the writer's file object, formatted according to
-   the current dialect.
+   the current dialect. Return the return value of the call to the *write* method
+   of the underlying file object.
 
    .. versionchanged:: 3.5
       Added support of arbitrary iterables.
 
 .. method:: csvwriter.writerows(rows)
 
-   Write all the *rows* parameters (a list of *row* objects as described above) to
-   the writer's file object, formatted according to the current dialect.
+   Write all elements in *rows* (an iterable of *row* objects as described
+   above) to the writer's file object, formatted according to the current
+   dialect.
 
 Writer objects have the following public attribute:
 
@@ -468,9 +472,14 @@ DictWriter objects have the following public method:
 
 .. method:: DictWriter.writeheader()
 
-   Write a row with the field names (as specified in the constructor).
+   Write a row with the field names (as specified in the constructor) to
+   the writer's file object, formatted according to the current dialect. Return
+   the return value of the :meth:`csvwriter.writerow` call used internally.
 
    .. versionadded:: 3.2
+   .. versionchanged:: 3.8
+      :meth:`writeheader` now also returns the value returned by
+      the :meth:`csvwriter.writerow` method it uses internally.
 
 
 .. _csv-examples:

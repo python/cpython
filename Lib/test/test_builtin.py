@@ -1,6 +1,7 @@
 # Python test set -- built-in functions
 
 import ast
+import asyncio
 import builtins
 import collections
 import decimal
@@ -17,9 +18,19 @@ import traceback
 import types
 import unittest
 import warnings
+from contextlib import ExitStack
+from functools import partial
+from inspect import CO_COROUTINE
+from itertools import product
+from textwrap import dedent
+from types import AsyncGeneratorType, FunctionType
 from operator import neg
-from test.support import TESTFN, unlink, check_warnings
+from test import support
+from test.support import (swap_attr, maybe_get_event_loop_policy)
+from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
+from test.support.warnings_helper import check_warnings
+from unittest.mock import MagicMock, patch
 try:
     import pty, signal
 except ImportError:
@@ -151,6 +162,13 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, __import__, 1, 2, 3, 4)
         self.assertRaises(ValueError, __import__, '')
         self.assertRaises(TypeError, __import__, 'sys', name='sys')
+        # Relative import outside of a package with no __package__ or __spec__ (bpo-37409).
+        with self.assertWarns(ImportWarning):
+            self.assertRaises(ImportError, __import__, '',
+                              {'__package__': None, '__spec__': None, '__name__': '__main__'},
+                              locals={}, fromlist=('foo',), level=1)
+        # embedded null character
+        self.assertRaises(ModuleNotFoundError, __import__, 'string\x00')
 
     def test_abs(self):
         # int
@@ -309,8 +327,8 @@ class BuiltinTest(unittest.TestCase):
         bom = b'\xef\xbb\xbf'
         compile(bom + b'print(1)\n', '', 'exec')
         compile(source='pass', filename='?', mode='exec')
-        compile(dont_inherit=0, filename='tmp', source='0', mode='eval')
-        compile('pass', '?', dont_inherit=1, mode='exec')
+        compile(dont_inherit=False, filename='tmp', source='0', mode='eval')
+        compile('pass', '?', dont_inherit=True, mode='exec')
         compile(memoryview(b"text"), "name", "exec")
         self.assertRaises(TypeError, compile)
         self.assertRaises(ValueError, compile, 'print(42)\n', '<string>', 'badmode')
@@ -326,19 +344,22 @@ class BuiltinTest(unittest.TestCase):
 
         codestr = '''def f():
         """doc"""
+        debug_enabled = False
+        if __debug__:
+            debug_enabled = True
         try:
             assert False
         except AssertionError:
-            return (True, f.__doc__)
+            return (True, f.__doc__, debug_enabled, __debug__)
         else:
-            return (False, f.__doc__)
+            return (False, f.__doc__, debug_enabled, __debug__)
         '''
         def f(): """doc"""
-        values = [(-1, __debug__, f.__doc__),
-                  (0, True, 'doc'),
-                  (1, False, 'doc'),
-                  (2, False, None)]
-        for optval, debugval, docstring in values:
+        values = [(-1, __debug__, f.__doc__, __debug__, __debug__),
+                  (0, True, 'doc', True, True),
+                  (1, False, 'doc', False, False),
+                  (2, False, None, False, False)]
+        for optval, *expected in values:
             # test both direct compilation and compilation via AST
             codeobjs = []
             codeobjs.append(compile(codestr, "<test>", "exec", optimize=optval))
@@ -348,7 +369,140 @@ class BuiltinTest(unittest.TestCase):
                 ns = {}
                 exec(code, ns)
                 rv = ns['f']()
-                self.assertEqual(rv, (debugval, docstring))
+                self.assertEqual(rv, tuple(expected))
+
+    def test_compile_top_level_await_no_coro(self):
+        """Make sure top level non-await codes get the correct coroutine flags"""
+        modes = ('single', 'exec')
+        code_samples = [
+            '''def f():pass\n''',
+            '''[x for x in l]''',
+            '''{x for x in l}''',
+            '''(x for x in l)''',
+            '''{x:x for x in l}''',
+        ]
+        for mode, code_sample in product(modes, code_samples):
+            source = dedent(code_sample)
+            co = compile(source,
+                            '?',
+                            mode,
+                            flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+
+            self.assertNotEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
+                                msg=f"source={source} mode={mode}")
+
+
+    def test_compile_top_level_await(self):
+        """Test whether code some top level await can be compiled.
+
+        Make sure it compiles only with the PyCF_ALLOW_TOP_LEVEL_AWAIT flag
+        set, and make sure the generated code object has the CO_COROUTINE flag
+        set in order to execute it with  `await eval(.....)` instead of exec,
+        or via a FunctionType.
+        """
+
+        # helper function just to check we can run top=level async-for
+        async def arange(n):
+            for i in range(n):
+                yield i
+
+        modes = ('single', 'exec')
+        code_samples = [
+            '''a = await asyncio.sleep(0, result=1)''',
+            '''async for i in arange(1):
+                   a = 1''',
+            '''async with asyncio.Lock() as l:
+                   a = 1''',
+            '''a = [x async for x in arange(2)][1]''',
+            '''a = 1 in {x async for x in arange(2)}''',
+            '''a = {x:1 async for x in arange(1)}[0]''',
+            '''a = [x async for x in arange(2) async for x in arange(2)][1]''',
+            '''a = [x async for x in (x async for x in arange(5))][1]''',
+            '''a, = [1 for x in {x async for x in arange(1)}]''',
+            '''a = [await asyncio.sleep(0, x) async for x in arange(2)][1]'''
+        ]
+        policy = maybe_get_event_loop_policy()
+        try:
+            for mode, code_sample in product(modes, code_samples):
+                source = dedent(code_sample)
+                with self.assertRaises(
+                        SyntaxError, msg=f"source={source} mode={mode}"):
+                    compile(source, '?', mode)
+
+                co = compile(source,
+                             '?',
+                             mode,
+                             flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+
+                self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
+                                 msg=f"source={source} mode={mode}")
+
+                # test we can create and  advance a function type
+                globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
+                async_f = FunctionType(co, globals_)
+                asyncio.run(async_f())
+                self.assertEqual(globals_['a'], 1)
+
+                # test we can await-eval,
+                globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
+                asyncio.run(eval(co, globals_))
+                self.assertEqual(globals_['a'], 1)
+        finally:
+            asyncio.set_event_loop_policy(policy)
+
+    def test_compile_top_level_await_invalid_cases(self):
+         # helper function just to check we can run top=level async-for
+        async def arange(n):
+            for i in range(n):
+                yield i
+
+        modes = ('single', 'exec')
+        code_samples = [
+            '''def f():  await arange(10)\n''',
+            '''def f():  [x async for x in arange(10)]\n''',
+            '''def f():  [await x async for x in arange(10)]\n''',
+            '''def f():
+                   async for i in arange(1):
+                       a = 1
+            ''',
+            '''def f():
+                   async with asyncio.Lock() as l:
+                       a = 1
+            '''
+        ]
+        policy = maybe_get_event_loop_policy()
+        try:
+            for mode, code_sample in product(modes, code_samples):
+                source = dedent(code_sample)
+                with self.assertRaises(
+                        SyntaxError, msg=f"source={source} mode={mode}"):
+                    compile(source, '?', mode)
+
+                with self.assertRaises(
+                        SyntaxError, msg=f"source={source} mode={mode}"):
+                    co = compile(source,
+                             '?',
+                             mode,
+                             flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+        finally:
+            asyncio.set_event_loop_policy(policy)
+
+
+    def test_compile_async_generator(self):
+        """
+        With the PyCF_ALLOW_TOP_LEVEL_AWAIT flag added in 3.8, we want to
+        make sure AsyncGenerators are still properly not marked with the
+        CO_COROUTINE flag.
+        """
+        code = dedent("""async def ticker():
+                for i in range(10):
+                    yield i
+                    await asyncio.sleep(0)""")
+
+        co = compile(code, '?', 'exec', flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+        glob = {}
+        exec(co, glob)
+        self.assertEqual(type(glob['ticker']()), AsyncGeneratorType)
 
     def test_delattr(self):
         sys.spam = 1
@@ -678,6 +832,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(hash('spam'), hash(b'spam'))
         hash((0,1,2,3))
         def f(): pass
+        hash(f)
         self.assertRaises(TypeError, hash, [])
         self.assertRaises(TypeError, hash, {})
         # Bug 1536021: Allow hash to return long objects
@@ -861,7 +1016,12 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(max(1, 2.0, 3), 3)
         self.assertEqual(max(1.0, 2, 3), 3)
 
-        self.assertRaises(TypeError, max)
+        with self.assertRaisesRegex(
+            TypeError,
+            'max expected at least 1 argument, got 0'
+        ):
+            max()
+
         self.assertRaises(TypeError, max, 42)
         self.assertRaises(ValueError, max, ())
         class BadSeq:
@@ -897,6 +1057,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(max((), default=1, key=neg), 1)
         self.assertEqual(max((1, 2), default=3, key=neg), 1)
 
+        self.assertEqual(max((1, 2), key=None), 2)
+
         data = [random.randrange(200) for i in range(100)]
         keys = dict((elem, random.randrange(50)) for elem in data)
         f = keys.__getitem__
@@ -913,7 +1075,12 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(min(1, 2.0, 3), 1)
         self.assertEqual(min(1.0, 2, 3), 1.0)
 
-        self.assertRaises(TypeError, min)
+        with self.assertRaisesRegex(
+            TypeError,
+            'min expected at least 1 argument, got 0'
+        ):
+            min()
+
         self.assertRaises(TypeError, min, 42)
         self.assertRaises(ValueError, min, ())
         class BadSeq:
@@ -948,6 +1115,8 @@ class BuiltinTest(unittest.TestCase):
 
         self.assertEqual(min((), default=1, key=neg), 1)
         self.assertEqual(min((1, 2), default=1, key=neg), 2)
+
+        self.assertEqual(min((1, 2), key=None), 1)
 
         data = [random.randrange(200) for i in range(100)]
         keys = dict((elem, random.randrange(50)) for elem in data)
@@ -1010,6 +1179,11 @@ class BuiltinTest(unittest.TestCase):
             self.assertEqual(fp.read(300), 'XXX'*100)
             self.assertEqual(fp.read(1000), 'YYY'*100)
 
+        # embedded null bytes and characters
+        self.assertRaises(ValueError, open, 'a\x00b')
+        self.assertRaises(ValueError, open, b'a\x00b')
+
+    @unittest.skipIf(sys.flags.utf8_mode, "utf-8 mode is enabled")
     def test_open_default_encoding(self):
         old_environ = dict(os.environ)
         try:
@@ -1105,10 +1279,23 @@ class BuiltinTest(unittest.TestCase):
         self.assertAlmostEqual(pow(-1, 0.5), 1j)
         self.assertAlmostEqual(pow(-1, 1/3), 0.5 + 0.8660254037844386j)
 
-        self.assertRaises(ValueError, pow, -1, -2, 3)
+        # See test_pow for additional tests for three-argument pow.
+        self.assertEqual(pow(-1, -2, 3), 1)
         self.assertRaises(ValueError, pow, 1, 2, 0)
 
         self.assertRaises(TypeError, pow)
+
+        # Test passing in arguments as keywords.
+        self.assertEqual(pow(0, exp=0), 1)
+        self.assertEqual(pow(base=2, exp=4), 16)
+        self.assertEqual(pow(base=5, exp=2, mod=14), 11)
+        twopow = partial(pow, base=2)
+        self.assertEqual(twopow(exp=5), 32)
+        fifth_power = partial(pow, exp=5)
+        self.assertEqual(fifth_power(2), 32)
+        mod10 = partial(pow, mod=10)
+        self.assertEqual(mod10(2, 6), 4)
+        self.assertEqual(mod10(exp=6, base=2), 4)
 
     def test_input(self):
         self.write_testfile()
@@ -1280,6 +1467,27 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(sum(iter(Squares(10))), 285)
         self.assertEqual(sum([[1], [2], [3]], []), [1, 2, 3])
 
+        self.assertEqual(sum(range(10), 1000), 1045)
+        self.assertEqual(sum(range(10), start=1000), 1045)
+        self.assertEqual(sum(range(10), 2**31-5), 2**31+40)
+        self.assertEqual(sum(range(10), 2**63-5), 2**63+40)
+
+        self.assertEqual(sum(i % 2 != 0 for i in range(10)), 5)
+        self.assertEqual(sum((i % 2 != 0 for i in range(10)), 2**31-3),
+                         2**31+2)
+        self.assertEqual(sum((i % 2 != 0 for i in range(10)), 2**63-3),
+                         2**63+2)
+        self.assertIs(sum([], False), False)
+
+        self.assertEqual(sum(i / 2 for i in range(10)), 22.5)
+        self.assertEqual(sum((i / 2 for i in range(10)), 1000), 1022.5)
+        self.assertEqual(sum((i / 2 for i in range(10)), 1000.25), 1022.75)
+        self.assertEqual(sum([0.5, 1]), 1.5)
+        self.assertEqual(sum([1, 0.5]), 1.5)
+        self.assertEqual(repr(sum([-0.0])), '0.0')
+        self.assertEqual(repr(sum([-0.0], -0.0)), '-0.0')
+        self.assertEqual(repr(sum([], -0.0)), '-0.0')
+
         self.assertRaises(TypeError, sum)
         self.assertRaises(TypeError, sum, 42)
         self.assertRaises(TypeError, sum, ['a', 'b', 'c'])
@@ -1290,6 +1498,9 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, sum, [[1], [2], [3]])
         self.assertRaises(TypeError, sum, [{2:3}])
         self.assertRaises(TypeError, sum, [{2:3}]*2, {2:3})
+        self.assertRaises(TypeError, sum, [], '')
+        self.assertRaises(TypeError, sum, [], b'')
+        self.assertRaises(TypeError, sum, [], bytearray())
 
         class BadSeq:
             def __getitem__(self, index):
@@ -1330,6 +1541,14 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, vars, 42, 42)
         self.assertRaises(TypeError, vars, 42)
         self.assertEqual(vars(self.C_get_vars()), {'a':2})
+
+    def iter_error(self, iterable, error):
+        """Collect `iterable` into a list, catching an expected `error`."""
+        items = []
+        with self.assertRaises(error):
+            for item in iterable:
+                items.append(item)
+        return items
 
     def test_zip(self):
         a = (1, 2, 3)
@@ -1382,6 +1601,160 @@ class BuiltinTest(unittest.TestCase):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             z1 = zip(a, b)
             self.check_iter_pickle(z1, t, proto)
+
+    def test_zip_pickle_strict(self):
+        a = (1, 2, 3)
+        b = (4, 5, 6)
+        t = [(1, 4), (2, 5), (3, 6)]
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            z1 = zip(a, b, strict=True)
+            self.check_iter_pickle(z1, t, proto)
+
+    def test_zip_pickle_strict_fail(self):
+        a = (1, 2, 3)
+        b = (4, 5, 6, 7)
+        t = [(1, 4), (2, 5), (3, 6)]
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            z1 = zip(a, b, strict=True)
+            z2 = pickle.loads(pickle.dumps(z1, proto))
+            self.assertEqual(self.iter_error(z1, ValueError), t)
+            self.assertEqual(self.iter_error(z2, ValueError), t)
+
+    def test_zip_pickle_stability(self):
+        # Pickles of zip((1, 2, 3), (4, 5, 6)) dumped from 3.9:
+        pickles = [
+            b'citertools\nizip\np0\n(c__builtin__\niter\np1\n((I1\nI2\nI3\ntp2\ntp3\nRp4\nI0\nbg1\n((I4\nI5\nI6\ntp5\ntp6\nRp7\nI0\nbtp8\nRp9\n.',
+            b'citertools\nizip\nq\x00(c__builtin__\niter\nq\x01((K\x01K\x02K\x03tq\x02tq\x03Rq\x04K\x00bh\x01((K\x04K\x05K\x06tq\x05tq\x06Rq\x07K\x00btq\x08Rq\t.',
+            b'\x80\x02citertools\nizip\nq\x00c__builtin__\niter\nq\x01K\x01K\x02K\x03\x87q\x02\x85q\x03Rq\x04K\x00bh\x01K\x04K\x05K\x06\x87q\x05\x85q\x06Rq\x07K\x00b\x86q\x08Rq\t.',
+            b'\x80\x03cbuiltins\nzip\nq\x00cbuiltins\niter\nq\x01K\x01K\x02K\x03\x87q\x02\x85q\x03Rq\x04K\x00bh\x01K\x04K\x05K\x06\x87q\x05\x85q\x06Rq\x07K\x00b\x86q\x08Rq\t.',
+            b'\x80\x04\x95L\x00\x00\x00\x00\x00\x00\x00\x8c\x08builtins\x94\x8c\x03zip\x94\x93\x94\x8c\x08builtins\x94\x8c\x04iter\x94\x93\x94K\x01K\x02K\x03\x87\x94\x85\x94R\x94K\x00bh\x05K\x04K\x05K\x06\x87\x94\x85\x94R\x94K\x00b\x86\x94R\x94.',
+            b'\x80\x05\x95L\x00\x00\x00\x00\x00\x00\x00\x8c\x08builtins\x94\x8c\x03zip\x94\x93\x94\x8c\x08builtins\x94\x8c\x04iter\x94\x93\x94K\x01K\x02K\x03\x87\x94\x85\x94R\x94K\x00bh\x05K\x04K\x05K\x06\x87\x94\x85\x94R\x94K\x00b\x86\x94R\x94.',
+        ]
+        for protocol, dump in enumerate(pickles):
+            z1 = zip((1, 2, 3), (4, 5, 6))
+            z2 = zip((1, 2, 3), (4, 5, 6), strict=False)
+            z3 = pickle.loads(dump)
+            l3 = list(z3)
+            self.assertEqual(type(z3), zip)
+            self.assertEqual(pickle.dumps(z1, protocol), dump)
+            self.assertEqual(pickle.dumps(z2, protocol), dump)
+            self.assertEqual(list(z1), l3)
+            self.assertEqual(list(z2), l3)
+
+    def test_zip_pickle_strict_stability(self):
+        # Pickles of zip((1, 2, 3), (4, 5), strict=True) dumped from 3.10:
+        pickles = [
+            b'citertools\nizip\np0\n(c__builtin__\niter\np1\n((I1\nI2\nI3\ntp2\ntp3\nRp4\nI0\nbg1\n((I4\nI5\ntp5\ntp6\nRp7\nI0\nbtp8\nRp9\nI01\nb.',
+            b'citertools\nizip\nq\x00(c__builtin__\niter\nq\x01((K\x01K\x02K\x03tq\x02tq\x03Rq\x04K\x00bh\x01((K\x04K\x05tq\x05tq\x06Rq\x07K\x00btq\x08Rq\tI01\nb.',
+            b'\x80\x02citertools\nizip\nq\x00c__builtin__\niter\nq\x01K\x01K\x02K\x03\x87q\x02\x85q\x03Rq\x04K\x00bh\x01K\x04K\x05\x86q\x05\x85q\x06Rq\x07K\x00b\x86q\x08Rq\t\x88b.',
+            b'\x80\x03cbuiltins\nzip\nq\x00cbuiltins\niter\nq\x01K\x01K\x02K\x03\x87q\x02\x85q\x03Rq\x04K\x00bh\x01K\x04K\x05\x86q\x05\x85q\x06Rq\x07K\x00b\x86q\x08Rq\t\x88b.',
+            b'\x80\x04\x95L\x00\x00\x00\x00\x00\x00\x00\x8c\x08builtins\x94\x8c\x03zip\x94\x93\x94\x8c\x08builtins\x94\x8c\x04iter\x94\x93\x94K\x01K\x02K\x03\x87\x94\x85\x94R\x94K\x00bh\x05K\x04K\x05\x86\x94\x85\x94R\x94K\x00b\x86\x94R\x94\x88b.',
+            b'\x80\x05\x95L\x00\x00\x00\x00\x00\x00\x00\x8c\x08builtins\x94\x8c\x03zip\x94\x93\x94\x8c\x08builtins\x94\x8c\x04iter\x94\x93\x94K\x01K\x02K\x03\x87\x94\x85\x94R\x94K\x00bh\x05K\x04K\x05\x86\x94\x85\x94R\x94K\x00b\x86\x94R\x94\x88b.',
+        ]
+        a = (1, 2, 3)
+        b = (4, 5)
+        t = [(1, 4), (2, 5)]
+        for protocol, dump in enumerate(pickles):
+            z1 = zip(a, b, strict=True)
+            z2 = pickle.loads(dump)
+            self.assertEqual(pickle.dumps(z1, protocol), dump)
+            self.assertEqual(type(z2), zip)
+            self.assertEqual(self.iter_error(z1, ValueError), t)
+            self.assertEqual(self.iter_error(z2, ValueError), t)
+
+    def test_zip_bad_iterable(self):
+        exception = TypeError()
+
+        class BadIterable:
+            def __iter__(self):
+                raise exception
+
+        with self.assertRaises(TypeError) as cm:
+            zip(BadIterable())
+
+        self.assertIs(cm.exception, exception)
+
+    def test_zip_strict(self):
+        self.assertEqual(tuple(zip((1, 2, 3), 'abc', strict=True)),
+                         ((1, 'a'), (2, 'b'), (3, 'c')))
+        self.assertRaises(ValueError, tuple,
+                          zip((1, 2, 3, 4), 'abc', strict=True))
+        self.assertRaises(ValueError, tuple,
+                          zip((1, 2), 'abc', strict=True))
+        self.assertRaises(ValueError, tuple,
+                          zip((1, 2), (1, 2), 'abc', strict=True))
+
+    def test_zip_strict_iterators(self):
+        x = iter(range(5))
+        y = [0]
+        z = iter(range(5))
+        self.assertRaises(ValueError, list,
+                          (zip(x, y, z, strict=True)))
+        self.assertEqual(next(x), 2)
+        self.assertEqual(next(z), 1)
+
+    def test_zip_strict_error_handling(self):
+
+        class Error(Exception):
+            pass
+
+        class Iter:
+            def __init__(self, size):
+                self.size = size
+            def __iter__(self):
+                return self
+            def __next__(self):
+                self.size -= 1
+                if self.size < 0:
+                    raise Error
+                return self.size
+
+        l1 = self.iter_error(zip("AB", Iter(1), strict=True), Error)
+        self.assertEqual(l1, [("A", 0)])
+        l2 = self.iter_error(zip("AB", Iter(2), "A", strict=True), ValueError)
+        self.assertEqual(l2, [("A", 1, "A")])
+        l3 = self.iter_error(zip("AB", Iter(2), "ABC", strict=True), Error)
+        self.assertEqual(l3, [("A", 1, "A"), ("B", 0, "B")])
+        l4 = self.iter_error(zip("AB", Iter(3), strict=True), ValueError)
+        self.assertEqual(l4, [("A", 2), ("B", 1)])
+        l5 = self.iter_error(zip(Iter(1), "AB", strict=True), Error)
+        self.assertEqual(l5, [(0, "A")])
+        l6 = self.iter_error(zip(Iter(2), "A", strict=True), ValueError)
+        self.assertEqual(l6, [(1, "A")])
+        l7 = self.iter_error(zip(Iter(2), "ABC", strict=True), Error)
+        self.assertEqual(l7, [(1, "A"), (0, "B")])
+        l8 = self.iter_error(zip(Iter(3), "AB", strict=True), ValueError)
+        self.assertEqual(l8, [(2, "A"), (1, "B")])
+
+    def test_zip_strict_error_handling_stopiteration(self):
+
+        class Iter:
+            def __init__(self, size):
+                self.size = size
+            def __iter__(self):
+                return self
+            def __next__(self):
+                self.size -= 1
+                if self.size < 0:
+                    raise StopIteration
+                return self.size
+
+        l1 = self.iter_error(zip("AB", Iter(1), strict=True), ValueError)
+        self.assertEqual(l1, [("A", 0)])
+        l2 = self.iter_error(zip("AB", Iter(2), "A", strict=True), ValueError)
+        self.assertEqual(l2, [("A", 1, "A")])
+        l3 = self.iter_error(zip("AB", Iter(2), "ABC", strict=True), ValueError)
+        self.assertEqual(l3, [("A", 1, "A"), ("B", 0, "B")])
+        l4 = self.iter_error(zip("AB", Iter(3), strict=True), ValueError)
+        self.assertEqual(l4, [("A", 2), ("B", 1)])
+        l5 = self.iter_error(zip(Iter(1), "AB", strict=True), ValueError)
+        self.assertEqual(l5, [(0, "A")])
+        l6 = self.iter_error(zip(Iter(2), "A", strict=True), ValueError)
+        self.assertEqual(l6, [(1, "A")])
+        l7 = self.iter_error(zip(Iter(2), "ABC", strict=True), ValueError)
+        self.assertEqual(l7, [(1, "A"), (0, "B")])
+        l8 = self.iter_error(zip(Iter(3), "AB", strict=True), ValueError)
+        self.assertEqual(l8, [(2, "A"), (1, "B")])
 
     def test_format(self):
         # Test the basic machinery of the format() builtin.  Don't test
@@ -1498,6 +1871,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, x.translate, b"1", 1)
         self.assertRaises(TypeError, x.translate, b"1"*256, 1)
 
+    def test_bytearray_extend_error(self):
+        array = bytearray()
+        bad_iter = map(int, "X")
+        self.assertRaises(ValueError, array.extend, bad_iter)
+
     def test_construct_singletons(self):
         for const in None, Ellipsis, NotImplemented:
             tp = type(const)
@@ -1505,12 +1883,146 @@ class BuiltinTest(unittest.TestCase):
             self.assertRaises(TypeError, tp, 1, 2)
             self.assertRaises(TypeError, tp, a=1, b=2)
 
+    def test_warning_notimplemented(self):
+        # Issue #35712: NotImplemented is a sentinel value that should never
+        # be evaluated in a boolean context (virtually all such use cases
+        # are a result of accidental misuse implementing rich comparison
+        # operations in terms of one another).
+        # For the time being, it will continue to evaluate as truthy, but
+        # issue a deprecation warning (with the eventual intent to make it
+        # a TypeError).
+        self.assertWarns(DeprecationWarning, bool, NotImplemented)
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(NotImplemented)
+        with self.assertWarns(DeprecationWarning):
+            self.assertFalse(not NotImplemented)
+
+
+class TestBreakpoint(unittest.TestCase):
+    def setUp(self):
+        # These tests require a clean slate environment.  For example, if the
+        # test suite is run with $PYTHONBREAKPOINT set to something else, it
+        # will mess up these tests.  Similarly for sys.breakpointhook.
+        # Cleaning the slate here means you can't use breakpoint() to debug
+        # these tests, but I think that's okay.  Just use pdb.set_trace() if
+        # you must.
+        self.resources = ExitStack()
+        self.addCleanup(self.resources.close)
+        self.env = self.resources.enter_context(EnvironmentVarGuard())
+        del self.env['PYTHONBREAKPOINT']
+        self.resources.enter_context(
+            swap_attr(sys, 'breakpointhook', sys.__breakpointhook__))
+
+    def test_breakpoint(self):
+        with patch('pdb.set_trace') as mock:
+            breakpoint()
+        mock.assert_called_once()
+
+    def test_breakpoint_with_breakpointhook_set(self):
+        my_breakpointhook = MagicMock()
+        sys.breakpointhook = my_breakpointhook
+        breakpoint()
+        my_breakpointhook.assert_called_once_with()
+
+    def test_breakpoint_with_breakpointhook_reset(self):
+        my_breakpointhook = MagicMock()
+        sys.breakpointhook = my_breakpointhook
+        breakpoint()
+        my_breakpointhook.assert_called_once_with()
+        # Reset the hook and it will not be called again.
+        sys.breakpointhook = sys.__breakpointhook__
+        with patch('pdb.set_trace') as mock:
+            breakpoint()
+            mock.assert_called_once_with()
+        my_breakpointhook.assert_called_once_with()
+
+    def test_breakpoint_with_args_and_keywords(self):
+        my_breakpointhook = MagicMock()
+        sys.breakpointhook = my_breakpointhook
+        breakpoint(1, 2, 3, four=4, five=5)
+        my_breakpointhook.assert_called_once_with(1, 2, 3, four=4, five=5)
+
+    def test_breakpoint_with_passthru_error(self):
+        def my_breakpointhook():
+            pass
+        sys.breakpointhook = my_breakpointhook
+        self.assertRaises(TypeError, breakpoint, 1, 2, 3, four=4, five=5)
+
+    @unittest.skipIf(sys.flags.ignore_environment, '-E was given')
+    def test_envar_good_path_builtin(self):
+        self.env['PYTHONBREAKPOINT'] = 'int'
+        with patch('builtins.int') as mock:
+            breakpoint('7')
+            mock.assert_called_once_with('7')
+
+    @unittest.skipIf(sys.flags.ignore_environment, '-E was given')
+    def test_envar_good_path_other(self):
+        self.env['PYTHONBREAKPOINT'] = 'sys.exit'
+        with patch('sys.exit') as mock:
+            breakpoint()
+            mock.assert_called_once_with()
+
+    @unittest.skipIf(sys.flags.ignore_environment, '-E was given')
+    def test_envar_good_path_noop_0(self):
+        self.env['PYTHONBREAKPOINT'] = '0'
+        with patch('pdb.set_trace') as mock:
+            breakpoint()
+            mock.assert_not_called()
+
+    def test_envar_good_path_empty_string(self):
+        # PYTHONBREAKPOINT='' is the same as it not being set.
+        self.env['PYTHONBREAKPOINT'] = ''
+        with patch('pdb.set_trace') as mock:
+            breakpoint()
+            mock.assert_called_once_with()
+
+    @unittest.skipIf(sys.flags.ignore_environment, '-E was given')
+    def test_envar_unimportable(self):
+        for envar in (
+                '.', '..', '.foo', 'foo.', '.int', 'int.',
+                '.foo.bar', '..foo.bar', '/./',
+                'nosuchbuiltin',
+                'nosuchmodule.nosuchcallable',
+                ):
+            with self.subTest(envar=envar):
+                self.env['PYTHONBREAKPOINT'] = envar
+                mock = self.resources.enter_context(patch('pdb.set_trace'))
+                w = self.resources.enter_context(check_warnings(quiet=True))
+                breakpoint()
+                self.assertEqual(
+                    str(w.message),
+                    f'Ignoring unimportable $PYTHONBREAKPOINT: "{envar}"')
+                self.assertEqual(w.category, RuntimeWarning)
+                mock.assert_not_called()
+
+    def test_envar_ignored_when_hook_is_set(self):
+        self.env['PYTHONBREAKPOINT'] = 'sys.exit'
+        with patch('sys.exit') as mock:
+            sys.breakpointhook = int
+            breakpoint()
+            mock.assert_not_called()
+
+
 @unittest.skipUnless(pty, "the pty and signal modules must be available")
 class PtyTests(unittest.TestCase):
     """Tests that use a pseudo terminal to guarantee stdin and stdout are
     terminals in the test environment"""
 
+    @staticmethod
+    def handle_sighup(signum, frame):
+        # bpo-40140: if the process is the session leader, os.close(fd)
+        # of "pid, fd = pty.fork()" can raise SIGHUP signal:
+        # just ignore the signal.
+        pass
+
     def run_child(self, child, terminal_input):
+        old_sighup = signal.signal(signal.SIGHUP, self.handle_sighup)
+        try:
+            return self._run_child(child, terminal_input)
+        finally:
+            signal.signal(signal.SIGHUP, old_sighup)
+
+    def _run_child(self, child, terminal_input):
         r, w = os.pipe()  # Pipe test results from child back to parent
         try:
             pid, fd = pty.fork()
@@ -1519,6 +2031,7 @@ class PtyTests(unittest.TestCase):
             os.close(w)
             self.skipTest("pty.fork() raised {}".format(e))
             raise
+
         if pid == 0:
             # Child
             try:
@@ -1532,9 +2045,11 @@ class PtyTests(unittest.TestCase):
             finally:
                 # We don't want to return to unittest...
                 os._exit(0)
+
         # Parent
         os.close(w)
         os.write(fd, terminal_input)
+
         # Get results from the pipe
         with open(r, "r") as rpipe:
             lines = []
@@ -1544,6 +2059,7 @@ class PtyTests(unittest.TestCase):
                     # The other end was closed => the child exited
                     break
                 lines.append(line)
+
         # Check the result was got and corresponds to the user's terminal input
         if len(lines) != 2:
             # Something went wrong, try to get at stderr
@@ -1561,7 +2077,13 @@ class PtyTests(unittest.TestCase):
             child_output = child_output.decode("ascii", "ignore")
             self.fail("got %d lines in pipe but expected 2, child output was:\n%s"
                       % (len(lines), child_output))
+
+        # bpo-40155: Close the PTY before waiting for the child process
+        # completion, otherwise the child process hangs on AIX.
         os.close(fd)
+
+        support.wait_process(pid, exitcode=0)
+
         return lines
 
     def check_input_tty(self, prompt, terminal_input, stdio_encoding=None):
@@ -1632,7 +2154,7 @@ class TestSorted(unittest.TestCase):
         self.assertEqual(data, sorted(copy, key=lambda x: -x))
         self.assertNotEqual(data, copy)
         random.shuffle(copy)
-        self.assertEqual(data, sorted(copy, reverse=1))
+        self.assertEqual(data, sorted(copy, reverse=True))
         self.assertNotEqual(data, copy)
 
     def test_bad_arguments(self):
@@ -1838,6 +2360,15 @@ class TestType(unittest.TestCase):
             type('A', (B,), {'__slots__': '__dict__'})
         with self.assertRaises(TypeError):
             type('A', (B,), {'__slots__': '__weakref__'})
+
+    def test_namespace_order(self):
+        # bpo-34320: namespace should preserve order
+        od = collections.OrderedDict([('a', 1), ('b', 2)])
+        od.move_to_end('a')
+        expected = list(od.items())
+
+        C = type('C', (), od)
+        self.assertEqual(list(C.__dict__.items())[:2], [('b', 2), ('a', 1)])
 
 
 def load_tests(loader, tests, pattern):

@@ -5,23 +5,13 @@
 #include <stdlib.h>
 #include <errno.h>
 
-
-/* First some general settings */
-
-/* microseconds (the Python API uses seconds, though) */
-#define DEFAULT_INTERVAL 5000
-static unsigned long gil_interval = DEFAULT_INTERVAL;
-#define INTERVAL (gil_interval >= 1 ? gil_interval : 1)
-
-/* Enable if you want to force the switching of threads at least every `gil_interval` */
-#undef FORCE_SWITCHING
-#define FORCE_SWITCHING
+#include "pycore_atomic.h"
 
 
 /*
    Notes about the implementation:
 
-   - The GIL is just a boolean variable (gil_locked) whose access is protected
+   - The GIL is just a boolean variable (locked) whose access is protected
      by a mutex (gil_mutex), and whose changes are signalled by a condition
      variable (gil_cond). gil_mutex is taken for short periods of time,
      and therefore mostly uncontended.
@@ -48,7 +38,7 @@ static unsigned long gil_interval = DEFAULT_INTERVAL;
    - When a thread releases the GIL and gil_drop_request is set, that thread
      ensures that another GIL-awaiting thread gets scheduled.
      It does so by waiting on a condition variable (switch_cond) until
-     the value of gil_last_holder is changed to something else than its
+     the value of last_holder is changed to something else than its
      own thread state pointer, indicating that another thread was able to
      take the GIL.
 
@@ -60,11 +50,7 @@ static unsigned long gil_interval = DEFAULT_INTERVAL;
 */
 
 #include "condvar.h"
-#ifndef Py_HAVE_CONDVAR
-#error You need either a POSIX-compatible or a Windows system!
-#endif
 
-#define MUTEX_T PyMUTEX_T
 #define MUTEX_INIT(mut) \
     if (PyMUTEX_INIT(&(mut))) { \
         Py_FatalError("PyMUTEX_INIT(" #mut ") failed"); };
@@ -78,7 +64,6 @@ static unsigned long gil_interval = DEFAULT_INTERVAL;
     if (PyMUTEX_UNLOCK(&(mut))) { \
         Py_FatalError("PyMUTEX_UNLOCK(" #mut ") failed"); };
 
-#define COND_T PyCOND_T
 #define COND_INIT(cond) \
     if (PyCOND_INIT(&(cond))) { \
         Py_FatalError("PyCOND_INIT(" #cond ") failed"); };
@@ -103,168 +88,262 @@ static unsigned long gil_interval = DEFAULT_INTERVAL;
     } \
 
 
+#define DEFAULT_INTERVAL 5000
 
-/* Whether the GIL is already taken (-1 if uninitialized). This is atomic
-   because it can be read without any lock taken in ceval.c. */
-static _Py_atomic_int gil_locked = {-1};
-/* Number of GIL switches since the beginning. */
-static unsigned long gil_switch_number = 0;
-/* Last PyThreadState holding / having held the GIL. This helps us know
-   whether anyone else was scheduled after we dropped the GIL. */
-static _Py_atomic_address gil_last_holder = {0};
-
-/* This condition variable allows one or several threads to wait until
-   the GIL is released. In addition, the mutex also protects the above
-   variables. */
-static COND_T gil_cond;
-static MUTEX_T gil_mutex;
-
-#ifdef FORCE_SWITCHING
-/* This condition variable helps the GIL-releasing thread wait for
-   a GIL-awaiting thread to be scheduled and take the GIL. */
-static COND_T switch_cond;
-static MUTEX_T switch_mutex;
-#endif
-
-
-static int gil_created(void)
+static void _gil_initialize(struct _gil_runtime_state *gil)
 {
-    return _Py_atomic_load_explicit(&gil_locked, _Py_memory_order_acquire) >= 0;
+    _Py_atomic_int uninitialized = {-1};
+    gil->locked = uninitialized;
+    gil->interval = DEFAULT_INTERVAL;
 }
 
-static void create_gil(void)
+static int gil_created(struct _gil_runtime_state *gil)
 {
-    MUTEX_INIT(gil_mutex);
-#ifdef FORCE_SWITCHING
-    MUTEX_INIT(switch_mutex);
-#endif
-    COND_INIT(gil_cond);
-#ifdef FORCE_SWITCHING
-    COND_INIT(switch_cond);
-#endif
-    _Py_atomic_store_relaxed(&gil_last_holder, 0);
-    _Py_ANNOTATE_RWLOCK_CREATE(&gil_locked);
-    _Py_atomic_store_explicit(&gil_locked, 0, _Py_memory_order_release);
+    return (_Py_atomic_load_explicit(&gil->locked, _Py_memory_order_acquire) >= 0);
 }
 
-static void destroy_gil(void)
+static void create_gil(struct _gil_runtime_state *gil)
+{
+    MUTEX_INIT(gil->mutex);
+#ifdef FORCE_SWITCHING
+    MUTEX_INIT(gil->switch_mutex);
+#endif
+    COND_INIT(gil->cond);
+#ifdef FORCE_SWITCHING
+    COND_INIT(gil->switch_cond);
+#endif
+    _Py_atomic_store_relaxed(&gil->last_holder, 0);
+    _Py_ANNOTATE_RWLOCK_CREATE(&gil->locked);
+    _Py_atomic_store_explicit(&gil->locked, 0, _Py_memory_order_release);
+}
+
+static void destroy_gil(struct _gil_runtime_state *gil)
 {
     /* some pthread-like implementations tie the mutex to the cond
      * and must have the cond destroyed first.
      */
-    COND_FINI(gil_cond);
-    MUTEX_FINI(gil_mutex);
+    COND_FINI(gil->cond);
+    MUTEX_FINI(gil->mutex);
 #ifdef FORCE_SWITCHING
-    COND_FINI(switch_cond);
-    MUTEX_FINI(switch_mutex);
+    COND_FINI(gil->switch_cond);
+    MUTEX_FINI(gil->switch_mutex);
 #endif
-    _Py_atomic_store_explicit(&gil_locked, -1, _Py_memory_order_release);
-    _Py_ANNOTATE_RWLOCK_DESTROY(&gil_locked);
+    _Py_atomic_store_explicit(&gil->locked, -1,
+                              _Py_memory_order_release);
+    _Py_ANNOTATE_RWLOCK_DESTROY(&gil->locked);
 }
 
-static void recreate_gil(void)
+static void recreate_gil(struct _gil_runtime_state *gil)
 {
-    _Py_ANNOTATE_RWLOCK_DESTROY(&gil_locked);
+    _Py_ANNOTATE_RWLOCK_DESTROY(&gil->locked);
     /* XXX should we destroy the old OS resources here? */
-    create_gil();
+    create_gil(gil);
 }
 
-static void drop_gil(PyThreadState *tstate)
+static void
+drop_gil(struct _ceval_runtime_state *ceval, struct _ceval_state *ceval2,
+         PyThreadState *tstate)
 {
-    if (!_Py_atomic_load_relaxed(&gil_locked))
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    struct _gil_runtime_state *gil = &ceval2->gil;
+#else
+    struct _gil_runtime_state *gil = &ceval->gil;
+#endif
+    if (!_Py_atomic_load_relaxed(&gil->locked)) {
         Py_FatalError("drop_gil: GIL is not locked");
+    }
+
     /* tstate is allowed to be NULL (early interpreter init) */
     if (tstate != NULL) {
         /* Sub-interpreter support: threads might have been switched
            under our feet using PyThreadState_Swap(). Fix the GIL last
            holder variable so that our heuristics work. */
-        _Py_atomic_store_relaxed(&gil_last_holder, (uintptr_t)tstate);
+        _Py_atomic_store_relaxed(&gil->last_holder, (uintptr_t)tstate);
     }
 
-    MUTEX_LOCK(gil_mutex);
-    _Py_ANNOTATE_RWLOCK_RELEASED(&gil_locked, /*is_write=*/1);
-    _Py_atomic_store_relaxed(&gil_locked, 0);
-    COND_SIGNAL(gil_cond);
-    MUTEX_UNLOCK(gil_mutex);
+    MUTEX_LOCK(gil->mutex);
+    _Py_ANNOTATE_RWLOCK_RELEASED(&gil->locked, /*is_write=*/1);
+    _Py_atomic_store_relaxed(&gil->locked, 0);
+    COND_SIGNAL(gil->cond);
+    MUTEX_UNLOCK(gil->mutex);
 
 #ifdef FORCE_SWITCHING
-    if (_Py_atomic_load_relaxed(&gil_drop_request) && tstate != NULL) {
-        MUTEX_LOCK(switch_mutex);
+    if (_Py_atomic_load_relaxed(&ceval2->gil_drop_request) && tstate != NULL) {
+        MUTEX_LOCK(gil->switch_mutex);
         /* Not switched yet => wait */
-        if ((PyThreadState*)_Py_atomic_load_relaxed(&gil_last_holder) == tstate) {
-        RESET_GIL_DROP_REQUEST();
+        if (((PyThreadState*)_Py_atomic_load_relaxed(&gil->last_holder)) == tstate)
+        {
+            assert(is_tstate_valid(tstate));
+            RESET_GIL_DROP_REQUEST(tstate->interp);
             /* NOTE: if COND_WAIT does not atomically start waiting when
                releasing the mutex, another thread can run through, take
                the GIL and drop it again, and reset the condition
                before we even had a chance to wait for it. */
-            COND_WAIT(switch_cond, switch_mutex);
-    }
-        MUTEX_UNLOCK(switch_mutex);
+            COND_WAIT(gil->switch_cond, gil->switch_mutex);
+        }
+        MUTEX_UNLOCK(gil->switch_mutex);
     }
 #endif
 }
 
-static void take_gil(PyThreadState *tstate)
+
+/* Check if a Python thread must exit immediately, rather than taking the GIL
+   if Py_Finalize() has been called.
+
+   When this function is called by a daemon thread after Py_Finalize() has been
+   called, the GIL does no longer exist.
+
+   tstate must be non-NULL. */
+static inline int
+tstate_must_exit(PyThreadState *tstate)
 {
-    int err;
-    if (tstate == NULL)
-        Py_FatalError("take_gil: NULL tstate");
+    /* bpo-39877: Access _PyRuntime directly rather than using
+       tstate->interp->runtime to support calls from Python daemon threads.
+       After Py_Finalize() has been called, tstate can be a dangling pointer:
+       point to PyThreadState freed memory. */
+    PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(&_PyRuntime);
+    return (finalizing != NULL && finalizing != tstate);
+}
 
-    err = errno;
-    MUTEX_LOCK(gil_mutex);
 
-    if (!_Py_atomic_load_relaxed(&gil_locked))
+/* Take the GIL.
+
+   The function saves errno at entry and restores its value at exit.
+
+   tstate must be non-NULL. */
+static void
+take_gil(PyThreadState *tstate)
+{
+    int err = errno;
+
+    assert(tstate != NULL);
+
+    if (tstate_must_exit(tstate)) {
+        /* bpo-39877: If Py_Finalize() has been called and tstate is not the
+           thread which called Py_Finalize(), exit immediately the thread.
+
+           This code path can be reached by a daemon thread after Py_Finalize()
+           completes. In this case, tstate is a dangling pointer: points to
+           PyThreadState freed memory. */
+        PyThread_exit_thread();
+    }
+
+    assert(is_tstate_valid(tstate));
+    PyInterpreterState *interp = tstate->interp;
+    struct _ceval_runtime_state *ceval = &interp->runtime->ceval;
+    struct _ceval_state *ceval2 = &interp->ceval;
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    struct _gil_runtime_state *gil = &ceval2->gil;
+#else
+    struct _gil_runtime_state *gil = &ceval->gil;
+#endif
+
+    /* Check that _PyEval_InitThreads() was called to create the lock */
+    assert(gil_created(gil));
+
+    MUTEX_LOCK(gil->mutex);
+
+    if (!_Py_atomic_load_relaxed(&gil->locked)) {
         goto _ready;
+    }
 
-    while (_Py_atomic_load_relaxed(&gil_locked)) {
+    while (_Py_atomic_load_relaxed(&gil->locked)) {
+        unsigned long saved_switchnum = gil->switch_number;
+
+        unsigned long interval = (gil->interval >= 1 ? gil->interval : 1);
         int timed_out = 0;
-        unsigned long saved_switchnum;
+        COND_TIMED_WAIT(gil->cond, gil->mutex, interval, timed_out);
 
-        saved_switchnum = gil_switch_number;
-        COND_TIMED_WAIT(gil_cond, gil_mutex, INTERVAL, timed_out);
         /* If we timed out and no switch occurred in the meantime, it is time
            to ask the GIL-holding thread to drop it. */
         if (timed_out &&
-            _Py_atomic_load_relaxed(&gil_locked) &&
-            gil_switch_number == saved_switchnum) {
-            SET_GIL_DROP_REQUEST();
+            _Py_atomic_load_relaxed(&gil->locked) &&
+            gil->switch_number == saved_switchnum)
+        {
+            if (tstate_must_exit(tstate)) {
+                MUTEX_UNLOCK(gil->mutex);
+                PyThread_exit_thread();
+            }
+            assert(is_tstate_valid(tstate));
+
+            SET_GIL_DROP_REQUEST(interp);
         }
     }
+
 _ready:
 #ifdef FORCE_SWITCHING
-    /* This mutex must be taken before modifying gil_last_holder (see drop_gil()). */
-    MUTEX_LOCK(switch_mutex);
+    /* This mutex must be taken before modifying gil->last_holder:
+       see drop_gil(). */
+    MUTEX_LOCK(gil->switch_mutex);
 #endif
     /* We now hold the GIL */
-    _Py_atomic_store_relaxed(&gil_locked, 1);
-    _Py_ANNOTATE_RWLOCK_ACQUIRED(&gil_locked, /*is_write=*/1);
+    _Py_atomic_store_relaxed(&gil->locked, 1);
+    _Py_ANNOTATE_RWLOCK_ACQUIRED(&gil->locked, /*is_write=*/1);
 
-    if (tstate != (PyThreadState*)_Py_atomic_load_relaxed(&gil_last_holder)) {
-        _Py_atomic_store_relaxed(&gil_last_holder, (uintptr_t)tstate);
-        ++gil_switch_number;
+    if (tstate != (PyThreadState*)_Py_atomic_load_relaxed(&gil->last_holder)) {
+        _Py_atomic_store_relaxed(&gil->last_holder, (uintptr_t)tstate);
+        ++gil->switch_number;
     }
 
 #ifdef FORCE_SWITCHING
-    COND_SIGNAL(switch_cond);
-    MUTEX_UNLOCK(switch_mutex);
+    COND_SIGNAL(gil->switch_cond);
+    MUTEX_UNLOCK(gil->switch_mutex);
 #endif
-    if (_Py_atomic_load_relaxed(&gil_drop_request)) {
-        RESET_GIL_DROP_REQUEST();
+
+    if (tstate_must_exit(tstate)) {
+        /* bpo-36475: If Py_Finalize() has been called and tstate is not
+           the thread which called Py_Finalize(), exit immediately the
+           thread.
+
+           This code path can be reached by a daemon thread which was waiting
+           in take_gil() while the main thread called
+           wait_for_thread_shutdown() from Py_Finalize(). */
+        MUTEX_UNLOCK(gil->mutex);
+        drop_gil(ceval, ceval2, tstate);
+        PyThread_exit_thread();
     }
-    if (tstate->async_exc != NULL) {
-        _PyEval_SignalAsyncExc();
+    assert(is_tstate_valid(tstate));
+
+    if (_Py_atomic_load_relaxed(&ceval2->gil_drop_request)) {
+        RESET_GIL_DROP_REQUEST(interp);
+    }
+    else {
+        /* bpo-40010: eval_breaker should be recomputed to be set to 1 if there
+           is a pending signal: signal received by another thread which cannot
+           handle signals.
+
+           Note: RESET_GIL_DROP_REQUEST() calls COMPUTE_EVAL_BREAKER(). */
+        COMPUTE_EVAL_BREAKER(interp, ceval, ceval2);
     }
 
-    MUTEX_UNLOCK(gil_mutex);
+    /* Don't access tstate if the thread must exit */
+    if (tstate->async_exc != NULL) {
+        _PyEval_SignalAsyncExc(tstate);
+    }
+
+    MUTEX_UNLOCK(gil->mutex);
+
     errno = err;
 }
 
 void _PyEval_SetSwitchInterval(unsigned long microseconds)
 {
-    gil_interval = microseconds;
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    struct _gil_runtime_state *gil = &interp->ceval.gil;
+#else
+    struct _gil_runtime_state *gil = &_PyRuntime.ceval.gil;
+#endif
+    gil->interval = microseconds;
 }
 
 unsigned long _PyEval_GetSwitchInterval()
 {
-    return gil_interval;
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    struct _gil_runtime_state *gil = &interp->ceval.gil;
+#else
+    struct _gil_runtime_state *gil = &_PyRuntime.ceval.gil;
+#endif
+    return gil->interval;
 }

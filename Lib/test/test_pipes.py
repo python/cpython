@@ -3,10 +3,15 @@ import os
 import string
 import unittest
 import shutil
-from test.support import TESTFN, run_unittest, unlink, reap_children
+from test.support import run_unittest, reap_children, unix_shell
+from test.support.os_helper import TESTFN, unlink
+
 
 if os.name != 'posix':
     raise unittest.SkipTest('pipes module only works on posix')
+
+if not (unix_shell and os.path.exists(unix_shell)):
+    raise unittest.SkipTest('pipes module requires a shell')
 
 TESTFN2 = TESTFN + "2"
 
@@ -23,9 +28,8 @@ class SimplePipeTests(unittest.TestCase):
             self.skipTest('tr is not available')
         t = pipes.Template()
         t.append(s_command, pipes.STDIN_STDOUT)
-        f = t.open(TESTFN, 'w')
-        f.write('hello world #1')
-        f.close()
+        with t.open(TESTFN, 'w') as f:
+            f.write('hello world #1')
         with open(TESTFN) as f:
             self.assertEqual(f.read(), 'HELLO WORLD #1')
 

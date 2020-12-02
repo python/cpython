@@ -11,9 +11,9 @@ available for Python:
    `PyGObject <https://wiki.gnome.org/Projects/PyGObject>`_
       PyGObject provides introspection bindings for C libraries using
       `GObject <https://developer.gnome.org/gobject/stable/>`_.  One of
-      these libraries is the `GTK+ 3 <http://www.gtk.org/>`_ widget set.
+      these libraries is the `GTK+ 3 <https://www.gtk.org/>`_ widget set.
       GTK+ comes with many more widgets than Tkinter provides.  An online
-      `Python GTK+ 3 Tutorial <https://python-gtk-3-tutorial.readthedocs.org/en/latest/>`_
+      `Python GTK+ 3 Tutorial <https://python-gtk-3-tutorial.readthedocs.io/>`_
       is available.
 
    `PyGTK <http://www.pygtk.org/>`_
@@ -30,12 +30,13 @@ available for Python:
       for generating bindings for C++ libraries as Python classes, and
       is specifically designed for Python.
 
-   `PySide <https://wiki.qt.io/PySide>`_
-      PySide is a newer binding to the Qt toolkit, provided by Nokia.
-      Compared to PyQt, its licensing scheme is friendlier to non-open source
-      applications.
+   `PySide2 <https://doc.qt.io/qtforpython/>`_
+      Also known as the Qt for Python project, PySide2 is a newer binding to the
+      Qt toolkit. It is provided by The Qt Company and aims to provide a
+      complete port of PySide to Qt 5. Compared to PyQt, its licensing scheme is
+      friendlier to non-open source applications.
 
-   `wxPython <http://www.wxpython.org>`_
+   `wxPython <https://www.wxpython.org>`_
       wxPython is a cross-platform GUI toolkit for Python that is built around
       the popular `wxWidgets <https://www.wxwidgets.org/>`_ (formerly wxWindows)
       C++ toolkit.  It provides a native look and feel for applications on
@@ -47,7 +48,7 @@ available for Python:
       an XML-based resource format and more, including an ever growing library
       of user-contributed modules.
 
-PyGTK, PyQt, and wxPython, all have a modern look and feel and more
+PyGTK, PyQt, PySide2, and wxPython, all have a modern look and feel and more
 widgets than Tkinter. In addition, there are many other GUI toolkits for
 Python, both cross-platform, and platform-specific. See the `GUI Programming
 <https://wiki.python.org/moin/GuiProgramming>`_ page in the Python Wiki for a

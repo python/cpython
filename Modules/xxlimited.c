@@ -25,7 +25,7 @@ typedef struct {
 
 static PyObject *Xxo_Type;
 
-#define XxoObject_Check(v)      (Py_TYPE(v) == Xxo_Type)
+#define XxoObject_Check(v)      Py_IS_TYPE(v, Xxo_Type)
 
 static XxoObject *
 newXxoObject(PyObject *arg)
@@ -43,15 +43,15 @@ newXxoObject(PyObject *arg)
 static int
 Xxo_traverse(XxoObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->x_attr);
     return 0;
 }
 
-static int
+static void
 Xxo_finalize(XxoObject *self)
 {
     Py_CLEAR(self->x_attr);
-    return 0;
 }
 
 static PyObject *
@@ -79,10 +79,13 @@ static PyObject *
 Xxo_getattro(XxoObject *self, PyObject *name)
 {
     if (self->x_attr != NULL) {
-        PyObject *v = PyDict_GetItem(self->x_attr, name);
+        PyObject *v = PyDict_GetItemWithError(self->x_attr, name);
         if (v != NULL) {
             Py_INCREF(v);
             return v;
+        }
+        else if (PyErr_Occurred()) {
+            return NULL;
         }
     }
     return PyObject_GenericGetAttr((PyObject *)self, name);
@@ -98,7 +101,7 @@ Xxo_setattr(XxoObject *self, const char *name, PyObject *v)
     }
     if (v == NULL) {
         int rv = PyDict_DelItemString(self->x_attr, name);
-        if (rv < 0)
+        if (rv < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
             PyErr_SetString(PyExc_AttributeError,
                 "delete non-existing Xxo attribute");
         return rv;
@@ -121,7 +124,7 @@ static PyType_Spec Xxo_Type_spec = {
     "xxlimited.Xxo",
     sizeof(XxoObject),
     0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_FINALIZE,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     Xxo_Type_slots
 };
 

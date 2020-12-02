@@ -36,7 +36,8 @@ The module defines the following functions:
        Added negative *limit* support.
 
 
-.. function:: print_exception(etype, value, tb, limit=None, file=None, chain=True)
+.. function:: print_exception(exc, /[, value, tb], limit=None, \
+                              file=None, chain=True)
 
    Print exception information and stack trace entries from traceback object
    *tb* to *file*. This differs from :func:`print_tb` in the following
@@ -44,16 +45,31 @@ The module defines the following functions:
 
    * if *tb* is not ``None``, it prints a header ``Traceback (most recent
      call last):``
-   * it prints the exception *etype* and *value* after the stack trace
-   * if *etype* is :exc:`SyntaxError` and *value* has the appropriate format, it
-     prints the line where the syntax error occurred with a caret indicating the
-     approximate position of the error.
+
+   * it prints the exception type and *value* after the stack trace
+
+   .. index:: single: ^ (caret); marker
+
+   * if *type(value)* is :exc:`SyntaxError` and *value* has the appropriate
+     format, it prints the line where the syntax error occurred with a caret
+     indicating the approximate position of the error.
+
+   Since Python 3.10, instead of passing *value* and *tb*, an exception object
+   can be passed as the first argument. If *value* and *tb* are provided, the
+   first argument is ignored in order to provide backwards compatibility.
 
    The optional *limit* argument has the same meaning as for :func:`print_tb`.
    If *chain* is true (the default), then chained exceptions (the
    :attr:`__cause__` or :attr:`__context__` attributes of the exception) will be
    printed as well, like the interpreter itself does when printing an unhandled
    exception.
+
+   .. versionchanged:: 3.5
+      The *etype* argument is ignored and inferred from the type of *value*.
+
+   .. versionchanged:: 3.10
+      The *etype* parameter has been renamed to *exc* and is now
+      positional-only.
 
 
 .. function:: print_exc(limit=None, file=None, chain=True)
@@ -85,14 +101,16 @@ The module defines the following functions:
 
 .. function:: extract_tb(tb, limit=None)
 
-   Return a list of "pre-processed" stack trace entries extracted from the
-   traceback object *tb*.  It is useful for alternate formatting of
-   stack traces.  The optional *limit* argument has the same meaning as for
-   :func:`print_tb`.  A "pre-processed" stack trace entry is a 4-tuple
-   (*filename*, *line number*, *function name*, *text*) representing the
-   information that is usually printed for a stack trace.  The *text* is a
-   string with leading and trailing whitespace stripped; if the source is
-   not available it is ``None``.
+   Return a :class:`StackSummary` object representing a list of "pre-processed"
+   stack trace entries extracted from the traceback object *tb*.  It is useful
+   for alternate formatting of stack traces.  The optional *limit* argument has
+   the same meaning as for :func:`print_tb`.  A "pre-processed" stack trace
+   entry is a :class:`FrameSummary` object containing attributes
+   :attr:`~FrameSummary.filename`, :attr:`~FrameSummary.lineno`,
+   :attr:`~FrameSummary.name`, and :attr:`~FrameSummary.line` representing the
+   information that is usually printed for a stack trace.  The
+   :attr:`~FrameSummary.line` is a string with leading and trailing
+   whitespace stripped; if the source is not available it is ``None``.
 
 
 .. function:: extract_stack(f=None, limit=None)
@@ -104,32 +122,47 @@ The module defines the following functions:
 
 .. function:: format_list(extracted_list)
 
-   Given a list of tuples as returned by :func:`extract_tb` or
-   :func:`extract_stack`, return a list of strings ready for printing. Each
-   string in the resulting list corresponds to the item with the same index in
-   the argument list.  Each string ends in a newline; the strings may contain
-   internal newlines as well, for those items whose source text line is not
-   ``None``.
+   Given a list of tuples or :class:`FrameSummary` objects as returned by
+   :func:`extract_tb` or :func:`extract_stack`, return a list of strings ready
+   for printing.  Each string in the resulting list corresponds to the item with
+   the same index in the argument list.  Each string ends in a newline; the
+   strings may contain internal newlines as well, for those items whose source
+   text line is not ``None``.
 
 
-.. function:: format_exception_only(etype, value)
+.. function:: format_exception_only(exc, /[, value])
 
-   Format the exception part of a traceback.  The arguments are the exception
-   type and value such as given by ``sys.last_type`` and ``sys.last_value``.
-   The return value is a list of strings, each ending in a newline.  Normally,
-   the list contains a single string; however, for :exc:`SyntaxError`
-   exceptions, it contains several lines that (when printed) display detailed
-   information about where the syntax error occurred.  The message indicating
-   which exception occurred is the always last string in the list.
+   Format the exception part of a traceback using an exception value such as
+   given by ``sys.last_value``.  The return value is a list of strings, each
+   ending in a newline.  Normally, the list contains a single string; however,
+   for :exc:`SyntaxError` exceptions, it contains several lines that (when
+   printed) display detailed information about where the syntax error occurred.
+   The message indicating which exception occurred is the always last string in
+   the list.
+
+   Since Python 3.10, instead of passing *value*, an exception object
+   can be passed as the first argument.  If *value* is provided, the first
+   argument is ignored in order to provide backwards compatibility.
+
+   .. versionchanged:: 3.10
+      The *etype* parameter has been renamed to *exc* and is now
+      positional-only.
 
 
-.. function:: format_exception(etype, value, tb, limit=None, chain=True)
+.. function:: format_exception(exc, /[, value, tb], limit=None, chain=True)
 
    Format a stack trace and the exception information.  The arguments  have the
    same meaning as the corresponding arguments to :func:`print_exception`.  The
    return value is a list of strings, each ending in a newline and some
    containing internal newlines.  When these lines are concatenated and printed,
    exactly the same text is printed as does :func:`print_exception`.
+
+   .. versionchanged:: 3.5
+      The *etype* argument is ignored and inferred from the type of *value*.
+
+   .. versionchanged:: 3.10
+      This function's behavior and signature were modified to match
+      :func:`print_exception`.
 
 
 .. function:: format_exc(limit=None, chain=True)
@@ -287,9 +320,9 @@ capture data for later printing in a lightweight fashion.
 
    .. classmethod:: from_list(a_list)
 
-      Construct a :class:`StackSummary` object from a supplied old-style list
-      of tuples. Each tuple should be a 4-tuple with filename, lineno, name,
-      line as the elements.
+      Construct a :class:`StackSummary` object from a supplied list of
+      :class:`FrameSummary` objects or old-style list of tuples.  Each tuple
+      should be a 4-tuple with filename, lineno, name, line as the elements.
 
    .. method:: format()
 
@@ -372,6 +405,7 @@ exception and traceback:
        print("*** print_tb:")
        traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
        print("*** print_exception:")
+       # exc_type below is ignored on 3.5 and later
        traceback.print_exception(exc_type, exc_value, exc_traceback,
                                  limit=2, file=sys.stdout)
        print("*** print_exc:")
@@ -381,6 +415,7 @@ exception and traceback:
        print(formatted_lines[0])
        print(formatted_lines[-1])
        print("*** format_exception:")
+       # exc_type below is ignored on 3.5 and later
        print(repr(traceback.format_exception(exc_type, exc_value,
                                              exc_traceback)))
        print("*** extract_tb:")

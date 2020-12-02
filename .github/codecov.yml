@@ -1,10 +1,11 @@
 codecov:
+  strict_yaml_branch: master
   notify:
     require_ci_to_pass: true
 comment: off
 ignore:
   - "Doc/**/*"
-  - "Misc/*"
+  - "Misc/**/*"
   - "Mac/**/*"
   - "PC/**/*"
   - "PCbuild/**/*"

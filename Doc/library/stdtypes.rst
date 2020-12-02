@@ -20,10 +20,10 @@ rearrange their members in place, and don't return a specific item, never return
 the collection instance itself but ``None``.
 
 Some operations are supported by several object types; in particular,
-practically all objects can be compared, tested for truth value, and converted
-to a string (with the :func:`repr` function or the slightly different
-:func:`str` function).  The latter function is implicitly used when an object is
-written by the :func:`print` function.
+practically all objects can be compared for equality, tested for truth
+value, and converted to a string (with the :func:`repr` function or the
+slightly different :func:`str` function).  The latter function is implicitly
+used when an object is written by the :func:`print` function.
 
 
 .. _truth:
@@ -39,31 +39,26 @@ Truth Value Testing
    single: false
 
 Any object can be tested for truth value, for use in an :keyword:`if` or
-:keyword:`while` condition or as operand of the Boolean operations below. The
-following values are considered false:
-
-  .. index:: single: None (Built-in object)
-
-* ``None``
-
-  .. index:: single: False (Built-in object)
-
-* ``False``
-
-* zero of any numeric type, for example, ``0``, ``0.0``, ``0j``.
-
-* any empty sequence, for example, ``''``, ``()``, ``[]``.
-
-* any empty mapping, for example, ``{}``.
-
-* instances of user-defined classes, if the class defines a :meth:`__bool__` or
-  :meth:`__len__` method, when that method returns the integer zero or
-  :class:`bool` value ``False``. [1]_
+:keyword:`while` condition or as operand of the Boolean operations below.
 
 .. index:: single: true
 
-All other values are considered true --- so objects of many types are always
-true.
+By default, an object is considered true unless its class defines either a
+:meth:`__bool__` method that returns ``False`` or a :meth:`__len__` method that
+returns zero, when called with the object. [1]_  Here are most of the built-in
+objects considered false:
+
+  .. index::
+     single: None (Built-in object)
+     single: False (Built-in object)
+
+* constants defined to be false: ``None`` and ``False``.
+
+* zero of any numeric type: ``0``, ``0.0``, ``0j``, ``Decimal(0)``,
+  ``Fraction(0, 1)``
+
+* empty sequences and collections: ``''``, ``()``, ``[]``, ``{}``, ``set()``,
+  ``range(0)``
 
 .. index::
    operator: or
@@ -79,8 +74,8 @@ one of their operands.)
 
 .. _boolean:
 
-Boolean Operations --- :keyword:`and`, :keyword:`or`, :keyword:`not`
-====================================================================
+Boolean Operations --- :keyword:`!and`, :keyword:`!or`, :keyword:`!not`
+=======================================================================
 
 .. index:: pair: Boolean; operations
 
@@ -128,9 +123,9 @@ Comparisons
    pair: chaining; comparisons
    pair: operator; comparison
    operator: ==
-   operator: <
+   operator: < (less)
    operator: <=
-   operator: >
+   operator: > (greater)
    operator: >=
    operator: !=
    operator: is
@@ -169,12 +164,10 @@ This table summarizes the comparison operations:
    pair: objects; comparing
 
 Objects of different types, except different numeric types, never compare equal.
-Furthermore, some types (for example, function objects) support only a degenerate
-notion of comparison where any two objects of that type are unequal.  The ``<``,
-``<=``, ``>`` and ``>=`` operators will raise a :exc:`TypeError` exception when
-comparing a complex number with another built-in numeric type, when the objects
-are of different types that cannot be compared, or in other cases where there is
-no defined ordering.
+The ``==`` operator is always defined but for some object types (for example,
+class objects) is equivalent to :keyword:`is`. The ``<``, ``<=``, ``>`` and ``>=``
+operators are only defined where they make sense; for example, they raise a
+:exc:`TypeError` exception when one of the arguments is a complex number.
 
 .. index::
    single: __eq__() (instance method)
@@ -202,8 +195,8 @@ exception.
    operator: not in
 
 Two more operations with the same syntactic priority, :keyword:`in` and
-:keyword:`not in`, are supported only by sequence types (below).
-
+:keyword:`not in`, are supported by types that are :term:`iterable` or
+implement the :meth:`__contains__` method.
 
 .. _typesnumeric:
 
@@ -227,8 +220,8 @@ numbers for the machine on which your program is running is available
 in :data:`sys.float_info`.  Complex numbers have a real and imaginary
 part, which are each a floating point number.  To extract these parts
 from a complex number *z*, use ``z.real`` and ``z.imag``. (The standard
-library includes additional numeric types, :mod:`fractions` that hold
-rationals, and :mod:`decimal` that hold floating-point numbers with
+library includes the additional numeric types :mod:`fractions.Fraction`, for
+rationals, and :mod:`decimal.Decimal`, for floating-point numbers with
 user-definable precision.)
 
 .. index::
@@ -253,24 +246,29 @@ and imaginary parts.
    builtin: int
    builtin: float
    builtin: complex
-   operator: +
-   operator: -
-   operator: *
-   operator: /
+   single: operator; + (plus)
+   single: + (plus); unary operator
+   single: + (plus); binary operator
+   single: operator; - (minus)
+   single: - (minus); unary operator
+   single: - (minus); binary operator
+   operator: * (asterisk)
+   operator: / (slash)
    operator: //
-   operator: %
+   operator: % (percent)
    operator: **
 
 Python fully supports mixed arithmetic: when a binary arithmetic operator has
 operands of different numeric types, the operand with the "narrower" type is
 widened to that of the other, where integer is narrower than floating point,
-which is narrower than complex.  Comparisons between numbers of mixed type use
-the same rule. [2]_ The constructors :func:`int`, :func:`float`, and
+which is narrower than complex. A comparison between numbers of different types
+behaves as though the exact values of those numbers were being compared. [2]_
+
+The constructors :func:`int`, :func:`float`, and
 :func:`complex` can be used to produce numbers of a specific type.
 
-All numeric types (except complex) support the following operations, sorted by
-ascending priority (all numeric operations have a higher priority than
-comparison operations):
+All numeric types (except complex) support the following operations (for priorities of
+the operations, see :ref:`operator-summary`):
 
 +---------------------+---------------------------------+---------+--------------------+
 | Operation           | Result                          | Notes   | Full documentation |
@@ -354,7 +352,7 @@ Notes:
    The numeric literals accepted include the digits ``0`` to ``9`` or any
    Unicode equivalent (code points with the ``Nd`` property).
 
-   See http://www.unicode.org/Public/8.0.0/ucd/extracted/DerivedNumericType.txt
+   See https://www.unicode.org/Public/13.0.0/ucd/extracted/DerivedNumericType.txt
    for a complete list of code points with the ``Nd`` property.
 
 
@@ -387,21 +385,23 @@ modules.
 .. _bitstring-ops:
 
 Bitwise Operations on Integer Types
---------------------------------------
+-----------------------------------
 
 .. index::
    triple: operations on; integer; types
    pair: bitwise; operations
    pair: shifting; operations
    pair: masking; operations
-   operator: ^
-   operator: &
+   operator: | (vertical bar)
+   operator: ^ (caret)
+   operator: & (ampersand)
    operator: <<
    operator: >>
+   operator: ~ (tilde)
 
-Bitwise operations only make sense for integers.  Negative numbers are treated
-as their 2's complement value (this assumes that there are enough bits so that
-no overflow occurs during the operation).
+Bitwise operations only make sense for integers. The result of bitwise
+operations is calculated as though carried out in two's complement with an
+infinite number of sign bits.
 
 The priorities of the binary bitwise operations are all lower than the numeric
 operations and higher than the comparisons; the unary operation ``~`` has the
@@ -412,13 +412,13 @@ This table lists the bitwise operations sorted in ascending priority:
 +------------+--------------------------------+----------+
 | Operation  | Result                         | Notes    |
 +============+================================+==========+
-| ``x | y``  | bitwise :dfn:`or` of *x* and   |          |
+| ``x | y``  | bitwise :dfn:`or` of *x* and   | \(4)     |
 |            | *y*                            |          |
 +------------+--------------------------------+----------+
-| ``x ^ y``  | bitwise :dfn:`exclusive or` of |          |
+| ``x ^ y``  | bitwise :dfn:`exclusive or` of | \(4)     |
 |            | *x* and *y*                    |          |
 +------------+--------------------------------+----------+
-| ``x & y``  | bitwise :dfn:`and` of *x* and  |          |
+| ``x & y``  | bitwise :dfn:`and` of *x* and  | \(4)     |
 |            | *y*                            |          |
 +------------+--------------------------------+----------+
 | ``x << n`` | *x* shifted left by *n* bits   | (1)(2)   |
@@ -434,12 +434,16 @@ Notes:
    Negative shift counts are illegal and cause a :exc:`ValueError` to be raised.
 
 (2)
-   A left shift by *n* bits is equivalent to multiplication by ``pow(2, n)``
-   without overflow check.
+   A left shift by *n* bits is equivalent to multiplication by ``pow(2, n)``.
 
 (3)
-   A right shift by *n* bits is equivalent to division by ``pow(2, n)`` without
-   overflow check.
+   A right shift by *n* bits is equivalent to floor division by ``pow(2, n)``.
+
+(4)
+   Performing these calculations with at least one extra sign extension bit in
+   a finite two's complement representation (a working bit-width of
+   ``1 + max(x.bit_length(), y.bit_length())`` or more) is sufficient to get the
+   same result as if there were an infinite number of sign bits.
 
 
 Additional Methods on Integer Types
@@ -473,6 +477,27 @@ class`. In addition, it provides a few more methods:
             return len(s)       # len('100101') --> 6
 
     .. versionadded:: 3.1
+
+.. method:: int.bit_count()
+
+    Return the number of ones in the binary representation of the absolute
+    value of the integer. This is also known as the population count.
+    Example::
+
+        >>> n = 19
+        >>> bin(n)
+        '0b10011'
+        >>> n.bit_count()
+        3
+        >>> (-n).bit_count()
+        3
+
+    Equivalent to::
+
+        def bit_count(self):
+            return bin(self).count("1")
+
+    .. versionadded:: 3.10
 
 .. method:: int.to_bytes(length, byteorder, \*, signed=False)
 
@@ -536,6 +561,14 @@ class`. In addition, it provides a few more methods:
 
     .. versionadded:: 3.2
 
+.. method:: int.as_integer_ratio()
+
+   Return a pair of integers whose ratio is exactly equal to the original
+   integer and with a positive denominator. The integer ratio of integers
+   (whole numbers) is always the integer as the numerator and ``1`` as the
+   denominator.
+
+   .. versionadded:: 3.8
 
 Additional Methods on Float
 ---------------------------
@@ -976,9 +1009,9 @@ Notes:
 
 (8)
    ``index`` raises :exc:`ValueError` when *x* is not found in *s*.
-   When supported, the additional arguments to the index method allow
-   efficient searching of subsections of the sequence. Passing the extra
-   arguments is roughly equivalent to using ``s[i:j].index(x)``, only
+   Not all implementations support passing the additional arguments *i* and *j*.
+   These arguments allow efficient searching of subsections of the sequence. Passing
+   the extra arguments is roughly equivalent to using ``s[i:j].index(x)``, only
    without copying any data and with the returned index being relative to
    the start of the sequence rather than the start of the slice.
 
@@ -1062,10 +1095,10 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 |                              | sequence (same as              |                     |
 |                              | ``s[len(s):len(s)] = [x]``)    |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.clear()``                | removes all items from ``s``   | \(5)                |
+| ``s.clear()``                | removes all items from *s*     | \(5)                |
 |                              | (same as ``del s[:]``)         |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.copy()``                 | creates a shallow copy of ``s``| \(5)                |
+| ``s.copy()``                 | creates a shallow copy of *s*  | \(5)                |
 |                              | (same as ``s[:]``)             |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s.extend(t)`` or           | extends *s* with the           |                     |
@@ -1101,7 +1134,7 @@ Notes:
    item is removed and returned.
 
 (3)
-   ``remove`` raises :exc:`ValueError` when *x* is not found in *s*.
+   :meth:`remove` raises :exc:`ValueError` when *x* is not found in *s*.
 
 (4)
    The :meth:`reverse` method modifies the sequence in place for economy of
@@ -1111,7 +1144,9 @@ Notes:
 (5)
    :meth:`clear` and :meth:`!copy` are included for consistency with the
    interfaces of mutable containers that don't support slicing operations
-   (such as :class:`dict` and :class:`set`)
+   (such as :class:`dict` and :class:`set`). :meth:`!copy` is not part of the
+   :class:`collections.abc.MutableSequence` ABC, but most concrete
+   mutable sequence classes provide it.
 
    .. versionadded:: 3.3
       :meth:`clear` and :meth:`!copy` methods.
@@ -1159,7 +1194,7 @@ application).
    :ref:`mutable <typesseq-mutable>` sequence operations. Lists also provide the
    following additional method:
 
-   .. method:: list.sort(*, key=None, reverse=None)
+   .. method:: list.sort(*, key=None, reverse=False)
 
       This method sorts the list in place, using only ``<`` comparisons
       between items. Exceptions are not suppressed - if any comparison operations
@@ -1191,6 +1226,8 @@ application).
       guarantees not to change the relative order of elements that compare equal
       --- this is helpful for sorting in multiple passes (for example, sort by
       department, then by salary grade).
+
+      For sorting examples and a brief sorting tutorial, see :ref:`sortinghowto`.
 
       .. impl-detail::
 
@@ -1368,7 +1405,7 @@ objects that compare equal might have different :attr:`~range.start`,
 .. seealso::
 
    * The `linspace recipe <http://code.activestate.com/recipes/579000/>`_
-     shows how to implement a lazy version of range that suitable for floating
+     shows how to implement a lazy version of range suitable for floating
      point applications.
 
 .. index::
@@ -1494,6 +1531,10 @@ expression support in the :mod:`re` module).
    Return a copy of the string with its first character capitalized and the
    rest lowercased.
 
+   .. versionchanged:: 3.8
+      The first character is now put into titlecase rather than uppercase.
+      This means that characters like digraphs will only have their first
+      letter capitalized, instead of the full character.
 
 .. method:: str.casefold()
 
@@ -1538,8 +1579,15 @@ expression support in the :mod:`re` module).
    :func:`codecs.register_error`, see section :ref:`error-handlers`. For a
    list of possible encodings, see section :ref:`standard-encodings`.
 
+   By default, the *errors* argument is not checked for best performances, but
+   only used at the first encoding error. Enable the :ref:`Python Development
+   Mode <devmode>`, or use a debug build to check *errors*.
+
    .. versionchanged:: 3.1
       Support for keyword arguments added.
+
+   .. versionchanged:: 3.9
+      The *errors* is now checked in development mode and in debug mode.
 
 
 .. method:: str.endswith(suffix[, start[, end]])
@@ -1602,6 +1650,21 @@ expression support in the :mod:`re` module).
    See :ref:`formatstrings` for a description of the various formatting options
    that can be specified in format strings.
 
+   .. note::
+      When formatting a number (:class:`int`, :class:`float`, :class:`complex`,
+      :class:`decimal.Decimal` and subclasses) with the ``n`` type
+      (ex: ``'{:n}'.format(1234)``), the function temporarily sets the
+      ``LC_CTYPE`` locale to the ``LC_NUMERIC`` locale to decode
+      ``decimal_point`` and ``thousands_sep`` fields of :c:func:`localeconv` if
+      they are non-ASCII or longer than 1 byte, and the ``LC_NUMERIC`` locale is
+      different than the ``LC_CTYPE`` locale.  This temporary change affects
+      other threads.
+
+   .. versionchanged:: 3.7
+      When formatting a number with the ``n`` type, the function sets
+      temporarily the ``LC_CTYPE`` locale to the ``LC_NUMERIC`` locale in some
+      cases.
+
 
 .. method:: str.format_map(mapping)
 
@@ -1627,25 +1690,34 @@ expression support in the :mod:`re` module).
 
 .. method:: str.isalnum()
 
-   Return true if all characters in the string are alphanumeric and there is at
-   least one character, false otherwise.  A character ``c`` is alphanumeric if one
+   Return ``True`` if all characters in the string are alphanumeric and there is at
+   least one character, ``False`` otherwise.  A character ``c`` is alphanumeric if one
    of the following returns ``True``: ``c.isalpha()``, ``c.isdecimal()``,
    ``c.isdigit()``, or ``c.isnumeric()``.
 
 
 .. method:: str.isalpha()
 
-   Return true if all characters in the string are alphabetic and there is at least
-   one character, false otherwise.  Alphabetic characters are those characters defined
+   Return ``True`` if all characters in the string are alphabetic and there is at least
+   one character, ``False`` otherwise.  Alphabetic characters are those characters defined
    in the Unicode character database as "Letter", i.e., those with general category
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
    from the "Alphabetic" property defined in the Unicode Standard.
 
 
+.. method:: str.isascii()
+
+   Return ``True`` if the string is empty or all characters in the string are ASCII,
+   ``False`` otherwise.
+   ASCII characters have code points in the range U+0000-U+007F.
+
+   .. versionadded:: 3.7
+
+
 .. method:: str.isdecimal()
 
-   Return true if all characters in the string are decimal
-   characters and there is at least one character, false
+   Return ``True`` if all characters in the string are decimal
+   characters and there is at least one character, ``False``
    otherwise. Decimal characters are those that can be used to form
    numbers in base 10, e.g. U+0660, ARABIC-INDIC DIGIT
    ZERO.  Formally a decimal character is a character in the Unicode
@@ -1654,8 +1726,8 @@ expression support in the :mod:`re` module).
 
 .. method:: str.isdigit()
 
-   Return true if all characters in the string are digits and there is at least one
-   character, false otherwise.  Digits include decimal characters and digits that need
+   Return ``True`` if all characters in the string are digits and there is at least one
+   character, ``False`` otherwise.  Digits include decimal characters and digits that need
    special handling, such as the compatibility superscript digits.
    This covers digits which cannot be used to form numbers in base 10,
    like the Kharosthi numbers.  Formally, a digit is a character that has the
@@ -1664,22 +1736,33 @@ expression support in the :mod:`re` module).
 
 .. method:: str.isidentifier()
 
-   Return true if the string is a valid identifier according to the language
+   Return ``True`` if the string is a valid identifier according to the language
    definition, section :ref:`identifiers`.
 
-   Use :func:`keyword.iskeyword` to test for reserved identifiers such as
-   :keyword:`def` and :keyword:`class`.
+   Call :func:`keyword.iskeyword` to test whether string ``s`` is a reserved
+   identifier, such as :keyword:`def` and :keyword:`class`.
+
+   Example:
+   ::
+
+      >>> from keyword import iskeyword
+
+      >>> 'hello'.isidentifier(), iskeyword('hello')
+      True, False
+      >>> 'def'.isidentifier(), iskeyword('def')
+      True, True
+
 
 .. method:: str.islower()
 
-   Return true if all cased characters [4]_ in the string are lowercase and
-   there is at least one cased character, false otherwise.
+   Return ``True`` if all cased characters [4]_ in the string are lowercase and
+   there is at least one cased character, ``False`` otherwise.
 
 
 .. method:: str.isnumeric()
 
-   Return true if all characters in the string are numeric
-   characters, and there is at least one character, false
+   Return ``True`` if all characters in the string are numeric
+   characters, and there is at least one character, ``False``
    otherwise. Numeric characters include digit characters, and all characters
    that have the Unicode numeric value property, e.g. U+2155,
    VULGAR FRACTION ONE FIFTH.  Formally, numeric characters are those with the property
@@ -1688,8 +1771,8 @@ expression support in the :mod:`re` module).
 
 .. method:: str.isprintable()
 
-   Return true if all characters in the string are printable or the string is
-   empty, false otherwise.  Nonprintable characters are those characters defined
+   Return ``True`` if all characters in the string are printable or the string is
+   empty, ``False`` otherwise.  Nonprintable characters are those characters defined
    in the Unicode character database as "Other" or "Separator", excepting the
    ASCII space (0x20) which is considered printable.  (Note that printable
    characters in this context are those which should not be escaped when
@@ -1699,30 +1782,44 @@ expression support in the :mod:`re` module).
 
 .. method:: str.isspace()
 
-   Return true if there are only whitespace characters in the string and there is
-   at least one character, false otherwise.  Whitespace characters  are those
-   characters defined in the Unicode character database as "Other" or "Separator"
-   and those with bidirectional property being one of "WS", "B", or "S".
+   Return ``True`` if there are only whitespace characters in the string and there is
+   at least one character, ``False`` otherwise.
+
+   A character is *whitespace* if in the Unicode character database
+   (see :mod:`unicodedata`), either its general category is ``Zs``
+   ("Separator, space"), or its bidirectional class is one of ``WS``,
+   ``B``, or ``S``.
+
 
 .. method:: str.istitle()
 
-   Return true if the string is a titlecased string and there is at least one
+   Return ``True`` if the string is a titlecased string and there is at least one
    character, for example uppercase characters may only follow uncased characters
-   and lowercase characters only cased ones.  Return false otherwise.
+   and lowercase characters only cased ones.  Return ``False`` otherwise.
 
 
 .. method:: str.isupper()
 
-   Return true if all cased characters [4]_ in the string are uppercase and
-   there is at least one cased character, false otherwise.
+   Return ``True`` if all cased characters [4]_ in the string are uppercase and
+   there is at least one cased character, ``False`` otherwise.
+
+      >>> 'BANANA'.isupper()
+      True
+      >>> 'banana'.isupper()
+      False
+      >>> 'baNana'.isupper()
+      False
+      >>> ' '.isupper()
+      False
+
 
 
 .. method:: str.join(iterable)
 
-   Return a string which is the concatenation of the strings in the
-   :term:`iterable` *iterable*.  A :exc:`TypeError` will be raised if there are
-   any non-string values in *iterable*, including :class:`bytes` objects.  The
-   separator between elements is the string providing this method.
+   Return a string which is the concatenation of the strings in *iterable*.
+   A :exc:`TypeError` will be raised if there are any non-string values in
+   *iterable*, including :class:`bytes` objects.  The separator between
+   elements is the string providing this method.
 
 
 .. method:: str.ljust(width[, fillchar])
@@ -1753,6 +1850,14 @@ expression support in the :mod:`re` module).
       >>> 'www.example.com'.lstrip('cmowz.')
       'example.com'
 
+   See :meth:`str.removeprefix` for a method that will remove a single prefix
+   string rather than all of a set of characters.  For example::
+
+      >>> 'Arthur: three!'.lstrip('Arthur: ')
+      'ee!'
+      >>> 'Arthur: three!'.removeprefix('Arthur: ')
+      'three!'
+
 
 .. staticmethod:: str.maketrans(x[, y[, z]])
 
@@ -1775,6 +1880,34 @@ expression support in the :mod:`re` module).
    containing the part before the separator, the separator itself, and the part
    after the separator.  If the separator is not found, return a 3-tuple containing
    the string itself, followed by two empty strings.
+
+
+.. method:: str.removeprefix(prefix, /)
+
+   If the string starts with the *prefix* string, return
+   ``string[len(prefix):]``. Otherwise, return a copy of the original
+   string::
+
+      >>> 'TestHook'.removeprefix('Test')
+      'Hook'
+      >>> 'BaseTestCase'.removeprefix('Test')
+      'BaseTestCase'
+
+   .. versionadded:: 3.9
+
+
+.. method:: str.removesuffix(suffix, /)
+
+   If the string ends with the *suffix* string and that *suffix* is not empty,
+   return ``string[:-len(suffix)]``. Otherwise, return a copy of the
+   original string::
+
+      >>> 'MiscTests'.removesuffix('Tests')
+      'Misc'
+      >>> 'TmpDirMixin'.removesuffix('Tests')
+      'TmpDirMixin'
+
+   .. versionadded:: 3.9
 
 
 .. method:: str.replace(old, new[, count])
@@ -1833,6 +1966,13 @@ expression support in the :mod:`re` module).
       >>> 'mississippi'.rstrip('ipz')
       'mississ'
 
+   See :meth:`str.removesuffix` for a method that will remove a single suffix
+   string rather than all of a set of characters.  For example::
+
+      >>> 'Monty Python'.rstrip(' Python')
+      'M'
+      >>> 'Monty Python'.removesuffix(' Python')
+      'Monty'
 
 .. method:: str.split(sep=None, maxsplit=-1)
 
@@ -2002,8 +2142,7 @@ expression support in the :mod:`re` module).
         >>> import re
         >>> def titlecase(s):
         ...     return re.sub(r"[A-Za-z]+('[A-Za-z]+)?",
-        ...                   lambda mo: mo.group(0)[0].upper() +
-        ...                              mo.group(0)[1:].lower(),
+        ...                   lambda mo: mo.group(0).capitalize(),
         ...                   s)
         ...
         >>> titlecase("they're bill's friends.")
@@ -2031,7 +2170,7 @@ expression support in the :mod:`re` module).
 .. method:: str.upper()
 
    Return a copy of the string with all the cased characters [4]_ converted to
-   uppercase.  Note that ``str.upper().isupper()`` might be ``False`` if ``s``
+   uppercase.  Note that ``s.upper().isupper()`` might be ``False`` if ``s``
    contains uncased characters or if the Unicode category of the resulting
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
    titlecase).
@@ -2069,8 +2208,7 @@ expression support in the :mod:`re` module).
    single: string; interpolation, printf
    single: printf-style formatting
    single: sprintf-style formatting
-   single: % formatting
-   single: % interpolation
+   single: % (percent); printf-style formatting
 
 .. note::
 
@@ -2092,6 +2230,11 @@ If *format* requires a single argument, *values* may be a single non-tuple
 object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
 items specified by the format string, or a single mapping object (for example, a
 dictionary).
+
+.. index::
+   single: () (parentheses); in printf-style formatting
+   single: * (asterisk); in printf-style formatting
+   single: . (dot); in printf-style formatting
 
 A conversion specifier contains two or more characters and has the following
 components, which must occur in this order:
@@ -2130,6 +2273,12 @@ In this case no ``*`` specifiers may occur in a format (since they require a
 sequential parameter list).
 
 The conversion flag characters are:
+
+.. index::
+   single: # (hash); in printf-style formatting
+   single: - (minus); in printf-style formatting
+   single: + (plus); in printf-style formatting
+   single: space; in printf-style formatting
 
 +---------+---------------------------------------------------------------------+
 | Flag    | Meaning                                                             |
@@ -2295,7 +2444,7 @@ data and are closely related to string objects in a variety of other ways.
    While bytes literals and representations are based on ASCII text, bytes
    objects actually behave like immutable sequences of integers, with each
    value in the sequence restricted such that ``0 <= x < 256`` (attempts to
-   violate this restriction will trigger :exc:`ValueError`. This is done
+   violate this restriction will trigger :exc:`ValueError`). This is done
    deliberately to emphasise that while many binary formats include ASCII based
    elements and can be usefully manipulated with some text-oriented algorithms,
    this is not generally the case for arbitrary binary data (blindly applying
@@ -2331,7 +2480,7 @@ data and are closely related to string objects in a variety of other ways.
    A reverse conversion function exists to transform a bytes object into its
    hexadecimal representation.
 
-   .. method:: hex()
+   .. method:: hex([sep[, bytes_per_sep]])
 
       Return a string object containing two hexadecimal digits for each
       byte in the instance.
@@ -2339,7 +2488,25 @@ data and are closely related to string objects in a variety of other ways.
       >>> b'\xf0\xf1\xf2'.hex()
       'f0f1f2'
 
+      If you want to make the hex string easier to read, you can specify a
+      single character separator *sep* parameter to include in the output.
+      By default between each byte.  A second optional *bytes_per_sep*
+      parameter controls the spacing.  Positive values calculate the
+      separator position from the right, negative values from the left.
+
+      >>> value = b'\xf0\xf1\xf2'
+      >>> value.hex('-')
+      'f0-f1-f2'
+      >>> value.hex('_', 2)
+      'f0_f1f2'
+      >>> b'UUDDLRLRAB'.hex(' ', -4)
+      '55554444 4c524c52 4142'
+
       .. versionadded:: 3.5
+
+      .. versionchanged:: 3.8
+         :meth:`bytes.hex` now supports optional *sep* and *bytes_per_sep*
+         parameters to insert separators between bytes in the hex output.
 
 Since bytes objects are sequences of integers (akin to a tuple), for a bytes
 object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be a bytes
@@ -2407,7 +2574,7 @@ objects.
    A reverse conversion function exists to transform a bytearray object into its
    hexadecimal representation.
 
-   .. method:: hex()
+   .. method:: hex([sep[, bytes_per_sep]])
 
       Return a string object containing two hexadecimal digits for each
       byte in the instance.
@@ -2416,6 +2583,11 @@ objects.
       'f0f1f2'
 
       .. versionadded:: 3.5
+
+      .. versionchanged:: 3.8
+         Similar to :meth:`bytes.hex`, :meth:`bytearray.hex` now supports
+         optional *sep* and *bytes_per_sep* parameters to insert separators
+         between bytes in the hex output.
 
 Since bytearray objects are sequences of integers (akin to a list), for a
 bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be
@@ -2481,6 +2653,50 @@ arbitrary binary data.
       Also accept an integer in the range 0 to 255 as the subsequence.
 
 
+.. method:: bytes.removeprefix(prefix, /)
+            bytearray.removeprefix(prefix, /)
+
+   If the binary data starts with the *prefix* string, return
+   ``bytes[len(prefix):]``. Otherwise, return a copy of the original
+   binary data::
+
+      >>> b'TestHook'.removeprefix(b'Test')
+      b'Hook'
+      >>> b'BaseTestCase'.removeprefix(b'Test')
+      b'BaseTestCase'
+
+   The *prefix* may be any :term:`bytes-like object`.
+
+   .. note::
+
+      The bytearray version of this method does *not* operate in place -
+      it always produces a new object, even if no changes were made.
+
+   .. versionadded:: 3.9
+
+
+.. method:: bytes.removesuffix(suffix, /)
+            bytearray.removesuffix(suffix, /)
+
+   If the binary data ends with the *suffix* string and that *suffix* is
+   not empty, return ``bytes[:-len(suffix)]``.  Otherwise, return a copy of
+   the original binary data::
+
+      >>> b'MiscTests'.removesuffix(b'Tests')
+      b'Misc'
+      >>> b'TmpDirMixin'.removesuffix(b'Tests')
+      b'TmpDirMixin'
+
+   The *suffix* may be any :term:`bytes-like object`.
+
+   .. note::
+
+      The bytearray version of this method does *not* operate in place -
+      it always produces a new object, even if no changes were made.
+
+   .. versionadded:: 3.9
+
+
 .. method:: bytes.decode(encoding="utf-8", errors="strict")
             bytearray.decode(encoding="utf-8", errors="strict")
 
@@ -2492,6 +2708,10 @@ arbitrary binary data.
    :func:`codecs.register_error`, see section :ref:`error-handlers`. For a
    list of possible encodings, see section :ref:`standard-encodings`.
 
+   By default, the *errors* argument is not checked for best performances, but
+   only used at the first decoding error. Enable the :ref:`Python Development
+   Mode <devmode>`, or use a debug build to check *errors*.
+
    .. note::
 
       Passing the *encoding* argument to :class:`str` allows decoding any
@@ -2500,6 +2720,9 @@ arbitrary binary data.
 
    .. versionchanged:: 3.1
       Added support for keyword arguments.
+
+   .. versionchanged:: 3.9
+      The *errors* is now checked in development mode and in debug mode.
 
 
 .. method:: bytes.endswith(suffix[, start[, end]])
@@ -2554,11 +2777,11 @@ arbitrary binary data.
             bytearray.join(iterable)
 
    Return a bytes or bytearray object which is the concatenation of the
-   binary data sequences in the :term:`iterable` *iterable*.  A
-   :exc:`TypeError` will be raised if there are any values in *iterable*
-   that are not :term:`bytes-like objects <bytes-like object>`, including
-   :class:`str` objects.  The separator between elements is the contents
-   of the bytes or bytearray object providing this method.
+   binary data sequences in *iterable*.  A :exc:`TypeError` will be raised
+   if there are any values in *iterable* that are not :term:`bytes-like
+   objects <bytes-like object>`, including :class:`str` objects.  The
+   separator between elements is the contents of the bytes or
+   bytearray object providing this method.
 
 
 .. staticmethod:: bytes.maketrans(from, to)
@@ -2576,8 +2799,9 @@ arbitrary binary data.
             bytearray.partition(sep)
 
    Split the sequence at the first occurrence of *sep*, and return a 3-tuple
-   containing the part before the separator, the separator, and the part
-   after the separator.  If the separator is not found, return a 3-tuple
+   containing the part before the separator, the separator itself or its
+   bytearray copy, and the part after the separator.
+   If the separator is not found, return a 3-tuple
    containing a copy of the original sequence, followed by two empty bytes or
    bytearray objects.
 
@@ -2632,10 +2856,11 @@ arbitrary binary data.
             bytearray.rpartition(sep)
 
    Split the sequence at the last occurrence of *sep*, and return a 3-tuple
-   containing the part before the separator, the separator, and the part
-   after the separator.  If the separator is not found, return a 3-tuple
-   containing a copy of the original sequence, followed by two empty bytes or
-   bytearray objects.
+   containing the part before the separator, the separator itself or its
+   bytearray copy, and the part after the separator.
+   If the separator is not found, return a 3-tuple
+   containing two empty bytes or bytearray objects, followed by a copy of the
+   original sequence.
 
    The separator to search for may be any :term:`bytes-like object`.
 
@@ -2651,8 +2876,8 @@ arbitrary binary data.
    The prefix(es) to search for may be any :term:`bytes-like object`.
 
 
-.. method:: bytes.translate(table, delete=b'')
-            bytearray.translate(table, delete=b'')
+.. method:: bytes.translate(table, /, delete=b'')
+            bytearray.translate(table, /, delete=b'')
 
    Return a copy of the bytes or bytearray object where all bytes occurring in
    the optional argument *delete* are removed, and the remaining bytes have
@@ -2722,7 +2947,14 @@ produce new objects.
       b'example.com'
 
    The binary sequence of byte values to remove may be any
-   :term:`bytes-like object`.
+   :term:`bytes-like object`. See :meth:`~bytes.removeprefix` for a method
+   that will remove a single prefix string rather than all of a set of
+   characters.  For example::
+
+      >>> b'Arthur: three!'.lstrip(b'Arthur: ')
+      b'ee!'
+      >>> b'Arthur: three!'.removeprefix(b'Arthur: ')
+      b'three!'
 
    .. note::
 
@@ -2771,7 +3003,14 @@ produce new objects.
       b'mississ'
 
    The binary sequence of byte values to remove may be any
-   :term:`bytes-like object`.
+   :term:`bytes-like object`. See :meth:`~bytes.removesuffix` for a method
+   that will remove a single suffix string rather than all of a set of
+   characters.  For example::
+
+      >>> b'Monty Python'.rstrip(b' Python')
+      b'M'
+      >>> b'Monty Python'.removesuffix(b' Python')
+      b'Monty'
 
    .. note::
 
@@ -2898,8 +3137,8 @@ place, and instead produce new objects.
 .. method:: bytes.isalnum()
             bytearray.isalnum()
 
-   Return true if all bytes in the sequence are alphabetical ASCII characters
-   or ASCII decimal digits and the sequence is not empty, false otherwise.
+   Return ``True`` if all bytes in the sequence are alphabetical ASCII characters
+   or ASCII decimal digits and the sequence is not empty, ``False`` otherwise.
    Alphabetic ASCII characters are those byte values in the sequence
    ``b'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'``. ASCII decimal
    digits are those byte values in the sequence ``b'0123456789'``.
@@ -2915,8 +3154,8 @@ place, and instead produce new objects.
 .. method:: bytes.isalpha()
             bytearray.isalpha()
 
-   Return true if all bytes in the sequence are alphabetic ASCII characters
-   and the sequence is not empty, false otherwise.  Alphabetic ASCII
+   Return ``True`` if all bytes in the sequence are alphabetic ASCII characters
+   and the sequence is not empty, ``False`` otherwise.  Alphabetic ASCII
    characters are those byte values in the sequence
    ``b'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'``.
 
@@ -2928,11 +3167,21 @@ place, and instead produce new objects.
       False
 
 
+.. method:: bytes.isascii()
+            bytearray.isascii()
+
+   Return ``True`` if the sequence is empty or all bytes in the sequence are ASCII,
+   ``False`` otherwise.
+   ASCII bytes are in the range 0-0x7F.
+
+   .. versionadded:: 3.7
+
+
 .. method:: bytes.isdigit()
             bytearray.isdigit()
 
-   Return true if all bytes in the sequence are ASCII decimal digits
-   and the sequence is not empty, false otherwise. ASCII decimal digits are
+   Return ``True`` if all bytes in the sequence are ASCII decimal digits
+   and the sequence is not empty, ``False`` otherwise. ASCII decimal digits are
    those byte values in the sequence ``b'0123456789'``.
 
    For example::
@@ -2946,8 +3195,8 @@ place, and instead produce new objects.
 .. method:: bytes.islower()
             bytearray.islower()
 
-   Return true if there is at least one lowercase ASCII character
-   in the sequence and no uppercase ASCII characters, false otherwise.
+   Return ``True`` if there is at least one lowercase ASCII character
+   in the sequence and no uppercase ASCII characters, ``False`` otherwise.
 
    For example::
 
@@ -2964,8 +3213,8 @@ place, and instead produce new objects.
 .. method:: bytes.isspace()
             bytearray.isspace()
 
-   Return true if all bytes in the sequence are ASCII whitespace and the
-   sequence is not empty, false otherwise.  ASCII whitespace characters are
+   Return ``True`` if all bytes in the sequence are ASCII whitespace and the
+   sequence is not empty, ``False`` otherwise.  ASCII whitespace characters are
    those byte values in the sequence ``b' \t\n\r\x0b\f'`` (space, tab, newline,
    carriage return, vertical tab, form feed).
 
@@ -2973,8 +3222,8 @@ place, and instead produce new objects.
 .. method:: bytes.istitle()
             bytearray.istitle()
 
-   Return true if the sequence is ASCII titlecase and the sequence is not
-   empty, false otherwise. See :meth:`bytes.title` for more details on the
+   Return ``True`` if the sequence is ASCII titlecase and the sequence is not
+   empty, ``False`` otherwise. See :meth:`bytes.title` for more details on the
    definition of "titlecase".
 
    For example::
@@ -2988,8 +3237,8 @@ place, and instead produce new objects.
 .. method:: bytes.isupper()
             bytearray.isupper()
 
-   Return true if there is at least one uppercase alphabetic ASCII character
-   in the sequence and no lowercase ASCII characters, false otherwise.
+   Return ``True`` if there is at least one uppercase alphabetic ASCII character
+   in the sequence and no lowercase ASCII characters, ``False`` otherwise.
 
    For example::
 
@@ -3148,7 +3397,7 @@ place, and instead produce new objects.
 
    Return a copy of the sequence left filled with ASCII ``b'0'`` digits to
    make a sequence of length *width*. A leading sign prefix (``b'+'``/
-   ``b'-'`` is handled by inserting the padding *after* the sign character
+   ``b'-'``) is handled by inserting the padding *after* the sign character
    rather than before. For :class:`bytes` objects, the original sequence is
    returned if *width* is less than or equal to ``len(seq)``.
 
@@ -3171,18 +3420,17 @@ place, and instead produce new objects.
 ----------------------------------
 
 .. index::
-   single: formatting, bytes (%)
-   single: formatting, bytearray (%)
-   single: interpolation, bytes (%)
-   single: interpolation, bytearray (%)
+   single: formatting; bytes (%)
+   single: formatting; bytearray (%)
+   single: interpolation; bytes (%)
+   single: interpolation; bytearray (%)
    single: bytes; formatting
    single: bytearray; formatting
    single: bytes; interpolation
    single: bytearray; interpolation
    single: printf-style formatting
    single: sprintf-style formatting
-   single: % formatting
-   single: % interpolation
+   single: % (percent); printf-style formatting
 
 .. note::
 
@@ -3202,6 +3450,11 @@ If *format* requires a single argument, *values* may be a single non-tuple
 object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
 items specified by the format bytes object, or a single mapping object (for
 example, a dictionary).
+
+.. index::
+   single: () (parentheses); in printf-style formatting
+   single: * (asterisk); in printf-style formatting
+   single: . (dot); in printf-style formatting
 
 A conversion specifier contains two or more characters and has the following
 components, which must occur in this order:
@@ -3240,6 +3493,12 @@ In this case no ``*`` specifiers may occur in a format (since they require a
 sequential parameter list).
 
 The conversion flag characters are:
+
+.. index::
+   single: # (hash); in printf-style formatting
+   single: - (minus); in printf-style formatting
+   single: + (plus); in printf-style formatting
+   single: space; in printf-style formatting
 
 +---------+---------------------------------------------------------------------+
 | Flag    | Meaning                                                             |
@@ -3356,7 +3615,10 @@ Notes:
    The bytearray version of this method does *not* operate in place - it
    always produces a new object, even if no changes were made.
 
-.. seealso:: :pep:`461`.
+.. seealso::
+
+   :pep:`461` - Adding % formatting to bytes and bytearray
+
 .. versionadded:: 3.5
 
 .. _typememoryview:
@@ -3515,7 +3777,7 @@ copying.
          Previous versions compared the raw memory disregarding the item format
          and the logical array structure.
 
-   .. method:: tobytes()
+   .. method:: tobytes(order=None)
 
       Return the data in the buffer as a bytestring.  This is equivalent to
       calling the :class:`bytes` constructor on the memoryview. ::
@@ -3531,7 +3793,14 @@ copying.
       supports all format strings, including those that are not in
       :mod:`struct` module syntax.
 
-   .. method:: hex()
+      .. versionadded:: 3.8
+         *order* can be {'C', 'F', 'A'}.  When *order* is 'C' or 'F', the data
+         of the original array is converted to C or Fortran order. For contiguous
+         views, 'A' returns an exact copy of the physical memory. In particular,
+         in-memory Fortran order is preserved. For non-contiguous views, the
+         data is converted to C first. *order=None* is the same as *order='C'*.
+
+   .. method:: hex([sep[, bytes_per_sep]])
 
       Return a string object containing two hexadecimal digits for each
       byte in the buffer. ::
@@ -3541,6 +3810,11 @@ copying.
          '616263'
 
       .. versionadded:: 3.5
+
+      .. versionchanged:: 3.8
+         Similar to :meth:`bytes.hex`, :meth:`memoryview.hex` now supports
+         optional *sep* and *bytes_per_sep* parameters to insert separators
+         between bytes in the hex output.
 
    .. method:: tolist()
 
@@ -3558,6 +3832,25 @@ copying.
          :meth:`tolist` now supports all single character native formats in
          :mod:`struct` module syntax as well as multi-dimensional
          representations.
+
+   .. method:: toreadonly()
+
+      Return a readonly version of the memoryview object.  The original
+      memoryview object is unchanged. ::
+
+         >>> m = memoryview(bytearray(b'abc'))
+         >>> mm = m.toreadonly()
+         >>> mm.tolist()
+         [89, 98, 99]
+         >>> mm[0] = 42
+         Traceback (most recent call last):
+           File "<stdin>", line 1, in <module>
+         TypeError: cannot modify read-only memory
+         >>> m[0] = 43
+         >>> mm.tolist()
+         [43, 98, 99]
+
+      .. versionadded:: 3.8
 
    .. method:: release()
 
@@ -3667,7 +3960,7 @@ copying.
          >>> z.nbytes
          48
 
-      Cast 1D/unsigned char to 2D/unsigned long::
+      Cast 1D/unsigned long to 2D/unsigned long::
 
          >>> buf = struct.pack("L"*6, *list(range(6)))
          >>> x = memoryview(buf)
@@ -3701,7 +3994,7 @@ copying.
 
       ``nbytes == product(shape) * itemsize == len(m.tobytes())``. This is
       the amount of space in bytes that the array would use in a contiguous
-      representation. It is not necessarily equal to len(m)::
+      representation. It is not necessarily equal to ``len(m)``::
 
          >>> import array
          >>> a = array.array('i', [1,2,3,4,5])
@@ -3847,6 +4140,12 @@ The constructors for both classes work the same:
    objects.  If *iterable* is not specified, a new empty set is
    returned.
 
+   Sets can be created by several means:
+
+   * Use a comma-separated list of elements within braces: ``{'jack', 'sjoerd'}``
+   * Use a set comprehension: ``{c for c in 'abracadabra' if c not in 'abc'}``
+   * Use the type constructor: ``set()``, ``set('foobar')``, ``set(['a', 'b', 'foo'])``
+
    Instances of :class:`set` and :class:`frozenset` provide the following
    operations:
 
@@ -3909,11 +4208,11 @@ The constructors for both classes work the same:
 
    .. method:: copy()
 
-      Return a new set with a shallow copy of *s*.
+      Return a shallow copy of the set.
 
 
    Note, the non-operator versions of :meth:`union`, :meth:`intersection`,
-   :meth:`difference`, and :meth:`symmetric_difference`, :meth:`issubset`, and
+   :meth:`difference`, :meth:`symmetric_difference`, :meth:`issubset`, and
    :meth:`issuperset` methods will accept any iterable as an argument.  In
    contrast, their operator based counterparts require their arguments to be
    sets.  This precludes error-prone constructions like ``set('abc') & 'cbs'``
@@ -3997,9 +4296,7 @@ The constructors for both classes work the same:
 
    Note, the *elem* argument to the :meth:`__contains__`, :meth:`remove`, and
    :meth:`discard` methods may be a set.  To support searching for an equivalent
-   frozenset, the *elem* set is temporarily mutated during the search and then
-   restored.  During the search, the *elem* set should not be read or mutated
-   since it does not have a meaningful value.
+   frozenset, a temporary one is created from *elem*.
 
 
 .. _typesmapping:
@@ -4041,6 +4338,14 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
    Return a new dictionary initialized from an optional positional argument
    and a possibly empty set of keyword arguments.
 
+   Dictionaries can be created by several means:
+
+   * Use a comma-separated list of ``key: value`` pairs within braces:
+     ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098: 'jack', 4127: 'sjoerd'}``
+   * Use a dict comprehension: ``{}``, ``{x: x ** 2 for x in range(10)}``
+   * Use the type constructor: ``dict()``,
+     ``dict([('foo', 100), ('bar', 200)])``, ``dict(foo=100, bar=200)``
+
    If no positional argument is given, an empty dictionary is created.
    If a positional argument is given and it is a mapping object, a dictionary
    is created with the same key-value pairs as the mapping object.  Otherwise,
@@ -4064,7 +4369,8 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       >>> c = dict(zip(['one', 'two', 'three'], [1, 2, 3]))
       >>> d = dict([('two', 2), ('one', 1), ('three', 3)])
       >>> e = dict({'three': 3, 'one': 1, 'two': 2})
-      >>> a == b == c == d == e
+      >>> f = dict({'one': 1, 'three': 3}, two=2)
+      >>> a == b == c == d == e == f
       True
 
    Providing keyword arguments as in the first example only works for keys that
@@ -4073,6 +4379,10 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
    These are the operations that dictionaries support (and therefore, custom
    mapping types should support too):
+
+   .. describe:: list(d)
+
+      Return a list of all the keys used in the dictionary *d*.
 
    .. describe:: len(d)
 
@@ -4137,12 +4447,15 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
       Return a shallow copy of the dictionary.
 
-   .. classmethod:: fromkeys(seq[, value])
+   .. classmethod:: fromkeys(iterable[, value])
 
-      Create a new dictionary with keys from *seq* and values set to *value*.
+      Create a new dictionary with keys from *iterable* and values set to *value*.
 
       :meth:`fromkeys` is a class method that returns a new dictionary. *value*
-      defaults to ``None``.
+      defaults to ``None``.  All of the values refer to just a single instance,
+      so it generally doesn't make sense for *value* to be a mutable object
+      such as an empty list.  To get distinct values, use a :ref:`dict
+      comprehension <dict>` instead.
 
    .. method:: get(key[, default])
 
@@ -4168,11 +4481,23 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
    .. method:: popitem()
 
-      Remove and return an arbitrary ``(key, value)`` pair from the dictionary.
+      Remove and return a ``(key, value)`` pair from the dictionary.
+      Pairs are returned in :abbr:`LIFO (last-in, first-out)` order.
 
       :meth:`popitem` is useful to destructively iterate over a dictionary, as
       often used in set algorithms.  If the dictionary is empty, calling
       :meth:`popitem` raises a :exc:`KeyError`.
+
+      .. versionchanged:: 3.7
+         LIFO order is now guaranteed. In prior versions, :meth:`popitem` would
+         return an arbitrary key/value pair.
+
+   .. describe:: reversed(d)
+
+      Return a reverse iterator over the keys of the dictionary. This is a
+      shortcut for ``reversed(d.keys())``.
+
+      .. versionadded:: 3.8
 
    .. method:: setdefault(key[, default])
 
@@ -4195,9 +4520,71 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       Return a new view of the dictionary's values.  See the
       :ref:`documentation of view objects <dict-views>`.
 
+      An equality comparison between one ``dict.values()`` view and another
+      will always return ``False``. This also applies when comparing
+      ``dict.values()`` to itself::
+
+         >>> d = {'a': 1}
+         >>> d.values() == d.values()
+         False
+
+   .. describe:: d | other
+
+      Create a new dictionary with the merged keys and values of *d* and
+      *other*, which must both be dictionaries. The values of *other* take
+      priority when *d* and *other* share keys.
+
+      .. versionadded:: 3.9
+
+   .. describe:: d |= other
+
+      Update the dictionary *d* with keys and values from *other*, which may be
+      either a :term:`mapping` or an :term:`iterable` of key/value pairs. The
+      values of *other* take priority when *d* and *other* share keys.
+
+      .. versionadded:: 3.9
+
    Dictionaries compare equal if and only if they have the same ``(key,
-   value)`` pairs. Order comparisons ('<', '<=', '>=', '>') raise
+   value)`` pairs (regardless of ordering). Order comparisons ('<', '<=', '>=', '>') raise
    :exc:`TypeError`.
+
+   Dictionaries preserve insertion order.  Note that updating a key does not
+   affect the order.  Keys added after deletion are inserted at the end. ::
+
+      >>> d = {"one": 1, "two": 2, "three": 3, "four": 4}
+      >>> d
+      {'one': 1, 'two': 2, 'three': 3, 'four': 4}
+      >>> list(d)
+      ['one', 'two', 'three', 'four']
+      >>> list(d.values())
+      [1, 2, 3, 4]
+      >>> d["one"] = 42
+      >>> d
+      {'one': 42, 'two': 2, 'three': 3, 'four': 4}
+      >>> del d["two"]
+      >>> d["two"] = None
+      >>> d
+      {'one': 42, 'three': 3, 'four': 4, 'two': None}
+
+   .. versionchanged:: 3.7
+      Dictionary order is guaranteed to be insertion order.  This behavior was
+      an implementation detail of CPython from 3.6.
+
+   Dictionaries and dictionary views are reversible. ::
+
+      >>> d = {"one": 1, "two": 2, "three": 3, "four": 4}
+      >>> d
+      {'one': 1, 'two': 2, 'three': 3, 'four': 4}
+      >>> list(reversed(d))
+      ['four', 'three', 'two', 'one']
+      >>> list(reversed(d.values()))
+      [4, 3, 2, 1]
+      >>> list(reversed(d.items()))
+      [('four', 4), ('three', 3), ('two', 2), ('one', 1)]
+
+   .. versionchanged:: 3.8
+      Dictionaries are now reversible.
+
 
 .. seealso::
    :class:`types.MappingProxyType` can be used to create a read-only view
@@ -4226,22 +4613,36 @@ support membership tests:
    Return an iterator over the keys, values or items (represented as tuples of
    ``(key, value)``) in the dictionary.
 
-   Keys and values are iterated over in an arbitrary order which is non-random,
-   varies across Python implementations, and depends on the dictionary's history
-   of insertions and deletions. If keys, values and items views are iterated
-   over with no intervening modifications to the dictionary, the order of items
-   will directly correspond.  This allows the creation of ``(value, key)`` pairs
+   Keys and values are iterated over in insertion order.
+   This allows the creation of ``(value, key)`` pairs
    using :func:`zip`: ``pairs = zip(d.values(), d.keys())``.  Another way to
    create the same list is ``pairs = [(v, k) for (k, v) in d.items()]``.
 
    Iterating views while adding or deleting entries in the dictionary may raise
    a :exc:`RuntimeError` or fail to iterate over all entries.
 
+   .. versionchanged:: 3.7
+      Dictionary order is guaranteed to be insertion order.
+
 .. describe:: x in dictview
 
    Return ``True`` if *x* is in the underlying dictionary's keys, values or
    items (in the latter case, *x* should be a ``(key, value)`` tuple).
 
+.. describe:: reversed(dictview)
+
+   Return a reverse iterator over the keys, values or items of the dictionary.
+   The view will be iterated in reverse order of the insertion.
+
+   .. versionchanged:: 3.8
+      Dictionary views are now reversible.
+
+.. describe:: dictview.mapping
+
+   Return a :class:`types.MappingProxyType` that wraps the original
+   dictionary to which the view refers.
+
+   .. versionadded:: 3.10
 
 Keys views are set-like since their entries are unique and hashable.  If all
 values are hashable, so that ``(key, value)`` pairs are unique and hashable,
@@ -4263,9 +4664,9 @@ An example of dictionary view usage::
    >>> print(n)
    504
 
-   >>> # keys and values are iterated over in the same order
+   >>> # keys and values are iterated over in the same order (insertion order)
    >>> list(keys)
-   ['eggs', 'bacon', 'sausage', 'spam']
+   ['eggs', 'sausage', 'bacon', 'spam']
    >>> list(values)
    [2, 1, 1, 500]
 
@@ -4273,13 +4674,19 @@ An example of dictionary view usage::
    >>> del dishes['eggs']
    >>> del dishes['sausage']
    >>> list(keys)
-   ['spam', 'bacon']
+   ['bacon', 'spam']
 
    >>> # set operations
    >>> keys & {'eggs', 'bacon', 'salad'}
    {'bacon'}
    >>> keys ^ {'sausage', 'juice'}
    {'juice', 'sausage', 'bacon', 'spam'}
+
+   >>> # get back a read-only proxy for the original dictionary
+   >>> values.mapping
+   mappingproxy({'eggs': 2, 'sausage': 1, 'bacon': 1, 'spam': 500})
+   >>> values.mapping['spam']
+   500
 
 
 .. _typecontextmanager:
@@ -4302,7 +4709,7 @@ before the statement body is executed and exited when the statement ends:
 
    Enter the runtime context and return either this object or another object
    related to the runtime context. The value returned by this method is bound to
-   the identifier in the :keyword:`as` clause of :keyword:`with` statements using
+   the identifier in the :keyword:`!as` clause of :keyword:`with` statements using
    this context manager.
 
    An example of a context manager that returns itself is a :term:`file object`.
@@ -4314,7 +4721,7 @@ before the statement body is executed and exited when the statement ends:
    decimal context to a copy of the original decimal context and then return the
    copy. This allows changes to be made to the current decimal context in the body
    of the :keyword:`with` statement without affecting code outside the
-   :keyword:`with` statement.
+   :keyword:`!with` statement.
 
 
 .. method:: contextmanager.__exit__(exc_type, exc_val, exc_tb)
@@ -4326,10 +4733,10 @@ before the statement body is executed and exited when the statement ends:
 
    Returning a true value from this method will cause the :keyword:`with` statement
    to suppress the exception and continue execution with the statement immediately
-   following the :keyword:`with` statement. Otherwise the exception continues
+   following the :keyword:`!with` statement. Otherwise the exception continues
    propagating after this method has finished executing. Exceptions that occur
    during execution of this method will replace any exception that occurred in the
-   body of the :keyword:`with` statement.
+   body of the :keyword:`!with` statement.
 
    The exception passed in should never be reraised explicitly - instead, this
    method should return a false value to indicate that the method completed
@@ -4355,6 +4762,324 @@ structure for Python objects in the Python/C API. Extension types wanting to
 define these methods must provide them as a normal Python accessible method.
 Compared to the overhead of setting up the runtime context, the overhead of a
 single class dictionary lookup is negligible.
+
+
+Type Annotation Types --- :ref:`Generic Alias <types-genericalias>`, :ref:`Union <types-union>`
+===============================================================================================
+
+.. index::
+   single: annotation; type annotation; type hint
+
+The core built-in types for :term:`type annotations <annotation>` are
+:ref:`Generic Alias <types-genericalias>` and :ref:`Union <types-union>`.
+
+
+.. _types-genericalias:
+
+Generic Alias Type
+------------------
+
+.. index::
+   object: GenericAlias
+   pair: Generic; Alias
+
+``GenericAlias`` objects are created by subscripting a class (usually a
+container), such as ``list[int]``.  They are intended primarily for
+:term:`type annotations <annotation>`.
+
+Usually, the :ref:`subscription <subscriptions>` of container objects calls the
+method :meth:`__getitem__` of the object.  However, the subscription of some
+containers' classes may call the classmethod :meth:`__class_getitem__` of the
+class instead. The classmethod :meth:`__class_getitem__` should return a
+``GenericAlias`` object.
+
+.. note::
+   If the :meth:`__getitem__` of the class' metaclass is present, it will take
+   precedence over the :meth:`__class_getitem__` defined in the class (see
+   :pep:`560` for more details).
+
+The ``GenericAlias`` object acts as a proxy for :term:`generic types
+<generic type>`, implementing *parameterized generics* - a specific instance
+of a generic which provides the types for container elements.
+
+The user-exposed type for the ``GenericAlias`` object can be accessed from
+:class:`types.GenericAlias` and used for :func:`isinstance` checks.  It can
+also be used to create ``GenericAlias`` objects directly.
+
+.. describe:: T[X, Y, ...]
+
+   Creates a ``GenericAlias`` representing a type ``T`` containing elements
+   of types *X*, *Y*, and more depending on the ``T`` used.
+   For example, a function expecting a :class:`list` containing
+   :class:`float` elements::
+
+      def average(values: list[float]) -> float:
+          return sum(values) / len(values)
+
+   Another example for :term:`mapping` objects, using a :class:`dict`, which
+   is a generic type expecting two type parameters representing the key type
+   and the value type.  In this example, the function expects a ``dict`` with
+   keys of type :class:`str` and values of type :class:`int`::
+
+      def send_post_request(url: str, body: dict[str, int]) -> None:
+          ...
+
+The builtin functions :func:`isinstance` and :func:`issubclass` do not accept
+``GenericAlias`` types for their second argument::
+
+   >>> isinstance([1, 2], list[str])
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: isinstance() argument 2 cannot be a parameterized generic
+
+The Python runtime does not enforce :term:`type annotations <annotation>`.
+This extends to generic types and their type parameters. When creating
+an object from a ``GenericAlias``, container elements are not checked
+against their type. For example, the following code is discouraged, but will
+run without errors::
+
+   >>> t = list[str]
+   >>> t([1, 2, 3])
+   [1, 2, 3]
+
+Furthermore, parameterized generics erase type parameters during object
+creation::
+
+   >>> t = list[str]
+   >>> type(t)
+   <class 'types.GenericAlias'>
+
+   >>> l = t()
+   >>> type(l)
+   <class 'list'>
+
+Calling :func:`repr` or :func:`str` on a generic shows the parameterized type::
+
+   >>> repr(list[int])
+   'list[int]'
+
+   >>> str(list[int])
+   'list[int]'
+
+The :meth:`__getitem__` method of generics will raise an exception to disallow
+mistakes like ``dict[str][str]``::
+
+   >>> dict[str][str]
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: There are no type variables left in dict[str]
+
+However, such expressions are valid when :ref:`type variables <generics>` are
+used.  The index must have as many elements as there are type variable items
+in the ``GenericAlias`` object's :attr:`__args__ <genericalias.__args__>`. ::
+
+   >>> from typing import TypeVar
+   >>> Y = TypeVar('Y')
+   >>> dict[str, Y][int]
+   dict[str, int]
+
+
+Standard Generic Collections
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+These standard library collections support parameterized generics.
+
+* :class:`tuple`
+* :class:`list`
+* :class:`dict`
+* :class:`set`
+* :class:`frozenset`
+* :class:`type`
+* :class:`collections.deque`
+* :class:`collections.defaultdict`
+* :class:`collections.OrderedDict`
+* :class:`collections.Counter`
+* :class:`collections.ChainMap`
+* :class:`collections.abc.Awaitable`
+* :class:`collections.abc.Coroutine`
+* :class:`collections.abc.AsyncIterable`
+* :class:`collections.abc.AsyncIterator`
+* :class:`collections.abc.AsyncGenerator`
+* :class:`collections.abc.Iterable`
+* :class:`collections.abc.Iterator`
+* :class:`collections.abc.Generator`
+* :class:`collections.abc.Reversible`
+* :class:`collections.abc.Container`
+* :class:`collections.abc.Collection`
+* :class:`collections.abc.Callable`
+* :class:`collections.abc.Set`
+* :class:`collections.abc.MutableSet`
+* :class:`collections.abc.Mapping`
+* :class:`collections.abc.MutableMapping`
+* :class:`collections.abc.Sequence`
+* :class:`collections.abc.MutableSequence`
+* :class:`collections.abc.ByteString`
+* :class:`collections.abc.MappingView`
+* :class:`collections.abc.KeysView`
+* :class:`collections.abc.ItemsView`
+* :class:`collections.abc.ValuesView`
+* :class:`contextlib.AbstractContextManager`
+* :class:`contextlib.AbstractAsyncContextManager`
+* :ref:`re.Pattern <re-objects>`
+* :ref:`re.Match <match-objects>`
+
+
+Special Attributes of Generic Alias
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+All parameterized generics implement special read-only attributes.
+
+.. attribute:: genericalias.__origin__
+
+   This attribute points at the non-parameterized generic class::
+
+      >>> list[int].__origin__
+      <class 'list'>
+
+
+.. attribute:: genericalias.__args__
+
+   This attribute is a :class:`tuple` (possibly of length 1) of generic
+   types passed to the original :meth:`__class_getitem__`
+   of the generic container::
+
+      >>> dict[str, list[int]].__args__
+      (<class 'str'>, list[int])
+
+
+.. attribute:: genericalias.__parameters__
+
+   This attribute is a lazily computed tuple (possibly empty) of unique type
+   variables found in ``__args__``::
+
+      >>> from typing import TypeVar
+
+      >>> T = TypeVar('T')
+      >>> list[T].__parameters__
+      (~T,)
+
+
+.. seealso::
+
+   * :pep:`585` -- "Type Hinting Generics In Standard Collections"
+   * :meth:`__class_getitem__` -- Used to implement parameterized generics.
+   * :ref:`generics` -- Generics in the :mod:`typing` module.
+
+.. versionadded:: 3.9
+
+
+.. _types-union:
+
+Union Type
+----------
+
+.. index::
+   object: Union
+   pair: union; type
+
+A union object holds the value of the ``|`` (bitwise or) operation on
+multiple :ref:`type objects <bltin-type-objects>`.  These types are intended
+primarily for :term:`type annotations <annotation>`. The union type expression
+enables cleaner type hinting syntax compared to :data:`typing.Union`.
+
+.. describe:: X | Y | ...
+
+   Defines a union object which holds types *X*, *Y*, and so forth. ``X | Y``
+   means either X or Y.  It is equivalent to ``typing.Union[X, Y]``.
+   For example, the following function expects an argument of type
+   :class:`int` or :class:`float`::
+
+      def square(number: int | float) -> int | float:
+          return number ** 2
+
+.. describe:: union_object == other
+
+   Union objects can be tested for equality with other union objects.  Details:
+
+   * Unions of unions are flattened::
+
+       (int | str) | float == int | str | float
+
+   * Redundant types are removed::
+
+       int | str | int == int | str
+
+   * When comparing unions, the order is ignored::
+
+      int | str == str | int
+
+   * It is compatible with :data:`typing.Union`::
+
+      int | str == typing.Union[int, str]
+
+   * Optional types can be spelled as a union with ``None``::
+
+      str | None == typing.Optional[str]
+
+.. describe:: isinstance(obj, union_object)
+
+   Calls to :func:`isinstance` are also supported with a union object::
+
+      >>> isinstance("", int | str)
+      True
+
+   However, union objects containing :ref:`parameterized generics
+   <types-genericalias>` cannot be used::
+
+      >>> isinstance(1, int | list[int])
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      TypeError: isinstance() argument 2 cannot contain a parameterized generic
+
+.. describe:: issubclass(obj, union_object)
+
+   Calls to :func:`issubclass` are also supported with a union object::
+
+      >>> issubclass(bool, int | str)
+      True
+
+   However, union objects containing :ref:`parameterized generics
+   <types-genericalias>` cannot be used::
+
+      >>> issubclass(bool, bool | list[str])
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      TypeError: issubclass() argument 2 cannot contain a parameterized generic
+
+The user-exposed type for the union object can be accessed from
+:data:`types.Union` and used for :func:`isinstance` checks.  An object cannot be
+instantiated from the type::
+
+   >>> import types
+   >>> isinstance(int | str, types.Union)
+   True
+   >>> types.Union()
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: cannot create 'types.Union' instances
+
+.. note::
+   The :meth:`__or__` method for type objects was added to support the syntax
+   ``X | Y``.  If a metaclass implements :meth:`__or__`, the Union may
+   override it::
+
+      >>> class M(type):
+      ...     def __or__(self, other):
+      ...         return "Hello"
+      ...
+      >>> class C(metaclass=M):
+      ...     pass
+      ...
+      >>> C | int
+      'Hello'
+      >>> int | C
+      int | __main__.C
+
+.. seealso::
+
+   :pep:`604` -- PEP proposing the ``X | Y`` syntax and the Union type.
+
+.. versionadded:: 3.10
 
 
 .. _typesother:
@@ -4515,6 +5240,7 @@ supports no special operations.  There is exactly one null object, named
 It is written as ``None``.
 
 
+.. index:: single: ...; ellipsis literal
 .. _bltin-ellipsis-object:
 
 The Ellipsis Object

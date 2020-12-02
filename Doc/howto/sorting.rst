@@ -43,16 +43,18 @@ Key Functions
 =============
 
 Both :meth:`list.sort` and :func:`sorted` have a *key* parameter to specify a
-function to be called on each list element prior to making comparisons.
+function (or other callable) to be called on each list element prior to making
+comparisons.
 
 For example, here's a case-insensitive string comparison:
 
     >>> sorted("This is a test string from Andrew".split(), key=str.lower)
     ['a', 'Andrew', 'from', 'is', 'string', 'test', 'This']
 
-The value of the *key* parameter should be a function that takes a single argument
-and returns a key to use for sorting purposes. This technique is fast because
-the key function is called exactly once for each input record.
+The value of the *key* parameter should be a function (or other callable) that
+takes a single argument and returns a key to use for sorting purposes. This
+technique is fast because the key function is called exactly once for each
+input record.
 
 A common pattern is to sort complex objects using some of the object's indices
 as keys. For example:
@@ -143,6 +145,17 @@ ascending *age*, do the *age* sort first and then sort again using *grade*:
 
     >>> s = sorted(student_objects, key=attrgetter('age'))     # sort on secondary key
     >>> sorted(s, key=attrgetter('grade'), reverse=True)       # now sort on primary key, descending
+    [('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
+
+This can be abstracted out into a wrapper function that can take a list and
+tuples of field and order to sort them on multiple passes.
+
+    >>> def multisort(xs, specs):
+    ...     for key, reverse in reversed(specs):
+    ...         xs.sort(key=attrgetter(key), reverse=reverse)
+    ...     return xs
+
+    >>> multisort(list(student_objects), (('grade', True), ('age', False)))
     [('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
 
 The `Timsort <https://en.wikipedia.org/wiki/Timsort>`_ algorithm used in Python

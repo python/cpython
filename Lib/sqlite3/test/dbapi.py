@@ -21,14 +21,11 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
+import threading
 import unittest
 import sqlite3 as sqlite
-try:
-    import threading
-except ImportError:
-    threading = None
 
-from test.support import TESTFN, unlink
+from test.support.os_helper import TESTFN, unlink
 
 
 class ModuleTests(unittest.TestCase):
@@ -163,6 +160,17 @@ class ConnectionTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             self.cx.in_transaction = True
 
+    def CheckOpenWithPathLikeObject(self):
+        """ Checks that we can successfully connect to a database using an object that
+            is PathLike, i.e. has __fspath__(). """
+        self.addCleanup(unlink, TESTFN)
+        class Path:
+            def __fspath__(self):
+                return TESTFN
+        path = Path()
+        with sqlite.connect(path) as cx:
+            cx.execute('create table test(id integer)')
+
     def CheckOpenUri(self):
         if sqlite.sqlite_version_info < (3, 7, 7):
             with self.assertRaises(sqlite.NotSupportedError):
@@ -177,12 +185,6 @@ class ConnectionTests(unittest.TestCase):
             with self.assertRaises(sqlite.OperationalError):
                 cx.execute('insert into test(id) values(1)')
 
-    @unittest.skipIf(sqlite.sqlite_version_info >= (3, 3, 1),
-                     'needs sqlite versions older than 3.3.1')
-    def CheckSameThreadErrorOnOldVersion(self):
-        with self.assertRaises(sqlite.NotSupportedError) as cm:
-            sqlite.connect(':memory:', check_same_thread=False)
-        self.assertEqual(str(cm.exception), 'shared connections not available')
 
 class CursorTests(unittest.TestCase):
     def setUp(self):
@@ -222,7 +224,7 @@ class CursorTests(unittest.TestCase):
             """)
 
     def CheckExecuteWrongSqlArg(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             self.cu.execute(42)
 
     def CheckExecuteArgInt(self):
@@ -268,7 +270,7 @@ class CursorTests(unittest.TestCase):
         self.assertEqual(row[0], "foo")
 
     def CheckExecuteParamSequence(self):
-        class L(object):
+        class L:
             def __len__(self):
                 return 1
             def __getitem__(self, x):
@@ -279,6 +281,18 @@ class CursorTests(unittest.TestCase):
         self.cu.execute("select name from test where name=?", L())
         row = self.cu.fetchone()
         self.assertEqual(row[0], "foo")
+
+    def CheckExecuteParamSequenceBadLen(self):
+        # Issue41662: Error in __len__() was overridden with ProgrammingError.
+        class L:
+            def __len__(self):
+                1/0
+            def __getitem__(slf, x):
+                raise AssertionError
+
+        self.cu.execute("insert into test(name) values ('foo')")
+        with self.assertRaises(ZeroDivisionError):
+            self.cu.execute("select name from test where name=?", L())
 
     def CheckExecuteDictMapping(self):
         self.cu.execute("insert into test(name) values ('foo')")
@@ -369,7 +383,7 @@ class CursorTests(unittest.TestCase):
         self.cu.executemany("insert into test(income) values (?)", mygen())
 
     def CheckExecuteManyWrongSqlArg(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             self.cu.executemany(42, [(3,)])
 
     def CheckExecuteManySelect(self):
@@ -503,7 +517,6 @@ class CursorTests(unittest.TestCase):
         self.assertEqual(results, expected)
 
 
-@unittest.skipUnless(threading, 'This test requires threading.')
 class ThreadTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:")

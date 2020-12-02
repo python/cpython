@@ -1,8 +1,9 @@
 import os
 import unittest
-from test import support
+from test.support import import_helper
 
-spwd = support.import_module('spwd')
+
+spwd = import_helper.import_module('spwd')
 
 
 @unittest.skipUnless(hasattr(os, 'geteuid') and os.geteuid() == 0,
@@ -67,8 +68,6 @@ class TestSpwdNonRoot(unittest.TestCase):
                 spwd.getspnam(name)
         except KeyError as exc:
             self.skipTest("spwd entry %r doesn't exist: %s" % (name, exc))
-        else:
-            self.assertEqual(str(cm.exception), '[Errno 13] Permission denied')
 
 
 if __name__ == "__main__":

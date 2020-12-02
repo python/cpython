@@ -5,6 +5,27 @@
 
 #include <inttypes.h>
 
+
+/* Defines to build Python and its standard library:
+ *
+ * - Py_BUILD_CORE: Build Python core. Give access to Python internals, but
+ *   should not be used by third-party modules.
+ * - Py_BUILD_CORE_BUILTIN: Build a Python stdlib module as a built-in module.
+ * - Py_BUILD_CORE_MODULE: Build a Python stdlib module as a dynamic library.
+ *
+ * Py_BUILD_CORE_BUILTIN and Py_BUILD_CORE_MODULE imply Py_BUILD_CORE.
+ *
+ * On Windows, Py_BUILD_CORE_MODULE exports "PyInit_xxx" symbol, whereas
+ * Py_BUILD_CORE_BUILTIN does not.
+ */
+#if defined(Py_BUILD_CORE_BUILTIN) && !defined(Py_BUILD_CORE)
+#  define Py_BUILD_CORE
+#endif
+#if defined(Py_BUILD_CORE_MODULE) && !defined(Py_BUILD_CORE)
+#  define Py_BUILD_CORE
+#endif
+
+
 /**************************************************************************
 Symbols and macros to supply platform-independent interfaces to basic
 C language & library operations whose spellings vary across platforms.
@@ -110,10 +131,13 @@ typedef int Py_ssize_clean_t;
 /* Smallest negative value of type Py_ssize_t. */
 #define PY_SSIZE_T_MIN (-PY_SSIZE_T_MAX-1)
 
-/* PY_FORMAT_SIZE_T is a platform-specific modifier for use in a printf
+/* Macro kept for backward compatibility: use "z" in new code.
+ *
+ * PY_FORMAT_SIZE_T is a platform-specific modifier for use in a printf
  * format to convert an argument with the width of a size_t or Py_ssize_t.
- * C99 introduced "z" for this purpose, but not all platforms support that;
- * e.g., MS compilers use "I" instead.
+ * C99 introduced "z" for this purpose, but old MSVCs had not supported it.
+ * Since MSVC supports "z" since (at least) 2015, we can just use "z"
+ * for new code.
  *
  * These "high level" Python format functions interpret "z" correctly on
  * all platforms (Python interprets the format string itself, and does whatever
@@ -131,19 +155,11 @@ typedef int Py_ssize_clean_t;
  *     Py_ssize_t index;
  *     fprintf(stderr, "index %" PY_FORMAT_SIZE_T "d sucks\n", index);
  *
- * That will expand to %ld, or %Id, or to something else correct for a
- * Py_ssize_t on the platform.
+ * That will expand to %zd or to something else correct for a Py_ssize_t on
+ * the platform.
  */
 #ifndef PY_FORMAT_SIZE_T
-#   if SIZEOF_SIZE_T == SIZEOF_INT && !defined(__APPLE__)
-#       define PY_FORMAT_SIZE_T ""
-#   elif SIZEOF_SIZE_T == SIZEOF_LONG
-#       define PY_FORMAT_SIZE_T "l"
-#   elif defined(MS_WINDOWS)
-#       define PY_FORMAT_SIZE_T "I"
-#   else
-#       error "This platform's pyconfig.h needs to define PY_FORMAT_SIZE_T"
-#   endif
+#   define PY_FORMAT_SIZE_T "z"
 #endif
 
 /* Py_LOCAL can be used instead of static to get the fastest possible calling
@@ -164,18 +180,18 @@ typedef int Py_ssize_clean_t;
  */
 
 #if defined(_MSC_VER)
-#if defined(PY_LOCAL_AGGRESSIVE)
-/* enable more aggressive optimization for visual studio */
-#pragma optimize("agtw", on)
+#  if defined(PY_LOCAL_AGGRESSIVE)
+   /* enable more aggressive optimization for visual studio */
+#  pragma optimize("agtw", on)
 #endif
-/* ignore warnings if the compiler decides not to inline a function */
-#pragma warning(disable: 4710)
-/* fastest possible local call under MSVC */
-#define Py_LOCAL(type) static type __fastcall
-#define Py_LOCAL_INLINE(type) static __inline type __fastcall
+   /* ignore warnings if the compiler decides not to inline a function */
+#  pragma warning(disable: 4710)
+   /* fastest possible local call under MSVC */
+#  define Py_LOCAL(type) static type __fastcall
+#  define Py_LOCAL_INLINE(type) static __inline type __fastcall
 #else
-#define Py_LOCAL(type) static type
-#define Py_LOCAL_INLINE(type) static inline type
+#  define Py_LOCAL(type) static type
+#  define Py_LOCAL_INLINE(type) static inline type
 #endif
 
 /* Py_MEMCPY is kept for backwards compatibility,
@@ -324,7 +340,7 @@ extern "C" {
         } \
     } while(0)
 
-/* Py_SET_ERANGE_ON_OVERFLOW(x)
+/* Py_SET_ERANGE_IF_OVERFLOW(x)
  * An alias of Py_SET_ERRNO_ON_MATH_ERROR for backward-compatibility.
  */
 #define Py_SET_ERANGE_IF_OVERFLOW(X) Py_SET_ERRNO_ON_MATH_ERROR(X)
@@ -406,7 +422,7 @@ extern "C" {
 #endif
 
 /* get and set x87 control word for VisualStudio/x86 */
-#if defined(_MSC_VER) && !defined(_WIN64) /* x87 not supported in 64-bit */
+#if defined(_MSC_VER) && !defined(_WIN64) && !defined(_M_ARM) /* x87 not supported in 64-bit or ARM */
 #define HAVE_PY_SET_53BIT_PRECISION 1
 #define _Py_SET_53BIT_PRECISION_HEADER \
     unsigned int old_387controlword, new_387controlword, out_387controlword
@@ -483,18 +499,42 @@ extern "C" {
 
 /* Py_DEPRECATED(version)
  * Declare a variable, type, or function deprecated.
+ * The macro must be placed before the declaration.
  * Usage:
- *    extern int old_var Py_DEPRECATED(2.3);
- *    typedef int T1 Py_DEPRECATED(2.4);
- *    extern int x() Py_DEPRECATED(2.5);
+ *    Py_DEPRECATED(3.3) extern int old_var;
+ *    Py_DEPRECATED(3.4) typedef int T1;
+ *    Py_DEPRECATED(3.8) PyAPI_FUNC(int) Py_OldFunction(void);
  */
 #if defined(__GNUC__) \
     && ((__GNUC__ >= 4) || (__GNUC__ == 3) && (__GNUC_MINOR__ >= 1))
 #define Py_DEPRECATED(VERSION_UNUSED) __attribute__((__deprecated__))
+#elif defined(_MSC_VER)
+#define Py_DEPRECATED(VERSION) __declspec(deprecated( \
+                                          "deprecated in " #VERSION))
 #else
 #define Py_DEPRECATED(VERSION_UNUSED)
 #endif
 
+#if defined(__clang__)
+#define _Py_COMP_DIAG_PUSH _Pragma("clang diagnostic push")
+#define _Py_COMP_DIAG_IGNORE_DEPR_DECLS \
+    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"")
+#define _Py_COMP_DIAG_POP _Pragma("clang diagnostic pop")
+#elif defined(__GNUC__) \
+    && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 6))
+#define _Py_COMP_DIAG_PUSH _Pragma("GCC diagnostic push")
+#define _Py_COMP_DIAG_IGNORE_DEPR_DECLS \
+    _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+#define _Py_COMP_DIAG_POP _Pragma("GCC diagnostic pop")
+#elif defined(_MSC_VER)
+#define _Py_COMP_DIAG_PUSH __pragma(warning(push))
+#define _Py_COMP_DIAG_IGNORE_DEPR_DECLS __pragma(warning(disable: 4996))
+#define _Py_COMP_DIAG_POP __pragma(warning(pop))
+#else
+#define _Py_COMP_DIAG_PUSH
+#define _Py_COMP_DIAG_IGNORE_DEPR_DECLS
+#define _Py_COMP_DIAG_POP
+#endif
 
 /* _Py_HOT_FUNCTION
  * The hot attribute on a function is used to inform the compiler that the
@@ -525,8 +565,10 @@ extern "C" {
  * Usage:
  *    int _Py_NO_INLINE x(void) { return 3; }
  */
-#if defined(__GNUC__) || defined(__clang__)
-#  define _Py_NO_INLINE __attribute__((noinline))
+#if defined(_MSC_VER)
+#  define _Py_NO_INLINE __declspec(noinline)
+#elif defined(__GNUC__) || defined(__clang__)
+#  define _Py_NO_INLINE __attribute__ ((noinline))
 #else
 #  define _Py_NO_INLINE
 #endif
@@ -556,16 +598,6 @@ extern char * _getpty(int *, int, mode_t, int);
 #include <sys/termio.h>
 #endif
 
-#if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY)
-#if !defined(HAVE_PTY_H) && !defined(HAVE_LIBUTIL_H)
-/* BSDI does not supply a prototype for the 'openpty' and 'forkpty'
-   functions, even though they are included in libutil. */
-#include <termios.h>
-extern int openpty(int *, int *, char *, struct termios *, struct winsize *);
-extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
-#endif /* !defined(HAVE_PTY_H) && !defined(HAVE_LIBUTIL_H) */
-#endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) */
-
 
 /* On 4.4BSD-descendants, ctype functions serves the whole range of
  * wchar_t character set rather than single byte code points only.
@@ -574,18 +606,8 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
  * workaround was provided by Tim Robbins of FreeBSD project.
  */
 
-#ifdef __FreeBSD__
-#include <osreldate.h>
-#if (__FreeBSD_version >= 500040 && __FreeBSD_version < 602113) || \
-    (__FreeBSD_version >= 700000 && __FreeBSD_version < 700054) || \
-    (__FreeBSD_version >= 800000 && __FreeBSD_version < 800001)
-# define _PY_PORT_CTYPE_UTF8_ISSUE
-#endif
-#endif
-
-
 #if defined(__APPLE__)
-# define _PY_PORT_CTYPE_UTF8_ISSUE
+#  define _PY_PORT_CTYPE_UTF8_ISSUE
 #endif
 
 #ifdef _PY_PORT_CTYPE_UTF8_ISSUE
@@ -638,16 +660,18 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 #       define HAVE_DECLSPEC_DLL
 #endif
 
+#include "exports.h"
+
 /* only get special linkage if built as shared or platform is Cygwin */
 #if defined(Py_ENABLE_SHARED) || defined(__CYGWIN__)
 #       if defined(HAVE_DECLSPEC_DLL)
-#               ifdef Py_BUILD_CORE
-#                       define PyAPI_FUNC(RTYPE) __declspec(dllexport) RTYPE
-#                       define PyAPI_DATA(RTYPE) extern __declspec(dllexport) RTYPE
+#               if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#                       define PyAPI_FUNC(RTYPE) Py_EXPORTED_SYMBOL RTYPE
+#                       define PyAPI_DATA(RTYPE) extern Py_EXPORTED_SYMBOL RTYPE
         /* module init functions inside the core need no external linkage */
         /* except for Cygwin to handle embedding */
 #                       if defined(__CYGWIN__)
-#                               define PyMODINIT_FUNC __declspec(dllexport) PyObject*
+#                               define PyMODINIT_FUNC Py_EXPORTED_SYMBOL PyObject*
 #                       else /* __CYGWIN__ */
 #                               define PyMODINIT_FUNC PyObject*
 #                       endif /* __CYGWIN__ */
@@ -658,14 +682,14 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
         /* failures similar to those described at the bottom of 4.1: */
         /* http://docs.python.org/extending/windows.html#a-cookbook-approach */
 #                       if !defined(__CYGWIN__)
-#                               define PyAPI_FUNC(RTYPE) __declspec(dllimport) RTYPE
+#                               define PyAPI_FUNC(RTYPE) Py_IMPORTED_SYMBOL RTYPE
 #                       endif /* !__CYGWIN__ */
-#                       define PyAPI_DATA(RTYPE) extern __declspec(dllimport) RTYPE
+#                       define PyAPI_DATA(RTYPE) extern Py_IMPORTED_SYMBOL RTYPE
         /* module init functions outside the core must be exported */
 #                       if defined(__cplusplus)
-#                               define PyMODINIT_FUNC extern "C" __declspec(dllexport) PyObject*
+#                               define PyMODINIT_FUNC extern "C" Py_EXPORTED_SYMBOL PyObject*
 #                       else /* __cplusplus */
-#                               define PyMODINIT_FUNC __declspec(dllexport) PyObject*
+#                               define PyMODINIT_FUNC Py_EXPORTED_SYMBOL PyObject*
 #                       endif /* __cplusplus */
 #               endif /* Py_BUILD_CORE */
 #       endif /* HAVE_DECLSPEC_DLL */
@@ -673,16 +697,16 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 
 /* If no external linkage macros defined by now, create defaults */
 #ifndef PyAPI_FUNC
-#       define PyAPI_FUNC(RTYPE) RTYPE
+#       define PyAPI_FUNC(RTYPE) Py_EXPORTED_SYMBOL RTYPE
 #endif
 #ifndef PyAPI_DATA
-#       define PyAPI_DATA(RTYPE) extern RTYPE
+#       define PyAPI_DATA(RTYPE) extern Py_EXPORTED_SYMBOL RTYPE
 #endif
 #ifndef PyMODINIT_FUNC
 #       if defined(__cplusplus)
-#               define PyMODINIT_FUNC extern "C" PyObject*
+#               define PyMODINIT_FUNC extern "C" Py_EXPORTED_SYMBOL PyObject*
 #       else /* __cplusplus */
-#               define PyMODINIT_FUNC PyObject*
+#               define PyMODINIT_FUNC Py_EXPORTED_SYMBOL PyObject*
 #       endif /* __cplusplus */
 #endif
 
@@ -766,11 +790,11 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
  */
 
 #ifdef WORDS_BIGENDIAN
-#define PY_BIG_ENDIAN 1
-#define PY_LITTLE_ENDIAN 0
+#  define PY_BIG_ENDIAN 1
+#  define PY_LITTLE_ENDIAN 0
 #else
-#define PY_BIG_ENDIAN 0
-#define PY_LITTLE_ENDIAN 1
+#  define PY_BIG_ENDIAN 0
+#  define PY_LITTLE_ENDIAN 1
 #endif
 
 #ifdef Py_BUILD_CORE
@@ -794,7 +818,67 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #endif /* Py_BUILD_CORE */
 
 #ifdef __ANDROID__
-#include <android/api-level.h>
+   /* The Android langinfo.h header is not used. */
+#  undef HAVE_LANGINFO_H
+#  undef CODESET
 #endif
+
+/* Maximum value of the Windows DWORD type */
+#define PY_DWORD_MAX 4294967295U
+
+/* This macro used to tell whether Python was built with multithreading
+ * enabled.  Now multithreading is always enabled, but keep the macro
+ * for compatibility.
+ */
+#ifndef WITH_THREAD
+#  define WITH_THREAD
+#endif
+
+/* Check that ALT_SOABI is consistent with Py_TRACE_REFS:
+   ./configure --with-trace-refs should must be used to define Py_TRACE_REFS */
+#if defined(ALT_SOABI) && defined(Py_TRACE_REFS)
+#  error "Py_TRACE_REFS ABI is not compatible with release and debug ABI"
+#endif
+
+#if defined(__ANDROID__) || defined(__VXWORKS__)
+   // Use UTF-8 as the locale encoding, ignore the LC_CTYPE locale.
+   // See _Py_GetLocaleEncoding(), PyUnicode_DecodeLocale()
+   // and PyUnicode_EncodeLocale().
+#  define _Py_FORCE_UTF8_LOCALE
+#endif
+
+#if defined(_Py_FORCE_UTF8_LOCALE) || defined(__APPLE__)
+   // Use UTF-8 as the filesystem encoding.
+   // See PyUnicode_DecodeFSDefaultAndSize(), PyUnicode_EncodeFSDefault(),
+   // Py_DecodeLocale() and Py_EncodeLocale().
+#  define _Py_FORCE_UTF8_FS_ENCODING
+#endif
+
+/* Mark a function which cannot return. Example:
+   PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
+
+   XLC support is intentionally omitted due to bpo-40244 */
+#if defined(__clang__) || \
+    (defined(__GNUC__) && \
+     ((__GNUC__ >= 3) || \
+      (__GNUC__ == 2) && (__GNUC_MINOR__ >= 5)))
+#  define _Py_NO_RETURN __attribute__((__noreturn__))
+#elif defined(_MSC_VER)
+#  define _Py_NO_RETURN __declspec(noreturn)
+#else
+#  define _Py_NO_RETURN
+#endif
+
+
+// Preprocessor check for a builtin preprocessor function. Always return 0
+// if __has_builtin() macro is not defined.
+//
+// __has_builtin() is available on clang and GCC 10.
+#ifdef __has_builtin
+#  define _Py__has_builtin(x) __has_builtin(x)
+#else
+#  define _Py__has_builtin(x) 0
+#endif
+
 
 #endif /* Py_PYPORT_H */

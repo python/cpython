@@ -1,5 +1,5 @@
 #
-# Module providing the `SyncManager` class for dealing
+# Module providing manager classes for dealing
 # with shared objects
 #
 # multiprocessing/managers.py
@@ -8,7 +8,8 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
-__all__ = [ 'BaseManager', 'SyncManager', 'BaseProxy', 'Token' ]
+__all__ = [ 'BaseManager', 'SyncManager', 'BaseProxy', 'Token',
+            'SharedMemoryManager' ]
 
 #
 # Imports
@@ -16,18 +17,27 @@ __all__ = [ 'BaseManager', 'SyncManager', 'BaseProxy', 'Token' ]
 
 import sys
 import threading
+import signal
 import array
 import queue
+import time
+import types
+import os
+from os import getpid
 
-from time import time as _time
 from traceback import format_exc
 
 from . import connection
-from .context import reduction, get_spawning_popen
+from .context import reduction, get_spawning_popen, ProcessError
 from . import pool
 from . import process
 from . import util
 from . import get_context
+try:
+    from . import shared_memory
+    HAS_SHMEM = True
+except ImportError:
+    HAS_SHMEM = False
 
 #
 # Register some things for pickling
@@ -50,7 +60,7 @@ if view_types[0] is not list:       # only needed in Py3.0
 
 class Token(object):
     '''
-    Type to uniquely indentify a shared object
+    Type to uniquely identify a shared object
     '''
     __slots__ = ('typeid', 'address', 'id')
 
@@ -84,14 +94,17 @@ def dispatch(c, id, methodname, args=(), kwds={}):
 def convert_to_error(kind, result):
     if kind == '#ERROR':
         return result
-    elif kind == '#TRACEBACK':
-        assert type(result) is str
-        return  RemoteError(result)
-    elif kind == '#UNSERIALIZABLE':
-        assert type(result) is str
-        return RemoteError('Unserializable message: %s\n' % result)
+    elif kind in ('#TRACEBACK', '#UNSERIALIZABLE'):
+        if not isinstance(result, str):
+            raise TypeError(
+                "Result {0!r} (kind '{1}') type is {2}, not str".format(
+                    result, kind, type(result)))
+        if kind == '#UNSERIALIZABLE':
+            return RemoteError('Unserializable message: %s\n' % result)
+        else:
+            return RemoteError(result)
     else:
-        return ValueError('Unrecognized message type')
+        return ValueError('Unrecognized message type {!r}'.format(kind))
 
 class RemoteError(Exception):
     def __str__(self):
@@ -130,7 +143,10 @@ class Server(object):
               'debug_info', 'number_of_objects', 'dummy', 'incref', 'decref']
 
     def __init__(self, registry, address, authkey, serializer):
-        assert isinstance(authkey, bytes)
+        if not isinstance(authkey, bytes):
+            raise TypeError(
+                "Authkey {0!r} is type {1!s}, not bytes".format(
+                    authkey, type(authkey)))
         self.registry = registry
         self.authkey = process.AuthenticationString(authkey)
         Listener, Client = listener_client[serializer]
@@ -160,7 +176,7 @@ class Server(object):
             except (KeyboardInterrupt, SystemExit):
                 pass
         finally:
-            if sys.stdout != sys.__stdout__:
+            if sys.stdout != sys.__stdout__: # what about stderr?
                 util.debug('resetting stdout, stderr')
                 sys.stdout = sys.__stdout__
                 sys.stderr = sys.__stderr__
@@ -233,7 +249,7 @@ class Server(object):
                     try:
                         obj, exposed, gettypeid = \
                             self.id_to_local_proxy_obj[ident]
-                    except KeyError as second_ke:
+                    except KeyError:
                         raise ke
 
                 if methodname not in exposed:
@@ -281,7 +297,7 @@ class Server(object):
             try:
                 try:
                     send(msg)
-                except Exception as e:
+                except Exception:
                     send(('#UNSERIALIZABLE', format_exc()))
             except Exception as e:
                 util.info('exception in thread serving %r',
@@ -313,6 +329,7 @@ class Server(object):
         '''
         Return some info --- useful to spot problems with refcounting
         '''
+        # Perhaps include debug info about 'c'?
         with self.mutex:
             result = []
             keys = list(self.id_to_refcount.keys())
@@ -344,7 +361,7 @@ class Server(object):
         finally:
             self.stop_event.set()
 
-    def create(self, c, typeid, *args, **kwds):
+    def create(self, c, typeid, /, *args, **kwds):
         '''
         Create a new shared object and return its id
         '''
@@ -353,7 +370,9 @@ class Server(object):
                       self.registry[typeid]
 
             if callable is None:
-                assert len(args) == 1 and not kwds
+                if kwds or (len(args) != 1):
+                    raise ValueError(
+                        "Without callable, must have one non-keyword argument")
                 obj = args[0]
             else:
                 obj = callable(*args, **kwds)
@@ -361,7 +380,10 @@ class Server(object):
             if exposed is None:
                 exposed = public_methods(obj)
             if method_to_typeid is not None:
-                assert type(method_to_typeid) is dict
+                if not isinstance(method_to_typeid, dict):
+                    raise TypeError(
+                        "Method_to_typeid {0!r}: type {1!s}, not dict".format(
+                            method_to_typeid, type(method_to_typeid)))
                 exposed = list(exposed) + list(method_to_typeid)
 
             ident = '%x' % id(obj)  # convert to string because xmlrpclib
@@ -414,7 +436,11 @@ class Server(object):
             return
 
         with self.mutex:
-            assert self.id_to_refcount[ident] >= 1
+            if self.id_to_refcount[ident] <= 0:
+                raise AssertionError(
+                    "Id {0!s} ({1!r}) has refcount {2:n}, not 1+".format(
+                        ident, self.id_to_obj[ident],
+                        self.id_to_refcount[ident]))
             self.id_to_refcount[ident] -= 1
             if self.id_to_refcount[ident] == 0:
                 del self.id_to_refcount[ident]
@@ -477,7 +503,14 @@ class BaseManager(object):
         '''
         Return server object with serve_forever() method and address attribute
         '''
-        assert self._state.value == State.INITIAL
+        if self._state.value != State.INITIAL:
+            if self._state.value == State.STARTED:
+                raise ProcessError("Already started server")
+            elif self._state.value == State.SHUTDOWN:
+                raise ProcessError("Manager has shut down")
+            else:
+                raise ProcessError(
+                    "Unknown state {!r}".format(self._state.value))
         return Server(self._registry, self._address,
                       self._authkey, self._serializer)
 
@@ -494,7 +527,14 @@ class BaseManager(object):
         '''
         Spawn a server process for this manager object
         '''
-        assert self._state.value == State.INITIAL
+        if self._state.value != State.INITIAL:
+            if self._state.value == State.STARTED:
+                raise ProcessError("Already started server")
+            elif self._state.value == State.SHUTDOWN:
+                raise ProcessError("Manager has shut down")
+            else:
+                raise ProcessError(
+                    "Unknown state {!r}".format(self._state.value))
 
         if initializer is not None and not callable(initializer):
             raise TypeError('initializer must be a callable')
@@ -532,6 +572,9 @@ class BaseManager(object):
         '''
         Create a server, report its address and run it
         '''
+        # bpo-36368: protect server process from KeyboardInterrupt signals
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+
         if initializer is not None:
             initializer(*initargs)
 
@@ -546,7 +589,7 @@ class BaseManager(object):
         util.info('manager serving at %r', server.address)
         server.serve_forever()
 
-    def _create(self, typeid, *args, **kwds):
+    def _create(self, typeid, /, *args, **kwds):
         '''
         Create a new shared object; return the token and exposed tuple
         '''
@@ -590,7 +633,14 @@ class BaseManager(object):
     def __enter__(self):
         if self._state.value == State.INITIAL:
             self.start()
-        assert self._state.value == State.STARTED
+        if self._state.value != State.STARTED:
+            if self._state.value == State.INITIAL:
+                raise ProcessError("Unable to start server")
+            elif self._state.value == State.SHUTDOWN:
+                raise ProcessError("Manager has shut down")
+            else:
+                raise ProcessError(
+                    "Unknown state {!r}".format(self._state.value))
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -650,7 +700,7 @@ class BaseManager(object):
                            getattr(proxytype, '_method_to_typeid_', None)
 
         if method_to_typeid:
-            for key, value in list(method_to_typeid.items()):
+            for key, value in list(method_to_typeid.items()): # isinstance?
                 assert type(key) is str, '%r is not a string' % key
                 assert type(value) is str, '%r is not a string' % value
 
@@ -659,7 +709,7 @@ class BaseManager(object):
             )
 
         if create_method:
-            def temp(self, *args, **kwds):
+            def temp(self, /, *args, **kwds):
                 util.debug('requesting creation of a shared %r object', typeid)
                 token, exp = self._create(typeid, *args, **kwds)
                 proxy = proxytype(
@@ -745,7 +795,7 @@ class BaseProxy(object):
 
     def _callmethod(self, methodname, args=(), kwds={}):
         '''
-        Try to call a method of the referrent and return a copy of the result
+        Try to call a method of the referent and return a copy of the result
         '''
         try:
             conn = self._tls.connection
@@ -899,7 +949,7 @@ def MakeProxyType(name, exposed, _cache={}):
     dic = {}
 
     for meth in exposed:
-        exec('''def %s(self, *args, **kwds):
+        exec('''def %s(self, /, *args, **kwds):
         return self._callmethod(%r, args, kwds)''' % (meth, meth), dic)
 
     ProxyType = type(name, (BaseProxy,), dic)
@@ -938,7 +988,7 @@ def AutoProxy(token, serializer, manager=None, authkey=None,
 #
 
 class Namespace(object):
-    def __init__(self, **kwds):
+    def __init__(self, /, **kwds):
         self.__dict__.update(kwds)
     def __repr__(self):
         items = list(self.__dict__.items())
@@ -999,8 +1049,8 @@ class ConditionProxy(AcquirerProxy):
     _exposed_ = ('acquire', 'release', 'wait', 'notify', 'notify_all')
     def wait(self, timeout=None):
         return self._callmethod('wait', (timeout,))
-    def notify(self):
-        return self._callmethod('notify')
+    def notify(self, n=1):
+        return self._callmethod('notify', (n,))
     def notify_all(self):
         return self._callmethod('notify_all')
     def wait_for(self, predicate, timeout=None):
@@ -1008,13 +1058,13 @@ class ConditionProxy(AcquirerProxy):
         if result:
             return result
         if timeout is not None:
-            endtime = _time() + timeout
+            endtime = time.monotonic() + timeout
         else:
             endtime = None
             waittime = None
         while not result:
             if endtime is not None:
-                waittime = endtime - _time()
+                waittime = endtime - time.monotonic()
                 if waittime <= 0:
                     break
             self.wait(waittime)
@@ -1080,6 +1130,8 @@ class ValueProxy(BaseProxy):
         return self._callmethod('set', (value,))
     value = property(get, set)
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
 
 BaseListProxy = MakeProxyType('BaseListProxy', (
     '__add__', '__contains__', '__delitem__', '__getitem__', '__len__',
@@ -1097,10 +1149,13 @@ class ListProxy(BaseListProxy):
 
 
 DictProxy = MakeProxyType('DictProxy', (
-    '__contains__', '__delitem__', '__getitem__', '__len__',
-    '__setitem__', 'clear', 'copy', 'get', 'has_key', 'items',
+    '__contains__', '__delitem__', '__getitem__', '__iter__', '__len__',
+    '__setitem__', 'clear', 'copy', 'get', 'items',
     'keys', 'pop', 'popitem', 'setdefault', 'update', 'values'
     ))
+DictProxy._method_to_typeid_ = {
+    '__iter__': 'Iterator',
+    }
 
 
 ArrayProxy = MakeProxyType('ArrayProxy', (
@@ -1160,3 +1215,155 @@ SyncManager.register('Namespace', Namespace, NamespaceProxy)
 # types returned by methods of PoolProxy
 SyncManager.register('Iterator', proxytype=IteratorProxy, create_method=False)
 SyncManager.register('AsyncResult', create_method=False)
+
+#
+# Definition of SharedMemoryManager and SharedMemoryServer
+#
+
+if HAS_SHMEM:
+    class _SharedMemoryTracker:
+        "Manages one or more shared memory segments."
+
+        def __init__(self, name, segment_names=[]):
+            self.shared_memory_context_name = name
+            self.segment_names = segment_names
+
+        def register_segment(self, segment_name):
+            "Adds the supplied shared memory block name to tracker."
+            util.debug(f"Register segment {segment_name!r} in pid {getpid()}")
+            self.segment_names.append(segment_name)
+
+        def destroy_segment(self, segment_name):
+            """Calls unlink() on the shared memory block with the supplied name
+            and removes it from the list of blocks being tracked."""
+            util.debug(f"Destroy segment {segment_name!r} in pid {getpid()}")
+            self.segment_names.remove(segment_name)
+            segment = shared_memory.SharedMemory(segment_name)
+            segment.close()
+            segment.unlink()
+
+        def unlink(self):
+            "Calls destroy_segment() on all tracked shared memory blocks."
+            for segment_name in self.segment_names[:]:
+                self.destroy_segment(segment_name)
+
+        def __del__(self):
+            util.debug(f"Call {self.__class__.__name__}.__del__ in {getpid()}")
+            self.unlink()
+
+        def __getstate__(self):
+            return (self.shared_memory_context_name, self.segment_names)
+
+        def __setstate__(self, state):
+            self.__init__(*state)
+
+
+    class SharedMemoryServer(Server):
+
+        public = Server.public + \
+                 ['track_segment', 'release_segment', 'list_segments']
+
+        def __init__(self, *args, **kwargs):
+            Server.__init__(self, *args, **kwargs)
+            address = self.address
+            # The address of Linux abstract namespaces can be bytes
+            if isinstance(address, bytes):
+                address = os.fsdecode(address)
+            self.shared_memory_context = \
+                _SharedMemoryTracker(f"shm_{address}_{getpid()}")
+            util.debug(f"SharedMemoryServer started by pid {getpid()}")
+
+        def create(self, c, typeid, /, *args, **kwargs):
+            """Create a new distributed-shared object (not backed by a shared
+            memory block) and return its id to be used in a Proxy Object."""
+            # Unless set up as a shared proxy, don't make shared_memory_context
+            # a standard part of kwargs.  This makes things easier for supplying
+            # simple functions.
+            if hasattr(self.registry[typeid][-1], "_shared_memory_proxy"):
+                kwargs['shared_memory_context'] = self.shared_memory_context
+            return Server.create(self, c, typeid, *args, **kwargs)
+
+        def shutdown(self, c):
+            "Call unlink() on all tracked shared memory, terminate the Server."
+            self.shared_memory_context.unlink()
+            return Server.shutdown(self, c)
+
+        def track_segment(self, c, segment_name):
+            "Adds the supplied shared memory block name to Server's tracker."
+            self.shared_memory_context.register_segment(segment_name)
+
+        def release_segment(self, c, segment_name):
+            """Calls unlink() on the shared memory block with the supplied name
+            and removes it from the tracker instance inside the Server."""
+            self.shared_memory_context.destroy_segment(segment_name)
+
+        def list_segments(self, c):
+            """Returns a list of names of shared memory blocks that the Server
+            is currently tracking."""
+            return self.shared_memory_context.segment_names
+
+
+    class SharedMemoryManager(BaseManager):
+        """Like SyncManager but uses SharedMemoryServer instead of Server.
+
+        It provides methods for creating and returning SharedMemory instances
+        and for creating a list-like object (ShareableList) backed by shared
+        memory.  It also provides methods that create and return Proxy Objects
+        that support synchronization across processes (i.e. multi-process-safe
+        locks and semaphores).
+        """
+
+        _Server = SharedMemoryServer
+
+        def __init__(self, *args, **kwargs):
+            if os.name == "posix":
+                # bpo-36867: Ensure the resource_tracker is running before
+                # launching the manager process, so that concurrent
+                # shared_memory manipulation both in the manager and in the
+                # current process does not create two resource_tracker
+                # processes.
+                from . import resource_tracker
+                resource_tracker.ensure_running()
+            BaseManager.__init__(self, *args, **kwargs)
+            util.debug(f"{self.__class__.__name__} created by pid {getpid()}")
+
+        def __del__(self):
+            util.debug(f"{self.__class__.__name__}.__del__ by pid {getpid()}")
+            pass
+
+        def get_server(self):
+            'Better than monkeypatching for now; merge into Server ultimately'
+            if self._state.value != State.INITIAL:
+                if self._state.value == State.STARTED:
+                    raise ProcessError("Already started SharedMemoryServer")
+                elif self._state.value == State.SHUTDOWN:
+                    raise ProcessError("SharedMemoryManager has shut down")
+                else:
+                    raise ProcessError(
+                        "Unknown state {!r}".format(self._state.value))
+            return self._Server(self._registry, self._address,
+                                self._authkey, self._serializer)
+
+        def SharedMemory(self, size):
+            """Returns a new SharedMemory instance with the specified size in
+            bytes, to be tracked by the manager."""
+            with self._Client(self._address, authkey=self._authkey) as conn:
+                sms = shared_memory.SharedMemory(None, create=True, size=size)
+                try:
+                    dispatch(conn, None, 'track_segment', (sms.name,))
+                except BaseException as e:
+                    sms.unlink()
+                    raise e
+            return sms
+
+        def ShareableList(self, sequence):
+            """Returns a new ShareableList instance populated with the values
+            from the input sequence, to be tracked by the manager."""
+            with self._Client(self._address, authkey=self._authkey) as conn:
+                sl = shared_memory.ShareableList(sequence)
+                try:
+                    dispatch(conn, None, 'track_segment', (sl.shm.name,))
+                except BaseException as e:
+                    sl.shm.unlink()
+                    raise e
+            return sl

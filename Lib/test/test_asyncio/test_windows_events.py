@@ -1,17 +1,25 @@
 import os
+import signal
+import socket
 import sys
+import time
+import threading
 import unittest
 from unittest import mock
 
 if sys.platform != 'win32':
     raise unittest.SkipTest('Windows only')
 
+import _overlapped
 import _winapi
 
 import asyncio
-from asyncio import _overlapped
-from asyncio import test_utils
 from asyncio import windows_events
+from test.test_asyncio import utils as test_utils
+
+
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
 
 
 class UpperProto(asyncio.Protocol):
@@ -28,6 +36,49 @@ class UpperProto(asyncio.Protocol):
             self.trans.close()
 
 
+class ProactorLoopCtrlC(test_utils.TestCase):
+
+    def test_ctrl_c(self):
+
+        def SIGINT_after_delay():
+            time.sleep(0.1)
+            signal.raise_signal(signal.SIGINT)
+
+        thread = threading.Thread(target=SIGINT_after_delay)
+        loop = asyncio.get_event_loop()
+        try:
+            # only start the loop once the event loop is running
+            loop.call_soon(thread.start)
+            loop.run_forever()
+            self.fail("should not fall through 'run_forever'")
+        except KeyboardInterrupt:
+            pass
+        finally:
+            self.close_loop(loop)
+        thread.join()
+
+
+class ProactorMultithreading(test_utils.TestCase):
+    def test_run_from_nonmain_thread(self):
+        finished = False
+
+        async def coro():
+            await asyncio.sleep(0)
+
+        def func():
+            nonlocal finished
+            loop = asyncio.new_event_loop()
+            loop.run_until_complete(coro())
+            # close() must not call signal.set_wakeup_fd()
+            loop.close()
+            finished = True
+
+        thread = threading.Thread(target=func)
+        thread.start()
+        thread.join()
+        self.assertTrue(finished)
+
+
 class ProactorTests(test_utils.TestCase):
 
     def setUp(self):
@@ -36,9 +87,9 @@ class ProactorTests(test_utils.TestCase):
         self.set_event_loop(self.loop)
 
     def test_close(self):
-        a, b = self.loop._socketpair()
+        a, b = socket.socketpair()
         trans = self.loop._make_socket_transport(a, asyncio.Protocol())
-        f = asyncio.ensure_future(self.loop.sock_recv(b, 100))
+        f = asyncio.ensure_future(self.loop.sock_recv(b, 100), loop=self.loop)
         trans.close()
         self.loop.run_until_complete(f)
         self.assertEqual(f.result(), b'')
@@ -55,14 +106,14 @@ class ProactorTests(test_utils.TestCase):
         res = self.loop.run_until_complete(self._test_pipe())
         self.assertEqual(res, 'done')
 
-    def _test_pipe(self):
+    async def _test_pipe(self):
         ADDRESS = r'\\.\pipe\_test_pipe-%s' % os.getpid()
 
         with self.assertRaises(FileNotFoundError):
-            yield from self.loop.create_pipe_connection(
+            await self.loop.create_pipe_connection(
                 asyncio.Protocol, ADDRESS)
 
-        [server] = yield from self.loop.start_serving_pipe(
+        [server] = await self.loop.start_serving_pipe(
             UpperProto, ADDRESS)
         self.assertIsInstance(server, windows_events.PipeServer)
 
@@ -71,7 +122,7 @@ class ProactorTests(test_utils.TestCase):
             stream_reader = asyncio.StreamReader(loop=self.loop)
             protocol = asyncio.StreamReaderProtocol(stream_reader,
                                                     loop=self.loop)
-            trans, proto = yield from self.loop.create_pipe_connection(
+            trans, proto = await self.loop.create_pipe_connection(
                 lambda: protocol, ADDRESS)
             self.assertIsInstance(trans, asyncio.Transport)
             self.assertEqual(protocol, proto)
@@ -81,14 +132,14 @@ class ProactorTests(test_utils.TestCase):
             w.write('lower-{}\n'.format(i).encode())
 
         for i, (r, w) in enumerate(clients):
-            response = yield from r.readline()
+            response = await r.readline()
             self.assertEqual(response, 'LOWER-{}\n'.format(i).encode())
             w.close()
 
         server.close()
 
         with self.assertRaises(FileNotFoundError):
-            yield from self.loop.create_pipe_connection(
+            await self.loop.create_pipe_connection(
                 asyncio.Protocol, ADDRESS)
 
         return 'done'
@@ -96,7 +147,8 @@ class ProactorTests(test_utils.TestCase):
     def test_connect_pipe_cancel(self):
         exc = OSError()
         exc.winerror = _overlapped.ERROR_PIPE_BUSY
-        with mock.patch.object(_overlapped, 'ConnectPipe', side_effect=exc) as connect:
+        with mock.patch.object(_overlapped, 'ConnectPipe',
+                               side_effect=exc) as connect:
             coro = self.loop._proactor.connect_pipe('pipe_address')
             task = self.loop.create_task(coro)
 
@@ -118,7 +170,9 @@ class ProactorTests(test_utils.TestCase):
 
         self.assertEqual(done, False)
         self.assertFalse(fut.result())
-        self.assertTrue(0.48 < elapsed < 0.9, elapsed)
+        # bpo-31008: Tolerate only 450 ms (at least 500 ms expected),
+        # because of bad clock resolution on Windows
+        self.assertTrue(0.45 <= elapsed <= 0.9, elapsed)
 
         _overlapped.SetEvent(event)
 
@@ -156,6 +210,65 @@ class ProactorTests(test_utils.TestCase):
         fut = self.loop._proactor.wait_for_handle(event)
         fut.cancel()
         fut.cancel()
+
+    def test_read_self_pipe_restart(self):
+        # Regression test for https://bugs.python.org/issue39010
+        # Previously, restarting a proactor event loop in certain states
+        # would lead to spurious ConnectionResetErrors being logged.
+        self.loop.call_exception_handler = mock.Mock()
+        # Start an operation in another thread so that the self-pipe is used.
+        # This is theoretically timing-dependent (the task in the executor
+        # must complete before our start/stop cycles), but in practice it
+        # seems to work every time.
+        f = self.loop.run_in_executor(None, lambda: None)
+        self.loop.stop()
+        self.loop.run_forever()
+        self.loop.stop()
+        self.loop.run_forever()
+
+        # Shut everything down cleanly. This is an important part of the
+        # test - in issue 39010, the error occurred during loop.close(),
+        # so we want to close the loop during the test instead of leaving
+        # it for tearDown.
+        #
+        # First wait for f to complete to avoid a "future's result was never
+        # retrieved" error.
+        self.loop.run_until_complete(f)
+        # Now shut down the loop itself (self.close_loop also shuts down the
+        # loop's default executor).
+        self.close_loop(self.loop)
+        self.assertFalse(self.loop.call_exception_handler.called)
+
+
+class WinPolicyTests(test_utils.TestCase):
+
+    def test_selector_win_policy(self):
+        async def main():
+            self.assertIsInstance(
+                asyncio.get_running_loop(),
+                asyncio.SelectorEventLoop)
+
+        old_policy = asyncio.get_event_loop_policy()
+        try:
+            asyncio.set_event_loop_policy(
+                asyncio.WindowsSelectorEventLoopPolicy())
+            asyncio.run(main())
+        finally:
+            asyncio.set_event_loop_policy(old_policy)
+
+    def test_proactor_win_policy(self):
+        async def main():
+            self.assertIsInstance(
+                asyncio.get_running_loop(),
+                asyncio.ProactorEventLoop)
+
+        old_policy = asyncio.get_event_loop_policy()
+        try:
+            asyncio.set_event_loop_policy(
+                asyncio.WindowsProactorEventLoopPolicy())
+            asyncio.run(main())
+        finally:
+            asyncio.set_event_loop_policy(old_policy)
 
 
 if __name__ == '__main__':

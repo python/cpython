@@ -1,8 +1,12 @@
 from ctypes import *
 import os
+import shutil
+import subprocess
 import sys
 import unittest
 import test.support
+from test.support import import_helper
+from test.support import os_helper
 from ctypes.util import find_library
 
 libc_name = None
@@ -62,6 +66,8 @@ class LoaderTest(unittest.TestCase):
             windll["kernel32"].GetModuleHandleW
             windll.LoadLibrary("kernel32").GetModuleHandleW
             WinDLL("kernel32").GetModuleHandleW
+            # embedded null character
+            self.assertRaises(ValueError, windll.LoadLibrary, "kernel32\0")
 
     @unittest.skipUnless(os.name == "nt",
                          'test specific to Windows')
@@ -109,6 +115,68 @@ class LoaderTest(unittest.TestCase):
         self.assertTrue(proc)
         # This is the real test: call the function via 'call_function'
         self.assertEqual(0, call_function(proc, (None,)))
+
+    @unittest.skipUnless(os.name == "nt",
+                         'test specific to Windows')
+    def test_load_dll_with_flags(self):
+        _sqlite3 = import_helper.import_module("_sqlite3")
+        src = _sqlite3.__file__
+        if src.lower().endswith("_d.pyd"):
+            ext = "_d.dll"
+        else:
+            ext = ".dll"
+
+        with os_helper.temp_dir() as tmp:
+            # We copy two files and load _sqlite3.dll (formerly .pyd),
+            # which has a dependency on sqlite3.dll. Then we test
+            # loading it in subprocesses to avoid it starting in memory
+            # for each test.
+            target = os.path.join(tmp, "_sqlite3.dll")
+            shutil.copy(src, target)
+            shutil.copy(os.path.join(os.path.dirname(src), "sqlite3" + ext),
+                        os.path.join(tmp, "sqlite3" + ext))
+
+            def should_pass(command):
+                with self.subTest(command):
+                    subprocess.check_output(
+                        [sys.executable, "-c",
+                         "from ctypes import *; import nt;" + command],
+                        cwd=tmp
+                    )
+
+            def should_fail(command):
+                with self.subTest(command):
+                    with self.assertRaises(subprocess.CalledProcessError):
+                        subprocess.check_output(
+                            [sys.executable, "-c",
+                             "from ctypes import *; import nt;" + command],
+                            cwd=tmp, stderr=subprocess.STDOUT,
+                        )
+
+            # Default load should not find this in CWD
+            should_fail("WinDLL('_sqlite3.dll')")
+
+            # Relative path (but not just filename) should succeed
+            should_pass("WinDLL('./_sqlite3.dll')")
+
+            # Insecure load flags should succeed
+            # Clear the DLL directory to avoid safe search settings propagating
+            should_pass("windll.kernel32.SetDllDirectoryW(None); WinDLL('_sqlite3.dll', winmode=0)")
+
+            # Full path load without DLL_LOAD_DIR shouldn't find dependency
+            should_fail("WinDLL(nt._getfullpathname('_sqlite3.dll'), " +
+                        "winmode=nt._LOAD_LIBRARY_SEARCH_SYSTEM32)")
+
+            # Full path load with DLL_LOAD_DIR should succeed
+            should_pass("WinDLL(nt._getfullpathname('_sqlite3.dll'), " +
+                        "winmode=nt._LOAD_LIBRARY_SEARCH_SYSTEM32|" +
+                        "nt._LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR)")
+
+            # User-specified directory should succeed
+            should_pass("import os; p = os.add_dll_directory(os.getcwd());" +
+                        "WinDLL('_sqlite3.dll'); p.close()")
+
+
 
 if __name__ == "__main__":
     unittest.main()

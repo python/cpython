@@ -20,7 +20,7 @@ HTTPS protocols.  It is normally not used directly --- the module
 
 .. seealso::
 
-    The `Requests package <http://docs.python-requests.org/>`_
+    The `Requests package <https://requests.readthedocs.io/en/master/>`_
     is recommended for a higher-level HTTP client interface.
 
 .. note::
@@ -31,7 +31,8 @@ HTTPS protocols.  It is normally not used directly --- the module
 The module provides the following classes:
 
 
-.. class:: HTTPConnection(host, port=None[, timeout], source_address=None)
+.. class:: HTTPConnection(host, port=None[, timeout], source_address=None, \
+                          blocksize=8192)
 
    An :class:`HTTPConnection` instance represents one transaction with an HTTP
    server.  It should be instantiated passing it a host and optional port
@@ -42,6 +43,8 @@ The module provides the following classes:
    (if it is not given, the global default timeout setting is used).
    The optional *source_address* parameter may be a tuple of a (host, port)
    to use as the source address the HTTP connection is made from.
+   The optional *blocksize* parameter sets the buffer size in bytes for
+   sending a file-like message body.
 
    For example, the following calls all create instances that connect to the server
    at the same host and port::
@@ -58,11 +61,14 @@ The module provides the following classes:
       The  *strict* parameter was removed. HTTP 0.9-style "Simple Responses" are
       not longer supported.
 
+   .. versionchanged:: 3.7
+      *blocksize* parameter was added.
+
 
 .. class:: HTTPSConnection(host, port=None, key_file=None, \
                            cert_file=None[, timeout], \
                            source_address=None, *, context=None, \
-                           check_hostname=None)
+                           check_hostname=None, blocksize=8192)
 
    A subclass of :class:`HTTPConnection` that uses SSL for communication with
    secure servers.  Default port is ``443``.  If *context* is specified, it
@@ -88,6 +94,16 @@ The module provides the following classes:
       :func:`ssl._create_unverified_context` can be passed to the *context*
       parameter.
 
+   .. versionchanged:: 3.8
+      This class now enables TLS 1.3
+      :attr:`ssl.SSLContext.post_handshake_auth` for the default *context* or
+      when *cert_file* is passed with a custom *context*.
+
+   .. versionchanged:: 3.10
+      This class now sends an ALPN extension with protocol indicator
+      ``http/1.1`` when no *context* is given. Custom *context* should set
+      ALPN protocols with :meth:`~ssl.SSLContext.set_alpn_protocol`.
+
    .. deprecated:: 3.6
 
        *key_file* and *cert_file* are deprecated in favor of *context*.
@@ -109,6 +125,25 @@ The module provides the following classes:
       The *strict* parameter was removed. HTTP 0.9 style "Simple Responses" are
       no longer supported.
 
+This module provides the following function:
+
+.. function:: parse_headers(fp)
+
+   Parse the headers from a file pointer *fp* representing a HTTP
+   request/response. The file has to be a :class:`BufferedIOBase` reader
+   (i.e. not text) and must provide a valid :rfc:`2822` style header.
+
+   This function returns an instance of :class:`http.client.HTTPMessage`
+   that holds the header fields, but no payload
+   (the same as :attr:`HTTPResponse.msg`
+   and :attr:`http.server.BaseHTTPRequestHandler.headers`).
+   After returning, the file pointer *fp* is ready to read the HTTP body.
+
+   .. note::
+      :meth:`parse_headers` does not parse the start-line of a HTTP message;
+      it only parses the ``Name: value`` lines. The file has to be ready to
+      read these field lines, so the first line should already be consumed
+      before calling the function.
 
 The following exceptions are raised as appropriate:
 
@@ -338,6 +373,14 @@ HTTPConnection Objects
 
    Close the connection to the server.
 
+
+.. attribute:: HTTPConnection.blocksize
+
+   Buffer size in bytes for sending a file-like message body.
+
+   .. versionadded:: 3.7
+
+
 As an alternative to using the :meth:`request` method described above, you can
 also send your request step by step, by using the four functions below.
 
@@ -446,6 +489,14 @@ statement.
 
    HTTP protocol version used by server.  10 for HTTP/1.0, 11 for HTTP/1.1.
 
+.. attribute:: HTTPResponse.url
+
+   URL of the resource retrieved, commonly used to determine if a redirect was followed.
+
+.. attribute:: HTTPResponse.headers
+
+   Headers of the response in the form of an :class:`email.message.EmailMessage` instance.
+
 .. attribute:: HTTPResponse.status
 
    Status code returned by server.
@@ -463,6 +514,21 @@ statement.
 
    Is ``True`` if the stream is closed.
 
+.. method:: HTTPResponse.geturl()
+
+   .. deprecated:: 3.9
+      Deprecated in favor of :attr:`~HTTPResponse.url`.
+
+.. method:: HTTPResponse.info()
+
+   .. deprecated:: 3.9
+      Deprecated in favor of :attr:`~HTTPResponse.headers`.
+
+.. method:: HTTPResponse.getstatus()
+
+   .. deprecated:: 3.9
+      Deprecated in favor of :attr:`~HTTPResponse.status`.
+
 Examples
 --------
 
@@ -478,11 +544,12 @@ Here is an example session that uses the ``GET`` method::
    >>> # The following example demonstrates reading data in chunks.
    >>> conn.request("GET", "/")
    >>> r1 = conn.getresponse()
-   >>> while not r1.closed:
-   ...     print(r1.read(200))  # 200 bytes
+   >>> while chunk := r1.read(200):
+   ...     print(repr(chunk))
    b'<!doctype html>\n<!--[if"...
    ...
    >>> # Example of an invalid request
+   >>> conn = http.client.HTTPSConnection("docs.python.org")
    >>> conn.request("GET", "/parrot.spam")
    >>> r2 = conn.getresponse()
    >>> print(r2.status, r2.reason)
@@ -524,8 +591,8 @@ Here is an example session that shows how to ``POST`` requests::
 Client side ``HTTP PUT`` requests are very similar to ``POST`` requests. The
 difference lies only the server side where HTTP server will allow resources to
 be created via ``PUT`` request. It should be noted that custom HTTP methods
-+are also handled in :class:`urllib.request.Request` by sending the appropriate
-+method attribute.Here is an example session that shows how to do ``PUT``
+are also handled in :class:`urllib.request.Request` by setting the appropriate
+method attribute. Here is an example session that shows how to send a ``PUT``
 request using http.client::
 
     >>> # This creates an HTTP message
