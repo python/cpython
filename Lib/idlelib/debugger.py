@@ -13,6 +13,7 @@ class Idb(bdb.Bdb):
 
     def __init__(self, gui):
         self.gui = gui  # An instance of Debugger or proxy of remote.
+        self._interrupt = False
         bdb.Bdb.__init__(self)
 
     def user_line(self, frame):
