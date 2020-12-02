@@ -812,6 +812,28 @@ compiler_use_next_block(struct compiler *c, basicblock *block)
     return block;
 }
 
+static basicblock *
+compiler_copy_block(struct compiler *c, basicblock *block)
+{
+    /* Cannot copy a block if it has a fallthrough, since
+     * a block can only have one fallthrough predecessor.
+     */
+    assert(block->b_nofallthrough);
+    basicblock *result = compiler_next_block(c);
+    if (result == NULL) {
+        return NULL;
+    }
+    for (int i = 0; i < block->b_iused; i++) {
+        int n = compiler_next_instr(result);
+        if (n < 0) {
+            return NULL;
+        }
+        result->b_instr[n] = block->b_instr[i];
+    }
+    result->b_exit = block->b_exit;
+    return result;
+}
+
 /* Returns the offset of the next instruction in the current block's
    b_instr array.  Resizes the b_instr as necessary.
    Returns -1 on failure.
@@ -2732,12 +2754,13 @@ compiler_if(struct compiler *c, stmt_ty s)
 static int
 compiler_for(struct compiler *c, stmt_ty s)
 {
-    basicblock *start, *cleanup, *end;
+    basicblock *start, *body, *cleanup, *end;
 
     start = compiler_new_block(c);
+    body = compiler_new_block(c);
     cleanup = compiler_new_block(c);
     end = compiler_new_block(c);
-    if (start == NULL || end == NULL || cleanup == NULL) {
+    if (start == NULL || body == NULL || end == NULL || cleanup == NULL) {
         return 0;
     }
     if (!compiler_push_fblock(c, FOR_LOOP, start, end, NULL)) {
@@ -2747,6 +2770,7 @@ compiler_for(struct compiler *c, stmt_ty s)
     ADDOP(c, GET_ITER);
     compiler_use_next_block(c, start);
     ADDOP_JUMP(c, FOR_ITER, cleanup);
+    compiler_use_next_block(c, body);
     VISIT(c, expr, s->v.For.target);
     VISIT_SEQ(c, stmt, s->v.For.body);
     ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
@@ -5929,8 +5953,15 @@ dump_basicblock(const basicblock *b)
 }
 #endif
 
+
+static int
+normalize_basic_block(basicblock *bb);
+
 static int
 optimize_cfg(struct assembler *a, PyObject *consts);
+
+static int
+ensure_exits_have_lineno(struct compiler *c);
 
 static PyCodeObject *
 assemble(struct compiler *c, int addNone)
@@ -5952,6 +5983,16 @@ assemble(struct compiler *c, int addNone)
         ADDOP(c, RETURN_VALUE);
     }
 
+    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+        if (normalize_basic_block(b)) {
+            goto error;
+        }
+    }
+
+    if (ensure_exits_have_lineno(c)) {
+        goto error;
+    }
+
     nblocks = 0;
     entryblock = NULL;
     for (b = c->u->u_blocks; b != NULL; b = b->b_list) {
@@ -5966,6 +6007,7 @@ assemble(struct compiler *c, int addNone)
        else
             c->u->u_firstlineno = 1;
     }
+
     if (!assemble_init(&a, nblocks, c->u->u_firstlineno))
         goto error;
     a.a_entry = entryblock;
@@ -6338,7 +6380,6 @@ clean_basic_block(basicblock *bb) {
     bb->b_iused = dest;
 }
 
-
 static int
 normalize_basic_block(basicblock *bb) {
     /* Mark blocks as exit and/or nofallthrough.
@@ -6349,7 +6390,8 @@ normalize_basic_block(basicblock *bb) {
             case RAISE_VARARGS:
             case RERAISE:
                 bb->b_exit = 1;
-                /* fall through */
+                bb->b_nofallthrough = 1;
+                break;
             case JUMP_ABSOLUTE:
             case JUMP_FORWARD:
                 bb->b_nofallthrough = 1;
@@ -6358,15 +6400,20 @@ normalize_basic_block(basicblock *bb) {
             case POP_JUMP_IF_TRUE:
             case JUMP_IF_FALSE_OR_POP:
             case JUMP_IF_TRUE_OR_POP:
+            case FOR_ITER:
                 if (i != bb->b_iused-1) {
                     PyErr_SetString(PyExc_SystemError, "malformed control flow graph.");
                     return -1;
                 }
+                /* Skip over empty basic blocks. */
+                while (bb->b_instr[i].i_target->b_iused == 0) {
+                    bb->b_instr[i].i_target = bb->b_instr[i].i_target->b_next;
+                }
+
         }
     }
     return 0;
 }
-
 
 static int
 mark_reachable(struct assembler *a) {
@@ -6398,8 +6445,27 @@ mark_reachable(struct assembler *a) {
     return 0;
 }
 
+/* If an instruction has no line number, but it's predecessor in the BB does,
+ * then copy the line number. This reduces the size of the line number table,
+ * but has no impact on the generated line number events.
+ */
+static void
+minimize_lineno_table(struct assembler *a) {
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        int prev_lineno = -1;
+        for (int i = 0; i < b->b_iused; i++) {
+            if (b->b_instr[i].i_lineno < 0) {
+                b->b_instr[i].i_lineno = prev_lineno;
+            }
+            else {
+                prev_lineno = b->b_instr[i].i_lineno;
+            }
+        }
 
-/* Perform basic peephole optimizations on a control flow graph.
+    }
+}
+
+/* Perform optimizations on a control flow graph.
    The consts object should still be in list form to allow new constants
    to be appended.
 
@@ -6411,11 +6477,6 @@ mark_reachable(struct assembler *a) {
 static int
 optimize_cfg(struct assembler *a, PyObject *consts)
 {
-    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
-        if (normalize_basic_block(b)) {
-            return -1;
-        }
-    }
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
         if (optimize_basic_block(b, consts)) {
             return -1;
@@ -6432,8 +6493,62 @@ optimize_cfg(struct assembler *a, PyObject *consts)
             b->b_iused = 0;
        }
     }
+    minimize_lineno_table(a);
     return 0;
 }
+
+static inline int
+is_exit_without_lineno(basicblock *b) {
+    return b->b_exit && b->b_instr[0].i_lineno < 0;
+}
+
+/* PEP 626 mandates that the f_lineno of a frame is correct
+ * after a frame terminates. It would be prohibitively expensive
+ * to continuously update the f_lineno field at runtime,
+ * so we make sure that all exiting instruction (raises and returns)
+ * have a valid line number, allowing us to compute f_lineno lazily.
+ * We can do this by duplicating the exit blocks without line number
+ * so that none have more than one predecessor. We can then safely
+ * copy the line number from the sole predecessor block.
+ */
+static int
+ensure_exits_have_lineno(struct compiler *c)
+{
+    /* Copy all exit blocks without line number that are targets of a jump.
+     */
+    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+        if (b->b_iused > 0 && is_jump(&b->b_instr[b->b_iused-1])) {
+            switch (b->b_instr[b->b_iused-1].i_opcode) {
+                /* Note: Only actual jumps, not exception handlers */
+                case SETUP_ASYNC_WITH:
+                case SETUP_WITH:
+                case SETUP_FINALLY:
+                    continue;
+            }
+            basicblock *target = b->b_instr[b->b_iused-1].i_target;
+            if (is_exit_without_lineno(target)) {
+                basicblock *new_target = compiler_copy_block(c, target);
+                if (new_target == NULL) {
+                    return -1;
+                }
+                new_target->b_instr[0].i_lineno = b->b_instr[b->b_iused-1].i_lineno;
+                b->b_instr[b->b_iused-1].i_target = new_target;
+            }
+        }
+    }
+    /* Any remaining reachable exit blocks without line number can only be reached by
+     * fall through, and thus can only have a single predecessor */
+    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+        if (!b->b_nofallthrough && b->b_next && b->b_iused > 0) {
+            if (is_exit_without_lineno(b->b_next)) {
+                assert(b->b_next->b_iused > 0);
+                b->b_next->b_instr[0].i_lineno = b->b_instr[b->b_iused-1].i_lineno;
+            }
+        }
+    }
+    return 0;
+}
+
 
 /* Retained for API compatibility.
  * Optimization is now done in optimize_cfg */

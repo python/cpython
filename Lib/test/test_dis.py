@@ -131,12 +131,14 @@ dis_bug708901 = """\
              12 STORE_FAST               0 (res)
 
 %3d          14 JUMP_ABSOLUTE           10
-        >>   16 LOAD_CONST               0 (None)
+
+%3d     >>   16 LOAD_CONST               0 (None)
              18 RETURN_VALUE
 """ % (bug708901.__code__.co_firstlineno + 1,
        bug708901.__code__.co_firstlineno + 2,
        bug708901.__code__.co_firstlineno + 1,
-       bug708901.__code__.co_firstlineno + 3)
+       bug708901.__code__.co_firstlineno + 3,
+       bug708901.__code__.co_firstlineno + 1)
 
 
 def bug1333982(x=[]):
@@ -295,13 +297,15 @@ dis_traceback = """\
              52 STORE_FAST               0 (e)
              54 DELETE_FAST              0 (e)
              56 RERAISE
-        >>   58 RERAISE
+
+%3d     >>   58 RERAISE
 """ % (TRACEBACK_CODE.co_firstlineno + 1,
        TRACEBACK_CODE.co_firstlineno + 2,
        TRACEBACK_CODE.co_firstlineno + 5,
        TRACEBACK_CODE.co_firstlineno + 3,
        TRACEBACK_CODE.co_firstlineno + 4,
-       TRACEBACK_CODE.co_firstlineno + 5)
+       TRACEBACK_CODE.co_firstlineno + 5,
+       TRACEBACK_CODE.co_firstlineno + 3)
 
 def _fstring(a, b, c, d):
     return f'{a} {b:4} {c!r} {d!r:4}'
