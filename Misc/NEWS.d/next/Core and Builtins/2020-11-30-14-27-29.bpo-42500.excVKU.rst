@@ -1,0 +1,2 @@
+Improve handling of exceptions near recursion limit. Converts a number of
+Fatal Errors in RecursionErrors.
