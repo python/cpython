@@ -156,7 +156,7 @@ if 1:
         s256 = "".join(["\n"] * 256 + ["spam"])
         co = compile(s256, 'fn', 'exec')
         self.assertEqual(co.co_firstlineno, 1)
-        self.assertEqual(list(co.co_lines()), [(0, 4, 257), (4, 8, None)])
+        self.assertEqual(list(co.co_lines()), [(0, 8, 257)])
 
     def test_literals_with_leading_zeroes(self):
         for arg in ["077787", "0xj", "0x.", "0e",  "090000000000000",
@@ -775,6 +775,39 @@ if 1:
                 self.assertIn('LOAD_', opcodes[0].opname)
                 self.assertEqual('RETURN_VALUE', opcodes[1].opname)
 
+    def test_lineno_after_implicit_return(self):
+        TRUE = True
+        # Don't use constant True or False, as compiler will remove test
+        def if1(x):
+            x()
+            if TRUE:
+                pass
+        def if2(x):
+            x()
+            if TRUE:
+                pass
+            else:
+                pass
+        def if3(x):
+            x()
+            if TRUE:
+                pass
+            else:
+                return None
+        def if4(x):
+            x()
+            if not TRUE:
+                pass
+        funcs = [ if1, if2, if3, if4]
+        lastlines = [ 3, 3, 3, 2]
+        frame = None
+        def save_caller_frame():
+            nonlocal frame
+            frame = sys._getframe(1)
+        for func, lastline in zip(funcs, lastlines, strict=True):
+            with self.subTest(func=func):
+                func(save_caller_frame)
+                self.assertEqual(frame.f_lineno-frame.f_code.co_firstlineno, lastline)
 
     def test_big_dict_literal(self):
         # The compiler has a flushing point in "compiler_dict" that calls compiles
