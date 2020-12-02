@@ -311,13 +311,6 @@ class BaseTest(unittest.TestCase):
         with self.subTest("Testing instance checks"):
             self.assertIsInstance(alias, GenericAlias)
 
-        invalid_params = ('Callable[int]', 'Callable[int, str]')
-        with self.subTest("Testing parameter validation"):
-            for bad in invalid_params:
-                with self.subTest(f'Testing expression {bad}'):
-                    with self.assertRaises(TypeError):
-                        eval(bad)
-
         with self.subTest("Testing weakref"):
             self.assertEqual(ref(alias)(), alias)
 
