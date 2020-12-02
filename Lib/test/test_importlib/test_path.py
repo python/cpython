@@ -1,3 +1,4 @@
+from test.support import swap_attr
 import unittest
 
 from importlib import resources
@@ -25,6 +26,17 @@ class PathTests:
 
 class PathDiskTests(PathTests, unittest.TestCase):
     data = data01
+
+    def test_package_spec_origin_is_None(self):
+        import pydoc_data
+        spec = pydoc_data.__spec__
+        # Emulate importing from non-file source by setting spec.origin = None.
+        # Barge past path's sanity checks by ensuring spec.loader.is_resource
+        # returns False.
+        with swap_attr(spec, "origin", None), \
+            swap_attr(spec.loader, "is_resource", lambda *args: False), \
+            resources.path(pydoc_data, '_pydoc.css') as p:
+            pass
 
 
 class PathZipTests(PathTests, util.ZipSetup, unittest.TestCase):
