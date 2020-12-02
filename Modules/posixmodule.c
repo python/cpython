@@ -10370,7 +10370,7 @@ os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
 }
 #endif /* HAVE_COPY_FILE_RANGE*/
 
-#ifdef HAVE_SPLICE
+#if (defined(HAVE_SPLICE) && !defined(_AIX))
 /*[clinic input]
 
 os.splice
