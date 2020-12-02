@@ -6,7 +6,6 @@ from collections import (
     defaultdict, deque, OrderedDict, Counter, UserDict, UserList
 )
 from collections.abc import *
-from collections.abc import _PosArgs
 from concurrent.futures import Future
 from concurrent.futures.thread import _WorkItem
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
@@ -306,7 +305,7 @@ class BaseTest(unittest.TestCase):
         alias = Callable[[int, str], float]
         with self.subTest("Testing subscription"):
             self.assertIs(alias.__origin__, Callable)
-            self.assertEqual(alias.__args__, (_PosArgs[int, str], float))
+            self.assertEqual(alias.__args__, (int, str, float))
             self.assertEqual(alias.__parameters__, ())
 
         with self.subTest("Testing instance checks"):

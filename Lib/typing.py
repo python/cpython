@@ -906,7 +906,7 @@ class _CallableType(_SpecialGenericAlias, _root=True):
             if not isinstance(args, list):
                 raise TypeError(f"Callable[args, result]: args must be a list."
                                 f" Got {args}")
-            params = tuple(args) + (result,)
+            params = (tuple(args), result)
         return self.__getitem_inner__(params)
 
     @_tp_cache

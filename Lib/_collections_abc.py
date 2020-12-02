@@ -13,7 +13,7 @@ GenericAlias = type(list[int])
 EllipsisType = type(...)
 def _f(): pass
 FunctionType = type(_f)
-
+del _f
 
 __all__ = ["Awaitable", "Coroutine",
            "AsyncIterable", "AsyncIterator", "AsyncGenerator",
@@ -419,35 +419,39 @@ class _CallableGenericAlias(GenericAlias):
     """
     __slots__ = ()
     def __new__(cls, origin, args, **kwargs):
+       try:
+           return cls.__getitem_type(origin, args, **kwargs)
+       except TypeError as exc:
+           return super().__new__(cls, origin, args)
+
+    @classmethod
+    def __getitem_type(cls, origin, args, **kwargs):
         if not isinstance(args, tuple) or len(args) != 2:
-            raise TypeError("Callable must be used as Callable[[arg, ...], result]")
+            print(args)
+            raise TypeError(
+                "Callable must be used as Callable[[arg, ...], result]")
         t_args, t_result = args
         if not isinstance(t_args, (list, EllipsisType)):
-            raise TypeError(f"Callable[args, result]: args must be a list or Ellipsis. "
-                            f"Got {_type_repr(t_args)}")
-
+            raise TypeError(
+                f"Callable[args, result]: args must be a list or Ellipsis. "
+                f"Got {_type_repr(t_args)}")
         if t_args is Ellipsis:
             ga_args = args
         else:
             ga_args = tuple(t_args) + (t_result,)
-
         return super().__new__(cls, origin, ga_args)
 
     def __repr__(self):
         if len(self.__args__) == 2 and self.__args__[0] is Ellipsis:
             return super().__repr__()
-        t_args = self.__args__[0]
-        if t_args.__args__ == ((),):
-            t_args_repr = '[]'
-        else:
-            t_args_repr = f'[{", ".join(_type_repr(a) for a in t_args.__args__)}]'
-        origin = _type_repr(self.__origin__)
-        return f"{origin}[{t_args_repr}, {_type_repr(self.__args__[-1])}]"
+        return (f'collections.abc.Callable'
+                f'[[{", ".join([_type_repr(a) for a in self.__args__[:-1]])}], '
+                f'{_type_repr(self.__args__[-1])}]')
 
     def __reduce__(self):
         args = self.__args__
         if not (len(args) == 2 and args[0] is ...):
-            args = list(t for t in args[0].__args__), args[-1]
+            args = list(args[:-1]), args[-1]
         return _CallableGenericAlias, (Callable, args)
 
 
