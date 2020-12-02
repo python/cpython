@@ -3039,12 +3039,10 @@ Invalid file name:
     ...         '-m', 'doctest', 'nosuchfile')
     >>> rc, out
     (1, b'')
-    >>> if sys.platform == "vxworks":
-    ...     err = err.replace(b'no such file', b'No such file')
     >>> print(normalize(err))                    # doctest: +ELLIPSIS
     Traceback (most recent call last):
       ...
-    FileNotFoundError: [Errno ...] No such file or directory: 'nosuchfile'
+    FileNotFoundError: [Errno ...] ...nosuchfile...
 
 Invalid doctest option:
 
