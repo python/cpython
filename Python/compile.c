@@ -823,7 +823,7 @@ compiler_copy_block(struct compiler *c, basicblock *block)
     if (result == NULL) {
         return NULL;
     }
-    for(int i = 0; i < block->b_iused; i++) {
+    for (int i = 0; i < block->b_iused; i++) {
         int n = compiler_next_instr(result);
         if (n < 0) {
             return NULL;
@@ -5955,7 +5955,7 @@ dump_basicblock(const basicblock *b)
 
 
 static int
-normalize_cfg(basicblock *bb);
+normalize_basic_block(basicblock *bb);
 
 static int
 optimize_cfg(struct assembler *a, PyObject *consts);
@@ -5983,8 +5983,10 @@ assemble(struct compiler *c, int addNone)
         ADDOP(c, RETURN_VALUE);
     }
 
-    if (normalize_cfg(c->u->u_blocks)) {
-        goto error;
+    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+        if (normalize_basic_block(b)) {
+            goto error;
+        }
     }
 
     if (ensure_exits_have_lineno(c)) {
@@ -6413,17 +6415,6 @@ normalize_basic_block(basicblock *bb) {
     return 0;
 }
 
-
-static int
-normalize_cfg(basicblock *b) {
-    for (; b != NULL; b = b->b_list) {
-        if (normalize_basic_block(b)) {
-            return -1;
-        }
-    }
-    return 0;
-}
-
 static int
 mark_reachable(struct assembler *a) {
     basicblock **stack, **sp;
@@ -6506,7 +6497,7 @@ optimize_cfg(struct assembler *a, PyObject *consts)
     return 0;
 }
 
-static int
+static inline int
 is_exit_without_lineno(basicblock *b) {
     return b->b_exit && b->b_instr[0].i_lineno < 0;
 }
@@ -6527,7 +6518,7 @@ ensure_exits_have_lineno(struct compiler *c)
      */
     for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
         if (b->b_iused > 0 && is_jump(&b->b_instr[b->b_iused-1])) {
-            switch(b->b_instr[b->b_iused-1].i_opcode) {
+            switch (b->b_instr[b->b_iused-1].i_opcode) {
                 /* Note: Only actual jumps, not exception handlers */
                 case SETUP_ASYNC_WITH:
                 case SETUP_WITH:
