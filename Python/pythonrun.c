@@ -1236,12 +1236,6 @@ Py_CompileStringExFlags(const char *str, const char *filename_str, int start,
 }
 
 /* For use in Py_LIMITED_API */
-#undef Py_CompileString
-PyObject *
-PyCompileString(const char *str, const char *filename, int start)
-{
-    return Py_CompileStringFlags(str, filename, start, NULL);
-}
 
 const char *
 _Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyCompilerFlags *cf, PyObject **cmd_copy)
