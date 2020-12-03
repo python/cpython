@@ -6,6 +6,7 @@ import builtins
 import collections
 import decimal
 import fractions
+import gc
 import io
 import locale
 import os
@@ -1755,6 +1756,15 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(l7, [(1, "A"), (0, "B")])
         l8 = self.iter_error(zip(Iter(3), "AB", strict=True), ValueError)
         self.assertEqual(l8, [(2, "A"), (1, "B")])
+
+    def test_zip_result_gc(self):
+        try:
+            gc.disable()
+            z = zip([[]])
+            gc.collect()
+            self.assertTrue(gc.is_tracked(next(z)))
+        finally:
+            gc.enable()
 
     def test_format(self):
         # Test the basic machinery of the format() builtin.  Don't test
