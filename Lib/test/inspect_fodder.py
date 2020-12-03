@@ -91,3 +91,15 @@ class Callable:
 
 custom_method = Callable().as_method_of(42)
 del Callable
+
+def gen_subclass(abuse_msg):
+
+    class subclass(StupidGit):
+        def abuse(self, a, b, c):
+            print(abuse_msg)
+            super().abuse(a, b, c)
+
+    return subclass
+
+DynamicSubclass = gen_subclass("some message")
+del gen_subclass

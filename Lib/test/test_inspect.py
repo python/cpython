@@ -385,7 +385,8 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getclasses(self):
         classes = inspect.getmembers(mod, inspect.isclass)
         self.assertEqual(classes,
-                         [('FesteringGob', mod.FesteringGob),
+                         [('DynamicSubclass', mod.DynamicSubclass),
+                          ('FesteringGob', mod.FesteringGob),
                           ('MalodorousPervert', mod.MalodorousPervert),
                           ('ParrotDroppings', mod.ParrotDroppings),
                           ('StupidGit', mod.StupidGit),
@@ -402,9 +403,10 @@ class TestRetrievingSourceCode(GetSourceBase):
                            [(mod.MalodorousPervert, (mod.StupidGit,)),
                             [(mod.FesteringGob, (mod.MalodorousPervert,
                                                     mod.ParrotDroppings))
-                             ]
+                             ],
+                            (mod.DynamicSubclass, (mod.StupidGit,)),
                             ]
-                           ]
+                           ],
                           ])
         tree = inspect.getclasstree([cls[1] for cls in classes], True)
         self.assertEqual(tree,
@@ -414,7 +416,8 @@ class TestRetrievingSourceCode(GetSourceBase):
                            [(mod.MalodorousPervert, (mod.StupidGit,)),
                             [(mod.FesteringGob, (mod.MalodorousPervert,
                                                     mod.ParrotDroppings))
-                             ]
+                             ],
+                            (mod.DynamicSubclass, (mod.StupidGit,)),
                             ]
                            ]
                           ])
@@ -449,6 +452,10 @@ class TestRetrievingSourceCode(GetSourceBase):
                          'Another\n\ndocstring\n\ncontaining\n\ntabs')
         self.assertEqual(inspect.getdoc(mod.FesteringGob.contradiction),
                          'The automatic gainsaying.')
+        self.assertEqual(inspect.getdoc(mod.DynamicSubclass.abuse),
+                         'Another\n\ndocstring\n\ncontaining\n\ntabs')
+        self.assertEqual(inspect.getdoc(mod.DynamicSubclass().abuse),
+                         'Another\n\ndocstring\n\ncontaining\n\ntabs')
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS, "test requires docstrings")
     def test_finddoc(self):

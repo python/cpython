@@ -534,6 +534,12 @@ def indentsize(line):
     return len(expline) - len(expline.lstrip())
 
 def _findclass(func):
+    try:
+        idx = func.__code__.co_freevars.index('__class__')
+    except ValueError:
+        pass
+    else:
+        return func.__closure__[0].cell_contents
     cls = sys.modules.get(func.__module__)
     if cls is None:
         return None
