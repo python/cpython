@@ -3,7 +3,7 @@
 Written by Cody A.W. Somerville <cody-somerville@ubuntu.com>,
 Josip Dzolonga, and Michael Otteneder for the 2007/08 GHOP contest.
 """
-
+from collections import OrderedDict
 from http.server import BaseHTTPRequestHandler, HTTPServer, \
      SimpleHTTPRequestHandler, CGIHTTPRequestHandler
 from http import server, HTTPStatus
@@ -19,7 +19,7 @@ import shutil
 import email.message
 import email.utils
 import html
-import http.client
+import http, http.client
 import urllib.parse
 import tempfile
 import time
@@ -588,6 +588,15 @@ print()
 print(os.environ["%s"])
 """
 
+cgi_env = """\
+#!%s
+import os
+
+print("Content-type: text/plain")
+print()
+print(repr(os.environ))
+"""
+
 
 @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
         "This test can't be run reliably as root (issue #13308).")
@@ -665,6 +674,11 @@ class CGIHTTPServerTestCase(BaseTestCase):
         with open(self.file5_path, 'w', encoding='utf-8') as file5:
             file5.write(cgi_file1 % self.pythonexe)
         os.chmod(self.file5_path, 0o777)
+
+        self.env_path = os.path.join(self.cgi_dir, 'env.py')
+        with open(self.env_path, 'w', encoding='utf-8') as envfile:
+            envfile.write(cgi_env % self.pythonexe)
+        os.chmod(self.env_path, 0o777)
 
         os.chdir(self.parent_dir)
 
@@ -818,6 +832,23 @@ class CGIHTTPServerTestCase(BaseTestCase):
         finally:
             CGIHTTPRequestHandler.cgi_directories.remove('/sub/dir/cgi-bin')
 
+    def test_accept(self):
+        browser_accept = \
+                    'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        tests = (
+            ((('Accept', browser_accept),), browser_accept),
+            ((), ''),
+            # Hack case to get two values for the one header
+            ((('Accept', 'text/html'), ('ACCEPT', 'text/plain')),
+               'text/html,text/plain'),
+        )
+        for headers, expected in tests:
+            headers = OrderedDict(headers)
+            with self.subTest(headers):
+                res = self.request('/cgi-bin/env.py', 'GET', headers=headers)
+                self.assertEqual(http.HTTPStatus.OK, res.status)
+                expected = r"'HTTP_ACCEPT': " + repr(expected)
+                self.assertIn(expected.encode('ascii'), res.read())
 
 
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
