@@ -785,7 +785,7 @@ class Flag(Enum):
 
     def __iter__(self):
         members, extra_flags = _decompose(self.__class__, self.value)
-        return (m for m in members if _power_of_two(m._value_))
+        return (m for m in members if m._value_.bit_count() == 1)
 
     def __repr__(self):
         cls = self.__class__
@@ -946,9 +946,3 @@ def _decompose(flag, value):
         # we have the breakdown, don't need the value member itself
         members.pop(0)
     return members, not_covered
-
-
-def _power_of_two(value):
-    if value < 1:
-        return False
-    return not value & (value - 1)
