@@ -1,0 +1,1 @@
+:func:`inspect.findsource` raises OsError instead of IndexError when co_lineno of code object is larger than the file length (can happen if the file was edited after the module was imported).
