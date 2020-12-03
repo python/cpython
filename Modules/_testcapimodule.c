@@ -5614,7 +5614,7 @@ static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 
 
 static PyObject*
-test_set_type_size(PyObject* self, PyObject* ignored)
+test_set_type_size(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *obj = PyList_New(0);
     if (obj == NULL) {
@@ -5630,6 +5630,35 @@ test_set_type_size(PyObject* self, PyObject* ignored)
     // as l-values to set an object type and size.
     Py_TYPE(obj) = &PyList_Type;
     Py_SIZE(obj) = 0;
+
+    Py_DECREF(obj);
+    Py_RETURN_NONE;
+}
+
+
+// Test Py_NewRef() and Py_XNewRef() functions
+static PyObject*
+test_refcount(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *obj = PyList_New(0);
+    if (obj == NULL) {
+        return NULL;
+    }
+    assert(Py_REFCNT(obj) == 1);
+
+    // Test Py_NewRef()
+    PyObject *ref = Py_NewRef(obj);
+    assert(ref == obj);
+    assert(Py_REFCNT(obj) == 2);
+    Py_DECREF(ref);
+
+    // Test Py_XNewRef()
+    PyObject *xref = Py_XNewRef(obj);
+    assert(xref == obj);
+    assert(Py_REFCNT(obj) == 2);
+    Py_DECREF(xref);
+
+    assert(Py_XNewRef(NULL) == NULL);
 
     Py_DECREF(obj);
     Py_RETURN_NONE;
@@ -5908,6 +5937,7 @@ static PyMethodDef TestMethods[] = {
     {"pynumber_tobase", pynumber_tobase, METH_VARARGS},
     {"without_gc", without_gc, METH_O},
     {"test_set_type_size", test_set_type_size, METH_NOARGS},
+    {"test_refcount", test_refcount, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
