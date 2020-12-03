@@ -2636,6 +2636,11 @@ zip_next(zipobject *lz)
             PyTuple_SET_ITEM(result, i, item);
             Py_DECREF(olditem);
         }
+        // The GC may have untracked this result tuple if its elements were all
+        // untracked. Since we're recycling it, make sure it's tracked again:
+        if (!_PyObject_GC_IS_TRACKED(result)) {
+            _PyObject_GC_TRACK(result);
+        }
     } else {
         result = PyTuple_New(tuplesize);
         if (result == NULL)
