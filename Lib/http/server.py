@@ -1092,8 +1092,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
         env['PATH_INFO'] = uqrest
         env['PATH_TRANSLATED'] = self.translate_path(uqrest)
         env['SCRIPT_NAME'] = scriptname
-        if query:
-            env['QUERY_STRING'] = query
+        env['QUERY_STRING'] = query
         env['REMOTE_ADDR'] = self.client_address[0]
         authorization = self.headers.get("authorization")
         if authorization:
