@@ -1,0 +1,2 @@
+Fix issue when dis failed to parse function that has only annotations. Patch
+provided by Yurii Karabas.
