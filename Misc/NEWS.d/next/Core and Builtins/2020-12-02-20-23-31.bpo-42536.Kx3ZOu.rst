@@ -1,0 +1,2 @@
+Fix an issue where :func:`zip` may create untracked reference cyles. Patch
+by Brandt Bucher.
