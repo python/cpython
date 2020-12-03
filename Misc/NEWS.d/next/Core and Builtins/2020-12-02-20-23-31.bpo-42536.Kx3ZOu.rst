@@ -1,2 +1,3 @@
-Fix an issue where :func:`zip` may create untracked reference cyles. Patch
-by Brandt Bucher.
+:func:`zip` now ensures that its internal result tuple is always tracked by the
+garbage collector. Previously, it could have become untracked by a prior garbage
+collection. Patch by Brandt Bucher.
