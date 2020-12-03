@@ -5,6 +5,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_bytes_methods.h" // _Py_bytes_startswith()
+#include "pycore_format.h"        // F_LJUST
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyObject_GC_TRACK
 #include "pycore_pymem.h"         // PYMEM_CLEANBYTE
@@ -21,11 +22,11 @@ class bytes "PyBytesObject *" "&PyBytes_Type"
 
 _Py_IDENTIFIER(__bytes__);
 
-/* PyBytesObject_SIZE gives the basic size of a string; any memory allocation
-   for a string of length n should request PyBytesObject_SIZE + n bytes.
+/* PyBytesObject_SIZE gives the basic size of a bytes object; any memory allocation
+   for a bytes object of length n should request PyBytesObject_SIZE + n bytes.
 
    Using PyBytesObject_SIZE instead of sizeof(PyBytesObject) saves
-   3 bytes per string allocation on a typical system.
+   3 or 7 bytes per bytes object allocation on a typical system.
 */
 #define PyBytesObject_SIZE (offsetof(PyBytesObject, ob_sval) + 1)
 
@@ -438,19 +439,6 @@ getnextarg(PyObject *args, Py_ssize_t arglen, Py_ssize_t *p_argidx)
                     "not enough arguments for format string");
     return NULL;
 }
-
-/* Format codes
- * F_LJUST      '-'
- * F_SIGN       '+'
- * F_BLANK      ' '
- * F_ALT        '#'
- * F_ZERO       '0'
- */
-#define F_LJUST (1<<0)
-#define F_SIGN  (1<<1)
-#define F_BLANK (1<<2)
-#define F_ALT   (1<<3)
-#define F_ZERO  (1<<4)
 
 /* Returns a new reference to a PyBytes object, or NULL on failure. */
 
@@ -1560,7 +1548,7 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
         case Py_EQ:
         case Py_LE:
         case Py_GE:
-            /* a string is equal to itself */
+            /* a byte string is equal to itself */
             Py_RETURN_TRUE;
         case Py_NE:
         case Py_LT:
@@ -2149,7 +2137,7 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table,
         Py_INCREF(input_obj);
         return input_obj;
     }
-    /* Fix the size of the resulting string */
+    /* Fix the size of the resulting byte string */
     if (inlen > 0)
         _PyBytes_Resize(&result, output - output_start);
     return result;
@@ -2453,7 +2441,7 @@ bytes.hex
         How many bytes between separators.  Positive values count from the
         right, negative values count from the left.
 
-Create a str of hexadecimal numbers from a bytes object.
+Create a string of hexadecimal numbers from a bytes object.
 
 Example:
 >>> value = b'\xb9\x01\xef'
@@ -2469,7 +2457,7 @@ Example:
 
 static PyObject *
 bytes_hex_impl(PyBytesObject *self, PyObject *sep, int bytes_per_sep)
-/*[clinic end generated code: output=1f134da504064139 input=f1238d3455990218]*/
+/*[clinic end generated code: output=1f134da504064139 input=1a21282b1f1ae595]*/
 {
     const char *argbuf = PyBytes_AS_STRING(self);
     Py_ssize_t arglen = PyBytes_GET_SIZE(self);
@@ -2771,7 +2759,7 @@ _PyBytes_FromIterator(PyObject *it, PyObject *x)
     Py_ssize_t i, size;
     _PyBytesWriter writer;
 
-    /* For iterator version, create a string object and resize as needed */
+    /* For iterator version, create a bytes object and resize as needed */
     size = PyObject_LengthHint(x, 64);
     if (size == -1 && PyErr_Occurred())
         return NULL;
