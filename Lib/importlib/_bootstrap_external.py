@@ -832,7 +832,8 @@ class _LoaderBasics:
         _bootstrap._call_with_frames_removed(exec, code, module.__dict__)
 
     def load_module(self, fullname):
-        """This module is deprecated."""
+        """This method is deprecated."""
+        # Warning implemented in _load_module_shim().
         return _bootstrap._load_module_shim(self, fullname)
 
 
@@ -1007,7 +1008,7 @@ class FileLoader:
         """
         # The only reason for this method is for the name check.
         # Issue #14857: Avoid the zero-argument form of super so the implementation
-        # of that form can be updated without breaking the frozen module
+        # of that form can be updated without breaking the frozen module.
         return super(FileLoader, self).load_module(fullname)
 
     @_check_name
@@ -1253,6 +1254,7 @@ class _NamespaceLoader:
         # The import system never calls this method.
         _bootstrap._verbose_message('namespace module loaded with path {!r}',
                                     self._path)
+        # Warning implemented in _load_module_shim().
         return _bootstrap._load_module_shim(self, fullname)
 
 

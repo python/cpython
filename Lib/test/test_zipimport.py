@@ -7,6 +7,7 @@ import struct
 import time
 import unittest
 import unittest.mock
+import warnings
 
 from test import support
 from test.support import import_helper
@@ -453,15 +454,17 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.assertTrue(zi.is_package(TESTPACK))
 
         # PEP 302
-        find_mod = zi.find_module('spam')
-        self.assertIsNotNone(find_mod)
-        self.assertIsInstance(find_mod, zipimport.zipimporter)
-        self.assertFalse(find_mod.is_package('spam'))
-        load_mod = find_mod.load_module('spam')
-        self.assertEqual(find_mod.get_filename('spam'), load_mod.__file__)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            find_mod = zi.find_module('spam')
+            self.assertIsNotNone(find_mod)
+            self.assertIsInstance(find_mod, zipimport.zipimporter)
+            self.assertFalse(find_mod.is_package('spam'))
+            load_mod = find_mod.load_module('spam')
+            self.assertEqual(find_mod.get_filename('spam'), load_mod.__file__)
 
-        mod = zi.load_module(TESTPACK)
-        self.assertEqual(zi.get_filename(TESTPACK), mod.__file__)
+            mod = zi.load_module(TESTPACK)
+            self.assertEqual(zi.get_filename(TESTPACK), mod.__file__)
 
         # PEP 451
         spec = zi.find_spec('spam')
@@ -522,8 +525,10 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.assertEqual(zi.prefix, packdir)
         self.assertTrue(zi.is_package(TESTPACK2))
         # PEP 302
-        mod = zi.load_module(TESTPACK2)
-        self.assertEqual(zi.get_filename(TESTPACK2), mod.__file__)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            mod = zi.load_module(TESTPACK2)
+            self.assertEqual(zi.get_filename(TESTPACK2), mod.__file__)
         # PEP 451
         spec = zi.find_spec(TESTPACK2)
         mod = importlib.util.module_from_spec(spec)
@@ -536,13 +541,15 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         pkg_path = TEMP_ZIP + os.sep + packdir + TESTPACK2
         zi2 = zipimport.zipimporter(pkg_path)
         # PEP 302
-        find_mod_dotted = zi2.find_module(TESTMOD)
-        self.assertIsNotNone(find_mod_dotted)
-        self.assertIsInstance(find_mod_dotted, zipimport.zipimporter)
-        self.assertFalse(zi2.is_package(TESTMOD))
-        load_mod = find_mod_dotted.load_module(TESTMOD)
-        self.assertEqual(
-            find_mod_dotted.get_filename(TESTMOD), load_mod.__file__)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            find_mod_dotted = zi2.find_module(TESTMOD)
+            self.assertIsNotNone(find_mod_dotted)
+            self.assertIsInstance(find_mod_dotted, zipimport.zipimporter)
+            self.assertFalse(zi2.is_package(TESTMOD))
+            load_mod = find_mod_dotted.load_module(TESTMOD)
+            self.assertEqual(
+                find_mod_dotted.get_filename(TESTMOD), load_mod.__file__)
 
         # PEP 451
         spec = zi2.find_spec(TESTMOD)
@@ -778,10 +785,12 @@ class BadFileZipImportTestCase(unittest.TestCase):
         z = zipimport.zipimporter(TESTMOD)
 
         try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                self.assertRaises(TypeError, z.load_module, None)
             self.assertRaises(TypeError, z.find_module, None)
             self.assertRaises(TypeError, z.find_spec, None)
             self.assertRaises(TypeError, z.exec_module, None)
-            self.assertRaises(TypeError, z.load_module, None)
             self.assertRaises(TypeError, z.is_package, None)
             self.assertRaises(TypeError, z.get_code, None)
             self.assertRaises(TypeError, z.get_data, None)
@@ -791,7 +800,9 @@ class BadFileZipImportTestCase(unittest.TestCase):
             self.assertIsNone(z.find_module('abc'))
             self.assertIsNone(z.find_spec('abc'))
 
-            self.assertRaises(error, z.load_module, 'abc')
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                self.assertRaises(error, z.load_module, 'abc')
             self.assertRaises(error, z.get_code, 'abc')
             self.assertRaises(OSError, z.get_data, 'abc')
             self.assertRaises(error, z.get_source, 'abc')

@@ -1,0 +1,1 @@
+Deprecate zipimport.zipimporter.load_module() in favour of exec_module().

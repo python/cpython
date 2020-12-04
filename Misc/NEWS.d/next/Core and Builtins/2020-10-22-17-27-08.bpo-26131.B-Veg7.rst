@@ -1,0 +1,2 @@
+The import system triggers a `ImportWarning` when it falls back to using
+`load_module()`.
