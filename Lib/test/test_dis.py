@@ -166,6 +166,20 @@ dis_bug1333982 = """\
        bug1333982.__code__.co_firstlineno + 2,
        bug1333982.__code__.co_firstlineno + 1)
 
+
+def bug42562():
+    pass
+
+
+# Set line number for 'pass' to None
+bug42562.__code__ = bug42562.__code__.replace(co_linetable=b'\x04\x80\xff\x80')
+
+
+dis_bug42562 = """\
+          0 LOAD_CONST               0 (None)
+          2 RETURN_VALUE
+"""
+
 _BIG_LINENO_FORMAT = """\
 %3d           0 LOAD_GLOBAL              0 (spam)
               2 POP_TOP
@@ -519,6 +533,9 @@ class DisTests(unittest.TestCase):
             self.skipTest('need asserts, run without -O')
 
         self.do_disassembly_test(bug1333982, dis_bug1333982)
+
+    def test_bug_42562(self):
+        self.do_disassembly_test(bug42562, dis_bug42562)
 
     def test_big_linenos(self):
         def func(count):

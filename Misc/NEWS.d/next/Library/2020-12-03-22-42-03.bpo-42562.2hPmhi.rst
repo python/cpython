@@ -1,0 +1,2 @@
+Fix issue when dis failed to parse function that has no line numbers. Patch
+provided by Yurii Karabas.
