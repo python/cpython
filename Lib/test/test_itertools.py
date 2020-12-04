@@ -399,15 +399,11 @@ class TestBasicOps(unittest.TestCase):
 
     @support.cpython_only
     def test_combinations_with_replacement_result_gc(self):
-        # bpo-42536: combinations_with_replacement's tuple-reuse speed trick
-        # breaks the GC's assumptions about what can be un-tracked. Make sure we
-        # re-track result tuples whenever we reuse them.
+        # Same as test_combinations_result_gc above, but for
+        # combinations_with_replacement.
         c = combinations_with_replacement([None, []], 1)
         next(c)
         gc.collect()
-        # That GC collection probably untracked the recycled internal result
-        # tuple, which has the value (None,). Make sure it's re-tracked when
-        # it's mutated and returned from __next__:
         self.assertTrue(gc.is_tracked(next(c)))
 
     def test_permutations(self):
@@ -485,15 +481,10 @@ class TestBasicOps(unittest.TestCase):
 
     @support.cpython_only
     def test_permutations_result_gc(self):
-        # bpo-42536: combinations's tuple-reuse speed trick breaks the GC's
-        # assumptions about what can be un-tracked. Make sure we re-track result
-        # tuples whenever we reuse them.
+        # Same as test_combinations_result_gc above, but for permutations.
         p = permutations([None, []], 1)
         next(p)
         gc.collect()
-        # That GC collection probably untracked the recycled internal result
-        # tuple, which has the value (None,). Make sure it's re-tracked when
-        # it's mutated and returned from __next__:
         self.assertTrue(gc.is_tracked(next(p)))
 
     def test_combinatorics(self):
@@ -1008,14 +999,9 @@ class TestBasicOps(unittest.TestCase):
 
     @support.cpython_only
     def test_zip_longest_result_gc(self):
-        # bpo-42536: zip_longest's tuple-reuse speed trick breaks the GC's
-        # assumptions about what can be un-tracked. Make sure we re-track result
-        # tuples whenever we reuse them.
+        # Same as test_combinations_result_gc above, but for zip_longest.
         z = zip_longest([[]])
         gc.collect()
-        # That GC collection probably untracked the recycled internal result
-        # tuple, which has the value (None,). Make sure it's re-tracked when
-        # it's mutated and returned from __next__:
         self.assertTrue(gc.is_tracked(next(z)))
 
     def test_zip_longest_pickling(self):
@@ -1166,15 +1152,10 @@ class TestBasicOps(unittest.TestCase):
 
     @support.cpython_only
     def test_product_result_gc(self):
-        # bpo-42536: produce's tuple-reuse speed trick breaks the GC's
-        # assumptions about what can be un-tracked. Make sure we re-track result
-        # tuples whenever we reuse them.
+        # Same as test_combinations_result_gc above, but for product.
         p = product([None, []])
         next(p)
         gc.collect()
-        # That GC collection probably untracked the recycled internal result
-        # tuple, which has the value (None,). Make sure it's re-tracked when
-        # it's mutated and returned from __next__:
         self.assertTrue(gc.is_tracked(next(p)))
 
     def test_product_pickling(self):

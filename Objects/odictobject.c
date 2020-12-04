@@ -1814,9 +1814,8 @@ odictiter_iternext(odictiterobject *di)
         Py_INCREF(result);
         Py_DECREF(PyTuple_GET_ITEM(result, 0));  /* borrowed */
         Py_DECREF(PyTuple_GET_ITEM(result, 1));  /* borrowed */
-        // bpo-42536
-        // The GC may have untracked this result tuple if its elements were all
-        // untracked. Since we're recycling it, make sure it's tracked again:
+        // bpo-42536: the GC may have untracked this result tuple. Since we're
+        // recycling it, make sure it's tracked again:
         if (!_PyObject_GC_IS_TRACKED(result)) {
             _PyObject_GC_TRACK(result);
         }
