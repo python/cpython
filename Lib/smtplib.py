@@ -341,6 +341,8 @@ class SMTP:
         (code, msg) = self.getreply()
         if self.debuglevel > 0:
             self._print_debug('connect:', repr(msg))
+        if code == 220:
+            self._host = host
         return (code, msg)
 
     def send(self, s):
@@ -1039,7 +1041,7 @@ if _have_ssl:
                 self._print_debug('connect:', (host, port))
             new_socket = super()._get_socket(host, port, timeout)
             new_socket = self.context.wrap_socket(new_socket,
-                                                  server_hostname=self._host)
+                                                  server_hostname=host)
             return new_socket
 
     __all__.append("SMTP_SSL")
