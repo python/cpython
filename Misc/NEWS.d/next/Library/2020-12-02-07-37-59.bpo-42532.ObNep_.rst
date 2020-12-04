@@ -1,1 +1,1 @@
-Check if NonCallableMock.__new__'s spec_arg is not None instead of calling its __bool__ function
+Remove unexpected call of ``__bool__`` when passing a ``spec_arg`` argument to a Mock.
