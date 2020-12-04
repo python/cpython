@@ -51,11 +51,6 @@ if gdb_major_version < 7:
                             "embedding. Saw %s.%s:\n%s"
                             % (gdb_major_version, gdb_minor_version,
                                gdb_version))
-if (gdb_major_version, gdb_minor_version) >= (9, 2):
-    # gdb 9.2 on Fedora Rawhide is not reliable, see:
-    # * https://bugs.python.org/issue41473
-    # * https://bugzilla.redhat.com/show_bug.cgi?id=1866884
-    raise unittest.SkipTest("https://bugzilla.redhat.com/show_bug.cgi?id=1866884")
 
 if not sysconfig.is_python_build():
     raise unittest.SkipTest("test_gdb only works on source builds at the moment.")
