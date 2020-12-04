@@ -171,6 +171,7 @@ def bug42562():
     pass
 
 
+# Set line number for 'pass' to None
 bug42562.__code__ = bug42562.__code__.replace(co_linetable=b'\x04\x80\xff\x80')
 
 
