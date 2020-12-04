@@ -2379,7 +2379,7 @@ product_next(productobject *lz)
             lz->result = result;
             Py_DECREF(old_result);
         }
-        // bpo-42536: the GC may have untracked this result tuple. Since we're
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
         else if (!_PyObject_GC_IS_TRACKED(result)) {
             _PyObject_GC_TRACK(result);
@@ -2707,7 +2707,7 @@ combinations_next(combinationsobject *co)
             co->result = result;
             Py_DECREF(old_result);
         }
-        // bpo-42536: the GC may have untracked this result tuple. Since we're
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
         else if (!_PyObject_GC_IS_TRACKED(result)) {
             _PyObject_GC_TRACK(result);
@@ -3046,7 +3046,7 @@ cwr_next(cwrobject *co)
             co->result = result;
             Py_DECREF(old_result);
         }
-        // bpo-42536: the GC may have untracked this result tuple. Since we're
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
         else if (!_PyObject_GC_IS_TRACKED(result)) {
             _PyObject_GC_TRACK(result);
@@ -3395,7 +3395,7 @@ permutations_next(permutationsobject *po)
             po->result = result;
             Py_DECREF(old_result);
         }
-        // bpo-42536: the GC may have untracked this result tuple. Since we're
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
         else if (!_PyObject_GC_IS_TRACKED(result)) {
             _PyObject_GC_TRACK(result);
@@ -4670,7 +4670,7 @@ zip_longest_next(ziplongestobject *lz)
             PyTuple_SET_ITEM(result, i, item);
             Py_DECREF(olditem);
         }
-        // bpo-42536: the GC may have untracked this result tuple. Since we're
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
         if (!_PyObject_GC_IS_TRACKED(result)) {
             _PyObject_GC_TRACK(result);

@@ -674,7 +674,7 @@ functools_reduce(PyObject *self, PyObject *args)
             if ((result = PyObject_Call(func, args, NULL)) == NULL) {
                 goto Fail;
             }
-            // bpo-42536: the GC may have untracked this args tuple. Since we're
+            // bpo-42536: The GC may have untracked this args tuple. Since we're
             // recycling it, make sure it's tracked again:
             if (!_PyObject_GC_IS_TRACKED(args)) {
                 _PyObject_GC_TRACK(args);
