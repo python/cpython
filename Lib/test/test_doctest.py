@@ -3039,6 +3039,7 @@ Invalid file name:
     ...         '-m', 'doctest', 'nosuchfile')
     >>> rc, out
     (1, b'')
+    >>> # The exact error message changes depending on the platform.
     >>> print(normalize(err))                    # doctest: +ELLIPSIS
     Traceback (most recent call last):
       ...
