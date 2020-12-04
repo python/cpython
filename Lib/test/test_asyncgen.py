@@ -400,6 +400,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         self.assertEqual(res, [1, 2])
 
     def test_async_gen_operator_aiter_class(self):
+        results = []
         loop = self.loop
         class Gen:
             async def __aiter__(self):
@@ -408,9 +409,14 @@ class AsyncGenAsyncioTest(unittest.TestCase):
                 yield 2
         g = Gen()
         async def consume():
-            return [i async for i in operator.aiter(g)]
-        res = self.loop.run_until_complete(consume())
-        self.assertEqual(res, [1, 2])
+            ait = operator.aiter(g)
+            while True:
+                try:
+                    results.append(await operator.anext(ait))
+                except StopAsyncIteration:
+                    break
+        self.loop.run_until_complete(consume())
+        self.assertEqual(results, [1, 2])
 
     def test_async_gen_operator_aiter_2_arg(self):
         async def gen():
