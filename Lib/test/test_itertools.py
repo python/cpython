@@ -296,19 +296,6 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(len(set(map(id, combinations('abcde', 3)))), 1)
         self.assertNotEqual(len(set(map(id, list(combinations('abcde', 3))))), 1)
 
-    @support.cpython_only
-    def test_combinations_result_gc(self):
-        # bpo-42536: combinations's tuple-reuse speed trick breaks the GC's
-        # assumptions about what can be untracked. Make sure we re-track result
-        # tuples whenever we reuse them.
-        it = combinations([None, []], 1)
-        next(it)
-        gc.collect()
-        # That GC collection probably untracked the recycled internal result
-        # tuple, which has the value (None,). Make sure it's re-tracked when
-        # it's mutated and returned from __next__:
-        self.assertTrue(gc.is_tracked(next(it)))
-
     def test_combinations_with_replacement(self):
         cwr = combinations_with_replacement
         self.assertRaises(TypeError, cwr, 'abc')       # missing r argument
@@ -397,15 +384,6 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(len(set(map(id, cwr('abcde', 3)))), 1)
         self.assertNotEqual(len(set(map(id, list(cwr('abcde', 3))))), 1)
 
-    @support.cpython_only
-    def test_combinations_with_replacement_result_gc(self):
-        # Same as test_combinations_result_gc above, but for
-        # combinations_with_replacement.
-        it = combinations_with_replacement([None, []], 1)
-        next(it)
-        gc.collect()
-        self.assertTrue(gc.is_tracked(next(it)))
-
     def test_permutations(self):
         self.assertRaises(TypeError, permutations)              # too few arguments
         self.assertRaises(TypeError, permutations, 'abc', 2, 1) # too many arguments
@@ -478,14 +456,6 @@ class TestBasicOps(unittest.TestCase):
     def test_permutations_tuple_reuse(self):
         self.assertEqual(len(set(map(id, permutations('abcde', 3)))), 1)
         self.assertNotEqual(len(set(map(id, list(permutations('abcde', 3))))), 1)
-
-    @support.cpython_only
-    def test_permutations_result_gc(self):
-        # Same as test_combinations_result_gc above, but for permutations.
-        it = permutations([None, []], 1)
-        next(it)
-        gc.collect()
-        self.assertTrue(gc.is_tracked(next(it)))
 
     def test_combinatorics(self):
         # Test relationships between product(), permutations(),
@@ -997,13 +967,6 @@ class TestBasicOps(unittest.TestCase):
         ids = list(map(id, list(zip_longest('abc', 'def'))))
         self.assertEqual(len(dict.fromkeys(ids)), len(ids))
 
-    @support.cpython_only
-    def test_zip_longest_result_gc(self):
-        # Same as test_combinations_result_gc above, but for zip_longest.
-        it = zip_longest([[]])
-        gc.collect()
-        self.assertTrue(gc.is_tracked(next(it)))
-
     def test_zip_longest_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             self.pickletest(proto, zip_longest("abc", "def"))
@@ -1149,14 +1112,6 @@ class TestBasicOps(unittest.TestCase):
     def test_product_tuple_reuse(self):
         self.assertEqual(len(set(map(id, product('abc', 'def')))), 1)
         self.assertNotEqual(len(set(map(id, list(product('abc', 'def'))))), 1)
-
-    @support.cpython_only
-    def test_product_result_gc(self):
-        # Same as test_combinations_result_gc above, but for product.
-        it = product([None, []])
-        next(it)
-        gc.collect()
-        self.assertTrue(gc.is_tracked(next(it)))
 
     def test_product_pickling(self):
         # check copy, deepcopy, pickle
@@ -1619,6 +1574,51 @@ class TestBasicOps(unittest.TestCase):
         for f in (filter, filterfalse, map, takewhile, dropwhile, starmap):
             self.assertRaises(StopIteration, next, f(lambda x:x, []))
             self.assertRaises(StopIteration, next, f(lambda x:x, StopNow()))
+
+    @support.cpython_only
+    def test_combinations_result_gc(self):
+        # bpo-42536: combinations's tuple-reuse speed trick breaks the GC's
+        # assumptions about what can be untracked. Make sure we re-track result
+        # tuples whenever we reuse them.
+        it = combinations([None, []], 1)
+        next(it)
+        gc.collect()
+        # That GC collection probably untracked the recycled internal result
+        # tuple, which has the value (None,). Make sure it's re-tracked when
+        # it's mutated and returned from __next__:
+        self.assertTrue(gc.is_tracked(next(it)))
+
+    @support.cpython_only
+    def test_combinations_with_replacement_result_gc(self):
+        # Ditto for combinations_with_replacement.
+        it = combinations_with_replacement([None, []], 1)
+        next(it)
+        gc.collect()
+        self.assertTrue(gc.is_tracked(next(it)))
+
+    @support.cpython_only
+    def test_permutations_result_gc(self):
+        # Ditto for permutations.
+        it = permutations([None, []], 1)
+        next(it)
+        gc.collect()
+        self.assertTrue(gc.is_tracked(next(it)))
+
+    @support.cpython_only
+    def test_product_result_gc(self):
+        # Ditto for product.
+        it = product([None, []])
+        next(it)
+        gc.collect()
+        self.assertTrue(gc.is_tracked(next(it)))
+
+    @support.cpython_only
+    def test_zip_longest_result_gc(self):
+        # Ditto for zip_longest.
+        it = zip_longest([[]])
+        gc.collect()
+        self.assertTrue(gc.is_tracked(next(it)))
+
 
 class TestExamples(unittest.TestCase):
 
