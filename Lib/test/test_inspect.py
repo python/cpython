@@ -653,7 +653,7 @@ class TestBlockComments(GetSourceBase):
     fodderModule = mod
 
     def test_toplevel_class(self):
-        self.assertSourceEqual(mod.WhichComments, 96, 113)
+        self.assertSourceEqual(mod.WhichComments, 96, 114)
 
     def test_class_method(self):
         self.assertSourceEqual(mod.WhichComments.f, 99, 104)
