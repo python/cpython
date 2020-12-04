@@ -744,6 +744,13 @@ regen-importlib: Programs/_freeze_importlib
 	$(UPDATE_FILE) $(srcdir)/Python/importlib_zipimport.h $(srcdir)/Python/importlib_zipimport.h.new
 
 
+regen-limited-abi: all
+	@$(MKDIR_P) $(srcdir)/Doc/data/
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py generate $(srcdir)/Doc/data/stable_abi.dat.new
+	$(UPDATE_FILE) $(srcdir)/Doc/data/stable_abi.dat \
+	$(srcdir)/Doc/data/stable_abi.dat.new
+
+
 ############################################################################
 # Regenerate all generated files
 
@@ -1899,6 +1906,9 @@ funny:
 # Perform some verification checks on any modified files.
 patchcheck: @DEF_MAKE_RULE@
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/patchcheck.py
+
+check-limited-abi: all
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py check $(srcdir)/Doc/data/stable_abi.dat
 
 # Dependencies
 
