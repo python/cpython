@@ -24,7 +24,7 @@ class ReturnValue:
 
     def test_return_from_from_import(self):
         # [from return]
-        with util.mock_modules('pkg.__init__', 'pkg.module')as importer:
+        with util.mock_spec('pkg.__init__', 'pkg.module')as importer:
             with util.import_state(meta_path=[importer]):
                 module = self.__import__('pkg.module', fromlist=['attr'])
                 self.assertEqual(module.__name__, 'pkg.module')
@@ -52,14 +52,14 @@ class HandlingFromlist:
 
     def test_object(self):
         # [object case]
-        with util.mock_modules('module') as importer:
+        with util.mock_spec('module') as importer:
             with util.import_state(meta_path=[importer]):
                 module = self.__import__('module', fromlist=['attr'])
                 self.assertEqual(module.__name__, 'module')
 
     def test_nonexistent_object(self):
         # [bad object]
-        with util.mock_modules('module') as importer:
+        with util.mock_spec('module') as importer:
             with util.import_state(meta_path=[importer]):
                 module = self.__import__('module', fromlist=['non_existent'])
                 self.assertEqual(module.__name__, 'module')
@@ -67,7 +67,7 @@ class HandlingFromlist:
 
     def test_module_from_package(self):
         # [module]
-        with util.mock_modules('pkg.__init__', 'pkg.module') as importer:
+        with util.mock_spec('pkg.__init__', 'pkg.module') as importer:
             with util.import_state(meta_path=[importer]):
                 module = self.__import__('pkg', fromlist=['module'])
                 self.assertEqual(module.__name__, 'pkg')
@@ -75,7 +75,7 @@ class HandlingFromlist:
                 self.assertEqual(module.module.__name__, 'pkg.module')
 
     def test_nonexistent_from_package(self):
-        with util.mock_modules('pkg.__init__') as importer:
+        with util.mock_spec('pkg.__init__') as importer:
             with util.import_state(meta_path=[importer]):
                 module = self.__import__('pkg', fromlist=['non_existent'])
                 self.assertEqual(module.__name__, 'pkg')
@@ -87,7 +87,7 @@ class HandlingFromlist:
         # ModuleNotFoundError propagate.
         def module_code():
             import i_do_not_exist
-        with util.mock_modules('pkg.__init__', 'pkg.mod',
+        with util.mock_spec('pkg.__init__', 'pkg.mod',
                                module_code={'pkg.mod': module_code}) as importer:
             with util.import_state(meta_path=[importer]):
                 with self.assertRaises(ModuleNotFoundError) as exc:
@@ -95,14 +95,14 @@ class HandlingFromlist:
                 self.assertEqual('i_do_not_exist', exc.exception.name)
 
     def test_empty_string(self):
-        with util.mock_modules('pkg.__init__', 'pkg.mod') as importer:
+        with util.mock_spec('pkg.__init__', 'pkg.mod') as importer:
             with util.import_state(meta_path=[importer]):
                 module = self.__import__('pkg.mod', fromlist=[''])
                 self.assertEqual(module.__name__, 'pkg.mod')
 
     def basic_star_test(self, fromlist=['*']):
         # [using *]
-        with util.mock_modules('pkg.__init__', 'pkg.module') as mock:
+        with util.mock_spec('pkg.__init__', 'pkg.module') as mock:
             with util.import_state(meta_path=[mock]):
                 mock['pkg'].__all__ = ['module']
                 module = self.__import__('pkg', fromlist=fromlist)
@@ -119,7 +119,7 @@ class HandlingFromlist:
 
     def test_star_with_others(self):
         # [using * with others]
-        context = util.mock_modules('pkg.__init__', 'pkg.module1', 'pkg.module2')
+        context = util.mock_spec('pkg.__init__', 'pkg.module1', 'pkg.module2')
         with context as mock:
             with util.import_state(meta_path=[mock]):
                 mock['pkg'].__all__ = ['module1']
@@ -131,7 +131,7 @@ class HandlingFromlist:
                 self.assertEqual(module.module2.__name__, 'pkg.module2')
 
     def test_nonexistent_in_all(self):
-        with util.mock_modules('pkg.__init__') as importer:
+        with util.mock_spec('pkg.__init__') as importer:
             with util.import_state(meta_path=[importer]):
                 importer['pkg'].__all__ = ['non_existent']
                 module = self.__import__('pkg', fromlist=['*'])
@@ -139,7 +139,7 @@ class HandlingFromlist:
                 self.assertFalse(hasattr(module, 'non_existent'))
 
     def test_star_in_all(self):
-        with util.mock_modules('pkg.__init__') as importer:
+        with util.mock_spec('pkg.__init__') as importer:
             with util.import_state(meta_path=[importer]):
                 importer['pkg'].__all__ = ['*']
                 module = self.__import__('pkg', fromlist=['*'])
@@ -147,7 +147,7 @@ class HandlingFromlist:
                 self.assertFalse(hasattr(module, '*'))
 
     def test_invalid_type(self):
-        with util.mock_modules('pkg.__init__') as importer:
+        with util.mock_spec('pkg.__init__') as importer:
             with util.import_state(meta_path=[importer]), \
                  warnings.catch_warnings():
                 warnings.simplefilter('error', BytesWarning)
@@ -157,7 +157,7 @@ class HandlingFromlist:
                     self.__import__('pkg', fromlist=iter([b'attr']))
 
     def test_invalid_type_in_all(self):
-        with util.mock_modules('pkg.__init__') as importer:
+        with util.mock_spec('pkg.__init__') as importer:
             with util.import_state(meta_path=[importer]), \
                  warnings.catch_warnings():
                 warnings.simplefilter('error', BytesWarning)
