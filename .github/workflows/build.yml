@@ -75,6 +75,8 @@ jobs:
           fi
       - name: Check exported libpython symbols
         run: make smelly
+      - name: Check limited ABI symbols
+        run: make check-limited-abi
 
   build_win32:
     name: 'Windows (x86)'
