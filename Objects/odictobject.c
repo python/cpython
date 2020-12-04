@@ -459,7 +459,7 @@ later:
 - implement a fuller MutableMapping API in C?
 - move the MutableMapping implementation to abstract.c?
 - optimize mutablemapping_update
-- use PyObject_MALLOC (small object allocator) for odict nodes?
+- use PyObject_Malloc (small object allocator) for odict nodes?
 - support subclasses better (e.g. in odict_richcompare)
 
 */
@@ -567,14 +567,14 @@ _odict_resize(PyODictObject *od)
         i = _odict_get_index_raw(od, _odictnode_KEY(node),
                                  _odictnode_HASH(node));
         if (i < 0) {
-            PyMem_FREE(fast_nodes);
+            PyMem_Free(fast_nodes);
             return -1;
         }
         fast_nodes[i] = node;
     }
 
     /* Replace the old fast nodes table. */
-    PyMem_FREE(od->od_fast_nodes);
+    PyMem_Free(od->od_fast_nodes);
     od->od_fast_nodes = fast_nodes;
     od->od_fast_nodes_size = size;
     od->od_resize_sentinel = ((PyDictObject *)od)->ma_keys;
@@ -683,7 +683,7 @@ _odict_add_new_node(PyODictObject *od, PyObject *key, Py_hash_t hash)
     }
 
     /* must not be added yet */
-    node = (_ODictNode *)PyMem_MALLOC(sizeof(_ODictNode));
+    node = (_ODictNode *)PyMem_Malloc(sizeof(_ODictNode));
     if (node == NULL) {
         Py_DECREF(key);
         PyErr_NoMemory();
@@ -701,7 +701,7 @@ _odict_add_new_node(PyODictObject *od, PyObject *key, Py_hash_t hash)
 #define _odictnode_DEALLOC(node) \
     do { \
         Py_DECREF(_odictnode_KEY(node)); \
-        PyMem_FREE((void *)node); \
+        PyMem_Free((void *)node); \
     } while (0)
 
 /* Repeated calls on the same node are no-ops. */
@@ -776,7 +776,7 @@ _odict_clear_nodes(PyODictObject *od)
 {
     _ODictNode *node, *next;
 
-    PyMem_FREE(od->od_fast_nodes);
+    PyMem_Free(od->od_fast_nodes);
     od->od_fast_nodes = NULL;
     od->od_fast_nodes_size = 0;
     od->od_resize_sentinel = NULL;

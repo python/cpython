@@ -440,6 +440,9 @@ class _BasePurePathTest(object):
         self.assertEqual(par[0], P('a/b'))
         self.assertEqual(par[1], P('a'))
         self.assertEqual(par[2], P('.'))
+        self.assertEqual(par[-1], P('.'))
+        self.assertEqual(par[-2], P('a'))
+        self.assertEqual(par[-3], P('a/b'))
         self.assertEqual(par[0:1], (P('a/b'),))
         self.assertEqual(par[:2], (P('a/b'), P('a')))
         self.assertEqual(par[:-1], (P('a/b'), P('a')))
@@ -448,7 +451,7 @@ class _BasePurePathTest(object):
         self.assertEqual(par[::-1], (P('.'), P('a'), P('a/b')))
         self.assertEqual(list(par), [P('a/b'), P('a'), P('.')])
         with self.assertRaises(IndexError):
-            par[-1]
+            par[-4]
         with self.assertRaises(IndexError):
             par[3]
         with self.assertRaises(TypeError):
@@ -2216,6 +2219,8 @@ class _BasePathTest(object):
         self.assertIs((P / 'fileA\x00').is_fifo(), False)
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), "os.mkfifo() required")
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
     def test_is_fifo_true(self):
         P = self.cls(BASE, 'myfifo')
         try:

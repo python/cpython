@@ -153,6 +153,9 @@ DEPTARGET = '10.5'
 def getDeptargetTuple():
     return tuple([int(n) for n in DEPTARGET.split('.')[0:2]])
 
+def getBuildTuple():
+    return tuple([int(n) for n in platform.mac_ver()[0].split('.')[0:2]])
+
 def getTargetCompilers():
     target_cc_map = {
         '10.4': ('gcc-4.0', 'g++-4.0'),
@@ -191,6 +194,13 @@ EXPECTED_SHARED_LIBS = {}
 #   For now, do so if deployment target is 10.6+.
 def internalTk():
     return getDeptargetTuple() >= (10, 6)
+
+# Do we use 8.6.8 when building our own copy
+# of Tcl/Tk or a modern version.
+#   We use the old version when buildin on
+#   old versions of macOS due to build issues.
+def useOldTk():
+    return getBuildTuple() < (10, 15)
 
 
 def tweak_tcl_build(basedir, archList):
@@ -245,11 +255,26 @@ def library_recipes():
     ])
 
     if internalTk():
+        if useOldTk():
+            tcl_tk_ver='8.6.8'
+            tcl_checksum='81656d3367af032e0ae6157eff134f89'
+
+            tk_checksum='5e0faecba458ee1386078fb228d008ba'
+            tk_patches = ['tk868_on_10_8_10_9.patch']
+
+        else:
+            tcl_tk_ver='8.6.10'
+            tcl_checksum='97c55573f8520bcab74e21bfd8d0aadc'
+
+            tk_checksum='602a47ad9ecac7bf655ada729d140a94'
+            tk_patches = [ ]
+
+
         result.extend([
           dict(
-              name="Tcl 8.6.8",
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tcl8.6.8-src.tar.gz",
-              checksum='81656d3367af032e0ae6157eff134f89',
+              name="Tcl %s"%(tcl_tk_ver,),
+              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tcl%s-src.tar.gz"%(tcl_tk_ver,),
+              checksum=tcl_checksum,
               buildDir="unix",
               configure_pre=[
                     '--enable-shared',
@@ -264,12 +289,10 @@ def library_recipes():
                   },
               ),
           dict(
-              name="Tk 8.6.8",
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk8.6.8-src.tar.gz",
-              checksum='5e0faecba458ee1386078fb228d008ba',
-              patches=[
-                  "tk868_on_10_8_10_9.patch",
-                   ],
+              name="Tk %s"%(tcl_tk_ver,),
+              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk%s-src.tar.gz"%(tcl_tk_ver,),
+              checksum=tk_checksum,
+              patches=tk_patches,
               buildDir="unix",
               configure_pre=[
                     '--enable-aqua',
@@ -564,8 +587,8 @@ def checkEnvironment():
     Check that we're running on a supported system.
     """
 
-    if sys.version_info[0:2] < (2, 5):
-        fatal("This script must be run with Python 2.5 (or later)")
+    if sys.version_info[0:2] < (2, 7):
+        fatal("This script must be run with Python 2.7 (or later)")
 
     if platform.system() != 'Darwin':
         fatal("This script should be run on a macOS 10.5 (or later) system")
@@ -633,9 +656,6 @@ def checkEnvironment():
         base_path = base_path + ':' + OLD_DEVELOPER_TOOLS
     os.environ['PATH'] = base_path
     print("Setting default PATH: %s"%(os.environ['PATH']))
-    # Ensure we have access to sphinx-build.
-    # You may have to create a link in /usr/bin for it.
-    runCommand('sphinx-build --version')
 
 def parseOptions(args=None):
     """
@@ -1595,8 +1615,17 @@ def buildDMG():
     if os.path.exists(outdir):
         shutil.rmtree(outdir)
 
+    # We used to use the deployment target as the last characters of the 
+    # installer file name. With the introduction of weaklinked installer
+    # variants, we may have two variants with the same file name, i.e.
+    # both ending in '10.9'.  To avoid this, we now use the major/minor
+    # version numbers of the macOS version we are building on, i.e.
+    # '10.9' as before for 10.9+ variant, '11.0' for universal2 11.0-.
+    # it's not ideal but should cause the least disruption to packaging
+    # workflows.
+    build_system_version = '.'.join(platform.mac_ver()[0].split('.')[0:2])
     imagepath = os.path.join(outdir,
-                    'python-%s-macosx%s'%(getFullVersion(),DEPTARGET))
+                    'python-%s-macosx%s'%(getFullVersion(),build_system_version))
     if INCLUDE_TIMESTAMP:
         imagepath = imagepath + '-%04d-%02d-%02d'%(time.localtime()[:3])
     imagepath = imagepath + '.dmg'

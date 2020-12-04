@@ -2295,7 +2295,7 @@ PySSL_dealloc(PySSLSocket *self)
     Py_XDECREF(self->ctx);
     Py_XDECREF(self->server_hostname);
     Py_XDECREF(self->owner);
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 
@@ -3306,10 +3306,10 @@ context_dealloc(PySSLContext *self)
     context_clear(self);
     SSL_CTX_free(self->ctx);
 #if HAVE_NPN
-    PyMem_FREE(self->npn_protocols);
+    PyMem_Free(self->npn_protocols);
 #endif
 #if HAVE_ALPN
-    PyMem_FREE(self->alpn_protocols);
+    PyMem_Free(self->alpn_protocols);
 #endif
     Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
@@ -3510,7 +3510,7 @@ _ssl__SSLContext__set_alpn_protocols_impl(PySSLContext *self,
         return NULL;
     }
 
-    PyMem_FREE(self->alpn_protocols);
+    PyMem_Free(self->alpn_protocols);
     self->alpn_protocols = PyMem_Malloc(protos->len);
     if (!self->alpn_protocols)
         return PyErr_NoMemory();
@@ -5955,12 +5955,7 @@ do {                                                                      \
     if (PyModule_AddObjectRef(module, name, exc) < 0) goto error;         \
 } while(0)
 
-    bases = PyTuple_Pack(1, PyExc_OSError);
-    if (bases == NULL) {
-        goto error;
-    }
-    PySSLErrorObject = PyType_FromSpecWithBases(&sslerror_type_spec, bases);
-    Py_CLEAR(bases);
+    PySSLErrorObject = PyType_FromSpecWithBases(&sslerror_type_spec, PyExc_OSError);
     if (PySSLErrorObject == NULL) {
         goto error;
     }
@@ -6421,7 +6416,7 @@ sslmodule_legacy(PyObject *module)
 #ifdef HAVE_OPENSSL_CRYPTO_LOCK
     /* note that this will start threading if not already started */
     if (!_setup_ssl_threads()) {
-        return NULL;
+        return 0;
     }
 #elif OPENSSL_VERSION_1_1
     /* OpenSSL 1.1.0 builtin thread support is enabled */

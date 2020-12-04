@@ -5480,7 +5480,7 @@ free_string_array(EXECV_CHAR **array, Py_ssize_t count)
     Py_ssize_t i;
     for (i = 0; i < count; i++)
         PyMem_Free(array[i]);
-    PyMem_DEL(array);
+    PyMem_Free(array);
 }
 
 static int
@@ -6510,9 +6510,10 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
         res = Py_BuildValue(_Py_PARSE_INTPTR, spawnval);
 
   fail_2:
-    while (--envc >= 0)
-        PyMem_DEL(envlist[envc]);
-    PyMem_DEL(envlist);
+    while (--envc >= 0) {
+        PyMem_Free(envlist[envc]);
+    }
+    PyMem_Free(envlist);
   fail_1:
     free_string_array(argvlist, lastarg);
   fail_0:
@@ -7444,7 +7445,7 @@ os_getgrouplist_impl(PyObject *module, const char *user, gid_t basegid)
 
     list = PyList_New(ngroups);
     if (list == NULL) {
-        PyMem_Del(groups);
+        PyMem_Free(groups);
         return NULL;
     }
 
@@ -7456,13 +7457,13 @@ os_getgrouplist_impl(PyObject *module, const char *user, gid_t basegid)
 #endif
         if (o == NULL) {
             Py_DECREF(list);
-            PyMem_Del(groups);
+            PyMem_Free(groups);
             return NULL;
         }
         PyList_SET_ITEM(list, i, o);
     }
 
-    PyMem_Del(groups);
+    PyMem_Free(groups);
 
     return list;
 }
@@ -9407,7 +9408,7 @@ iov_setup(struct iovec **iov, Py_buffer **buf, PyObject *seq, Py_ssize_t cnt, in
 
     *buf = PyMem_New(Py_buffer, cnt);
     if (*buf == NULL) {
-        PyMem_Del(*iov);
+        PyMem_Free(*iov);
         PyErr_NoMemory();
         return -1;
     }
@@ -9427,11 +9428,11 @@ iov_setup(struct iovec **iov, Py_buffer **buf, PyObject *seq, Py_ssize_t cnt, in
     return 0;
 
 fail:
-    PyMem_Del(*iov);
+    PyMem_Free(*iov);
     for (j = 0; j < i; j++) {
         PyBuffer_Release(&(*buf)[j]);
     }
-    PyMem_Del(*buf);
+    PyMem_Free(*buf);
     return -1;
 }
 
@@ -9439,11 +9440,11 @@ static void
 iov_cleanup(struct iovec *iov, Py_buffer *buf, int cnt)
 {
     int i;
-    PyMem_Del(iov);
+    PyMem_Free(iov);
     for (i = 0; i < cnt; i++) {
         PyBuffer_Release(&buf[i]);
     }
-    PyMem_Del(buf);
+    PyMem_Free(buf);
 }
 #endif
 
@@ -10369,7 +10370,7 @@ os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
 }
 #endif /* HAVE_COPY_FILE_RANGE*/
 
-#ifdef HAVE_SPLICE
+#if (defined(HAVE_SPLICE) && !defined(_AIX))
 /*[clinic input]
 
 os.splice
@@ -12815,7 +12816,7 @@ os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks)
             path_error(path);
             break;
         }
-        buffer = PyMem_MALLOC(buffer_size);
+        buffer = PyMem_Malloc(buffer_size);
         if (!buffer) {
             PyErr_NoMemory();
             break;
@@ -12832,7 +12833,7 @@ os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks)
 
         if (length < 0) {
             if (errno == ERANGE) {
-                PyMem_FREE(buffer);
+                PyMem_Free(buffer);
                 buffer = NULL;
                 continue;
             }
@@ -12870,7 +12871,7 @@ os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks)
     }
 exit:
     if (buffer)
-        PyMem_FREE(buffer);
+        PyMem_Free(buffer);
     return result;
 }
 #endif /* USE_XATTRS */
