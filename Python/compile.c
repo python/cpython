@@ -6514,6 +6514,7 @@ is_exit_without_lineno(basicblock *b) {
 static int
 ensure_exits_have_lineno(struct compiler *c)
 {
+    basicblock *entry = NULL;
     /* Copy all exit blocks without line number that are targets of a jump.
      */
     for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
@@ -6535,6 +6536,11 @@ ensure_exits_have_lineno(struct compiler *c)
                 b->b_instr[b->b_iused-1].i_target = new_target;
             }
         }
+        entry = b;
+    }
+    assert(entry != NULL);
+    if (is_exit_without_lineno(entry)) {
+        entry->b_instr[0].i_lineno = c->u->u_firstlineno;
     }
     /* Any remaining reachable exit blocks without line number can only be reached by
      * fall through, and thus can only have a single predecessor */
