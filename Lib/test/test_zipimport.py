@@ -242,7 +242,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         files = {TESTMOD + pyc_ext: (NOW, badmagic_pyc)}
         try:
             self.doTest(".py", files, TESTMOD)
-            raise AssertionError("This should not be reached")
+            self.fail("This should not be reached")
         except zipimport.ZipImportError as exc:
             self.assertIsInstance(exc.__cause__, ImportError)
             self.assertIn("magic number", exc.__cause__.msg)
