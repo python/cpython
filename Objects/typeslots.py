@@ -1,4 +1,4 @@
-# Usage: ./python typeslots.py < Include/typeslots.h typeslots.inc
+# Usage: ./python Objects/typeslots.py < Include/typeslots.h typeslots.inc
 
 import sys, re
 
