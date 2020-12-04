@@ -147,13 +147,6 @@ class EnumerateTestCase(unittest.TestCase, PickleTest):
         # when it's mutated and returned from __next__:
         self.assertTrue(gc.is_tracked(next(e)))
 
-    # @support.cpython_only
-    # def test_enumerate_long_result_gc(self):
-    #     # Same as test_enumerate_result_gc, above.
-    #     e = self.enum([[]], sys.maxsize)
-    #     gc.collect()
-    #     self.assertTrue(gc.is_tracked(next(e)))
-
 class MyEnum(enumerate):
     pass
 
