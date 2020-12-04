@@ -809,6 +809,24 @@ if 1:
                 func(save_caller_frame)
                 self.assertEqual(frame.f_lineno-frame.f_code.co_firstlineno, lastline)
 
+    def test_lineno_after_no_code(self):
+        def no_code1():
+            "doc string"
+
+        def no_code2():
+            a: int
+
+        for func in (no_code1, no_code2):
+            with self.subTest(func=func):
+                code = func.__code__
+                lines = list(code.co_lines())
+                self.assertEqual(len(lines), 1)
+                start, end, line = lines[0]
+                self.assertEqual(start, 0)
+                self.assertEqual(end, len(code.co_code))
+                self.assertEqual(line, code.co_firstlineno)
+
+
     def test_big_dict_literal(self):
         # The compiler has a flushing point in "compiler_dict" that calls compiles
         # a portion of the dictionary literal when the loop that iterates over the items
