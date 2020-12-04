@@ -1,3 +1,4 @@
-:func:`zip` now ensures that its internal result tuple is always tracked by the
-garbage collector. Previously, it could have become untracked by a prior garbage
-collection. Patch by Brandt Bucher.
+Several built-in and standard library types now ensure that their internal
+result tuples are always tracked by the garbage collector. Previously, they
+could have become untracked by a prior garbage collection. Patch by Brandt
+Bucher.
