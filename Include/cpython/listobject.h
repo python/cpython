@@ -29,6 +29,14 @@ PyAPI_FUNC(void) _PyList_DebugMallocStats(FILE *out);
 /* Cast argument to PyListObject* type. */
 #define _PyList_CAST(op) (assert(PyList_Check(op)), (PyListObject *)(op))
 
-#define PyList_GET_ITEM(op, i) (_PyList_CAST(op)->ob_item[i])
-#define PyList_SET_ITEM(op, i, v) (_PyList_CAST(op)->ob_item[i] = (v))
+#define PyList_GET_ITEM(op, index) (_PyList_CAST(op)->ob_item[index])
+
+static inline void
+_PyList_SET_ITEM(PyListObject *list, Py_ssize_t index, PyObject *item)
+{
+    list->ob_item[index] = item;
+}
+#define PyList_SET_ITEM(op, index, item) \
+    _PyList_SET_ITEM(_PyList_CAST(op), index, item)
+
 #define PyList_GET_SIZE(op)    Py_SIZE(_PyList_CAST(op))

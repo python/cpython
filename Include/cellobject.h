@@ -19,8 +19,16 @@ PyAPI_FUNC(PyObject *) PyCell_New(PyObject *);
 PyAPI_FUNC(PyObject *) PyCell_Get(PyObject *);
 PyAPI_FUNC(int) PyCell_Set(PyObject *, PyObject *);
 
-#define PyCell_GET(op) (((PyCellObject *)(op))->ob_ref)
-#define PyCell_SET(op, v) (((PyCellObject *)(op))->ob_ref = v)
+// Cast the argument to PyCellObject* type.
+#define _PyCell_CAST(op) (assert(PyCell_Check(op)), (PyCellObject *)(op))
+
+#define PyCell_GET(op) (_PyCell_CAST(op)->ob_ref)
+
+static inline void _PyCell_SET(PyCellObject *cell, PyObject *value)
+{
+    cell->ob_ref = value;
+}
+#define PyCell_SET(op, value) _PyCell_SET(_PyCell_CAST(op), value)
 
 #ifdef __cplusplus
 }

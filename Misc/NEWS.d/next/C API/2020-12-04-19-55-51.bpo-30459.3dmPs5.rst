@@ -1,0 +1,2 @@
+Convert the :c:func:`PyTuple_SET_ITEM()`, :c:func:`PyList_SET_ITEM()` and
+:c:func:`PyCell_SET()` macros to static inline functions.
