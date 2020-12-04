@@ -1455,7 +1455,7 @@ class DictTest(unittest.TestCase):
     @support.cpython_only
     def test_dict_items_result_gc(self):
         # bpo-42536: dict.items's tuple-reuse speed trick breaks the GC's
-        # assumptions about what can be un-tracked. Make sure we re-track result
+        # assumptions about what can be untracked. Make sure we re-track result
         # tuples whenever we reuse them.
         i = iter({None: []}.items())
         gc.collect()

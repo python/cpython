@@ -138,7 +138,7 @@ class EnumerateTestCase(unittest.TestCase, PickleTest):
     @support.cpython_only
     def test_enumerate_result_gc(self):
         # bpo-42536: enumerate's tuple-reuse speed trick breaks the GC's
-        # assumptions about what can be un-tracked. Make sure we re-track result
+        # assumptions about what can be untracked. Make sure we re-track result
         # tuples whenever we reuse them.
         e = self.enum([[]])
         gc.collect()

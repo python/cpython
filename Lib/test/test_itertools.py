@@ -299,7 +299,7 @@ class TestBasicOps(unittest.TestCase):
     @support.cpython_only
     def test_combinations_result_gc(self):
         # bpo-42536: combinations's tuple-reuse speed trick breaks the GC's
-        # assumptions about what can be un-tracked. Make sure we re-track result
+        # assumptions about what can be untracked. Make sure we re-track result
         # tuples whenever we reuse them.
         c = combinations([None, []], 1)
         next(c)

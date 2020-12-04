@@ -1760,7 +1760,7 @@ class BuiltinTest(unittest.TestCase):
     @support.cpython_only
     def test_zip_result_gc(self):
         # bpo-42536: zip's tuple-reuse speed trick breaks the GC's assumptions
-        # about what can be un-tracked. Make sure we re-track result tuples
+        # about what can be untracked. Make sure we re-track result tuples
         # whenever we reuse them.
         z = zip([[]])
         gc.collect()
