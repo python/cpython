@@ -101,8 +101,8 @@ class WhichComments:
         # start f
         return 1
         # line 103
-      # end f
-    # line 105
+        # end f
+      # line 105
     # after f
 
     # before asyncf - line 108
@@ -110,7 +110,5 @@ class WhichComments:
         # start asyncf
         return 2
         # end asyncf
-      # line 113
-    # after asyncf
-  # almost finished WhichComments
-# after WhichComments - line 116
+    # after asyncf - line 113
+  # after WhichComments - line 114

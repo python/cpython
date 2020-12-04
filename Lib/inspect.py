@@ -930,7 +930,7 @@ class BlockFinder:
         self.indecorator = False
         self.decoratorhasargs = False
         self.last = 1
-        self.block_start_col = None
+        self.body_col0 = None
 
     def tokeneater(self, type, token, srowcol, erowcol, line):
         if not self.started and not self.indecorator:
@@ -942,10 +942,6 @@ class BlockFinder:
                 if token == "lambda":
                     self.islambda = True
                 self.started = True
-                if self.block_start_col is None:
-                    self.block_start_col = srowcol[1]
-            elif token == "async":
-                self.block_start_col = srowcol[1]
             self.passline = True    # skip to the end of the line
         elif token == "(":
             if self.indecorator:
@@ -966,6 +962,8 @@ class BlockFinder:
         elif self.passline:
             pass
         elif type == tokenize.INDENT:
+            if self.body_col0 is None and self.started:
+                self.body_col0 = erowcol[1]
             self.indent = self.indent + 1
             self.passline = True
         elif type == tokenize.DEDENT:
@@ -976,9 +974,8 @@ class BlockFinder:
             if self.indent <= 0:
                 raise EndOfBlock
         elif type == tokenize.COMMENT:
-            if self.started and srowcol[1] > self.block_start_col:
-                # Include comments which are indented more than the block's
-                # start statement
+            if self.body_col0 is not None and srowcol[1] >= self.body_col0:
+                # Include comments if indented at least as much as the block
                 self.last = srowcol[0]
         elif self.indent == 0 and type not in (tokenize.COMMENT, tokenize.NL):
             # any other token on the same indentation level end the previous

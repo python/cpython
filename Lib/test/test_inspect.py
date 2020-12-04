@@ -653,13 +653,13 @@ class TestBlockComments(GetSourceBase):
     fodderModule = mod
 
     def test_toplevel_class(self):
-        self.assertSourceEqual(mod.WhichComments, 96, 115)
+        self.assertSourceEqual(mod.WhichComments, 96, 113)
 
     def test_class_method(self):
         self.assertSourceEqual(mod.WhichComments.f, 99, 104)
 
     def test_class_async_method(self):
-        self.assertSourceEqual(mod.WhichComments.asyncf, 109, 113)
+        self.assertSourceEqual(mod.WhichComments.asyncf, 109, 112)
 
 class TestBuggyCases(GetSourceBase):
     fodderModule = mod2
