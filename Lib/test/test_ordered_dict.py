@@ -702,7 +702,7 @@ class OrderedDictTests:
 
     @support.cpython_only
     def test_ordered_dict_items_result_gc(self):
-        # bpo-42536: OrderedDict.item's tuple-reuse speed trick breaks the GC's
+        # bpo-42536: OrderedDict.items's tuple-reuse speed trick breaks the GC's
         # assumptions about what can be untracked. Make sure we re-track result
         # tuples whenever we reuse them.
         i = iter(self.OrderedDict({None: []}).items())
