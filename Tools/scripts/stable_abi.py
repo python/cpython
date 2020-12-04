@@ -60,15 +60,33 @@ def get_exported_symbols(library, dynamic=False):
         yield symbol
 
 
-def check_library(library, abi_funcs, dynamic=False):
+def check_library(stable_abi_file, library, abi_funcs, dynamic=False):
     available_symbols = set(get_exported_symbols(library, dynamic))
     missing_symbols = abi_funcs - available_symbols
     if missing_symbols:
-        print(
-            f"Some symbols from the stable ABI are missing: {', '.join(missing_symbols)}"
+        raise Exception(
+            f"""\
+Some symbols from the limited API are missing: {', '.join(missing_symbols)}
+
+This error means that there are some missing symbols among the ones exported
+in the Python library ("libpythonx.x.a" or "libpythonx.x.so"). This normally
+means that some symbol, function implementation or a prototype, belonging to
+a symbol in the limited API has been deleted or is missing.
+
+Check if this was a mistake and if not, update the file containing the limited
+API symbols. This file is located at:
+
+{stable_abi_file}
+
+You can read more about the limited API and its contracts at:
+
+https://docs.python.org/3/c-api/stable.html
+
+And in PEP 384:
+
+https://www.python.org/dev/peps/pep-0384/
+"""
         )
-        return 1
-    return 0
 
 
 def generate_limited_api_symbols(args):
@@ -107,7 +125,6 @@ def generate_limited_api_symbols(args):
         )
         for symbol in sorted(stable_symbols):
             output_file.write(f"{symbol}\n")
-    sys.exit(0)
 
 
 def get_limited_api_macros(headers):
@@ -187,21 +204,24 @@ def check_symbols(parser_args):
             if symbol and not symbol.startswith("#")
         }
 
-    ret = 0
-    # static library
-    LIBRARY = sysconfig.get_config_var("LIBRARY")
-    if not LIBRARY:
-        raise Exception("failed to get LIBRARY variable from sysconfig")
-    ret = check_library(LIBRARY, abi_funcs)
+    try:
+        # static library
+        LIBRARY = sysconfig.get_config_var("LIBRARY")
+        if not LIBRARY:
+            raise Exception("failed to get LIBRARY variable from sysconfig")
+        check_library(parser_args.stable_abi_file, LIBRARY, abi_funcs)
 
-    # dynamic library
-    LDLIBRARY = sysconfig.get_config_var("LDLIBRARY")
-    if not LDLIBRARY:
-        raise Exception("failed to get LDLIBRARY variable from sysconfig")
-    if LDLIBRARY != LIBRARY:
-        ret |= check_library(LDLIBRARY, abi_funcs, dynamic=True)
-
-    sys.exit(ret)
+        # dynamic library
+        LDLIBRARY = sysconfig.get_config_var("LDLIBRARY")
+        if not LDLIBRARY:
+            raise Exception("failed to get LDLIBRARY variable from sysconfig")
+        if LDLIBRARY != LIBRARY:
+            check_library(
+                parser_args.stable_abi_file, LDLIBRARY, abi_funcs, dynamic=True
+            )
+    except Exception as e:
+        print(e, file=sys.stderr)
+        sys.exit(1)
 
 
 def main():
