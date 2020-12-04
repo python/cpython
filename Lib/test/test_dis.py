@@ -168,7 +168,10 @@ dis_bug1333982 = """\
 
 
 def bug42562():
-    a: int
+    pass
+
+
+bug42562.__code__ = bug42562.__code__.replace(co_linetable=b'\x04\x80\xff\x80')
 
 
 dis_bug42562 = """\
