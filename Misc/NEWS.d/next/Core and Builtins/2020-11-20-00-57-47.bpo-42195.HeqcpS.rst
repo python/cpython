@@ -1,7 +1,6 @@
 The ``__args__`` of the parameterized generics for :data:`typing.Callable`
 and :class:`collections.abc.Callable` are now consistent.  Said ``__args__`` 
-are now in the form ``(_PosArgs[args], result)``.  For example, 
-``typing.Callable[[int], float].__args__`` now gives 
-``(typing._PosArgs[int], float)``.  Due to this change, 
+for :class:`collections.abc.Callable` are now flattened while 
+:data:`typing.Callable`'s have not changed.  To allow this change, 
 :class:`types.GenericAlias` can now be subclassed.  Patch by Ken Jin.  
 
