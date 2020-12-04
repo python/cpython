@@ -1,0 +1,4 @@
+:func:`inspect.findsource` now raises :exc:`OSError` instead of
+:exc:`IndexError` when :attr:`co_lineno` of a code object is greater than the
+file length. This can happen, for example, when a file is edited after it was
+imported.  PR by Irit Katriel.
