@@ -1536,6 +1536,42 @@ In the second form, the callable is called until it returns the sentinel.");
 
 
 /*[clinic input]
+aiter as builtin_aiter
+
+    aiterable: object
+    sentinel: object = NULL
+    /
+
+Return an async iterator for an async iterable object.
+[clinic start generated code]*/
+static PyObject *
+builtin_aiter(PyObject *self, PyObject *aiterable, PyObject *sentinel)
+{
+    PyObject *v;
+
+    if (sentinel == NULL) {
+        return PyObject_GetIter(v);
+    }
+
+    if (!PyCallable_Check(v)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "iter(v, w): v must be callable");
+        return NULL;
+    }
+    PyObject *sentinel = args[1];
+    return PyCallIter_New(v, sentinel);
+}
+
+PyDoc_STRVAR(iter_doc,
+"iter(iterable) -> iterator\n\
+iter(callable, sentinel) -> iterator\n\
+\n\
+Get an iterator from an object.  In the first form, the argument must\n\
+supply its own iterator, or be a sequence.\n\
+In the second form, the callable is called until it returns the sentinel.");
+
+
+/*[clinic input]
 len as builtin_len
 
     obj: object
@@ -2810,6 +2846,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_ISINSTANCE_METHODDEF
     BUILTIN_ISSUBCLASS_METHODDEF
     {"iter",            (PyCFunction)(void(*)(void))builtin_iter,       METH_FASTCALL, iter_doc},
+    {"aiter",            (PyCFunction)(void(*)(void))builtin_aiter,       METH_FASTCALL, aiter_doc},
     BUILTIN_LEN_METHODDEF
     BUILTIN_LOCALS_METHODDEF
     {"max",             (PyCFunction)(void(*)(void))builtin_max,        METH_VARARGS | METH_KEYWORDS, max_doc},

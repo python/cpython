@@ -288,3 +288,144 @@ PyTypeObject PyCallIter_Type = {
 };
 
 
+/* -------------------------------------- */
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *it_callable; /* Set to NULL when iterator is exhausted */
+    PyObject *it_sentinel; /* Set to NULL when iterator is exhausted */
+} asynccalliterobject;
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *result; /* The return value of the callable, to be awaited */
+    PyObject *it; /* The iterator object, in order to clear it when done. */
+} asynccallawaitableobject;
+
+PyObject *
+PyCallIter_New(PyObject *callable, PyObject *sentinel)
+{
+    asynccalliterobject *it;
+    it = PyObject_GC_New(asynccalliterobject, &PyCallIter_Type);
+    if (it == NULL)
+        return NULL;
+    Py_INCREF(callable);
+    it->it_callable = callable;
+    Py_INCREF(sentinel);
+    it->it_sentinel = sentinel;
+    _PyObject_GC_TRACK(it);
+    return (PyObject *)it;
+}
+static void
+asynccalliter_dealloc(asynccalliterobject *it)
+{
+    _PyObject_GC_UNTRACK(it);
+    Py_XDECREF(it->it_callable);
+    Py_XDECREF(it->it_sentinel);
+    PyObject_GC_Del(it);
+}
+
+static int
+asynccalliter_traverse(asynccalliterobject *it, visitproc visit, void *arg)
+{
+    Py_VISIT(it->it_callable);
+    Py_VISIT(it->it_sentinel);
+    return 0;
+}
+
+static PyObject *
+asynccalliter_iternext(asynccalliterobject *it)
+{
+    PyObject *result;
+
+    if (it->it_callable == NULL) {
+        return NULL;
+    }
+
+    result = _PyObject_CallNoArg(it->it_callable);
+
+    Py_INCREF(it);
+    return Awaitable(result, it);
+}
+
+
+static PyObject *
+awaitable_await(PyObject *self) {
+
+    PyObject *iterator, *result;
+
+    Py_INCREF(self->result);
+    iterator = (*Py_TYPE(self->result)->tp_aiter.am_await)(self->result);
+    Py_DECREF(self->result);
+
+    result = PyIter_Next(iterator);
+    Py_DECREF(iterator);
+    if (result != NULL) {
+        int ok;
+
+        ok = PyObject_RichCompareBool(it->it_sentinel, result, Py_EQ);
+        if (ok == 0) {
+            return result; /* Common case, fast path */
+        }
+
+        Py_DECREF(result);
+        if (ok > 0) {
+            Py_CLEAR(it->it_callable);
+            Py_CLEAR(it->it_sentinel);
+        }
+    }
+    else if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
+        PyErr_Clear();
+        Py_CLEAR(self->it->it_callable);
+        Py_CLEAR(self->it->it_sentinel);
+    }
+    return NULL;
+}
+
+static PyObject *
+asynccalliter_reduce(asynccalliterobject *it, PyObject *Py_UNUSED(ignored))
+{
+    if (it->it_callable != NULL && it->it_sentinel != NULL)
+        return Py_BuildValue("N(OO)", _PyEval_GetBuiltinId(&PyId_iter),
+                             it->it_callable, it->it_sentinel);
+    else
+        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
+}
+
+static PyMethodDef asynccalliter_methods[] = {
+    {"__reduce__", (PyCFunction)asynccalliter_reduce, METH_NOARGS, reduce_doc},
+    {NULL,              NULL}           /* sentinel */
+};
+
+PyTypeObject PyCallIter_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "callable_iterator",                        /* tp_name */
+    sizeof(asynccalliterobject),                     /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor)asynccalliter_dealloc,               /* tp_dealloc */
+    0,                                          /* tp_vectorcall_offset */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_as_async */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+    0,                                          /* tp_doc */
+    (traverseproc)asynccalliter_traverse,            /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    PyObject_SelfIter,                          /* tp_iter */
+    (iternextfunc)asynccalliter_iternext,            /* tp_iternext */
+    asynccalliter_methods,                           /* tp_methods */
+};
+
