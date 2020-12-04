@@ -140,12 +140,12 @@ class EnumerateTestCase(unittest.TestCase, PickleTest):
         # bpo-42536: enumerate's tuple-reuse speed trick breaks the GC's
         # assumptions about what can be untracked. Make sure we re-track result
         # tuples whenever we reuse them.
-        e = self.enum([[]])
+        it = self.enum([[]])
         gc.collect()
         # That GC collection probably untracked the recycled internal result
         # tuple, which is initialized to (None, None). Make sure it's re-tracked
         # when it's mutated and returned from __next__:
-        self.assertTrue(gc.is_tracked(next(e)))
+        self.assertTrue(gc.is_tracked(next(it)))
 
 class MyEnum(enumerate):
     pass
