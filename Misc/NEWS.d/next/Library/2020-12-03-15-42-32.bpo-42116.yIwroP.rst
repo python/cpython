@@ -1,0 +1,1 @@
+Fix handling of trailing comments by :func:`inspect.getsource`.
