@@ -394,7 +394,12 @@ class DeprecatedRemoved(Directive):
                                    translatable=False)
             node.append(para)
         env = self.state.document.settings.env
-        env.get_domain('changeset').note_changeset(node)
+        # new method
+        if hasattr(env, 'get_domain'):
+            env.get_domain('changeset').note_changeset(node)
+        # deprecated pre-Sphinx-2 method
+        else:
+            env.note_versionchange('deprecated', version[0], node, self.lineno)
         return [node] + messages
 
 
