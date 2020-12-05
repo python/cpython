@@ -1,1 +1,2 @@
-Update the `pprint` module to always order the contents of `set` and `frozenset` objects.
+Update the :mod:`pprint` module to always order the contents of :class:`set`
+and :class:`frozenset` objects.
