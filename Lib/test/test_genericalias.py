@@ -321,6 +321,12 @@ class BaseTest(unittest.TestCase):
             self.assertEqual(alias.__args__, loaded.__args__)
             self.assertEqual(alias.__parameters__, loaded.__parameters__)
 
+        with self.subTest("Testing TypeVar substitution"):
+            C1 = Callable[[int, T], T]
+            self.assertEqual(C1[str], Callable[[int, str], str])
+            C2 = Callable[[K, T], V]
+            self.assertEqual(C2[int, float, str], Callable[[int, float], str])
+
         # bpo-42195
         with self.subTest("Testing collections.abc.Callable's consistency "
                           "with typing.Callable"):

@@ -414,8 +414,13 @@ class Collection(Sized, Iterable, Container):
 
 
 class _CallableGenericAlias(GenericAlias):
-    """ Internal class specifically for consistency between the ``__args__`` of
-    ``collections.abc.Callable``'s and ``typing.Callable``'s ``GenericAlias``.
+    """ Represent `Callable[argtypes, resulttype]`.
+
+    This sets ``__args__`` to a tuple containing the flattened``argtypes``
+    followed by ``resulttype``.
+
+    Example: ``Callable[[int, str], float]`` sets ``__args__`` to
+    ``(int, str, float)``.
     """
     __slots__ = ()
     def __new__(cls, origin, args):
@@ -463,7 +468,7 @@ class _CallableGenericAlias(GenericAlias):
 
     def __reduce__(self):
         args = self.__args__
-        if not (len(args) == 2 and args[0] is ...):
+        if not (len(args) == 2 and args[0] is Ellipsis):
             args = list(args[:-1]), args[-1]
         return _CallableGenericAlias, (Callable, args)
 
@@ -480,7 +485,7 @@ def _type_repr(obj):
         if obj.__module__ == 'builtins':
             return obj.__qualname__
         return f'{obj.__module__}.{obj.__qualname__}'
-    if obj is ...:
+    if obj is Ellipsis:
         return '...'
     if isinstance(obj, FunctionType):
         return obj.__name__

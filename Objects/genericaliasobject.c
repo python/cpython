@@ -564,7 +564,6 @@ static PyGetSetDef ga_properties[] = {
     {0}
 };
 
-// Helper to create inheritable or non-inheritable gaobjects
 static inline gaobject *
 create_ga(PyTypeObject *type, PyObject *origin, PyObject *args) {
     if (!PyTuple_Check(args)) {

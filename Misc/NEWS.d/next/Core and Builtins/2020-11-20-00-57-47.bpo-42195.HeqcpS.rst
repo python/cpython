@@ -1,5 +1,5 @@
 The ``__args__`` of the parameterized generics for :data:`typing.Callable`
-and :class:`collections.abc.Callable` are now consistent.  Said ``__args__`` 
+and :class:`collections.abc.Callable` are now consistent.  The ``__args__`` 
 for :class:`collections.abc.Callable` are now flattened while 
 :data:`typing.Callable`'s have not changed.  To allow this change, 
 :class:`types.GenericAlias` can now be subclassed.  Patch by Ken Jin.  
