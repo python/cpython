@@ -302,6 +302,8 @@ class BaseTest(unittest.TestCase):
                 self.assertEqual(ref(alias)(), alias)
 
     def test_abc_callable(self):
+        # A separate test is needed for Callable since it uses a subclass of
+        # GenericAlias.
         alias = Callable[[int, str], float]
         with self.subTest("Testing subscription"):
             self.assertIs(alias.__origin__, Callable)
@@ -323,9 +325,19 @@ class BaseTest(unittest.TestCase):
 
         with self.subTest("Testing TypeVar substitution"):
             C1 = Callable[[int, T], T]
-            self.assertEqual(C1[str], Callable[[int, str], str])
             C2 = Callable[[K, T], V]
+            C3 = Callable[..., T]
+            self.assertEqual(C1[str], Callable[[int, str], str])
             self.assertEqual(C2[int, float, str], Callable[[int, float], str])
+            self.assertEqual(C3[int], Callable[..., int])
+
+        with self.subTest("Testing type erasure"):
+            class C1(Callable):
+                def __call__(self):
+                    return None
+            a = C1[[int], T]
+            self.assertIs(a().__class__, C1)
+            self.assertEqual(a().__orig_class__, C1[[int], T])
 
         # bpo-42195
         with self.subTest("Testing collections.abc.Callable's consistency "

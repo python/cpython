@@ -2,5 +2,8 @@ The ``__args__`` of the parameterized generics for :data:`typing.Callable`
 and :class:`collections.abc.Callable` are now consistent.  The ``__args__`` 
 for :class:`collections.abc.Callable` are now flattened while 
 :data:`typing.Callable`'s have not changed.  To allow this change, 
-:class:`types.GenericAlias` can now be subclassed.  Patch by Ken Jin.  
+:class:`types.GenericAlias` can now be subclassed and 
+``collections.abc.Callable``'s ``__class_getitem__`` will now return a subclass
+of ``types.GenericAlias``.  Tests for typing were also updated to not subclass 
+things like ``Callable[..., T]`` as that is not a valid base class.  Patch by Ken Jin.  
 

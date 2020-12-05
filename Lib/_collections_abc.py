@@ -422,29 +422,10 @@ class _CallableGenericAlias(GenericAlias):
     Example: ``Callable[[int, str], float]`` sets ``__args__`` to
     ``(int, str, float)``.
     """
-    __slots__ = ()
-    def __new__(cls, origin, args):
-        try:
-            return cls.__getitem_type(origin, args)
-        except TypeError:
-            # Fail-safe: most builtin generic collections don't validate the
-            # arguments passed to types.GenericAlias anyways.
-            # This is also because a subclass of the typing.Callable generic
-            # will have an __mro__ (<class 'MyCallable'>,
-            # <class 'collections.abc.Callable'>, <class 'typing.Generic'>,
-            # <class 'object'>). Subclasses wil use the __class_getitem__ of
-            # collections.abc.Callable before typing.Generic. As a result,
-            # we need to fall back on this to allow things like::
-            #
-            # T = TypeVar('T')
-            # class C1(typing.Callable[[T], T]): ...
-            # C1[int]
-            #
-            # Otherwise that will raise a TypeError.
-            return GenericAlias(origin, args)
 
-    @classmethod
-    def __getitem_type(cls, origin, args):
+    __slots__ = ()
+
+    def __new__(cls, origin, args):
         if not isinstance(args, tuple) or len(args) != 2:
             raise TypeError(
                 "Callable must be used as Callable[[arg, ...], result]")
