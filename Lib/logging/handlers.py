@@ -701,6 +701,11 @@ class DatagramHandler(SocketHandler):
             self.createSocket()
         self.sock.sendto(s, self.address)
 
+
+class NullSocket:
+    close = send = sendto = sendall = lambda self, *args, **kwargs: None
+
+
 class SysLogHandler(logging.Handler):
     """
     A handler class which sends formatted logging records to a syslog
@@ -828,7 +833,7 @@ class SysLogHandler(logging.Handler):
 
         self.address = address
         self.facility = facility
-        self.socket = None
+        self.socket = NullSocket()
         self.socktype = socktype
 
         if isinstance(address, str):
@@ -909,8 +914,7 @@ class SysLogHandler(logging.Handler):
         """
         self.acquire()
         try:
-            if self.socket:
-                self.socket.close()
+            self.socket.close()
             logging.Handler.close(self)
         finally:
             self.release()
@@ -951,20 +955,15 @@ class SysLogHandler(logging.Handler):
             msg = msg.encode('utf-8')
             msg = prio + msg
             if self.unixsocket:
-                if not self.socket:
-                    self._connect_unixsocket(self.address)
                 try:
-                    if self.socket:
-                        self.socket.send(msg)
+                    self.socket.send(msg)
                 except OSError:
                     self.socket.close()
                     self._connect_unixsocket(self.address)
-                    if self.socket:
-                        self.socket.send(msg)
+                    self.socket.send(msg)
             elif self.socktype == socket.SOCK_DGRAM:
-                if self.socket:
-                    self.socket.sendto(msg, self.address)
-            elif self.socket:
+                self.socket.sendto(msg, self.address)
+            else:
                 self.socket.sendall(msg)
         except Exception:
             self.handleError(record)
