@@ -55,6 +55,7 @@ Iterator                        Arguments                       Results         
 :func:`filterfalse`             pred, seq                       elements of seq where pred(elem) is false           ``filterfalse(lambda x: x%2, range(10)) --> 0 2 4 6 8``
 :func:`groupby`                 iterable[, key]                 sub-iterators grouped by value of key(v)
 :func:`islice`                  seq, [start,] stop [, step]     elements from seq[start:stop:step]                  ``islice('ABCDEFG', 2, None) --> C D E F G``
+:func:`pairwise`                iterable                        (p[0], p[1]), (p[1], p[2])                          ``pairwise('ABCDEFG') --> AB BC CD DE EF FG``
 :func:`starmap`                 func, seq                       func(\*seq[0]), func(\*seq[1]), ...                 ``starmap(pow, [(2,5), (3,2), (10,3)]) --> 32 9 1000``
 :func:`takewhile`               pred, seq                       seq[0], seq[1], until pred fails                    ``takewhile(lambda x: x<5, [1,4,6,4,1]) --> 1 4``
 :func:`tee`                     it, n                           it1, it2, ... itn  splits one iterator into n
@@ -475,6 +476,22 @@ loops that truncate the stream.
    If *start* is ``None``, then iteration starts at zero. If *step* is ``None``,
    then the step defaults to one.
 
+.. function:: pairwise(iterable)
+
+   Return successive overlapping pairs taken from the input *iterable*.
+
+   The number of 2-tuples in the output iterator will be one fewer than the
+   number of inputs.  It will be empty if the input iterable has fewer than
+   two values.
+
+   Roughly equivalent to::
+
+        def pairwise(iterable):
+            # pairwise('ABCDEFG') --> AB BC CD DE EF FG
+            a, b = tee(iterable)
+            next(b, None)
+            return zip(a, b)
+
 
 .. function:: permutations(iterable, r=None)
 
@@ -755,7 +772,7 @@ which incur interpreter overhead.
        "Count how many times the predicate is true"
        return sum(map(pred, iterable))
 
-   def padnone(iterable):
+   def pad_none(iterable):
        """Returns the sequence elements and then returns None indefinitely.
 
        Useful for emulating the behavior of the built-in map() function.
@@ -782,12 +799,6 @@ which incur interpreter overhead.
            return starmap(func, repeat(args))
        return starmap(func, repeat(args, times))
 
-   def pairwise(iterable):
-       "s -> (s0,s1), (s1,s2), (s2, s3), ..."
-       a, b = tee(iterable)
-       next(b, None)
-       return zip(a, b)
-
    def grouper(iterable, n, fillvalue=None):
        "Collect data into fixed-length chunks or blocks"
        # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
@@ -809,7 +820,7 @@ which incur interpreter overhead.
                nexts = cycle(islice(nexts, num_active))
 
    def partition(pred, iterable):
-       'Use a predicate to partition entries into false entries and true entries'
+       "Use a predicate to partition entries into false entries and true entries"
        # partition(is_odd, range(10)) --> 0 2 4 6 8   and  1 3 5 7 9
        t1, t2 = tee(iterable)
        return filterfalse(pred, t1), filter(pred, t2)
@@ -881,7 +892,7 @@ which incur interpreter overhead.
    def random_product(*args, repeat=1):
        "Random selection from itertools.product(*args, **kwds)"
        pools = [tuple(pool) for pool in args] * repeat
-       return tuple(random.choice(pool) for pool in pools)
+       return tuple(map(random.choice, pools))
 
    def random_permutation(iterable, r=None):
        "Random selection from itertools.permutations(iterable, r)"
@@ -900,11 +911,11 @@ which incur interpreter overhead.
        "Random selection from itertools.combinations_with_replacement(iterable, r)"
        pool = tuple(iterable)
        n = len(pool)
-       indices = sorted(random.randrange(n) for i in range(r))
+       indices = sorted(random.choices(range(n), k=r))
        return tuple(pool[i] for i in indices)
 
    def nth_combination(iterable, r, index):
-       'Equivalent to list(combinations(iterable, r))[index]'
+       "Equivalent to list(combinations(iterable, r))[index]"
        pool = tuple(iterable)
        n = len(pool)
        if r < 0 or r > n:

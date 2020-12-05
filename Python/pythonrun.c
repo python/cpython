@@ -1235,14 +1235,6 @@ Py_CompileStringExFlags(const char *str, const char *filename_str, int start,
     return co;
 }
 
-/* For use in Py_LIMITED_API */
-#undef Py_CompileString
-PyObject *
-PyCompileString(const char *str, const char *filename, int start)
-{
-    return Py_CompileStringFlags(str, filename, start, NULL);
-}
-
 const char *
 _Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyCompilerFlags *cf, PyObject **cmd_copy)
 {
@@ -1370,6 +1362,109 @@ PyOS_CheckStack(void)
 /* Alternate implementations can be added here... */
 
 #endif /* USE_STACKCHECK */
+
+/* Deprecated C API functions still provided for binary compatibility */
+
+#undef PyRun_AnyFile
+PyAPI_FUNC(int)
+PyRun_AnyFile(FILE *fp, const char *name)
+{
+    return PyRun_AnyFileExFlags(fp, name, 0, NULL);
+}
+
+#undef PyRun_AnyFileEx
+PyAPI_FUNC(int)
+PyRun_AnyFileEx(FILE *fp, const char *name, int closeit)
+{
+    return PyRun_AnyFileExFlags(fp, name, closeit, NULL);
+}
+
+#undef PyRun_AnyFileFlags
+PyAPI_FUNC(int)
+PyRun_AnyFileFlags(FILE *fp, const char *name, PyCompilerFlags *flags)
+{
+    return PyRun_AnyFileExFlags(fp, name, 0, flags);
+}
+
+#undef PyRun_File
+PyAPI_FUNC(PyObject *)
+PyRun_File(FILE *fp, const char *p, int s, PyObject *g, PyObject *l)
+{
+    return PyRun_FileExFlags(fp, p, s, g, l, 0, NULL);
+}
+
+#undef PyRun_FileEx
+PyAPI_FUNC(PyObject *)
+PyRun_FileEx(FILE *fp, const char *p, int s, PyObject *g, PyObject *l, int c)
+{
+    return PyRun_FileExFlags(fp, p, s, g, l, c, NULL);
+}
+
+#undef PyRun_FileFlags
+PyAPI_FUNC(PyObject *)
+PyRun_FileFlags(FILE *fp, const char *p, int s, PyObject *g, PyObject *l,
+                PyCompilerFlags *flags)
+{
+    return PyRun_FileExFlags(fp, p, s, g, l, 0, flags);
+}
+
+#undef PyRun_SimpleFile
+PyAPI_FUNC(int)
+PyRun_SimpleFile(FILE *f, const char *p)
+{
+    return PyRun_SimpleFileExFlags(f, p, 0, NULL);
+}
+
+#undef PyRun_SimpleFileEx
+PyAPI_FUNC(int)
+PyRun_SimpleFileEx(FILE *f, const char *p, int c)
+{
+    return PyRun_SimpleFileExFlags(f, p, c, NULL);
+}
+
+
+#undef PyRun_String
+PyAPI_FUNC(PyObject *)
+PyRun_String(const char *str, int s, PyObject *g, PyObject *l)
+{
+    return PyRun_StringFlags(str, s, g, l, NULL);
+}
+
+#undef PyRun_SimpleString
+PyAPI_FUNC(int)
+PyRun_SimpleString(const char *s)
+{
+    return PyRun_SimpleStringFlags(s, NULL);
+}
+
+#undef Py_CompileString
+PyAPI_FUNC(PyObject *)
+Py_CompileString(const char *str, const char *p, int s)
+{
+    return Py_CompileStringExFlags(str, p, s, NULL, -1);
+}
+
+#undef Py_CompileStringFlags
+PyAPI_FUNC(PyObject *)
+Py_CompileStringFlags(const char *str, const char *p, int s,
+                      PyCompilerFlags *flags)
+{
+    return Py_CompileStringExFlags(str, p, s, flags, -1);
+}
+
+#undef PyRun_InteractiveOne
+PyAPI_FUNC(int)
+PyRun_InteractiveOne(FILE *f, const char *p)
+{
+    return PyRun_InteractiveOneFlags(f, p, NULL);
+}
+
+#undef PyRun_InteractiveLoop
+PyAPI_FUNC(int)
+PyRun_InteractiveLoop(FILE *f, const char *p)
+{
+    return PyRun_InteractiveLoopFlags(f, p, NULL);
+}
 
 #ifdef __cplusplus
 }

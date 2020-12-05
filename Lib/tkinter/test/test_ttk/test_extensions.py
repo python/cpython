@@ -114,7 +114,6 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
     def test_horizontal_range(self):
         lscale = ttk.LabeledScale(self.root, from_=0, to=10)
         lscale.pack()
-        lscale.wait_visibility()
         lscale.update()
 
         linfo_1 = lscale.label.place_info()
@@ -144,7 +143,6 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
     def test_variable_change(self):
         x = ttk.LabeledScale(self.root)
         x.pack()
-        x.wait_visibility()
         x.update()
 
         curr_xcoord = x.scale.coords()[0]
@@ -187,7 +185,6 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
     def test_resize(self):
         x = ttk.LabeledScale(self.root)
         x.pack(expand=True, fill='both')
-        x.wait_visibility()
         x.update()
 
         width, height = x.master.winfo_width(), x.master.winfo_height()
@@ -268,7 +265,6 @@ class OptionMenuTest(AbstractTkTest, unittest.TestCase):
 
         # check that variable is updated correctly
         optmenu.pack()
-        optmenu.wait_visibility()
         optmenu['menu'].invoke(0)
         self.assertEqual(optmenu._variable.get(), items[0])
 
@@ -299,9 +295,7 @@ class OptionMenuTest(AbstractTkTest, unittest.TestCase):
         textvar2 = tkinter.StringVar(self.root)
         optmenu2 = ttk.OptionMenu(self.root, textvar2, default, *items)
         optmenu.pack()
-        optmenu.wait_visibility()
         optmenu2.pack()
-        optmenu2.wait_visibility()
         optmenu['menu'].invoke(1)
         optmenu2['menu'].invoke(2)
         optmenu_stringvar_name = optmenu['menu'].entrycget(0, 'variable')

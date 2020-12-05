@@ -1,0 +1,1 @@
+Fix test_netrc on VxWorks: create temporary directories using temp_cwd().

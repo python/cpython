@@ -155,7 +155,7 @@ class BaseTaskTests:
         self.loop.run_until_complete(
             asyncio.gather(*[
                 self.new_task(self.loop, run()) for _ in range(100)
-            ], loop=self.loop))
+            ]))
 
     def test_other_loop_future(self):
         other_loop = asyncio.new_event_loop()
@@ -1603,19 +1603,18 @@ class BaseTaskTests:
 
         async def foo():
             values = []
-            for f in asyncio.as_completed([b, c, a], loop=loop):
+            for f in asyncio.as_completed([b, c, a]):
                 values.append(await f)
             return values
-        with self.assertWarns(DeprecationWarning):
-            res = loop.run_until_complete(self.new_task(loop, foo()))
+
+        res = loop.run_until_complete(self.new_task(loop, foo()))
         self.assertAlmostEqual(0.15, loop.time())
         self.assertTrue('a' in res[:2])
         self.assertTrue('b' in res[:2])
         self.assertEqual(res[2], 'c')
 
         # Doing it again should take no time and exercise a different path.
-        with self.assertWarns(DeprecationWarning):
-            res = loop.run_until_complete(self.new_task(loop, foo()))
+        res = loop.run_until_complete(self.new_task(loop, foo()))
         self.assertAlmostEqual(0.15, loop.time())
 
     def test_as_completed_with_timeout(self):
@@ -1633,7 +1632,7 @@ class BaseTaskTests:
 
         async def foo():
             values = []
-            for f in asyncio.as_completed([a, b], timeout=0.12, loop=loop):
+            for f in asyncio.as_completed([a, b], timeout=0.12):
                 if values:
                     loop.advance_time(0.02)
                 try:
@@ -1643,8 +1642,7 @@ class BaseTaskTests:
                     values.append((2, exc))
             return values
 
-        with self.assertWarns(DeprecationWarning):
-            res = loop.run_until_complete(self.new_task(loop, foo()))
+        res = loop.run_until_complete(self.new_task(loop, foo()))
         self.assertEqual(len(res), 2, res)
         self.assertEqual(res[0], (1, 'a'))
         self.assertEqual(res[1][0], 2)
@@ -1667,12 +1665,11 @@ class BaseTaskTests:
         a = asyncio.sleep(0.01, 'a')
 
         async def foo():
-            for f in asyncio.as_completed([a], timeout=1, loop=loop):
+            for f in asyncio.as_completed([a], timeout=1):
                 v = await f
                 self.assertEqual(v, 'a')
 
-        with self.assertWarns(DeprecationWarning):
-            loop.run_until_complete(self.new_task(loop, foo()))
+        loop.run_until_complete(self.new_task(loop, foo()))
 
     def test_as_completed_reverse_wait(self):
 
@@ -1682,13 +1679,13 @@ class BaseTaskTests:
             yield 0
 
         loop = self.new_test_loop(gen)
+        asyncio.set_event_loop(loop)
 
         a = asyncio.sleep(0.05, 'a')
         b = asyncio.sleep(0.10, 'b')
         fs = {a, b}
 
-        with self.assertWarns(DeprecationWarning):
-            futs = list(asyncio.as_completed(fs, loop=loop))
+        futs = list(asyncio.as_completed(fs))
         self.assertEqual(len(futs), 2)
 
         x = loop.run_until_complete(futs[1])
@@ -1709,12 +1706,13 @@ class BaseTaskTests:
             yield 0.05
 
         loop = self.new_test_loop(gen)
+        asyncio.set_event_loop(loop)
 
         a = asyncio.sleep(0.05, 'a')
         b = asyncio.sleep(0.05, 'b')
         fs = {a, b}
-        with self.assertWarns(DeprecationWarning):
-            futs = list(asyncio.as_completed(fs, loop=loop))
+
+        futs = list(asyncio.as_completed(fs))
         self.assertEqual(len(futs), 2)
         waiter = asyncio.wait(futs)
         # Deprecation from passing coros in futs to asyncio.wait()
@@ -1734,14 +1732,12 @@ class BaseTaskTests:
             def runner():
                 result = []
                 c = coro('ham')
-                for f in asyncio.as_completed([c, c, coro('spam')],
-                                              loop=self.loop):
+                for f in asyncio.as_completed([c, c, coro('spam')]):
                     result.append((yield from f))
                 return result
 
-        with self.assertWarns(DeprecationWarning):
-            fut = self.new_task(self.loop, runner())
-            self.loop.run_until_complete(fut)
+        fut = self.new_task(self.loop, runner())
+        self.loop.run_until_complete(fut)
         result = fut.result()
         self.assertEqual(set(result), {'ham', 'spam'})
         self.assertEqual(len(result), 2)
@@ -2018,7 +2014,7 @@ class BaseTaskTests:
         self.assertIsNone(asyncio.current_task(loop=self.loop))
 
         async def coro(loop):
-            self.assertIs(asyncio.current_task(loop=loop), task)
+            self.assertIs(asyncio.current_task(), task)
 
             self.assertIs(asyncio.current_task(None), task)
             self.assertIs(asyncio.current_task(), task)
@@ -2034,16 +2030,16 @@ class BaseTaskTests:
         fut2 = self.new_future(self.loop)
 
         async def coro1(loop):
-            self.assertTrue(asyncio.current_task(loop=loop) is task1)
+            self.assertTrue(asyncio.current_task() is task1)
             await fut1
-            self.assertTrue(asyncio.current_task(loop=loop) is task1)
+            self.assertTrue(asyncio.current_task() is task1)
             fut2.set_result(True)
 
         async def coro2(loop):
-            self.assertTrue(asyncio.current_task(loop=loop) is task2)
+            self.assertTrue(asyncio.current_task() is task2)
             fut1.set_result(True)
             await fut2
-            self.assertTrue(asyncio.current_task(loop=loop) is task2)
+            self.assertTrue(asyncio.current_task() is task2)
 
         task1 = self.new_task(self.loop, coro1(self.loop))
         task2 = self.new_task(self.loop, coro2(self.loop))
@@ -2210,10 +2206,10 @@ class BaseTaskTests:
 
         # as_completed() expects a list of futures, not a future instance
         self.assertRaises(TypeError, self.loop.run_until_complete,
-            asyncio.as_completed(fut, loop=self.loop))
+            asyncio.as_completed(fut))
         coro = coroutine_function()
         self.assertRaises(TypeError, self.loop.run_until_complete,
-            asyncio.as_completed(coro, loop=self.loop))
+            asyncio.as_completed(coro))
         coro.close()
 
     def test_wait_invalid_args(self):
@@ -2511,6 +2507,7 @@ class BaseTaskTests:
         """Ensure that a gathering future refuses to be cancelled once all
         children are done"""
         loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         self.addCleanup(loop.close)
 
         fut = self.new_future(loop)
@@ -2518,7 +2515,7 @@ class BaseTaskTests:
         # gathering task is done at the same time as the child future
         def child_coro():
             return (yield from fut)
-        gather_future = asyncio.gather(child_coro(), loop=loop)
+        gather_future = asyncio.gather(child_coro())
         gather_task = asyncio.ensure_future(gather_future, loop=loop)
 
         cancel_result = None
@@ -2555,8 +2552,7 @@ class BaseTaskTests:
                     while True:
                         time += 0.05
                         await asyncio.gather(asyncio.sleep(0.05),
-                                             return_exceptions=True,
-                                             loop=loop)
+                                             return_exceptions=True)
                         if time > 1:
                             return
 
@@ -2771,7 +2767,7 @@ class BaseTaskTests:
                 task = loop.create_task(sub(random.randint(0, 10)))
                 tasks.append(task)
 
-            await asyncio.gather(*tasks, loop=loop)
+            await asyncio.gather(*tasks)
 
         loop = asyncio.new_event_loop()
         try:
@@ -3328,9 +3324,6 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
         self._run_loop(self.one_loop)
         self.assertTrue(fut.done())
         self.assertEqual(fut.result(), [])
-        with self.assertWarns(DeprecationWarning):
-            fut = asyncio.gather(*seq_or_iter, loop=self.other_loop)
-        self.assertIs(fut._loop, self.other_loop)
 
     def test_constructor_empty_sequence(self):
         self._check_empty_sequence([])
@@ -3343,8 +3336,6 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
         fut2 = self.other_loop.create_future()
         with self.assertRaises(ValueError):
             asyncio.gather(fut1, fut2)
-        with self.assertRaises(ValueError):
-            asyncio.gather(fut1, loop=self.other_loop)
 
     def test_constructor_homogenous_futures(self):
         children = [self.other_loop.create_future() for i in range(3)]
@@ -3352,7 +3343,7 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
         self.assertIs(fut._loop, self.other_loop)
         self._run_loop(self.other_loop)
         self.assertFalse(fut.done())
-        fut = asyncio.gather(*children, loop=self.other_loop)
+        fut = asyncio.gather(*children)
         self.assertIs(fut._loop, self.other_loop)
         self._run_loop(self.other_loop)
         self.assertFalse(fut.done())
@@ -3423,9 +3414,10 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
         self.one_loop.run_until_complete(fut)
 
         self.set_event_loop(self.other_loop, cleanup=False)
+        asyncio.set_event_loop(self.other_loop)
         gen3 = coro()
         gen4 = coro()
-        fut2 = asyncio.gather(gen3, gen4, loop=self.other_loop)
+        fut2 = asyncio.gather(gen3, gen4)
         self.assertIs(fut2._loop, self.other_loop)
         self.other_loop.run_until_complete(fut2)
 
@@ -3435,7 +3427,7 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
             def coro(s):
                 return s
         c = coro('abc')
-        fut = asyncio.gather(c, c, coro('def'), c, loop=self.one_loop)
+        fut = asyncio.gather(c, c, coro('def'), c)
         self._run_loop(self.one_loop)
         self.assertEqual(fut.result(), ['abc', 'abc', 'def', 'abc'])
 
@@ -3455,7 +3447,7 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
 
         async def outer():
             nonlocal proof, gatherer
-            gatherer = asyncio.gather(child1, child2, loop=self.one_loop)
+            gatherer = asyncio.gather(child1, child2)
             await gatherer
             proof += 100
 
@@ -3482,7 +3474,7 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
         b = self.one_loop.create_future()
 
         async def outer():
-            await asyncio.gather(inner(a), inner(b), loop=self.one_loop)
+            await asyncio.gather(inner(a), inner(b))
 
         f = asyncio.ensure_future(outer(), loop=self.one_loop)
         test_utils.run_briefly(self.one_loop)
@@ -3621,11 +3613,6 @@ class SleepTests(test_utils.TestCase):
         self.loop.run_until_complete(coro())
         self.assertEqual(result, 11)
 
-    def test_loop_argument_is_deprecated(self):
-        # Remove test when loop argument is removed in Python 3.10
-        with self.assertWarns(DeprecationWarning):
-            self.loop.run_until_complete(asyncio.sleep(0.01, loop=self.loop))
-
 
 class WaitTests(test_utils.TestCase):
     def setUp(self):
@@ -3637,18 +3624,6 @@ class WaitTests(test_utils.TestCase):
         self.loop.close()
         self.loop = None
         super().tearDown()
-
-    def test_loop_argument_is_deprecated_in_wait(self):
-        # Remove test when loop argument is removed in Python 3.10
-        with self.assertWarns(DeprecationWarning):
-            self.loop.run_until_complete(
-                asyncio.wait([coroutine_function()], loop=self.loop))
-
-    def test_loop_argument_is_deprecated_in_wait_for(self):
-        # Remove test when loop argument is removed in Python 3.10
-        with self.assertWarns(DeprecationWarning):
-            self.loop.run_until_complete(
-                asyncio.wait_for(coroutine_function(), 0.01, loop=self.loop))
 
     def test_coro_is_deprecated_in_wait(self):
         # Remove test when passing coros to asyncio.wait() is removed in 3.11
@@ -3701,7 +3676,7 @@ class CompatibilityTests(test_utils.TestCase):
                 return 'ok2'
 
         async def inner():
-            return await asyncio.gather(coro1(), coro2(), loop=self.loop)
+            return await asyncio.gather(coro1(), coro2())
 
         result = self.loop.run_until_complete(inner())
         self.assertEqual(['ok1', 'ok2'], result)

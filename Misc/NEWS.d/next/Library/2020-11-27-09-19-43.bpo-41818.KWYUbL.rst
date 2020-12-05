@@ -1,0 +1,1 @@
+Make test_openpty() avoid unexpected success due to number of rows and/or number of columns being == 0.

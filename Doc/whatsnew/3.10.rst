@@ -120,8 +120,8 @@ See :pep:`613` for more details.
 
 (Contributed by Mikhail Golubev in :issue:`41923`.)
 
-PEP604: New Type Union Operator
--------------------------------
+PEP 604: New Type Union Operator
+--------------------------------
 
 A new type union operator was introduced which enables the syntax ``X | Y``.
 This provides a cleaner way of expressing 'either type X or type Y' instead of
@@ -244,6 +244,24 @@ descriptors without copying between kernel address space and user
 address space, where one of the file descriptors must refer to a
 pipe. (Contributed by Pablo Galindo in :issue:`41625`.)
 
+pathlib
+-------
+
+Added slice support to :attr:`PurePath.parents <pathlib.PurePath.parents>`.
+(Contributed by Joshua Cannon in :issue:`35498`)
+
+Added negative indexing support to :attr:`PurePath.parents
+<pathlib.PurePath.parents>`.
+(Contributed by Yaroslav Pankovych in :issue:`21041`)
+
+platform
+--------
+
+Added :func:`platform.freedesktop_os_release()` to retrieve operation system
+identification from `freedesktop.org os-release
+<https://www.freedesktop.org/software/systemd/man/os-release.html>`_ standard file.
+(Contributed by Christian Heimes in :issue:`28468`)
+
 py_compile
 ----------
 
@@ -262,6 +280,12 @@ site
 
 When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
 (Contributed by Brett Cannon in :issue:`42133`.)
+
+socket
+------
+
+The exception :exc:`socket.timeout` is now an alias of :exc:`TimeoutError`.
+(Contributed by Christian Heimes in :issue:`42413`.)
 
 sys
 ---
@@ -299,6 +323,32 @@ Reintroduced the :data:`types.EllipsisType`, :data:`types.NoneType`
 and :data:`types.NotImplementedType` classes, providing a new set
 of types readily interpretable by type checkers.
 (Contributed by Bas van Beek in :issue:`41810`.)
+
+typing
+------
+
+The behavior of :class:`typing.Literal` was changed to conform with :pep:`586`
+and to match the behavior of static type checkers specified in the PEP.
+
+1. ``Literal`` now de-duplicates parameters.
+2. Equality comparisons between ``Literal`` objects are now order independent.
+3. ``Literal`` comparisons now respects types.  For example,
+   ``Literal[0] == Literal[False]`` previously evaluated to ``True``.  It is
+   now ``False``.  To support this change, the internally used type cache now
+   supports differentiating types.
+4. ``Literal`` objects will now raise a :exc:`TypeError` exception during
+   equality comparisons if one of their parameters are not :term:`immutable`.
+   Note that declaring ``Literal`` with mutable parameters will not throw
+   an error::
+
+      >>> from typing import Literal
+      >>> Literal[{0}]
+      >>> Literal[{0}] == Literal[{False}]
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      TypeError: unhashable type: 'set'
+
+(Contributed by Yurii Karabas in :issue:`42345`.)
 
 unittest
 --------
@@ -344,7 +394,13 @@ Optimizations
   with ``gcc`` by up to 30%. See `this article
   <https://developers.redhat.com/blog/2020/06/25/red-hat-enterprise-linux-8-2-brings-faster-python-3-8-run-speeds/>`_
   for more details. (Contributed by Victor Stinner and Pablo Galindo in
-  :issue:`38980`)
+  :issue:`38980`.)
+
+
+* Function parameters and their annotations are no longer computed at runtime,
+  but rather at compilation time.  They are stored as a tuple of strings at the
+  bytecode level.  It is now around 100% faster to create a function with parameter
+  annotations.  (Contributed by Yurii Karabas and Inada Naoki in :issue:`42202`)
 
 Deprecated
 ==========
@@ -365,6 +421,21 @@ Deprecated
   :exc:`ImportWarning` and/or :exc:`DeprecationWarning` will be raised
   as appropriate to help identify code which needs updating during
   this transition.
+
+* The various ``load_module()`` methods of :mod:`importlib` have been
+  documented as deprecated since Python 3.6, but will now also trigger
+  a :exc:`DeprecationWarning`. Use
+  :meth:`~importlib.abc.Loader.exec_module` instead.
+  (Contributed by Brett Cannon in :issue:`26131`.)
+
+* :meth:`zimport.zipimporter.load_module` has been deprecated in
+  preference for :meth:`~zipimport.zipimporter.exec_module`.
+  (Contributed by Brett Cannon in :issue:`26131`.)
+
+* The use of :meth:`~importlib.abc.Loader.load_module` by the import
+  system now triggers an :exc:`ImportWarning` as
+  :meth:`~importlib.abc.Loader.exec_module` is preferred.
+  (Contributed by Brett Cannon in :issue:`26131`.)
 
 * ``sqlite3.OptimizedUnicode`` has been undocumented and obsolete since Python
   3.3, when it was made an alias to :class:`str`.  It is now deprecated,
@@ -402,6 +473,12 @@ Removed
   :c:func:`PyParser_SimpleParseFileFlags` and :c:func:`PyNode_Compile`
   that were deprecated in 3.9 due to the switch to the new PEG parser.
 
+* Removed the ``formatter`` module, which was deprecated in Python 3.4.
+  It is somewhat obsolete, little used, and not tested. It was originally
+  scheduled to be removed in Python 3.6, but such removals were delayed until
+  after Python 2.7 EOL. Existing users should copy whatever classes they use
+  into their code.
+  (Contributed by Dong-hee Na and Terry J. Reedy in :issue:`42299`.)
 
 Porting to Python 3.10
 ======================
@@ -419,6 +496,12 @@ Changes in the Python API
   have been renamed to *exc*.
   (Contributed by Zackery Spytz and Matthias Bussonnier in :issue:`26389`.)
 
+CPython bytecode changes
+========================
+
+* The ``MAKE_FUNCTION`` instruction accepts tuple of strings as annotations
+  instead of dictionary.
+  (Contributed by Yurii Karabas and Inada Naoki in :issue:`42202`)
 
 Build Changes
 =============
@@ -473,6 +556,10 @@ New Features
 * Added :c:func:`Py_NewRef` and :c:func:`Py_XNewRef` functions to increment the
   reference count of an object and return the object.
   (Contributed by Victor Stinner in :issue:`42262`.)
+
+* The :c:func:`PyType_FromSpecWithBases` and :c:func:`PyType_FromModuleAndSpec`
+  functions now accept a single class as the *bases* argument.
+  (Contributed by Serhiy Storchaka in :issue:`42423`.)
 
 * The :c:func:`PyType_FromModuleAndSpec` function now accepts NULL ``tp_doc``
   slot.

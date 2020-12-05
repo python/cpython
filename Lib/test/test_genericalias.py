@@ -300,6 +300,11 @@ class BaseTest(unittest.TestCase):
             with self.subTest(f"Testing {tname}"):
                 alias = t[int]
                 self.assertEqual(ref(alias)(), alias)
+    
+    def test_no_kwargs(self):
+        # bpo-42576
+        with self.assertRaises(TypeError):
+            GenericAlias(bad=float)
 
     def test_subclassing_types_genericalias(self):
         class SubClass(GenericAlias): ...
@@ -357,6 +362,7 @@ class BaseTest(unittest.TestCase):
             c2 = Callable[[int, str], dict]
             self.assertEqual(c1.__args__, c2.__args__)
             self.assertEqual(hash(c1.__args__), hash(c2.__args__))
+
 
 if __name__ == "__main__":
     unittest.main()

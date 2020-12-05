@@ -38,7 +38,8 @@ Options and arguments (and corresponding environment variables):\n\
          and comparing bytes/bytearray with str. (-bb: issue errors)\n\
 -B     : don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x\n\
 -c cmd : program passed in as string (terminates option list)\n\
--d     : debug output from parser; also PYTHONDEBUG=x\n\
+-d     : turn on parser debugging output (for experts only, only works on\n\
+         debug builds); also PYTHONDEBUG=x\n\
 -E     : ignore PYTHON* environment variables (such as PYTHONPATH)\n\
 -h     : print this help message and exit (also --help)\n\
 ";
@@ -1050,8 +1051,8 @@ fail:
 static PyObject*
 config_dict_get(PyObject *dict, const char *name)
 {
-    PyObject *item = PyDict_GetItemString(dict, name);
-    if (item == NULL) {
+    PyObject *item = _PyDict_GetItemStringWithError(dict, name);
+    if (item == NULL && !PyErr_Occurred()) {
         PyErr_Format(PyExc_ValueError, "missing config key: %s", name);
         return NULL;
     }
@@ -1085,7 +1086,7 @@ config_dict_get_int(PyObject *dict, const char *name, int *result)
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             config_dict_invalid_type(name);
         }
-        else {
+        else if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
             config_dict_invalid_value(name);
         }
         return -1;
@@ -1104,7 +1105,12 @@ config_dict_get_ulong(PyObject *dict, const char *name, unsigned long *result)
     }
     unsigned long value = PyLong_AsUnsignedLong(item);
     if (value == (unsigned long)-1 && PyErr_Occurred()) {
-        config_dict_invalid_value(name);
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            config_dict_invalid_type(name);
+        }
+        else if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            config_dict_invalid_value(name);
+        }
         return -1;
     }
     *result = value;

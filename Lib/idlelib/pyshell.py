@@ -463,7 +463,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.rpcclt.listening_sock.settimeout(10)
         try:
             self.rpcclt.accept()
-        except socket.timeout:
+        except TimeoutError:
             self.display_no_subprocess_error()
             return None
         self.rpcclt.register("console", self.tkconsole)
@@ -498,7 +498,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.spawn_subprocess()
         try:
             self.rpcclt.accept()
-        except socket.timeout:
+        except TimeoutError:
             self.display_no_subprocess_error()
             return None
         self.transfer_path(with_cwd=with_cwd)
@@ -757,7 +757,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def runcode(self, code):
         "Override base class method"
         if self.tkconsole.executing:
-            self.interp.restart_subprocess()
+            self.restart_subprocess()
         self.checklinecache()
         debugger = self.debugger
         try:
