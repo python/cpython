@@ -3989,6 +3989,11 @@ dictiter_iternextitem(dictiterobject *di)
         Py_INCREF(result);
         Py_DECREF(oldkey);
         Py_DECREF(oldvalue);
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
+        // recycling it, make sure it's tracked again:
+        if (!_PyObject_GC_IS_TRACKED(result)) {
+            _PyObject_GC_TRACK(result);
+        }
     }
     else {
         result = PyTuple_New(2);
@@ -4104,6 +4109,11 @@ dictreviter_iternext(dictiterobject *di)
             Py_INCREF(result);
             Py_DECREF(oldkey);
             Py_DECREF(oldvalue);
+            // bpo-42536: The GC may have untracked this result tuple. Since
+            // we're recycling it, make sure it's tracked again:
+            if (!_PyObject_GC_IS_TRACKED(result)) {
+                _PyObject_GC_TRACK(result);
+            }
         }
         else {
             result = PyTuple_New(2);

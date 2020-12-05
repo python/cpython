@@ -12,6 +12,8 @@ from functools import reduce
 import sys
 import struct
 import threading
+import gc
+
 maxsize = support.MAX_Py_ssize_t
 minsize = -maxsize-1
 
@@ -1572,6 +1574,51 @@ class TestBasicOps(unittest.TestCase):
         for f in (filter, filterfalse, map, takewhile, dropwhile, starmap):
             self.assertRaises(StopIteration, next, f(lambda x:x, []))
             self.assertRaises(StopIteration, next, f(lambda x:x, StopNow()))
+
+    @support.cpython_only
+    def test_combinations_result_gc(self):
+        # bpo-42536: combinations's tuple-reuse speed trick breaks the GC's
+        # assumptions about what can be untracked. Make sure we re-track result
+        # tuples whenever we reuse them.
+        it = combinations([None, []], 1)
+        next(it)
+        gc.collect()
+        # That GC collection probably untracked the recycled internal result
+        # tuple, which has the value (None,). Make sure it's re-tracked when
+        # it's mutated and returned from __next__:
+        self.assertTrue(gc.is_tracked(next(it)))
+
+    @support.cpython_only
+    def test_combinations_with_replacement_result_gc(self):
+        # Ditto for combinations_with_replacement.
+        it = combinations_with_replacement([None, []], 1)
+        next(it)
+        gc.collect()
+        self.assertTrue(gc.is_tracked(next(it)))
+
+    @support.cpython_only
+    def test_permutations_result_gc(self):
+        # Ditto for permutations.
+        it = permutations([None, []], 1)
+        next(it)
+        gc.collect()
+        self.assertTrue(gc.is_tracked(next(it)))
+
+    @support.cpython_only
+    def test_product_result_gc(self):
+        # Ditto for product.
+        it = product([None, []])
+        next(it)
+        gc.collect()
+        self.assertTrue(gc.is_tracked(next(it)))
+
+    @support.cpython_only
+    def test_zip_longest_result_gc(self):
+        # Ditto for zip_longest.
+        it = zip_longest([[]])
+        gc.collect()
+        self.assertTrue(gc.is_tracked(next(it)))
+
 
 class TestExamples(unittest.TestCase):
 
