@@ -384,7 +384,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
 
     int lines, cols;
     if (!fstring_find_expr_location(t, str, &lines, &cols)) {
-        PyMem_FREE(str);
+        PyMem_Free(str);
         return NULL;
     }
 

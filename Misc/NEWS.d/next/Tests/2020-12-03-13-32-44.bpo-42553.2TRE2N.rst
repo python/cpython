@@ -1,0 +1,3 @@
+Fix ``test_asyncio.test_call_later()`` race condition: don't measure asyncio
+performance in the ``call_later()`` unit test. The test failed randomly on
+the CI.

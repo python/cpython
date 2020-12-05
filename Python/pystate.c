@@ -605,7 +605,7 @@ new_threadstate(PyInterpreterState *interp, int init)
 
     tstate->frame = NULL;
     tstate->recursion_depth = 0;
-    tstate->overflowed = 0;
+    tstate->recursion_headroom = 0;
     tstate->stackcheck_counter = 0;
     tstate->tracing = 0;
     tstate->use_tracing = 0;
