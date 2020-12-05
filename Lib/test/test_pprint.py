@@ -486,8 +486,10 @@ AdvancedNamespace(the=0,
  5,
  6}''')
         self.assertEqual(pprint.pformat(set2([-1, 0, 1])), "set2({-1, 0, 1})")
-        self.assertEqual(pprint.pformat(set2("0123")), "set2({'0', '1', '2', '3'})")
-        self.assertEqual(pprint.pformat(set2("abcd")), "set2({'a', 'b', 'c', 'd'})")
+        self.assertEqual(pprint.pformat(set2("0123")),
+                         "set2({'0', '1', '2', '3'})")
+        self.assertEqual(pprint.pformat(set2("abcd")),
+                         "set2({'a', 'b', 'c', 'd'})")
         self.assertEqual(pprint.pformat(set2(range(7)), width=20), '''\
 set2({0,
       1,
