@@ -607,7 +607,7 @@ static PyObject *
 ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     assert(type != NULL && type->tp_alloc != NULL);
-    if (!_PyArg_NoKwnames("GenericAlias", kwds)) {
+    if (!_PyArg_NoKeywords("GenericAlias", kwds)) {
         return NULL;
     }
     if (!_PyArg_CheckPositional("GenericAlias", PyTuple_GET_SIZE(args), 2, 2)) {

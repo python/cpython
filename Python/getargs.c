@@ -2764,10 +2764,7 @@ _PyArg_NoKwnames(const char *funcname, PyObject *kwnames)
         return 1;
     }
 
-    if (!PyTuple_CheckExact(kwnames)) {
-        PyErr_BadInternalCall();
-        return 0;
-    }
+    assert(PyTuple_CheckExact(kwnames));
 
     if (PyTuple_GET_SIZE(kwnames) == 0) {
         return 1;

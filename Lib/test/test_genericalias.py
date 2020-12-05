@@ -309,8 +309,8 @@ class BaseTest(unittest.TestCase):
                 super().__new__(cls, *args, **kwargs)
 
         self.assertEqual(alias, list[int])
-        with self.assertRaises(SystemError):
-            Bad(list, int)
+        with self.assertRaises(TypeError):
+            Bad(list, int, bad=int)
 
     def test_abc_callable(self):
         # A separate test is needed for Callable since it uses a subclass of
