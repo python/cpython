@@ -177,10 +177,11 @@ def macosx_sdk_root():
     m = re.search(r'-isysroot\s*(\S+)', cflags)
     if m is not None:
         MACOS_SDK_ROOT = m.group(1)
+        MACOS_SDK_SPECIFIED = MACOS_SDK_ROOT != '/'
     else:
         MACOS_SDK_ROOT = _osx_support._default_sysroot(
             sysconfig.get_config_var('CC'))
-    MACOS_SDK_SPECIFIED = MACOS_SDK_ROOT != '/'
+        MACOS_SDK_SPECIFIED = False
 
     return MACOS_SDK_ROOT
 
