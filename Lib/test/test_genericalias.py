@@ -300,7 +300,7 @@ class BaseTest(unittest.TestCase):
             with self.subTest(f"Testing {tname}"):
                 alias = t[int]
                 self.assertEqual(ref(alias)(), alias)
-    
+
     def test_no_kwargs(self):
         # bpo-42576
         with self.assertRaises(TypeError):
