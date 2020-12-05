@@ -71,7 +71,7 @@ and work with streams:
       The *ssl_handshake_timeout* parameter.
 
 .. coroutinefunction:: start_server(client_connected_cb, host=None, \
-                          port=None, \*, limit=None, \
+                          port=None, *, limit=None, \
                           family=socket.AF_UNSPEC, \
                           flags=socket.AI_PASSIVE, sock=None, \
                           backlog=100, ssl=None, reuse_address=None, \
@@ -126,7 +126,7 @@ and work with streams:
 
 
 .. coroutinefunction:: start_unix_server(client_connected_cb, path=None, \
-                          \*, limit=None, sock=None, backlog=100, ssl=None, \
+                          *, limit=None, sock=None, backlog=100, ssl=None, \
                           ssl_handshake_timeout=None, start_serving=True)
 
    Start a Unix socket server.
