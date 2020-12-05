@@ -1265,7 +1265,7 @@ Using the non-data descriptor protocol, a pure Python version of
         def __get__(self, obj, cls=None):
             if cls is None:
                 cls = type(obj)
-            if hasattr(obj, '__get__'):
+            if hasattr(self.f, '__get__'):
                 return self.f.__get__(cls)
             return MethodType(self.f, cls)
 
@@ -1289,7 +1289,7 @@ Using the non-data descriptor protocol, a pure Python version of
     >>> t.cm(11, 22)
     (<class 'T'>, 11, 22)
 
-The code path for ``hasattr(obj, '__get__')`` was added in Python 3.9 and
+The code path for ``hasattr(self.f, '__get__')`` was added in Python 3.9 and
 makes it possible for :func:`classmethod` to support chained decorators.
 For example, a classmethod and property could be chained together:
 
