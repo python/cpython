@@ -301,6 +301,17 @@ class BaseTest(unittest.TestCase):
                 alias = t[int]
                 self.assertEqual(ref(alias)(), alias)
 
+    def test_subclassing_types_genericalias(self):
+        class SubClass(GenericAlias): ...
+        alias = SubClass(list, int)
+        class Bad(GenericAlias):
+            def __new__(cls, *args, **kwargs):
+                super().__new__(cls, *args, **kwargs)
+
+        self.assertEqual(alias, list[int])
+        with self.assertRaises(SystemError):
+            Bad(list, int)
+
     def test_abc_callable(self):
         # A separate test is needed for Callable since it uses a subclass of
         # GenericAlias.
