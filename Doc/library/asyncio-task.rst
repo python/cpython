@@ -316,7 +316,7 @@ Sleeping
 Running Tasks Concurrently
 ==========================
 
-.. awaitablefunction:: gather(\*aws, return_exceptions=False)
+.. awaitablefunction:: gather(*aws, return_exceptions=False)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
    sequence *concurrently*.
@@ -593,7 +593,7 @@ Waiting Primitives
 Running in Threads
 ==================
 
-.. coroutinefunction:: to_thread(func, /, \*args, \*\*kwargs)
+.. coroutinefunction:: to_thread(func, /, *args, **kwargs)
 
    Asynchronously run function *func* in a separate thread.
 

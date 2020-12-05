@@ -146,7 +146,7 @@ Manual Context Management
 
    Context implements the :class:`collections.abc.Mapping` interface.
 
-   .. method:: run(callable, \*args, \*\*kwargs)
+   .. method:: run(callable, *args, **kwargs)
 
       Execute ``callable(*args, **kwargs)`` code in the context object
       the *run* method is called on.  Return the result of the execution

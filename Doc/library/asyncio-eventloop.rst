@@ -806,7 +806,7 @@ TLS Upgrade
 Watching file descriptors
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. method:: loop.add_reader(fd, callback, \*args)
+.. method:: loop.add_reader(fd, callback, *args)
 
    Start monitoring the *fd* file descriptor for read availability and
    invoke *callback* with the specified arguments once *fd* is available for
@@ -816,7 +816,7 @@ Watching file descriptors
 
    Stop monitoring the *fd* file descriptor for read availability.
 
-.. method:: loop.add_writer(fd, callback, \*args)
+.. method:: loop.add_writer(fd, callback, *args)
 
    Start monitoring the *fd* file descriptor for write availability and
    invoke *callback* with the specified arguments once *fd* is available for
@@ -1029,7 +1029,7 @@ Working with pipes
 Unix signals
 ^^^^^^^^^^^^
 
-.. method:: loop.add_signal_handler(signum, callback, \*args)
+.. method:: loop.add_signal_handler(signum, callback, *args)
 
    Set *callback* as the handler for the *signum* signal.
 
@@ -1064,7 +1064,7 @@ Unix signals
 Executing code in thread or process pools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. awaitablemethod:: loop.run_in_executor(executor, func, \*args)
+.. awaitablemethod:: loop.run_in_executor(executor, func, *args)
 
    Arrange for *func* to be called in the specified executor.
 
@@ -1237,9 +1237,9 @@ async/await code consider using the high-level
    subprocesses. See :ref:`Subprocess Support on Windows
    <asyncio-windows-subprocess>` for details.
 
-.. coroutinemethod:: loop.subprocess_exec(protocol_factory, \*args, \
+.. coroutinemethod:: loop.subprocess_exec(protocol_factory, *args, \
                       stdin=subprocess.PIPE, stdout=subprocess.PIPE, \
-                      stderr=subprocess.PIPE, \*\*kwargs)
+                      stderr=subprocess.PIPE, **kwargs)
 
    Create a subprocess from one or more string arguments specified by
    *args*.
@@ -1321,7 +1321,7 @@ async/await code consider using the high-level
 
 .. coroutinemethod:: loop.subprocess_shell(protocol_factory, cmd, \*, \
                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, \
-                        stderr=subprocess.PIPE, \*\*kwargs)
+                        stderr=subprocess.PIPE, **kwargs)
 
    Create a subprocess from *cmd*, which can be a :class:`str` or a
    :class:`bytes` string encoded to the
