@@ -595,6 +595,10 @@ Porting to Python 3.10
   :ref:`Python Path Configuration.  <init-path-config>`.
   (Contributed by Victor Stinner in :issue:`42260`.)
 
+* Convert the :c:func:`PyTuple_SET_ITEM()`, :c:func:`PyList_SET_ITEM()` and
+  :c:func:`PyCell_SET()` macros to static inline functions.
+  (Contributed by Victor Stinner in :issue:`30459`.)
+
 Deprecated
 ----------
 
