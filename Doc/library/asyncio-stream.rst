@@ -48,7 +48,7 @@ The following top-level asyncio functions can be used to create
 and work with streams:
 
 
-.. coroutinefunction:: open_connection(host=None, port=None, \*, \
+.. coroutinefunction:: open_connection(host=None, port=None, *, \
                           limit=None, ssl=None, family=0, proto=0, \
                           flags=0, sock=None, local_addr=None, \
                           server_hostname=None, ssl_handshake_timeout=None)
@@ -103,7 +103,7 @@ and work with streams:
 
 .. rubric:: Unix Sockets
 
-.. coroutinefunction:: open_unix_connection(path=None, \*, limit=None, \
+.. coroutinefunction:: open_unix_connection(path=None, *, limit=None, \
                         ssl=None, sock=None, server_hostname=None, \
                         ssl_handshake_timeout=None)
 

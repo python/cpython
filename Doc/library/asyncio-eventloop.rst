@@ -321,7 +321,7 @@ Creating Futures and Tasks
 
    .. versionadded:: 3.5.2
 
-.. method:: loop.create_task(coro, \*, name=None)
+.. method:: loop.create_task(coro, *, name=None)
 
    Schedule the execution of a :ref:`coroutine`.
    Return a :class:`Task` object.
@@ -964,7 +964,7 @@ convenient.
 DNS
 ^^^
 
-.. coroutinemethod:: loop.getaddrinfo(host, port, \*, family=0, \
+.. coroutinemethod:: loop.getaddrinfo(host, port, *, family=0, \
                         type=0, proto=0, flags=0)
 
    Asynchronous version of :meth:`socket.getaddrinfo`.
@@ -1319,7 +1319,7 @@ async/await code consider using the high-level
    conforms to the :class:`asyncio.SubprocessTransport` base class and
    *protocol* is an object instantiated by the *protocol_factory*.
 
-.. coroutinemethod:: loop.subprocess_shell(protocol_factory, cmd, \*, \
+.. coroutinemethod:: loop.subprocess_shell(protocol_factory, cmd, *, \
                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, \
                         stderr=subprocess.PIPE, **kwargs)
 
