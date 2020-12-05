@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include "ast.h"
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_pystate.h"
 #include "pycore_tupleobject.h"
 
@@ -2617,6 +2618,11 @@ zip_next(zipobject *lz)
             olditem = PyTuple_GET_ITEM(result, i);
             PyTuple_SET_ITEM(result, i, item);
             Py_DECREF(olditem);
+        }
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
+        // recycling it, make sure it's tracked again:
+        if (!_PyObject_GC_IS_TRACKED(result)) {
+            _PyObject_GC_TRACK(result);
         }
     } else {
         result = PyTuple_New(tuplesize);
