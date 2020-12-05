@@ -951,7 +951,7 @@ Miscellaneous
    use.  The number of usable CPUs can be obtained with
    ``len(os.sched_getaffinity(0))``
 
-   When the number of CPUs can not be determined a :exc:`NotImplementedError`
+   When the number of CPUs cannot be determined a :exc:`NotImplementedError`
    is raised.
 
    .. seealso::
