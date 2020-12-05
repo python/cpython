@@ -1,0 +1,3 @@
+``types.GenericAlias`` will now raise a ``TypeError`` when attempting to
+initialize with a keyword argument.  Previously, this would cause the
+interpreter to crash.  Patch by Ken Jin.
