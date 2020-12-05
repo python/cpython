@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_object.h"        // _PyObject_GC_TRACK
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "structmember.h"         // PyMemberDef
@@ -672,6 +673,11 @@ functools_reduce(PyObject *self, PyObject *args)
             Py_XSETREF(_PyTuple_ITEMS(args)[1], op2);
             if ((result = PyObject_Call(func, args, NULL)) == NULL) {
                 goto Fail;
+            }
+            // bpo-42536: The GC may have untracked this args tuple. Since we're
+            // recycling it, make sure it's tracked again:
+            if (!_PyObject_GC_IS_TRACKED(args)) {
+                _PyObject_GC_TRACK(args);
             }
         }
     }
