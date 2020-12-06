@@ -382,6 +382,8 @@ given type object has a specified feature.
 /* Type structure has tp_finalize member (3.4) */
 #define Py_TPFLAGS_HAVE_FINALIZE (1UL << 0)
 
+/* Set if the module object is only allowed loading once in per interpreter. */
+#define Py_MODFLAGS_SINGLE 1UL
 
 /*
 The macros Py_INCREF(op) and Py_DECREF(op) are used to increment or decrement

@@ -38,8 +38,15 @@ PyTypeObject PyModuleDef_Type = {
 PyObject*
 PyModuleDef_Init(struct PyModuleDef* def)
 {
-    if (PyType_Ready(&PyModuleDef_Type) < 0)
-         return NULL;
+    if (PyType_Ready(&PyModuleDef_Type) < 0) {
+        return NULL;
+    }
+    if (def->m_flags & Py_MODFLAGS_SINGLE) {
+        PyObject *mod = _PyState_FindSingleModule(def);
+        if (mod != NULL) {
+            return mod;
+        }
+    }
     if (def->m_base.m_index == 0) {
         max_module_number++;
         Py_SET_REFCNT(def, 1);

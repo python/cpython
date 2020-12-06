@@ -222,6 +222,28 @@ class SubinterpreterTest(unittest.TestCase):
         self.assertEqual(os.read(r, len(expected)), expected)
         os.close(r)
 
+    def test_multiple_loading_on_subinterpreter(self):
+        expected = b"atexit2 callback\natexit1 callback\n"
+        r, w = os.pipe()
+
+        code = r"""if 1:
+            import sys
+            import os
+            def callback(msg):
+                os.write({:d}, msg)
+            atexit1 = sys.modules.pop('atexit', None)
+            if atexit1 is None:
+                import atexit as atexit1
+                del sys.modules['atexit']
+            import atexit as atexit2
+            atexit1.register(callback, b"atexit1 callback\n")
+            atexit2.register(callback, b"atexit2 callback\n")
+        """.format(w)
+        ret = support.run_in_subinterp(code)
+        os.close(w)
+        self.assertEqual(os.read(r, len(expected)), expected)
+        os.close(r)
+
 
 if __name__ == "__main__":
     unittest.main()

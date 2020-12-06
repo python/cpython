@@ -1,0 +1,3 @@
+Add :c:func:`_PyState_AddSingleModule` and :c:func:`_PyState_FindSingleModule`
+and ``Py_MODFLAGS_SINGLE`` of module flags to disallow loading the extension
+module more than once in per interpreter.

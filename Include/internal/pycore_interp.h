@@ -193,6 +193,7 @@ struct _is {
     // sys.modules dictionary
     PyObject *modules;
     PyObject *modules_by_index;
+    PyObject *single_modules;
     // Dictionary of the sys module
     PyObject *sysdict;
     // Dictionary of the builtins module

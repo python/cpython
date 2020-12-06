@@ -402,6 +402,11 @@ Optimizations
   bytecode level.  It is now around 100% faster to create a function with parameter
   annotations.  (Contributed by Yurii Karabas and Inada Naoki in :issue:`42202`)
 
+* Add ``Py_MODFLAGS_SINGLE`` of module flags to disallow loading the extension
+  module more than once in per interpreter.
+  (Contributed by Hai Shi in :issue:`40600`.)
+
+
 Deprecated
 ==========
 

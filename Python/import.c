@@ -1002,7 +1002,25 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
             }
 
             if (PyObject_TypeCheck(mod, &PyModuleDef_Type)) {
-                return PyModule_FromDefAndSpec((PyModuleDef*)mod, spec);
+                PyObject *module = PyModule_FromDefAndSpec((PyModuleDef *)mod,
+                                                           spec);
+                if (module == NULL) {
+                    return NULL;
+                }
+                if (((PyModuleDef *)mod)->m_flags & Py_MODFLAGS_SINGLE) {
+                    if (_PyState_AddSingleModule(module,
+                                                 (PyModuleDef *)mod) < 0) {
+                        Py_DECREF(module);
+                        return NULL;
+                    }
+                }
+                return module;
+            }
+            else if (PyModule_GetDef(mod)->m_slots != NULL) {
+                PyModuleDef *def = PyModule_GetDef(mod);
+                PyObject *module = _PyState_FindSingleModule(def);
+                Py_XINCREF(module);
+                return module;
             }
             else {
                 /* Remember pointer to module init function. */

@@ -291,6 +291,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->codec_error_registry);
     Py_CLEAR(interp->modules);
     Py_CLEAR(interp->modules_by_index);
+    Py_CLEAR(interp->single_modules);
     Py_CLEAR(interp->builtins_copy);
     Py_CLEAR(interp->importlib);
     Py_CLEAR(interp->import_func);
@@ -748,6 +749,56 @@ PyState_AddModule(PyObject* module, struct PyModuleDef* def)
         return -1;
     }
     return _PyState_AddModule(tstate, module, def);
+}
+
+int
+_PyState_AddSingleModule(PyObject *module, PyModuleDef *def)
+{
+    if (def == NULL) {
+        Py_FatalError("module definition is NULL");
+        return -1;
+    }
+    if (module == NULL) {
+        Py_FatalError("module is NULL");
+        return -1;
+    }
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->single_modules == NULL) {
+        interp->single_modules = PyList_New(0);
+        if (interp->single_modules == NULL) {
+            return -1;
+        }
+    }
+
+    while (PyList_GET_SIZE(interp->single_modules) <= def->m_base.m_index) {
+        if (PyList_Append(interp->single_modules, Py_None) < 0) {
+            return -1;
+        }
+    }
+
+    Py_INCREF(module);
+    return PyList_SetItem(interp->single_modules,
+                          def->m_base.m_index, module);
+}
+
+PyObject *
+_PyState_FindSingleModule(PyModuleDef *def)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    Py_ssize_t index = def->m_base.m_index;
+
+    if (index == 0) {
+        return NULL;
+    }
+    if (interp->single_modules == NULL) {
+        return NULL;
+    }
+    if (index >= PyList_GET_SIZE(interp->single_modules)) {
+        return NULL;
+    }
+    PyObject *res = PyList_GET_ITEM(interp->single_modules, index);
+    return res == Py_None ? NULL : res;
 }
 
 int

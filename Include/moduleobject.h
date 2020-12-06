@@ -82,6 +82,7 @@ typedef struct PyModuleDef{
   traverseproc m_traverse;
   inquiry m_clear;
   freefunc m_free;
+  unsigned int m_flags;
 } PyModuleDef;
 
 #ifdef __cplusplus

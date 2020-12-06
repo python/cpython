@@ -338,14 +338,15 @@ static PyModuleDef_Slot atexit_slots[] = {
 
 static struct PyModuleDef atexitmodule = {
     PyModuleDef_HEAD_INIT,
-    "atexit",
-    atexit__doc__,
-    sizeof(atexitmodule_state),
-    atexit_methods,
-    atexit_slots,
-    atexit_m_traverse,
-    atexit_m_clear,
-    (freefunc)atexit_free
+    .m_name = "atexit",
+    .m_doc = atexit__doc__,
+    .m_size = sizeof(atexitmodule_state),
+    .m_methods = atexit_methods,
+    .m_slots = atexit_slots,
+    .m_traverse = atexit_m_traverse,
+    .m_clear = atexit_m_clear,
+    .m_free = (freefunc)atexit_free,
+    .m_flags = Py_MODFLAGS_SINGLE
 };
 
 PyMODINIT_FUNC

@@ -144,6 +144,9 @@ PyAPI_FUNC(int) _PyState_AddModule(
     PyObject* module,
     struct PyModuleDef* def);
 
+/* New in 3.10 */
+PyAPI_FUNC(int) _PyState_AddSingleModule(PyObject *, struct PyModuleDef *);
+PyAPI_FUNC(PyObject *) _PyState_FindSingleModule(struct PyModuleDef *);
 
 PyAPI_FUNC(int) _PyOS_InterruptOccurred(PyThreadState *tstate);
 
