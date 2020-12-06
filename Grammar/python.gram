@@ -52,18 +52,18 @@ type_expressions[asdl_expr_seq*]:
     | a[asdl_expr_seq*]=','.expression+ {a}
 
 statements[asdl_stmt_seq*]: a=statement+ { (asdl_stmt_seq*)_PyPegen_seq_flatten(p, a) }
-statement[asdl_stmt_seq*]: a=compound_stmt { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) } | a[asdl_stmt_seq*]=simple_stmt { a }
+statement[asdl_stmt_seq*]: a=compound_stmt { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) } | a[asdl_stmt_seq*]=simple_stmts { a }
 statement_newline[asdl_stmt_seq*]:
     | a=compound_stmt NEWLINE { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) }
-    | simple_stmt
+    | simple_stmts
     | NEWLINE { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, CHECK(stmt_ty, _Py_Pass(EXTRA))) }
     | ENDMARKER { _PyPegen_interactive_exit(p) }
-simple_stmt[asdl_stmt_seq*]:
-    | a=small_stmt !';' NEWLINE { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) } # Not needed, there for speedup
-    | a[asdl_stmt_seq*]=';'.small_stmt+ [';'] NEWLINE { a }
+simple_stmts[asdl_stmt_seq*]:
+    | a=simple_stmt !';' NEWLINE { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) } # Not needed, there for speedup
+    | a[asdl_stmt_seq*]=';'.simple_stmt+ [';'] NEWLINE { a }
 # NOTE: assignment MUST precede expression, else parsing a simple assignment
 # will throw a SyntaxError.
-small_stmt[stmt_ty] (memo):
+simple_stmt[stmt_ty] (memo):
     | assignment
     | e=star_expressions { _Py_Expr(e, EXTRA) }
     | &'return' return_stmt
@@ -308,7 +308,7 @@ class_def_raw[stmt_ty]:
 
 block[asdl_stmt_seq*] (memo):
     | NEWLINE INDENT a=statements DEDENT { a }
-    | simple_stmt
+    | simple_stmts
     | invalid_block
 
 star_expressions[expr_ty]:

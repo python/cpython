@@ -294,9 +294,9 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     wfd2obj = PyMem_NEW(pylist, FD_SETSIZE + 1);
     efd2obj = PyMem_NEW(pylist, FD_SETSIZE + 1);
     if (rfd2obj == NULL || wfd2obj == NULL || efd2obj == NULL) {
-        if (rfd2obj) PyMem_DEL(rfd2obj);
-        if (wfd2obj) PyMem_DEL(wfd2obj);
-        if (efd2obj) PyMem_DEL(efd2obj);
+        if (rfd2obj) PyMem_Free(rfd2obj);
+        if (wfd2obj) PyMem_Free(wfd2obj);
+        if (efd2obj) PyMem_Free(efd2obj);
         return PyErr_NoMemory();
     }
 #endif /* SELECT_USES_HEAP */
@@ -381,9 +381,9 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     reap_obj(wfd2obj);
     reap_obj(efd2obj);
 #ifdef SELECT_USES_HEAP
-    PyMem_DEL(rfd2obj);
-    PyMem_DEL(wfd2obj);
-    PyMem_DEL(efd2obj);
+    PyMem_Free(rfd2obj);
+    PyMem_Free(wfd2obj);
+    PyMem_Free(efd2obj);
 #endif /* SELECT_USES_HEAP */
     return ret;
 }
@@ -740,9 +740,9 @@ poll_dealloc(pollObject *self)
 {
     PyObject* type = (PyObject *)Py_TYPE(self);
     if (self->ufds != NULL)
-        PyMem_DEL(self->ufds);
+        PyMem_Free(self->ufds);
     Py_XDECREF(self->dict);
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(type);
 }
 
@@ -1106,7 +1106,7 @@ newDevPollObject(PyObject *module)
     self = PyObject_New(devpollObject, get_select_state(module)->devpoll_Type);
     if (self == NULL) {
         close(fd_devpoll);
-        PyMem_DEL(fds);
+        PyMem_Free(fds);
         return NULL;
     }
     self->fd_devpoll = fd_devpoll;
@@ -1129,8 +1129,8 @@ devpoll_dealloc(devpollObject *self)
 {
     PyObject *type = (PyObject *)Py_TYPE(self);
     (void)devpoll_internal_close(self);
-    PyMem_DEL(self->fds);
-    PyObject_Del(self);
+    PyMem_Free(self->fds);
+    PyObject_Free(self);
     Py_DECREF(type);
 }
 

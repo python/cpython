@@ -213,7 +213,7 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
                 PyObject *arg = PyTuple_GET_ITEM(varnames, j);
                 int cmp = PyUnicode_Compare(cell, arg);
                 if (cmp == -1 && PyErr_Occurred()) {
-                    PyMem_FREE(cell2arg);
+                    PyMem_Free(cell2arg);
                     return NULL;
                 }
                 if (cmp == 0) {
@@ -224,14 +224,14 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
             }
         }
         if (!used_cell2arg) {
-            PyMem_FREE(cell2arg);
+            PyMem_Free(cell2arg);
             cell2arg = NULL;
         }
     }
     co = PyObject_New(PyCodeObject, &PyCode_Type);
     if (co == NULL) {
         if (cell2arg)
-            PyMem_FREE(cell2arg);
+            PyMem_Free(cell2arg);
         return NULL;
     }
     co->co_argcount = argcount;
@@ -314,12 +314,12 @@ _PyCode_InitOpcache(PyCodeObject *co)
     if (opts) {
         co->co_opcache = (_PyOpcache *)PyMem_Calloc(opts, sizeof(_PyOpcache));
         if (co->co_opcache == NULL) {
-            PyMem_FREE(co->co_opcache_map);
+            PyMem_Free(co->co_opcache_map);
             return -1;
         }
     }
     else {
-        PyMem_FREE(co->co_opcache_map);
+        PyMem_Free(co->co_opcache_map);
         co->co_opcache_map = NULL;
         co->co_opcache = NULL;
     }
@@ -631,10 +631,10 @@ static void
 code_dealloc(PyCodeObject *co)
 {
     if (co->co_opcache != NULL) {
-        PyMem_FREE(co->co_opcache);
+        PyMem_Free(co->co_opcache);
     }
     if (co->co_opcache_map != NULL) {
-        PyMem_FREE(co->co_opcache_map);
+        PyMem_Free(co->co_opcache_map);
     }
     co->co_opcache_flag = 0;
     co->co_opcache_size = 0;
@@ -664,12 +664,12 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->co_name);
     Py_XDECREF(co->co_linetable);
     if (co->co_cell2arg != NULL)
-        PyMem_FREE(co->co_cell2arg);
+        PyMem_Free(co->co_cell2arg);
     if (co->co_zombieframe != NULL)
         PyObject_GC_Del(co->co_zombieframe);
     if (co->co_weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject*)co);
-    PyObject_DEL(co);
+    PyObject_Free(co);
 }
 
 static PyObject *

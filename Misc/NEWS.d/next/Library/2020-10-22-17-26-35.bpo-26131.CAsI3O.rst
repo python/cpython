@@ -1,0 +1,2 @@
+The `load_module()` methods found in importlib now trigger a
+DeprecationWarning.

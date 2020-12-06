@@ -221,7 +221,7 @@ class SysModuleTest(unittest.TestCase):
         def f():
             f()
         try:
-            for depth in (10, 25, 50, 75, 100, 250, 1000):
+            for depth in (50, 75, 100, 250, 1000):
                 try:
                     sys.setrecursionlimit(depth)
                 except RecursionError:
@@ -231,17 +231,17 @@ class SysModuleTest(unittest.TestCase):
 
                 # Issue #5392: test stack overflow after hitting recursion
                 # limit twice
-                self.assertRaises(RecursionError, f)
-                self.assertRaises(RecursionError, f)
+                with self.assertRaises(RecursionError):
+                    f()
+                with self.assertRaises(RecursionError):
+                    f()
         finally:
             sys.setrecursionlimit(oldlimit)
 
     @test.support.cpython_only
     def test_setrecursionlimit_recursion_depth(self):
         # Issue #25274: Setting a low recursion limit must be blocked if the
-        # current recursion depth is already higher than the "lower-water
-        # mark". Otherwise, it may not be possible anymore to
-        # reset the overflowed flag to 0.
+        # current recursion depth is already higher than limit.
 
         from _testinternalcapi import get_recursion_depth
 
@@ -262,41 +262,9 @@ class SysModuleTest(unittest.TestCase):
             sys.setrecursionlimit(1000)
 
             for limit in (10, 25, 50, 75, 100, 150, 200):
-                # formula extracted from _Py_RecursionLimitLowerWaterMark()
-                if limit > 200:
-                    depth = limit - 50
-                else:
-                    depth = limit * 3 // 4
-                set_recursion_limit_at_depth(depth, limit)
+                set_recursion_limit_at_depth(limit, limit)
         finally:
             sys.setrecursionlimit(oldlimit)
-
-    # The error message is specific to CPython
-    @test.support.cpython_only
-    def test_recursionlimit_fatalerror(self):
-        # A fatal error occurs if a second recursion limit is hit when recovering
-        # from a first one.
-        code = textwrap.dedent("""
-            import sys
-
-            def f():
-                try:
-                    f()
-                except RecursionError:
-                    f()
-
-            sys.setrecursionlimit(%d)
-            f()""")
-        with test.support.SuppressCrashReport():
-            for i in (50, 1000):
-                sub = subprocess.Popen([sys.executable, '-c', code % i],
-                    stderr=subprocess.PIPE)
-                err = sub.communicate()[1]
-                self.assertTrue(sub.returncode, sub.returncode)
-                self.assertIn(
-                    b"Fatal Python error: _Py_CheckRecursiveCall: "
-                    b"Cannot recover from stack overflow",
-                    err)
 
     def test_getwindowsversion(self):
         # Raise SkipTest if sys doesn't have getwindowsversion attribute
