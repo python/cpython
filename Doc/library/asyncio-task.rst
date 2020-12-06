@@ -393,6 +393,11 @@ Running Tasks Concurrently
       If the *gather* itself is cancelled, the cancellation is
       propagated regardless of *return_exceptions*.
 
+   .. deprecated:: 3.10
+      Deprecation warning is emitted if no positional arguments are provided
+      or not all positional arguments are Future-like objects
+      and there is no running event loop.
+
 
 Shielding From Cancellation
 ===========================
@@ -429,6 +434,10 @@ Shielding From Cancellation
            res = await shield(something())
        except CancelledError:
            res = None
+
+   .. deprecated:: 3.10
+      Deprecation warning is emitted if *aw* is not Future-like object
+      and there is no running event loop.
 
 
 Timeouts
@@ -588,6 +597,10 @@ Waiting Primitives
        for coro in as_completed(aws):
            earliest_result = await coro
            # ...
+
+   .. deprecated:: 3.10
+      Deprecation warning is emitted if not all awaitable objects in the *aws*
+      iterable are Future-like objects and there is no running event loop.
 
 
 Running in Threads
@@ -770,6 +783,10 @@ Task Object
 
    .. deprecated-removed:: 3.8 3.10
       The *loop* parameter.
+
+   .. deprecated:: 3.10
+      Deprecation warning is emitted if *loop* is not specified
+      and there is no running event loop.
 
    .. method:: cancel(msg=None)
 
