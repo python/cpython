@@ -1747,7 +1747,7 @@ class BaseTaskTests:
         self.assertEqual(set(result), {'ham', 'spam'})
         self.assertEqual(len(result), 2)
 
-    def test_as_completed_nontask_without_loop(self):
+    def test_as_completed_coroutine_without_loop(self):
         async def coro():
             return 42
 
@@ -1760,7 +1760,7 @@ class BaseTaskTests:
                 list(futs)
         self.assertEqual(cm.warnings[0].filename, __file__)
 
-    def test_as_completed_nontask_use_running_loop(self):
+    def test_as_completed_coroutine_use_running_loop(self):
         loop = self.new_test_loop()
 
         async def coro():
@@ -1773,7 +1773,7 @@ class BaseTaskTests:
 
         loop.run_until_complete(test())
 
-    def test_as_completed_nontask_use_global_loop(self):
+    def test_as_completed_coroutine_use_global_loop(self):
         # Deprecated in 3.10
         async def coro():
             return 42
