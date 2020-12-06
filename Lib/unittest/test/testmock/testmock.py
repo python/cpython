@@ -2165,6 +2165,16 @@ class MockTest(unittest.TestCase):
                 obj = mock(spec=Something)
                 self.assertIsInstance(obj, Something)
 
+    def test_bool_not_called_when_passing_spec_arg(self):
+        class Something:
+            def __init__(self):
+                self.obj_with_bool_func = unittest.mock.MagicMock()
+
+        obj = Something()
+        with unittest.mock.patch.object(obj, 'obj_with_bool_func', autospec=True): pass
+
+        self.assertEqual(obj.obj_with_bool_func.__bool__.call_count, 0)
+
 
 if __name__ == '__main__':
     unittest.main()
