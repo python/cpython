@@ -426,17 +426,7 @@ class _CallableGenericAlias(GenericAlias):
     __slots__ = ()
 
     def __new__(cls, origin, args):
-        try:
-            return cls.__create_ga(origin, args)
-        except TypeError as exc:
-            if sys.version_info[:2] == (3, 9):
-                import warnings
-                warnings.warn(f'{str(exc)} '
-                              f'(This will raise TypeError in Python 3.10)',
-                              DeprecationWarning)
-                return GenericAlias(origin, args)
-            else:
-                raise exc
+        return cls.__create_ga(origin, args)
 
     @classmethod
     def __create_ga(cls, origin, args):

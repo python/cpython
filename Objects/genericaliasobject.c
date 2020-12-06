@@ -569,9 +569,6 @@ static PyGetSetDef ga_properties[] = {
  */
 static inline int
 setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {
-    if (alias == NULL) {
-        return 0;
-    }
     if (!PyTuple_Check(args)) {
         args = PyTuple_Pack(1, args);
         if (args == NULL) {
