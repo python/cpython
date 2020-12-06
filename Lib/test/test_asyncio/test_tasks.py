@@ -3401,38 +3401,16 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
     def _gather(self, *args, **kwargs):
         return asyncio.gather(*args, **kwargs)
 
-    def _check_empty_sequence_without_loop(self, seq_or_iter):
+    def test_constructor_empty_sequence_without_loop(self):
         with self.assertWarns(DeprecationWarning) as cm:
             with self.assertRaises(RuntimeError):
-                asyncio.gather(*seq_or_iter)
+                asyncio.gather()
         self.assertEqual(cm.warnings[0].filename, __file__)
-
-    def test_constructor_empty_sequence_without_loop(self):
-        self._check_empty_sequence_without_loop([])
-        self._check_empty_sequence_without_loop(())
-        self._check_empty_sequence_without_loop(set())
-        self._check_empty_sequence_without_loop(iter(""))
-
-    def _check_empty_sequence_use_running_loop(self, seq_or_iter):
-        async def gather():
-            return asyncio.gather(*seq_or_iter)
-        fut = self.one_loop.run_until_complete(gather())
-        self.assertIsInstance(fut, asyncio.Future)
-        self.assertIs(fut._loop, self.one_loop)
-        self._run_loop(self.one_loop)
-        self.assertTrue(fut.done())
-        self.assertEqual(fut.result(), [])
 
     def test_constructor_empty_sequence_use_running_loop(self):
-        self._check_empty_sequence_use_running_loop([])
-        self._check_empty_sequence_use_running_loop(())
-        self._check_empty_sequence_use_running_loop(set())
-        self._check_empty_sequence_use_running_loop(iter(""))
-
-    def _check_empty_sequence_use_global_loop(self, seq_or_iter):
-        with self.assertWarns(DeprecationWarning) as cm:
-            fut = asyncio.gather(*seq_or_iter)
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        async def gather():
+            return asyncio.gather()
+        fut = self.one_loop.run_until_complete(gather())
         self.assertIsInstance(fut, asyncio.Future)
         self.assertIs(fut._loop, self.one_loop)
         self._run_loop(self.one_loop)
@@ -3443,10 +3421,14 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
         # Deprecated in 3.10
         asyncio.set_event_loop(self.one_loop)
         self.addCleanup(asyncio.set_event_loop, None)
-        self._check_empty_sequence_use_global_loop([])
-        self._check_empty_sequence_use_global_loop(())
-        self._check_empty_sequence_use_global_loop(set())
-        self._check_empty_sequence_use_global_loop(iter(""))
+        with self.assertWarns(DeprecationWarning) as cm:
+            fut = asyncio.gather()
+        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertIsInstance(fut, asyncio.Future)
+        self.assertIs(fut._loop, self.one_loop)
+        self._run_loop(self.one_loop)
+        self.assertTrue(fut.done())
+        self.assertEqual(fut.result(), [])
 
     def test_constructor_heterogenous_futures(self):
         fut1 = self.one_loop.create_future()
