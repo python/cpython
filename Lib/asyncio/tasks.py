@@ -66,7 +66,7 @@ def _all_tasks_compat(loop=None):
     # the completed ones.  Used to implement deprecated "Tasks.all_task()"
     # method.
     if loop is None:
-        loop = events._get_event_loop()
+        loop = events.get_event_loop()
     # Looping over a WeakSet (_all_tasks) isn't safe as it can be updated from another
     # thread while we do so. Therefore we cast it to list prior to filtering. The list
     # cast itself requires iteration, so we repeat it several times ignoring

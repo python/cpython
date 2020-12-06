@@ -371,7 +371,7 @@ def _chain_future(source, destination):
         raise TypeError('A future is required for source argument')
     if not isfuture(destination) and not isinstance(destination,
                                                     concurrent.futures.Future):
-        raise TypeError('A future is required for destination argument %r' % destination)
+        raise TypeError('A future is required for destination argument')
     source_loop = _get_loop(source) if isfuture(source) else None
     dest_loop = _get_loop(destination) if isfuture(destination) else None
 
