@@ -145,14 +145,14 @@ class BaseFutureTests:
                 self._new_future()
         self.assertEqual(cm.warnings[0].filename, __file__)
 
-    def test_constructor_with_running_loop(self):
+    def test_constructor_use_running_loop(self):
         async def test():
             return self._new_future()
         f = self.loop.run_until_complete(test())
         self.assertIs(f._loop, self.loop)
         self.assertIs(f.get_loop(), self.loop)
 
-    def test_constructor_with_global_loop(self):
+    def test_constructor_use_global_loop(self):
         # Deprecated in 3.10
         asyncio.set_event_loop(self.loop)
         self.addCleanup(asyncio.set_event_loop, None)
@@ -500,7 +500,7 @@ class BaseFutureTests:
         self.assertEqual(cm.warnings[0].filename, __file__)
         ex.shutdown(wait=True)
 
-    def test_wrap_future_with_running_loop(self):
+    def test_wrap_future_use_running_loop(self):
         def run(arg):
             return (arg, threading.get_ident())
         ex = concurrent.futures.ThreadPoolExecutor(1)
@@ -511,7 +511,7 @@ class BaseFutureTests:
         self.assertIs(self.loop, f2._loop)
         ex.shutdown(wait=True)
 
-    def test_wrap_future_with_global_loop(self):
+    def test_wrap_future_use_global_loop(self):
         # Deprecated in 3.10
         asyncio.set_event_loop(self.loop)
         self.addCleanup(asyncio.set_event_loop, None)

@@ -1760,7 +1760,7 @@ class BaseTaskTests:
                 list(futs)
         self.assertEqual(cm.warnings[0].filename, __file__)
 
-    def test_as_completed_nontask_with_running_loop(self):
+    def test_as_completed_nontask_use_running_loop(self):
         loop = self.new_test_loop()
 
         async def coro():
@@ -1773,7 +1773,7 @@ class BaseTaskTests:
 
         loop.run_until_complete(test())
 
-    def test_as_completed_nontask_with_global_loop(self):
+    def test_as_completed_nontask_use_global_loop(self):
         # Deprecated in 3.10
         async def coro():
             return 42
@@ -2258,7 +2258,7 @@ class BaseTaskTests:
                 asyncio.shield(inner)
         self.assertEqual(cm.warnings[0].filename, __file__)
 
-    def test_shield_coroutine_with_running_loop(self):
+    def test_shield_coroutine_use_running_loop(self):
         async def coro():
             return 42
 
@@ -2269,7 +2269,7 @@ class BaseTaskTests:
         res = self.loop.run_until_complete(outer)
         self.assertEqual(res, 42)
 
-    def test_shield_coroutine_with_global_loop(self):
+    def test_shield_coroutine_use_global_loop(self):
         # Deprecated in 3.10
         async def coro():
             return 42
@@ -3413,7 +3413,7 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
         self._check_empty_sequence_without_loop(set())
         self._check_empty_sequence_without_loop(iter(""))
 
-    def _check_empty_sequence_with_running_loop(self, seq_or_iter):
+    def _check_empty_sequence_use_running_loop(self, seq_or_iter):
         async def gather():
             return asyncio.gather(*seq_or_iter)
         fut = self.one_loop.run_until_complete(gather())
@@ -3423,13 +3423,13 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
         self.assertTrue(fut.done())
         self.assertEqual(fut.result(), [])
 
-    def test_constructor_empty_sequence_with_running_loop(self):
-        self._check_empty_sequence_with_running_loop([])
-        self._check_empty_sequence_with_running_loop(())
-        self._check_empty_sequence_with_running_loop(set())
-        self._check_empty_sequence_with_running_loop(iter(""))
+    def test_constructor_empty_sequence_use_running_loop(self):
+        self._check_empty_sequence_use_running_loop([])
+        self._check_empty_sequence_use_running_loop(())
+        self._check_empty_sequence_use_running_loop(set())
+        self._check_empty_sequence_use_running_loop(iter(""))
 
-    def _check_empty_sequence_with_global_loop(self, seq_or_iter):
+    def _check_empty_sequence_use_global_loop(self, seq_or_iter):
         with self.assertWarns(DeprecationWarning) as cm:
             fut = asyncio.gather(*seq_or_iter)
         self.assertEqual(cm.warnings[0].filename, __file__)
@@ -3439,14 +3439,14 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
         self.assertTrue(fut.done())
         self.assertEqual(fut.result(), [])
 
-    def test_constructor_empty_sequence_with_global_loop(self):
+    def test_constructor_empty_sequence_use_global_loop(self):
         # Deprecated in 3.10
         asyncio.set_event_loop(self.one_loop)
         self.addCleanup(asyncio.set_event_loop, None)
-        self._check_empty_sequence_with_global_loop([])
-        self._check_empty_sequence_with_global_loop(())
-        self._check_empty_sequence_with_global_loop(set())
-        self._check_empty_sequence_with_global_loop(iter(""))
+        self._check_empty_sequence_use_global_loop([])
+        self._check_empty_sequence_use_global_loop(())
+        self._check_empty_sequence_use_global_loop(set())
+        self._check_empty_sequence_use_global_loop(iter(""))
 
     def test_constructor_heterogenous_futures(self):
         fut1 = self.one_loop.create_future()
@@ -3534,7 +3534,7 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
                 asyncio.gather(gen1, gen2)
         self.assertEqual(cm.warnings[0].filename, __file__)
 
-    def test_constructor_with_running_loop(self):
+    def test_constructor_use_running_loop(self):
         async def coro():
             return 'abc'
         gen1 = coro()
@@ -3545,7 +3545,7 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
         self.assertIs(fut._loop, self.one_loop)
         self.one_loop.run_until_complete(fut)
 
-    def test_constructor_with_global_loop(self):
+    def test_constructor_use_global_loop(self):
         # Deprecated in 3.10
         async def coro():
             return 'abc'

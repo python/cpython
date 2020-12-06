@@ -752,7 +752,7 @@ os.close(fd)
                 asyncio.StreamReader()
         self.assertEqual(cm.warnings[0].filename, __file__)
 
-    def test_streamreader_constructor_with_running_loop(self):
+    def test_streamreader_constructor_use_running_loop(self):
         # asyncio issue #184: Ensure that StreamReaderProtocol constructor
         # retrieves the current loop if the loop parameter is not set
         async def test():
@@ -761,7 +761,7 @@ os.close(fd)
         reader = self.loop.run_until_complete(test())
         self.assertIs(reader._loop, self.loop)
 
-    def test_streamreader_constructor_with_global_loop(self):
+    def test_streamreader_constructor_use_global_loop(self):
         # asyncio issue #184: Ensure that StreamReaderProtocol constructor
         # retrieves the current loop if the loop parameter is not set
         # Deprecated in 3.10
@@ -780,7 +780,7 @@ os.close(fd)
                 asyncio.StreamReaderProtocol(reader)
         self.assertEqual(cm.warnings[0].filename, __file__)
 
-    def test_streamreaderprotocol_constructor_with_running_loop(self):
+    def test_streamreaderprotocol_constructor_use_running_loop(self):
         # asyncio issue #184: Ensure that StreamReaderProtocol constructor
         # retrieves the current loop if the loop parameter is not set
         reader = mock.Mock()
@@ -789,7 +789,7 @@ os.close(fd)
         protocol = self.loop.run_until_complete(test())
         self.assertIs(protocol._loop, self.loop)
 
-    def test_streamreaderprotocol_constructor_with_global_loop(self):
+    def test_streamreaderprotocol_constructor_use_global_loop(self):
         # asyncio issue #184: Ensure that StreamReaderProtocol constructor
         # retrieves the current loop if the loop parameter is not set
         # Deprecated in 3.10
