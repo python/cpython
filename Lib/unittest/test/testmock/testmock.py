@@ -2164,7 +2164,7 @@ class MockTest(unittest.TestCase):
             for mock in mocks:
                 obj = mock(spec=Something)
                 self.assertIsInstance(obj, Something)
-    
+
     def test_bool_not_called_when_passing_spec_arg(self):
         class Something:
             def __init__(self):
