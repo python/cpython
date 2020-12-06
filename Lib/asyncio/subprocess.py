@@ -199,7 +199,7 @@ class Process:
 
 async def create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None,
                                   limit=streams._DEFAULT_LIMIT, **kwds):
-    loop = events._get_event_loop()
+    loop = events.get_running_loop()
     protocol_factory = lambda: SubprocessStreamProtocol(limit=limit,
                                                         loop=loop)
     transport, protocol = await loop.subprocess_shell(
@@ -212,7 +212,7 @@ async def create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None,
 async def create_subprocess_exec(program, *args, stdin=None, stdout=None,
                                  stderr=None, limit=streams._DEFAULT_LIMIT,
                                  **kwds):
-    loop = events._get_event_loop()
+    loop = events.get_running_loop()
     protocol_factory = lambda: SubprocessStreamProtocol(limit=limit,
                                                         loop=loop)
     transport, protocol = await loop.subprocess_exec(

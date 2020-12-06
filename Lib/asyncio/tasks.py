@@ -681,7 +681,8 @@ class _GatheringFuture(futures.Future):
     cancelled.
     """
 
-    def __init__(self, children, *, loop=None):
+    def __init__(self, children, *, loop):
+        assert loop is not None
         super().__init__(loop=loop)
         self._children = children
         self._cancel_requested = False

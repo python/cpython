@@ -762,6 +762,7 @@ os.close(fd)
     def test_streamreader_constructor_with_global_loop(self):
         # asyncio issue #184: Ensure that StreamReaderProtocol constructor
         # retrieves the current loop if the loop parameter is not set
+        # Deprecated in 3.10
         self.addCleanup(asyncio.set_event_loop, None)
         asyncio.set_event_loop(self.loop)
         with self.assertWarns(DeprecationWarning) as cm:
@@ -789,6 +790,7 @@ os.close(fd)
     def test_streamreaderprotocol_constructor_with_global_loop(self):
         # asyncio issue #184: Ensure that StreamReaderProtocol constructor
         # retrieves the current loop if the loop parameter is not set
+        # Deprecated in 3.10
         self.addCleanup(asyncio.set_event_loop, None)
         asyncio.set_event_loop(self.loop)
         reader = mock.Mock()
