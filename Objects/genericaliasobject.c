@@ -564,32 +564,22 @@ static PyGetSetDef ga_properties[] = {
     {0}
 };
 
-static inline gaobject *
-create_ga(PyTypeObject *type, PyObject *origin, PyObject *args) {
+/* A helper function to create GenericAlias' args tuple and set its attributes.
+ * Returns 1 on success, 0 on failure. 
+ */
+static inline int
+setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {
+    if (alias == NULL) {
+        return 0;
+    }
     if (!PyTuple_Check(args)) {
         args = PyTuple_Pack(1, args);
         if (args == NULL) {
-            return NULL;
+            return 0;
         }
     }
     else {
         Py_INCREF(args);
-    }
-
-    gaobject *alias;
-    int gc_should_track = 0;
-    if (type != NULL) {
-        assert(type->tp_alloc != NULL);
-        alias = (gaobject *)type->tp_alloc(type, 0);
-    }
-    else {
-        alias = PyObject_GC_New(gaobject, &Py_GenericAliasType);
-        gc_should_track = 1;
-    }
-
-    if (alias == NULL) {
-        Py_DECREF(args);
-        return NULL;
     }
 
     Py_INCREF(origin);
@@ -597,10 +587,7 @@ create_ga(PyTypeObject *type, PyObject *origin, PyObject *args) {
     alias->args = args;
     alias->parameters = NULL;
     alias->weakreflist = NULL;
-    if (gc_should_track) {
-        _PyObject_GC_TRACK(alias);
-    }
-    return alias;
+    return 1;
 }
 
 static PyObject *
@@ -615,8 +602,15 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     PyObject *origin = PyTuple_GET_ITEM(args, 0);
     PyObject *arguments = PyTuple_GET_ITEM(args, 1);
-    PyObject *self = (PyObject *)create_ga(type, origin, arguments);
-    return self;
+    gaobject *self = (gaobject *)type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
+    }
+    if (!setup_ga(self, origin, arguments)) {
+        type->tp_free(self);
+        return NULL;
+    }
+    return (PyObject *)self;
 }
 
 static PyNumberMethods ga_as_number = {
@@ -656,5 +650,14 @@ PyTypeObject Py_GenericAliasType = {
 PyObject *
 Py_GenericAlias(PyObject *origin, PyObject *args)
 {
-    return (PyObject *)create_ga(NULL, origin, args);
+    gaobject *alias = PyObject_GC_New(gaobject, &Py_GenericAliasType);
+    if (alias == NULL) {
+        return NULL;
+    }
+    if (!setup_ga(alias, origin, args)) {
+        PyObject_GC_Del(alias);
+        return NULL;
+    }
+    _PyObject_GC_TRACK(alias);
+    return (PyObject *)alias;
 }

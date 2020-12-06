@@ -426,14 +426,28 @@ class _CallableGenericAlias(GenericAlias):
     __slots__ = ()
 
     def __new__(cls, origin, args):
+        try:
+            return cls.__create_ga(origin, args)
+        except TypeError as exc:
+            if sys.version_info[:2] == (3, 9):
+                import warnings
+                warnings.warn(f'{str(exc)} '
+                              f'(This will raise TypeError in Python 3.10)',
+                              DeprecationWarning)
+                return GenericAlias(origin, args)
+            else:
+                raise exc
+
+    @classmethod
+    def __create_ga(cls, origin, args):
         if not isinstance(args, tuple) or len(args) != 2:
             raise TypeError(
-                "Callable must be used as Callable[[arg, ...], result]")
+                "Callable must be used as Callable[[arg, ...], result].")
         t_args, t_result = args
         if not isinstance(t_args, (list, EllipsisType)):
             raise TypeError(
                 f"Callable[args, result]: args must be a list or Ellipsis. "
-                f"Got {_type_repr(t_args)}")
+                f"Got {_type_repr(t_args)} instead.")
         if t_args is Ellipsis:
             ga_args = args
         else:
