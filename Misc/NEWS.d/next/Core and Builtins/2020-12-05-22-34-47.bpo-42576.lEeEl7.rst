@@ -1,3 +1,4 @@
 ``types.GenericAlias`` will now raise a ``TypeError`` when attempting to
 initialize with a keyword argument.  Previously, this would cause the
-interpreter to crash.  Patch by Ken Jin.
+interpreter to crash if the interpreter was compiled with debug symbols.
+This does not affect interpreters compiled for release.  Patch by Ken Jin.
