@@ -2171,8 +2171,8 @@ class MockTest(unittest.TestCase):
                 self.obj_with_bool_func = unittest.mock.MagicMock()
 
         obj = Something()
-        with unittest.mock.patch.object(obj, 'obj_with_bool_func', autospec=True):
-            pass
+        with unittest.mock.patch.object(obj, 'obj_with_bool_func', autospec=True): pass
+
         self.assertEqual(obj.obj_with_bool_func.__bool__.call_count, 0)
 
 
