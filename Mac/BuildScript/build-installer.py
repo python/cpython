@@ -1615,7 +1615,7 @@ def buildDMG():
     if os.path.exists(outdir):
         shutil.rmtree(outdir)
 
-    # We used to use the deployment target as the last characters of the 
+    # We used to use the deployment target as the last characters of the
     # installer file name. With the introduction of weaklinked installer
     # variants, we may have two variants with the same file name, i.e.
     # both ending in '10.9'.  To avoid this, we now use the major/minor
