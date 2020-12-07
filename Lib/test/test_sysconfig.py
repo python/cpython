@@ -372,6 +372,8 @@ class TestSysConfig(unittest.TestCase):
     @unittest.skipIf(sys.platform.startswith('freebsd'), "fails on FREEBSD")
     @unittest.skipIf(platform.system() =='AIX', "fails on AIX")
     def test_EXT_SUFFIX_in_vars(self):
+        import _imp
+        vars = sysconfig.get_config_vars()
         self.assertEqual(vars['EXT_SUFFIX'], _imp.extension_suffixes()[0])
 
     @unittest.skipUnless(sys.platform == 'linux' and
