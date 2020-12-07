@@ -1,3 +1,0 @@
-Keep IDLE running on macOS.  Remove obsolete workaround that prevented
-running files with shortcuts when using new universal2 installers built
-on macOS 11.

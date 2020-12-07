@@ -1,3 +1,0 @@
-It is no longer possible to build the ``_ctypes`` extension module without
-:c:type:`wchar_t` type: remove ``CTYPES_UNICODE`` macro. Anyway, the
-:c:type:`wchar_t` type is required to build Python. Patch by Victor Stinner.

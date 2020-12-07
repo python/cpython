@@ -1,3 +1,0 @@
-Removed the undocumented ``PyOS_InitInterrupts()`` function. Initializing
-Python already implicitly installs signal handlers: see
-:c:member:`PyConfig.install_signal_handlers`. Patch by Victor Stinner.
