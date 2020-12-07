@@ -131,12 +131,14 @@ dis_bug708901 = """\
              12 STORE_FAST               0 (res)
 
 %3d          14 JUMP_ABSOLUTE           10
-        >>   16 LOAD_CONST               0 (None)
+
+%3d     >>   16 LOAD_CONST               0 (None)
              18 RETURN_VALUE
 """ % (bug708901.__code__.co_firstlineno + 1,
        bug708901.__code__.co_firstlineno + 2,
        bug708901.__code__.co_firstlineno + 1,
-       bug708901.__code__.co_firstlineno + 3)
+       bug708901.__code__.co_firstlineno + 3,
+       bug708901.__code__.co_firstlineno + 1)
 
 
 def bug1333982(x=[]):
@@ -163,6 +165,20 @@ dis_bug1333982 = """\
        bug1333982.__code__.co_firstlineno + 1,
        bug1333982.__code__.co_firstlineno + 2,
        bug1333982.__code__.co_firstlineno + 1)
+
+
+def bug42562():
+    pass
+
+
+# Set line number for 'pass' to None
+bug42562.__code__ = bug42562.__code__.replace(co_linetable=b'\x04\x80\xff\x80')
+
+
+dis_bug42562 = """\
+          0 LOAD_CONST               0 (None)
+          2 RETURN_VALUE
+"""
 
 _BIG_LINENO_FORMAT = """\
 %3d           0 LOAD_GLOBAL              0 (spam)
@@ -295,13 +311,15 @@ dis_traceback = """\
              52 STORE_FAST               0 (e)
              54 DELETE_FAST              0 (e)
              56 RERAISE
-        >>   58 RERAISE
+
+%3d     >>   58 RERAISE
 """ % (TRACEBACK_CODE.co_firstlineno + 1,
        TRACEBACK_CODE.co_firstlineno + 2,
        TRACEBACK_CODE.co_firstlineno + 5,
        TRACEBACK_CODE.co_firstlineno + 3,
        TRACEBACK_CODE.co_firstlineno + 4,
-       TRACEBACK_CODE.co_firstlineno + 5)
+       TRACEBACK_CODE.co_firstlineno + 5,
+       TRACEBACK_CODE.co_firstlineno + 3)
 
 def _fstring(a, b, c, d):
     return f'{a} {b:4} {c!r} {d!r:4}'
@@ -515,6 +533,9 @@ class DisTests(unittest.TestCase):
             self.skipTest('need asserts, run without -O')
 
         self.do_disassembly_test(bug1333982, dis_bug1333982)
+
+    def test_bug_42562(self):
+        self.do_disassembly_test(bug42562, dis_bug42562)
 
     def test_big_linenos(self):
         def func(count):

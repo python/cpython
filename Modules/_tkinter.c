@@ -904,7 +904,7 @@ PyTclObject_dealloc(PyTclObject *self)
     PyObject *tp = (PyObject *) Py_TYPE(self);
     Tcl_DecrRefCount(self->value);
     Py_XDECREF(self->string);
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 
@@ -2472,7 +2472,7 @@ PythonCmdDelete(ClientData clientData)
     ENTER_PYTHON
     Py_XDECREF(data->self);
     Py_XDECREF(data->func);
-    PyMem_DEL(data);
+    PyMem_Free(data);
     LEAVE_PYTHON
 }
 
@@ -2545,7 +2545,7 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
         CommandEvent *ev = (CommandEvent*)attemptckalloc(sizeof(CommandEvent));
         if (ev == NULL) {
             PyErr_NoMemory();
-            PyMem_DEL(data);
+            PyMem_Free(data);
             return NULL;
         }
         ev->ev.proc = (Tcl_EventProc*)Tkapp_CommandProc;
@@ -2568,7 +2568,7 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
     }
     if (err) {
         PyErr_SetString(Tkinter_TclError, "can't create Tcl command");
-        PyMem_DEL(data);
+        PyMem_Free(data);
         return NULL;
     }
 
@@ -2666,7 +2666,7 @@ DeleteFHCD(int id)
             *pp = p->next;
             Py_XDECREF(p->func);
             Py_XDECREF(p->file);
-            PyMem_DEL(p);
+            PyMem_Free(p);
         }
         else
             pp = &p->next;
@@ -2823,7 +2823,7 @@ Tktt_Dealloc(PyObject *self)
 
     Py_XDECREF(func);
 
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 
@@ -3096,7 +3096,7 @@ Tkapp_Dealloc(PyObject *self)
     ENTER_TCL
     Tcl_DeleteInterp(Tkapp_Interp(self));
     LEAVE_TCL
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
     DisableEventHook();
 }

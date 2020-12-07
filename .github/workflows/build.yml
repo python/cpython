@@ -60,7 +60,8 @@ jobs:
         run: sudo ./.github/workflows/posix-deps-apt.sh
       - name: Build CPython
         run: |
-          ./configure --with-pydebug
+          # Build Python with the libpython dynamic library
+          ./configure --with-pydebug --enable-shared
           make -j4 regen-all
       - name: Check for changes
         run: |
@@ -74,6 +75,8 @@ jobs:
           fi
       - name: Check exported libpython symbols
         run: make smelly
+      - name: Check limited ABI symbols
+        run: make check-limited-abi
 
   build_win32:
     name: 'Windows (x86)'
@@ -134,7 +137,7 @@ jobs:
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v2.1.2
+      uses: actions/cache@v2.1.3
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}

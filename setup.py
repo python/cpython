@@ -177,10 +177,11 @@ def macosx_sdk_root():
     m = re.search(r'-isysroot\s*(\S+)', cflags)
     if m is not None:
         MACOS_SDK_ROOT = m.group(1)
+        MACOS_SDK_SPECIFIED = MACOS_SDK_ROOT != '/'
     else:
         MACOS_SDK_ROOT = _osx_support._default_sysroot(
             sysconfig.get_config_var('CC'))
-    MACOS_SDK_SPECIFIED = MACOS_SDK_ROOT != '/'
+        MACOS_SDK_SPECIFIED = False
 
     return MACOS_SDK_ROOT
 
@@ -1014,7 +1015,7 @@ class PyBuildExt(build_ext):
             os_release = int(os.uname()[2].split('.')[0])
             dep_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
             if (dep_target and
-                    (tuple(int(n) for n in dep_target.split('.')[0:2])
+                    (tuple(int(n) for n in str(dep_target).split('.')[0:2])
                         < (10, 5) ) ):
                 os_release = 8
             if os_release < 9:
@@ -1132,11 +1133,7 @@ class PyBuildExt(build_ext):
     def detect_socket(self):
         # socket(2)
         kwargs = {'depends': ['socketmodule.h']}
-        if VXWORKS:
-            if not self.compiler.find_library_file(self.lib_dirs, 'net'):
-                return
-            kwargs['libraries'] = ['net']
-        elif MACOS:
+        if MACOS:
             # Issue #35569: Expose RFC 3542 socket options.
             kwargs['extra_compile_args'] = ['-D__APPLE_USE_RFC_3542']
 

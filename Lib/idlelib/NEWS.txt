@@ -3,6 +3,10 @@ Released on 2021-10-04?
 ======================================
 
 
+bpo-42508: Keep IDLE running on macOS.  Remove obsolete workaround
+that prevented running files with shortcuts when using new universal2
+installers built on macOS 11.
+
 bpo-42426: Fix reporting offset of the RE error in searchengine.
 
 bpo-42416: Get docstrings for IDLE calltips more often

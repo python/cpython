@@ -92,24 +92,8 @@ static inline int _Py_EnterRecursiveCall_inline(const char *where) {
 
 #define Py_EnterRecursiveCall(where) _Py_EnterRecursiveCall_inline(where)
 
-/* Compute the "lower-water mark" for a recursion limit. When
- * Py_LeaveRecursiveCall() is called with a recursion depth below this mark,
- * the overflowed flag is reset to 0. */
-static inline int _Py_RecursionLimitLowerWaterMark(int limit) {
-    if (limit > 200) {
-        return (limit - 50);
-    }
-    else {
-        return (3 * (limit >> 2));
-    }
-}
-
 static inline void _Py_LeaveRecursiveCall(PyThreadState *tstate)  {
     tstate->recursion_depth--;
-    int limit = tstate->interp->ceval.recursion_limit;
-    if (tstate->recursion_depth < _Py_RecursionLimitLowerWaterMark(limit)) {
-        tstate->overflowed = 0;
-    }
 }
 
 static inline void _Py_LeaveRecursiveCall_inline(void)  {
