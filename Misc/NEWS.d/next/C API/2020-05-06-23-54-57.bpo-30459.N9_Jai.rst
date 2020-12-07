@@ -1,2 +1,6 @@
-Cast the result of :c:func:`PyList_SET_ITEM` and :c:func:`PyTuple_SET_ITEM`
-to void.
+:c:func:`PyList_SET_ITEM`, :c:func:`PyTuple_SET_ITEM` and :c:func:`PyCell_SET`
+macros can no longer be used as l-value or r-value.  For example,
+``x = PyList_SET_ITEM(a, b, c)`` and ``PyList_SET_ITEM(a, b, c) = x`` now fail
+with a compiler error. It prevents bugs like
+``if (PyList_SET_ITEM (a, b, c) < 0) ...`` test.
+Patch by Zackery Spytz and Victor Stinner.
