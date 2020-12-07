@@ -1,3 +1,0 @@
-If no explicit macOS SDK was specified, setup.py should check for Tcl and TK
-frameworks in /Library/Frameworks; the previous commit inadvertently broke
-that test.
