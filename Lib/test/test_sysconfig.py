@@ -1,3 +1,4 @@
+import platform
 import unittest
 import sys
 import os
