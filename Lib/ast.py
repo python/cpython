@@ -63,7 +63,9 @@ def literal_eval(node_or_string):
     if isinstance(node_or_string, Expression):
         node_or_string = node_or_string.body
     def _raise_malformed_node(node):
-        raise ValueError(f'malformed node or string: {node!r}')
+        lno = getattr(node, 'lineno', None)
+        lno_str = f' on line {lno}' if lno else ''
+        raise ValueError(f'malformed node or string{lno_str}: {node!r}')
     def _convert_num(node):
         if not isinstance(node, Constant) or type(node.value) not in (int, float, complex):
             _raise_malformed_node(node)
