@@ -590,7 +590,6 @@ setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {
 static PyObject *
 ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    assert(type != NULL && type->tp_alloc != NULL);
     if (!_PyArg_NoKeywords("GenericAlias", kwds)) {
         return NULL;
     }
