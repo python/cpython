@@ -1,3 +1,0 @@
-``sqlite3.OptimizedUnicode`` has been undocumented and obsolete since Python
-3.3, when it was made an alias to :class:`str`.  It is now deprecated,
-scheduled for removal in Python 3.12.

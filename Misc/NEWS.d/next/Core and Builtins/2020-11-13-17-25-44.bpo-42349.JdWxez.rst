@@ -1,1 +1,0 @@
-Make sure that the compiler front-end produces a well-formed control flow graph. Be be more aggressive in the compiler back-end, as it is now safe to do so.
