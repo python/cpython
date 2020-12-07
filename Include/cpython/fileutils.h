@@ -91,6 +91,13 @@ PyAPI_FUNC(int) _Py_open_noraise(
     const char *pathname,
     int flags);
 
+#ifdef MS_WINDOWS
+PyAPI_FUNC(int) _Py_wopen_noraise(
+    const wchar_t *pathname,
+    int flags,
+    int mode);
+#endif
+
 PyAPI_FUNC(FILE *) _Py_wfopen(
     const wchar_t *path,
     const wchar_t *mode);

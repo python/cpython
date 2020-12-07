@@ -9060,7 +9060,7 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
     do {
         Py_BEGIN_ALLOW_THREADS
 #ifdef MS_WINDOWS
-        fd = _wopen(path->wide, flags, mode);
+        fd = _Py_wopen_noraise(path->wide, flags, mode);
 #else
 #ifdef HAVE_OPENAT
         if (dir_fd != DEFAULT_DIR_FD) {

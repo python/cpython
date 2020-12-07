@@ -1,0 +1,2 @@
+Support POSIX atomicity guarantee of ``O_APPEND`` on Windows for :func:`open`
+and :func:`os.open`.

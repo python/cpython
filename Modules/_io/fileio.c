@@ -381,7 +381,7 @@ _Py_COMP_DIAG_POP
             do {
                 Py_BEGIN_ALLOW_THREADS
 #ifdef MS_WINDOWS
-                self->fd = _wopen(widename, flags, 0666);
+                self->fd = _Py_wopen_noraise(widename, flags, 0666);
 #else
                 self->fd = open(name, flags, 0666);
 #endif

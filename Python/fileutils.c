@@ -1415,6 +1415,76 @@ _Py_open_noraise(const char *pathname, int flags)
     return _Py_open_impl(pathname, flags, 0);
 }
 
+#ifdef MS_WINDOWS
+/* Open a file like _wopen(). In case it is a normal disk file and O_APPEND is
+   in flags, ensure that for each write() the file offset update and the write
+   are performed as a single atomic step, so that two processes concurrently
+   appending to the same file can never overwrite each others data.
+
+   Return a file descriptor on success. Set errno and return -1 on error. */
+int
+_Py_wopen_noraise(const wchar_t *pathname, int flags, int mode)
+{
+    int fd;
+    _Py_BEGIN_SUPPRESS_IPH
+    fd = _wopen(pathname, flags, mode);
+    _Py_END_SUPPRESS_IPH
+
+    if (fd < 0 || !(flags & O_APPEND) || !(flags & (O_WRONLY | O_RDWR))) {
+        return fd;
+    }
+
+    HANDLE src;
+    _Py_BEGIN_SUPPRESS_IPH
+    src = (HANDLE)_get_osfhandle(fd);
+    _Py_END_SUPPRESS_IPH
+
+    if (src == INVALID_HANDLE_VALUE) {
+        goto error;
+    }
+
+    /* FILE_APPEND_DATA is meaningful only for normal files. */
+    if (GetFileType(src) != FILE_TYPE_DISK) {
+        return fd;
+    }
+
+    /* Use the access rights corresponding to GENERIC_WRITE for files,
+     * but remove FILE_WRITE_DATA, leaving only FILE_APPEND_DATA. */
+    DWORD access = FILE_READ_ATTRIBUTES | FILE_GENERIC_WRITE ^ FILE_WRITE_DATA;
+    assert(access & FILE_APPEND_DATA);
+    if (flags & O_RDWR) {
+        access |= FILE_GENERIC_READ;
+    }
+
+    HANDLE dst;
+    if (!DuplicateHandle(GetCurrentProcess(), src, GetCurrentProcess(), &dst,
+                         access, !(flags & O_NOINHERIT), 0)) {
+        errno = winerror_to_errno(GetLastError());
+        goto error;
+    }
+
+    _Py_BEGIN_SUPPRESS_IPH
+    (void)close(fd);
+     fd = _open_osfhandle((intptr_t)dst, flags & ~O_APPEND);
+    _Py_END_SUPPRESS_IPH
+
+    if (fd < 0) {
+        CloseHandle(dst);
+        return -1;
+    }
+
+    return fd;
+
+error:;
+    int err = errno;
+    _Py_BEGIN_SUPPRESS_IPH
+    (void)close(fd);
+    _Py_END_SUPPRESS_IPH
+    errno = err;
+    return -1;
+}
+#endif
+
 /* Open a file. Use _wfopen() on Windows, encode the path to the locale
    encoding and use fopen() otherwise.
 
