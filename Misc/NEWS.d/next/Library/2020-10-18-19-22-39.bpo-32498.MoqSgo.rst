@@ -1,3 +1,0 @@
-Clearer exception message when passing an argument of type bytes to
-:func:`urllib.parse.unquote`.  This is only for 3.8; in 3.9 and later this
-function accepts bytes inputs as well.  PR by Irit Katriel.

@@ -1,4 +1,0 @@
-Fix a race condition in "make regen-all" when make -jN option is used to run
-jobs in parallel. The clinic.py script now only use atomic write to write
-files. Moveover, generated files are now left unchanged if the content does not
-change, to not change the file modification time.
