@@ -2070,7 +2070,9 @@ _Py_get_blocking(int fd)
 int
 _Py_set_blocking(int fd, int blocking)
 {
-#if defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO)
+/* bpo-41462: On VxWorks, ioctl(FIONBIO) only works on sockets.
+   Use fcntl() instead. */
+#if defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO) && !defined(__VXWORKS__)
     int arg = !blocking;
     if (ioctl(fd, FIONBIO, &arg) < 0)
         goto error;
