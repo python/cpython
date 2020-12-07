@@ -1769,7 +1769,7 @@ def write_file(filename, new_contents):
         pass
 
     # Atomic write using a temporary file and os.replace()
-    filename_new = f"{filename}.new"
+    filename_new = "{}.new".format(filename)
     with open(filename_new, "w", encoding="utf-8") as fp:
         fp.write(new_contents)
 
