@@ -1,0 +1,1 @@
+Enum: fix regression involving inheriting a multiply-inherited enum
