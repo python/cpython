@@ -299,14 +299,14 @@ typedef struct {
 typedef struct {
     PyObject_HEAD
     PyObject *result; /* The return value of the callable, to be awaited */
-    PyObject *it; /* The iterator object, in order to clear it when done. */
+    asynccalliterobject *it; /* The iterator object, in order to clear it when done. */
 } asynccallawaitableobject;
 
 PyObject *
-PyCallIter_New(PyObject *callable, PyObject *sentinel)
+PyCallAiter_New(PyObject *callable, PyObject *sentinel)
 {
     asynccalliterobject *it;
-    it = PyObject_GC_New(asynccalliterobject, &PyCallIter_Type);
+    it = PyObject_GC_New(asynccalliterobject, &PyCallAiter_Type);
     if (it == NULL)
         return NULL;
     Py_INCREF(callable);
@@ -316,6 +316,7 @@ PyCallIter_New(PyObject *callable, PyObject *sentinel)
     _PyObject_GC_TRACK(it);
     return (PyObject *)it;
 }
+
 static void
 asynccalliter_dealloc(asynccalliterobject *it)
 {
@@ -336,30 +337,39 @@ asynccalliter_traverse(asynccalliterobject *it, visitproc visit, void *arg)
 static PyObject *
 asynccalliter_iternext(asynccalliterobject *it)
 {
-    PyObject *result;
+    PyObject *obj;
 
     if (it->it_callable == NULL) {
         return NULL;
     }
 
-    result = _PyObject_CallNoArg(it->it_callable);
+    obj = _PyObject_CallNoArg(it->it_callable);
+    int ok = PyObject_RichCompareBool(it->it_sentinel, obj, Py_EQ);
+    if (ok == 0) {
+        PyObject *result = (*Py_TYPE(obj)->tp_as_async->am_await)(obj);
+        return result;
+    } else {
+        Py_CLEAR(it->it_callable);
+        Py_CLEAR(it->it_sentinel);
+    }
 
     Py_INCREF(it);
-    return Awaitable(result, it);
+    return NULL;
 }
 
 
 static PyObject *
-awaitable_await(PyObject *self) {
+awaitable_await(asynccallawaitableobject *self) {
 
-    PyObject *iterator, *result;
+    asynccalliterobject *it;
+    PyObject *result;
 
     Py_INCREF(self->result);
-    iterator = (*Py_TYPE(self->result)->tp_aiter.am_await)(self->result);
+    it = (asynccalliterobject*)(*Py_TYPE(self->result)->tp_as_async->am_await)(self->result);
     Py_DECREF(self->result);
 
-    result = PyIter_Next(iterator);
-    Py_DECREF(iterator);
+    result = PyIter_Next(result);
+    Py_DECREF(it);
     if (result != NULL) {
         int ok;
 
@@ -397,9 +407,16 @@ static PyMethodDef asynccalliter_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
-PyTypeObject PyCallIter_Type = {
+static PyAsyncMethods async_iter_as_async = {
+    PyObject_SelfIter,                          /* am_await */                                          /* am_await */
+    PyObject_SelfIter,                          /* am_aiter */
+    (unaryfunc)asynccalliter_iternext,                     /* am_anext */
+    0,                                          /* am_send  */
+};
+
+PyTypeObject PyCallAiter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "callable_iterator",                        /* tp_name */
+    "callable_async_iterator",                        /* tp_name */
     sizeof(asynccalliterobject),                     /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
@@ -407,7 +424,7 @@ PyTypeObject PyCallIter_Type = {
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
+    &async_iter_as_async,                       /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */

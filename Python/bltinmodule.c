@@ -1544,25 +1544,26 @@ aiter as builtin_aiter
 
 Return an async iterator for an async iterable object.
 [clinic start generated code]*/
-static PyObject *
-builtin_aiter(PyObject *self, PyObject *aiterable, PyObject *sentinel)
-{
-    PyObject *v;
 
+static PyObject *
+builtin_aiter_impl(PyObject *module, PyObject *aiterable, PyObject *sentinel)
+/*[clinic end generated code: output=ea120e90169d9f32 input=a12efceda1863b3c]*/
+{
     if (sentinel == NULL) {
-        return PyObject_GetIter(v);
+        return PyObject_GetAiter(aiterable);
     }
 
-    if (!PyCallable_Check(v)) {
+    if (!PyCallable_Check(aiterable)) {
         PyErr_SetString(PyExc_TypeError,
                         "iter(v, w): v must be callable");
         return NULL;
     }
-    PyObject *sentinel = args[1];
-    return PyCallIter_New(v, sentinel);
+    // PyObject *sentinel = args[1];
+    return PyCallAiter_New(aiterable, sentinel);
 }
 
-PyDoc_STRVAR(iter_doc,
+// TODO
+PyDoc_STRVAR(aiter_doc,
 "iter(iterable) -> iterator\n\
 iter(callable, sentinel) -> iterator\n\
 \n\

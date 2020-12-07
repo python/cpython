@@ -2638,6 +2638,26 @@ PyObject_GetIter(PyObject *o)
     }
 }
 
+
+PyObject *
+PyObject_GetAiter(PyObject *o) {
+    PyTypeObject *t = Py_TYPE(o);
+    unaryfunc f;
+
+    f = t->tp_as_async->am_aiter;
+    if (f == NULL) {
+        // TODO: is this check relevant?
+        // if (PySequence_Check(o))
+        //     return PySeqIter_New(o);
+        return type_error("'%.200s' object is not iterable", o);
+    }
+    else {
+        PyObject *it = (*f)(o);
+        // TODO: deleted a check here, do we need an async version?
+        return it;
+    }
+}
+
 #undef PyIter_Check
 
 int PyIter_Check(PyObject *obj)
