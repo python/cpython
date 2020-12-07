@@ -6,6 +6,7 @@ import builtins
 import collections
 import decimal
 import fractions
+import gc
 import io
 import locale
 import os
@@ -27,7 +28,7 @@ from types import AsyncGeneratorType, FunctionType
 from operator import neg
 from test.support import (
     EnvironmentVarGuard, TESTFN, check_warnings, swap_attr, unlink,
-    maybe_get_event_loop_policy)
+    maybe_get_event_loop_policy, cpython_only)
 from test.support.script_helper import assert_python_ok
 from unittest.mock import MagicMock, patch
 try:
@@ -1572,6 +1573,18 @@ class BuiltinTest(unittest.TestCase):
             zip(BadIterable())
 
         self.assertIs(cm.exception, exception)
+
+    @cpython_only
+    def test_zip_result_gc(self):
+        # bpo-42536: zip's tuple-reuse speed trick breaks the GC's assumptions
+        # about what can be untracked. Make sure we re-track result tuples
+        # whenever we reuse them.
+        it = zip([[]])
+        gc.collect()
+        # That GC collection probably untracked the recycled internal result
+        # tuple, which is initialized to (None,). Make sure it's re-tracked when
+        # it's mutated and returned from __next__:
+        self.assertTrue(gc.is_tracked(next(it)))
 
     def test_format(self):
         # Test the basic machinery of the format() builtin.  Don't test
