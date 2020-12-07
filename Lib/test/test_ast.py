@@ -1012,7 +1012,7 @@ Module(
         self.assertRaises(IndentationError, ast.literal_eval, "\n -1")
 
     def test_literal_eval_malformed_lineno(self):
-        msg = r'malformed node or string on line 3: .*'
+        msg = r'malformed node or string on line 3:'
         with self.assertRaisesRegex(ValueError, msg):
             ast.literal_eval("{'a': 1,\n'b':2,\n'c':++3,\n'd':4}")
 
