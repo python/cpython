@@ -429,17 +429,46 @@ def aiter(obj, sentinel=_NOT_PROVIDED):
     if not callable(obj):
         raise TypeError(f'aiter expected an async callable, got {type(obj)}')
 
-    async def ait():
-        while True:
-            value = await obj()
-            if value == sentinel:
-                break
-            yield value
-
-    return ait()
+    return _aiter_callable(obj, sentinel)
 
 
-async def anext(async_iterator, default=_NOT_PROVIDED):
+class _aiter_callable:
+    __slots__ = ('acallable', 'sentinel')
+
+    def __init__(self, acallable, sentinel):
+        self.acallable = acallable
+        self.sentinel = sentinel
+
+    def __aiter__(self):
+        return self
+
+    def __anext__(self):
+        return _aiter_anext(self.acallable().__await__(), self.sentinel)
+
+
+class _aiter_anext:
+    __slots__ = ('iterator', 'sentinel')
+
+    def __init__(self, iterator, sentinel):
+        self.iterator = iterator
+        self.sentinel = sentinel
+
+    def __await__(self):
+        return self
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        try:
+            return next(self.iterator)
+        except StopIteration as end:
+            if end.value == self.sentinel:
+                raise StopAsyncIteration(end.value) from None
+            raise
+
+
+def anext(async_iterator, default=_NOT_PROVIDED):
     """anext(async_iterator[, default])
 
     Return the next item from the async iterator.
@@ -449,13 +478,32 @@ async def anext(async_iterator, default=_NOT_PROVIDED):
     from collections.abc import AsyncIterator
     if not isinstance(async_iterator, AsyncIterator):
         raise TypeError(f'anext expected an AsyncIterator, got {type(async_iterator)}')
-    anxt = type(async_iterator).__anext__
-    try:
-        return await anxt(async_iterator)
-    except StopAsyncIteration:
-        if default is _NOT_PROVIDED:
-            raise
-        return default
+    anxt = type(async_iterator).__anext__(async_iterator)
+
+    if default is _NOT_PROVIDED:
+        return anxt
+
+    return _anext_default(anxt, default)
+
+
+class _anext_default:
+    __slots__ = ('iterator', 'default')
+
+    def __init__(self, iterator, default):
+        self.iterator = iterator
+        self.default = default
+
+    def __await__(self):
+        return self
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        try:
+            return next(self.iterator)
+        except StopAsyncIteration:
+            raise StopIteration(self.default) from None
 
 
 try:
