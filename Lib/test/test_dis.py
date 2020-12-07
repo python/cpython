@@ -131,12 +131,14 @@ dis_bug708901 = """\
              12 STORE_FAST               0 (res)
 
 %3d          14 JUMP_ABSOLUTE           10
-        >>   16 LOAD_CONST               0 (None)
+
+%3d     >>   16 LOAD_CONST               0 (None)
              18 RETURN_VALUE
 """ % (bug708901.__code__.co_firstlineno + 1,
        bug708901.__code__.co_firstlineno + 2,
        bug708901.__code__.co_firstlineno + 1,
-       bug708901.__code__.co_firstlineno + 3)
+       bug708901.__code__.co_firstlineno + 3,
+       bug708901.__code__.co_firstlineno + 1)
 
 
 def bug1333982(x=[]):
@@ -145,30 +147,38 @@ def bug1333982(x=[]):
     pass
 
 dis_bug1333982 = """\
-%3d           0 LOAD_CONST               1 (0)
-              2 POP_JUMP_IF_TRUE        26
-              4 LOAD_ASSERTION_ERROR
-              6 LOAD_CONST               2 (<code object <listcomp> at 0x..., file "%s", line %d>)
-              8 LOAD_CONST               3 ('bug1333982.<locals>.<listcomp>')
-             10 MAKE_FUNCTION            0
-             12 LOAD_FAST                0 (x)
-             14 GET_ITER
-             16 CALL_FUNCTION            1
+%3d           0 LOAD_ASSERTION_ERROR
+              2 LOAD_CONST               2 (<code object <listcomp> at 0x..., file "%s", line %d>)
+              4 LOAD_CONST               3 ('bug1333982.<locals>.<listcomp>')
+              6 MAKE_FUNCTION            0
+              8 LOAD_FAST                0 (x)
+             10 GET_ITER
+             12 CALL_FUNCTION            1
 
-%3d          18 LOAD_CONST               4 (1)
+%3d          14 LOAD_CONST               4 (1)
 
-%3d          20 BINARY_ADD
-             22 CALL_FUNCTION            1
-             24 RAISE_VARARGS            1
-
-%3d     >>   26 LOAD_CONST               0 (None)
-             28 RETURN_VALUE
+%3d          16 BINARY_ADD
+             18 CALL_FUNCTION            1
+             20 RAISE_VARARGS            1
 """ % (bug1333982.__code__.co_firstlineno + 1,
        __file__,
        bug1333982.__code__.co_firstlineno + 1,
        bug1333982.__code__.co_firstlineno + 2,
-       bug1333982.__code__.co_firstlineno + 1,
-       bug1333982.__code__.co_firstlineno + 3)
+       bug1333982.__code__.co_firstlineno + 1)
+
+
+def bug42562():
+    pass
+
+
+# Set line number for 'pass' to None
+bug42562.__code__ = bug42562.__code__.replace(co_linetable=b'\x04\x80\xff\x80')
+
+
+dis_bug42562 = """\
+          0 LOAD_CONST               0 (None)
+          2 RETURN_VALUE
+"""
 
 _BIG_LINENO_FORMAT = """\
 %3d           0 LOAD_GLOBAL              0 (spam)
@@ -301,13 +311,15 @@ dis_traceback = """\
              52 STORE_FAST               0 (e)
              54 DELETE_FAST              0 (e)
              56 RERAISE
-        >>   58 RERAISE
+
+%3d     >>   58 RERAISE
 """ % (TRACEBACK_CODE.co_firstlineno + 1,
        TRACEBACK_CODE.co_firstlineno + 2,
        TRACEBACK_CODE.co_firstlineno + 5,
        TRACEBACK_CODE.co_firstlineno + 3,
        TRACEBACK_CODE.co_firstlineno + 4,
-       TRACEBACK_CODE.co_firstlineno + 5)
+       TRACEBACK_CODE.co_firstlineno + 5,
+       TRACEBACK_CODE.co_firstlineno + 3)
 
 def _fstring(a, b, c, d):
     return f'{a} {b:4} {c!r} {d!r:4}'
@@ -522,6 +534,9 @@ class DisTests(unittest.TestCase):
 
         self.do_disassembly_test(bug1333982, dis_bug1333982)
 
+    def test_bug_42562(self):
+        self.do_disassembly_test(bug42562, dis_bug42562)
+
     def test_big_linenos(self):
         def func(count):
             namespace = {}
@@ -674,8 +689,15 @@ class DisWithFileTests(DisTests):
         return output.getvalue()
 
 
+if sys.flags.optimize:
+    code_info_consts = "0: None"
+else:
+    code_info_consts = (
+    """0: 'Formatted details of methods, functions, or code.'
+   1: None"""
+)
 
-code_info_code_info = """\
+code_info_code_info = f"""\
 Name:              code_info
 Filename:          (.*)
 Argument count:    1
@@ -685,13 +707,13 @@ Number of locals:  1
 Stack size:        3
 Flags:             OPTIMIZED, NEWLOCALS, NOFREE
 Constants:
-   0: %r
+   {code_info_consts}
 Names:
    0: _format_code_info
    1: _get_code_object
 Variable names:
-   0: x""" % (('Formatted details of methods, functions, or code.',)
-              if sys.flags.optimize < 2 else (None,))
+   0: x"""
+
 
 @staticmethod
 def tricky(a, b, /, x, y, z=True, *args, c, d, e=[], **kwds):

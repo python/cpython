@@ -225,7 +225,7 @@ def transient_internet(resource_name, *, timeout=_NOT_SET, errnos=()):
 
     def filter_error(err):
         n = getattr(err, 'errno', None)
-        if (isinstance(err, socket.timeout) or
+        if (isinstance(err, TimeoutError) or
             (isinstance(err, socket.gaierror) and n in gai_errnos) or
             (isinstance(err, urllib.error.HTTPError) and
              500 <= err.code <= 599) or

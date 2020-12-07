@@ -98,7 +98,7 @@ to start a process.  These *start methods* are
   *spawn*
     The parent process starts a fresh python interpreter process.  The
     child process will only inherit those resources necessary to run
-    the process objects :meth:`~Process.run` method.  In particular,
+    the process object's :meth:`~Process.run` method.  In particular,
     unnecessary file descriptors and handles from the parent process
     will not be inherited.  Starting a process using this method is
     rather slow compared to using *fork* or *forkserver*.
@@ -2569,9 +2569,9 @@ Address Formats
   filesystem.
 
 * An ``'AF_PIPE'`` address is a string of the form
-   :samp:`r'\\\\.\\pipe\\{PipeName}'`.  To use :func:`Client` to connect to a named
-   pipe on a remote computer called *ServerName* one should use an address of the
-   form :samp:`r'\\\\{ServerName}\\pipe\\{PipeName}'` instead.
+  :samp:`r'\\\\.\\pipe\\{PipeName}'`.  To use :func:`Client` to connect to a named
+  pipe on a remote computer called *ServerName* one should use an address of the
+  form :samp:`r'\\\\{ServerName}\\pipe\\{PipeName}'` instead.
 
 Note that any string beginning with two backslashes is assumed by default to be
 an ``'AF_PIPE'`` address rather than an ``'AF_UNIX'`` address.

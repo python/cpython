@@ -419,12 +419,12 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     if (lseek(fd, 0, SEEK_SET) == (off_t)-1) {
         Py_DECREF(io);
         Py_DECREF(binary);
-        PyMem_FREE(found_encoding);
+        PyMem_Free(found_encoding);
         return 0;
     }
     fob = _PyObject_CallMethodId(io, &PyId_TextIOWrapper, "Os", binary, encoding);
     Py_DECREF(io);
-    PyMem_FREE(found_encoding);
+    PyMem_Free(found_encoding);
 
     if (fob == NULL) {
         PyErr_Clear();

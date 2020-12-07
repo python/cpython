@@ -1,0 +1,1 @@
+skip test_test of test_mailcap on VxWorks

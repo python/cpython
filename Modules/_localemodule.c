@@ -370,8 +370,8 @@ _locale_strcoll_impl(PyObject *module, PyObject *os1, PyObject *os2)
     result = PyLong_FromLong(wcscoll(ws1, ws2));
   done:
     /* Deallocate everything. */
-    if (ws1) PyMem_FREE(ws1);
-    if (ws2) PyMem_FREE(ws2);
+    if (ws1) PyMem_Free(ws1);
+    if (ws2) PyMem_Free(ws2);
     return result;
 }
 #endif
@@ -556,7 +556,6 @@ static struct langinfo_constant{
     LANGINFO(PM_STR),
 
     /* The following constants are available only with XPG4, but...
-       AIX 3.2. only has CODESET.
        OpenBSD doesn't have CODESET but has T_FMT_AMPM, and doesn't have
        a few of the others.
        Solution: ifdef-test them all. */

@@ -1,0 +1,5 @@
+Windows: Change ``sysconfig.get_config_var('EXT_SUFFIX')`` to the expected
+full ``platform_tag.extension`` format. Previously it was hard-coded to
+``.pyd``, now it is compatible with ``distutils.sysconfig`` and will result
+in something like ``.cp38-win_amd64.pyd``. This brings windows into
+conformance with the other platforms.

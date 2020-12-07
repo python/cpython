@@ -430,7 +430,6 @@ class Callable(metaclass=ABCMeta):
 
 
 class Set(Collection):
-
     """A set is a finite, iterable container.
 
     This class provides concrete generic implementations of all
@@ -657,16 +656,14 @@ MutableSet.register(set)
 
 
 class Mapping(Collection):
-
-    __slots__ = ()
-
     """A Mapping is a generic container for associating key/value
     pairs.
 
     This class provides concrete generic implementations of all
     methods except for __getitem__, __iter__, and __len__.
-
     """
+
+    __slots__ = ()
 
     @abstractmethod
     def __getitem__(self, key):
@@ -789,17 +786,15 @@ ValuesView.register(dict_values)
 
 
 class MutableMapping(Mapping):
-
-    __slots__ = ()
-
     """A MutableMapping is a generic container for associating
     key/value pairs.
 
     This class provides concrete generic implementations of all
     methods except for __getitem__, __setitem__, __delitem__,
     __iter__, and __len__.
-
     """
+
+    __slots__ = ()
 
     @abstractmethod
     def __setitem__(self, key, value):
@@ -879,7 +874,6 @@ MutableMapping.register(dict)
 
 
 class Sequence(Reversible, Collection):
-
     """All the operations on a read-only sequence.
 
     Concrete subclasses must override __new__ or __init__,
@@ -947,7 +941,6 @@ Sequence.register(memoryview)
 
 
 class ByteString(Sequence):
-
     """This unifies bytes and bytearray.
 
     XXX Should add all their methods.
@@ -960,15 +953,13 @@ ByteString.register(bytearray)
 
 
 class MutableSequence(Sequence):
-
-    __slots__ = ()
-
     """All the operations on a read-write sequence.
 
     Concrete subclasses must provide __new__ or __init__,
     __getitem__, __setitem__, __delitem__, __len__, and insert().
-
     """
+
+    __slots__ = ()
 
     @abstractmethod
     def __setitem__(self, index, value):

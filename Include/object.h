@@ -128,16 +128,11 @@ static inline Py_ssize_t _Py_REFCNT(const PyObject *ob) {
 #define Py_REFCNT(ob) _Py_REFCNT(_PyObject_CAST_CONST(ob))
 
 
-static inline Py_ssize_t _Py_SIZE(const PyVarObject *ob) {
-    return ob->ob_size;
-}
-#define Py_SIZE(ob) _Py_SIZE(_PyVarObject_CAST_CONST(ob))
+// bpo-39573: The Py_SET_TYPE() function must be used to set an object type.
+#define Py_TYPE(ob)             (_PyObject_CAST(ob)->ob_type)
 
-
-static inline PyTypeObject* _Py_TYPE(const PyObject *ob) {
-    return ob->ob_type;
-}
-#define Py_TYPE(ob) _Py_TYPE(_PyObject_CAST_CONST(ob))
+// bpo-39573: The Py_SET_SIZE() function must be used to set an object size.
+#define Py_SIZE(ob)             (_PyVarObject_CAST(ob)->ob_size)
 
 
 static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
@@ -431,7 +426,6 @@ static inline void _Py_INCREF(PyObject *op)
 #endif
     op->ob_refcnt++;
 }
-
 #define Py_INCREF(op) _Py_INCREF(_PyObject_CAST(op))
 
 static inline void _Py_DECREF(
@@ -454,7 +448,6 @@ static inline void _Py_DECREF(
         _Py_Dealloc(op);
     }
 }
-
 #ifdef Py_REF_DEBUG
 #  define Py_DECREF(op) _Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
 #else
@@ -553,8 +546,8 @@ static inline PyObject* _Py_XNewRef(PyObject *obj)
 // Py_NewRef() and Py_XNewRef() are exported as functions for the stable ABI.
 // Names overriden with macros by static inline functions for best
 // performances.
-#define Py_NewRef(obj) _Py_NewRef(obj)
-#define Py_XNewRef(obj) _Py_XNewRef(obj)
+#define Py_NewRef(obj) _Py_NewRef(_PyObject_CAST(obj))
+#define Py_XNewRef(obj) _Py_XNewRef(_PyObject_CAST(obj))
 
 
 /*

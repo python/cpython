@@ -1059,7 +1059,7 @@ PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
         obj = _PyObject_GC_Malloc(size);
     }
     else {
-        obj = (PyObject *)PyObject_MALLOC(size);
+        obj = (PyObject *)PyObject_Malloc(size);
     }
 
     if (obj == NULL) {
@@ -1779,7 +1779,7 @@ pmerge(PyObject *acc, PyObject **to_merge, Py_ssize_t to_merge_size)
     }
 
   out:
-    PyMem_Del(remain);
+    PyMem_Free(remain);
 
     return res;
 }
@@ -1859,7 +1859,7 @@ mro_implementation(PyTypeObject *type)
 
     result = PyList_New(1);
     if (result == NULL) {
-        PyMem_Del(to_merge);
+        PyMem_Free(to_merge);
         return NULL;
     }
 
@@ -1869,7 +1869,7 @@ mro_implementation(PyTypeObject *type)
         Py_CLEAR(result);
     }
 
-    PyMem_Del(to_merge);
+    PyMem_Free(to_merge);
     return result;
 }
 
@@ -2707,7 +2707,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
                 goto error;
             /* Silently truncate the docstring if it contains null bytes. */
             len = strlen(doc_str);
-            tp_doc = (char *)PyObject_MALLOC(len + 1);
+            tp_doc = (char *)PyObject_Malloc(len + 1);
             if (tp_doc == NULL) {
                 PyErr_NoMemory();
                 goto error;
@@ -2977,26 +2977,41 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
                 base = slot->pfunc;
             else if (slot->slot == Py_tp_bases) {
                 bases = slot->pfunc;
-                Py_INCREF(bases);
             }
         }
-        if (!bases)
+        if (!bases) {
             bases = PyTuple_Pack(1, base);
+            if (!bases)
+                goto fail;
+        }
+        else if (!PyTuple_Check(bases)) {
+            PyErr_SetString(PyExc_SystemError, "Py_tp_bases is not a tuple");
+            goto fail;
+        }
+        else {
+            Py_INCREF(bases);
+        }
+    }
+    else if (!PyTuple_Check(bases)) {
+        bases = PyTuple_Pack(1, bases);
         if (!bases)
             goto fail;
     }
-    else
+    else {
         Py_INCREF(bases);
+    }
 
     /* Calculate best base, and check that all bases are type objects */
     base = best_base(bases);
     if (base == NULL) {
+        Py_DECREF(bases);
         goto fail;
     }
     if (!_PyType_HasFeature(base, Py_TPFLAGS_BASETYPE)) {
         PyErr_Format(PyExc_TypeError,
                      "type '%.100s' is not an acceptable base type",
                      base->tp_name);
+        Py_DECREF(bases);
         goto fail;
     }
 
@@ -3008,7 +3023,6 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     type->tp_as_buffer = &res->as_buffer;
     /* Set tp_base and tp_bases */
     type->tp_bases = bases;
-    bases = NULL;
     Py_INCREF(base);
     type->tp_base = base;
 
@@ -3033,7 +3047,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
                 continue;
             }
             size_t len = strlen(slot->pfunc)+1;
-            char *tp_doc = PyObject_MALLOC(len);
+            char *tp_doc = PyObject_Malloc(len);
             if (tp_doc == NULL) {
                 type->tp_doc = NULL;
                 PyErr_NoMemory();
