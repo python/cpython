@@ -360,6 +360,7 @@ class TestSysConfig(unittest.TestCase):
 
     @unittest.skipIf(sysconfig.get_config_var('EXT_SUFFIX') is None,
                      'EXT_SUFFIX required for this test')
+    @unittest.skipIf(sys.platform.startswith('freebsd'))
     def test_EXT_SUFFIX_in_vars(self):
         import _imp
         vars = sysconfig.get_config_vars()
