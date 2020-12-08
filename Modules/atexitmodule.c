@@ -7,6 +7,7 @@
  */
 
 #include "Python.h"
+#include "pycore_interp.h"
 
 /* Forward declaration (for atexit_cleanup) */
 static PyObject *atexit_clear(PyObject*, PyObject*);
@@ -318,6 +319,10 @@ Two public functions, register and unregister, are defined.\n\
 static int
 atexit_exec(PyObject *m) {
     atexitmodule_state *modstate;
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    if (interp->atexit_initialized == 1) {
+        return -1;
+    }
 
     modstate = get_atexit_state(m);
     modstate->callback_len = 32;
@@ -328,6 +333,7 @@ atexit_exec(PyObject *m) {
         return -1;
 
     _Py_PyAtExit(atexit_callfuncs, m);
+    interp->atexit_initialized = 1;
     return 0;
 }
 

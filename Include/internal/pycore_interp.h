@@ -212,6 +212,7 @@ struct _is {
     PyObject *codec_search_cache;
     PyObject *codec_error_registry;
     int codecs_initialized;
+    int atexit_initialized;
 
     PyConfig config;
 #ifdef HAVE_DLOPEN
