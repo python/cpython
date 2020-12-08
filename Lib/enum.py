@@ -358,7 +358,7 @@ class EnumMeta(type):
         # nicer error message when someone tries to delete an attribute
         # (see issue19025).
         if attr in cls._member_map_:
-            raise AttributeError("%s: cannot delete Enum member %r." % (cls.__name__, attr))
+            raise AttributeError("%s: cannot delete Enum member." % cls.__name__)
         super().__delattr__(attr)
 
     def __dir__(self):
