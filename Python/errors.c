@@ -1703,6 +1703,7 @@ PyErr_ProgramText(const char *filename, int lineno)
 
     PyObject *filename_obj = PyUnicode_DecodeFSDefault(filename);
     if (filename_obj == NULL) {
+        PyErr_Clear();
         return NULL;
     }
     PyObject *res = PyErr_ProgramTextObject(filename_obj, lineno);
