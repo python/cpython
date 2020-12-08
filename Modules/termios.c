@@ -315,6 +315,90 @@ termios_tcflow_impl(PyObject *module, int fd, int action)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+termios.tcgetwinsize
+
+    fd: fildes
+    /
+
+Get the tty winsize for file descriptor fd.
+
+Returns a list [ws_row, ws_col].
+[clinic start generated code]*/
+
+static PyObject *
+termios_tcgetwinsize_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=31825977d5325fb6 input=c7ed8aa957d108c0]*/
+{
+#if defined(TIOCGWINSZ)
+    termiosmodulestate *state = PyModule_GetState(module);
+    struct winsize w;
+    if (ioctl(fd, TIOCGWINSZ, &w) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
+
+    PyObject *v;
+    if (!(v = PyList_New(2))) {
+        return NULL;
+    }
+
+    PyList_SetItem(v, 0, PyLong_FromLong((long)w.ws_row));
+    PyList_SetItem(v, 1, PyLong_FromLong((long)w.ws_col));
+    if (PyErr_Occurred()) {
+        Py_DECREF(v);
+        return NULL;
+    }
+    return v;
+#else
+    PyErr_SetString(PyExc_NotImplementedError, "termios.TIOCGWINSZ undefined");
+    return NULL;
+#endif /* TIOCGWINSZ */
+}
+
+/*[clinic input]
+termios.tcsetwinsize
+
+    fd: fildes
+    winsize as winsz: object
+    /
+
+Set the tty winsize for file descriptor fd.
+
+The winsize to be set is taken from the winsize argument, which
+is a list like the one returned by tcgetwinsize().
+[clinic start generated code]*/
+
+static PyObject *
+termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
+/*[clinic end generated code: output=2ac3c9bb6eda83e1 input=c495180b2b932a30]*/
+{
+#if defined(TIOCSWINSZ)
+    if (!PyList_Check(winsz) || PyList_Size(winsz) != 2) {
+        PyErr_SetString(PyExc_TypeError,
+                     "tcsetwinsize, arg 2: must be 2 element list");
+        return NULL;
+    }
+
+    termiosmodulestate *state = PyModule_GetState(module);
+    struct winsize w;
+
+    w.ws_row = (unsigned short) PyLong_AsLong(PyList_GetItem(winsz, 0));
+    w.ws_col = (unsigned short) PyLong_AsLong(PyList_GetItem(winsz, 1));
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+
+    if (ioctl(fd, TIOCSWINSZ, &w) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
+
+    Py_RETURN_NONE;
+#else
+    PyErr_SetString(PyExc_NotImplementedError, "termios.TIOCSWINSZ undefined");
+    return NULL;
+#endif /* TIOCSWINSZ */
+}
+
 static PyMethodDef termios_methods[] =
 {
     TERMIOS_TCGETATTR_METHODDEF
@@ -323,6 +407,8 @@ static PyMethodDef termios_methods[] =
     TERMIOS_TCDRAIN_METHODDEF
     TERMIOS_TCFLUSH_METHODDEF
     TERMIOS_TCFLOW_METHODDEF
+    TERMIOS_TCGETWINSIZE_METHODDEF
+    TERMIOS_TCSETWINSIZE_METHODDEF
     {NULL, NULL}
 };
 

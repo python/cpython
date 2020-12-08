@@ -74,6 +74,19 @@ The module defines the following functions:
    output, :const:`TCIOFF` to suspend input, or :const:`TCION` to restart input.
 
 
+.. function:: tcgetwinsize(fd)
+
+   Return a list ``[ws_row, ws_col]`` containing the tty window size for file
+   descriptor *fd*. Requires :const:`termios.TIOCGWINSZ`.
+
+
+.. function:: tcsetwinsize(fd, winsize)
+
+    Set the tty window size for file descriptor *fd* from *winsize*, which is
+    a list like the one returned by :func:`tcgetwinsize`. Requires
+    :const:`termios.TIOCSWINSZ`.
+
+
 .. seealso::
 
    Module :mod:`tty`
