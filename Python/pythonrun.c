@@ -63,11 +63,15 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 static void flush_io(void);
 static PyObject *run_mod(mod_ty, PyObject *, PyObject *, PyObject *,
                           PyCompilerFlags *, PyArena *);
-static PyObject *run_pyc_file(FILE *, const char *, PyObject *, PyObject *,
+static PyObject *run_pyc_file(FILE *, PyObject *, PyObject *,
                               PyCompilerFlags *);
 static void err_input(perrdetail *);
 static void err_free(perrdetail *);
 static int PyRun_InteractiveOneObjectEx(FILE *, PyObject *, PyCompilerFlags *);
+static PyObject* pyrun_file(FILE *fp, PyObject *filename, int start,
+                            PyObject *globals, PyObject *locals, int closeit,
+                            PyCompilerFlags *flags);
+
 
 /* Parse input from a file and execute it */
 int
@@ -300,82 +304,89 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename_str, PyCompilerFlags *f
    the file type, and, if we may close it, at the first few bytes. */
 
 static int
-maybe_pyc_file(FILE *fp, const char* filename, const char* ext, int closeit)
+maybe_pyc_file(FILE *fp, PyObject *filename, int closeit)
 {
-    if (strcmp(ext, ".pyc") == 0)
+    PyObject *ext = PyUnicode_FromString(".pyc");
+    if (ext == NULL) {
+        return -1;
+    }
+    Py_ssize_t endswith = PyUnicode_Tailmatch(filename, ext, 0, PY_SSIZE_T_MAX, +1);
+    Py_DECREF(ext);
+    if (endswith) {
         return 1;
+    }
 
     /* Only look into the file if we are allowed to close it, since
        it then should also be seekable. */
-    if (closeit) {
-        /* Read only two bytes of the magic. If the file was opened in
-           text mode, the bytes 3 and 4 of the magic (\r\n) might not
-           be read as they are on disk. */
-        unsigned int halfmagic = PyImport_GetMagicNumber() & 0xFFFF;
-        unsigned char buf[2];
-        /* Mess:  In case of -x, the stream is NOT at its start now,
-           and ungetc() was used to push back the first newline,
-           which makes the current stream position formally undefined,
-           and a x-platform nightmare.
-           Unfortunately, we have no direct way to know whether -x
-           was specified.  So we use a terrible hack:  if the current
-           stream position is not 0, we assume -x was specified, and
-           give up.  Bug 132850 on SourceForge spells out the
-           hopelessness of trying anything else (fseek and ftell
-           don't work predictably x-platform for text-mode files).
-        */
-        int ispyc = 0;
-        if (ftell(fp) == 0) {
-            if (fread(buf, 1, 2, fp) == 2 &&
-                ((unsigned int)buf[1]<<8 | buf[0]) == halfmagic)
-                ispyc = 1;
-            rewind(fp);
-        }
-        return ispyc;
+    if (!closeit) {
+        return 0;
     }
-    return 0;
+
+    /* Read only two bytes of the magic. If the file was opened in
+       text mode, the bytes 3 and 4 of the magic (\r\n) might not
+       be read as they are on disk. */
+    unsigned int halfmagic = PyImport_GetMagicNumber() & 0xFFFF;
+    unsigned char buf[2];
+    /* Mess:  In case of -x, the stream is NOT at its start now,
+       and ungetc() was used to push back the first newline,
+       which makes the current stream position formally undefined,
+       and a x-platform nightmare.
+       Unfortunately, we have no direct way to know whether -x
+       was specified.  So we use a terrible hack:  if the current
+       stream position is not 0, we assume -x was specified, and
+       give up.  Bug 132850 on SourceForge spells out the
+       hopelessness of trying anything else (fseek and ftell
+       don't work predictably x-platform for text-mode files).
+    */
+    int ispyc = 0;
+    if (ftell(fp) == 0) {
+        if (fread(buf, 1, 2, fp) == 2 &&
+            ((unsigned int)buf[1]<<8 | buf[0]) == halfmagic)
+            ispyc = 1;
+        rewind(fp);
+    }
+    return ispyc;
 }
 
-static int
-set_main_loader(PyObject *d, const char *filename, const char *loader_name)
-{
-    PyObject *filename_obj, *bootstrap, *loader_type = NULL, *loader;
-    int result = 0;
 
-    filename_obj = PyUnicode_DecodeFSDefault(filename);
-    if (filename_obj == NULL)
-        return -1;
+static int
+set_main_loader(PyObject *d, PyObject *filename, const char *loader_name)
+{
     PyInterpreterState *interp = _PyInterpreterState_Get();
-    bootstrap = PyObject_GetAttrString(interp->importlib,
-                                       "_bootstrap_external");
-    if (bootstrap != NULL) {
-        loader_type = PyObject_GetAttrString(bootstrap, loader_name);
-        Py_DECREF(bootstrap);
-    }
-    if (loader_type == NULL) {
-        Py_DECREF(filename_obj);
+    PyObject *bootstrap = PyObject_GetAttrString(interp->importlib,
+                                                 "_bootstrap_external");
+    if (bootstrap == NULL) {
         return -1;
     }
-    loader = PyObject_CallFunction(loader_type, "sN", "__main__", filename_obj);
+
+    PyObject *loader_type = PyObject_GetAttrString(bootstrap, loader_name);
+    Py_DECREF(bootstrap);
+    if (loader_type == NULL) {
+        return -1;
+    }
+
+    PyObject *loader = PyObject_CallFunction(loader_type,
+                                             "sO", "__main__", filename);
     Py_DECREF(loader_type);
     if (loader == NULL) {
         return -1;
     }
+
     if (PyDict_SetItemString(d, "__loader__", loader) < 0) {
-        result = -1;
+        Py_DECREF(loader);
+        return -1;
     }
     Py_DECREF(loader);
-    return result;
+    return 0;
 }
 
-int
-PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
-                        PyCompilerFlags *flags)
+
+static int
+pyrun_simple_file(FILE *fp, PyObject *filename, int closeit,
+                  PyCompilerFlags *flags)
 {
     PyObject *m, *d, *v;
-    const char *ext;
     int set_file_name = 0, ret = -1;
-    size_t len;
 
     m = PyImport_AddModule("__main__");
     if (m == NULL)
@@ -383,29 +394,29 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
     Py_INCREF(m);
     d = PyModule_GetDict(m);
     if (PyDict_GetItemString(d, "__file__") == NULL) {
-        PyObject *f;
-        f = PyUnicode_DecodeFSDefault(filename);
-        if (f == NULL)
-            goto done;
-        if (PyDict_SetItemString(d, "__file__", f) < 0) {
-            Py_DECREF(f);
+        if (PyDict_SetItemString(d, "__file__", filename) < 0) {
             goto done;
         }
         if (PyDict_SetItemString(d, "__cached__", Py_None) < 0) {
-            Py_DECREF(f);
             goto done;
         }
         set_file_name = 1;
-        Py_DECREF(f);
     }
-    len = strlen(filename);
-    ext = filename + len - (len > 4 ? 4 : 0);
-    if (maybe_pyc_file(fp, filename, ext, closeit)) {
+
+    int pyc = maybe_pyc_file(fp, filename, closeit);
+    if (pyc < 0) {
+        goto done;
+    }
+
+    if (pyc) {
         FILE *pyc_fp;
         /* Try to run a pyc file. First, re-open in binary */
-        if (closeit)
+        if (closeit) {
             fclose(fp);
-        if ((pyc_fp = _Py_fopen(filename, "rb")) == NULL) {
+        }
+
+        pyc_fp = _Py_fopen_obj(filename, "rb");
+        if (pyc_fp == NULL) {
             fprintf(stderr, "python: Can't reopen .pyc file\n");
             goto done;
         }
@@ -416,17 +427,17 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
             fclose(pyc_fp);
             goto done;
         }
-        v = run_pyc_file(pyc_fp, filename, d, d, flags);
+        v = run_pyc_file(pyc_fp, d, d, flags);
     } else {
         /* When running from stdin, leave __main__.__loader__ alone */
-        if (strcmp(filename, "<stdin>") != 0 &&
+        if (PyUnicode_CompareWithASCIIString(filename, "<stdin>") != 0 &&
             set_main_loader(d, filename, "SourceFileLoader") < 0) {
             fprintf(stderr, "python: failed to set __main__.__loader__\n");
             ret = -1;
             goto done;
         }
-        v = PyRun_FileExFlags(fp, filename, Py_file_input, d, d,
-                              closeit, flags);
+        v = pyrun_file(fp, filename, Py_file_input, d, d,
+                       closeit, flags);
     }
     flush_io();
     if (v == NULL) {
@@ -448,6 +459,21 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
     Py_XDECREF(m);
     return ret;
 }
+
+
+int
+PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
+                        PyCompilerFlags *flags)
+{
+    PyObject *filename_obj = PyUnicode_DecodeFSDefault(filename);
+    if (filename_obj == NULL) {
+        return -1;
+    }
+    int res = pyrun_simple_file(fp, filename_obj, closeit, flags);
+    Py_DECREF(filename_obj);
+    return res;
+}
+
 
 int
 PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)
@@ -1036,38 +1062,52 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
     return ret;
 }
 
-PyObject *
-PyRun_FileExFlags(FILE *fp, const char *filename_str, int start, PyObject *globals,
-                  PyObject *locals, int closeit, PyCompilerFlags *flags)
+
+static PyObject *
+pyrun_file(FILE *fp, PyObject *filename, int start, PyObject *globals,
+           PyObject *locals, int closeit, PyCompilerFlags *flags)
 {
-    PyObject *ret = NULL;
+    PyArena *arena = PyArena_New();
+    if (arena == NULL) {
+        return NULL;
+    }
+
     mod_ty mod;
-    PyArena *arena = NULL;
-    PyObject *filename;
-
-    filename = PyUnicode_DecodeFSDefault(filename_str);
-    if (filename == NULL)
-        goto exit;
-
-    arena = PyArena_New();
-    if (arena == NULL)
-        goto exit;
-
     mod = PyParser_ASTFromFileObject(fp, filename, NULL, start, 0, 0,
                                      flags, NULL, arena);
-    if (closeit)
+    if (closeit) {
         fclose(fp);
-    if (mod == NULL) {
-        goto exit;
     }
-    ret = run_mod(mod, filename, globals, locals, flags, arena);
 
-exit:
-    Py_XDECREF(filename);
-    if (arena != NULL)
-        PyArena_Free(arena);
+    PyObject *ret;
+    if (mod != NULL) {
+        ret = run_mod(mod, filename, globals, locals, flags, arena);
+    }
+    else {
+        ret = NULL;
+    }
+    PyArena_Free(arena);
+
     return ret;
 }
+
+
+PyObject *
+PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals,
+                  PyObject *locals, int closeit, PyCompilerFlags *flags)
+{
+    PyObject *filename_obj = PyUnicode_DecodeFSDefault(filename);
+    if (filename_obj == NULL) {
+        return NULL;
+    }
+
+    PyObject *res = pyrun_file(fp, filename_obj, start, globals,
+                               locals, closeit, flags);
+    Py_DECREF(filename_obj);
+    return res;
+
+}
+
 
 static void
 flush_io(void)
@@ -1150,8 +1190,8 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
 }
 
 static PyObject *
-run_pyc_file(FILE *fp, const char *filename, PyObject *globals,
-             PyObject *locals, PyCompilerFlags *flags)
+run_pyc_file(FILE *fp, PyObject *globals, PyObject *locals,
+             PyCompilerFlags *flags)
 {
     PyCodeObject *co;
     PyObject *v;
