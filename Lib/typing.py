@@ -1120,9 +1120,10 @@ class Generic:
         params = tuple(_type_check(p, msg) for p in params)
         if cls in (Generic, Protocol):
             # Generic and Protocol can only be subscripted with unique type variables.
-            if not all(isinstance(p, TypeVar) for p in params):
+            if not all(isinstance(p, (TypeVar, ParamSpec)) for p in params):
                 raise TypeError(
-                    f"Parameters to {cls.__name__}[...] must all be type variables")
+                    f"Parameters to {cls.__name__}[...] must all be type variables "
+                    f"or parameter specification variables.")
             if len(set(params)) != len(params):
                 raise TypeError(
                     f"Parameters to {cls.__name__}[...] must all be unique")
