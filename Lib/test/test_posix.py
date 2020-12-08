@@ -1094,7 +1094,8 @@ class PosixTester(unittest.TestCase):
         finally:
             posix.close(f)
 
-    @unittest.skipUnless(os.chown in os.supports_dir_fd, "test needs dir_fd support in os.chown()")
+    @unittest.skipUnless(hasattr(os, 'chown') and (os.chown in os.supports_dir_fd),
+                         "test needs dir_fd support in os.chown()")
     def test_chown_dir_fd(self):
         os_helper.unlink(os_helper.TESTFN)
         os_helper.create_empty_file(os_helper.TESTFN)
@@ -1189,7 +1190,9 @@ class PosixTester(unittest.TestCase):
             posix.close(f)
             os_helper.rmtree(os_helper.TESTFN + 'dir')
 
-    @unittest.skipUnless((os.mknod in os.supports_dir_fd) and hasattr(stat, 'S_IFIFO'),
+    @unittest.skipUnless(hasattr(os, 'mknod')
+                         and (os.mknod in os.supports_dir_fd)
+                         and hasattr(stat, 'S_IFIFO'),
                          "test requires both stat.S_IFIFO and dir_fd support for os.mknod()")
     def test_mknod_dir_fd(self):
         # Test using mknodat() to create a FIFO (the only use specified
@@ -1222,7 +1225,8 @@ class PosixTester(unittest.TestCase):
             posix.close(a)
             posix.close(b)
 
-    @unittest.skipUnless(os.readlink in os.supports_dir_fd, "test needs dir_fd support in os.readlink()")
+    @unittest.skipUnless(hasattr(os, 'readlink') and (os.readlink in os.supports_dir_fd),
+                         "test needs dir_fd support in os.readlink()")
     def test_readlink_dir_fd(self):
         os.symlink(os_helper.TESTFN, os_helper.TESTFN + 'link')
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
