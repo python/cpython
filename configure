@@ -15429,13 +15429,7 @@ _ACEOF
 
 fi
 
-
-case $ac_sys_system in
-    Linux*|GNU*|Darwin|VxWorks)
-	EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX};;
-    *)
-	EXT_SUFFIX=${SHLIB_SUFFIX};;
-esac
+EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX}
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking LDVERSION" >&5
 $as_echo_n "checking LDVERSION... " >&6; }
