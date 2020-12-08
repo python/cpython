@@ -67,8 +67,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{F749B822-B489-4CA5-A3AD-CE078F5F338A}</ProjectGuid>
-    <RootNamespace>xxlimited</RootNamespace>
+    <ProjectGuid>{fb868ea7-f93a-4d9b-be78-ca4e9ba14fff}</ProjectGuid>
+    <RootNamespace>xxlimited_35</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
   <Import Project="python.props" />
@@ -94,14 +94,14 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);Py_LIMITED_API=0x03100000</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);Py_LIMITED_API=0x03060000</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\Modules\xxlimited.c" />
+    <ClCompile Include="..\Modules\xxlimited_35.c" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="python3dll.vcxproj">
