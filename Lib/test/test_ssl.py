@@ -391,7 +391,7 @@ class BasicSocketTests(unittest.TestCase):
         ssl.RAND_add(b"this is a random bytes object", 75.0)
         ssl.RAND_add(bytearray(b"this is a random bytearray object"), 75.0)
 
-    @unittest.skipUnless(os.name == 'posix', 'requires posix')
+    @unittest.skipUnless(hasattr(os, 'fork'), 'need os.fork')
     def test_random_fork(self):
         status = ssl.RAND_status()
         if not status:
