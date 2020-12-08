@@ -459,6 +459,9 @@
     <ClInclude Include="..\Include\cpython\interpreteridobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\pythonrun.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\sysmodule.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
