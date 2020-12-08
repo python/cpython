@@ -321,6 +321,8 @@ atexit_exec(PyObject *m) {
     atexitmodule_state *modstate;
     PyInterpreterState *interp = PyInterpreterState_Get();
     if (interp->atexit_initialized == 1) {
+        PyErr_SetString(PyExc_ImportError,
+                        "cannot load module more than once per interpreter");
         return -1;
     }
 
