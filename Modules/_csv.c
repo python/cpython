@@ -385,6 +385,9 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         return NULL;
 
     _csvstate *module_state = _csv_state_from_type(type, "dialect_new");
+    if (module_state == NULL) {
+        return NULL;
+    }
 
     if (dialect != NULL) {
         if (PyUnicode_Check(dialect)) {
