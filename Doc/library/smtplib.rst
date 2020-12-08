@@ -32,7 +32,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    than a success code, an :exc:`SMTPConnectError` is raised. The optional
    *timeout* parameter specifies a timeout in seconds for blocking operations
    like the connection attempt (if not specified, the global default timeout
-   setting will be used).  If the timeout expires, :exc:`socket.timeout` is
+   setting will be used).  If the timeout expires, :exc:`TimeoutError` is
    raised.  The optional source_address parameter allows binding
    to some specific source address in a machine with multiple network
    interfaces, and/or to some specific source TCP port. It takes a 2-tuple
@@ -115,7 +115,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
       If the *timeout* parameter is set to be zero, it will raise a
       :class:`ValueError` to prevent the creation of a non-blocking socket
 
-.. class:: LMTP(host='', port=LMTP_PORT, local_hostname=None,
+.. class:: LMTP(host='', port=LMTP_PORT, local_hostname=None, \
                 source_address=None[, timeout])
 
    The LMTP protocol, which is very similar to ESMTP, is heavily based on the

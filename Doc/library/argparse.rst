@@ -696,7 +696,7 @@ The add_argument() method
    * const_ - A constant value required by some action_ and nargs_ selections.
 
    * default_ - The value produced if the argument is absent from the
-     command line.
+     command line and if it is absent from the namespace object.
 
    * type_ - The type to which the command-line argument should be converted.
 
@@ -1006,6 +1006,14 @@ was not present at the command line::
    >>> parser.parse_args([])
    Namespace(foo=42)
 
+If the target namespace already has an attribute set, the action *default*
+will not over write it::
+
+   >>> parser = argparse.ArgumentParser()
+   >>> parser.add_argument('--foo', default=42)
+   >>> parser.parse_args([], namespace=argparse.Namespace(foo=101))
+   Namespace(foo=101)
+
 If the ``default`` value is a string, the parser parses the value as if it
 were a command-line argument.  In particular, the parser applies any type_
 conversion argument, if provided, before setting the attribute on the
@@ -1133,20 +1141,9 @@ container should match the type_ specified::
 
 Any container can be passed as the *choices* value, so :class:`list` objects,
 :class:`set` objects, and custom containers are all supported.
-This includes :class:`enum.Enum`, which could be used to restrain
-argument's choices; if we reuse previous rock/paper/scissors game example,
-this could be as follows::
 
-   >>> from enum import Enum
-   >>> class GameMove(Enum):
-   ...     ROCK = 'rock'
-   ...     PAPER = 'paper'
-   ...     SCISSORS = 'scissors'
-   ...
-   >>> parser = argparse.ArgumentParser(prog='game.py')
-   >>> parser.add_argument('move', type=GameMove, choices=GameMove)
-   >>> parser.parse_args(['rock'])
-   Namespace(move=<GameMove.ROCK: 'rock'>)
+Use of :class:`enum.Enum` is not recommended because it is difficult to
+control its appearance in usage, help, and error messages.
 
 
 required

@@ -59,7 +59,7 @@ as much as it can.
 
       This function returns a :term:`borrowed reference` to the referenced object.
       This means that you should always call :c:func:`Py_INCREF` on the object
-      except it cannot be destroyed before the last usage of the borrowed
+      except when it cannot be destroyed before the last usage of the borrowed
       reference.
 
 

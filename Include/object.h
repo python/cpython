@@ -128,16 +128,11 @@ static inline Py_ssize_t _Py_REFCNT(const PyObject *ob) {
 #define Py_REFCNT(ob) _Py_REFCNT(_PyObject_CAST_CONST(ob))
 
 
-static inline Py_ssize_t _Py_SIZE(const PyVarObject *ob) {
-    return ob->ob_size;
-}
-#define Py_SIZE(ob) _Py_SIZE(_PyVarObject_CAST_CONST(ob))
+// bpo-39573: The Py_SET_TYPE() function must be used to set an object type.
+#define Py_TYPE(ob)             (_PyObject_CAST(ob)->ob_type)
 
-
-static inline PyTypeObject* _Py_TYPE(const PyObject *ob) {
-    return ob->ob_type;
-}
-#define Py_TYPE(ob) _Py_TYPE(_PyObject_CAST_CONST(ob))
+// bpo-39573: The Py_SET_SIZE() function must be used to set an object size.
+#define Py_SIZE(ob)             (_PyVarObject_CAST(ob)->ob_size)
 
 
 static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
@@ -356,6 +351,11 @@ given type object has a specified feature.
 /* Type is abstract and cannot be instantiated */
 #define Py_TPFLAGS_IS_ABSTRACT (1UL << 20)
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+/* Type has am_send entry in tp_as_async slot */
+#define Py_TPFLAGS_HAVE_AM_SEND (1UL << 21)
+#endif
+
 /* These flags are used to determine if a type is a subclass. */
 #define Py_TPFLAGS_LONG_SUBCLASS        (1UL << 24)
 #define Py_TPFLAGS_LIST_SUBCLASS        (1UL << 25)
@@ -426,7 +426,6 @@ static inline void _Py_INCREF(PyObject *op)
 #endif
     op->ob_refcnt++;
 }
-
 #define Py_INCREF(op) _Py_INCREF(_PyObject_CAST(op))
 
 static inline void _Py_DECREF(
@@ -449,7 +448,6 @@ static inline void _Py_DECREF(
         _Py_Dealloc(op);
     }
 }
-
 #ifdef Py_REF_DEBUG
 #  define Py_DECREF(op) _Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
 #else
@@ -548,8 +546,8 @@ static inline PyObject* _Py_XNewRef(PyObject *obj)
 // Py_NewRef() and Py_XNewRef() are exported as functions for the stable ABI.
 // Names overriden with macros by static inline functions for best
 // performances.
-#define Py_NewRef(obj) _Py_NewRef(obj)
-#define Py_XNewRef(obj) _Py_XNewRef(obj)
+#define Py_NewRef(obj) _Py_NewRef(_PyObject_CAST(obj))
+#define Py_XNewRef(obj) _Py_XNewRef(_PyObject_CAST(obj))
 
 
 /*
@@ -581,6 +579,15 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 #define Py_NE 3
 #define Py_GT 4
 #define Py_GE 5
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+/* Result of calling PyIter_Send */
+typedef enum {
+    PYGEN_RETURN = 0,
+    PYGEN_ERROR = -1,
+    PYGEN_NEXT = 1,
+} PySendResult;
+#endif
 
 /*
  * Macro for implementing rich comparisons

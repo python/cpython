@@ -159,14 +159,14 @@ Glossary
       :class:`str` objects.
 
    borrowed reference
-      In the Python's C API, a borrowed reference is a reference to an object.
+      In Python's C API, a borrowed reference is a reference to an object.
       It does not modify the object reference count. It becomes a dangling
       pointer if the object is destroyed. For example, a garbage collection can
       remove the last :term:`strong reference` to the object and so destroy it.
 
       Calling :c:func:`Py_INCREF` on the :term:`borrowed reference` is
       recommended to convert it to a :term:`strong reference` in-place, except
-      if the object cannot be destroyed before the last usage of the borrowed
+      when the object cannot be destroyed before the last usage of the borrowed
       reference. The :c:func:`Py_NewRef` function can be used to create a new
       :term:`strong reference`.
 
@@ -1113,9 +1113,9 @@ Glossary
       as :keyword:`if`, :keyword:`while` or :keyword:`for`.
 
    strong reference
-      In the Python's C API, a strong reference is a reference to an object
-      which increments object reference count when it is created and
-      decrements the object reference count when it is deleted.
+      In Python's C API, a strong reference is a reference to an object
+      which increments the object's reference count when it is created and
+      decrements the object's reference count when it is deleted.
 
       The :c:func:`Py_NewRef` function can be used to create a strong reference
       to an object. Usually, the :c:func:`Py_DECREF` function must be called on

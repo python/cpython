@@ -406,7 +406,7 @@ class NonCallableMock(Base):
             # Check if spec is an async object or function
             bound_args = _MOCK_SIG.bind_partial(cls, *args, **kw).arguments
             spec_arg = bound_args.get('spec_set', bound_args.get('spec'))
-            if spec_arg and _is_async_obj(spec_arg):
+            if spec_arg is not None and _is_async_obj(spec_arg):
                 bases = (AsyncMockMixin, cls)
         new = type(cls.__name__, bases, {'__doc__': cls.__doc__})
         instance = _safe_super(NonCallableMock, cls).__new__(new)

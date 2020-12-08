@@ -8,6 +8,7 @@
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_context.h"       // _PyContext_Init()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
+#include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_pathconfig.h"    // _PyConfig_WritePathConfig()
@@ -54,7 +55,6 @@ static PyStatus add_main_module(PyInterpreterState *interp);
 static PyStatus init_import_site(void);
 static PyStatus init_set_builtins_open(void);
 static PyStatus init_sys_streams(PyThreadState *tstate);
-static PyStatus init_signals(PyThreadState *tstate);
 static void call_py_exitfuncs(PyThreadState *tstate);
 static void wait_for_thread_shutdown(PyThreadState *tstate);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
@@ -97,14 +97,6 @@ _Py_IsFinalizing(void)
 int (*_PyOS_mystrnicmp_hack)(const char *, const char *, Py_ssize_t) = \
     PyOS_mystrnicmp; /* Python/pystrcmp.o */
 
-/* PyModule_GetWarningsModule is no longer necessary as of 2.6
-since _warnings is builtin.  This API should not be used. */
-PyObject *
-PyModule_GetWarningsModule(void)
-{
-    return PyImport_ImportModule("warnings");
-}
-
 
 /* APIs to access the initialization flags
  *
@@ -135,58 +127,53 @@ Py_IsInitialized(void)
    having the lock, but you cannot use multiple threads.)
 
 */
-
-static PyStatus
+static int
 init_importlib(PyThreadState *tstate, PyObject *sysmod)
 {
-    PyObject *importlib;
-    PyObject *impmod;
-    PyObject *value;
+    assert(!_PyErr_Occurred(tstate));
+
     PyInterpreterState *interp = tstate->interp;
     int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
 
-    /* Import _importlib through its frozen version, _frozen_importlib. */
-    if (PyImport_ImportFrozenModule("_frozen_importlib") <= 0) {
-        return _PyStatus_ERR("can't import _frozen_importlib");
-    }
-    else if (verbose) {
+    // Import _importlib through its frozen version, _frozen_importlib.
+    if (verbose) {
         PySys_FormatStderr("import _frozen_importlib # frozen\n");
     }
-    importlib = PyImport_AddModule("_frozen_importlib");
+    if (PyImport_ImportFrozenModule("_frozen_importlib") <= 0) {
+        return -1;
+    }
+    PyObject *importlib = PyImport_AddModule("_frozen_importlib"); // borrowed
     if (importlib == NULL) {
-        return _PyStatus_ERR("couldn't get _frozen_importlib from sys.modules");
+        return -1;
     }
-    interp->importlib = importlib;
-    Py_INCREF(interp->importlib);
+    interp->importlib = Py_NewRef(importlib);
 
-    interp->import_func = _PyDict_GetItemStringWithError(interp->builtins, "__import__");
-    if (interp->import_func == NULL)
-        return _PyStatus_ERR("__import__ not found");
-    Py_INCREF(interp->import_func);
-
-    /* Import the _imp module */
-    impmod = PyInit__imp();
-    if (impmod == NULL) {
-        return _PyStatus_ERR("can't import _imp");
-    }
-    else if (verbose) {
+    // Import the _imp module
+    if (verbose) {
         PySys_FormatStderr("import _imp # builtin\n");
     }
-    if (_PyImport_SetModuleString("_imp", impmod) < 0) {
-        return _PyStatus_ERR("can't save _imp to sys.modules");
+    PyObject *imp_mod = _PyImport_BootstrapImp(tstate);
+    if (imp_mod == NULL) {
+        return -1;
+    }
+    if (_PyImport_SetModuleString("_imp", imp_mod) < 0) {
+        Py_DECREF(imp_mod);
+        return -1;
     }
 
-    /* Install importlib as the implementation of import */
-    value = PyObject_CallMethod(importlib, "_install", "OO", sysmod, impmod);
+    // Install importlib as the implementation of import
+    PyObject *value = PyObject_CallMethod(importlib, "_install",
+                                          "OO", sysmod, imp_mod);
+    Py_DECREF(imp_mod);
     if (value == NULL) {
-        _PyErr_Print(tstate);
-        return _PyStatus_ERR("importlib install failed");
+        return -1;
     }
     Py_DECREF(value);
-    Py_DECREF(impmod);
 
-    return _PyStatus_OK();
+    assert(!_PyErr_Occurred(tstate));
+    return 0;
 }
+
 
 static PyStatus
 init_importlib_external(PyThreadState *tstate)
@@ -700,6 +687,9 @@ pycore_init_types(PyThreadState *tstate)
         }
     }
 
+    if (_PyWarnings_InitState(tstate) < 0) {
+        return _PyStatus_ERR("can't initialize warnings");
+    }
     return _PyStatus_OK();
 }
 
@@ -737,6 +727,14 @@ pycore_init_builtins(PyThreadState *tstate)
     }
     Py_DECREF(bimod);
 
+    // Get the __import__ function
+    PyObject *import_func = _PyDict_GetItemStringWithError(interp->builtins,
+                                                           "__import__");
+    if (import_func == NULL) {
+        goto error;
+    }
+    interp->import_func = Py_NewRef(import_func);
+
     assert(!_PyErr_Occurred(tstate));
 
     return _PyStatus_OK();
@@ -744,37 +742,6 @@ pycore_init_builtins(PyThreadState *tstate)
 error:
     Py_XDECREF(bimod);
     return _PyStatus_ERR("can't initialize builtins module");
-}
-
-
-static PyStatus
-pycore_init_import_warnings(PyThreadState *tstate, PyObject *sysmod)
-{
-    assert(!_PyErr_Occurred(tstate));
-
-    PyStatus status = _PyImportHooks_Init(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    /* Initialize _warnings. */
-    status = _PyWarnings_InitState(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
-    if (config->_install_importlib) {
-        /* This call sets up builtin and frozen import support */
-        status = init_importlib(tstate, sysmod);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-    }
-
-    assert(!_PyErr_Occurred(tstate));
-
-    return _PyStatus_OK();
 }
 
 
@@ -799,7 +766,13 @@ pycore_interp_init(PyThreadState *tstate)
         goto done;
     }
 
-    status = pycore_init_import_warnings(tstate, sysmod);
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->_install_importlib) {
+        /* This call sets up builtin and frozen import support */
+        if (init_importlib(tstate, sysmod) < 0) {
+            return _PyStatus_ERR("failed to initialize importlib");
+        }
+    }
 
 done:
     /* sys.modules['sys'] contains a strong reference to the module */
@@ -1039,15 +1012,9 @@ init_interp_main(PyThreadState *tstate)
     }
 
     // Compute the path configuration
-    status = _PyConfig_InitPathConfig(&interp->config);
+    status = _PyConfig_InitPathConfig(&interp->config, 1);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
-    }
-
-    if (is_main_interp) {
-        if (_PyTime_Init() < 0) {
-            return _PyStatus_ERR("can't initialize time");
-        }
     }
 
     if (interpreter_update_config(tstate, 1) < 0) {
@@ -1073,11 +1040,8 @@ init_interp_main(PyThreadState *tstate)
     }
 
     if (is_main_interp) {
-        if (config->install_signal_handlers) {
-            status = init_signals(tstate);
-            if (_PyStatus_EXCEPTION(status)) {
-                return status;
-            }
+        if (_PySignal_Init(config->install_signal_handlers) < 0) {
+            return _PyStatus_ERR("can't initialize signals");
         }
 
         if (_PyTraceMalloc_Init(config->tracemalloc) < 0) {
@@ -1674,7 +1638,6 @@ Py_FinalizeEx(void)
 
     /* Get current thread state and interpreter pointer */
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    PyInterpreterState *interp = tstate->interp;
 
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
@@ -1697,13 +1660,13 @@ Py_FinalizeEx(void)
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
 #ifdef Py_REF_DEBUG
-    int show_ref_count = interp->config.show_ref_count;
+    int show_ref_count = tstate->interp->config.show_ref_count;
 #endif
 #ifdef Py_TRACE_REFS
-    int dump_refs = interp->config.dump_refs;
+    int dump_refs = tstate->interp->config.dump_refs;
 #endif
 #ifdef WITH_PYMALLOC
-    int malloc_stats = interp->config.malloc_stats;
+    int malloc_stats = tstate->interp->config.malloc_stats;
 #endif
 
     /* Remaining daemon threads will automatically exit
@@ -1728,7 +1691,7 @@ Py_FinalizeEx(void)
     }
 
     /* Disable signal handling */
-    PyOS_FiniInterrupts();
+    _PySignal_Fini();
 
     /* Collect garbage.  This may call finalizers; it's nice to call these
      * before all modules are destroyed.
@@ -2754,48 +2717,6 @@ Py_Exit(int sts)
     }
 
     exit(sts);
-}
-
-static PyStatus
-init_signals(PyThreadState *tstate)
-{
-#ifdef SIGPIPE
-    PyOS_setsig(SIGPIPE, SIG_IGN);
-#endif
-#ifdef SIGXFZ
-    PyOS_setsig(SIGXFZ, SIG_IGN);
-#endif
-#ifdef SIGXFSZ
-    PyOS_setsig(SIGXFSZ, SIG_IGN);
-#endif
-    PyOS_InitInterrupts(); /* May imply init_signals() */
-    if (_PyErr_Occurred(tstate)) {
-        return _PyStatus_ERR("can't import signal");
-    }
-    return _PyStatus_OK();
-}
-
-
-/* Restore signals that the interpreter has called SIG_IGN on to SIG_DFL.
- *
- * All of the code in this function must only use async-signal-safe functions,
- * listed at `man 7 signal` or
- * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_04.html.
- *
- * If this function is updated, update also _posix_spawn() of subprocess.py.
- */
-void
-_Py_RestoreSignals(void)
-{
-#ifdef SIGPIPE
-    PyOS_setsig(SIGPIPE, SIG_DFL);
-#endif
-#ifdef SIGXFZ
-    PyOS_setsig(SIGXFZ, SIG_DFL);
-#endif
-#ifdef SIGXFSZ
-    PyOS_setsig(SIGXFSZ, SIG_DFL);
-#endif
 }
 
 

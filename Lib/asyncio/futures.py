@@ -115,7 +115,7 @@ class Future:
 
     @_log_traceback.setter
     def _log_traceback(self, val):
-        if bool(val):
+        if val:
             raise ValueError('_log_traceback can only be set to False')
         self.__log_traceback = False
 

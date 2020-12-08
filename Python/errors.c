@@ -290,12 +290,14 @@ _PyErr_NormalizeException(PyThreadState *tstate, PyObject **exc,
                           PyObject **val, PyObject **tb)
 {
     int recursion_depth = 0;
+    tstate->recursion_headroom++;
     PyObject *type, *value, *initial_tb;
 
   restart:
     type = *exc;
     if (type == NULL) {
         /* There was no exception, so nothing to do. */
+        tstate->recursion_headroom--;
         return;
     }
 
@@ -347,6 +349,7 @@ _PyErr_NormalizeException(PyThreadState *tstate, PyObject **exc,
     }
     *exc = type;
     *val = value;
+    tstate->recursion_headroom--;
     return;
 
   error:
@@ -1529,9 +1532,6 @@ PyErr_WriteUnraisable(PyObject *obj)
 {
     _PyErr_WriteUnraisableMsg(NULL, obj);
 }
-
-
-extern PyObject *PyModule_GetWarningsModule(void);
 
 
 void

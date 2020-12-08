@@ -216,7 +216,6 @@ serve:
 # for development releases: always build
 autobuild-dev:
 	make dist SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1'
-	-make suspicious
 
 # for quick rebuilds (HTML only)
 autobuild-dev-html:
