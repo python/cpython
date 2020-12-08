@@ -1835,7 +1835,7 @@ class PyBuildExt(build_ext):
             self.add(Extension('xxlimited', ['xxlimited.c'],
                                define_macros=[('Py_LIMITED_API', '0x03100000')]))
             self.add(Extension('xxlimited_35', ['xxlimited_35.c'],
-                               define_macros=[('Py_LIMITED_API', '0x03100000')]))
+                               define_macros=[('Py_LIMITED_API', '0x03050000')]))
         else:
             # Debug mode: Build xxlimited with the full API
             # (which is compatible with the limited one)
