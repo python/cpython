@@ -9,6 +9,7 @@
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_sysmodule.h"
+#include "pycore_atexit.h"
 
 /* --------------------------------------------------------------------------
 CAUTION
@@ -303,6 +304,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     _PyAST_Fini(interp);
     _PyWarnings_Fini(interp);
+    _PyAtExit_Fini(interp);
 
     // All Python types must be destroyed before the last GC collection. Python
     // types create a reference cycle to themselves in their in their

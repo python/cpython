@@ -8,6 +8,10 @@
 
 #include "Python.h"
 #include "pycore_interp.h"
+#include "pycore_pystate.h"
+
+typedef struct _atexit_runtime_state atexitmodule_state;
+typedef _Py_atexit_callback atexit_callback;
 
 /* Forward declaration (for atexit_cleanup) */
 static PyObject *atexit_clear(PyObject*, PyObject*);
@@ -17,24 +21,13 @@ static struct PyModuleDef atexitmodule;
 /* ===================================================================== */
 /* Callback machinery. */
 
-typedef struct {
-    PyObject *func;
-    PyObject *args;
-    PyObject *kwargs;
-} atexit_callback;
-
-typedef struct {
-    atexit_callback **atexit_callbacks;
-    int ncallbacks;
-    int callback_len;
-} atexitmodule_state;
 
 static inline atexitmodule_state*
-get_atexit_state(PyObject *module)
+get_atexit_state()
 {
-    void *state = PyModule_GetState(module);
-    assert(state != NULL);
-    return (atexitmodule_state *)state;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    atexitmodule_state *modstate = &interp->atexits;
+    return modstate;
 }
 
 
@@ -56,8 +49,7 @@ static void
 atexit_cleanup(atexitmodule_state *modstate)
 {
     atexit_callback *cb;
-    int i;
-    for (i = 0; i < modstate->ncallbacks; i++) {
+    for (int i = 0; i < modstate->ncallbacks; i++) {
         cb = modstate->atexit_callbacks[i];
         if (cb == NULL)
             continue;
@@ -79,7 +71,7 @@ atexit_callfuncs(PyObject *module)
 
     if (module == NULL)
         return;
-    modstate = get_atexit_state(module);
+    modstate = get_atexit_state();
 
     if (modstate->ncallbacks == 0)
         return;
@@ -137,7 +129,7 @@ atexit_register(PyObject *self, PyObject *args, PyObject *kwargs)
     atexit_callback *new_callback;
     PyObject *func = NULL;
 
-    modstate = get_atexit_state(self);
+    modstate = get_atexit_state();
 
     if (modstate->ncallbacks >= modstate->callback_len) {
         atexit_callback **r;
@@ -204,7 +196,7 @@ Clear the list of previously registered exit functions.");
 static PyObject *
 atexit_clear(PyObject *self, PyObject *unused)
 {
-    atexit_cleanup(get_atexit_state(self));
+    atexit_cleanup(get_atexit_state());
     Py_RETURN_NONE;
 }
 
@@ -218,46 +210,9 @@ atexit_ncallbacks(PyObject *self, PyObject *unused)
 {
     atexitmodule_state *modstate;
 
-    modstate = get_atexit_state(self);
+    modstate = get_atexit_state();
 
     return PyLong_FromSsize_t(modstate->ncallbacks);
-}
-
-static int
-atexit_m_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    int i;
-    atexitmodule_state *modstate;
-
-    modstate = (atexitmodule_state *)PyModule_GetState(self);
-
-    for (i = 0; i < modstate->ncallbacks; i++) {
-        atexit_callback *cb = modstate->atexit_callbacks[i];
-        if (cb == NULL)
-            continue;
-        Py_VISIT(cb->func);
-        Py_VISIT(cb->args);
-        Py_VISIT(cb->kwargs);
-    }
-    return 0;
-}
-
-static int
-atexit_m_clear(PyObject *self)
-{
-    atexitmodule_state *modstate;
-    modstate = (atexitmodule_state *)PyModule_GetState(self);
-    atexit_cleanup(modstate);
-    return 0;
-}
-
-static void
-atexit_free(PyObject *m)
-{
-    atexitmodule_state *modstate;
-    modstate = (atexitmodule_state *)PyModule_GetState(m);
-    atexit_cleanup(modstate);
-    PyMem_Free(modstate->atexit_callbacks);
 }
 
 PyDoc_STRVAR(atexit_unregister__doc__,
@@ -275,7 +230,7 @@ atexit_unregister(PyObject *self, PyObject *func)
     atexit_callback *cb;
     int i, eq;
 
-    modstate = get_atexit_state(self);
+    modstate = get_atexit_state();
 
     for (i = 0; i < modstate->ncallbacks; i++)
     {
@@ -318,24 +273,21 @@ Two public functions, register and unregister, are defined.\n\
 
 static int
 atexit_exec(PyObject *m) {
-    atexitmodule_state *modstate;
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    if (interp->atexit_initialized == 1) {
+    atexitmodule_state *modstate = get_atexit_state();
+    if (modstate->atexit_callbacks != NULL) {
         PyErr_SetString(PyExc_ImportError,
                         "cannot load module more than once per interpreter");
         return -1;
     }
-
-    modstate = get_atexit_state(m);
     modstate->callback_len = 32;
     modstate->ncallbacks = 0;
     modstate->atexit_callbacks = PyMem_New(atexit_callback*,
                                            modstate->callback_len);
-    if (modstate->atexit_callbacks == NULL)
+    if (modstate->atexit_callbacks == NULL) {
         return -1;
+    }
 
     _Py_PyAtExit(atexit_callfuncs, m);
-    interp->atexit_initialized = 1;
     return 0;
 }
 
@@ -346,15 +298,19 @@ static PyModuleDef_Slot atexit_slots[] = {
 
 static struct PyModuleDef atexitmodule = {
     PyModuleDef_HEAD_INIT,
-    "atexit",
-    atexit__doc__,
-    sizeof(atexitmodule_state),
-    atexit_methods,
-    atexit_slots,
-    atexit_m_traverse,
-    atexit_m_clear,
-    (freefunc)atexit_free
+    .m_name = "atexit",
+    .m_doc = atexit__doc__,
+    .m_methods = atexit_methods,
+    .m_slots = atexit_slots,
 };
+
+void
+_PyAtExit_Fini(PyInterpreterState *interp)
+{
+    atexitmodule_state *modstate = &interp->atexits;
+    atexit_cleanup(modstate);
+    PyMem_Free(modstate->atexit_callbacks);
+}
 
 PyMODINIT_FUNC
 PyInit_atexit(void)

@@ -13,6 +13,7 @@ extern "C" {
 #include "pycore_gil.h"           // struct _gil_runtime_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
+#include "pycore_atexit.h"        // struct _atexit_runtime_state
 
 struct _pending_calls {
     PyThread_type_lock lock;
@@ -212,7 +213,6 @@ struct _is {
     PyObject *codec_search_cache;
     PyObject *codec_error_registry;
     int codecs_initialized;
-    int atexit_initialized;
 
     PyConfig config;
 #ifdef HAVE_DLOPEN
@@ -241,6 +241,7 @@ struct _is {
     uint64_t tstate_next_unique_id;
 
     struct _warnings_runtime_state warnings;
+    struct _atexit_runtime_state atexits;
 
     PyObject *audit_hooks;
 
