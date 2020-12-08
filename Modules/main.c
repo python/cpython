@@ -380,64 +380,51 @@ static int
 pymain_run_startup(PyConfig *config, PyCompilerFlags *cf, int *exitcode)
 {
     int ret;
-    PyObject *startup_obj = NULL;
     if (!config->use_environment) {
         return 0;
     }
+    PyObject *startup = NULL;
 #ifdef MS_WINDOWS
-    const wchar_t *wstartup = _wgetenv(L"PYTHONSTARTUP");
-    if (wstartup == NULL || wstartup[0] == L'\0') {
+    const wchar_t *env = _wgetenv(L"PYTHONSTARTUP");
+    if (env == NULL || env[0] == L'\0') {
         return 0;
     }
-    PyObject *startup_bytes = NULL;
-    startup_obj = PyUnicode_FromWideChar(wstartup, wcslen(wstartup));
-    if (startup_obj == NULL) {
-        goto error;
-    }
-    startup_bytes = PyUnicode_EncodeFSDefault(startup_obj);
-    if (startup_bytes == NULL) {
-        goto error;
-    }
-    const char *startup = PyBytes_AS_STRING(startup_bytes);
-#else
-    const char *startup = _Py_GetEnv(config->use_environment, "PYTHONSTARTUP");
+    startup = PyUnicode_FromWideChar(env, wcslen(env));
     if (startup == NULL) {
+        goto error;
+    }
+#else
+    const char *env = _Py_GetEnv(config->use_environment, "PYTHONSTARTUP");
+    if (env == NULL) {
         return 0;
     }
-    startup_obj = PyUnicode_DecodeFSDefault(startup);
-    if (startup_obj == NULL) {
+    startup = PyUnicode_DecodeFSDefault(env);
+    if (startup == NULL) {
         goto error;
     }
 #endif
-    if (PySys_Audit("cpython.run_startup", "O", startup_obj) < 0) {
+    if (PySys_Audit("cpython.run_startup", "O", startup) < 0) {
         goto error;
     }
 
-#ifdef MS_WINDOWS
-    FILE *fp = _Py_wfopen(wstartup, L"r");
-#else
-    FILE *fp = _Py_fopen(startup, "r");
-#endif
+    FILE *fp = _Py_fopen_obj(startup, "r");
     if (fp == NULL) {
         int save_errno = errno;
         PyErr_Clear();
         PySys_WriteStderr("Could not open PYTHONSTARTUP\n");
 
         errno = save_errno;
-        PyErr_SetFromErrnoWithFilenameObjects(PyExc_OSError, startup_obj, NULL);
+        PyErr_SetFromErrnoWithFilenameObjects(PyExc_OSError, startup, NULL);
         goto error;
     }
 
-    (void) PyRun_SimpleFileExFlags(fp, startup, 0, cf);
+    (void) _PyRun_SimpleFileObject(fp, startup, 0, cf);
     PyErr_Clear();
     fclose(fp);
     ret = 0;
 
 done:
-#ifdef MS_WINDOWS
-    Py_XDECREF(startup_bytes);
-#endif
-    Py_XDECREF(startup_obj);
+    Py_XDECREF(startup);
     return ret;
 
 error:

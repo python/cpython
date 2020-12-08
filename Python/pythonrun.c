@@ -350,9 +350,9 @@ set_main_loader(PyObject *d, PyObject *filename, const char *loader_name)
 }
 
 
-static int
-pyrun_simple_file(FILE *fp, PyObject *filename, int closeit,
-                  PyCompilerFlags *flags)
+int
+_PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
+                        PyCompilerFlags *flags)
 {
     PyObject *m, *d, *v;
     int set_file_name = 0, ret = -1;
@@ -441,7 +441,7 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
     if (filename_obj == NULL) {
         return -1;
     }
-    int res = pyrun_simple_file(fp, filename_obj, closeit, flags);
+    int res = _PyRun_SimpleFileObject(fp, filename_obj, closeit, flags);
     Py_DECREF(filename_obj);
     return res;
 }

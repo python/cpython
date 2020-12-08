@@ -3,6 +3,11 @@
 #endif
 
 PyAPI_FUNC(int) PyRun_SimpleStringFlags(const char *, PyCompilerFlags *);
+PyAPI_FUNC(int) _PyRun_SimpleFileObject(
+    FILE *fp,
+    PyObject *filename,
+    int closeit,
+    PyCompilerFlags *flags);
 PyAPI_FUNC(int) PyRun_AnyFileExFlags(
     FILE *fp,
     const char *filename,       /* decoded from the filesystem encoding */
