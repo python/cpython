@@ -301,32 +301,31 @@ xx_modexec(PyObject *m)
     if (state->Error_Type == NULL) {
         return -1;
     }
-    PyModule_AddType(m, (PyTypeObject*)state->Error_Type);
+    if (PyModule_AddType(m, (PyTypeObject*)state->Error_Type) < 0) {
+        return -1;
+    }
 
     state->Xxo_Type = PyType_FromModuleAndSpec(m, &Xxo_Type_spec, NULL);
     if (state->Xxo_Type == NULL) {
         return -1;
     }
-    PyModule_AddType(m, (PyTypeObject*)state->Xxo_Type);
+    if (PyModule_AddType(m, (PyTypeObject*)state->Xxo_Type) < 0) {
+        return -1;
+    }
 
     // Add the Str type. It is not needed from C code, so it is only
     // added to the module dict.
     // It does not inherit from "object" (PyObject_Type), but from "str"
-    // (PyUnincode_Type). The tuple of bases is constructed manually.
-    // (It would also possible to fill the Py_tp_base slot, but
-    // it would need to be done dynamically: in standard C, `&PyUnicode_Type`
-    // is not a constant expression .)
-    PyObject *bases = PyTuple_Pack(1, (PyObject *)&PyUnicode_Type);
-    if (bases == NULL) {
-        return -1;
-    }
-    PyObject *Str_Type = PyType_FromModuleAndSpec(m, &Str_Type_spec, bases);
-    Py_DECREF(bases);
+    // (PyUnincode_Type).
+    PyObject *Str_Type = PyType_FromModuleAndSpec(
+        m, &Str_Type_spec, (PyObject *)&PyUnicode_Type);
     if (Str_Type == NULL) {
         return -1;
     }
-    PyModule_AddType(m, (PyTypeObject*)Str_Type);
-    Py_INCREF(Str_Type);
+    if (PyModule_AddType(m, (PyTypeObject*)Str_Type) < 0) {
+        return -1;
+    }
+    Py_DECREF(Str_Type);
 
     return 0;
 }
@@ -337,7 +336,8 @@ static PyModuleDef_Slot xx_slots[] = {
 };
 
 static int
-xx_traverse(PyObject *module, visitproc visit, void *arg) {
+xx_traverse(PyObject *module, visitproc visit, void *arg)
+{
     xx_state *state = PyModule_GetState(module);
     Py_VISIT(state->Xxo_Type);
     Py_VISIT(state->Error_Type);
@@ -345,7 +345,8 @@ xx_traverse(PyObject *module, visitproc visit, void *arg) {
 }
 
 static int
-xx_clear(PyObject *module) {
+xx_clear(PyObject *module)
+{
     xx_state *state = PyModule_GetState(module);
     Py_CLEAR(state->Xxo_Type);
     Py_CLEAR(state->Error_Type);
