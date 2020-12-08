@@ -1102,6 +1102,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pylifecycle.h \
 		$(srcdir)/Include/cpython/pymem.h \
 		$(srcdir)/Include/cpython/pystate.h \
+		$(srcdir)/Include/cpython/pythonrun.h \
 		$(srcdir)/Include/cpython/sysmodule.h \
 		$(srcdir)/Include/cpython/traceback.h \
 		$(srcdir)/Include/cpython/tupleobject.h \

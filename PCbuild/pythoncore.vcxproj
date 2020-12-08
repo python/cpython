@@ -146,6 +146,7 @@
     <ClInclude Include="..\Include\cpython\pylifecycle.h" />
     <ClInclude Include="..\Include\cpython\pymem.h" />
     <ClInclude Include="..\Include\cpython\pystate.h" />
+    <ClInclude Include="..\Include\cpython\pythonrun.h" />
     <ClInclude Include="..\Include\cpython\sysmodule.h" />
     <ClInclude Include="..\Include\cpython\traceback.h" />
     <ClInclude Include="..\Include\cpython\tupleobject.h" />
