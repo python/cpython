@@ -179,11 +179,9 @@ class TestResult(object):
 
         if exctype is test.failureException:
             # Skip assert*() traceback levels
-            length = self._count_relevant_tb_levels(tb)
-        else:
-            length = None
+            self._remove_unittest_tb_frames(tb)
         tb_e = traceback.TracebackException(
-            exctype, value, tb, limit=length, capture_locals=self.tb_locals)
+            exctype, value, tb, capture_locals=self.tb_locals)
         msgLines = list(tb_e.format())
 
         if self.buffer:
@@ -203,12 +201,20 @@ class TestResult(object):
     def _is_relevant_tb_level(self, tb):
         return '__unittest' in tb.tb_frame.f_globals
 
-    def _count_relevant_tb_levels(self, tb):
-        length = 0
+    def _remove_unittest_tb_frames(self, tb):
+        '''Truncates usercode tb at the first unittest frame.
+
+        If the first frame of the traceback is in user code,
+        the prefix up to the first unittest frame is returned.
+        If the first frame is already in the unittest module,
+        the traceback is not modified.
+        '''
+        prev = None
         while tb and not self._is_relevant_tb_level(tb):
-            length += 1
+            prev = tb
             tb = tb.tb_next
-        return length
+        if prev is not None:
+            prev.tb_next = None
 
     def __repr__(self):
         return ("<%s run=%i errors=%i failures=%i>" %

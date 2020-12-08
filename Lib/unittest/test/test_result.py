@@ -413,6 +413,47 @@ class Test_TestResult(unittest.TestCase):
         Frame.tb_frame.f_globals['__unittest'] = True
         self.assertTrue(result._is_relevant_tb_level(Frame))
 
+    def testRemoveUnittestTbFrames(self):
+        try:
+            self.fail('too bad')
+        except:
+            exc_info = sys.exc_info()
+        tb = exc_info[2]
+        self.assertEqual(len(list(traceback.walk_tb(tb))), 2)
+        result = unittest.TestResult()
+        result._remove_unittest_tb_frames(tb)
+        self.assertEqual(len(list(traceback.walk_tb(tb))), 1)
+
+    def testExcInfoStringChained(self):  # bpo 49563
+        def raiseAnException():
+            raise ValueError(42)
+        try:
+            try:
+                raiseAnException()
+            except:
+                self.fail('too bad')
+        except:
+            exc_info = sys.exc_info()
+
+        class ResultWithoutFilter(unittest.TestResult):
+            def _remove_unittest_tb_frames(self, tb):
+                pass
+
+        result = ResultWithoutFilter()
+        exc_str_no_filter = result._exc_info_to_string(exc_info, self)
+
+        result = unittest.TestResult()
+        exc_str_filtered = result._exc_info_to_string(exc_info, self)
+        for exc_str in [exc_str_no_filter, exc_str_filtered]:
+            self.assertIn('raiseAnException()', exc_str)
+            self.assertIn('raise ValueError(42)', exc_str)
+            self.assertIn("self.fail('too bad')", exc_str)
+            self.assertIn('AssertionError: too bad', exc_str)
+
+        # The unittest call:
+        self.assertNotIn('raise self.failureException(msg)', exc_str_filtered)
+        self.assertIn('raise self.failureException(msg)', exc_str_no_filter)
+
     def testFailFast(self):
         result = unittest.TestResult()
         result._exc_info_to_string = lambda *_: ''
