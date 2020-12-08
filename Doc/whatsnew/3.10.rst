@@ -480,6 +480,11 @@ Removed
   into their code.
   (Contributed by Dong-hee Na and Terry J. Reedy in :issue:`42299`.)
 
+* Removed the :c:func:`PyModule_GetWarningsModule` function that was useless
+  now due to the _warnings module was converted to a builtin module in 2.6.
+  (Contributed by Hai Shi in :issue:`42599`.)
+
+
 Porting to Python 3.10
 ======================
 

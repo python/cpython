@@ -1534,9 +1534,6 @@ PyErr_WriteUnraisable(PyObject *obj)
 }
 
 
-extern PyObject *PyModule_GetWarningsModule(void);
-
-
 void
 PyErr_SyntaxLocation(const char *filename, int lineno)
 {
