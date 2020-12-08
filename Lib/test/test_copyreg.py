@@ -6,6 +6,9 @@ from test.pickletester import ExtensionSaver
 class C:
     pass
 
+def pickle_C(c):
+    return C, ()
+
 
 class WithoutSlots(object):
     pass
@@ -32,16 +35,15 @@ class WithInherited(WithSingleString):
 class CopyRegTestCase(unittest.TestCase):
 
     def test_class(self):
-        self.assertRaises(TypeError, copyreg.pickle,
-                          C, None, None)
+        copyreg.pickle(C, pickle_C)
 
     def test_noncallable_reduce(self):
         self.assertRaises(TypeError, copyreg.pickle,
-                          type(1), "not a callable")
+                          C, "not a callable")
 
     def test_noncallable_constructor(self):
         self.assertRaises(TypeError, copyreg.pickle,
-                          type(1), int, "not a callable")
+                          C, pickle_C, "not a callable")
 
     def test_bool(self):
         import copy

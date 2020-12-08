@@ -844,9 +844,9 @@ class MultiCallIterator:
 
     def __getitem__(self, i):
         item = self.results[i]
-        if type(item) == type({}):
+        if type(item) == dict:
             raise Fault(item['faultCode'], item['faultString'])
-        elif type(item) == type([]):
+        elif type(item) == list:
             return item[0]
         else:
             raise ValueError("unexpected type in multicall result")

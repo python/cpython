@@ -150,7 +150,7 @@ def _copy(master_fd, master_read=_read, stdin_read=_read):
 
 def spawn(argv, master_read=_read, stdin_read=_read):
     """Create a spawned process."""
-    if type(argv) == type(''):
+    if type(argv) == str:
         argv = (argv,)
     sys.audit('pty.spawn', argv)
     pid, master_fd = fork()

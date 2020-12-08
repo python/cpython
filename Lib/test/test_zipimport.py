@@ -37,14 +37,10 @@ raise_src = 'def do_raise(): raise TypeError\n'
 
 def make_pyc(co, mtime, size):
     data = marshal.dumps(co)
-    if type(mtime) is type(0.0):
-        # Mac mtimes need a bit of special casing
-        if mtime < 0x7fffffff:
-            mtime = int(mtime)
-        else:
-            mtime = int(-0x100000000 + int(mtime))
+    mtime = int(mtime)
     pyc = (importlib.util.MAGIC_NUMBER +
-        struct.pack("<iii", 0, int(mtime), size & 0xFFFFFFFF) + data)
+        struct.pack("<iII", 0, mtime & 0xFFFF_FFFF, size & 0xFFFF_FFFF) +
+        data)
     return pyc
 
 def module_path_to_dotted_name(path):
