@@ -97,14 +97,6 @@ _Py_IsFinalizing(void)
 int (*_PyOS_mystrnicmp_hack)(const char *, const char *, Py_ssize_t) = \
     PyOS_mystrnicmp; /* Python/pystrcmp.o */
 
-/* PyModule_GetWarningsModule is no longer necessary as of 2.6
-since _warnings is builtin.  This API should not be used. */
-PyObject *
-PyModule_GetWarningsModule(void)
-{
-    return PyImport_ImportModule("warnings");
-}
-
 
 /* APIs to access the initialization flags
  *
