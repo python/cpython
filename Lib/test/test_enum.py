@@ -417,7 +417,6 @@ class TestEnum(unittest.TestCase):
                 green = 2
                 blue = 3
 
-
     def test_enum_with_value_name(self):
         class Huh(Enum):
             name = 1
