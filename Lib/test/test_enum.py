@@ -429,7 +429,7 @@ class TestEnum(unittest.TestCase):
     def test_reserved__sunder_(self):
         with self.assertRaisesRegex(
                 ValueError,
-                '_sunder_ names, such as "_bad_", are reserved',
+                "_sunder_ names, such as '_bad_', are reserved",
             ):
             class Bad(Enum):
                 _bad_ = 1
