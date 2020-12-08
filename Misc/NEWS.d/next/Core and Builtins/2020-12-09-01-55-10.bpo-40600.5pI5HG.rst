@@ -1,0 +1,2 @@
+:mod:`atexit` supports only once loading per interpreter. Patch by Dong-hee
+Na.
