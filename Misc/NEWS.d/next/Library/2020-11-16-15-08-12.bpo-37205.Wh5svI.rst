@@ -1,3 +1,0 @@
-:func:`time.time()`, :func:`time.perf_counter()` and
-:func:`time.monotonic()` functions can no longer fail with a Python fatal
-error, instead raise a regular Python exception on failure.
