@@ -158,7 +158,7 @@ type hinted using ``Callable[[Arg1Type, Arg2Type], ReturnType]``.
 
 For example::
 
-   from collections.abc import Callable
+   from typing import Callable
 
    def feeder(get_next_item: Callable[[], str]) -> None:
        # Body
