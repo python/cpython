@@ -1409,8 +1409,7 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
     self->rec_len = 0;
     self->num_fields = 0;
 
-    self->error_obj = module_state->error_obj;
-    Py_INCREF(self->error_obj);
+    self->error_obj = Py_NewRef(module_state->error_obj);
 
     if (!PyArg_UnpackTuple(args, "", 1, 2, &output_file, &dialect)) {
         Py_DECREF(self);
