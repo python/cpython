@@ -99,7 +99,7 @@ Or, more often::
 
    .. method:: destroy()
 
-      Destroy this and all descendants widgets. This will 
+      Destroy this and all descendants widgets. This will
       end the application of this Tcl interpreter.
 
    .. method:: after(ms, func=None, *args)
@@ -118,7 +118,7 @@ Or, more often::
 
       Return an identifier to cancel the scheduling with
       :meth:`~Tk.after_cancel`.
-   
+
    .. method:: after_cancel(id)
 
       Cancel scheduling of function identified with ID.
@@ -147,7 +147,7 @@ Or, more often::
       selection_get(CLIPBOARD)
 
       .. FIXME: Create link to :meth:`selection_get` with the parameter CLIPBOARD
-   
+
    .. method:: clipboard_clear(**kw)
 
       Clear the data in the Tk clipboard.
@@ -178,7 +178,7 @@ Or, more often::
 
       A grab directs all events to this and descendant
       widgets in the application.
-      
+
    .. method:: grab_set_global()
 
       Set global grab for this widget.
@@ -206,7 +206,7 @@ Or, more often::
       to use. A keyword parameter type specifies the form of data to be
       fetched, defaulting to STRING except on X11, where UTF8_STRING is tried
       before STRING.
-   
+
    .. method:: selection_handle(command, **kw)
 
       Specify a function COMMAND to call if the X
@@ -227,7 +227,7 @@ Or, more often::
 
       A keyword parameter selection specifies the name of
       the selection (default PRIMARY).
-   
+
    .. method:: selection_own_get(**kw)
 
       Return owner of X selection.
@@ -236,15 +236,15 @@ Or, more often::
       be provided:
       selection - name of the selection (default PRIMARY),
       type - type of the selection (e.g. STRING, FILE_NAME).
-      
+
    .. method:: lower(belowThis=None)
-       
+
       Lower this widget in the stacking order.
 
    .. method:: tkraise(aboveThis=None)
 
       Raise this widget in the stacking order.
-   
+
    .. method:: winfo_children()
 
       Return a list of all widgets which are children of this widget.
@@ -252,9 +252,9 @@ Or, more often::
    .. method:: winfo_exists()
 
       Return true if this widget exists.
-   
+
    .. method:: winfo_geometry()
-   
+
       Return geometry string for this widget in the form "widthxheight+X+Y".
 
    .. method:: winfo_height()
@@ -268,7 +268,7 @@ Or, more often::
    .. method:: winfo_id()
 
       Return identifier ID for this widget.
-   
+
    .. method:: winfo_name()
 
       Return the name of this widget
@@ -276,15 +276,15 @@ Or, more often::
    .. method:: winfo_parent()
 
       Return the name of the parent of this widget.
-   
+
    .. method:: winfo_pointerx()
 
       Return the x coordinate of the pointer on the root window.
-   
+
    .. method:: winfo_pointerxy()
 
       Return a tuple of x and y coordinates of the pointer on the root window.
-   
+
    .. method:: winfo_pointery()
 
       Return the y coordinate of the pointer on the root window.
@@ -312,7 +312,7 @@ Or, more often::
 
       Return the number of pixels of the width of the screen of
       this widget in pixel.
-   
+
    .. method:: winfo_toplevel()
 
       Return the toplevel widget of this widget.
@@ -320,7 +320,7 @@ Or, more often::
    .. method:: winfo_viewable()
 
       Return true if the widget and all its higher ancestors are mapped.
-   
+
    .. method:: winfo_x()
 
       Return the x coordinate of the upper left corner of this widget
@@ -330,11 +330,11 @@ Or, more often::
 
       Return the y coordinate of the upper left corner of this widget
       in the parent.
-   
+
    .. method:: update()
 
       Enter event loop until all pending events have been processed by Tcl.
-   
+
    .. method:: update_idletasks()
 
       Enter event loop until all idle callbacks have been called. This
@@ -405,7 +405,7 @@ Or, more often::
    .. method:: unbind_all(sequence)
 
       Unbind for all widgets for event SEQUENCE all functions.
-   
+
    .. method:: mainloop(n=0)
 
       Call the mainloop of Tk.
@@ -413,7 +413,7 @@ Or, more often::
    .. method:: quit()
 
       Quit the Tcl interpreter. All widgets will be destroyed.
-   
+
    .. method:: nametowidget(name)
 
       Return the Tkinter instance of a widget identified by
@@ -442,12 +442,12 @@ Or, more often::
       Generate an event SEQUENCE. Additional
       keyword arguments specify parameter of the event
       (e.g. x, y, rootx, rooty).
-   
+
    .. method:: event_info(virtual=None)
 
       Return a list of all virtual events or the information
       about the SEQUENCE bound to the virtual event VIRTUAL.
-   
+
    Methods inheritted from :class:`WM` parent class:
 
    .. method:: aspect(minNumer=None, minDenom=None, maxNumer=None, maxDenom=None)
@@ -455,7 +455,7 @@ Or, more often::
       Instruct the window manager to set the aspect ratio (width/height)
       of this widget to be between MINNUMER/MINDENOM and MAXNUMER/MAXDENOM. Return a tuple
       of the actual values if no argument is given.
-   
+
    .. method:: attributes(*args)
 
       This subcommand returns or sets platform specific attributes
@@ -474,24 +474,24 @@ Or, more often::
       On Macintosh, XXXXX
 
       On Unix, there are currently no special attribute values.
-   
+
    .. method:: client(name=None)
 
       Store NAME in WM_CLIENT_MACHINE property of this widget. Return
       current value.
-   
+
    .. method:: colormapwindows(*wlist)
 
       Store list of window names (WLIST) into WM_COLORMAPWINDOWS property
       of this widget. This list contains windows whose colormaps differ from their
       parents. Return current list of widgets if WLIST is empty.
-   
+
    .. method:: command(value=None)
 
       Store VALUE in WM_COMMAND property. It is the command
       which shall be used to invoke the application. Return current
       command if VALUE is None.
-   
+
    .. method:: deiconify()
 
       Store VALUE in WM_COMMAND property. It is the command
@@ -503,7 +503,7 @@ Or, more often::
       Set focus model to MODEL. "active" means that this widget will claim
       the focus itself, "passive" means that the window manager shall give
       the focus. Return current focus model if MODEL is None.
-   
+
    .. method:: forget(window)
 
       The window will be unmapped from the screen and will no longer
@@ -515,24 +515,24 @@ Or, more often::
    .. method:: frame()
 
       Return identifier for decorative frame of this widget if present.
-   
+
    .. method:: geometry(newGeometry=None)
 
       Set geometry to NEWGEOMETRY of the form =widthxheight+x+y. Return
       current value if None is given.
-   
+
    .. method:: grid(baseWidth=None, baseHeight=None, widthInc=None, heightInc=None)
 
       Instruct the window manager that this widget shall only be
       resized on grid boundaries. WIDTHINC and HEIGHTINC are the width and
       height of a grid unit in pixels. BASEWIDTH and BASEHEIGHT are the
       number of grid units requested in Tk_GeometryRequest.
-   
+
    .. method:: group(pathName=None)
 
       Set the group leader widgets for related widgets to PATHNAME. Return
       the group leader of this widget if None is given.
-   
+
    .. method:: iconbitmap(bitmap=None, default=None)
 
       Set bitmap for the iconified widget to BITMAP. Return
@@ -543,22 +543,22 @@ Or, more often::
       explicitly.  DEFAULT can be the relative path to a .ico file
       (example: root.iconbitmap(default='myicon.ico') ).  See Tk
       documentation for more information.
-   
+
    .. method:: iconify()
 
       Display widget as icon.
-   
+
    .. method:: iconmask(bitmap=None)
 
       Set mask for the icon bitmap of this widget. Return the
       mask if None is given.
-   
+
    .. method:: iconname(newName=None)
 
       Set the name of the icon for this widget. Return the name if
       None is given.
-   
-   .. method:: iconphoto(defualt=False, *args) 
+
+   .. method:: iconphoto(defualt=False, *args)
 
       Sets the titlebar icon for this window based on the named photo
       images passed through args. If default is True, this is applied to
@@ -579,7 +579,7 @@ Or, more often::
       wm_iconbitmap may exist simultaneously.
 
       On Macintosh, this currently does nothing.
-      
+
       .. versionadded:: Tk 8.5
 
    .. method:: iconposition(x=None, y=None)
@@ -591,13 +591,13 @@ Or, more often::
 
       Set widget PATHNAME to be displayed instead of icon. Return the current
       value if None is given.
-   
+
    .. method:: manage(widget)
 
       The widget specified will become a stand alone top-level window.
       The window will be decorated with the window managers title bar,
       etc.
-   
+
    .. method:: maxsize(width=None, height=None)
 
       Set max WIDTH and HEIGHT for this widget. If the window is gridded
@@ -615,7 +615,7 @@ Or, more often::
       Instruct the window manager to ignore this widget
       if BOOLEAN is given with 1. Return the current value if None
       is given.
-   
+
    .. method:: positionfrom(who=None)
 
       Instruct the window manager that the position of this widget shall
@@ -632,13 +632,13 @@ Or, more often::
 
       Instruct the window manager whether this width can be resized
       in WIDTH or HEIGHT. Both values are boolean values.
-   
+
    .. method:: sizefrom(who=None)
 
       Instruct the window manager that the size of this widget shall
       be defined by the user if WHO is "user", and by its own policy if WHO is
       "program".
-   
+
    .. method:: state(newstate=None)
 
       Query or set the state of this widget as one of normal, icon,
