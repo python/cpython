@@ -658,7 +658,7 @@ class Enum(metaclass=EnumMeta):
         # the value
 
         # pure Enum branch, or branch with __str__ explicitly overridden
-        str_overridden = type(self).__str__ != Enum.__str__
+        str_overridden = type(self).__str__ not in (Enum.__str__, Flag.__str__)
         if self._member_type_ is object or str_overridden:
             cls = str
             val = str(self)
