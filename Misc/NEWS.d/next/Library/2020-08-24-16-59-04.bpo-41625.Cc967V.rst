@@ -1,2 +1,0 @@
-Expose the :c:func:`splice` as :func:`os.splice` in the :mod:`os` module.
-Patch by Pablo Galindo

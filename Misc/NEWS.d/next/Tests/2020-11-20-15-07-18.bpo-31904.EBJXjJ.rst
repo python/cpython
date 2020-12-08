@@ -1,1 +1,0 @@
-Fix test_doctest.py failures for VxWorks.

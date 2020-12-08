@@ -1,2 +1,0 @@
-Port _posixsubprocess extension module to multiphase initialization
-(:pep:`489`).
