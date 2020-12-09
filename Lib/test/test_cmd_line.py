@@ -153,6 +153,12 @@ class CmdLineTest(unittest.TestCase):
                    % (os_helper.FS_NONASCII, ord(os_helper.FS_NONASCII)))
         assert_python_ok('-c', command)
 
+    def test_coding(self):
+        # bpo-32381: the -c command ignores the coding cookie
+        cmd = f"# coding: latin1\nprint(ascii('\xe9'))"
+        res = assert_python_ok('-c', cmd)
+        self.assertEqual(res.out.rstrip(), b"'\\xe9'")
+
     # On Windows, pass bytes to subprocess doesn't test how Python decodes the
     # command line, but how subprocess does decode bytes to unicode. Python
     # doesn't decode the command line because Windows provides directly the
