@@ -524,7 +524,7 @@ over UDP sockets.
 
    .. versionchanged:: 3.4
       If ``port`` is specified as ``None``, a Unix domain socket is created
-      using the value in ``host`` - otherwise, a TCP socket is created.
+      using the value in ``host`` - otherwise, a UDP socket is created.
 
    .. method:: emit()
 

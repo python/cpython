@@ -51,9 +51,9 @@ The available exception and functions in this module are:
 
    Compresses the bytes in *data*, returning a bytes object containing compressed data.
    *level* is an integer from ``0`` to ``9`` or ``-1`` controlling the level of compression;
-   ``1`` is fastest and produces the least compression, ``9`` is slowest and
-   produces the most.  ``0`` is no compression.  The default value is ``-1``
-   (Z_DEFAULT_COMPRESSION).  Z_DEFAULT_COMPRESSION represents a default
+   ``1`` (Z_BEST_SPEED) is fastest and produces the least compression, ``9`` (Z_BEST_COMPRESSION)
+   is slowest and produces the most.  ``0`` (Z_NO_COMPRESSION) is no compression.
+   The default value is ``-1`` (Z_DEFAULT_COMPRESSION).  Z_DEFAULT_COMPRESSION represents a default
    compromise between speed and compression (currently equivalent to level 6).
    Raises the :exc:`error` exception if any error occurs.
 
@@ -61,23 +61,25 @@ The available exception and functions in this module are:
       *level* can now be used as a keyword parameter.
 
 
-.. function:: compressobj(level=-1, method=DEFLATED, wbits=15, memLevel=8, strategy=Z_DEFAULT_STRATEGY[, zdict])
+.. function:: compressobj(level=-1, method=DEFLATED, wbits=MAX_WBITS, memLevel=DEF_MEM_LEVEL, strategy=Z_DEFAULT_STRATEGY[, zdict])
 
    Returns a compression object, to be used for compressing data streams that won't
    fit into memory at once.
 
    *level* is the compression level -- an integer from ``0`` to ``9`` or ``-1``.
-   A value of ``1`` is fastest and produces the least compression, while a value of
-   ``9`` is slowest and produces the most. ``0`` is no compression. The default
-   value is ``-1`` (Z_DEFAULT_COMPRESSION). Z_DEFAULT_COMPRESSION represents a default
-   compromise between speed and compression (currently equivalent to level 6).
+   A value of ``1`` (Z_BEST_SPEED) is fastest and produces the least compression,
+   while a value of ``9`` (Z_BEST_COMPRESSION) is slowest and produces the most.
+   ``0`` (Z_NO_COMPRESSION) is no compression.  The default value is ``-1`` (Z_DEFAULT_COMPRESSION).
+   Z_DEFAULT_COMPRESSION represents a default compromise between speed and compression
+   (currently equivalent to level 6).
 
    *method* is the compression algorithm. Currently, the only supported value is
-   ``DEFLATED``.
+   :const:`DEFLATED`.
 
    The *wbits* argument controls the size of the history buffer (or the
    "window size") used when compressing data, and whether a header and
-   trailer is included in the output.  It can take several ranges of values:
+   trailer is included in the output.  It can take several ranges of values,
+   defaulting to ``15`` (MAX_WBITS):
 
    * +9 to +15: The base-two logarithm of the window size, which
      therefore ranges between 512 and 32768.  Larger values produce
@@ -97,7 +99,8 @@ The available exception and functions in this module are:
    Higher values use more memory, but are faster and produce smaller output.
 
    *strategy* is used to tune the compression algorithm. Possible values are
-   ``Z_DEFAULT_STRATEGY``, ``Z_FILTERED``, and ``Z_HUFFMAN_ONLY``.
+   :const:`Z_DEFAULT_STRATEGY`, :const:`Z_FILTERED`, :const:`Z_HUFFMAN_ONLY`,
+   :const:`Z_RLE` (zlib 1.2.0.1) and :const:`Z_FIXED` (zlib 1.2.2.2).
 
    *zdict* is a predefined compression dictionary. This is a sequence of bytes
    (such as a :class:`bytes` object) containing subsequences that are expected
@@ -175,7 +178,7 @@ The available exception and functions in this module are:
    .. versionchanged:: 3.6
       *wbits* and *bufsize* can be used as keyword arguments.
 
-.. function:: decompressobj(wbits=15[, zdict])
+.. function:: decompressobj(wbits=MAX_WBITS[, zdict])
 
    Returns a decompression object, to be used for decompressing data streams that
    won't fit into memory at once.
@@ -213,13 +216,13 @@ Compression objects support the following methods:
 
    All pending input is processed, and a bytes object containing the remaining compressed
    output is returned.  *mode* can be selected from the constants
-   :const:`Z_SYNC_FLUSH`,  :const:`Z_FULL_FLUSH`,  or  :const:`Z_FINISH`,
-   defaulting to :const:`Z_FINISH`.  :const:`Z_SYNC_FLUSH` and
-   :const:`Z_FULL_FLUSH` allow compressing further bytestrings of data, while
-   :const:`Z_FINISH` finishes the compressed stream and  prevents compressing any
-   more data.  After calling :meth:`flush` with *mode* set to :const:`Z_FINISH`,
-   the :meth:`compress` method cannot be called again; the only realistic action is
-   to delete the object.
+   :const:`Z_NO_FLUSH`, :const:`Z_PARTIAL_FLUSH`, :const:`Z_SYNC_FLUSH`,
+   :const:`Z_FULL_FLUSH`, :const:`Z_BLOCK` (zlib 1.2.3.4), or :const:`Z_FINISH`,
+   defaulting to :const:`Z_FINISH`.  Except :const:`Z_FINISH`, all constants
+   allow compressing further bytestrings of data, while :const:`Z_FINISH` finishes the
+   compressed stream and prevents compressing any more data.  After calling :meth:`flush`
+   with *mode* set to :const:`Z_FINISH`, the :meth:`compress` method cannot be called again;
+   the only realistic action is to delete the object.
 
 
 .. method:: Compress.copy()

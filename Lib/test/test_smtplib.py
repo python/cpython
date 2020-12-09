@@ -825,6 +825,7 @@ class SimSMTPServer(smtpd.SMTPServer):
 
     def __init__(self, *args, **kw):
         self._extra_features = []
+        self._addresses = {}
         smtpd.SMTPServer.__init__(self, *args, **kw)
 
     def handle_accepted(self, conn, addr):
@@ -833,7 +834,8 @@ class SimSMTPServer(smtpd.SMTPServer):
             decode_data=self._decode_data)
 
     def process_message(self, peer, mailfrom, rcpttos, data):
-        pass
+        self._addresses['from'] = mailfrom
+        self._addresses['tos'] = rcpttos
 
     def add_feature(self, feature):
         self._extra_features.append(feature)
@@ -1071,6 +1073,21 @@ class SMTPSimTests(unittest.TestCase):
         self.addCleanup(smtp.close)
         self.assertRaises(UnicodeEncodeError, smtp.sendmail, 'Alice', 'Böb', '')
         self.assertRaises(UnicodeEncodeError, smtp.mail, 'Älice')
+
+    def test_name_field_not_included_in_envelop_addresses(self):
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost', timeout=3
+        )
+        self.addCleanup(smtp.close)
+
+        message = EmailMessage()
+        message['From'] = email.utils.formataddr(('Michaël', 'michael@example.com'))
+        message['To'] = email.utils.formataddr(('René', 'rene@example.com'))
+
+        self.assertDictEqual(smtp.send_message(message), {})
+
+        self.assertEqual(self.serv._addresses['from'], 'michael@example.com')
+        self.assertEqual(self.serv._addresses['tos'], ['rene@example.com'])
 
 
 class SimSMTPUTF8Server(SimSMTPServer):

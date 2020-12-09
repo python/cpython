@@ -2370,12 +2370,12 @@ Sealing mocks
 
 .. function:: seal(mock)
 
-    Seal will disable the creation of mock children by preventing to get or set
-    any new attribute on the sealed mock. The sealing process is performed recursively.
+    Seal will disable the creation of mock children by preventing getting or setting
+    of any new attribute on the sealed mock. The sealing process is performed recursively.
 
     If a mock instance is assigned to an attribute instead of being dynamically created
-    it won't be considered in the sealing chain. This allows to prevent seal from fixing
-    part of the mock object.
+    it won't be considered in the sealing chain. This allows one to prevent seal from
+    fixing part of the mock object.
 
         >>> mock = Mock()
         >>> mock.submock.attribute1 = 2

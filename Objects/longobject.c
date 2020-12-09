@@ -2267,7 +2267,6 @@ just 1 digit at the start, so that the copying code was exercised for every
 digit beyond the first.
 ***/
         twodigits c;           /* current input character */
-        double fsize_z;
         Py_ssize_t size_z;
         Py_ssize_t digits = 0;
         int i;
@@ -2331,8 +2330,8 @@ digit beyond the first.
          * need to initialize z->ob_digit -- no slot is read up before
          * being stored into.
          */
-        fsize_z = digits * log_base_BASE[base] + 1;
-        if (fsize_z > MAX_LONG_DIGITS) {
+        double fsize_z = (double)digits * log_base_BASE[base] + 1.0;
+        if (fsize_z > (double)MAX_LONG_DIGITS) {
             /* The same exception as in _PyLong_New(). */
             PyErr_SetString(PyExc_OverflowError,
                             "too many digits in integer");
@@ -4881,12 +4880,14 @@ int___getnewargs___impl(PyObject *self)
 }
 
 static PyObject *
-long_get0(PyLongObject *v, void *context) {
+long_get0(PyObject *Py_UNUSED(self), void *Py_UNUSED(context))
+{
     return PyLong_FromLong(0L);
 }
 
 static PyObject *
-long_get1(PyLongObject *v, void *context) {
+long_get1(PyObject *Py_UNUSED(self), void *Py_UNUSED(ignored))
+{
     return PyLong_FromLong(1L);
 }
 
@@ -5279,8 +5280,14 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
     return long_obj;
 }
 
+static PyObject *
+long_long_meth(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return long_long(self);
+}
+
 static PyMethodDef long_methods[] = {
-    {"conjugate",       (PyCFunction)long_long, METH_NOARGS,
+    {"conjugate",       long_long_meth, METH_NOARGS,
      "Returns self, the complex conjugate of any int."},
     INT_BIT_LENGTH_METHODDEF
 #if 0
@@ -5289,11 +5296,11 @@ static PyMethodDef long_methods[] = {
 #endif
     INT_TO_BYTES_METHODDEF
     INT_FROM_BYTES_METHODDEF
-    {"__trunc__",       (PyCFunction)long_long, METH_NOARGS,
+    {"__trunc__",       long_long_meth, METH_NOARGS,
      "Truncating an Integral returns itself."},
-    {"__floor__",       (PyCFunction)long_long, METH_NOARGS,
+    {"__floor__",       long_long_meth, METH_NOARGS,
      "Flooring an Integral returns itself."},
-    {"__ceil__",        (PyCFunction)long_long, METH_NOARGS,
+    {"__ceil__",        long_long_meth, METH_NOARGS,
      "Ceiling of an Integral returns itself."},
     {"__round__",       (PyCFunction)long_round, METH_VARARGS,
      "Rounding an Integral returns itself.\n"
@@ -5306,19 +5313,19 @@ static PyMethodDef long_methods[] = {
 
 static PyGetSetDef long_getset[] = {
     {"real",
-     (getter)long_long, (setter)NULL,
+     (getter)long_long_meth, (setter)NULL,
      "the real part of a complex number",
      NULL},
     {"imag",
-     (getter)long_get0, (setter)NULL,
+     long_get0, (setter)NULL,
      "the imaginary part of a complex number",
      NULL},
     {"numerator",
-     (getter)long_long, (setter)NULL,
+     (getter)long_long_meth, (setter)NULL,
      "the numerator of a rational number in lowest terms",
      NULL},
     {"denominator",
-     (getter)long_get1, (setter)NULL,
+     long_get1, (setter)NULL,
      "the denominator of a rational number in lowest terms",
      NULL},
     {NULL}  /* Sentinel */
@@ -5348,7 +5355,7 @@ static PyNumberMethods long_as_number = {
     long_divmod,                /*nb_divmod*/
     long_pow,                   /*nb_power*/
     (unaryfunc)long_neg,        /*nb_negative*/
-    (unaryfunc)long_long,       /*tp_positive*/
+    long_long,                  /*tp_positive*/
     (unaryfunc)long_abs,        /*tp_absolute*/
     (inquiry)long_bool,         /*tp_bool*/
     (unaryfunc)long_invert,     /*nb_invert*/

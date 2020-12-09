@@ -29,11 +29,16 @@ const char *Py_FileSystemDefaultEncoding = NULL; /* set by initfsencoding() */
 int Py_HasFileSystemDefaultEncoding = 0;
 #endif
 const char *Py_FileSystemDefaultEncodeErrors = "surrogateescape";
+/* UTF-8 mode (PEP 540): if equals to 1, use the UTF-8 encoding, and change
+   stdin and stdout error handler to "surrogateescape". It is equal to
+   -1 by default: unknown, will be set by Py_Main() */
+int Py_UTF8Mode = -1;
 
 _Py_IDENTIFIER(__builtins__);
 _Py_IDENTIFIER(__dict__);
 _Py_IDENTIFIER(__prepare__);
 _Py_IDENTIFIER(__round__);
+_Py_IDENTIFIER(__mro_entries__);
 _Py_IDENTIFIER(encoding);
 _Py_IDENTIFIER(errors);
 _Py_IDENTIFIER(fileno);
@@ -46,12 +51,84 @@ _Py_IDENTIFIER(stderr);
 
 #include "clinic/bltinmodule.c.h"
 
+static PyObject*
+update_bases(PyObject *bases, PyObject *const *args, Py_ssize_t nargs)
+{
+    Py_ssize_t i, j;
+    PyObject *base, *meth, *new_base, *result, *new_bases = NULL;
+    PyObject *stack[1] = {bases};
+    assert(PyTuple_Check(bases));
+
+    for (i = 0; i < nargs; i++) {
+        base  = args[i];
+        if (PyType_Check(base)) {
+            if (new_bases) {
+                /* If we already have made a replacement, then we append every normal base,
+                   otherwise just skip it. */
+                if (PyList_Append(new_bases, base) < 0) {
+                    goto error;
+                }
+            }
+            continue;
+        }
+        if (_PyObject_LookupAttrId(base, &PyId___mro_entries__, &meth) < 0) {
+            goto error;
+        }
+        if (!meth) {
+            if (new_bases) {
+                if (PyList_Append(new_bases, base) < 0) {
+                    goto error;
+                }
+            }
+            continue;
+        }
+        new_base = _PyObject_FastCall(meth, stack, 1);
+        Py_DECREF(meth);
+        if (!new_base) {
+            goto error;
+        }
+        if (!PyTuple_Check(new_base)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "__mro_entries__ must return a tuple");
+            Py_DECREF(new_base);
+            goto error;
+        }
+        if (!new_bases) {
+            /* If this is a first successful replacement, create new_bases list and
+               copy previously encountered bases. */
+            if (!(new_bases = PyList_New(i))) {
+                goto error;
+            }
+            for (j = 0; j < i; j++) {
+                base = args[j];
+                PyList_SET_ITEM(new_bases, j, base);
+                Py_INCREF(base);
+            }
+        }
+        j = PyList_GET_SIZE(new_bases);
+        if (PyList_SetSlice(new_bases, j, j, new_base) < 0) {
+            goto error;
+        }
+        Py_DECREF(new_base);
+    }
+    if (!new_bases) {
+        return bases;
+    }
+    result = PyList_AsTuple(new_bases);
+    Py_DECREF(new_bases);
+    return result;
+
+error:
+    Py_XDECREF(new_bases);
+    return NULL;
+}
+
 /* AC: cannot convert yet, waiting for *args support */
 static PyObject *
-builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
+builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
                         PyObject *kwnames)
 {
-    PyObject *func, *name, *bases, *mkw, *meta, *winner, *prep, *ns;
+    PyObject *func, *name, *bases, *mkw, *meta, *winner, *prep, *ns, *orig_bases;
     PyObject *cls = NULL, *cell = NULL;
     int isclass = 0;   /* initialize to prevent gcc warning */
 
@@ -72,9 +149,15 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
                         "__build_class__: name is not a string");
         return NULL;
     }
-    bases = _PyStack_AsTupleSlice(args, nargs, 2, nargs);
-    if (bases == NULL)
+    orig_bases = _PyStack_AsTupleSlice(args, nargs, 2, nargs);
+    if (orig_bases == NULL)
         return NULL;
+
+    bases = update_bases(orig_bases, args + 2, nargs - 2);
+    if (bases == NULL) {
+        Py_DECREF(orig_bases);
+        return NULL;
+    }
 
     if (kwnames == NULL) {
         meta = NULL;
@@ -133,18 +216,11 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
     }
     /* else: meta is not a class, so we cannot do the metaclass
        calculation, so we will use the explicitly given object as it is */
-    prep = _PyObject_GetAttrId(meta, &PyId___prepare__);
-    if (prep == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-            ns = PyDict_New();
-        }
-        else {
-            Py_DECREF(meta);
-            Py_XDECREF(mkw);
-            Py_DECREF(bases);
-            return NULL;
-        }
+    if (_PyObject_LookupAttrId(meta, &PyId___prepare__, &prep) < 0) {
+        ns = NULL;
+    }
+    else if (prep == NULL) {
+        ns = PyDict_New();
     }
     else {
         PyObject *pargs[2] = {name, bases};
@@ -168,6 +244,11 @@ builtin___build_class__(PyObject *self, PyObject **args, Py_ssize_t nargs,
                              NULL, 0, NULL, 0, NULL, 0, NULL,
                              PyFunction_GET_CLOSURE(func));
     if (cell != NULL) {
+        if (bases != orig_bases) {
+            if (PyMapping_SetItemString(ns, "__orig_bases__", orig_bases) < 0) {
+                goto error;
+            }
+        }
         PyObject *margs[3] = {name, bases, ns};
         cls = _PyObject_FastCallDict(meta, margs, 3, mkw);
         if (cls != NULL && PyType_Check(cls) && PyCell_Check(cell)) {
@@ -206,6 +287,9 @@ error:
     Py_DECREF(meta);
     Py_XDECREF(mkw);
     Py_DECREF(bases);
+    if (bases != orig_bases) {
+        Py_DECREF(orig_bases);
+    }
     return cls;
 }
 
@@ -233,7 +317,7 @@ PyDoc_STRVAR(import_doc,
 "__import__(name, globals=None, locals=None, fromlist=(), level=0) -> module\n\
 \n\
 Import a module. Because this function is meant for use by the Python\n\
-interpreter and not for general use it is better to use\n\
+interpreter and not for general use, it is better to use\n\
 importlib.import_module() to programmatically import a module.\n\
 \n\
 The globals argument is only used to determine the context;\n\
@@ -242,8 +326,8 @@ should be a list of names to emulate ``from name import ...'', or an\n\
 empty list to emulate ``import name''.\n\
 When importing a module from a package, note that __import__('A.B', ...)\n\
 returns package A when fromlist is empty, but its submodule B when\n\
-fromlist is not empty.  Level is used to determine whether to perform \n\
-absolute or relative imports. 0 is absolute while a positive number\n\
+fromlist is not empty.  The level argument is used to determine whether to\n\
+perform absolute or relative imports: 0 is absolute, while a positive number\n\
 is the number of parent directories to search relative to the current module.");
 
 
@@ -423,7 +507,7 @@ builtin_callable(PyObject *module, PyObject *obj)
 }
 
 static PyObject *
-builtin_breakpoint(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *keywords)
+builtin_breakpoint(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *keywords)
 {
     PyObject *hook = PySys_GetObject("breakpointhook");
 
@@ -535,7 +619,7 @@ filter_next(filterobject *lz)
 }
 
 static PyObject *
-filter_reduce(filterobject *lz)
+filter_reduce(filterobject *lz, PyObject *Py_UNUSED(ignored))
 {
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->func, lz->it);
 }
@@ -1020,7 +1104,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
 
 /* AC: cannot convert yet, as needs PEP 457 group support in inspect */
 static PyObject *
-builtin_getattr(PyObject *self, PyObject **args, Py_ssize_t nargs)
+builtin_getattr(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *v, *result, *dflt = NULL;
     PyObject *name;
@@ -1033,13 +1117,14 @@ builtin_getattr(PyObject *self, PyObject **args, Py_ssize_t nargs)
                         "getattr(): attribute name must be string");
         return NULL;
     }
-    result = PyObject_GetAttr(v, name);
-    if (result == NULL && dflt != NULL &&
-        PyErr_ExceptionMatches(PyExc_AttributeError))
-    {
-        PyErr_Clear();
-        Py_INCREF(dflt);
-        result = dflt;
+    if (dflt != NULL) {
+        if (_PyObject_LookupAttr(v, name, &result) == 0) {
+            Py_INCREF(dflt);
+            return dflt;
+        }
+    }
+    else {
+        result = PyObject_GetAttr(v, name);
     }
     return result;
 }
@@ -1096,13 +1181,11 @@ builtin_hasattr_impl(PyObject *module, PyObject *obj, PyObject *name)
                         "hasattr(): attribute name must be string");
         return NULL;
     }
-    v = PyObject_GetAttr(obj, name);
-    if (v == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-            Py_RETURN_FALSE;
-        }
+    if (_PyObject_LookupAttr(obj, name, &v) < 0) {
         return NULL;
+    }
+    if (v == NULL) {
+        Py_RETURN_FALSE;
     }
     Py_DECREF(v);
     Py_RETURN_TRUE;
@@ -1248,7 +1331,7 @@ exit:
 }
 
 static PyObject *
-map_reduce(mapobject *lz)
+map_reduce(mapobject *lz, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t numargs = PyTuple_GET_SIZE(lz->iters);
     PyObject *args = PyTuple_New(numargs+1);
@@ -1325,7 +1408,7 @@ PyTypeObject PyMap_Type = {
 
 /* AC: cannot convert yet, as needs PEP 457 group support in inspect */
 static PyObject *
-builtin_next(PyObject *self, PyObject **args, Py_ssize_t nargs)
+builtin_next(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *it, *res;
     PyObject *def = NULL;
@@ -1765,7 +1848,7 @@ builtin_pow_impl(PyObject *module, PyObject *x, PyObject *y, PyObject *z)
 
 /* AC: cannot convert yet, waiting for *args support */
 static PyObject *
-builtin_print(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+builtin_print(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     static const char * const _keywords[] = {"sep", "end", "file", "flush", 0};
     static struct _PyArg_Parser _parser = {"|OOOO:print", _keywords, 0};
@@ -2150,7 +2233,7 @@ PyDoc_STRVAR(builtin_sorted__doc__,
     {"sorted", (PyCFunction)builtin_sorted, METH_FASTCALL | METH_KEYWORDS, builtin_sorted__doc__},
 
 static PyObject *
-builtin_sorted(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+builtin_sorted(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *newlist, *v, *seq, *callable;
 
@@ -2573,7 +2656,7 @@ zip_next(zipobject *lz)
 }
 
 static PyObject *
-zip_reduce(zipobject *lz)
+zip_reduce(zipobject *lz, PyObject *Py_UNUSED(ignored))
 {
     /* Just recreate the zip with the internal iterator tuple */
     return Py_BuildValue("OO", Py_TYPE(lz), lz->ittuple);

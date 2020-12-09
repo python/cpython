@@ -1062,7 +1062,7 @@ def _escape_cdata(text):
     # escape character data
     try:
         # it's worth avoiding do-nothing calls for strings that are
-        # shorter than 500 character, or so.  assume that's, by far,
+        # shorter than 500 characters, or so.  assume that's, by far,
         # the most common case in most applications.
         if "&" in text:
             text = text.replace("&", "&amp;")

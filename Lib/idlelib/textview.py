@@ -107,7 +107,7 @@ def view_text(parent, title, text, modal=True, _utest=False):
     return ViewWindow(parent, title, text, modal, _utest=_utest)
 
 
-def view_file(parent, title, filename, encoding=None, modal=True, _utest=False):
+def view_file(parent, title, filename, encoding, modal=True, _utest=False):
     """Create text viewer for text in filename.
 
     Return error message if file cannot be read.  Otherwise calls view_text

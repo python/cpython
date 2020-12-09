@@ -314,7 +314,7 @@ class RefactoringTool(object):
             encoding = tokenize.detect_encoding(f.readline)[0]
         finally:
             f.close()
-        with io.open(filename, "r", encoding=encoding) as f:
+        with io.open(filename, "r", encoding=encoding, newline='') as f:
             return f.read(), encoding
 
     def refactor_file(self, filename, write=False, doctests_only=False):

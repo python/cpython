@@ -257,8 +257,6 @@ However, for reading convenience, most of the examples show sorted sequences.
       * "Statistics for the Behavioral Sciences", Frederick J Gravetter and
         Larry B Wallnau (8th Edition).
 
-      * Calculating the `median <https://www.ualberta.ca/~opscan/median.html>`_.
-
       * The `SSMEDIAN
         <https://help.gnome.org/users/gnumeric/stable/gnumeric.html#gnumeric-function-SSMEDIAN>`_
         function in the Gnome Gnumeric spreadsheet, including `this discussion

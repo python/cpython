@@ -37,10 +37,10 @@ typedef struct {
 #endif
 
 
-PyAPI_FUNC(void) Py_SetProgramName(wchar_t *);
+PyAPI_FUNC(void) Py_SetProgramName(const wchar_t *);
 PyAPI_FUNC(wchar_t *) Py_GetProgramName(void);
 
-PyAPI_FUNC(void) Py_SetPythonHome(wchar_t *);
+PyAPI_FUNC(void) Py_SetPythonHome(const wchar_t *);
 PyAPI_FUNC(wchar_t *) Py_GetPythonHome(void);
 
 #ifndef Py_LIMITED_API
@@ -54,9 +54,19 @@ PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
 PyAPI_FUNC(_PyInitError) _Py_InitializeCore(const _PyCoreConfig *);
 PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
 
-PyAPI_FUNC(_PyInitError) _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *);
-PyAPI_FUNC(_PyInitError) _PyMainInterpreterConfig_ReadEnv(_PyMainInterpreterConfig *);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *);
+PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
+PyAPI_FUNC(int) _PyCoreConfig_Copy(
+    _PyCoreConfig *config,
+    const _PyCoreConfig *config2);
+
+PyAPI_FUNC(_PyInitError) _PyMainInterpreterConfig_Read(
+    _PyMainInterpreterConfig *config,
+    const _PyCoreConfig *core_config);
 PyAPI_FUNC(void) _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *);
+PyAPI_FUNC(int) _PyMainInterpreterConfig_Copy(
+    _PyMainInterpreterConfig *config,
+    const _PyMainInterpreterConfig *config2);
 
 PyAPI_FUNC(_PyInitError) _Py_InitializeMainInterpreter(const _PyMainInterpreterConfig *);
 #endif
@@ -81,7 +91,7 @@ PyAPI_FUNC(void) Py_EndInterpreter(PyThreadState *);
  * exit functions.
  */
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _Py_PyAtExit(void (*func)(void));
+PyAPI_FUNC(void) _Py_PyAtExit(void (*func)(PyObject *), PyObject *);
 #endif
 PyAPI_FUNC(int) Py_AtExit(void (*func)(void));
 
@@ -96,6 +106,9 @@ PyAPI_FUNC(int) Py_FdIsInteractive(FILE *, const char *);
 
 /* Bootstrap __main__ (defined in Modules/main.c) */
 PyAPI_FUNC(int) Py_Main(int argc, wchar_t **argv);
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(int) _Py_UnixMain(int argc, char **argv);
+#endif
 
 /* In getpath.c */
 PyAPI_FUNC(wchar_t *) Py_GetProgramFullPath(void);
@@ -103,8 +116,13 @@ PyAPI_FUNC(wchar_t *) Py_GetPrefix(void);
 PyAPI_FUNC(wchar_t *) Py_GetExecPrefix(void);
 PyAPI_FUNC(wchar_t *) Py_GetPath(void);
 #ifdef Py_BUILD_CORE
-PyAPI_FUNC(_PyInitError) _PyPathConfig_Init(
-    const _PyMainInterpreterConfig *main_config);
+PyAPI_FUNC(_PyInitError) _PyPathConfig_Init(const _PyCoreConfig *core_config);
+PyAPI_FUNC(PyObject*) _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv);
+PyAPI_FUNC(int) _Py_FindEnvConfigValue(
+    FILE *env_file,
+    const wchar_t *key,
+    wchar_t *value,
+    size_t value_size);
 #endif
 PyAPI_FUNC(void)      Py_SetPath(const wchar_t *);
 #ifdef MS_WINDOWS
@@ -126,20 +144,34 @@ PyAPI_FUNC(const char *) _Py_gitversion(void);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyBuiltin_Init(void);
 PyAPI_FUNC(_PyInitError) _PySys_BeginInit(PyObject **sysmod);
-PyAPI_FUNC(int) _PySys_EndInit(PyObject *sysdict);
-PyAPI_FUNC(_PyInitError) _PyImport_Init(void);
+PyAPI_FUNC(int) _PySys_EndInit(PyObject *sysdict, _PyMainInterpreterConfig *config);
+PyAPI_FUNC(_PyInitError) _PyImport_Init(PyInterpreterState *interp);
 PyAPI_FUNC(void) _PyExc_Init(PyObject * bltinmod);
 PyAPI_FUNC(_PyInitError) _PyImportHooks_Init(void);
-PyAPI_FUNC(int) _PyFrame_Init(void);
 PyAPI_FUNC(int) _PyFloat_Init(void);
 PyAPI_FUNC(int) PyByteArray_Init(void);
-PyAPI_FUNC(_PyInitError) _Py_HashRandomization_Init(_PyCoreConfig *core_config);
+PyAPI_FUNC(_PyInitError) _Py_HashRandomization_Init(const _PyCoreConfig *);
+#endif
+#ifdef Py_BUILD_CORE
+PyAPI_FUNC(int) _Py_ReadHashSeed(
+    const char *seed_text,
+    int *use_hash_seed,
+    unsigned long *hash_seed);
 #endif
 
 /* Various internal finalizers */
-#ifndef Py_LIMITED_API
+
+#ifdef Py_BUILD_CORE
 PyAPI_FUNC(void) _PyExc_Fini(void);
 PyAPI_FUNC(void) _PyImport_Fini(void);
+PyAPI_FUNC(void) _PyImport_Fini2(void);
+PyAPI_FUNC(void) _PyGC_DumpShutdownStats(void);
+PyAPI_FUNC(void) _PyGC_Fini(void);
+PyAPI_FUNC(void) _PyType_Fini(void);
+PyAPI_FUNC(void) _Py_HashRandomization_Fini(void);
+#endif   /* Py_BUILD_CORE */
+
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(void) PyMethod_Fini(void);
 PyAPI_FUNC(void) PyFrame_Fini(void);
 PyAPI_FUNC(void) PyCFunction_Fini(void);
@@ -151,15 +183,11 @@ PyAPI_FUNC(void) PyBytes_Fini(void);
 PyAPI_FUNC(void) PyByteArray_Fini(void);
 PyAPI_FUNC(void) PyFloat_Fini(void);
 PyAPI_FUNC(void) PyOS_FiniInterrupts(void);
-PyAPI_FUNC(void) _PyGC_DumpShutdownStats(void);
-PyAPI_FUNC(void) _PyGC_Fini(void);
 PyAPI_FUNC(void) PySlice_Fini(void);
-PyAPI_FUNC(void) _PyType_Fini(void);
-PyAPI_FUNC(void) _Py_HashRandomization_Fini(void);
 PyAPI_FUNC(void) PyAsyncGen_Fini(void);
 
 PyAPI_FUNC(int) _Py_IsFinalizing(void);
-#endif
+#endif   /* !Py_LIMITED_API */
 
 /* Signals */
 typedef void (*PyOS_sighandler_t)(int);
@@ -174,7 +202,7 @@ PyAPI_FUNC(int) _PyOS_URandomNonblock(void *buffer, Py_ssize_t size);
 
 /* Legacy locale support */
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _Py_CoerceLegacyLocale(void);
+PyAPI_FUNC(void) _Py_CoerceLegacyLocale(const _PyCoreConfig *config);
 PyAPI_FUNC(int) _Py_LegacyLocaleDetected(void);
 PyAPI_FUNC(char *) _Py_SetLocaleFromEnv(int category);
 #endif

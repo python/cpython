@@ -68,10 +68,8 @@ PyDoc_STRVAR(iobase_doc,
    by whatever subclass. */
 
 _Py_IDENTIFIER(__IOBase_closed);
-#define IS_CLOSED(self) \
-    _PyObject_HasAttrId(self, &PyId___IOBase_closed)
-
 _Py_IDENTIFIER(read);
+
 
 /* Internal methods */
 static PyObject *
@@ -131,6 +129,18 @@ iobase_truncate(PyObject *self, PyObject *args)
     return iobase_unsupported("truncate");
 }
 
+static int
+iobase_is_closed(PyObject *self)
+{
+    PyObject *res;
+    int ret;
+    /* This gets the derived attribute, which is *not* __IOBase_closed
+       in most cases! */
+    ret = _PyObject_LookupAttrId(self, &PyId___IOBase_closed, &res);
+    Py_XDECREF(res);
+    return ret;
+}
+
 /* Flush and close methods */
 
 /*[clinic input]
@@ -146,45 +156,56 @@ _io__IOBase_flush_impl(PyObject *self)
 /*[clinic end generated code: output=7cef4b4d54656a3b input=773be121abe270aa]*/
 {
     /* XXX Should this return the number of bytes written??? */
-    if (IS_CLOSED(self)) {
-        PyErr_SetString(PyExc_ValueError, "I/O operation on closed file.");
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
+    int closed = iobase_is_closed(self);
 
-static int
-iobase_closed(PyObject *self)
-{
-    PyObject *res;
-    int closed;
-    /* This gets the derived attribute, which is *not* __IOBase_closed
-       in most cases! */
-    res = PyObject_GetAttr(self, _PyIO_str_closed);
-    if (res == NULL)
-        return 0;
-    closed = PyObject_IsTrue(res);
-    Py_DECREF(res);
-    return closed;
+    if (!closed) {
+        Py_RETURN_NONE;
+    }
+    if (closed > 0) {
+        PyErr_SetString(PyExc_ValueError, "I/O operation on closed file.");
+    }
+    return NULL;
 }
 
 static PyObject *
 iobase_closed_get(PyObject *self, void *context)
 {
-    return PyBool_FromLong(IS_CLOSED(self));
+    int closed = iobase_is_closed(self);
+    if (closed < 0) {
+        return NULL;
+    }
+    return PyBool_FromLong(closed);
+}
+
+static int
+iobase_check_closed(PyObject *self)
+{
+    PyObject *res;
+    int closed;
+    /* This gets the derived attribute, which is *not* __IOBase_closed
+       in most cases! */
+    closed = _PyObject_LookupAttr(self, _PyIO_str_closed, &res);
+    if (closed > 0) {
+        closed = PyObject_IsTrue(res);
+        Py_DECREF(res);
+        if (closed > 0) {
+            PyErr_SetString(PyExc_ValueError, "I/O operation on closed file.");
+            return -1;
+        }
+    }
+    return closed;
 }
 
 PyObject *
 _PyIOBase_check_closed(PyObject *self, PyObject *args)
 {
-    if (iobase_closed(self)) {
-        PyErr_SetString(PyExc_ValueError, "I/O operation on closed file.");
+    if (iobase_check_closed(self)) {
         return NULL;
     }
-    if (args == Py_True)
+    if (args == Py_True) {
         return Py_None;
-    else
-        Py_RETURN_NONE;
+    }
+    Py_RETURN_NONE;
 }
 
 /* XXX: IOBase thinks it has to maintain its own internal state in
@@ -204,9 +225,14 @@ _io__IOBase_close_impl(PyObject *self)
 /*[clinic end generated code: output=63c6a6f57d783d6d input=f4494d5c31dbc6b7]*/
 {
     PyObject *res;
+    int closed = iobase_is_closed(self);
 
-    if (IS_CLOSED(self))
+    if (closed < 0) {
+        return NULL;
+    }
+    if (closed) {
         Py_RETURN_NONE;
+    }
 
     res = PyObject_CallMethodObjArgs(self, _PyIO_str_flush, NULL);
 
@@ -237,8 +263,7 @@ iobase_finalize(PyObject *self)
 
     /* If `closed` doesn't exist or can't be evaluated as bool, then the
        object is probably in an unusable state, so ignore. */
-    res = PyObject_GetAttr(self, _PyIO_str_closed);
-    if (res == NULL) {
+    if (_PyObject_LookupAttr(self, _PyIO_str_closed, &res) <= 0) {
         PyErr_Clear();
         closed = -1;
     }
@@ -428,7 +453,7 @@ _PyIOBase_check_writable(PyObject *self, PyObject *args)
 static PyObject *
 iobase_enter(PyObject *self, PyObject *args)
 {
-    if (_PyIOBase_check_closed(self, Py_True) == NULL)
+    if (iobase_check_closed(self))
         return NULL;
 
     Py_INCREF(self);
@@ -472,7 +497,7 @@ static PyObject *
 _io__IOBase_isatty_impl(PyObject *self)
 /*[clinic end generated code: output=60cab77cede41cdd input=9ef76530d368458b]*/
 {
-    if (_PyIOBase_check_closed(self, Py_True) == NULL)
+    if (iobase_check_closed(self))
         return NULL;
     Py_RETURN_FALSE;
 }
@@ -499,24 +524,25 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
 {
     /* For backwards compatibility, a (slowish) readline(). */
 
-    int has_peek = 0;
-    PyObject *buffer, *result;
+    PyObject *peek, *buffer, *result;
     Py_ssize_t old_size = -1;
-    _Py_IDENTIFIER(peek);
 
-    if (_PyObject_HasAttrId(self, &PyId_peek))
-        has_peek = 1;
+    if (_PyObject_LookupAttr(self, _PyIO_str_peek, &peek) < 0) {
+        return NULL;
+    }
 
     buffer = PyByteArray_FromStringAndSize(NULL, 0);
-    if (buffer == NULL)
+    if (buffer == NULL) {
+        Py_XDECREF(peek);
         return NULL;
+    }
 
     while (limit < 0 || PyByteArray_GET_SIZE(buffer) < limit) {
         Py_ssize_t nreadahead = 1;
         PyObject *b;
 
-        if (has_peek) {
-            PyObject *readahead = _PyObject_CallMethodId(self, &PyId_peek, "i", 1);
+        if (peek != NULL) {
+            PyObject *readahead = PyObject_CallFunctionObjArgs(peek, _PyLong_One, NULL);
             if (readahead == NULL) {
                 /* NOTE: PyErr_SetFromErrno() calls PyErr_CheckSignals()
                    when EINTR occurs so we needn't do it ourselves. */
@@ -593,9 +619,11 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
 
     result = PyBytes_FromStringAndSize(PyByteArray_AS_STRING(buffer),
                                        PyByteArray_GET_SIZE(buffer));
+    Py_XDECREF(peek);
     Py_DECREF(buffer);
     return result;
   fail:
+    Py_XDECREF(peek);
     Py_DECREF(buffer);
     return NULL;
 }
@@ -603,7 +631,7 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
 static PyObject *
 iobase_iter(PyObject *self)
 {
-    if (_PyIOBase_check_closed(self, Py_True) == NULL)
+    if (iobase_check_closed(self))
         return NULL;
 
     Py_INCREF(self);
@@ -716,7 +744,7 @@ _io__IOBase_writelines(PyObject *self, PyObject *lines)
 {
     PyObject *iter, *res;
 
-    if (_PyIOBase_check_closed(self, Py_True) == NULL)
+    if (iobase_check_closed(self))
         return NULL;
 
     iter = PyObject_GetIter(lines);

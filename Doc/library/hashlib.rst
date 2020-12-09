@@ -482,7 +482,7 @@ Keyed hashing
 
 Keyed hashing can be used for authentication as a faster and simpler
 replacement for `Hash-based message authentication code
-<http://en.wikipedia.org/wiki/Hash-based_message_authentication_code>`_ (HMAC).
+<https://en.wikipedia.org/wiki/Hash-based_message_authentication_code>`_ (HMAC).
 BLAKE2 can be securely used in prefix-MAC mode thanks to the
 indifferentiability property inherited from BLAKE.
 
@@ -562,7 +562,7 @@ on the hash function used in digital signatures.
     by the signer.
 
     (`NIST SP-800-106 "Randomized Hashing for Digital Signatures"
-    <http://csrc.nist.gov/publications/nistpubs/800-106/NIST-SP-800-106.pdf>`_)
+    <https://csrc.nist.gov/publications/detail/sp/800-106/final>`_)
 
 In BLAKE2 the salt is processed as a one-time input to the hash function during
 initialization, rather than as an input to each compression function.
@@ -699,7 +699,7 @@ implementation, extension code, and this documentation:
 
    You should have received a copy of the CC0 Public Domain Dedication along
    with this software. If not, see
-   http://creativecommons.org/publicdomain/zero/1.0/.
+   https://creativecommons.org/publicdomain/zero/1.0/.
 
 The following people have helped with development or contributed their changes
 to the project and the public domain according to the Creative Commons Public
@@ -728,7 +728,7 @@ Domain Dedication 1.0 Universal:
    https://blake2.net
       Official BLAKE2 website.
 
-   http://csrc.nist.gov/publications/fips/fips180-2/fips180-2.pdf
+   https://csrc.nist.gov/csrc/media/publications/fips/180/2/archive/2002-08-01/documents/fips180-2.pdf
       The FIPS 180-2 publication on Secure Hash Algorithms.
 
    https://en.wikipedia.org/wiki/Cryptographic_hash_function#Cryptographic_hash_algorithms

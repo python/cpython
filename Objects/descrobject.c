@@ -256,7 +256,7 @@ methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwargs)
 // same to methoddescr_call(), but use FASTCALL convention.
 PyObject *
 _PyMethodDescr_FastCallKeywords(PyObject *descrobj,
-                                PyObject **args, Py_ssize_t nargs,
+                                PyObject *const *args, Py_ssize_t nargs,
                                 PyObject *kwnames)
 {
     assert(Py_TYPE(descrobj) == &PyMethodDescr_Type);
@@ -448,7 +448,7 @@ descr_get_qualname(PyDescrObject *descr)
 }
 
 static PyObject *
-descr_reduce(PyDescrObject *descr)
+descr_reduce(PyDescrObject *descr, PyObject *Py_UNUSED(ignored))
 {
     PyObject *builtins;
     PyObject *getattr;
@@ -868,28 +868,28 @@ mappingproxy_get(mappingproxyobject *pp, PyObject *args)
 }
 
 static PyObject *
-mappingproxy_keys(mappingproxyobject *pp)
+mappingproxy_keys(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
     _Py_IDENTIFIER(keys);
     return _PyObject_CallMethodId(pp->mapping, &PyId_keys, NULL);
 }
 
 static PyObject *
-mappingproxy_values(mappingproxyobject *pp)
+mappingproxy_values(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
     _Py_IDENTIFIER(values);
     return _PyObject_CallMethodId(pp->mapping, &PyId_values, NULL);
 }
 
 static PyObject *
-mappingproxy_items(mappingproxyobject *pp)
+mappingproxy_items(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
     _Py_IDENTIFIER(items);
     return _PyObject_CallMethodId(pp->mapping, &PyId_items, NULL);
 }
 
 static PyObject *
-mappingproxy_copy(mappingproxyobject *pp)
+mappingproxy_copy(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
     _Py_IDENTIFIER(copy);
     return _PyObject_CallMethodId(pp->mapping, &PyId_copy, NULL);
@@ -1086,7 +1086,7 @@ wrapper_repr(wrapperobject *wp)
 }
 
 static PyObject *
-wrapper_reduce(wrapperobject *wp)
+wrapper_reduce(wrapperobject *wp, PyObject *Py_UNUSED(ignored))
 {
     PyObject *builtins;
     PyObject *getattr;
@@ -1490,10 +1490,10 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     Py_XINCREF(fdel);
     Py_XINCREF(doc);
 
-    self->prop_get = fget;
-    self->prop_set = fset;
-    self->prop_del = fdel;
-    self->prop_doc = doc;
+    Py_XSETREF(self->prop_get, fget);
+    Py_XSETREF(self->prop_set, fset);
+    Py_XSETREF(self->prop_del, fdel);
+    Py_XSETREF(self->prop_doc, doc);
     self->getter_doc = 0;
 
     /* if no docstring given and the getter has one, use that one */

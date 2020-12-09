@@ -23,10 +23,6 @@ independent set of installed Python packages in its site directories.
 
 See :pep:`405` for more information about Python virtual environments.
 
-.. note::
-   The ``pyvenv`` script has been deprecated as of Python 3.6 in favor of using
-   ``python3 -m venv`` to help prevent any potential confusion as to which
-   Python interpreter a virtual environment will be based on.
 
 
 Creating virtual environments
@@ -458,4 +454,4 @@ subclass which installs setuptools and pip into a created virtual environment::
 
 
 This script is also available for download `online
-<https://gist.github.com/4673395>`_.
+<https://gist.github.com/vsajip/4673395>`_.

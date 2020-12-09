@@ -32,7 +32,6 @@ __author__ = ('Ka-Ping Yee <ping@lfw.org>',
               'Yury Selivanov <yselivanov@sprymix.com>')
 
 import abc
-import ast
 import dis
 import collections.abc
 import enum
@@ -457,10 +456,10 @@ def classify_class_attrs(cls):
             continue
         obj = get_obj if get_obj is not None else dict_obj
         # Classify the object or its descriptor.
-        if isinstance(dict_obj, staticmethod):
+        if isinstance(dict_obj, (staticmethod, types.BuiltinMethodType)):
             kind = "static method"
             obj = dict_obj
-        elif isinstance(dict_obj, classmethod):
+        elif isinstance(dict_obj, (classmethod, types.ClassMethodDescriptorType)):
             kind = "class method"
             obj = dict_obj
         elif isinstance(dict_obj, property):
@@ -643,13 +642,13 @@ def cleandoc(doc):
 def getfile(object):
     """Work out which source or compiled file an object was defined in."""
     if ismodule(object):
-        if hasattr(object, '__file__'):
+        if getattr(object, '__file__', None):
             return object.__file__
         raise TypeError('{!r} is a built-in module'.format(object))
     if isclass(object):
         if hasattr(object, '__module__'):
             object = sys.modules.get(object.__module__)
-            if hasattr(object, '__file__'):
+            if getattr(object, '__file__', None):
                 return object.__file__
         raise TypeError('{!r} is a built-in class'.format(object))
     if ismethod(object):
@@ -994,7 +993,7 @@ def getclasstree(classes, unique=False):
     for c in classes:
         if c.__bases__:
             for parent in c.__bases__:
-                if not parent in children:
+                if parent not in children:
                     children[parent] = []
                 if c not in children[parent]:
                     children[parent].append(c)
@@ -1539,7 +1538,7 @@ def _shadowed_dict(klass):
         except KeyError:
             pass
         else:
-            if not (type(class_dict) is types.GetSetDescriptorType and
+            if not (isinstance(class_dict, types.GetSetDescriptorType) and
                     class_dict.__name__ == "__dict__" and
                     class_dict.__objclass__ is entry):
                 return class_dict
@@ -1561,7 +1560,7 @@ def getattr_static(obj, attr, default=_sentinel):
         klass = type(obj)
         dict_attr = _shadowed_dict(klass)
         if (dict_attr is _sentinel or
-            type(dict_attr) is types.MemberDescriptorType):
+            isinstance(dict_attr, types.MemberDescriptorType)):
             instance_result = _check_instance(obj, attr)
     else:
         klass = obj
@@ -1940,6 +1939,9 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
     """Private helper to parse content of '__text_signature__'
     and return a Signature based on it.
     """
+    # Lazy import ast because it's relatively heavy and
+    # it's not used for other than this function.
+    import ast
 
     Parameter = cls._parameter_cls
 
@@ -1973,7 +1975,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
 
     def parse_name(node):
         assert isinstance(node, ast.arg)
-        if node.annotation != None:
+        if node.annotation is not None:
             raise ValueError("Annotations are not currently supported")
         return node.arg
 
@@ -2252,7 +2254,8 @@ def _signature_from_callable(obj, *,
                 return sig
             else:
                 sig_params = tuple(sig.parameters.values())
-                assert first_wrapped_param is not sig_params[0]
+                assert (not sig_params or
+                        first_wrapped_param is not sig_params[0])
                 new_params = (first_wrapped_param,) + sig_params
                 return sig.replace(parameters=new_params)
 

@@ -15,7 +15,7 @@ static PyObject *
 math_gcd_impl(PyObject *module, PyObject *a, PyObject *b);
 
 static PyObject *
-math_gcd(PyObject *module, PyObject **args, Py_ssize_t nargs)
+math_gcd(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *a;
@@ -132,7 +132,7 @@ static PyObject *
 math_ldexp_impl(PyObject *module, double x, PyObject *i);
 
 static PyObject *
-math_ldexp(PyObject *module, PyObject **args, Py_ssize_t nargs)
+math_ldexp(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     double x;
@@ -253,7 +253,7 @@ static PyObject *
 math_fmod_impl(PyObject *module, double x, double y);
 
 static PyObject *
-math_fmod(PyObject *module, PyObject **args, Py_ssize_t nargs)
+math_fmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     double x;
@@ -282,7 +282,7 @@ static PyObject *
 math_hypot_impl(PyObject *module, double x, double y);
 
 static PyObject *
-math_hypot(PyObject *module, PyObject **args, Py_ssize_t nargs)
+math_hypot(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     double x;
@@ -311,7 +311,7 @@ static PyObject *
 math_pow_impl(PyObject *module, double x, double y);
 
 static PyObject *
-math_pow(PyObject *module, PyObject **args, Py_ssize_t nargs)
+math_pow(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     double x;
@@ -492,7 +492,7 @@ math_isclose_impl(PyObject *module, double a, double b, double rel_tol,
                   double abs_tol);
 
 static PyObject *
-math_isclose(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"a", "b", "rel_tol", "abs_tol", NULL};
@@ -516,4 +516,4 @@ math_isclose(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwna
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d9bfbd645d273209 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e554bad553045546 input=a9049054013a1b77]*/

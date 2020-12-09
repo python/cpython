@@ -793,7 +793,23 @@ def singledispatch(func):
         """
         nonlocal cache_token
         if func is None:
-            return lambda f: register(cls, f)
+            if isinstance(cls, type):
+                return lambda f: register(cls, f)
+            ann = getattr(cls, '__annotations__', {})
+            if not ann:
+                raise TypeError(
+                    f"Invalid first argument to `register()`: {cls!r}. "
+                    f"Use either `@register(some_class)` or plain `@register` "
+                    f"on an annotated function."
+                )
+            func = cls
+
+            # only import typing if annotation parsing is necessary
+            from typing import get_type_hints
+            argname, cls = next(iter(get_type_hints(func).items()))
+            assert isinstance(cls, type), (
+                f"Invalid annotation for {argname!r}. {cls!r} is not a class."
+            )
         registry[cls] = func
         if cache_token is None and hasattr(cls, '__abstractmethods__'):
             cache_token = get_cache_token()

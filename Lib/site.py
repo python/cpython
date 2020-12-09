@@ -340,11 +340,6 @@ def getsitepackages(prefixes=None):
         else:
             sitepackages.append(prefix)
             sitepackages.append(os.path.join(prefix, "lib", "site-packages"))
-        # for framework builds *only* we add the standard Apple locations.
-        if sys.platform == "darwin" and sys._framework:
-            sitepackages.append(
-                os.path.join("/Library", sys._framework,
-                             '%d.%d' % sys.version_info[:2], "site-packages"))
     return sitepackages
 
 def addsitepackages(known_paths, prefixes=None):

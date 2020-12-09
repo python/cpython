@@ -274,7 +274,7 @@ static PySequenceMethods dbm_as_sequence = {
 _dbm.dbm.get
 
     key: str(accept={str, robuffer}, zeroes=True)
-    default: object(c_default="NULL") = b''
+    default: object = None
     /
 
 Return the value for key if present, otherwise default.
@@ -283,7 +283,7 @@ Return the value for key if present, otherwise default.
 static PyObject *
 _dbm_dbm_get_impl(dbmobject *self, const char *key,
                   Py_ssize_clean_t key_length, PyObject *default_value)
-/*[clinic end generated code: output=b44f95eba8203d93 input=a3a279957f85eb6d]*/
+/*[clinic end generated code: output=b44f95eba8203d93 input=b788eba0ffad2e91]*/
 /*[clinic end generated code: output=4f5c0e523eaf1251 input=9402c0af8582dc69]*/
 {
     datum dbm_key, val;
@@ -412,7 +412,7 @@ static PyTypeObject Dbmtype = {
 
 _dbm.open as dbmopen
 
-    filename: str
+    filename: unicode
         The filename to open.
 
     flags: str="r"
@@ -429,9 +429,9 @@ Return a database object.
 [clinic start generated code]*/
 
 static PyObject *
-dbmopen_impl(PyObject *module, const char *filename, const char *flags,
+dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
              int mode)
-/*[clinic end generated code: output=5fade8cf16e0755f input=226334bade5764e6]*/
+/*[clinic end generated code: output=9527750f5df90764 input=376a9d903a50df59]*/
 {
     int iflags;
 
@@ -450,7 +450,20 @@ dbmopen_impl(PyObject *module, const char *filename, const char *flags,
                         "arg 2 to open should be 'r', 'w', 'c', or 'n'");
         return NULL;
     }
-    return newdbmobject(filename, iflags, mode);
+
+    PyObject *filenamebytes = PyUnicode_EncodeFSDefault(filename);
+    if (filenamebytes == NULL) {
+        return NULL;
+    }
+    const char *name = PyBytes_AS_STRING(filenamebytes);
+    if (strlen(name) != (size_t)PyBytes_GET_SIZE(filenamebytes)) {
+        Py_DECREF(filenamebytes);
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        return NULL;
+    }
+    PyObject *self = newdbmobject(name, iflags, mode);
+    Py_DECREF(filenamebytes);
+    return self;
 }
 
 static PyMethodDef dbmmodule_methods[] = {

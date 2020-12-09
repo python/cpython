@@ -281,22 +281,33 @@ The :mod:`functools` module defines the following functions:
      ...     print(arg)
 
    To add overloaded implementations to the function, use the :func:`register`
-   attribute of the generic function.  It is a decorator, taking a type
-   parameter and decorating a function implementing the operation for that
-   type::
+   attribute of the generic function.  It is a decorator.  For functions
+   annotated with types, the decorator will infer the type of the first
+   argument automatically::
 
-     >>> @fun.register(int)
-     ... def _(arg, verbose=False):
+     >>> @fun.register
+     ... def _(arg: int, verbose=False):
      ...     if verbose:
      ...         print("Strength in numbers, eh?", end=" ")
      ...     print(arg)
      ...
-     >>> @fun.register(list)
-     ... def _(arg, verbose=False):
+     >>> @fun.register
+     ... def _(arg: list, verbose=False):
      ...     if verbose:
      ...         print("Enumerate this:")
      ...     for i, elem in enumerate(arg):
      ...         print(i, elem)
+
+   For code which doesn't use type annotations, the appropriate type
+   argument can be passed explicitly to the decorator itself::
+
+     >>> @fun.register(complex)
+     ... def _(arg, verbose=False):
+     ...     if verbose:
+     ...         print("Better than complicated.", end=" ")
+     ...     print(arg.real, arg.imag)
+     ...
+
 
    To enable registering lambdas and pre-existing functions, the
    :func:`register` attribute can be used in a functional form::
@@ -367,6 +378,9 @@ The :mod:`functools` module defines the following functions:
     <function fun at 0x103fe0000>
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.7
+      The :func:`register` attribute supports using type annotations.
 
 
 .. function:: update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)

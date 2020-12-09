@@ -24,6 +24,7 @@
 */
 
 #include "Python.h"
+#include "internal/context.h"
 #include "internal/mem.h"
 #include "internal/pystate.h"
 #include "frameobject.h"        /* for PyFrame_ClearFreeList */
@@ -790,6 +791,7 @@ clear_freelists(void)
     (void)PyDict_ClearFreeList();
     (void)PySet_ClearFreeList();
     (void)PyAsyncGen_ClearFreeLists();
+    (void)PyContext_ClearFreeList();
 }
 
 /* This is the main function.  Read this to understand how the
@@ -1449,14 +1451,14 @@ gc_unfreeze_impl(PyObject *module)
 }
 
 /*[clinic input]
-gc.get_freeze_count -> int
+gc.get_freeze_count -> Py_ssize_t
 
 Return the number of objects in the permanent generation.
 [clinic start generated code]*/
 
-static int
+static Py_ssize_t
 gc_get_freeze_count_impl(PyObject *module)
-/*[clinic end generated code: output=e4e2ebcc77e5cbf3 input=4b759db880a3c6e4]*/
+/*[clinic end generated code: output=61cbd9f43aa032e1 input=45ffbc65cfe2a6ed]*/
 {
     return gc_list_size(&_PyRuntime.gc.permanent_generation.head);
 }

@@ -955,7 +955,7 @@ _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
         }
 
         n = n + 1;
-        state.must_advance = 1;
+        state.must_advance = (state.ptr == state.start);
         last = state.start = state.ptr;
 
     }
@@ -1109,7 +1109,7 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
 
         i = e;
         n = n + 1;
-        state.must_advance = 1;
+        state.must_advance = (state.ptr == state.start);
         state.start = state.ptr;
     }
 

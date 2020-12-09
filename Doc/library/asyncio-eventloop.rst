@@ -171,7 +171,7 @@ a different clock than :func:`time.time`.
    Arrange for the *callback* to be called after the given *delay*
    seconds (either an int or float).
 
-   An instance of :class:`asyncio.Handle` is returned, which can be
+   An instance of :class:`asyncio.TimerHandle` is returned, which can be
    used to cancel the callback.
 
    *callback* will be called exactly once per call to :meth:`call_later`.
@@ -193,7 +193,7 @@ a different clock than :func:`time.time`.
 
    This method's behavior is the same as :meth:`call_later`.
 
-   An instance of :class:`asyncio.Handle` is returned, which can be
+   An instance of :class:`asyncio.TimerHandle` is returned, which can be
    used to cancel the callback.
 
    :ref:`Use functools.partial to pass keywords to the callback
@@ -235,9 +235,6 @@ Tasks
    interoperability. In this case, the result type is a subclass of
    :class:`Task`.
 
-   This method was added in Python 3.4.2. Use the :func:`async` function to
-   support also older Python versions.
-
    .. versionadded:: 3.4.2
 
 .. method:: AbstractEventLoop.set_task_factory(factory)
@@ -264,7 +261,7 @@ Tasks
 Creating connections
 --------------------
 
-.. coroutinemethod:: AbstractEventLoop.create_connection(protocol_factory, host=None, port=None, \*, ssl=None, family=0, proto=0, flags=0, sock=None, local_addr=None, server_hostname=None)
+.. coroutinemethod:: AbstractEventLoop.create_connection(protocol_factory, host=None, port=None, \*, ssl=None, family=0, proto=0, flags=0, sock=None, local_addr=None, server_hostname=None, ssl_handshake_timeout=None)
 
    Create a streaming transport connection to a given Internet *host* and
    *port*: socket family :py:data:`~socket.AF_INET` or
@@ -272,9 +269,8 @@ Creating connections
    socket type :py:data:`~socket.SOCK_STREAM`.  *protocol_factory* must be a
    callable returning a :ref:`protocol <asyncio-protocol>` instance.
 
-   This method is a :ref:`coroutine <coroutine>` which will try to
-   establish the connection in the background.  When successful, the
-   coroutine returns a ``(transport, protocol)`` pair.
+   This method will try to establish the connection in the background.
+   When successful, it returns a ``(transport, protocol)`` pair.
 
    The chronological synopsis of the underlying operation is as follows:
 
@@ -329,6 +325,14 @@ Creating connections
      to bind the socket to locally.  The *local_host* and *local_port*
      are looked up using getaddrinfo(), similarly to *host* and *port*.
 
+   * *ssl_handshake_timeout* is (for an SSL connection) the time in seconds
+     to wait for the SSL handshake to complete before aborting the connection.
+     ``10.0`` seconds if ``None`` (default).
+
+   .. versionadded:: 3.7
+
+      The *ssl_handshake_timeout* parameter.
+
    .. versionchanged:: 3.5
 
       On Windows with :class:`ProactorEventLoop`, SSL/TLS is now supported.
@@ -347,9 +351,8 @@ Creating connections
    :py:data:`~socket.SOCK_DGRAM`. *protocol_factory* must be a
    callable returning a :ref:`protocol <asyncio-protocol>` instance.
 
-   This method is a :ref:`coroutine <coroutine>` which will try to
-   establish the connection in the background.  When successful, the
-   coroutine returns a ``(transport, protocol)`` pair.
+   This method will try to establish the connection in the background.
+   When successful, the it returns a ``(transport, protocol)`` pair.
 
    Options changing how the connection is created:
 
@@ -391,16 +394,15 @@ Creating connections
    :ref:`UDP echo server protocol <asyncio-udp-echo-server-protocol>` examples.
 
 
-.. coroutinemethod:: AbstractEventLoop.create_unix_connection(protocol_factory, path=None, \*, ssl=None, sock=None, server_hostname=None)
+.. coroutinemethod:: AbstractEventLoop.create_unix_connection(protocol_factory, path=None, \*, ssl=None, sock=None, server_hostname=None, ssl_handshake_timeout=None)
 
    Create UNIX connection: socket family :py:data:`~socket.AF_UNIX`, socket
    type :py:data:`~socket.SOCK_STREAM`. The :py:data:`~socket.AF_UNIX` socket
    family is used to communicate between processes on the same machine
    efficiently.
 
-   This method is a :ref:`coroutine <coroutine>` which will try to
-   establish the connection in the background.  When successful, the
-   coroutine returns a ``(transport, protocol)`` pair.
+   This method will try to establish the connection in the background.
+   When successful, the it returns a ``(transport, protocol)`` pair.
 
    *path* is the name of a UNIX domain socket, and is required unless a *sock*
    parameter is specified.  Abstract UNIX sockets, :class:`str`,
@@ -410,6 +412,10 @@ Creating connections
 
    Availability: UNIX.
 
+   .. versionadded:: 3.7
+
+      The *ssl_handshake_timeout* parameter.
+
    .. versionchanged:: 3.7
 
       The *path* parameter can now be a :class:`~pathlib.Path` object.
@@ -418,7 +424,7 @@ Creating connections
 Creating listening connections
 ------------------------------
 
-.. coroutinemethod:: AbstractEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None, reuse_port=None)
+.. coroutinemethod:: AbstractEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None, reuse_port=None, ssl_handshake_timeout=None, start_serving=True)
 
    Create a TCP server (socket type :data:`~socket.SOCK_STREAM`) bound to
    *host* and *port*.
@@ -462,7 +468,19 @@ Creating listening connections
      set this flag when being created. This option is not supported on
      Windows.
 
-   This method is a :ref:`coroutine <coroutine>`.
+   * *ssl_handshake_timeout* is (for an SSL server) the time in seconds to wait
+     for the SSL handshake to complete before aborting the connection.
+     ``10.0`` seconds if ``None`` (default).
+
+   * *start_serving* set to ``True`` (the default) causes the created server
+     to start accepting connections immediately.  When set to ``False``,
+     the user should await on :meth:`Server.start_serving` or
+     :meth:`Server.serve_forever` to make the server to start accepting
+     connections.
+
+   .. versionadded:: 3.7
+
+      *ssl_handshake_timeout* and *start_serving* parameters.
 
    .. versionchanged:: 3.5
 
@@ -478,7 +496,7 @@ Creating listening connections
       The *host* parameter can now be a sequence of strings.
 
 
-.. coroutinemethod:: AbstractEventLoop.create_unix_server(protocol_factory, path=None, \*, sock=None, backlog=100, ssl=None)
+.. coroutinemethod:: AbstractEventLoop.create_unix_server(protocol_factory, path=None, \*, sock=None, backlog=100, ssl=None, ssl_handshake_timeout=None, start_serving=True)
 
    Similar to :meth:`AbstractEventLoop.create_server`, but specific to the
    socket family :py:data:`~socket.AF_UNIX`.
@@ -487,15 +505,17 @@ Creating listening connections
    parameter is specified.  Abstract UNIX sockets, :class:`str`,
    :class:`bytes`, and :class:`~pathlib.Path` paths are supported.
 
-   This method is a :ref:`coroutine <coroutine>`.
-
    Availability: UNIX.
+
+   .. versionadded:: 3.7
+
+      The *ssl_handshake_timeout* parameter.
 
    .. versionchanged:: 3.7
 
       The *path* parameter can now be a :class:`~pathlib.Path` object.
 
-.. coroutinemethod:: BaseEventLoop.connect_accepted_socket(protocol_factory, sock, \*, ssl=None)
+.. coroutinemethod:: BaseEventLoop.connect_accepted_socket(protocol_factory, sock, \*, ssl=None, ssl_handshake_timeout=None)
 
    Handle an accepted connection.
 
@@ -510,10 +530,80 @@ Creating listening connections
    * *ssl* can be set to an :class:`~ssl.SSLContext` to enable SSL over the
      accepted connections.
 
-   This method is a :ref:`coroutine <coroutine>`.  When completed, the
-   coroutine returns a ``(transport, protocol)`` pair.
+   * *ssl_handshake_timeout* is (for an SSL connection) the time in seconds to
+     wait for the SSL handshake to complete before aborting the connection.
+     ``10.0`` seconds if ``None`` (default).
+
+   When completed it returns a ``(transport, protocol)`` pair.
+
+   .. versionadded:: 3.7
+
+      The *ssl_handshake_timeout* parameter.
 
    .. versionadded:: 3.5.3
+
+
+File Transferring
+-----------------
+
+.. coroutinemethod:: AbstractEventLoop.sendfile(transport, file, \
+                                                offset=0, count=None, \
+                                                *, fallback=True)
+
+   Send a *file* to *transport*, return the total number of bytes
+   which were sent.
+
+   The method uses high-performance :meth:`os.sendfile` if available.
+
+   *file* must be a regular file object opened in binary mode.
+
+   *offset* tells from where to start reading the file. If specified,
+   *count* is the total number of bytes to transmit as opposed to
+   sending the file until EOF is reached. File position is updated on
+   return or also in case of error in which case :meth:`file.tell()
+   <io.IOBase.tell>` can be used to figure out the number of bytes
+   which were sent.
+
+   *fallback* set to ``True`` makes asyncio to manually read and send
+   the file when the platform does not support the sendfile syscall
+   (e.g. Windows or SSL socket on Unix).
+
+   Raise :exc:`SendfileNotAvailableError` if the system does not support
+   *sendfile* syscall and *fallback* is ``False``.
+
+   .. versionadded:: 3.7
+
+
+TLS Upgrade
+-----------
+
+.. coroutinemethod:: AbstractEventLoop.start_tls(transport, protocol, sslcontext, \*, server_side=False, server_hostname=None, ssl_handshake_timeout=None)
+
+   Upgrades an existing connection to TLS.
+
+   Returns a new transport instance, that the *protocol* must start using
+   immediately after the *await*.  The *transport* instance passed to
+   the *start_tls* method should never be used again.
+
+   Parameters:
+
+   * *transport* and *protocol* instances that methods like
+     :meth:`~AbstractEventLoop.create_server` and
+     :meth:`~AbstractEventLoop.create_connection` return.
+
+   * *sslcontext*: a configured instance of :class:`~ssl.SSLContext`.
+
+   * *server_side* pass ``True`` when a server-side connection is being
+     upgraded (like the one created by :meth:`~AbstractEventLoop.create_server`).
+
+   * *server_hostname*: sets or overrides the host name that the target
+     server's certificate will be matched against.
+
+   * *ssl_handshake_timeout* is (for an SSL connection) the time in seconds to
+     wait for the SSL handshake to complete before aborting the connection.
+     ``10.0`` seconds if ``None`` (default).
+
+   .. versionadded:: 3.7
 
 
 Watch file descriptors
@@ -568,7 +658,10 @@ Low-level socket operations
    With :class:`SelectorEventLoop` event loop, the socket *sock* must be
    non-blocking.
 
-   This method is a :ref:`coroutine <coroutine>`.
+   .. versionchanged:: 3.7
+      Even though the method was always documented as a coroutine
+      method, before Python 3.7 it returned a :class:`Future`.
+      Since Python 3.7, this is an ``async def`` method.
 
 .. coroutinemethod:: AbstractEventLoop.sock_recv_into(sock, buf)
 
@@ -580,8 +673,6 @@ Low-level socket operations
 
    With :class:`SelectorEventLoop` event loop, the socket *sock* must be
    non-blocking.
-
-   This method is a :ref:`coroutine <coroutine>`.
 
    .. versionadded:: 3.7
 
@@ -599,7 +690,10 @@ Low-level socket operations
    With :class:`SelectorEventLoop` event loop, the socket *sock* must be
    non-blocking.
 
-   This method is a :ref:`coroutine <coroutine>`.
+   .. versionchanged:: 3.7
+      Even though the method was always documented as a coroutine
+      method, before Python 3.7 it returned an :class:`Future`.
+      Since Python 3.7, this is an ``async def`` method.
 
 .. coroutinemethod:: AbstractEventLoop.sock_connect(sock, address)
 
@@ -608,8 +702,6 @@ Low-level socket operations
 
    With :class:`SelectorEventLoop` event loop, the socket *sock* must be
    non-blocking.
-
-   This method is a :ref:`coroutine <coroutine>`.
 
    .. versionchanged:: 3.5.2
       ``address`` no longer needs to be resolved.  ``sock_connect``
@@ -637,11 +729,44 @@ Low-level socket operations
 
    The socket *sock* must be non-blocking.
 
-   This method is a :ref:`coroutine <coroutine>`.
+   .. versionchanged:: 3.7
+      Even though the method was always documented as a coroutine
+      method, before Python 3.7 it returned a :class:`Future`.
+      Since Python 3.7, this is an ``async def`` method.
 
    .. seealso::
 
       :meth:`AbstractEventLoop.create_server` and :func:`start_server`.
+
+.. coroutinemethod:: AbstractEventLoop.sock_sendfile(sock, file, \
+                                                     offset=0, count=None, \
+                                                     *, fallback=True)
+
+   Send a file using high-performance :mod:`os.sendfile` if possible
+   and return the total number of bytes which were sent.
+
+   Asynchronous version of :meth:`socket.socket.sendfile`.
+
+   *sock* must be non-blocking :class:`~socket.socket` of
+   :const:`socket.SOCK_STREAM` type.
+
+   *file* must be a regular file object opened in binary mode.
+
+   *offset* tells from where to start reading the file. If specified,
+   *count* is the total number of bytes to transmit as opposed to
+   sending the file until EOF is reached. File position is updated on
+   return or also in case of error in which case :meth:`file.tell()
+   <io.IOBase.tell>` can be used to figure out the number of bytes
+   which were sent.
+
+   *fallback* set to ``True`` makes asyncio to manually read and send
+   the file when the platform does not support the sendfile syscall
+   (e.g. Windows or SSL socket on Unix).
+
+   Raise :exc:`SendfileNotAvailableError` if the system does not support
+   *sendfile* syscall and *fallback* is ``False``.
+
+   .. versionadded:: 3.7
 
 
 Resolve host name
@@ -656,6 +781,12 @@ Resolve host name
 
    This method is a :ref:`coroutine <coroutine>`, similar to
    :meth:`socket.getnameinfo` function but non-blocking.
+
+.. versionchanged:: 3.7
+   Both *getaddrinfo* and *getnameinfo* methods were always documented
+   to return a coroutine, but prior to Python 3.7 they were, in fact,
+   returning :class:`asyncio.Future` objects.  Starting with Python 3.7
+   both methods are coroutines.
 
 
 Connect pipes
@@ -676,8 +807,6 @@ Use :class:`ProactorEventLoop` to support pipes on Windows.
    With :class:`SelectorEventLoop` event loop, the *pipe* is set to
    non-blocking mode.
 
-   This method is a :ref:`coroutine <coroutine>`.
-
 .. coroutinemethod:: AbstractEventLoop.connect_write_pipe(protocol_factory, pipe)
 
    Register write pipe in eventloop.
@@ -689,8 +818,6 @@ Use :class:`ProactorEventLoop` to support pipes on Windows.
 
    With :class:`SelectorEventLoop` event loop, the *pipe* is set to
    non-blocking mode.
-
-   This method is a :ref:`coroutine <coroutine>`.
 
 .. seealso::
 
@@ -731,7 +858,7 @@ Call a function in an :class:`~concurrent.futures.Executor` (pool of threads or
 pool of processes). By default, an event loop uses a thread pool executor
 (:class:`~concurrent.futures.ThreadPoolExecutor`).
 
-.. coroutinemethod:: AbstractEventLoop.run_in_executor(executor, func, \*args)
+.. method:: AbstractEventLoop.run_in_executor(executor, func, \*args)
 
    Arrange for a *func* to be called in the specified executor.
 
@@ -741,7 +868,7 @@ pool of processes). By default, an event loop uses a thread pool executor
    :ref:`Use functools.partial to pass keywords to the *func*
    <asyncio-pass-keywords>`.
 
-   This method is a :ref:`coroutine <coroutine>`.
+   This method returns a :class:`asyncio.Future` object.
 
    .. versionchanged:: 3.5.3
       :meth:`BaseEventLoop.run_in_executor` no longer configures the
@@ -842,8 +969,26 @@ Server
 
    Server listening on sockets.
 
-   Object created by the :meth:`AbstractEventLoop.create_server` method and the
-   :func:`start_server` function. Don't instantiate the class directly.
+   Object created by :meth:`AbstractEventLoop.create_server`,
+   :meth:`AbstractEventLoop.create_unix_server`, :func:`start_server`,
+   and :func:`start_unix_server` functions.  Don't instantiate the class
+   directly.
+
+   *Server* objects are asynchronous context managers.  When used in an
+   ``async with`` statement, it's guaranteed that the Server object is
+   closed and not accepting new connections when the ``async with``
+   statement is completed::
+
+      srv = await loop.create_server(...)
+
+      async with srv:
+          # some code
+
+      # At this point, srv is closed and no longer accepts new connections.
+
+
+   .. versionchanged:: 3.7
+      Server object is an asynchronous context manager since Python 3.7.
 
    .. method:: close()
 
@@ -856,16 +1001,73 @@ Server
       The server is closed asynchronously, use the :meth:`wait_closed`
       coroutine to wait until the server is closed.
 
+   .. method:: get_loop()
+
+      Gives the event loop associated with the server object.
+
+      .. versionadded:: 3.7
+
+   .. coroutinemethod:: start_serving()
+
+      Start accepting connections.
+
+      This method is idempotent, so it can be called when
+      the server is already being serving.
+
+      The new *start_serving* keyword-only parameter to
+      :meth:`AbstractEventLoop.create_server` and
+      :meth:`asyncio.start_server` allows to create a Server object
+      that is not accepting connections right away.  In which case
+      this method, or :meth:`Server.serve_forever` can be used
+      to make the Server object to start accepting connections.
+
+      .. versionadded:: 3.7
+
+   .. coroutinemethod:: serve_forever()
+
+      Start accepting connections until the coroutine is cancelled.
+      Cancellation of ``serve_forever`` task causes the server
+      to be closed.
+
+      This method can be called if the server is already accepting
+      connections.  Only one ``serve_forever`` task can exist per
+      one *Server* object.
+
+      Example::
+
+          async def client_connected(reader, writer):
+              # Communicate with the client with
+              # reader/writer streams.  For example:
+              await reader.readline()
+
+          async def main(host, port):
+              srv = await asyncio.start_server(
+                  client_connected, host, port)
+              await srv.serve_forever()
+
+          asyncio.run(main('127.0.0.1', 0))
+
+      .. versionadded:: 3.7
+
+   .. method:: is_serving()
+
+      Return ``True`` if the server is accepting new connections.
+
+      .. versionadded:: 3.7
+
    .. coroutinemethod:: wait_closed()
 
       Wait until the :meth:`close` method completes.
-
-      This method is a :ref:`coroutine <coroutine>`.
 
    .. attribute:: sockets
 
       List of :class:`socket.socket` objects the server is listening to, or
       ``None`` if the server is closed.
+
+      .. versionchanged:: 3.7
+         Prior to Python 3.7 ``Server.sockets`` used to return the
+         internal list of server's sockets directly.  In 3.7 a copy
+         of that list is returned.
 
 
 Handle
@@ -874,8 +1076,7 @@ Handle
 .. class:: Handle
 
    A callback wrapper object returned by :func:`AbstractEventLoop.call_soon`,
-   :func:`AbstractEventLoop.call_soon_threadsafe`, :func:`AbstractEventLoop.call_later`,
-   and :func:`AbstractEventLoop.call_at`.
+   :func:`AbstractEventLoop.call_soon_threadsafe`.
 
    .. method:: cancel()
 
@@ -887,6 +1088,34 @@ Handle
       Return ``True`` if the call was cancelled.
 
       .. versionadded:: 3.7
+
+.. class:: TimerHandle
+
+   A callback wrapper object returned by :func:`AbstractEventLoop.call_later`,
+   and :func:`AbstractEventLoop.call_at`.
+
+   The class is inherited from :class:`Handle`.
+
+   .. method:: when()
+
+      Return a scheduled callback time as :class:`float` seconds.
+
+      The time is an absolute timestamp, using the same time
+      reference as :meth:`AbstractEventLoop.time`.
+
+      .. versionadded:: 3.7
+
+
+SendfileNotAvailableError
+-------------------------
+
+
+.. exception:: SendfileNotAvailableError
+
+   Sendfile syscall is not available, subclass of :exc:`RuntimeError`.
+
+   Raised if the OS does not support sendfile syscall for
+   given socket or file type.
 
 
 Event loop examples

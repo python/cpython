@@ -3,10 +3,16 @@ import os
 import sys
 import unittest
 import warnings
-from test.support import TestFailed
+from test.support import TestFailed, FakePath
 from test import support, test_genericpath
 from tempfile import TemporaryFile
 
+try:
+    import nt
+except ImportError:
+    # Most tests can complete without the nt module,
+    # but for those that require it we import here.
+    nt = None
 
 def tester(fn, wantResult):
     fn = fn.replace("\\", "\\\\")
@@ -271,17 +277,9 @@ class TestNtpath(unittest.TestCase):
             tester('ntpath.expanduser("~/foo/bar")',
                    'C:\\idle\\eric/foo/bar')
 
+    @unittest.skipUnless(nt, "abspath requires 'nt' module")
     def test_abspath(self):
-        # ntpath.abspath() can only be used on a system with the "nt" module
-        # (reasonably), so we protect this test with "import nt".  This allows
-        # the rest of the tests for the ntpath module to be run to completion
-        # on any platform, since most of the module is intended to be usable
-        # from any platform.
-        try:
-            import nt
-            tester('ntpath.abspath("C:\\")', "C:\\")
-        except ImportError:
-            self.skipTest('nt module not available')
+        tester('ntpath.abspath("C:\\")', "C:\\")
 
     def test_relpath(self):
         tester('ntpath.relpath("a")', 'a')
@@ -424,6 +422,34 @@ class TestNtpath(unittest.TestCase):
             self.assertTrue(ntpath.ismount(b"\\\\localhost\\c$"))
             self.assertTrue(ntpath.ismount(b"\\\\localhost\\c$\\"))
 
+    @unittest.skipUnless(nt, "OS helpers require 'nt' module")
+    def test_nt_helpers(self):
+        # Trivial validation that the helpers do not break, and support both
+        # unicode and bytes (UTF-8) paths
+
+        drive, path = ntpath.splitdrive(sys.executable)
+        drive = drive.rstrip(ntpath.sep) + ntpath.sep
+        self.assertEqual(drive, nt._getvolumepathname(sys.executable))
+        self.assertEqual(drive.encode(),
+                         nt._getvolumepathname(sys.executable.encode()))
+
+        cap, free = nt._getdiskusage(sys.exec_prefix)
+        self.assertGreater(cap, 0)
+        self.assertGreater(free, 0)
+        b_cap, b_free = nt._getdiskusage(sys.exec_prefix.encode())
+        # Free space may change, so only test the capacity is equal
+        self.assertEqual(b_cap, cap)
+        self.assertGreater(b_free, 0)
+
+        for path in [sys.prefix, sys.executable]:
+            final_path = nt._getfinalpathname(path)
+            self.assertIsInstance(final_path, str)
+            self.assertGreater(len(final_path), 0)
+
+            b_final_path = nt._getfinalpathname(path.encode())
+            self.assertIsInstance(b_final_path, bytes)
+            self.assertGreater(len(b_final_path), 0)
+
 class NtCommonTest(test_genericpath.CommonTest, unittest.TestCase):
     pathmodule = ntpath
     attributes = ['relpath']
@@ -433,18 +459,9 @@ class PathLikeTests(unittest.TestCase):
 
     path = ntpath
 
-    class PathLike:
-        def __init__(self, path=''):
-            self.path = path
-        def __fspath__(self):
-            if isinstance(self.path, BaseException):
-                raise self.path
-            else:
-                return self.path
-
     def setUp(self):
         self.file_name = support.TESTFN.lower()
-        self.file_path = self.PathLike(support.TESTFN)
+        self.file_path = FakePath(support.TESTFN)
         self.addCleanup(support.unlink, self.file_name)
         with open(self.file_name, 'xb', 0) as file:
             file.write(b"test_ntpath.PathLikeTests")
@@ -459,7 +476,7 @@ class PathLikeTests(unittest.TestCase):
         self.assertPathEqual(self.path.isabs)
 
     def test_path_join(self):
-        self.assertEqual(self.path.join('a', self.PathLike('b'), 'c'),
+        self.assertEqual(self.path.join('a', FakePath('b'), 'c'),
                          self.path.join('a', 'b', 'c'))
 
     def test_path_split(self):

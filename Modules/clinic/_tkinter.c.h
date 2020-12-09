@@ -263,7 +263,7 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
                                   PyObject *func);
 
 static PyObject *
-_tkinter_tkapp_createcommand(TkappObject *self, PyObject **args, Py_ssize_t nargs)
+_tkinter_tkapp_createcommand(TkappObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *name;
@@ -320,7 +320,7 @@ _tkinter_tkapp_createfilehandler_impl(TkappObject *self, PyObject *file,
                                       int mask, PyObject *func);
 
 static PyObject *
-_tkinter_tkapp_createfilehandler(TkappObject *self, PyObject **args, Py_ssize_t nargs)
+_tkinter_tkapp_createfilehandler(TkappObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *file;
@@ -381,7 +381,7 @@ _tkinter_tkapp_createtimerhandler_impl(TkappObject *self, int milliseconds,
                                        PyObject *func);
 
 static PyObject *
-_tkinter_tkapp_createtimerhandler(TkappObject *self, PyObject **args, Py_ssize_t nargs)
+_tkinter_tkapp_createtimerhandler(TkappObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int milliseconds;
@@ -409,7 +409,7 @@ static PyObject *
 _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold);
 
 static PyObject *
-_tkinter_tkapp_mainloop(TkappObject *self, PyObject **args, Py_ssize_t nargs)
+_tkinter_tkapp_mainloop(TkappObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int threshold = 0;
@@ -436,7 +436,7 @@ static PyObject *
 _tkinter_tkapp_dooneevent_impl(TkappObject *self, int flags);
 
 static PyObject *
-_tkinter_tkapp_dooneevent(TkappObject *self, PyObject **args, Py_ssize_t nargs)
+_tkinter_tkapp_dooneevent(TkappObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int flags = 0;
@@ -552,7 +552,7 @@ _tkinter_create_impl(PyObject *module, const char *screenName,
                      const char *use);
 
 static PyObject *
-_tkinter_create(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *screenName = NULL;
@@ -638,4 +638,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=ca36236c57713ba0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eb3202e07db3dbb1 input=a9049054013a1b77]*/

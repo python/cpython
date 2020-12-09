@@ -809,8 +809,7 @@ time_strftime(PyObject *self, PyObject *args)
 #ifdef HAVE_WCSFTIME
             ret = PyUnicode_FromWideChar(outbuf, buflen);
 #else
-            ret = PyUnicode_DecodeLocaleAndSize(outbuf, buflen,
-                                                "surrogateescape");
+            ret = PyUnicode_DecodeLocaleAndSize(outbuf, buflen, "surrogateescape");
 #endif
             PyMem_Free(outbuf);
             break;
@@ -1193,11 +1192,13 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
             if (freq != -1) {
                 /* check that _PyTime_MulDiv(t, SEC_TO_NS, ticks_per_second)
                    cannot overflow below */
+#if LONG_MAX > _PyTime_MAX / SEC_TO_NS
                 if ((_PyTime_t)freq > _PyTime_MAX / SEC_TO_NS) {
                     PyErr_SetString(PyExc_OverflowError,
                                     "_SC_CLK_TCK is too large");
                     return -1;
                 }
+#endif
 
                 ticks_per_second = freq;
             }

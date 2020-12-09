@@ -112,7 +112,7 @@ class ViewFunctionTest(unittest.TestCase):
         view.ok()
 
     def test_view_file(self):
-        view = tv.view_file(root, 'Title', __file__, modal=False)
+        view = tv.view_file(root, 'Title', __file__, 'ascii', modal=False)
         self.assertIsInstance(view, tv.ViewWindow)
         self.assertIsInstance(view.viewframe, tv.ViewFrame)
         get = view.viewframe.textframe.text.get
@@ -121,7 +121,7 @@ class ViewFunctionTest(unittest.TestCase):
 
     def test_bad_file(self):
         # Mock showerror will be used; view_file will return None.
-        view = tv.view_file(root, 'Title', 'abc.xyz', modal=False)
+        view = tv.view_file(root, 'Title', 'abc.xyz', 'ascii', modal=False)
         self.assertIsNone(view)
         self.assertEqual(tv.showerror.title, 'File Load Error')
 
@@ -161,7 +161,8 @@ class ButtonClickTest(unittest.TestCase):
     def test_view_file_bind_with_button(self):
         def _command():
             self.called = True
-            self.view = tv.view_file(root, 'TITLE_FILE', __file__, _utest=True)
+            self.view = tv.view_file(root, 'TITLE_FILE', __file__,
+                                     encoding='ascii', _utest=True)
         button = Button(root, text='BUTTON', command=_command)
         button.invoke()
         self.addCleanup(button.destroy)

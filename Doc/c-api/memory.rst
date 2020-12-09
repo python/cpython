@@ -530,7 +530,7 @@ tracemalloc C API
 
    Track an allocated memory block in the :mod:`tracemalloc` module.
 
-   Return 0 on success, return ``-1`` on error (failed to allocate memory to
+   Return ``0`` on success, return ``-1`` on error (failed to allocate memory to
    store the trace). Return ``-2`` if tracemalloc is disabled.
 
    If memory block is already tracked, update the existing trace.

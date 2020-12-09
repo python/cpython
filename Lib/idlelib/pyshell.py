@@ -635,6 +635,9 @@ class ModifiedInterpreter(InteractiveInterpreter):
         if source is None:
             with tokenize.open(filename) as fp:
                 source = fp.read()
+                if use_subprocess:
+                    source = (f"__file__ = r'''{os.path.abspath(filename)}'''\n"
+                              + source + "\ndel __file__")
         try:
             code = compile(source, filename, "exec")
         except (OverflowError, SyntaxError):

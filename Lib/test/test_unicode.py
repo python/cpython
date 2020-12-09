@@ -638,6 +638,11 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertFalse('\U0001F40D'.isalpha())
         self.assertFalse('\U0001F46F'.isalpha())
 
+    def test_isascii(self):
+        super().test_isascii()
+        self.assertFalse("\u20ac".isascii())
+        self.assertFalse("\U0010ffff".isascii())
+
     def test_isdecimal(self):
         self.checkequalnofix(False, '', 'isdecimal')
         self.checkequalnofix(False, 'a', 'isdecimal')

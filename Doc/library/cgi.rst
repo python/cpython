@@ -289,10 +289,12 @@ algorithms implemented in this module in other circumstances.
    This function is deprecated in this module. Use :func:`urllib.parse.parse_qs`
    instead. It is maintained here only for backward compatibility.
 
+
 .. function:: parse_qsl(qs, keep_blank_values=False, strict_parsing=False)
 
    This function is deprecated in this module. Use :func:`urllib.parse.parse_qsl`
    instead. It is maintained here only for backward compatibility.
+
 
 .. function:: parse_multipart(fp, pdict, encoding="utf-8")
 
@@ -308,6 +310,10 @@ algorithms implemented in this module in other circumstances.
    This is easy to use but not much good if you are expecting megabytes to be
    uploaded --- in that case, use the :class:`FieldStorage` class instead
    which is much more flexible.
+
+   .. versionchanged:: 3.7
+      Added the *encoding* parameter.  For non-file fields, the value is now
+      a list of strings, not bytes.
 
 
 .. function:: parse_header(string)

@@ -1,7 +1,9 @@
+import binascii
 import functools
 import hmac
 import hashlib
 import unittest
+import unittest.mock
 import warnings
 
 
@@ -23,16 +25,27 @@ class TestVectorsTestCase(unittest.TestCase):
         def md5test(key, data, digest):
             h = hmac.HMAC(key, data, digestmod=hashlib.md5)
             self.assertEqual(h.hexdigest().upper(), digest.upper())
+            self.assertEqual(h.digest(), binascii.unhexlify(digest))
             self.assertEqual(h.name, "hmac-md5")
             self.assertEqual(h.digest_size, 16)
             self.assertEqual(h.block_size, 64)
 
             h = hmac.HMAC(key, data, digestmod='md5')
             self.assertEqual(h.hexdigest().upper(), digest.upper())
+            self.assertEqual(h.digest(), binascii.unhexlify(digest))
             self.assertEqual(h.name, "hmac-md5")
             self.assertEqual(h.digest_size, 16)
             self.assertEqual(h.block_size, 64)
 
+            self.assertEqual(
+                hmac.digest(key, data, digest='md5'),
+                binascii.unhexlify(digest)
+            )
+            with unittest.mock.patch('hmac._openssl_md_meths', {}):
+                self.assertEqual(
+                    hmac.digest(key, data, digest='md5'),
+                    binascii.unhexlify(digest)
+                )
 
         md5test(b"\x0b" * 16,
                 b"Hi There",
@@ -67,15 +80,22 @@ class TestVectorsTestCase(unittest.TestCase):
         def shatest(key, data, digest):
             h = hmac.HMAC(key, data, digestmod=hashlib.sha1)
             self.assertEqual(h.hexdigest().upper(), digest.upper())
+            self.assertEqual(h.digest(), binascii.unhexlify(digest))
             self.assertEqual(h.name, "hmac-sha1")
             self.assertEqual(h.digest_size, 20)
             self.assertEqual(h.block_size, 64)
 
             h = hmac.HMAC(key, data, digestmod='sha1')
             self.assertEqual(h.hexdigest().upper(), digest.upper())
+            self.assertEqual(h.digest(), binascii.unhexlify(digest))
             self.assertEqual(h.name, "hmac-sha1")
             self.assertEqual(h.digest_size, 20)
             self.assertEqual(h.block_size, 64)
+
+            self.assertEqual(
+                hmac.digest(key, data, digest='sha1'),
+                binascii.unhexlify(digest)
+            )
 
 
         shatest(b"\x0b" * 20,
@@ -122,6 +142,24 @@ class TestVectorsTestCase(unittest.TestCase):
             self.assertEqual(h.digest_size, digest_size)
             self.assertEqual(h.block_size, block_size)
 
+            self.assertEqual(
+                hmac.digest(key, data, digest=hashfunc),
+                binascii.unhexlify(hexdigests[hashfunc])
+            )
+            self.assertEqual(
+                hmac.digest(key, data, digest=hash_name),
+                binascii.unhexlify(hexdigests[hashfunc])
+            )
+
+            with unittest.mock.patch('hmac._openssl_md_meths', {}):
+                self.assertEqual(
+                    hmac.digest(key, data, digest=hashfunc),
+                    binascii.unhexlify(hexdigests[hashfunc])
+                )
+                self.assertEqual(
+                    hmac.digest(key, data, digest=hash_name),
+                    binascii.unhexlify(hexdigests[hashfunc])
+                )
 
         # 4.2.  Test Case 1
         hmactest(key = b'\x0b'*20,

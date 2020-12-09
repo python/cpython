@@ -516,7 +516,7 @@ poll_unregister(pollObject *self, PyObject *o)
 
 PyDoc_STRVAR(poll_poll_doc,
 "poll( [timeout] ) -> list of (fd, event) 2-tuples\n\n\
-Polls the set of registered file descriptors, returning a list containing \n\
+Polls the set of registered file descriptors, returning a list containing\n\
 any descriptors that have events or errors to report.");
 
 static PyObject *
@@ -877,7 +877,7 @@ devpoll_unregister(devpollObject *self, PyObject *o)
 
 PyDoc_STRVAR(devpoll_poll_doc,
 "poll( [timeout] ) -> list of (fd, event) 2-tuples\n\n\
-Polls the set of registered file descriptors, returning a list containing \n\
+Polls the set of registered file descriptors, returning a list containing\n\
 any descriptors that have events or errors to report.");
 
 static PyObject *
@@ -1006,7 +1006,7 @@ devpoll_internal_close(devpollObject *self)
 }
 
 static PyObject*
-devpoll_close(devpollObject *self)
+devpoll_close(devpollObject *self, PyObject *Py_UNUSED(ignored))
 {
     errno = devpoll_internal_close(self);
     if (errno < 0) {
@@ -1032,7 +1032,7 @@ devpoll_get_closed(devpollObject *self)
 }
 
 static PyObject*
-devpoll_fileno(devpollObject *self)
+devpoll_fileno(devpollObject *self, PyObject *Py_UNUSED(ignored))
 {
     if (self->fd_devpoll < 0)
         return devpoll_err_closed();
@@ -1307,10 +1307,13 @@ pyepoll_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         PyErr_SetString(PyExc_ValueError, "negative sizehint");
         return NULL;
     }
+
+#ifdef HAVE_EPOLL_CREATE1
     if (flags && flags != EPOLL_CLOEXEC) {
         PyErr_SetString(PyExc_OSError, "invalid flags");
         return NULL;
     }
+#endif
 
     return newPyEpoll_Object(type, sizehint, -1);
 }
@@ -1324,7 +1327,7 @@ pyepoll_dealloc(pyEpoll_Object *self)
 }
 
 static PyObject*
-pyepoll_close(pyEpoll_Object *self)
+pyepoll_close(pyEpoll_Object *self, PyObject *Py_UNUSED(ignored))
 {
     errno = pyepoll_internal_close(self);
     if (errno < 0) {
@@ -1350,7 +1353,7 @@ pyepoll_get_closed(pyEpoll_Object *self)
 }
 
 static PyObject*
-pyepoll_fileno(pyEpoll_Object *self)
+pyepoll_fileno(pyEpoll_Object *self, PyObject *Py_UNUSED(ignored))
 {
     if (self->epfd < 0)
         return pyepoll_err_closed();
@@ -2050,7 +2053,7 @@ kqueue_queue_dealloc(kqueue_queue_Object *self)
 }
 
 static PyObject*
-kqueue_queue_close(kqueue_queue_Object *self)
+kqueue_queue_close(kqueue_queue_Object *self, PyObject *Py_UNUSED(ignored))
 {
     errno = kqueue_queue_internal_close(self);
     if (errno < 0) {
@@ -2076,7 +2079,7 @@ kqueue_queue_get_closed(kqueue_queue_Object *self)
 }
 
 static PyObject*
-kqueue_queue_fileno(kqueue_queue_Object *self)
+kqueue_queue_fileno(kqueue_queue_Object *self, PyObject *Py_UNUSED(ignored))
 {
     if (self->kqfd < 0)
         return kqueue_queue_err_closed();

@@ -3,11 +3,13 @@ dnl * Please run autoreconf to test your changes! *
 dnl ***********************************************
 
 # Set VERSION so we only need to edit in one place (i.e., here)
-m4_define(PYTHON_VERSION, 3.7)
+m4_define(PYTHON_VERSION, 3.8)
 
 AC_PREREQ(2.65)
 
 AC_INIT(python, PYTHON_VERSION, https://bugs.python.org/)
+
+AC_CONFIG_MACRO_DIR(m4)
 
 AC_SUBST(BASECPPFLAGS)
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
@@ -210,7 +212,7 @@ fi
 AC_SUBST(LIPO_32BIT_FLAGS)
 AC_MSG_CHECKING(for --with-universal-archs)
 AC_ARG_WITH(universal-archs,
-    AS_HELP_STRING([--with-universal-archs=ARCH], [select architectures for universal build ("32-bit", "64-bit", "3-way", "intel", "intel-32", or "all")]),
+    AS_HELP_STRING([--with-universal-archs=ARCH], [select architectures for universal build ("32-bit", "64-bit", "3-way", "intel", "intel-32", "intel-64", or "all")]),
 [
 	UNIVERSAL_ARCHS="$withval"
 ],
@@ -478,10 +480,6 @@ case $ac_sys_system/$ac_sys_release in
   # On OpenServer 5, u_short is never defined with _XOPEN_SOURCE,
   # but used in struct sockaddr.sa_family. Reported by Tim Rice.
   SCO_SV/3.2)
-    define_xopen_source=no;;
-  # On FreeBSD 4, the math functions C89 does not cover are never defined
-  # with _XOPEN_SOURCE and __BSD_VISIBLE does not re-enable them.
-  FreeBSD/4.*)
     define_xopen_source=no;;
   # On MacOS X 10.2, a bug in ncurses.h means that it craps out if
   # _XOPEN_EXTENDED_SOURCE is defined. Apparently, this is fixed in 10.3, which
@@ -783,6 +781,26 @@ cat >> conftest.c <<EOF
         ia64-linux-gnu
 # elif defined(__m68k__) && !defined(__mcoldfire__)
         m68k-linux-gnu
+# elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6) && defined(_MIPSEL)
+#  if _MIPS_SIM == _ABIO32
+        mipsisa32r6el-linux-gnu
+#  elif _MIPS_SIM == _ABIN32
+        mipsisa64r6el-linux-gnuabin32
+#  elif _MIPS_SIM == _ABI64
+        mipsisa64r6el-linux-gnuabi64
+#  else
+#   error unknown platform triplet
+#  endif
+# elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6)
+#  if _MIPS_SIM == _ABIO32
+        mipsisa32r6-linux-gnu
+#  elif _MIPS_SIM == _ABIN32
+        mipsisa64r6-linux-gnuabin32
+#  elif _MIPS_SIM == _ABI64
+        mipsisa64r6-linux-gnuabi64
+#  else
+#   error unknown platform triplet
+#  endif
 # elif defined(__mips_hard_float) && defined(_MIPSEL)
 #  if _MIPS_SIM == _ABIO32
         mipsel-linux-gnu
@@ -825,6 +843,14 @@ cat >> conftest.c <<EOF
         sparc64-linux-gnu
 # elif defined(__sparc__)
         sparc-linux-gnu
+# elif defined(__riscv)
+#  if __riscv_xlen == 32
+        riscv32-linux-gnu
+#  elif __riscv_xlen == 64
+        riscv64-linux-gnu
+#  else
+#   error unknown platform triplet
+#  endif
 # else
 #   error unknown platform triplet
 # endif
@@ -1770,6 +1796,11 @@ yes)
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT=""
                ;;
+            intel-64)
+               UNIVERSAL_ARCH_FLAGS="-arch x86_64"
+               LIPO_32BIT_FLAGS=""
+               ARCH_RUN_32BIT="true"
+               ;;
             3-way)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
@@ -1780,11 +1811,14 @@ yes)
                ;;
             esac
 
-            CFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${CFLAGS}"
-            LDFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${LDFLAGS}"
             if test "${UNIVERSALSDK}" != "/"
             then
+                CFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${CFLAGS}"
+                LDFLAGS="${UNIVERSAL_ARCH_FLAGS} -isysroot ${UNIVERSALSDK} ${LDFLAGS}"
                 CPPFLAGS="-isysroot ${UNIVERSALSDK} ${CPPFLAGS}"
+            else
+                CFLAGS="${UNIVERSAL_ARCH_FLAGS} ${CFLAGS}"
+                LDFLAGS="${UNIVERSAL_ARCH_FLAGS} ${LDFLAGS}"
             fi
         fi
 
@@ -2043,7 +2077,7 @@ dnl AC_MSG_RESULT($cpp_type)
 
 # checks for header files
 AC_HEADER_STDC
-AC_CHECK_HEADERS(asm/types.h conio.h direct.h dlfcn.h errno.h \
+AC_CHECK_HEADERS(asm/types.h crypt.h conio.h direct.h dlfcn.h errno.h \
 fcntl.h grp.h \
 ieeefp.h io.h langinfo.h libintl.h process.h pthread.h \
 sched.h shadow.h signal.h stropts.h termios.h \
@@ -2442,7 +2476,8 @@ then
 			LDSHARED='$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
 		else
-			LDSHARED='ld -b'
+			LDSHARED='$(CC) -b'
+			LDCXXSHARED='$(CXX) -b'
 		fi ;;
 	Darwin/1.3*)
 		LDSHARED='$(CC) -bundle'
@@ -2680,6 +2715,9 @@ AC_CHECK_LIB(sendfile, sendfile)
 AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
 
+# checks for uuid.h location
+AC_CHECK_HEADERS([uuid/uuid.h uuid.h])
+
 AC_MSG_CHECKING(for uuid_generate_time_safe)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid/uuid.h>]], [[
 #ifndef uuid_generate_time_safe
@@ -2687,6 +2725,19 @@ void *x = uuid_generate_time_safe
 #endif
 ]])],
   [AC_DEFINE(HAVE_UUID_GENERATE_TIME_SAFE, 1, Define if uuid_generate_time_safe() exists.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+# AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
+# FreeBSD and OpenBSD provides support as well
+AC_MSG_CHECKING(for uuid_create)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid.h>]], [[
+#ifndef uuid_create
+void *x = uuid_create
+#endif
+]])],
+  [AC_DEFINE(HAVE_UUID_CREATE, 1, Define if uuid_create() exists.)
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)]
 )
@@ -3372,8 +3423,6 @@ then
 	fi
 	;;
 	hp*|HP*) DYNLOADFILE="dynload_hpux.o";;
-	# Use dynload_next.c only on 10.2 and below, which don't have native dlopen()
-	Darwin/@<:@0156@:>@\..*) DYNLOADFILE="dynload_next.o";;
 	*)
 	# use dynload_shlib.c and dlopen() if we have it; otherwise stub
 	# out any dynamic loading
@@ -3418,14 +3467,14 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
- posix_fallocate posix_fadvise pread \
- pthread_init pthread_kill putenv pwrite readlink readlinkat readv realpath renameat \
+ posix_fallocate posix_fadvise posix_spawn pread preadv preadv2 \
+ pthread_init pthread_kill putenv pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
  sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
  setgid sethostname \
  setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
  sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
  sched_rr_get_interval \
- sigaction sigaltstack siginterrupt sigpending sigrelse \
+ sigaction sigaltstack sigfillset siginterrupt sigpending sigrelse \
  sigtimedwait sigwait sigwaitinfo snprintf strftime strlcpy symlinkat sync \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
  truncate uname unlinkat unsetenv utimensat utimes waitid waitpid wait3 wait4 \
@@ -4121,20 +4170,6 @@ AC_CHECK_FUNC(__fpu_control,
   [AC_CHECK_LIB(ieee, __fpu_control)
 ])
 
-# Check for --with-fpectl
-AC_MSG_CHECKING(for --with-fpectl)
-AC_ARG_WITH(fpectl,
-            AS_HELP_STRING([--with-fpectl], [enable SIGFPE catching]),
-[
-if test "$withval" != no
-then
-  AC_DEFINE(WANT_SIGFPE_HANDLER, 1,
-  [Define if you want SIGFPE handled (see Include/pyfpe.h).])
-  AC_MSG_RESULT(yes)
-else AC_MSG_RESULT(no)
-fi],
-[AC_MSG_RESULT(no)])
-
 # check for --with-libm=...
 AC_SUBST(LIBM)
 case $ac_sys_system in
@@ -4479,7 +4514,7 @@ then
   [define to 1 if your sem_getvalue is broken.])
 fi
 
-AC_CHECK_DECLS([RTLD_LAZY, RTLD_NOW, RTLD_GLOBAL, RTLD_LOCAL, RTLD_NODELETE, RTLD_NOLOAD, RTLD_DEEPBIND], [], [], [[#include <dlfcn.h>]])
+AC_CHECK_DECLS([RTLD_LAZY, RTLD_NOW, RTLD_GLOBAL, RTLD_LOCAL, RTLD_NODELETE, RTLD_NOLOAD, RTLD_DEEPBIND, RTLD_MEMBER], [], [], [[#include <dlfcn.h>]])
 
 # determine what size digit to use for Python's longs
 AC_MSG_CHECKING([digit size for Python's longs])
@@ -5458,6 +5493,82 @@ if test "$have_getrandom" = yes; then
     AC_DEFINE(HAVE_GETRANDOM, 1,
               [Define to 1 if the getrandom() function is available])
 fi
+
+# Check for usable OpenSSL
+AX_CHECK_OPENSSL([have_openssl=yes],[have_openssl=no])
+
+if test "$have_openssl" = yes; then
+    AC_MSG_CHECKING([for X509_VERIFY_PARAM_set1_host in libssl])
+
+    save_LIBS="$LIBS"
+    save_LDFLAGS="$LDFLAGS"
+    save_CPPFLAGS="$CPPFLAGS"
+    LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
+    LIBS="$OPENSSL_LIBS $LIBS"
+    CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
+
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([
+        [#include <openssl/x509_vfy.h>]
+    ], [
+        [X509_VERIFY_PARAM *p = X509_VERIFY_PARAM_new();]
+        [X509_VERIFY_PARAM_set1_host(p, "localhost", 0);]
+        [X509_VERIFY_PARAM_set1_ip_asc(p, "127.0.0.1");]
+        [X509_VERIFY_PARAM_set_hostflags(p, 0);]
+    ])
+    ],
+    [
+        ac_cv_has_x509_verify_param_set1_host=yes
+    ],
+    [
+        ac_cv_has_x509_verify_param_set1_host=no
+    ])
+    AC_MSG_RESULT($ac_cv_has_x509_verify_param_set1_host)
+    if test "$ac_cv_has_x509_verify_param_set1_host" = "yes"; then
+        AC_DEFINE(HAVE_X509_VERIFY_PARAM_SET1_HOST, 1,
+        [Define if libssl has X509_VERIFY_PARAM_set1_host and related function])
+    fi
+
+    CPPFLAGS="$save_CPPFLAGS"
+    LDFLAGS="$save_LDFLAGS"
+    LIBS="$save_LIBS"
+fi
+
+# ssl module default cipher suite string
+AH_TEMPLATE(PY_SSL_DEFAULT_CIPHERS,
+  [Default cipher suites list for ssl module.
+   1: Python's preferred selection, 2: leave OpenSSL defaults untouched, 0: custom string])
+AH_TEMPLATE(PY_SSL_DEFAULT_CIPHER_STRING,
+  [Cipher suite string for PY_SSL_DEFAULT_CIPHERS=0]
+)
+
+AC_MSG_CHECKING(for --with-ssl-default-suites)
+AC_ARG_WITH(ssl-default-suites,
+            AS_HELP_STRING([--with-ssl-default-suites=@<:@python|openssl|STRING@:>@],
+                           [Override default cipher suites string,
+                            python: use Python's preferred selection (default),
+                            openssl: leave OpenSSL's defaults untouched,
+                            STRING: use a custom string,
+                            PROTOCOL_SSLv2 ignores the setting]),
+[
+AC_MSG_RESULT($withval)
+case "$withval" in
+    python)
+        AC_DEFINE(PY_SSL_DEFAULT_CIPHERS, 1)
+        ;;
+    openssl)
+        AC_DEFINE(PY_SSL_DEFAULT_CIPHERS, 2)
+        ;;
+    *)
+        AC_DEFINE(PY_SSL_DEFAULT_CIPHERS, 0)
+        AC_DEFINE_UNQUOTED(PY_SSL_DEFAULT_CIPHER_STRING, "$withval")
+        ;;
+esac
+],
+[
+AC_MSG_RESULT(python)
+AC_DEFINE(PY_SSL_DEFAULT_CIPHERS, 1)
+])
+
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-config.sh)

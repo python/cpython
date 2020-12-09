@@ -1,0 +1,3 @@
+Improved exceptions raised for invalid number of channels and sample width
+when read an audio file in modules :mod:`aifc`, :mod:`wave` and
+:mod:`sunau`.

@@ -1,0 +1,2 @@
+Raise a SyntaxError for ``async with`` and ``async for`` statements outside
+of async functions.

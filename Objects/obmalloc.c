@@ -379,7 +379,7 @@ _PyMem_DebugEnabled(void)
     return (_PyObject.malloc == _PyMem_DebugMalloc);
 }
 
-int
+static int
 _PyMem_PymallocEnabled(void)
 {
     if (_PyMem_DebugEnabled()) {
@@ -849,30 +849,6 @@ static int running_on_valgrind = -1;
 
 /*==========================================================================*/
 
-/*
- * Locking
- *
- * To reduce lock contention, it would probably be better to refine the
- * crude function locking with per size class locking. I'm not positive
- * however, whether it's worth switching to such locking policy because
- * of the performance penalty it might introduce.
- *
- * The following macros describe the simplest (should also be the fastest)
- * lock object on a particular platform and the init/fini/lock/unlock
- * operations on it. The locks defined here are not expected to be recursive
- * because it is assumed that they will always be called in the order:
- * INIT, [LOCK, UNLOCK]*, FINI.
- */
-
-/*
- * Python's threads are serialized, so object malloc locking is disabled.
- */
-#define SIMPLELOCK_DECL(lock)   /* simple lock declaration              */
-#define SIMPLELOCK_INIT(lock)   /* allocate (if needed) and initialize  */
-#define SIMPLELOCK_FINI(lock)   /* free/destroy an existing lock        */
-#define SIMPLELOCK_LOCK(lock)   /* acquire released lock */
-#define SIMPLELOCK_UNLOCK(lock) /* release acquired lock */
-
 /* When you say memory, my mind reasons in terms of (pointers to) blocks */
 typedef uint8_t block;
 
@@ -943,15 +919,6 @@ struct arena_object {
 #define NUMBLOCKS(I) ((uint)(POOL_SIZE - POOL_OVERHEAD) / INDEX2SIZE(I))
 
 /*==========================================================================*/
-
-/*
- * This malloc lock
- */
-SIMPLELOCK_DECL(_malloc_lock)
-#define LOCK()          SIMPLELOCK_LOCK(_malloc_lock)
-#define UNLOCK()        SIMPLELOCK_UNLOCK(_malloc_lock)
-#define LOCK_INIT()     SIMPLELOCK_INIT(_malloc_lock)
-#define LOCK_FINI()     SIMPLELOCK_FINI(_malloc_lock)
 
 /*
  * Pool table -- headed, circular, doubly-linked lists of partially used pools.
@@ -1167,7 +1134,7 @@ new_arena(void)
     static int debug_stats = -1;
 
     if (debug_stats == -1) {
-        char *opt = Py_GETENV("PYTHONMALLOCSTATS");
+        const char *opt = Py_GETENV("PYTHONMALLOCSTATS");
         debug_stats = (opt != NULL && *opt != '\0');
     }
     if (debug_stats)
@@ -1381,7 +1348,6 @@ pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
         return 0;
     }
 
-    LOCK();
     /*
      * Most frequent paths first
      */
@@ -1537,13 +1503,11 @@ pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
     goto init_pool;
 
 success:
-    UNLOCK();
     assert(bp != NULL);
     *ptr_p = (void *)bp;
     return 1;
 
 failed:
-    UNLOCK();
     return 0;
 }
 
@@ -1611,8 +1575,6 @@ pymalloc_free(void *ctx, void *p)
         return 0;
     }
     /* We allocated this address. */
-
-    LOCK();
 
     /* Link p to the start of the pool's freeblock list.  Since
      * the pool had at least the p block outstanding, the pool
@@ -1798,7 +1760,6 @@ pymalloc_free(void *ctx, void *p)
     goto success;
 
 success:
-    UNLOCK();
     return 1;
 }
 
@@ -2467,10 +2428,17 @@ pool_is_in_list(const poolp target, poolp list)
 /* Print summary info to "out" about the state of pymalloc's structures.
  * In Py_DEBUG mode, also perform some expensive internal consistency
  * checks.
+ *
+ * Return 0 if the memory debug hooks are not installed or no statistics was
+ * written into out, return 1 otherwise.
  */
-void
+int
 _PyObject_DebugMallocStats(FILE *out)
 {
+    if (!_PyMem_PymallocEnabled()) {
+        return 0;
+    }
+
     uint i;
     const uint numclasses = SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT;
     /* # of pools, allocated blocks, and free blocks per class index */
@@ -2603,6 +2571,7 @@ _PyObject_DebugMallocStats(FILE *out)
     total += printone(out, "# bytes lost to quantization", quantization);
     total += printone(out, "# bytes lost to arena alignment", arena_alignment);
     (void)printone(out, "Total", total);
+    return 1;
 }
 
 #endif /* #ifdef WITH_PYMALLOC */

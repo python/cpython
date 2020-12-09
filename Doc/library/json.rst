@@ -100,9 +100,9 @@ Extending :class:`JSONEncoder`::
     ['[2.0', ', 1.0', ']']
 
 
-.. highlight:: bash
+Using :mod:`json.tool` from the shell to validate and pretty-print:
 
-Using :mod:`json.tool` from the shell to validate and pretty-print::
+.. code-block:: shell-session
 
     $ echo '{"json":"obj"}' | python -m json.tool
     {
@@ -112,8 +112,6 @@ Using :mod:`json.tool` from the shell to validate and pretty-print::
     Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
 
 See :ref:`json-commandline` for detailed documentation.
-
-.. highlight:: python3
 
 .. note::
 
@@ -230,10 +228,8 @@ Basic Usage
    *object_pairs_hook* is an optional function that will be called with the
    result of any object literal decoded with an ordered list of pairs.  The
    return value of *object_pairs_hook* will be used instead of the
-   :class:`dict`.  This feature can be used to implement custom decoders that
-   rely on the order that the key and value pairs are decoded (for example,
-   :func:`collections.OrderedDict` will remember the order of insertion). If
-   *object_hook* is also defined, the *object_pairs_hook* takes priority.
+   :class:`dict`.  This feature can be used to implement custom decoders.
+   If *object_hook* is also defined, the *object_pairs_hook* takes priority.
 
    .. versionchanged:: 3.1
       Added support for *object_pairs_hook*.
@@ -325,10 +321,8 @@ Encoders and Decoders
    *object_pairs_hook*, if specified will be called with the result of every
    JSON object decoded with an ordered list of pairs.  The return value of
    *object_pairs_hook* will be used instead of the :class:`dict`.  This
-   feature can be used to implement custom decoders that rely on the order
-   that the key and value pairs are decoded (for example,
-   :func:`collections.OrderedDict` will remember the order of insertion). If
-   *object_hook* is also defined, the *object_pairs_hook* takes priority.
+   feature can be used to implement custom decoders.  If *object_hook* is also
+   defined, the *object_pairs_hook* takes priority.
 
    .. versionchanged:: 3.1
       Added support for *object_pairs_hook*.
@@ -651,8 +645,6 @@ when serializing Python :class:`int` values of extremely large magnitude, or
 when serializing instances of "exotic" numerical types such as
 :class:`decimal.Decimal`.
 
-.. highlight:: bash
-
 .. _json-commandline:
 
 Command Line Interface
@@ -669,7 +661,9 @@ The :mod:`json.tool` module provides a simple command line interface to validate
 and pretty-print JSON objects.
 
 If the optional ``infile`` and ``outfile`` arguments are not
-specified, :attr:`sys.stdin` and :attr:`sys.stdout` will be used respectively::
+specified, :attr:`sys.stdin` and :attr:`sys.stdout` will be used respectively:
+
+.. code-block:: shell-session
 
     $ echo '{"json": "obj"}' | python -m json.tool
     {
@@ -688,7 +682,9 @@ Command line options
 
 .. cmdoption:: infile
 
-   The JSON file to be validated or pretty-printed::
+   The JSON file to be validated or pretty-printed:
+
+   .. code-block:: shell-session
 
       $ python -m json.tool mp_films.json
       [

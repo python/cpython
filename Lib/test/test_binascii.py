@@ -198,6 +198,11 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(s, u)
         self.assertRaises(binascii.Error, binascii.a2b_hex, t[:-1])
         self.assertRaises(binascii.Error, binascii.a2b_hex, t[:-1] + b'q')
+        self.assertRaises(binascii.Error, binascii.a2b_hex, bytes([255, 255]))
+        self.assertRaises(binascii.Error, binascii.a2b_hex, b'0G')
+        self.assertRaises(binascii.Error, binascii.a2b_hex, b'0g')
+        self.assertRaises(binascii.Error, binascii.a2b_hex, b'G0')
+        self.assertRaises(binascii.Error, binascii.a2b_hex, b'g0')
 
         # Confirm that b2a_hex == hexlify and a2b_hex == unhexlify
         self.assertEqual(binascii.hexlify(self.type2test(s)), t)

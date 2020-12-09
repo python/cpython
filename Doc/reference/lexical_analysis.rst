@@ -571,7 +571,7 @@ that a single backslash followed by a newline is interpreted as those two
 characters as part of the literal, *not* as a line continuation.
 
 
-.. _string-catenation:
+.. _string-concatenation:
 
 String literal concatenation
 ----------------------------
@@ -654,9 +654,11 @@ expression or conversion result.  An empty string is passed when the
 format specifier is omitted.  The formatted result is then included in
 the final value of the whole string.
 
-Top-level format specifiers may include nested replacement fields.
-These nested fields may include their own conversion fields and
-format specifiers, but may not include more deeply-nested replacement fields.
+Top-level format specifiers may include nested replacement fields. These nested
+fields may include their own conversion fields and :ref:`format specifiers
+<formatspec>`, but may not include more deeply-nested replacement fields. The
+:ref:`format specifier mini-language <formatspec>` is the same as that used by
+the string .format() method.
 
 Formatted string literals may be concatenated, but replacement fields
 cannot be split across literals.
@@ -674,7 +676,7 @@ Some examples of formatted string literals::
    >>> f"result: {value:{width}.{precision}}"  # nested fields
    'result:      12.35'
    >>> today = datetime(year=2017, month=1, day=27)
-   >>> f"{today:%b %d, %Y}"  # using date format specifier
+   >>> f"{today:%B %d, %Y}"  # using date format specifier
    'January 27, 2017'
    >>> number = 1024
    >>> f"{number:#0x}"  # using integer format specifier

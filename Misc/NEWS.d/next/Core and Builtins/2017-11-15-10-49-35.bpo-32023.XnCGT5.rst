@@ -1,3 +1,0 @@
-SyntaxError is now correctly raised when a generator expression without
-parenthesis is used instead of an inheritance list in a class definition.
-The duplication of the parentheses can be omitted only on calls.

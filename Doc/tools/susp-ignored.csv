@@ -259,12 +259,8 @@ tutorial/stdlib2,,:start,extra = data[start:start+extra_size]
 tutorial/stdlib2,,:start,"fields = struct.unpack('<IIIHH', data[start:start+16])"
 tutorial/stdlib2,,:start,filename = data[start:start+filenamesize]
 tutorial/stdlib2,,:Warning,WARNING:root:Warning:config file server.conf not found
-using/cmdline,,:category,action:message:category:module:line
 using/cmdline,,:errorhandler,:errorhandler
-using/cmdline,,:line,action:message:category:module:line
 using/cmdline,,:line,file:line: category: message
-using/cmdline,,:message,action:message:category:module:line
-using/cmdline,,:module,action:message:category:module:line
 using/unix,,:Packaging,https://en.opensuse.org/Portal:Packaging
 whatsnew/2.0,,:len,
 whatsnew/2.3,,::,
@@ -302,6 +298,20 @@ whatsnew/3.2,,:prefix,zope-conf = ${custom:prefix}/etc/zope.conf
 library/re,,`,!#$%&'*+-.^_`|~:
 library/re,,`,!\#\$%\&'\*\+\-\.\^_`\|\~:
 library/tarfile,,:xz,'x:xz'
+library/warnings,,:message,action:message:category:module:line
+library/warnings,,:category,action:message:category:module:line
+library/warnings,,:module,action:message:category:module:line
+library/warnings,,:line,action:message:category:module:line
+library/warnings,,::,error::ResourceWarning
+library/warnings,,::,default::DeprecationWarning
+library/warnings,,::,default:::mymodule
+library/warnings,,:mymodule,default:::mymodule
+library/warnings,,::,error:::mymodule
+library/warnings,,:mymodule,error:::mymodule
+library/warnings,,::,ignore::DeprecationWarning
+library/warnings,,::,ignore::PendingDeprecationWarning
+library/warnings,,::,ignore::ImportWarning
+library/warnings,,::,ignore::ResourceWarning
 library/xml.etree.elementtree,,:sometag,prefix:sometag
 library/xml.etree.elementtree,,:fictional,"<actors xmlns:fictional=""http://characters.example.com"""
 library/xml.etree.elementtree,,:character,<fictional:character>Lancelot</fictional:character>
@@ -327,3 +337,7 @@ whatsnew/changelog,,:end,str[start:end]
 library/binascii,,`,'`'
 library/uu,,`,'`'
 whatsnew/3.7,,`,'`'
+whatsnew/3.7,,::,error::BytesWarning
+whatsnew/changelog,,::,error::BytesWarning
+whatsnew/changelog,,::,default::BytesWarning
+whatsnew/changelog,,::,default::DeprecationWarning

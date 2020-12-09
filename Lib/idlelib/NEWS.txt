@@ -1,7 +1,26 @@
-What's New in IDLE 3.7.0
+What's New in IDLE 3.7.0 (since 3.6.0)
 Released on 2018-06-18?
-========================
+======================================
 
+
+bpo-32916: Change 'str' to 'code' in idlelib.pyparse and users.
+
+bpo-32905: Remove unused code in pyparse module.
+
+bpo-32874: IDLE - add pyparse tests with 97% coverage.
+
+bpo-32837: IDLE - require encoding argument for textview.view_file.
+Using the system and place-dependent default encoding for open()
+is a bad idea for IDLE's system and location-independent files.
+
+bpo-32826: Add "encoding=utf-8" to open() in IDLE's test_help_about.
+GUI test test_file_buttons() only looks at initial ascii-only lines,
+but failed on systems where open() defaults to 'ascii' because
+readline() internally reads and decodes far enough ahead to encounter
+a non-ascii character in CREDITS.txt.
+
+bpo-32765: Update configdialog General tab create page docstring.
+Add new widgets to the widget list.
 
 bpo-32207: Improve tk event exception tracebacks in IDLE.
 When tk event handling is driven by IDLE's run loop, a confusing
@@ -20,7 +39,7 @@ bpo-31860: The font sample in the settings dialog is now editable.
 Edits persist while IDLE remains open.
 Patch by Serhiy Storchake and Terry Jan Reedy.
 
-bpo-31858: Restrict shell prompt manipulaton to the shell.
+bpo-31858: Restrict shell prompt manipulation to the shell.
 Editor and output windows only see an empty last prompt line.  This
 simplifies the code and fixes a minor bug when newline is inserted.
 Sys.ps1, if present, is read on Shell start-up, but is not set or changed.
@@ -84,7 +103,7 @@ bpo-31421: Document how IDLE runs tkinter programs.
 IDLE calls tcl/tk update in the background in order to make live
 interaction and experimentatin with tkinter applications much easier.
 
-bpo-bpo-31414: Fix tk entry box tests by deleting first.
+bpo-31414: Fix tk entry box tests by deleting first.
 Adding to an int entry is not the same as deleting and inserting
 because int('') will fail.  Patch by Terry Jan Reedy.
 
@@ -294,9 +313,9 @@ Issue #28572: Add 10% to coverage of IDLE's test_configdialog.
 Update and augment description of the configuration system.
 
 
-What's New in IDLE 3.6.0
+What's New in IDLE 3.6.0 (since 3.5.0)
 Released on 2016-12-23
-========================
+======================================
 
 - Issue #15308: Add 'interrupt execution' (^C) to Shell menu.
   Patch by Roger Serwy, updated by Bayard Randel.

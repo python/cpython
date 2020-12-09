@@ -74,7 +74,9 @@ interpreter.
 
 Occasionally, a user's environment is so full that the :program:`/usr/bin/env`
 program fails; or there's no env program at all.  In that case, you can try the
-following hack (due to Alex Rezinsky)::
+following hack (due to Alex Rezinsky):
+
+.. code-block:: sh
 
    #! /bin/sh
    """:"
@@ -419,7 +421,7 @@ Python program effectively only uses one CPU, due to the insistence that
 Back in the days of Python 1.5, Greg Stein actually implemented a comprehensive
 patch set (the "free threading" patches) that removed the GIL and replaced it
 with fine-grained locking.  Adam Olsen recently did a similar experiment
-in his `python-safethread <http://code.google.com/p/python-safethread/>`_
+in his `python-safethread <https://code.google.com/archive/p/python-safethread>`_
 project.  Unfortunately, both experiments exhibited a sharp drop in single-thread
 performance (at least 30% slower), due to the amount of fine-grained locking
 necessary to compensate for the removal of the GIL.
