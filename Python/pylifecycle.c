@@ -2739,6 +2739,21 @@ Py_FdIsInteractive(FILE *fp, const char *filename)
 }
 
 
+int
+_Py_FdIsInteractive(FILE *fp, PyObject *filename)
+{
+    if (isatty((int)fileno(fp))) {
+        return 1;
+    }
+    if (!Py_InteractiveFlag) {
+        return 0;
+    }
+    return (filename == NULL) ||
+           (PyUnicode_CompareWithASCIIString(filename, "<stdin>") == 0) ||
+           (PyUnicode_CompareWithASCIIString(filename, "???") == 0);
+}
+
+
 /* Wrappers around sigaction() or signal(). */
 
 PyOS_sighandler_t
