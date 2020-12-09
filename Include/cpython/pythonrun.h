@@ -13,6 +13,11 @@ PyAPI_FUNC(int) PyRun_AnyFileExFlags(
     const char *filename,       /* decoded from the filesystem encoding */
     int closeit,
     PyCompilerFlags *flags);
+PyAPI_FUNC(int) _PyRun_AnyFileObject(
+    FILE *fp,
+    PyObject *filename,
+    int closeit,
+    PyCompilerFlags *flags);
 PyAPI_FUNC(int) PyRun_SimpleFileExFlags(
     FILE *fp,
     const char *filename,       /* decoded from the filesystem encoding */
@@ -29,6 +34,10 @@ PyAPI_FUNC(int) PyRun_InteractiveOneObject(
 PyAPI_FUNC(int) PyRun_InteractiveLoopFlags(
     FILE *fp,
     const char *filename,       /* decoded from the filesystem encoding */
+    PyCompilerFlags *flags);
+PyAPI_FUNC(int) _PyRun_InteractiveLoopObject(
+    FILE *fp,
+    PyObject *filename,
     PyCompilerFlags *flags);
 
 
