@@ -153,6 +153,9 @@ def _type_check(arg, msg, is_argument=True):
         return arg
     if not callable(arg):
         raise TypeError(f"{msg} Got {arg!r:.100}.")
+    if isinstance(arg, _ConcatenateGenericAlias):
+        raise TypeError(f"{arg} is not valid as a type argument "
+                        "except in Callable.")
     return arg
 
 
@@ -965,7 +968,6 @@ class _SpecialGenericAlias(_BaseGenericAlias, _root=True):
     def __ror__(self, right):
         return Union[self, right]
 
-
 class _CallableGenericAlias(_GenericAlias, _root=True):
     def __repr__(self):
         assert self._name == 'Callable'
@@ -1083,7 +1085,12 @@ class _LiteralGenericAlias(_GenericAlias, _root=True):
 
 
 class _ConcatenateGenericAlias(_GenericAlias, _root=True):
-    pass
+
+    def __or__(self, right):
+        return NotImplemented
+
+    def __ror__(self, right):
+        return NotImplemented
 
 
 class Generic:
