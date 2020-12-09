@@ -1,0 +1,3 @@
+When no values are supplied for the ``--with-tcltk-*`` configuration flags,
+use pkg-config to detect the location of Tcl/Tk headers and libraries, used
+to build tkinter.
