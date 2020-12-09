@@ -38,8 +38,6 @@ __all__ = ["altsep", "curdir", "pardir", "sep", "pathsep", "linesep",
            "SEEK_END", "fsencode", "fsdecode", "get_exec_path", "fdopen",
            "extsep"]
 
-VXWORKS = (sys.platform == 'vxworks')
-
 def _exists(name):
     return name in globals()
 
@@ -972,7 +970,7 @@ otherwise return -SIG, where SIG is the signal that killed it. """
     __all__.extend(["spawnlp", "spawnlpe"])
 
 
-if not VXWORKS:
+if sys.platform != 'vxworks':
     # Supply os.popen()
     def popen(cmd, mode="r", buffering=-1):
         if not isinstance(cmd, str):
