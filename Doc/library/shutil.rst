@@ -108,7 +108,8 @@ Directory and files operations
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument.
 
-.. function:: copystat(src, dst, *, follow_symlinks=True)
+.. function:: copystat(src, dst, *, follow_symlinks=True, \
+                       preserve_security_context=False)
 
    Copy the permission bits, last access time, last modification time, and
    flags from *src* to *dst*.  On Linux, :func:`copystat` also copies the
@@ -122,6 +123,10 @@ Directory and files operations
    symbolic links refer to—reading the information from the
    *src* symbolic link, and writing the information to the
    *dst* symbolic link.
+
+    If the optional flag *preserve_security_context* is set, extended
+    attributes in the security namespace are copied as well. By default,
+    attributes like ``security.selinux`` are ignored.
 
    .. note::
 
@@ -155,6 +160,10 @@ Directory and files operations
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument and support for Linux extended attributes.
 
+   .. versionchanged:: 3.10
+      Added *preserve_security_context* argument.
+      Skip xattrs in the security namespace by default.
+
 .. function:: copy(src, dst, *, follow_symlinks=True)
 
    Copies the file *src* to the file or directory *dst*.  *src* and *dst*
@@ -186,7 +195,8 @@ Directory and files operations
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
-.. function:: copy2(src, dst, *, follow_symlinks=True)
+.. function:: copy2(src, dst, *, follow_symlinks=True, \
+                    preserve_security_context=False)
 
    Identical to :func:`~shutil.copy` except that :func:`copy2`
    also attempts to preserve file metadata.
@@ -218,6 +228,10 @@ Directory and files operations
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
+   .. versionchanged:: 3.10
+      Added *preserve_security_context* argument.
+      Skip xattrs in the security namespace by default.
+
 .. function:: ignore_patterns(\*patterns)
 
    This factory function creates a function that can be used as a callable for
@@ -227,7 +241,7 @@ Directory and files operations
 
 .. function:: copytree(src, dst, symlinks=False, ignore=None, \
               copy_function=copy2, ignore_dangling_symlinks=False, \
-              dirs_exist_ok=False)
+              dirs_exist_ok=False, preserve_security_context=False)
 
    Recursively copy an entire directory tree rooted at *src* to a directory
    named *dst* and return the destination directory. *dirs_exist_ok* dictates
@@ -286,6 +300,10 @@ Directory and files operations
    .. versionadded:: 3.8
       The *dirs_exist_ok* parameter.
 
+   .. versionchanged:: 3.10
+      Added *preserve_security_context* argument.
+      Skip xattrs in the security namespace by default.
+
 .. function:: rmtree(path, ignore_errors=False, onerror=None)
 
    .. index:: single: directory; deleting
@@ -334,7 +352,8 @@ Directory and files operations
       .. versionadded:: 3.3
 
 
-.. function:: move(src, dst, copy_function=copy2)
+.. function:: move(src, dst, copy_function=copy2, \
+                   preserve_security_context=False)
 
    Recursively move a file or directory (*src*) to another location (*dst*)
    and return the destination.
@@ -373,6 +392,10 @@ Directory and files operations
 
    .. versionchanged:: 3.9
       Accepts a :term:`path-like object` for both *src* and *dst*.
+
+   .. versionchanged:: 3.10
+      Added *preserve_security_context* argument.
+      Skip xattrs in the security namespace by default.
 
 .. function:: disk_usage(path)
 

@@ -1027,6 +1027,52 @@ class TestCopy(BaseTest, unittest.TestCase):
         shutil._copyxattr(src_link, dst, follow_symlinks=False)
         self.assertEqual(os.getxattr(dst, 'trusted.foo'), b'43')
 
+    @unittest.mock.patch('os.setxattr')
+    @unittest.mock.patch('os.getxattr')
+    @unittest.mock.patch('os.listxattr')
+    def test_copyxattr_preserve_security(
+            self, m_listxattr, m_getxattr, m_setxattr
+    ):
+        tmp_dir = self.mkdtemp()
+        src = os.path.join(tmp_dir, 'foo')
+        write_file(src, 'foo')
+        dst = os.path.join(tmp_dir, 'bar')
+        write_file(dst, 'bar')
+
+        m_listxattr.return_value = ["security.selinux", "user.python"]
+        m_getxattr.return_value = "value"
+
+        # by default do not copy xattr in security namespace
+        shutil.copystat(src, dst)
+        m_getxattr.assert_any_call(
+            src, "user.python", follow_symlinks=True
+        )
+        m_setxattr.assert_any_call(
+            dst, "user.python", "value", follow_symlinks=True
+        )
+        self.assertEqual(m_getxattr.call_count, 1)
+        self.assertEqual(m_setxattr.call_count, 1)
+
+        m_getxattr.reset_mock()
+        m_setxattr.reset_mock()
+
+        # preserve_security_context=True copies all attributes
+        shutil.copystat(src, dst, preserve_security_context=True)
+        m_getxattr.assert_any_call(
+            src, "user.python", follow_symlinks=True
+        )
+        m_setxattr.assert_any_call(
+            dst, "user.python", "value", follow_symlinks=True
+        )
+        m_getxattr.assert_any_call(
+            src, "security.selinux", follow_symlinks=True
+        )
+        m_setxattr.assert_any_call(
+            dst, "security.selinux", "value", follow_symlinks=True
+        )
+        self.assertEqual(m_getxattr.call_count, 2)
+        self.assertEqual(m_setxattr.call_count, 2)
+
     ### shutil.copy
 
     def _copy_file(self, method):
