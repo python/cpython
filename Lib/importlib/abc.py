@@ -401,7 +401,8 @@ class Traversable(Protocol):
         accepted by io.TextIOWrapper.
         """
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def name(self):
         # type: () -> str
         """
