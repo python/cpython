@@ -1056,6 +1056,38 @@ class date:
         "Return day of the week, where Monday == 0 ... Sunday == 6."
         return (self.toordinal() + 6) % 7
 
+    def months(self, date_to):
+        """Compute what months between two dates.
+
+        Arguments:
+        To date object.
+
+        Returns list of tuples.
+        """
+        result = []
+        months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        from_month = self.month
+        from_year = self.year
+        to_month = date_to.month
+        to_year = date_to.year
+        from_index = months.index(from_month)
+        to_index = months.index(to_month)
+        if from_year > to_year:
+            to_year = from_year
+        yrange = range(from_year, to_year + 1)
+        for year in yrange:
+            index = yrange.index(year)
+            if index == 0:
+                for mindex in range(from_month - 1, len(months)):
+                    result.append((year, months[mindex]))
+            elif 0 < index < len(yrange) - 1:
+                for mindex in range(0, len(months)):
+                    result.append((year, months[mindex]))
+            elif index == len(yrange) - 1:
+                for mindex in range(0, to_month):
+                    result.append((year, months[mindex]))
+        return result
+
     # Day-of-the-week and week-of-the-year, according to ISO
 
     def isoweekday(self):
