@@ -112,6 +112,9 @@ PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit,
             return -1;
         }
     }
+    else {
+        filename_obj = NULL;
+    }
     int res = _PyRun_AnyFileObject(fp, filename_obj, closeit, flags);
     Py_XDECREF(filename_obj);
     return res;
