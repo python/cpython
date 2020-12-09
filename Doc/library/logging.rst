@@ -1083,8 +1083,8 @@ functions.
    suitable value.
 
    .. versionchanged:: 3.7
-      The *level* parameter was defaulted to level ``CRITICAL``. See Issue
-      #28524 for more information about this change.
+      The *level* parameter was defaulted to level ``CRITICAL``. See
+      :issue:`28524` for more information about this change.
 
 .. function:: addLevelName(level, levelName)
 
