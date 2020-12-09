@@ -1271,7 +1271,7 @@ SSL sockets also have the following additional methods and attributes:
    this method returns a tuple with each element corresponding to the
    DER-encoded form of the entire certificate as a sequence of bytes.
 
-   .. versionadded:: 3.9
+   .. versionadded:: 3.10
 
    .. warning::
       This is not a verified chain. See :meth:`ssl.SSLSocket.get_verified_chain`.
@@ -1288,7 +1288,7 @@ SSL sockets also have the following additional methods and attributes:
    this method returns a tuple with each element corresponding to the
    DER-encoded form of the entire certificate as a sequence of bytes.
 
-   .. versionadded:: 3.9
+   .. versionadded:: 3.10
 
    .. note::
      This features requires OpenSSL 1.1.0 or newer.
