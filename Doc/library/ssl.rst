@@ -639,7 +639,7 @@ Constants
    Possible value for :attr:`SSLContext.verify_flags` to enables proxy
    certificate verification.
 
-   .. versionadded:: 3.9
+   .. versionadded:: 3.10
 
 .. data:: VERIFY_X509_TRUSTED_FIRST
 
