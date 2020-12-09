@@ -1133,12 +1133,12 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
         with self.assertRaises(KeyError) as cm:
             os.environ[missing]
-        self.assertIs(cm.exception.args[0], missing)
+        self.assertIn(missing, cm.exception.args[0])
         self.assertTrue(cm.exception.__suppress_context__)
 
         with self.assertRaises(KeyError) as cm:
             del os.environ[missing]
-        self.assertIs(cm.exception.args[0], missing)
+        self.assertIn(missing, cm.exception.args[0])
         self.assertTrue(cm.exception.__suppress_context__)
 
     def _test_environ_iteration(self, collection):
