@@ -724,41 +724,44 @@ class PosixTester(unittest.TestCase):
         chown_func(first_param, uid, -1)
         check_stat(uid, gid)
 
-        if uid == 0:
-            # Try an amusingly large uid/gid to make sure we handle
-            # large unsigned values.  (chown lets you use any
-            # uid/gid you like, even if they aren't defined.)
-            #
-            # This problem keeps coming up:
-            #   http://bugs.python.org/issue1747858
-            #   http://bugs.python.org/issue4591
-            #   http://bugs.python.org/issue15301
-            # Hopefully the fix in 4591 fixes it for good!
-            #
-            # This part of the test only runs when run as root.
-            # Only scary people run their tests as root.
+        # On VxWorks root user id is 1 and 0 means no login user. It also
+        # allows non-root user to chown() to root.
+        if sys.platform != "vxworks":
+            if uid == 0:
+                # Try an amusingly large uid/gid to make sure we handle
+                # large unsigned values.  (chown lets you use any
+                # uid/gid you like, even if they aren't defined.)
+                #
+                # This problem keeps coming up:
+                #   http://bugs.python.org/issue1747858
+                #   http://bugs.python.org/issue4591
+                #   http://bugs.python.org/issue15301
+                # Hopefully the fix in 4591 fixes it for good!
+                #
+                # This part of the test only runs when run as root.
+                # Only scary people run their tests as root.
 
-            big_value = 2**31
-            chown_func(first_param, big_value, big_value)
-            check_stat(big_value, big_value)
-            chown_func(first_param, -1, -1)
-            check_stat(big_value, big_value)
-            chown_func(first_param, uid, gid)
-            check_stat(uid, gid)
-        elif platform.system() in ('HP-UX', 'SunOS'):
-            # HP-UX and Solaris can allow a non-root user to chown() to root
-            # (issue #5113)
-            raise unittest.SkipTest("Skipping because of non-standard chown() "
-                                    "behavior")
-        else:
-            # non-root cannot chown to root, raises OSError
-            self.assertRaises(OSError, chown_func, first_param, 0, 0)
-            check_stat(uid, gid)
-            self.assertRaises(OSError, chown_func, first_param, 0, -1)
-            check_stat(uid, gid)
-            if 0 not in os.getgroups():
-                self.assertRaises(OSError, chown_func, first_param, -1, 0)
+                big_value = 2**31
+                chown_func(first_param, big_value, big_value)
+                check_stat(big_value, big_value)
+                chown_func(first_param, -1, -1)
+                check_stat(big_value, big_value)
+                chown_func(first_param, uid, gid)
                 check_stat(uid, gid)
+            elif platform.system() in ('HP-UX', 'SunOS'):
+                # HP-UX and Solaris can allow a non-root user to chown() to root
+                # (issue #5113)
+                raise unittest.SkipTest("Skipping because of non-standard chown() "
+                                        "behavior")
+            else:
+                # non-root cannot chown to root, raises OSError
+                self.assertRaises(OSError, chown_func, first_param, 0, 0)
+                check_stat(uid, gid)
+                self.assertRaises(OSError, chown_func, first_param, 0, -1)
+                check_stat(uid, gid)
+                if 0 not in os.getgroups():
+                    self.assertRaises(OSError, chown_func, first_param, -1, 0)
+                    check_stat(uid, gid)
         # test illegal types
         for t in str, float:
             self.assertRaises(TypeError, chown_func, first_param, t(uid), gid)
