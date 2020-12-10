@@ -632,8 +632,10 @@ class NonCallableMock(Base):
             raise AttributeError(name)
         if not self._mock_unsafe:
             if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')):
-                raise AttributeError("Attributes cannot start with 'assert' "
-                                     "or its misspellings")
+                raise AttributeError(
+                    "%r is not a valid assertion. "
+                    "Use a spec for the mock if %r is meant to be an attribute."
+                    % (name, name))
 
         result = self._mock_children.get(name)
         if result is _deleted:
