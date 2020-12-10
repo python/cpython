@@ -4,8 +4,8 @@
 # environment
 
 import ftplib
-import asyncore
-import asynchat
+from test.support import asyncore
+from test.support import asynchat
 import socket
 import io
 import errno

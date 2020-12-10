@@ -42,7 +42,9 @@ import sys
 import tempfile
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import support
+from test.support import asyncore
 from test.support import os_helper
+from test.support import smtpd
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
@@ -54,9 +56,7 @@ import unittest
 import warnings
 import weakref
 
-import asyncore
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import smtpd
 from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)

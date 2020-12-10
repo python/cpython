@@ -4,6 +4,7 @@ import sys
 import unittest
 import unittest.mock
 from test import support
+from test.support import asyncore
 from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
@@ -20,7 +21,6 @@ import pprint
 import urllib.request
 import threading
 import traceback
-import asyncore
 import weakref
 import platform
 import sysconfig
