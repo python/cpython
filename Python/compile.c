@@ -6439,6 +6439,28 @@ optimize_cfg(struct assembler *a, PyObject *consts)
             b->b_iused = 0;
        }
     }
+    /* Delete jump instructions made redundant by previous step. If a non-empty
+       block ends with a jump instruction, check if the next non-empty block
+       reached through normal flow control is the target of that jump. If it
+       is, then the jump instruction is redundant and can be deleted.
+    */
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        if (b->b_iused > 0) {
+            struct instr *b_last_instr = &b->b_instr[b->b_iused - 1];
+            if (is_jump(b_last_instr)) {
+                basicblock *b_next_act = b->b_next;
+                while (b_next_act != NULL && b_next_act->b_iused == 0) {
+                    /* Next line reqd to prevent assertion failure in stackdepth() */
+                    b_next_act->b_nofallthrough = 0;
+                    b_next_act = b_next_act->b_next;
+                }
+                if (b_last_instr->i_target == b_next_act) {
+                    b->b_iused -= 1;
+                    b->b_nofallthrough = 0;
+                }
+            }
+        }
+    }
     minimize_lineno_table(a);
     return 0;
 }
