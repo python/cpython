@@ -156,13 +156,14 @@ error:
     return NULL;
 }
 
-// isinstance(obj, TypeVar) without importing typing.py.
+// isinstance(obj, (TypeVar, ParamSpec)) without importing typing.py.
 // Returns -1 for errors.
 static int
 is_typevar(PyObject *obj)
 {
     PyTypeObject *type = Py_TYPE(obj);
-    if (strcmp(type->tp_name, "TypeVar") != 0) {
+    if ((strcmp(type->tp_name, "TypeVar") & 
+         strcmp(type->tp_name, "ParamSpec")) != 0) {
         return 0;
     }
     PyObject *module = PyObject_GetAttrString((PyObject *)type, "__module__");

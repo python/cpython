@@ -4266,17 +4266,17 @@ class ParamSpecTests(BaseTestCase):
         T = TypeVar('T')
         C1 = Callable[P, int]
         self.assertEqual(C1.__args__, (P, int))
-        self.assertEqual(C1.__parameters__, ())
+        self.assertEqual(C1.__parameters__, (P,))
         C2 = Callable[P, T]
         self.assertEqual(C2.__args__, (P, T))
-        self.assertEqual(C2.__parameters__, (T,))
+        self.assertEqual(C2.__parameters__, (P, T))
         # Test collections.abc.Callable too.
         C3 = collections.abc.Callable[P, int]
         self.assertEqual(C3.__args__, (P, int))
-        self.assertEqual(C3.__parameters__, ())
+        self.assertEqual(C3.__parameters__, (P,))
         C4 = collections.abc.Callable[P, T]
         self.assertEqual(C4.__args__, (P, T))
-        self.assertEqual(C4.__parameters__, (T,))
+        self.assertEqual(C4.__parameters__, (P, T))
 
         # ParamSpec instances should also have args and kwargs attributes.
         self.assertIn('args', dir(P))
@@ -4306,7 +4306,7 @@ class ParamSpecTests(BaseTestCase):
         self.assertNotEqual(Union[P1, int], Union[P1])
         self.assertNotEqual(Union[P1, int], Union[int])
         self.assertEqual(Union[P1, int].__args__, (P1, int))
-        self.assertEqual(Union[P1, int].__parameters__, ())
+        self.assertEqual(Union[P1, int].__parameters__, (P1,))
         self.assertIs(Union[P1, int].__origin__, Union)
 
     def test_repr(self):
@@ -4352,18 +4352,18 @@ class ConcatenateTests(BaseTestCase):
         T = TypeVar('T')
         C1 = Callable[Concatenate[int, P], int]
         self.assertEqual(C1.__args__, (Concatenate[int, P], int))
-        self.assertEqual(C1.__parameters__, ())
+        self.assertEqual(C1.__parameters__, (P,))
         C2 = Callable[Concatenate[int, T, P], T]
         self.assertEqual(C2.__args__, (Concatenate[int, T, P], T))
-        self.assertEqual(C2.__parameters__, (T,))
+        self.assertEqual(C2.__parameters__, (T, P))
 
         # Test collections.abc.Callable too.
         C3 = collections.abc.Callable[Concatenate[int, P], int]
         self.assertEqual(C3.__args__, (Concatenate[int, P], int))
-        self.assertEqual(C3.__parameters__, ())
+        self.assertEqual(C3.__parameters__, (P,))
         C4 = collections.abc.Callable[Concatenate[int, T, P], T]
         self.assertEqual(C4.__args__, (Concatenate[int, T, P], T))
-        self.assertEqual(C4.__parameters__, (T,))
+        self.assertEqual(C4.__parameters__, (T, P))
 
 
 class AllTests(BaseTestCase):

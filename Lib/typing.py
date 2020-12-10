@@ -180,14 +180,14 @@ def _type_repr(obj):
 
 
 def _collect_type_vars(types):
-    """Collect all type variable contained in types in order of
-    first appearance (lexicographic order). For example::
+    """Collect all type variable and parameter specification variables contained
+    in types in order of first appearance (lexicographic order). For example::
 
         _collect_type_vars((T, List[S, T])) == (T, S)
     """
     tvars = []
     for t in types:
-        if isinstance(t, TypeVar) and t not in tvars:
+        if isinstance(t, (TypeVar, ParamSpec)) and t not in tvars:
             tvars.append(t)
         if isinstance(t, (_GenericAlias, GenericAlias)):
             tvars.extend([t for t in t.__parameters__ if t not in tvars])
@@ -529,10 +529,7 @@ def Concatenate(self, parameters):
 
        Callable[Concatenate[int, P], int]
 
-    .. seealso::
-
-       :pep:`612` -- Parameter Specification Variables
-
+    See PEP 612 for detailed information.
     """
     if parameters == ():
         raise TypeError("Cannot take a Concatenate of no types.")
@@ -1008,8 +1005,9 @@ class _CallableType(_SpecialGenericAlias, _root=True):
             params = (Ellipsis, result)
         else:
             if not isinstance(args, (list, ParamSpec, _ConcatenateGenericAlias)):
-                raise TypeError(f"Callable[args, result]: args must be a list."
-                                f" Got {args}")
+                raise TypeError(f"Callable[args, result]: args must be a list, "
+                                f"ParamSpec or Concatenate. "
+                                f"Got {args}")
             if isinstance(args, list):
                 params = (tuple(args), result)
         return self.__getitem_inner__(params)
@@ -1092,12 +1090,7 @@ class _LiteralGenericAlias(_GenericAlias, _root=True):
 
 
 class _ConcatenateGenericAlias(_GenericAlias, _root=True):
-
-    def __or__(self, right):
-        return NotImplemented
-
-    def __ror__(self, right):
-        return NotImplemented
+    pass
 
 
 class Generic:
