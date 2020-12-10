@@ -352,7 +352,7 @@ termios_tcgetwinsize_impl(PyObject *module, int fd)
 #else
     PyErr_SetString(PyExc_NotImplementedError, "termios.TIOCGWINSZ undefined");
     return NULL;
-#endif /* TIOCGWINSZ */
+#endif /* defined(TIOCGWINSZ) */
 }
 
 /*[clinic input]
@@ -372,7 +372,7 @@ static PyObject *
 termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
 /*[clinic end generated code: output=2ac3c9bb6eda83e1 input=c495180b2b932a30]*/
 {
-#if defined(TIOCSWINSZ)
+#if defined(TIOCGWINSZ) && defined(TIOCSWINSZ)
     if (!PyList_Check(winsz) || PyList_Size(winsz) != 2) {
         PyErr_SetString(PyExc_TypeError,
                      "tcsetwinsize, arg 2: must be 2 element list");
@@ -381,6 +381,11 @@ termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
 
     termiosmodulestate *state = PyModule_GetState(module);
     struct winsize w;
+    /* Get the old winsize, in case there are
+       more fields such as xpixel, ypixel */
+    if (ioctl(fd, TIOCGWINSZ, &w) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
 
     w.ws_row = (unsigned short) PyLong_AsLong(PyList_GetItem(winsz, 0));
     w.ws_col = (unsigned short) PyLong_AsLong(PyList_GetItem(winsz, 1));
@@ -394,9 +399,10 @@ termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
 
     Py_RETURN_NONE;
 #else
-    PyErr_SetString(PyExc_NotImplementedError, "termios.TIOCSWINSZ undefined");
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "termios.TIOCGWINSZ and/or termios.TIOCSWINSZ undefined");
     return NULL;
-#endif /* TIOCSWINSZ */
+#endif /* defined(TIOCGWINSZ) && defined(TIOCSWINSZ) */
 }
 
 static PyMethodDef termios_methods[] =
