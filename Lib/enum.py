@@ -136,7 +136,7 @@ class _EnumDict(dict):
                 key = '_order_'
         elif key in self._member_names:
             # descriptor overwriting an enum?
-            raise TypeError('Attempted to reuse key: %r' % key)
+            raise TypeError('%r already defined as: %r' % (key, self[key]))
         elif key in self._ignore:
             pass
         elif not _is_descriptor(value):
@@ -156,6 +156,16 @@ class _EnumDict(dict):
             self._member_names.append(key)
             self._last_values.append(value)
         super().__setitem__(key, value)
+
+    def update(self, members, **more_members):
+        try:
+            for name in members.keys():
+                self[name] = members[name]
+        except AttributeError:
+            for name, value in members:
+                self[name] = value
+        for name, value in more_members.items():
+            self[name] = value
 
 
 # Dummy value for Enum as EnumMeta explicitly checks for it, but of course
