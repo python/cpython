@@ -407,65 +407,52 @@ asynccallawaitable_iternext(asynccallawaitableobject *obj)
 {
     PyObject *result;
     PyObject *type, *value, *traceback;
+    PyObject *stop_value = NULL;
 
-    // result = PyIter_Next(obj->wrapped_iter);
+    if (obj->it->it_sentinel == NULL) {
+        return PyErr_Format(PyExc_TypeError, "'%.200s' object is already exhausted", obj->it);
+    }
+
     result = (*Py_TYPE(obj->wrapped_iter)->tp_iternext)(obj->wrapped_iter);
 
     if (result != NULL) {
-        PyObject_Print(result, stdout, 0);
-        printf("result was not null!\n");
         return result;
     }
 
     if (PyErr_Occurred() == NULL) {
         PyErr_SetString(PyExc_AssertionError, "No exception set");
         return NULL;
-        // PyErr_SetObject(PyExc_StopAsyncIteration, obj->it->it_sentinel);
-        // return NULL;
     } else if (PyErr_ExceptionMatches(PyExc_StopIteration) == 0) {
-        PyObject_Print(value, stdout, 0);
-        printf("Was not Stop\n");
-        Py_DECREF(type);
-        Py_DECREF(traceback);
-        Py_DECREF(value);
         return result;
     }
 
     PyErr_Fetch(&type, &value, &traceback);
+    PyErr_NormalizeException(&type, &value, &traceback);
 
-    // result = PyObject_GetAttrString(value, "value");
-    // Py_DECREF(type);
-    // Py_DECREF(traceback);
-    // Py_DECREF(value);
-    if (value == NULL) {
+    if (value != NULL) {
+        stop_value = PyObject_GetAttrString(value, "value");
+    }
+
+    if (stop_value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Coroutine iterator raised StopIteration without value");
-        return NULL;
+        goto raise;
     }
 
-    if (obj->it->it_sentinel == NULL) {
-        return PyErr_Format(PyExc_TypeError, "'%.200s' object is already exhausted", obj->it);
-    }
-
-    int ok = PyObject_RichCompareBool(obj->it->it_sentinel, value, Py_EQ);
+    int ok = PyObject_RichCompareBool(obj->it->it_sentinel, stop_value, Py_EQ);
+    Py_DECREF(stop_value);
     if (ok == 0) {
-        Py_DECREF(value);
-        PyErr_SetObject(PyExc_StopIteration, value);
+        PyErr_Restore(type, value, traceback);
         return NULL;
     }
 
     Py_CLEAR(obj->it->it_callable);
     Py_CLEAR(obj->it->it_sentinel);
+    PyErr_SetNone(PyExc_StopAsyncIteration);
 
-    // value = _PyObject_New((PyTypeObject *) PyExc_StopAsyncIteration);
-    // if (value == NULL) {
-    //     return NULL;
-    // }
-
-    /*
-    if (-1 == PyObject_SetAttrString(value, "value", result)) {
-        return NULL;
-    } */
-    PyErr_SetObject(PyExc_StopAsyncIteration, value);
+raise:
+    Py_XDECREF(value);
+    Py_XDECREF(type);
+    Py_XDECREF(traceback);
     return NULL;
 }
 
