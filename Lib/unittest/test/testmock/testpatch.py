@@ -1678,7 +1678,7 @@ class PatchTest(unittest.TestCase):
             getter, attribute = _get_target(target)
             return custom_patch(
                 getter, attribute, DEFAULT, None, False, None,
-                None, None, {}
+                None, None, False, {}
             )
 
         @with_custom_patch('squizz.squozz')
@@ -1810,7 +1810,7 @@ class PatchTest(unittest.TestCase):
                     stopped.append(attribute)
                     return super(mypatch, self).stop()
             return mypatch(lambda: thing, attribute, None, None,
-                           False, None, None, None, {})
+                           False, None, None, None, False, {})
         [get_patch(val).start() for val in ("one", "two", "three")]
         patch.stopall()
 

@@ -654,8 +654,8 @@ class NonCallableMock(Base):
 
         elif isinstance(result, _SpecState):
             result = create_autospec(
-                result.spec, result.spec_set, result.instance,
-                result.parent, result.name
+                result.spec, spec_set=result.spec_set, instance=result.instance,
+                _parent=result.parent, _name=result.name
             )
             self._mock_children[name]  = result
 
@@ -1242,6 +1242,17 @@ def _importer(target):
     return thing
 
 
+# _check_spec_arg_typos takes kwargs from commands like patch and checks that
+# they don't contain common misspellings of arguments related to autospeccing.
+def _check_spec_arg_typos(kwargs_to_check):
+    typos = ["autospect", "auto_spec", "set_spec"]
+    for typo in typos:
+        if typo in kwargs_to_check:
+            raise RuntimeError(
+                f"{typo} might be a typo; use unsafe=True if this is intended"
+            )
+
+
 class _patch(object):
 
     attribute_name = None
@@ -1249,7 +1260,7 @@ class _patch(object):
 
     def __init__(
             self, getter, attribute, new, spec, create,
-            spec_set, autospec, new_callable, kwargs
+            spec_set, autospec, new_callable, unsafe, kwargs
         ):
         if new_callable is not None:
             if new is not DEFAULT:
@@ -1260,6 +1271,8 @@ class _patch(object):
                 raise ValueError(
                     "Cannot use 'autospec' and 'new_callable' together"
                 )
+        if not unsafe:
+            _check_spec_arg_typos(kwargs)
 
         self.getter = getter
         self.attribute = attribute
@@ -1278,7 +1291,7 @@ class _patch(object):
         patcher = _patch(
             self.getter, self.attribute, self.new, self.spec,
             self.create, self.spec_set,
-            self.autospec, self.new_callable, self.kwargs
+            self.autospec, self.new_callable, False, self.kwargs
         )
         patcher.attribute_name = self.attribute_name
         patcher.additional_patchers = [
@@ -1569,7 +1582,7 @@ def _get_target(target):
 def _patch_object(
         target, attribute, new=DEFAULT, spec=None,
         create=False, spec_set=None, autospec=None,
-        new_callable=None, **kwargs
+        new_callable=None, unsafe=False, **kwargs
     ):
     """
     patch the named member (`attribute`) on an object (`target`) with a mock
@@ -1591,7 +1604,7 @@ def _patch_object(
     getter = lambda: target
     return _patch(
         getter, attribute, new, spec, create,
-        spec_set, autospec, new_callable, kwargs
+        spec_set, autospec, new_callable, unsafe, kwargs
     )
 
 
@@ -1631,13 +1644,13 @@ def _patch_multiple(target, spec=None, create=False, spec_set=None,
     attribute, new = items[0]
     patcher = _patch(
         getter, attribute, new, spec, create, spec_set,
-        autospec, new_callable, {}
+        autospec, new_callable, False, {}
     )
     patcher.attribute_name = attribute
     for attribute, new in items[1:]:
         this_patcher = _patch(
             getter, attribute, new, spec, create, spec_set,
-            autospec, new_callable, {}
+            autospec, new_callable, False, {}
         )
         this_patcher.attribute_name = attribute
         patcher.additional_patchers.append(this_patcher)
@@ -1646,7 +1659,7 @@ def _patch_multiple(target, spec=None, create=False, spec_set=None,
 
 def patch(
         target, new=DEFAULT, spec=None, create=False,
-        spec_set=None, autospec=None, new_callable=None, **kwargs
+        spec_set=None, autospec=None, new_callable=None, unsafe=False, **kwargs
     ):
     """
     `patch` acts as a function decorator, class decorator or a context
@@ -1708,6 +1721,10 @@ def patch(
     use "as" then the patched object will be bound to the name after the
     "as"; very useful if `patch` is creating a mock object for you.
 
+    Patch will raise a `RuntimeError` if passed some common misspellings of
+    the arguments autospec and spec_set. Pass the argument `unsafe` with the
+    value True to disable that check.
+
     `patch` takes arbitrary keyword arguments. These will be passed to
     `AsyncMock` if the patched object is asynchronous, to `MagicMock`
     otherwise or to `new_callable` if specified.
@@ -1718,7 +1735,7 @@ def patch(
     getter, attribute = _get_target(target)
     return _patch(
         getter, attribute, new, spec, create,
-        spec_set, autospec, new_callable, kwargs
+        spec_set, autospec, new_callable, unsafe, kwargs
     )
 
 
@@ -2567,8 +2584,8 @@ class _Call(tuple):
 call = _Call(from_kall=False)
 
 
-def create_autospec(spec, spec_set=False, instance=False, _parent=None,
-                    _name=None, **kwargs):
+def create_autospec(spec, spec_set=False, instance=False, unsafe=False,
+                    _parent=None, _name=None, **kwargs):
     """Create a mock object using another object as a spec. Attributes on the
     mock will use the corresponding attribute on the `spec` object as their
     spec.
@@ -2583,6 +2600,10 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
     instance of the class) will have the same spec. You can use a class as the
     spec for an instance object by passing `instance=True`. The returned mock
     will only be callable if instances of the mock are callable.
+
+    `create_autospec` will raise a `RuntimeError` if passed some common
+    misspellings of the arguments autospec and spec_set. Pass the argument
+    `unsafe` with the value True to disable that check.
 
     `create_autospec` also takes arbitrary keyword arguments that are passed to
     the constructor of the created mock."""
@@ -2601,6 +2622,8 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         _kwargs = {}
     if _kwargs and instance:
         _kwargs['_spec_as_instance'] = True
+    if not unsafe:
+        _check_spec_arg_typos(kwargs)
 
     _kwargs.update(kwargs)
 
