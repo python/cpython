@@ -122,12 +122,6 @@ typedef struct {
 #define _PyVarObject_CAST_CONST(op) ((const PyVarObject*)(op))
 
 static inline Py_ssize_t _Py_REFCNT(const PyObject *ob) {
-    extern int _PyObject_IsImmortal(PyObject *);
-    if (_PyObject_IsImmortal((PyObject *)ob)) {
-        // The value is somewhat arbitrary.  It just needs
-        // to be positive and sufficiently far from 0.
-        return 1LL << (8 * sizeof(Py_ssize_t) - 4);
-    }
     return ob->ob_refcnt;
 }
 #define Py_REFCNT(ob) _Py_REFCNT(_PyObject_CAST_CONST(ob))

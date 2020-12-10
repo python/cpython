@@ -377,8 +377,8 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 
 /* An "immortal" object is one for which Py_DECREF() will never try
  * to deallocate it.  To achieve this we set the refcount to some
- * negative value.  To play it safe, we use a value right in the
- * middle of the negative range.
+ * positive value that we would never expect to be reachable through
+ * use of Py_INCREF() in a program.
  */
 
 #ifdef Py_BUILD_CORE
@@ -386,7 +386,10 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 #endif
 
 #ifdef _Py_IMMORTAL_OBJECTS
-#define _PyObject_IMMORTAL_BIT (PY_SSIZE_T_MAX / -4)
+/* The GC bit-shifts refcounts left by two, and after that shift we still
+ * need this to be >> 0, so leave three high zero bits (the sign bit and
+ * room for a shift of two.) */
+#define _PyObject_IMMORTAL_BIT (1LL << (8 * sizeof(Py_ssize_t) - 4))
 
 // We leave plenty of room to preserve _PyObject_IMMORTAL_BIT.
 #define _PyObject_IMMORTAL_INIT_REFCNT \
