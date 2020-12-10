@@ -336,6 +336,7 @@ class ZipInfo (object):
         'external_attr',
         'header_offset',
         'CRC',
+        'orig_filename_crc',
         'compress_size',
         'file_size',
         '_raw_time',
@@ -484,6 +485,13 @@ class ZipInfo (object):
                 except struct.error:
                     raise BadZipFile(f"Corrupt zip64 extra field. "
                                      f"{field} not found.") from None
+            elif tp == 0x7075:
+                data = extra[4:ln+4]
+                # Unicode Path Extra Field
+                up_version, up_name_crc = unpack('<BL', data[:5])
+                up_unicode_name = data[5:].decode('utf-8')
+                if up_version == 1 and up_name_crc == self.orig_filename_crc:
+                    self.filename = up_unicode_name
 
             extra = extra[ln+4:]
 
@@ -1354,6 +1362,7 @@ class ZipFile:
             if self.debug > 2:
                 print(centdir)
             filename = fp.read(centdir[_CD_FILENAME_LENGTH])
+            orig_filename_crc = crc32(filename)
             flags = centdir[5]
             if flags & 0x800:
                 # UTF-8 file names extension
@@ -1378,6 +1387,7 @@ class ZipFile:
             x.date_time = ( (d>>9)+1980, (d>>5)&0xF, d&0x1F,
                             t>>11, (t>>5)&0x3F, (t&0x1F) * 2 )
 
+            x.orig_filename_crc = orig_filename_crc
             x._decodeExtra()
             x.header_offset = x.header_offset + concat
             self.filelist.append(x)
