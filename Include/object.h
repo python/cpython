@@ -121,8 +121,13 @@ typedef struct {
 #define _PyVarObject_CAST(op) ((PyVarObject*)(op))
 #define _PyVarObject_CAST_CONST(op) ((const PyVarObject*)(op))
 
-
 static inline Py_ssize_t _Py_REFCNT(const PyObject *ob) {
+    extern int _PyObject_IsImmortal(PyObject *);
+    if (_PyObject_IsImmortal((PyObject *)ob)) {
+        // The value is somewhat arbitrary.  It just needs
+        // to be positive and sufficiently far from 0.
+        return 1LL << (8 * sizeof(Py_ssize_t) - 4);
+    }
     return ob->ob_refcnt;
 }
 #define Py_REFCNT(ob) _Py_REFCNT(_PyObject_CAST_CONST(ob))
@@ -142,6 +147,10 @@ static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
 
 
 static inline void _Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
+    extern int _PyObject_IsImmortal(PyObject *);
+    if (_PyObject_IsImmortal((PyObject *)ob)) {
+        return;
+    }
     ob->ob_refcnt = refcnt;
 }
 #define Py_SET_REFCNT(ob, refcnt) _Py_SET_REFCNT(_PyObject_CAST(ob), refcnt)
@@ -448,7 +457,10 @@ static inline void _Py_DECREF(
     if (--op->ob_refcnt != 0) {
 #ifdef Py_REF_DEBUG
         if (op->ob_refcnt < 0) {
-            _Py_NegativeRefcount(filename, lineno, op);
+            extern int _PyObject_IsImmortal(PyObject *);
+            if (!_PyObject_IsImmortal(op)) {
+                _Py_NegativeRefcount(filename, lineno, op);
+            }
         }
 #endif
     }
@@ -461,7 +473,6 @@ static inline void _Py_DECREF(
 #else
 #  define Py_DECREF(op) _Py_DECREF(_PyObject_CAST(op))
 #endif
-
 
 /* Safely decref `op` and set `op` to NULL, especially useful in tp_clear
  * and tp_dealloc implementations.

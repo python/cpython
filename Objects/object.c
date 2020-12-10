@@ -136,6 +136,23 @@ Py_DecRef(PyObject *o)
     Py_XDECREF(o);
 }
 
+int
+_PyObject_IsImmortal(PyObject *ob)
+{
+    if ((ob->ob_refcnt & _PyObject_IMMORTAL_BIT) == 0) {
+        return 0;
+    }
+    // Reset it to avoid approaching the boundaries.
+    _PyObject_SetImmortal(ob);
+    return 1;
+}
+
+void
+_PyObject_SetImmortal(PyObject *ob)
+{
+    ob->ob_refcnt = _PyObject_IMMORTAL_INIT_REFCNT;
+}
+
 PyObject *
 PyObject_Init(PyObject *op, PyTypeObject *tp)
 {
@@ -1728,11 +1745,14 @@ _PyTypes_Init(void)
         return status;
     }
 
+    // XXX We can stop calling _PyObject_SetImmortal() once we change
+    // all the static types to use PyVarObject_HEAD_IMMORTAL_INIT.
 #define INIT_TYPE(TYPE, NAME) \
     do { \
         if (PyType_Ready(TYPE) < 0) { \
             return _PyStatus_ERR("Can't initialize " NAME " type"); \
         } \
+        _PyObject_SetImmortal((PyObject *)TYPE); \
     } while (0)
 
     INIT_TYPE(&PyBaseObject_Type, "object");
@@ -1817,7 +1837,9 @@ _Py_NewReference(PyObject *op)
 #ifdef Py_REF_DEBUG
     _Py_RefTotal++;
 #endif
-    Py_SET_REFCNT(op, 1);
+    /* Do not use Py_SET_REFCNT to skip the Immortal Instance check. This
+     * API guarantees that an instance will always be set to a refcnt of 1 */
+    op->ob_refcnt = 1;
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op, 1);
 #endif

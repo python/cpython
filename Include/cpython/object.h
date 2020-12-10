@@ -375,6 +375,32 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
         Py_XDECREF(_py_tmp);                    \
     } while (0)
 
+/* An "immortal" object is one for which Py_DECREF() will never try
+ * to deallocate it.  To achieve this we set the refcount to some
+ * negative value.  To play it safe, we use a value right in the
+ * middle of the negative range.
+ */
+
+#ifdef Py_BUILD_CORE
+#define _Py_IMMORTAL_OBJECTS 1
+#endif
+
+#ifdef _Py_IMMORTAL_OBJECTS
+#define _PyObject_IMMORTAL_BIT (PY_SSIZE_T_MAX / -4)
+
+// We leave plenty of room to preserve _PyObject_IMMORTAL_BIT.
+#define _PyObject_IMMORTAL_INIT_REFCNT \
+    (_PyObject_IMMORTAL_BIT + (_PyObject_IMMORTAL_BIT / 2))
+
+#define _PyObject_HEAD_IMMORTAL_INIT(type) \
+    { _PyObject_EXTRA_INIT _PyObject_IMMORTAL_INIT_REFCNT, type },
+#define _PyVarObject_HEAD_IMMORTAL_INIT(type, size) \
+    { PyObject_HEAD_IMMORTAL_INIT(type) size },
+
+PyAPI_FUNC(int) _PyObject_IsImmortal(PyObject *);
+PyAPI_FUNC(void) _PyObject_SetImmortal(PyObject *);
+#endif
+
 
 PyAPI_DATA(PyTypeObject) _PyNone_Type;
 PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
