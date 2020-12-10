@@ -335,7 +335,7 @@ static void
 asynccallawaitable_dealloc(asynccallawaitableobject *obj)
 {
     _PyObject_GC_UNTRACK(obj);
-    Py_XDECREF(obj->wrapped_awaitable);
+    Py_XDECREF(obj->wrapped_iter);
     Py_XDECREF(obj->it);
     PyObject_GC_Del(obj);
 }
@@ -351,8 +351,8 @@ asynccalliter_traverse(asynccalliterobject *it, visitproc visit, void *arg)
 static int
 asynccallawaitable_traverse(asynccallawaitableobject *obj, visitproc visit, void *arg)
 {
-    Py_VISIT(obj->wrapped_awaitable);
-    PyVISIT(obj->it);
+    Py_VISIT(obj->wrapped_iter);
+    Py_VISIT(obj->it);
     return 0;
 }
 
@@ -360,21 +360,37 @@ static PyObject *
 asynccalliter_anext(asynccalliterobject *it)
 {
     PyObject *obj = NULL, *wrapped_iter = NULL;
+    PyTypeObject *t = NULL;
     asynccallawaitableobject *awaitable;
 
-    if (it->it_callable != NULL) {
-        obj = _PyObject_CallNoArg(it->it_callable);
-        if (!obj) {
+    if (it->it_callable == NULL) {
+        /* Can we raise this at this point, or do we need to return an awaitable
+         * that raises it?
+         */
+        PyObject *value = _PyObject_New((PyTypeObject *) PyExc_StopAsyncIteration);
+        if (value == NULL) {
             return NULL;
         }
+        PyErr_SetObject(PyExc_StopAsyncIteration, value);
+        return NULL;
+    }
+
+    obj = _PyObject_CallNoArg(it->it_callable);
+    if (obj == NULL) {
+        return NULL;
+    }
+
+    t = Py_TYPE(obj);
+    if (t->tp_as_async == NULL || t->tp_as_async->am_await == NULL) {
+        return PyErr_Format(PyExc_TypeError, "'%.200s' object is not awaitable", obj);
     }
     
-    wrapped_iter = (*Py_TYPE(obj)->tp_as_async->am_await)(obj);
+    wrapped_iter = (*t->tp_as_async->am_await)(obj);
 
     awaitable = PyObject_GC_New(
         asynccallawaitableobject,
         &PyAsyncCallAwaitable_Type);
-    if (!awaitable) {
+    if (awaitable == NULL) {
         return NULL;
     }
 
@@ -382,7 +398,8 @@ asynccalliter_anext(asynccalliterobject *it)
     awaitable->it = it;
     awaitable->wrapped_iter = wrapped_iter;
 
-    return NULL;
+    _PyObject_GC_TRACK(awaitable);
+    return (PyObject *) awaitable;
 }
 
 static PyObject *
@@ -391,37 +408,64 @@ asynccallawaitable_iternext(asynccallawaitableobject *obj)
     PyObject *result;
     PyObject *type, *value, *traceback;
 
-    result = PyIter_Next(obj->wrapped_iter);
+    // result = PyIter_Next(obj->wrapped_iter);
+    result = (*Py_TYPE(obj->wrapped_iter)->tp_iternext)(obj->wrapped_iter);
 
-    if (!PyErr_ExceptionMatches(&PyExc_StopIteration)) {
+    if (result != NULL) {
+        PyObject_Print(result, stdout, 0);
+        printf("result was not null!\n");
         return result;
     }
-    result = NULL;
+
+    if (PyErr_Occurred() == NULL) {
+        PyErr_SetString(PyExc_AssertionError, "No exception set");
+        return NULL;
+        // PyErr_SetObject(PyExc_StopAsyncIteration, obj->it->it_sentinel);
+        // return NULL;
+    } else if (PyErr_ExceptionMatches(PyExc_StopIteration) == 0) {
+        PyObject_Print(value, stdout, 0);
+        printf("Was not Stop\n");
+        Py_DECREF(type);
+        Py_DECREF(traceback);
+        Py_DECREF(value);
+        return result;
+    }
 
     PyErr_Fetch(&type, &value, &traceback);
-    result = PyObject_GetAttrString(value, "value");
-    Py_DECREF(type);
-    Py_DECREF(traceback);
-    Py_DECREF(value);
-    if (!result) {
-        PyErr_SetString(&PyExc_TypeError, "Coroutine iterator raised StopIteration without value");
+
+    // result = PyObject_GetAttrString(value, "value");
+    // Py_DECREF(type);
+    // Py_DECREF(traceback);
+    // Py_DECREF(value);
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError, "Coroutine iterator raised StopIteration without value");
         return NULL;
     }
 
+    if (obj->it->it_sentinel == NULL) {
+        return PyErr_Format(PyExc_TypeError, "'%.200s' object is already exhausted", obj->it);
+    }
 
-    int ok = PyObject_RichCompareBool(obj->it->it_sentinel, result, Py_EQ);
+    int ok = PyObject_RichCompareBool(obj->it->it_sentinel, value, Py_EQ);
     if (ok == 0) {
-        Py_DECREF(result);
+        Py_DECREF(value);
+        PyErr_SetObject(PyExc_StopIteration, value);
         return NULL;
     }
-
 
     Py_CLEAR(obj->it->it_callable);
     Py_CLEAR(obj->it->it_sentinel);
 
-    // value = ...
-    PyErr_SetObject(&PyExc_StopAsyncIteration, value)
+    // value = _PyObject_New((PyTypeObject *) PyExc_StopAsyncIteration);
+    // if (value == NULL) {
+    //     return NULL;
+    // }
 
+    /*
+    if (-1 == PyObject_SetAttrString(value, "value", result)) {
+        return NULL;
+    } */
+    PyErr_SetObject(PyExc_StopAsyncIteration, value);
     return NULL;
 }
 
@@ -490,6 +534,12 @@ static PyAsyncMethods async_awaitable_as_async = {
     0,                                          /* am_send  */
 };
 
+static PyMethodDef async_awaitable_methods[] = {
+    // TODO...
+    {"__reduce__", (PyCFunction)asynccalliter_reduce, METH_NOARGS, reduce_doc},
+    {NULL,              NULL}           /* sentinel */
+};
+
 PyTypeObject PyAsyncCallAwaitable_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "callable_async_awaitable",                 /* tp_name */
@@ -518,7 +568,7 @@ PyTypeObject PyAsyncCallAwaitable_Type = {
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    wrapped_awaitable_methods,                  /* tp_methods */
+    (unaryfunc)asynccallawaitable_iternext,     /* tp_iternext */
+    async_awaitable_methods,                  /* tp_methods */
 };
 

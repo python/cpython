@@ -422,12 +422,23 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         async def gen():
             yield 1
             yield 2
-            yield None
+            yield 3
         g = gen()
         async def foo():
             return await operator.anext(g)
         async def consume():
-            return [i async for i in operator.aiter(foo, None)]
+            return [i async for i in aiter(foo, 3)]
+        res = self.loop.run_until_complete(consume())
+        self.assertEqual(res, [1, 2])
+
+    def test_async_aiter_callable(self):
+        v = 0
+        async def foo():
+            nonlocal v
+            v += 1
+            return v
+        async def consume():
+            return [i async for i in aiter(foo, 3)]
         res = self.loop.run_until_complete(consume())
         self.assertEqual(res, [1, 2])
 

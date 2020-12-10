@@ -8,6 +8,7 @@ extern "C" {
 PyAPI_DATA(PyTypeObject) PySeqIter_Type;
 PyAPI_DATA(PyTypeObject) PyCallIter_Type;
 PyAPI_DATA(PyTypeObject) PyCallAiter_Type;
+PyAPI_DATA(PyTypeObject) PyAsyncCallAwaitable_Type;
 
 #define PySeqIter_Check(op) Py_IS_TYPE(op, &PySeqIter_Type)
 
