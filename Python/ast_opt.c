@@ -593,6 +593,10 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case Constant_kind:
         // Already a constant, nothing further to do
         break;
+    case MatchAs_kind:
+    case MatchOr_kind:
+        // These can't occur outside of patterns.
+        Py_UNREACHABLE();
     // No default case, so the compiler will emit a warning if new expression
     // kinds are added without being handled here
     }
