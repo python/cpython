@@ -1574,7 +1574,6 @@ class GenericTests(BaseTestCase):
 
     def test_subscripted_generics_as_proxies(self):
         T = TypeVar('T')
-        
         class C(Generic[T]):
             x = 'def'
         self.assertEqual(C[int].x, 'def')
@@ -1707,7 +1706,6 @@ class GenericTests(BaseTestCase):
         self.assertEqual(Callable[..., Meta].__args__, (Ellipsis, Meta))
 
     def test_generic_hashes(self):
-        
         class A(Generic[T]):
             ...
 
@@ -1895,8 +1893,6 @@ class GenericTests(BaseTestCase):
     def test_pickle(self):
         global C  # pickle wants to reference the class by name
         T = TypeVar('T')
-        global P
-        
 
         class B(Generic[T]):
             pass
@@ -1931,7 +1927,6 @@ class GenericTests(BaseTestCase):
 
     def test_copy_and_deepcopy(self):
         T = TypeVar('T')
-        
         class Node(Generic[T]): ...
         things = [Union[T, int], Tuple[T, int], Callable[..., T], Callable[[int], int],
                   Tuple[Any, Any], Node[T], Node[int], Node[Any], typing.Iterable[T],
@@ -1964,10 +1959,7 @@ class GenericTests(BaseTestCase):
 
     def test_copy_generic_instances(self):
         T = TypeVar('T')
-        
-
         class C(Generic[T]):
-            f: Callable[P, int]
             def __init__(self, attr: T) -> None:
                 self.attr = attr
 
@@ -1999,8 +1991,6 @@ class GenericTests(BaseTestCase):
 
     def test_parameterized_slots(self):
         T = TypeVar('T')
-        
-
         class C(Generic[T]):
             __slots__ = ('potato',)
 
@@ -2020,8 +2010,6 @@ class GenericTests(BaseTestCase):
 
     def test_parameterized_slots_dict(self):
         T = TypeVar('T')
-        
-
         class D(Generic[T]):
             __slots__ = {'banana': 42}
 
@@ -2043,8 +2031,6 @@ class GenericTests(BaseTestCase):
                 pass
 
     def test_repr_2(self):
-        
-
         class C(Generic[T]):
             pass
 
@@ -2081,7 +2067,6 @@ class GenericTests(BaseTestCase):
         self.assertNotEqual(A[T], B[T])
 
     def test_multiple_inheritance(self):
-        
 
         class A(Generic[T, VT]):
             pass
@@ -2096,8 +2081,6 @@ class GenericTests(BaseTestCase):
 
     def test_multiple_inheritance_special(self):
         S = TypeVar('S')
-        
-
         class B(Generic[S]): ...
         class C(List[int], B): ...
         self.assertEqual(C.__mro__, (C, list, B, Generic, object))
@@ -2112,7 +2095,6 @@ class GenericTests(BaseTestCase):
                     if base is not Final and issubclass(base, Final):
                         raise FinalException(base)
                 super().__init_subclass__(**kwargs)
-        
         class Test(Generic[T], Final):
             pass
         with self.assertRaises(FinalException):
@@ -2123,7 +2105,7 @@ class GenericTests(BaseTestCase):
                 pass
 
     def test_nested(self):
-        
+
         G = Generic
 
         class Visitor(G[T]):
@@ -2154,7 +2136,6 @@ class GenericTests(BaseTestCase):
 
     def test_type_erasure(self):
         T = TypeVar('T')
-        
 
         class Node(Generic[T]):
             def __init__(self, label: T,
@@ -2179,7 +2160,6 @@ class GenericTests(BaseTestCase):
 
     def test_implicit_any(self):
         T = TypeVar('T')
-        
 
         class C(Generic[T]):
             pass
@@ -2197,7 +2177,6 @@ class GenericTests(BaseTestCase):
             D[T]
 
     def test_new_with_args(self):
-        
 
         class A(Generic[T]):
             pass
@@ -2236,7 +2215,6 @@ class GenericTests(BaseTestCase):
         self.assertEqual(c.from_c, 'foo')
 
     def test_new_no_args(self):
-        
 
         class A(Generic[T]):
             pass
