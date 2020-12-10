@@ -938,7 +938,7 @@ class TestCopy(BaseTest, unittest.TestCase):
 
     ### shutil.copyxattr
 
-    @os_helper.skip_unless_xattr
+    @os_helper.skip_unless_xattr_user
     def test_copyxattr(self):
         tmp_dir = self.mkdtemp()
         src = os.path.join(tmp_dir, 'foo')
@@ -1003,9 +1003,7 @@ class TestCopy(BaseTest, unittest.TestCase):
         self.assertEqual(os.getxattr(dstro, 'user.the_value'), b'fiddly')
 
     @os_helper.skip_unless_symlink
-    @os_helper.skip_unless_xattr
-    @unittest.skipUnless(hasattr(os, 'geteuid') and os.geteuid() == 0,
-                         'root privileges required')
+    @os_helper.skip_unless_xattr_trusted
     def test_copyxattr_symlinks(self):
         # On Linux, it's only possible to access non-user xattr for symlinks;
         # which in turn require root privileges. This test should be expanded
@@ -1027,6 +1025,7 @@ class TestCopy(BaseTest, unittest.TestCase):
         shutil._copyxattr(src_link, dst, follow_symlinks=False)
         self.assertEqual(os.getxattr(dst, 'trusted.foo'), b'43')
 
+    @os_helper.skip_unless_xattr_user
     @unittest.mock.patch('os.setxattr')
     @unittest.mock.patch('os.getxattr')
     @unittest.mock.patch('os.listxattr')
@@ -1168,7 +1167,7 @@ class TestCopy(BaseTest, unittest.TestCase):
         if hasattr(os, 'lchflags') and hasattr(src_link_stat, 'st_flags'):
             self.assertEqual(src_link_stat.st_flags, dst_stat.st_flags)
 
-    @os_helper.skip_unless_xattr
+    @os_helper.skip_unless_xattr_user
     def test_copy2_xattr(self):
         tmp_dir = self.mkdtemp()
         src = os.path.join(tmp_dir, 'foo')
