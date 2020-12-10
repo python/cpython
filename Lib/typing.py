@@ -4,8 +4,10 @@ The typing module: Support for gradual typing as defined by PEP 484.
 At large scale, the structure of the module is following:
 * Imports and exports, all public names should be explicitly added to __all__.
 * Internal helper functions: these should never be used in code outside this module.
-* _SpecialForm and its instances (special forms): Any, NoReturn, ClassVar, Union, Optional, Concatenate
-* Three classes whose instances can be type arguments in addition to types: ForwardRef, TypeVar and ParamSpec
+* _SpecialForm and its instances (special forms):
+  Any, NoReturn, ClassVar, Union, Optional, Concatenate
+* Classes whose instances can be type arguments in addition to types:
+  ForwardRef, TypeVar and ParamSpec
 * The core of internal generics API: _GenericAlias and _VariadicGenericAlias, the latter is
   currently only used by Tuple and Callable. All subscripted types like X[int], Union[int, str],
   etc., are instances of either of these classes.
@@ -153,9 +155,6 @@ def _type_check(arg, msg, is_argument=True):
         return arg
     if not callable(arg):
         raise TypeError(f"{msg} Got {arg!r:.100}.")
-    if isinstance(arg, _ConcatenateGenericAlias):
-        raise TypeError(f"{arg} is not valid as a type argument "
-                        "except in Callable.")
     return arg
 
 
@@ -524,7 +523,16 @@ def TypeAlias(self, parameters):
 @_SpecialForm
 def Concatenate(self, parameters):
     """Used in conjunction with ParamSpec and Callable to represent a higher
-    order function which add, removes or transform parameters of a Callable.
+    order function which adds, removes or transforms parameters of a Callable.
+
+    For example::
+
+       Callable[Concatenate[int, P], int]
+
+    .. seealso::
+
+       :pep:`612` -- Parameter Specification Variables
+
     """
     if parameters == ():
         raise TypeError("Cannot take a Concatenate of no types.")
@@ -532,8 +540,9 @@ def Concatenate(self, parameters):
         parameters = (parameters,)
     msg = "Concatenate[arg, ...]: each arg must be a type."
     parameters = tuple(_type_check(p, msg) for p in parameters)
-    if not any(isinstance(p, ParamSpec) for p in parameters):
-        raise TypeError("Concatenate must contain at least one ParamSpec variable.")
+    if not isinstance(parameters[-1], ParamSpec):
+        raise TypeError("The last parameter to Concatenate should be a "
+                        "ParamSpec variable.")
     return _ConcatenateGenericAlias(self, parameters)
 
 
@@ -601,7 +610,7 @@ class ForwardRef(_Final, _root=True):
 
 class _TypeVarLike:
     """Mixin for TypeVar-like types (TypeVar and ParamSpec)."""
-    def _setup_bound_cov_contra(self, bound, covariant, contravariant):
+    def __init__(self, bound, covariant, contravariant):
         """Used to setup TypeVars and ParamSpec's bound, covariant and
         contravariant attributes.
         """
@@ -683,8 +692,7 @@ class TypeVar( _Final, _Immutable, _TypeVarLike, _root=True):
     def __init__(self, name, *constraints, bound=None,
                  covariant=False, contravariant=False):
         self.__name__ = name
-        self._setup_bound_cov_contra(bound=bound, covariant=covariant,
-                                     contravariant=contravariant)
+        super().__init__(bound, covariant, contravariant)
         if constraints and bound is not None:
             raise TypeError("Constraints cannot be combined with bound=...")
         if constraints and len(constraints) == 1:
@@ -707,7 +715,7 @@ class ParamSpec(_Final, _Immutable, _TypeVarLike, _root=True):
        P = ParamSpec('P')
 
     Parameter specification variables exist primarily for the benefit of static
-    type checkers.  They serve primarily to forward the parameter types of one
+    type checkers.  They are used to forward the parameter types of one
     Callable to another Callable, a pattern commonly found in higher order
     functions and decorators.  They are only valid as the first argument to
     Callable, or as parameters for user-defined Generics.  See class Generic
@@ -718,7 +726,7 @@ class ParamSpec(_Final, _Immutable, _TypeVarLike, _root=True):
        P = ParamSpec('P')
 
        def add_logging(f: Callable[P, T]) -> Callable[P, T]:
-           '''A decorator to add logging to a function.'''
+           '''A type-safe decorator to add logging to a function.'''
            def inner(*args: P.args, **kwargs: P.kwargs) -> T:
                logging.info(f'{f.__name__} was called')
                return f(*args, **kwargs)
@@ -753,8 +761,7 @@ class ParamSpec(_Final, _Immutable, _TypeVarLike, _root=True):
 
     def __init__(self, name, bound=None, covariant=False, contravariant=False):
         self.__name__ = name
-        self._setup_bound_cov_contra(bound=bound, covariant=covariant,
-                                contravariant=contravariant)
+        super().__init__(bound, covariant, contravariant)
         try:
             def_mod = sys._getframe(1).f_globals.get('__name__', '__main__')
         except (AttributeError, ValueError):

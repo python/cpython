@@ -1574,8 +1574,8 @@ class GenericTests(BaseTestCase):
 
     def test_subscripted_generics_as_proxies(self):
         T = TypeVar('T')
-        P = ParamSpec('T')
-        class C(Generic[T, P]):
+        
+        class C(Generic[T]):
             x = 'def'
         self.assertEqual(C[int].x, 'def')
         self.assertEqual(C[C[int]].x, 'def')
@@ -1707,12 +1707,12 @@ class GenericTests(BaseTestCase):
         self.assertEqual(Callable[..., Meta].__args__, (Ellipsis, Meta))
 
     def test_generic_hashes(self):
-        P = ParamSpec('P')
-        class A(Generic[T, P]):
+        
+        class A(Generic[T]):
             ...
 
-        class B(Generic[T, P]):
-            class A(Generic[T, P]):
+        class B(Generic[T]):
+            class A(Generic[T]):
                 ...
 
         self.assertEqual(A, A)
@@ -1896,9 +1896,9 @@ class GenericTests(BaseTestCase):
         global C  # pickle wants to reference the class by name
         T = TypeVar('T')
         global P
-        P = ParamSpec('P')
+        
 
-        class B(Generic[T, P]):
+        class B(Generic[T]):
             pass
 
         class C(B[int]):
@@ -1922,8 +1922,7 @@ class GenericTests(BaseTestCase):
                 x = pickle.loads(z)
                 self.assertEqual(s, x)
         more_samples = [List, typing.Iterable, typing.Type, List[int],
-                        typing.Type[typing.Mapping], typing.AbstractSet[Tuple[int, str]],
-                        Concatenate[int, P]]
+                        typing.Type[typing.Mapping], typing.AbstractSet[Tuple[int, str]]]
         for s in more_samples:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                 z = pickle.dumps(s, proto)
@@ -1932,8 +1931,8 @@ class GenericTests(BaseTestCase):
 
     def test_copy_and_deepcopy(self):
         T = TypeVar('T')
-        P = ParamSpec('P')
-        class Node(Generic[T, P]): ...
+        
+        class Node(Generic[T]): ...
         things = [Union[T, int], Tuple[T, int], Callable[..., T], Callable[[int], int],
                   Tuple[Any, Any], Node[T], Node[int], Node[Any], typing.Iterable[T],
                   typing.Iterable[Any], typing.Iterable[int], typing.Dict[int, str],
@@ -1965,9 +1964,9 @@ class GenericTests(BaseTestCase):
 
     def test_copy_generic_instances(self):
         T = TypeVar('T')
-        P = ParamSpec('P')
+        
 
-        class C(Generic[T, P]):
+        class C(Generic[T]):
             f: Callable[P, int]
             def __init__(self, attr: T) -> None:
                 self.attr = attr
@@ -2000,9 +1999,9 @@ class GenericTests(BaseTestCase):
 
     def test_parameterized_slots(self):
         T = TypeVar('T')
-        P = ParamSpec('P')
+        
 
-        class C(Generic[T, P]):
+        class C(Generic[T]):
             __slots__ = ('potato',)
 
         c = C()
@@ -2021,9 +2020,9 @@ class GenericTests(BaseTestCase):
 
     def test_parameterized_slots_dict(self):
         T = TypeVar('T')
-        P = ParamSpec('P')
+        
 
-        class D(Generic[T, P]):
+        class D(Generic[T]):
             __slots__ = {'banana': 42}
 
         d = D()
@@ -2044,9 +2043,9 @@ class GenericTests(BaseTestCase):
                 pass
 
     def test_repr_2(self):
-        P = ParamSpec('P')
+        
 
-        class C(Generic[T, P]):
+        class C(Generic[T]):
             pass
 
         self.assertEqual(C.__module__, __name__)
@@ -2082,9 +2081,9 @@ class GenericTests(BaseTestCase):
         self.assertNotEqual(A[T], B[T])
 
     def test_multiple_inheritance(self):
-        P = ParamSpec('P')
+        
 
-        class A(Generic[T, VT, P]):
+        class A(Generic[T, VT]):
             pass
 
         class B(Generic[KT, T]):
@@ -2097,9 +2096,9 @@ class GenericTests(BaseTestCase):
 
     def test_multiple_inheritance_special(self):
         S = TypeVar('S')
-        P = ParamSpec('P')
+        
 
-        class B(Generic[S, P]): ...
+        class B(Generic[S]): ...
         class C(List[int], B): ...
         self.assertEqual(C.__mro__, (C, list, B, Generic, object))
 
@@ -2113,8 +2112,8 @@ class GenericTests(BaseTestCase):
                     if base is not Final and issubclass(base, Final):
                         raise FinalException(base)
                 super().__init_subclass__(**kwargs)
-        P = ParamSpec('P')
-        class Test(Generic[T, P], Final):
+        
+        class Test(Generic[T], Final):
             pass
         with self.assertRaises(FinalException):
             class Subclass(Test):
@@ -2124,10 +2123,10 @@ class GenericTests(BaseTestCase):
                 pass
 
     def test_nested(self):
-        P = ParamSpec('P')
+        
         G = Generic
 
-        class Visitor(G[T, P]):
+        class Visitor(G[T]):
 
             a = None
 
@@ -2155,9 +2154,9 @@ class GenericTests(BaseTestCase):
 
     def test_type_erasure(self):
         T = TypeVar('T')
-        P = ParamSpec('P')
+        
 
-        class Node(Generic[T, P]):
+        class Node(Generic[T]):
             def __init__(self, label: T,
                          left: 'Node[T]' = None,
                          right: 'Node[T]' = None):
@@ -2180,9 +2179,9 @@ class GenericTests(BaseTestCase):
 
     def test_implicit_any(self):
         T = TypeVar('T')
-        P = ParamSpec('P')
+        
 
-        class C(Generic[T, P]):
+        class C(Generic[T]):
             pass
 
         class D(C):
@@ -2198,9 +2197,9 @@ class GenericTests(BaseTestCase):
             D[T]
 
     def test_new_with_args(self):
-        P = ParamSpec('P')
+        
 
-        class A(Generic[T, P]):
+        class A(Generic[T]):
             pass
 
         class B:
@@ -2237,9 +2236,9 @@ class GenericTests(BaseTestCase):
         self.assertEqual(c.from_c, 'foo')
 
     def test_new_no_args(self):
-        P = ParamSpec('P')
+        
 
-        class A(Generic[T, P]):
+        class A(Generic[T]):
             pass
 
         with self.assertRaises(TypeError):
@@ -4376,27 +4375,18 @@ class ConcatenateTests(BaseTestCase):
         C1 = Callable[Concatenate[int, P], int]
         self.assertEqual(C1.__args__, (Concatenate[int, P], int))
         self.assertEqual(C1.__parameters__, ())
-        C2 = Callable[Concatenate[int, P, T], T]
-        self.assertEqual(C2.__args__, (Concatenate[int, P, T], T))
+        C2 = Callable[Concatenate[int, T, P], T]
+        self.assertEqual(C2.__args__, (Concatenate[int, T, P], T))
         self.assertEqual(C2.__parameters__, (T,))
 
         # Test collections.abc.Callable too.
         C3 = collections.abc.Callable[Concatenate[int, P], int]
         self.assertEqual(C3.__args__, (Concatenate[int, P], int))
         self.assertEqual(C3.__parameters__, ())
-        C4 = collections.abc.Callable[Concatenate[int, P, T], T]
-        self.assertEqual(C4.__args__, (Concatenate[int, P, T], T))
+        C4 = collections.abc.Callable[Concatenate[int, T, P], T]
+        self.assertEqual(C4.__args__, (Concatenate[int, T, P], T))
         self.assertEqual(C4.__parameters__, (T,))
 
-    def test_disallow_in_other_types(self):
-        P = ParamSpec('P')
-        C = Concatenate[int, P]
-        samples = [Any, Union, Tuple, ClassVar, List,
-                   typing.DefaultDict, typing.FrozenSet]
-        for s in samples:
-            with self.subTest(f'{s}'):
-                with self.assertRaises(TypeError):
-                    s[C]
 
 class AllTests(BaseTestCase):
     """Tests for __all__."""
