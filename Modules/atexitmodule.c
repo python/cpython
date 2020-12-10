@@ -272,7 +272,8 @@ Two public functions, register and unregister, are defined.\n\
 ");
 
 static int
-atexit_exec(PyObject *m) {
+atexit_exec(PyObject *m)
+{
     atexitmodule_state *modstate = get_atexit_state();
     if (modstate->atexit_callbacks != NULL) {
         PyErr_SetString(PyExc_ImportError,
