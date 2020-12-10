@@ -49,6 +49,19 @@ def _is_sunder(name):
             name[-2:-1] != '_'
             )
 
+def _is_private(cls_name, name):
+    # do not use `re` as `re` imports `enum`
+    pattern = '_%s__' % (cls_name, )
+    if (
+            len(name) >= 5
+            and name.startswith(pattern)
+            and name[len(pattern)] != '_'
+            and (name[-1] != '_' or name[-2] != '_')
+        ):
+        return True
+    else:
+        return False
+
 def _make_class_unpicklable(cls):
     """
     Make the given class un-picklable.
@@ -89,7 +102,10 @@ class _EnumDict(dict):
 
         Single underscore (sunder) names are reserved.
         """
-        if _is_sunder(key):
+        if _is_private(self._cls_name, key):
+            # do nothing, name will be a normal attribute
+            pass
+        elif _is_sunder(key):
             if key not in (
                     '_order_', '_create_pseudo_member_',
                     '_generate_next_value_', '_missing_', '_ignore_',
@@ -157,6 +173,7 @@ class EnumMeta(type):
         metacls._check_for_existing_members(cls, bases)
         # create the namespace dict
         enum_dict = _EnumDict()
+        enum_dict._cls_name = cls
         # inherit previous flags and _generate_next_value_ function
         member_type, first_enum = metacls._get_mixins_(cls, bases)
         if first_enum is not None:

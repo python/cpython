@@ -1164,6 +1164,15 @@ and raise an error if the two do not match::
     In Python 2 code the :attr:`_order_` attribute is necessary as definition
     order is lost before it can be recorded.
 
+
+_Private__names
+"""""""""""""""
+
+Private names are not converted to Enum members, but remain normal attributes.
+
+.. versionchanged:: 3.10
+
+
 ``Enum`` member type
 """"""""""""""""""""
 
