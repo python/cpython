@@ -4339,6 +4339,43 @@ class ParamSpecTests(BaseTestCase):
         with self.assertRaises(ValueError):
             ParamSpec('P', covariant=True, contravariant=True)
 
+    def test_user_generics(self):
+        T = TypeVar("T")
+        P = ParamSpec("P")
+        P_2 = ParamSpec("P_2")
+
+        class X(Generic[T, P]):
+            f: Callable[P, int]
+            x: T
+        G1 = X[int, P_2]
+        self.assertEqual(G1.__args__, (int, P_2))
+        self.assertEqual(G1.__parameters__, (P_2,))
+
+        G2 = X[int, Concatenate[int, P_2]]
+        self.assertEqual(G2.__args__, (int, Concatenate[int, P_2]))
+        self.assertEqual(G2.__parameters__, (P_2,))
+
+        # currently raises TypeError for _type_check
+        # G3 = X[int, [int, bool]]
+        # self.assertEqual(G3.__args__, (int, [int, bool]))
+        # self.assertEqual(G3.__parameters__, ())
+
+        # G4 = X[int, ...]
+        # self.assertEqual(G4.__args__, (int, type(Ellipsis)))
+        # self.assertEqual(G4.__parameters__, ())
+        #
+        # class Z(Generic[P]):
+        #     f: Callable[P, int]
+
+        # These are valid
+        # currently raises TypeError for _type_check
+        # G5 = Z[[int, str, bool]]
+
+        # currently raises TypeError for too many parameters (not enough TypeVars)
+        # G6 = Z[int, str, bool]
+        # self.assertEqual(G6.__args__, (int, str, bool))
+        # self.assertEqual(G6.__parameters__, ())
+
 
 class ConcatenateTests(BaseTestCase):
     def test_basics(self):
