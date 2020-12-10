@@ -1,0 +1,44 @@
+#
+# $Id: 12Point.fsc,v 1.2 2001/12/09 05:03:09 idiscovery Exp $
+#
+proc tixPref:InitFontSet:12Point {} { 
+
+    global tixOption tcl_platform
+
+    switch -- $tcl_platform(platform) "windows" {
+	# This should be Tahoma for Win2000/XP
+	set font "MS Sans Serif"
+	set fixedfont "Courier New"
+    } unix {
+	set font "helvetica"
+	set fixedfont "courier"
+    }
+
+    set tixOption(font)         [list $font -12]
+    set tixOption(bold_font)    [list $font -12 bold]
+    set tixOption(menu_font)    [list $font -12]
+    set tixOption(italic_font)  [list $font -12 bold italic]
+    set tixOption(fixed_font)   [list $fixedfont -12]
+    set tixOption(border1)      1
+
+}
+proc tixPref:SetFontSet:12Point {} { 
+global tixOption
+option add *Font			$tixOption(font) $tixOption(prioLevel)
+option add *font			$tixOption(font) $tixOption(prioLevel)
+option add *Menu.font			$tixOption(menu_font) $tixOption(prioLevel)
+option add *TixMenu.font			$tixOption(menu_font) $tixOption(prioLevel)
+option add *Menubutton.font			$tixOption(menu_font) $tixOption(prioLevel)
+option add *Label.font              	$tixOption(bold_font) $tixOption(prioLevel)
+option add *Scale.font			$tixOption(italic_font) $tixOption(prioLevel)
+option add *TixBalloon*Label.font 			$tixOption(font) $tixOption(prioLevel)
+option add *TixBitmapButton*label.font 			$tixOption(font) $tixOption(prioLevel)
+option add *TixControl*label.font              	$tixOption(bold_font) $tixOption(prioLevel)
+option add *TixLabelEntry*label.font              	$tixOption(bold_font) $tixOption(prioLevel)
+option add *TixLabelFrame*label.font 	 		$tixOption(bold_font) $tixOption(prioLevel)
+option add *TixMwmClient*title.font			$tixOption(menu_font) $tixOption(prioLevel)
+option add *TixNoteBook.nbframe.font			$tixOption(menu_font) $tixOption(prioLevel)
+option add *TixOptionMenu*menubutton.font		$tixOption(font) $tixOption(prioLevel)
+option add *TixComboBox*Entry.font				$tixOption(font) $tixOption(prioLevel)
+option add *TixFileSelectBox*Label.font            		$tixOption(bold_font) $tixOption(prioLevel)
+}

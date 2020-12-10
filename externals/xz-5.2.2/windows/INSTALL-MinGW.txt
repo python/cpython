@@ -1,0 +1,138 @@
+
+Building XZ Utils on Windows
+============================
+
+Introduction
+------------
+
+    This document explains shortly where to get and how to install the
+    build tools that are needed to build XZ Utils on Windows. The final
+    binary package will be standalone in sense that it will depend only
+    on DLLs that are included in all Windows installations.
+
+    These instructions don't apply to Cygwin. XZ Utils can be built under
+    Cygwin in the same way as many other packages.
+
+    These instructions don't apply to MinGW and MSYS developers either,
+    who may want to package XZ Utils for MinGW or MSYS distributions.
+    You know who you are, and will probably use quite different configure
+    options etc. than what is described here.
+
+
+Installing the toolchain(s)
+---------------------------
+
+    Some of the following is needed:
+      - MSYS is always needed to use the GNU Autotools based build system.
+      - MinGW builds 32-bit x86 binaries.
+      - 32-bit MinGW-w64 (I call it MingW-w32 here) builds 32-bit x86
+        executables too.
+      - MinGW-w64 builds 64-bit x86-64 binaries.
+
+    So you need to pick between MinGW and MinGW-w32 when building
+    32-bit version. You don't need both.
+
+    You might find 7-Zip <http://7-zip.org/> handy when extracting
+    some files. The ready-made build script build.bash will also use
+    7-Zip to create the distributable .zip and .7z files.
+
+    I used the following directory structure but you can use whatever
+    you want. Just note that I will use these in my examples. Each of
+    these should have a subdirectory "bin":
+
+        C:\devel\tools\msys
+        C:\devel\tools\mingw
+        C:\devel\tools\mingw-w32
+        C:\devel\tools\mingw-w64
+
+
+Installing MSYS
+
+    You can download MSYS from MinGW's Sourceforge page:
+
+        http://sourceforge.net/projects/mingw/files/MSYS/Base/msys-core/
+
+    I recommend using MSYS 1.0.11 (MSYS-1.0.11.exe or
+    msysCORE-1.0.11-bin.tar.gz) because that package includes all the
+    required tools. At least some of the later versions include only
+    a subset and thus you would need to download the rest separately.
+    The old version will work fine for building XZ Utils.
+
+    You can use either the .exe or .tar.gz package. I prefer .tar.gz,
+    because it can be extracted into any directory and later removed
+    without worrying about uninstallers.
+
+
+Installing MinGW
+
+    NOTE: This section may be outdated. I haven't tried MinGW recently.
+
+    You can download the required packages from MinGW's Sourceforge page:
+
+        http://sourceforge.net/projects/mingw/files/
+
+    These version numbers were the latest when I wrote this document, but
+    you probably should pick the latest versions:
+
+        MinGW Runtime -> mingwrt-3.17-mingw32-dev.tar.gz
+        MinGW API for MS-Windows -> w32api-3.14-mingw32-dev.tar.gz
+        GNU Binutils -> binutils-2.20-1-bin.tar.gz
+        GCC Version 4 -> gcc-full-4.4.0-mingw32-bin-2.tar.lzma
+
+    The full GCC package is quite big, but if you want a smaller
+    download, you will need to download more than one file, so I'm
+    using the full package in this document for simplicity.
+
+    Extract the packages in the above order, possibly overwriting files
+    from packages that were extracted earlier.
+
+
+Installing MinGW-w32 or MinGW-w64
+
+    I used the packages from Mingw-builds project. With that it is
+    enough to pick one .7z file for 32-bit and another for 64-bit
+    toolchain. For XZ Utils 5.2.0 I used the packages from these
+    directories:
+
+        http://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/4.9.2/threads-win32/sjlj/
+
+        http://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/4.9.2/threads-win32/sjlj/
+
+    If you install both MinGW-w32 and MinGW-w64, remember to extract
+    them into different directories. build.bash looks at
+    C:\devel\tools\mingw-w32 and C:\devel\tools\mingw-w64 by default.
+
+
+Building XZ Utils
+-----------------
+
+    Start MSYS by going to the directory C:\devel\tools\msys and running
+    msys.bat there (double-click or use command prompt). It will start
+    at "home" directory, which is C:\devel\tools\msys\home\YourUserName.
+
+    If you have xz-5.x.x.tar.gz in C:\devel, you should be able to build
+    it now with the following commands:
+
+        cd /c/devel
+        tar xzf xz-5.x.x.tar.gz
+        cd xz-5.x.x
+        bash windows/build.bash
+
+    If you used some other directory than C:\devel\tools for the build
+    tools, edit the variables near the beginning of build.bash first.
+
+    If you want to build manually, read the buildit() function in
+    build.bash. Look especially at the latter configure invocation.
+
+    Be patient. Running configure and other scripts used by the build
+    system is (very) slow under Windows.
+
+
+Using a snapshot from the Git repository
+
+    To use a snapshot, the build system files need to be generated with
+    autogen.sh or "autoreconf -fi" before trying to build using the
+    above build instructions. You can install the relevant extra packages
+    from MinGW or use Cygwin or use e.g. a GNU/Linux system to create a
+    source package with the required build system files.
+

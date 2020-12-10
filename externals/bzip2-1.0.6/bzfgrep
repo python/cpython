@@ -1,0 +1,132 @@
+#!/bin/sh
+
+# bzgrep -- a wrapper around a grep program that decompresses files as needed
+# Adapted from zgrep of the Debian gzip package by Anibal Monsalve Salazar. 
+# Adapted from a version sent by Charles Levert <charles@comm.polymtl.ca>
+
+# Copyright (C) 1998, 2001, 2002 Free Software Foundation
+# Copyright (C) 1993 Jean-loup Gailly
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+# 02111-1307, USA.
+
+PATH="/usr/bin:$PATH"; export PATH
+
+prog=`echo "$0" | sed 's|.*/||'`
+case "$prog" in
+	*egrep)	grep=${EGREP-egrep}	;;
+	*fgrep)	grep=${FGREP-fgrep}	;;
+	*)	grep=${GREP-grep}	;;
+esac
+
+pat=""
+after_dash_dash=""
+files_with_matches=0
+files_without_matches=0
+no_filename=0
+with_filename=0
+
+while test $# -ne 0; do
+  case "$after_dash_dash$1" in
+  --d* | --rec*)	echo >&2 "$0: $1: option not supported"; exit 2;;
+  --files-with-*)	files_with_matches=1;;
+  --files-witho*)	files_without_matches=1;;
+  --no-f*)	no_filename=1;;
+  --wi*)	with_filename=1;;
+  --*)	;;
+  -*)
+	case "$1" in
+	-*[dr]*) echo >&2 "$0: $1: option not supported"; exit 2;;
+	esac
+	case "$1" in
+	-*H*)	with_filename=1;;
+	esac
+	case "$1" in
+	-*h*)	no_filename=1;;
+	esac
+	case "$1" in
+	-*L*)	files_without_matches=1;;
+	esac
+	case "$1" in
+	-*l*)	files_with_matches=1;;
+	esac;;
+  esac
+  case "$after_dash_dash$1" in
+  -[ef])   opt="$opt $1"; shift; pat="$1"
+           if test "$grep" = grep; then  # grep is buggy with -e on SVR4
+             grep=egrep
+           fi;;
+  -[ABCdm])opt="$opt $1 $2"; shift;;
+  --)      opt="$opt $1"; after_dash_dash=1;;
+  -*)	   opt="$opt $1";;
+   *)      if test -z "$pat"; then
+	     pat="$1"
+	   else
+	     break;
+           fi;;
+  esac
+  shift
+done
+
+if test -z "$pat"; then
+  echo "grep through bzip2 files"
+  echo "usage: $prog [grep_options] pattern [files]"
+  exit 2
+fi
+
+if test $# -eq 0; then
+  bzip2 -cdfq | $grep $opt "$pat"
+  exit $?
+fi
+
+res=0
+for i do
+  bzip2 -cdfq -- "$i" |
+    if test $files_with_matches -eq 1; then
+      $grep $opt "$pat" > /dev/null && printf "%s\n" "$i"
+    elif test $files_without_matches -eq 1; then
+      $grep $opt "$pat" > /dev/null || printf "%s\n" "$i"
+    elif test $with_filename -eq 0 && { test $# -eq 1 || test $no_filename -eq 1; }; then
+      $grep $opt "$pat"
+    else
+      i=$(echo "$i" | sed -e 's/[\\|&]/\\&/g')
+      if test $with_filename -eq 1; then
+	sed_script="s|^[^:]*:|${i}:|"
+      else
+	sed_script="s|^|${i}:|"
+      fi
+      # Hack adapted from GPLed code at
+      # http://home.comcast.net/~j.p.h/cus-faq-2
+      # Has the same effect as the following two lines of bash:
+      #
+      # $grep $opt "$pat" | sed "$sed_script"
+      # exit ${PIPESTATUS[0]}
+      #
+      # Inside the `...`, fd4 goes to the pipe whose other end is read
+      # and passed to eval; fd1 is the normal standard output
+      # preserved the line before with exec 3>&1
+      exec 3>&1
+      eval `
+      exec 4>&1 >&3 3>&-
+      {
+       $grep $opt "$pat" 4>&-; echo "r=$?;" >&4
+      } | sed "$sed_script"
+      `
+      exit $r
+    fi
+  r=$?
+  test $res -lt $r && res=$r
+done
+exit $res

@@ -1,0 +1,79 @@
+
+Building XZ Utils for DOS
+=========================
+
+Introduction
+
+    This document explains how to build XZ Utils for DOS using DJGPP.
+    The resulting binaries should run at least on various DOS versions
+    and under Windows 95/98/98SE/ME, although the Windows version of
+    XZ Utils is recommended under Windows 95 and later.
+
+    This is currently experimental and has got very little testing.
+
+    Note: Makefile and config.h are updated only now and then. This
+    means that especially if you checked out a development version,
+    building for DOS probably won't work without updating Makefile
+    and config.h first.
+
+
+Getting and Installing DJGPP
+
+    You may use <http://www.delorie.com/djgpp/zip-picker.html> to help
+    deciding what to download, but as of writing (2010-10-09) that may
+    not be the most convenient way taking into account what components
+    are actually required to build XZ Utils. However, using the
+    zip-picker can still be worth doing to get nice short summary of
+    installation instructions (they can be found from readme.1st too).
+
+    For a more manual method, first select a mirror from
+    <http://www.delorie.com/djgpp/getting.html>. You need
+    the following files:
+
+        unzip32.exe  (if you don't already have a LFN-capable unzipper)
+        beta/v2/djdev204.zip
+        v2gnu/bnu219b.zip
+        v2gnu/gcc444b.zip
+        v2gnu/mak3791b.zip
+        v2misc/csdpmi7b.zip
+
+    If newer versions are available, probably you should try them first.
+    Note that djdev203.zip is too old to build XZ Utils; you need at
+    least djdev204.zip. Also note that you want csdpmi7b.zip even if you
+    run under Windows or DOSEMU, because the XZ Utils Makefile will embed
+    cwsdstub.exe to the resulting binaries.
+
+    See the instructions in readme.1st found from djdev204.zip. Here's
+    a short summary, but you should still read readme.1st.
+
+        C:\> mkdir DJGPP
+        C:\> cd DJGPP
+        C:\DJGPP> c:\download\unzip32 c:\download\djdev204.zip
+        C:\DJGPP> c:\download\unzip32 c:\download\bnu219b.zip
+        C:\DJGPP> c:\download\unzip32 c:\download\gcc444b.zip
+        C:\DJGPP> c:\download\unzip32 c:\download\mak3791b.zip
+        C:\DJGPP> c:\download\unzip32 c:\download\csdpmi7b.zip
+
+        C:\DJGPP> set PATH=C:\DJGPP\BIN;%PATH%
+        C:\DJGPP> set DJGPP=C:\DJGPP\DJGPP.ENV
+
+    You may want to add the last two lines into AUTOEXEC.BAT or have,
+    for example, DJGPP.BAT which you can run before using DJGPP.
+
+    Make sure you use completely upper case path in the DJGPP environment
+    variable. This is not required by DJGPP, but the XZ Utils Makefile is
+    a bit stupid and expects that everything in DJGPP environment variable
+    is uppercase.
+
+
+Building
+
+    You need to have an environment that supports long filenames (LFN).
+    Once you have built XZ Utils, the resulting binaries can be run
+    without long filename support.
+
+    Run "make" in this directory (the directory containing this README).
+    You should get xz.exe (and a bunch of temporary files). Other tools
+    are not built. Having e.g. xzdec.exe doesn't save much space compared
+    to xz.exe, because the DJGPP runtime makes the .exe quite big anyway.
+

@@ -1,0 +1,505 @@
+
+XZ Utils Release Notes
+======================
+
+5.2.2 (2015-09-29)
+
+    * Fixed bugs in QNX-specific code.
+
+    * Omitted the use of pipe2() even if it is available to avoid
+      portability issues with some old Linux and glibc combinations.
+
+    * Updated German translation.
+
+    * Added project files to build static and shared liblzma (not the
+      whole XZ Utils) with Visual Studio 2013 update 2 or later.
+
+    * Documented that threaded decompression hasn't been implemented
+      yet. A 5.2.0 NEWS entry describing multi-threading support had
+      incorrectly said "decompression" when it should have said
+      "compression".
+
+
+5.2.1 (2015-02-26)
+
+    * Fixed a compression-ratio regression in fast mode of LZMA1 and
+      LZMA2. The bug is present in 5.1.4beta and 5.2.0 releases.
+
+    * Fixed a portability problem in xz that affected at least OpenBSD.
+
+    * Fixed xzdiff to be compatible with FreeBSD's mktemp which differs
+      from most other mktemp implementations.
+
+    * Changed CPU core count detection to use cpuset_getaffinity() on
+      FreeBSD.
+
+
+5.2.0 (2014-12-21)
+
+    Since 5.1.4beta:
+
+    * All fixes from 5.0.8
+
+    * liblzma: Fixed lzma_stream_encoder_mt_memusage() when a preset
+      was used.
+
+    * xzdiff: If mktemp isn't installed, mkdir will be used as
+      a fallback to create a temporary directory. Installing mktemp
+      is still recommended.
+
+    * Updated French, German, Italian, Polish, and Vietnamese
+      translations.
+
+    Summary of fixes and new features added in the 5.1.x development
+    releases:
+
+    * liblzma:
+
+        - Added support for multi-threaded compression. See the
+          lzma_mt structure, lzma_stream_encoder_mt(), and
+          lzma_stream_encoder_mt_memusage() in <lzma/container.h>,
+          lzma_get_progress() in <lzma/base.h>, and lzma_cputhreads()
+          in <lzma/hardware.h> for details.
+
+        - Made the uses of lzma_allocator const correct.
+
+        - Added lzma_block_uncomp_encode() to create uncompressed
+          .xz Blocks using LZMA2 uncompressed chunks.
+
+        - Added support for LZMA_IGNORE_CHECK.
+
+        - A few speed optimizations were made.
+
+        - Added support for symbol versioning. It is enabled by default
+          on GNU/Linux, other GNU-based systems, and FreeBSD.
+
+        - liblzma (not the whole XZ Utils) should now be buildable
+          with MSVC 2013 update 2 or later using windows/config.h.
+
+    * xz:
+
+        - Fixed a race condition in the signal handling. It was
+          possible that e.g. the first SIGINT didn't make xz exit
+          if reading or writing blocked and one had bad luck. The fix
+          is non-trivial, so as of writing it is unknown if it will be
+          backported to the v5.0 branch.
+
+        - Multi-threaded compression can be enabled with the
+          --threads (-T) option.
+          [Fixed: This originally said "decompression".]
+
+        - New command line options in xz: --single-stream,
+          --block-size=SIZE, --block-list=SIZES,
+          --flush-timeout=TIMEOUT, and --ignore-check.
+
+        - xz -lvv now shows the minimum xz version that is required to
+          decompress the file. Currently it is 5.0.0 for all supported
+          .xz files except files with empty LZMA2 streams require 5.0.2.
+
+    * xzdiff and xzgrep now support .lzo files if lzop is installed.
+      The .tzo suffix is also recognized as a shorthand for .tar.lzo.
+
+
+5.1.4beta (2014-09-14)
+
+    * All fixes from 5.0.6
+
+    * liblzma: Fixed the use of presets in threaded encoder
+      initialization.
+
+    * xz --block-list and --block-size can now be used together
+      in single-threaded mode. Previously the combination only
+      worked in multi-threaded mode.
+
+    * Added support for LZMA_IGNORE_CHECK to liblzma and made it
+      available in xz as --ignore-check.
+
+    * liblzma speed optimizations:
+
+        - Initialization of a new LZMA1 or LZMA2 encoder has been
+          optimized. (The speed of reinitializing an already-allocated
+          encoder isn't affected.) This helps when compressing many
+          small buffers with lzma_stream_buffer_encode() and other
+          similar situations where an already-allocated encoder state
+          isn't reused. This speed-up is visible in xz too if one
+          compresses many small files one at a time instead running xz
+          once and giving all files as command-line arguments.
+
+        - Buffer comparisons are now much faster when unaligned access
+          is allowed (configured with --enable-unaligned-access). This
+          speeds up encoding significantly. There is arch-specific code
+          for 32-bit and 64-bit x86 (32-bit needs SSE2 for the best
+          results and there's no run-time CPU detection for now).
+          For other archs there is only generic code which probably
+          isn't as optimal as arch-specific solutions could be.
+
+        - A few speed optimizations were made to the SHA-256 code.
+          (Note that the builtin SHA-256 code isn't used on all
+          operating systems.)
+
+    * liblzma can now be built with MSVC 2013 update 2 or later
+      using windows/config.h.
+
+    * Vietnamese translation was added.
+
+
+5.1.3alpha (2013-10-26)
+
+    * All fixes from 5.0.5
+
+    * liblzma:
+
+        - Fixed a deadlock in the threaded encoder.
+
+        - Made the uses of lzma_allocator const correct.
+
+        - Added lzma_block_uncomp_encode() to create uncompressed
+          .xz Blocks using LZMA2 uncompressed chunks.
+
+        - Added support for native threads on Windows and the ability
+          to detect the number of CPU cores.
+
+    * xz:
+
+        - Fixed a race condition in the signal handling. It was
+          possible that e.g. the first SIGINT didn't make xz exit
+          if reading or writing blocked and one had bad luck. The fix
+          is non-trivial, so as of writing it is unknown if it will be
+          backported to the v5.0 branch.
+
+        - Made the progress indicator work correctly in threaded mode.
+
+        - Threaded encoder now works together with --block-list=SIZES.
+
+        - Added preliminary support for --flush-timeout=TIMEOUT.
+          It can be useful for (somewhat) real-time streaming. For
+          now the decompression side has to be done with something
+          else than the xz tool due to how xz does buffering, but this
+          should be fixed.
+
+
+5.1.2alpha (2012-07-04)
+
+    * All fixes from 5.0.3 and 5.0.4
+
+    * liblzma:
+
+        - Fixed a deadlock and an invalid free() in the threaded encoder.
+
+        - Added support for symbol versioning. It is enabled by default
+          on GNU/Linux, other GNU-based systems, and FreeBSD.
+
+        - Use SHA-256 implementation from the operating system if one is
+          available in libc, libmd, or libutil. liblzma won't use e.g.
+          OpenSSL or libgcrypt to avoid introducing new dependencies.
+
+        - Fixed liblzma.pc for static linking.
+
+        - Fixed a few portability bugs.
+
+    * xz --decompress --single-stream now fixes the input position after
+      successful decompression. Now the following works:
+
+          echo foo | xz > foo.xz
+          echo bar | xz >> foo.xz
+          ( xz -dc --single-stream ; xz -dc --single-stream ) < foo.xz
+
+      Note that it doesn't work if the input is not seekable
+      or if there is Stream Padding between the concatenated
+      .xz Streams.
+
+    * xz -lvv now shows the minimum xz version that is required to
+      decompress the file. Currently it is 5.0.0 for all supported .xz
+      files except files with empty LZMA2 streams require 5.0.2.
+
+    * Added an *incomplete* implementation of --block-list=SIZES to xz.
+      It only works correctly in single-threaded mode and when
+      --block-size isn't used at the same time. --block-list allows
+      specifying the sizes of Blocks which can be useful e.g. when
+      creating files for random-access reading.
+
+
+5.1.1alpha (2011-04-12)
+
+    * All fixes from 5.0.2
+
+    * liblzma fixes that will also be included in 5.0.3:
+
+        - A memory leak was fixed.
+
+        - lzma_stream_buffer_encode() no longer creates an empty .xz
+          Block if encoding an empty buffer. Such an empty Block with
+          LZMA2 data would trigger a bug in 5.0.1 and older (see the
+          first bullet point in 5.0.2 notes). When releasing 5.0.2,
+          I thought that no encoder creates this kind of files but
+          I was wrong.
+
+        - Validate function arguments better in a few functions. Most
+          importantly, specifying an unsupported integrity check to
+          lzma_stream_buffer_encode() no longer creates a corrupt .xz
+          file. Probably no application tries to do that, so this
+          shouldn't be a big problem in practice.
+
+        - Document that lzma_block_buffer_encode(),
+          lzma_easy_buffer_encode(), lzma_stream_encoder(), and
+          lzma_stream_buffer_encode() may return LZMA_UNSUPPORTED_CHECK.
+
+        - The return values of the _memusage() functions are now
+          documented better.
+
+    * Support for multithreaded compression was added using the simplest
+      method, which splits the input data into blocks and compresses
+      them independently. Other methods will be added in the future.
+      The current method has room for improvement, e.g. it is possible
+      to reduce the memory usage.
+
+    * Added the options --single-stream and --block-size=SIZE to xz.
+
+    * xzdiff and xzgrep now support .lzo files if lzop is installed.
+      The .tzo suffix is also recognized as a shorthand for .tar.lzo.
+
+    * Support for short 8.3 filenames under DOS was added to xz. It is
+      experimental and may change before it gets into a stable release.
+
+
+5.0.8 (2014-12-21)
+
+    * Fixed an old bug in xzgrep that affected OpenBSD and probably
+      a few other operating systems too.
+
+    * Updated French and German translations.
+
+    * Added support for detecting the amount of RAM on AmigaOS/AROS.
+
+    * Minor build system updates.
+
+
+5.0.7 (2014-09-20)
+
+    * Fix regressions introduced in 5.0.6:
+
+        - Fix building with non-GNU make.
+
+        - Fix invalid Libs.private value in liblzma.pc which broke
+          static linking against liblzma if the linker flags were
+          taken from pkg-config.
+
+
+5.0.6 (2014-09-14)
+
+    * xzgrep now exits with status 0 if at least one file matched.
+
+    * A few minor portability and build system fixes
+
+
+5.0.5 (2013-06-30)
+
+    * lzmadec and liblzma's lzma_alone_decoder(): Support decompressing
+      .lzma files that have less common settings in the headers
+      (dictionary size other than 2^n or 2^n + 2^(n-1), or uncompressed
+      size greater than 256 GiB). The limitations existed to avoid false
+      positives when detecting .lzma files. The lc + lp <= 4 limitation
+      still remains since liblzma's LZMA decoder has that limitation.
+
+      NOTE: xz's .lzma support or liblzma's lzma_auto_decoder() are NOT
+      affected by this change. They still consider uncommon .lzma headers
+      as not being in the .lzma format. Changing this would give way too
+      many false positives.
+
+    * xz:
+
+        - Interaction of preset and custom filter chain options was
+          made less illogical. This affects only certain less typical
+          uses cases so few people are expected to notice this change.
+
+          Now when a custom filter chain option (e.g. --lzma2) is
+          specified, all preset options (-0 ... -9, -e) earlier are on
+          the command line are completely forgotten. Similarly, when
+          a preset option is specified, all custom filter chain options
+          earlier on the command line are completely forgotten.
+
+          Example 1: "xz -9 --lzma2=preset=5 -e" is equivalent to "xz -e"
+          which is equivalent to "xz -6e". Earlier -e didn't put xz back
+          into preset mode and thus the example command was equivalent
+          to "xz --lzma2=preset=5".
+
+          Example 2: "xz -9e --lzma2=preset=5 -7" is equivalent to
+          "xz -7". Earlier a custom filter chain option didn't make
+          xz forget the -e option so the example was equivalent to
+          "xz -7e".
+
+        - Fixes and improvements to error handling.
+
+        - Various fixes to the man page.
+
+    * xzless: Fixed to work with "less" versions 448 and later.
+
+    * xzgrep: Made -h an alias for --no-filename.
+
+    * Include the previously missing debug/translation.bash which can
+      be useful for translators.
+
+    * Include a build script for Mac OS X. This has been in the Git
+      repository since 2010 but due to a mistake in Makefile.am the
+      script hasn't been included in a release tarball before.
+
+
+5.0.4 (2012-06-22)
+
+    * liblzma:
+
+        - Fix lzma_index_init(). It could crash if memory allocation
+          failed.
+
+        - Fix the possibility of an incorrect LZMA_BUF_ERROR when a BCJ
+          filter is used and the application only provides exactly as
+          much output space as is the uncompressed size of the file.
+
+        - Fix a bug in doc/examples_old/xz_pipe_decompress.c. It didn't
+          check if the last call to lzma_code() really returned
+          LZMA_STREAM_END, which made the program think that truncated
+          files are valid.
+
+        - New example programs in doc/examples (old programs are now in
+          doc/examples_old). These have more comments and more detailed
+          error handling.
+
+    * Fix "xz -lvv foo.xz". It could crash on some corrupted files.
+
+    * Fix output of "xz --robot -lv" and "xz --robot -lvv" which
+      incorrectly printed the filename also in the "foo (x/x)" format.
+
+    * Fix exit status of "xzdiff foo.xz bar.xz".
+
+    * Fix exit status of "xzgrep foo binary_file".
+
+    * Fix portability to EBCDIC systems.
+
+    * Fix a configure issue on AIX with the XL C compiler. See INSTALL
+      for details.
+
+    * Update French, German, Italian, and Polish translations.
+
+
+5.0.3 (2011-05-21)
+
+    * liblzma fixes:
+
+        - A memory leak was fixed.
+
+        - lzma_stream_buffer_encode() no longer creates an empty .xz
+          Block if encoding an empty buffer. Such an empty Block with
+          LZMA2 data would trigger a bug in 5.0.1 and older (see the
+          first bullet point in 5.0.2 notes). When releasing 5.0.2,
+          I thought that no encoder creates this kind of files but
+          I was wrong.
+
+        - Validate function arguments better in a few functions. Most
+          importantly, specifying an unsupported integrity check to
+          lzma_stream_buffer_encode() no longer creates a corrupt .xz
+          file. Probably no application tries to do that, so this
+          shouldn't be a big problem in practice.
+
+        - Document that lzma_block_buffer_encode(),
+          lzma_easy_buffer_encode(), lzma_stream_encoder(), and
+          lzma_stream_buffer_encode() may return LZMA_UNSUPPORTED_CHECK.
+
+        - The return values of the _memusage() functions are now
+          documented better.
+
+    * Fix command name detection in xzgrep. xzegrep and xzfgrep now
+      correctly use egrep and fgrep instead of grep.
+
+    * French translation was added.
+
+
+5.0.2 (2011-04-01)
+
+    * LZMA2 decompressor now correctly accepts LZMA2 streams with no
+      uncompressed data. Previously it considered them corrupt. The
+      bug can affect applications that use raw LZMA2 streams. It is
+      very unlikely to affect .xz files because no compressor creates
+      .xz files with empty LZMA2 streams. (Empty .xz files are a
+      different thing than empty LZMA2 streams.)
+
+    * "xz --suffix=.foo filename.foo" now refuses to compress the
+      file due to it already having the suffix .foo. It was already
+      documented on the man page, but the code lacked the test.
+
+    * "xzgrep -l foo bar.xz" works now.
+
+    * Polish translation was added.
+
+
+5.0.1 (2011-01-29)
+
+    * xz --force now (de)compresses files that have setuid, setgid,
+      or sticky bit set and files that have multiple hard links.
+      The man page had it documented this way already, but the code
+      had a bug.
+
+    * gzip and bzip2 support in xzdiff was fixed.
+
+    * Portability fixes
+
+    * Minor fix to Czech translation
+
+
+5.0.0 (2010-10-23)
+
+    Only the most important changes compared to 4.999.9beta are listed
+    here. One change is especially important:
+
+      * The memory usage limit is now disabled by default. Some scripts
+        written before this change may have used --memory=max on xz command
+        line or in XZ_OPT. THESE USES OF --memory=max SHOULD BE REMOVED
+        NOW, because they interfere with user's ability to set the memory
+        usage limit himself. If user-specified limit causes problems to
+        your script, blame the user.
+
+    Other significant changes:
+
+      * Added support for XZ_DEFAULTS environment variable. This variable
+        allows users to set default options for xz, e.g. default memory
+        usage limit or default compression level. Scripts that use xz
+        must never set or unset XZ_DEFAULTS. Scripts should use XZ_OPT
+        instead if they need a way to pass options to xz via an
+        environment variable.
+
+      * The compression settings associated with the preset levels
+        -0 ... -9 have been changed. --extreme was changed a little too.
+        It is now less likely to make compression worse, but with some
+        files the new --extreme may compress slightly worse than the old
+        --extreme.
+
+      * If a preset level (-0 ... -9) is specified after a custom filter
+        chain options have been used (e.g. --lzma2), the custom filter
+        chain will be forgotten. Earlier the preset options were
+        completely ignored after custom filter chain options had been
+        seen.
+
+      * xz will create sparse files when decompressing if the uncompressed
+        data contains long sequences of binary zeros. This is done even
+        when writing to standard output that is connected to a regular
+        file and certain additional conditions are met to make it safe.
+
+      * Support for "xz --list" was added. Combine with --verbose or
+        --verbose --verbose (-vv) for detailed output.
+
+      * I had hoped that liblzma API would have been stable after
+        4.999.9beta, but there have been a couple of changes in the
+        advanced features, which don't affect most applications:
+
+          - Index handling code was revised. If you were using the old
+            API, you will get a compiler error (so it's easy to notice).
+
+          - A subtle but important change was made to the Block handling
+            API. lzma_block.version has to be initialized even for
+            lzma_block_header_decode(). Code that doesn't do it will work
+            for now, but might break in the future, which makes this API
+            change easy to miss.
+
+      * The major soname has been bumped to 5.0.0. liblzma API and ABI
+        are now stable, so the need to recompile programs linking against
+        liblzma shouldn't arise soon.
+

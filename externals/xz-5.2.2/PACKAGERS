@@ -1,0 +1,231 @@
+
+Information to packagers of XZ Utils
+====================================
+
+    0. Preface
+    1. Package naming
+    2. Package description
+    3. License
+    4. configure options
+    5. Additional documentation
+    6. Extra files
+    7. Installing XZ Utils and LZMA Utils in parallel
+    8. Example
+
+
+0. Preface
+----------
+
+    This document is meant for people who create and maintain XZ Utils
+    packages for operating system distributions. The focus is on GNU/Linux
+    systems, but most things apply to other systems too.
+
+    While the standard "configure && make DESTDIR=$PKG install" should
+    give a pretty good package, there are some details which packagers
+    may want to tweak.
+
+    Packagers should also read the INSTALL file.
+
+
+1. Package naming
+-----------------
+
+    The preferred name for the XZ Utils package is "xz", because that's
+    the name of the upstream tarball. Naturally you may have good reasons
+    to use some other name; I won't get angry about it. ;-) It's just nice
+    to be able to point people to the correct package name without asking
+    what distro they have.
+
+    If your distro policy is to split things into small pieces, here is
+    one suggestion:
+
+        xz              xz, xzdec, scripts (xzdiff, xzgrep, etc.), docs
+        xz-lzma         lzma, unlzma, lzcat, lzgrep etc. symlinks and
+                        lzmadec binary for compatibility with LZMA Utils
+        liblzma         liblzma.so.*
+        liblzma-devel   liblzma.so, liblzma.a, API headers
+
+
+2. Package description
+----------------------
+
+    Here is a suggestion which you may use as the package description.
+    If you can use only one-line description, pick only the first line.
+    Naturally, feel free to use some other description if you find it
+    better, and maybe send it to me too.
+
+        Library and command line tools for XZ and LZMA compressed files
+
+        XZ Utils provide a general purpose data compression library
+        and command line tools. The native file format is the .xz
+        format, but also the legacy .lzma format is supported. The .xz
+        format supports multiple compression algorithms, of which LZMA2
+        is currently the primary algorithm. With typical files, XZ Utils
+        create about 30 % smaller files than gzip.
+
+    If you are splitting XZ Utils into multiple packages, here are some
+    suggestions for package descriptions:
+
+    xz:
+
+        Command line tools for XZ and LZMA compressed files
+
+        This package includes the xz compression tool and other command
+        line tools from XZ Utils. xz has command line syntax similar to
+        that of gzip. The native file format is the .xz format, but also
+        the legacy .lzma format is supported. The .xz format supports
+        multiple compression algorithms, of which LZMA2 is currently the
+        primary algorithm. With typical files, XZ Utils create about 30 %
+        smaller files than gzip.
+
+        Note that this package doesn't include the files needed for
+        LZMA Utils 4.32.x compatibility. Install also the xz-lzma
+        package to make XZ Utils emulate LZMA Utils 4.32.x.
+
+    xz-lzma:
+
+        LZMA Utils emulation with XZ Utils
+
+        This package includes executables and symlinks to make
+        XZ Utils emulate lzma, unlzma, lzcat, and other command
+        line tools found from the legacy LZMA Utils 4.32.x package.
+
+    liblzma:
+
+        Library for XZ and LZMA compressed files
+
+        liblzma is a general purpose data compression library with
+        an API similar to that of zlib. liblzma supports multiple
+        algorithms, of which LZMA2 is currently the primary algorithm.
+        The native file format is .xz, but also the legacy .lzma
+        format and raw streams (no headers at all) are supported.
+
+        This package includes the shared library.
+
+    liblzma-devel:
+
+        Library for XZ and LZMA compressed files
+
+        This package includes the API headers, static library, and
+        other development files related to liblzma.
+
+
+3. License
+----------
+
+    If the package manager supports a license field, you probably should
+    put GPLv2+ there (GNU GPL v2 or later). The interesting parts of
+    XZ Utils are in the public domain, but some less important files
+    ending up into the binary package are under GPLv2+. So it is simplest
+    to just say GPLv2+ if you cannot specify "public domain and GPLv2+".
+
+    If you split XZ Utils into multiple packages as described earlier
+    in this file, liblzma and liblzma-dev packages will contain only
+    public domain code (from XZ Utils at least; compiler or linker may
+    add some third-party code, which may be copyrighted).
+
+
+4. configure options
+--------------------
+
+    Unless you are building a package for a distribution that is meant
+    only for embedded systems, don't use the following configure options:
+
+        --enable-debug
+        --enable-encoders (*)
+        --enable-decoders
+        --enable-match-finders
+        --enable-checks
+        --enable-small (*)
+        --disable-threads (*)
+
+    (*) These are OK when building xzdec and lzmadec as described
+        in INSTALL.
+
+    xzdec and lzmadec don't provide any functionality that isn't already
+    available in the xz tool. Shipping xzdec and lzmadec without size
+    optimization and statically-linked liblzma isn't very useful. Doing
+    that would give users the xzdec man page, which may make it easier
+    for people to find out that such tools exists, but the executables
+    wouldn't have any advantage over the full-featured xz.
+
+
+5. Additional documentation
+---------------------------
+
+    "make install" copies some additional documentation to $docdir
+    (--docdir in configure). There is a copy of the GNU GPL v2, which
+    can be replaced with a symlink if your distro ships with shared
+    copies of the common license texts.
+
+    liblzma API is currently only documented using Doxygen tags in the
+    API headers. It hasn't been tested much how good results Doxygen
+    is able to make from the tags (e.g. Doxyfile might need tweaking,
+    the tagging may need to be improved etc.), so it might be simpler
+    to just let people read docs directly from the .h files for now,
+    and also save quite a bit in package size at the same time.
+
+
+6. Extra files
+--------------
+
+    The "extra" directory contains some small extra tools or other files.
+    The exact set of extra files can vary between XZ Utils releases. The
+    extra files have only limited use or they are too dangerous to be
+    put directly to $bindir (7z2lzma.sh is a good example, since it can
+    silently create corrupt output if certain conditions are not met).
+
+    If you feel like it, you may copy the extra directory under the doc
+    directory (e.g. /usr/share/doc/xz/extra). Maybe some people will find
+    them useful. However, most people needing these tools probably are
+    able to find them from the source package too.
+
+    The "debug" directory contains some tools that are useful only when
+    hacking on XZ Utils. Don't package these tools.
+
+
+7. Installing XZ Utils and LZMA Utils in parallel
+-------------------------------------------------
+
+    XZ Utils and LZMA Utils 4.32.x can be installed in parallel by
+    omitting the compatibility symlinks (lzma, unlzma, lzcat, lzgrep etc.)
+    from the XZ Utils package. It's probably a good idea to still package
+    the symlinks into a separate package so that users may choose if they
+    want to use XZ Utils or LZMA Utils for handling .lzma files.
+
+
+8. Example
+----------
+
+    Here is an example for i686 GNU/Linux that
+      - links xz and lzmainfo against shared liblzma;
+      - links size-optimized xzdec and lzmadec against static liblzma
+        while avoiding libpthread dependency;
+      - includes only shared liblzma in the final package; and
+      - copies also the "extra" directory to the package.
+
+    PKG=/tmp/xz-pkg
+    tar xf xz-x.y.z.tar.gz
+    cd xz-x.y.z
+    ./configure \
+            --prefix=/usr \
+            --disable-static \
+            --disable-xzdec \
+            --disable-lzmadec \
+            CFLAGS='-march=i686 -mtune=generic -O2'
+    make
+    make DESTDIR=$PKG install-strip
+    make clean
+    ./configure \
+            --prefix=/usr \
+            --disable-shared \
+            --disable-nls \
+            --disable-encoders \
+            --enable-small \
+            --disable-threads \
+            CFLAGS='-march=i686 -mtune=generic -Os'
+    make -C src/liblzma
+    make -C src/xzdec
+    make -C src/xzdec DESTDIR=$PKG install-strip
+    cp -a extra $PKG/usr/share/doc/xz
+

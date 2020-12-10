@@ -1,0 +1,12 @@
+/*
+ * Author: Lasse Collin
+ *
+ * This file has been put into the public domain.
+ * You can do whatever you want with this file.
+ */
+
+#define MY_TYPE VFT_APP
+#define MY_NAME "xz"
+#define MY_SUFFIX ".exe"
+#define MY_DESC "xz data compression tool for .xz and .lzma files"
+#include "common_w32res.rc"

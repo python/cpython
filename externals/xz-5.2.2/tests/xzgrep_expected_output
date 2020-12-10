@@ -1,0 +1,39 @@
+=> xzgrep  el <=
+xzgrep_test_1.xz:elit, sed do eiusmod tempor incididunt ut 
+xzgrep_test_1.xz:in voluptate velit esse cillum dolore eu 
+xzgrep_test_2.xz:Hello
+retval 0
+=> xzgrep -l el <=
+xzgrep_test_1.xz
+xzgrep_test_2.xz
+retval 0
+=> xzgrep -h el <=
+elit, sed do eiusmod tempor incididunt ut 
+in voluptate velit esse cillum dolore eu 
+Hello
+retval 0
+=> xzgrep -H el <=
+xzgrep_test_1.xz:elit, sed do eiusmod tempor incididunt ut 
+xzgrep_test_1.xz:in voluptate velit esse cillum dolore eu 
+xzgrep_test_2.xz:Hello
+retval 0
+=> xzgrep  Hello <=
+xzgrep_test_2.xz:Hello
+retval 0
+=> xzgrep -l Hello <=
+xzgrep_test_2.xz
+retval 0
+=> xzgrep -h Hello <=
+Hello
+retval 0
+=> xzgrep -H Hello <=
+xzgrep_test_2.xz:Hello
+retval 0
+=> xzgrep  NOMATCH <=
+retval 1
+=> xzgrep -l NOMATCH <=
+retval 1
+=> xzgrep -h NOMATCH <=
+retval 1
+=> xzgrep -H NOMATCH <=
+retval 1

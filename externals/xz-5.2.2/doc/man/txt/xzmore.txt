@@ -1,0 +1,34 @@
+XZMORE(1)                          XZ Utils                          XZMORE(1)
+
+
+
+NAME
+       xzmore, lzmore - view xz or lzma compressed (text) files
+
+SYNOPSIS
+       xzmore [file...]
+       lzmore [file...]
+
+DESCRIPTION
+       xzmore  is  a  filter which allows examination of xz(1) or lzma(1) com-
+       pressed text files one screenful at a time on a soft-copy terminal.
+
+       To use a pager other than the default more,  set  environment  variable
+       PAGER  to the name of the desired program.  The name lzmore is provided
+       for backward compatibility with LZMA Utils.
+
+       e or q When the prompt --More--(Next file: file) is printed, this  com-
+              mand causes xzmore to exit.
+
+       s      When  the prompt --More--(Next file: file) is printed, this com-
+              mand causes xzmore to skip the next file and continue.
+
+       For list of keyboard commands supported while actually viewing the con-
+       tent of a file, refer to manual of the pager you use, usually more(1).
+
+SEE ALSO
+       more(1), xz(1), xzless(1), zmore(1)
+
+
+
+Tukaani                           2013-06-30                         XZMORE(1)

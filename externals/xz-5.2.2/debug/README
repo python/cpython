@@ -1,0 +1,17 @@
+
+Debug tools
+-----------
+
+    This directory contains a few tiny programs that may be helpful when
+    debugging XZ Utils.
+
+    These tools are not meant to be installed. Often one needs to edit
+    the source code a little to make the programs do the wanted things.
+    If you don't know how these programs could help you, it is likely
+    that they really are useless to you.
+
+    These aren't intended to be used as example programs. They take some
+    shortcuts here and there, which correct programs should not do. Many
+    possible errors (especially I/O errors) are ignored. Don't report
+    bugs or send patches to fix this kind of bugs.
+

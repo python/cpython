@@ -1,0 +1,970 @@
+# Vietnamese translations for xz package
+# Bản dịch tiếng Việt cho gói xz.
+# This file is put in the public domain.
+# Trần Ngọc Quân <vnwildman@gmail.com>, 2014.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: xz 5.1.4beta\n"
+"Report-Msgid-Bugs-To: lasse.collin@tukaani.org\n"
+"POT-Creation-Date: 2015-09-29 14:03+0300\n"
+"PO-Revision-Date: 2014-09-25 09:06+0700\n"
+"Last-Translator: Trần Ngọc Quân <vnwildman@gmail.com>\n"
+"Language-Team: Vietnamese <translation-team-vi@lists.sourceforge.net>\n"
+"Language: vi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Poedit-Basepath: ../\n"
+
+#: src/xz/args.c:63
+#, c-format
+msgid "%s: Invalid argument to --block-list"
+msgstr "%s: Đối số cho --block-list không hợp lệ"
+
+#: src/xz/args.c:73
+#, c-format
+msgid "%s: Too many arguments to --block-list"
+msgstr "%s: Quá nhiều đối số cho --block-list"
+
+#: src/xz/args.c:102
+msgid "0 can only be used as the last element in --block-list"
+msgstr "0 chỉ có thể dùng như là phần tử cuối trong --block-list"
+
+#: src/xz/args.c:406
+#, c-format
+msgid "%s: Unknown file format type"
+msgstr "%s: Không hiểu kiểu định dạng tập tin"
+
+#: src/xz/args.c:429 src/xz/args.c:437
+#, c-format
+msgid "%s: Unsupported integrity check type"
+msgstr "%s: Không hỗ trợ kiểu kiểm tra toàn vẹn"
+
+#: src/xz/args.c:473
+msgid "Only one file can be specified with `--files' or `--files0'."
+msgstr "Chỉ được đưa ra một tập tin cho “--files” hay “--files0”."
+
+#: src/xz/args.c:541
+#, c-format
+msgid "The environment variable %s contains too many arguments"
+msgstr "Biến môi trường %s chứa quá nhiều đối số"
+
+#: src/xz/coder.c:110
+msgid "Maximum number of filters is four"
+msgstr "Số lượng bộ lọc tối đa là bốn"
+
+#: src/xz/coder.c:129
+msgid "Memory usage limit is too low for the given filter setup."
+msgstr "Mức giới hạn dùng bộ nhớ là quá thấp cho việc cài đặt bộ lọc đã cho."
+
+#: src/xz/coder.c:159
+msgid "Using a preset in raw mode is discouraged."
+msgstr "Dùng hiện tại trong chế độ thô là ngớ ngẩn."
+
+#: src/xz/coder.c:161
+msgid "The exact options of the presets may vary between software versions."
+msgstr "Các tùy chọn trích xuất của chỉnh trước có thể biến đổi phụ thuộc vào phiên bản."
+
+#: src/xz/coder.c:184
+msgid "The .lzma format supports only the LZMA1 filter"
+msgstr "Định dạng .lzma chỉ hỗ trợ bộ lọc LZMA1"
+
+#: src/xz/coder.c:192
+msgid "LZMA1 cannot be used with the .xz format"
+msgstr "LZMA1 không thể được dùng với định dạng .xz"
+
+#: src/xz/coder.c:209
+msgid "The filter chain is incompatible with --flush-timeout"
+msgstr "Móc xích lọc là không tương thích với --flush-timeout"
+
+#: src/xz/coder.c:215
+msgid "Switching to single-threaded mode due to --flush-timeout"
+msgstr "Chuyển sang chế độ đơn tuyến trình bởi vì --flush-timeout"
+
+#: src/xz/coder.c:234
+#, c-format
+msgid "Using up to %<PRIu32> threads."
+msgstr "Dùng đến %<PRIu32> tuyến trình."
+
+#: src/xz/coder.c:247
+msgid "Unsupported filter chain or filter options"
+msgstr "Không hỗ trợ lọc móc xích hay tùy chọn lọc"
+
+#: src/xz/coder.c:255
+#, c-format
+msgid "Decompression will need %s MiB of memory."
+msgstr "Giải nén sẽ cần %s MiB bộ nhớ."
+
+#: src/xz/coder.c:290
+#, c-format
+msgid "Adjusted the number of threads from %s to %s to not exceed the memory usage limit of %s MiB"
+msgstr "Chỉnh số lượng tuyến trình từ %s thành %s để không vượt quá giới hạn tiêu dùng bộ nhớ là %s MiB"
+
+#: src/xz/coder.c:344
+#, c-format
+msgid "Adjusted LZMA%c dictionary size from %s MiB to %s MiB to not exceed the memory usage limit of %s MiB"
+msgstr "Chỉnh cỡ từ điển LZMA%c từ %s MiB thành %s MiB để không vượt quá giới hạn tiêu dùng bộ nhớ là %s MiB"
+
+#: src/xz/file_io.c:87 src/xz/file_io.c:95
+#, c-format
+msgid "Error creating a pipe: %s"
+msgstr "Gặp lỗi khi tạo một ống dẫn: %s"
+
+#: src/xz/file_io.c:172
+#, c-format
+msgid "%s: poll() failed: %s"
+msgstr "%s: hàm poll() bị lỗi: %s"
+
+#. TRANSLATORS: When compression or decompression finishes,
+#. and xz is going to remove the source file, xz first checks
+#. if the source file still exists, and if it does, does its
+#. device and inode numbers match what xz saw when it opened
+#. the source file. If these checks fail, this message is
+#. shown, %s being the filename, and the file is not deleted.
+#. The check for device and inode numbers is there, because
+#. it is possible that the user has put a new file in place
+#. of the original file, and in that case it obviously
+#. shouldn't be removed.
+#: src/xz/file_io.c:242
+#, c-format
+msgid "%s: File seems to have been moved, not removing"
+msgstr "%s: Tập tin có lẽ đã bị di chuyển, không phải gỡ bỏ"
+
+#: src/xz/file_io.c:249 src/xz/file_io.c:762
+#, c-format
+msgid "%s: Cannot remove: %s"
+msgstr "%s: Không thể gỡ bỏ: %s"
+
+#: src/xz/file_io.c:274
+#, c-format
+msgid "%s: Cannot set the file owner: %s"
+msgstr "%s: Không thể đặt chủ sở hữu tập tin: %s"
+
+#: src/xz/file_io.c:280
+#, c-format
+msgid "%s: Cannot set the file group: %s"
+msgstr "%s: Không thể đặt nhóm tập tin: %s"
+
+#: src/xz/file_io.c:299
+#, c-format
+msgid "%s: Cannot set the file permissions: %s"
+msgstr "%s: Không thể đặt chế độ đọc ghi cho tập tin: %s"
+
+#: src/xz/file_io.c:409
+#, c-format
+msgid "Error getting the file status flags from standard input: %s"
+msgstr "Gặp lỗi khi lấy các cờ trạng thái tập tin từ đầu vào tiêu chuẩn: %s"
+
+#: src/xz/file_io.c:463 src/xz/file_io.c:525
+#, c-format
+msgid "%s: Is a symbolic link, skipping"
+msgstr "%s: Là một liên kết mềm nên bỏ qua"
+
+#: src/xz/file_io.c:554
+#, c-format
+msgid "%s: Is a directory, skipping"
+msgstr "%s: Không phải là một thư mục nên bỏ qua"
+
+#: src/xz/file_io.c:560
+#, c-format
+msgid "%s: Not a regular file, skipping"
+msgstr "%s: Không phải là tập tin thường nên bỏ qua"
+
+#: src/xz/file_io.c:577
+#, c-format
+msgid "%s: File has setuid or setgid bit set, skipping"
+msgstr "%s: Tập tin có đặt bít setuid hoặc setgid nên bỏ qua"
+
+#: src/xz/file_io.c:584
+#, c-format
+msgid "%s: File has sticky bit set, skipping"
+msgstr "%s: Tập tin có bít sticky nên bỏ qua"
+
+#: src/xz/file_io.c:591
+#, c-format
+msgid "%s: Input file has more than one hard link, skipping"
+msgstr "%s: Tập tin đầu vào có nhiều hơn một liên kết cứng nên bỏ qua"
+
+#: src/xz/file_io.c:671
+#, c-format
+msgid "Error restoring the status flags to standard input: %s"
+msgstr "Gặp lỗi khi phục hồi các cờ trạng thái tới đầu vào tiêu chuẩn: %s"
+
+#: src/xz/file_io.c:720
+#, c-format
+msgid "Error getting the file status flags from standard output: %s"
+msgstr "Gặp lỗi khi lấy các cờ trạng thái tập tin từ đầu vào tiêu chuẩn: %s"
+
+#: src/xz/file_io.c:898
+#, c-format
+msgid "Error restoring the O_APPEND flag to standard output: %s"
+msgstr "Gặp lỗi khi phục hồi cờ O_APPEND trên đầu ra tiêu chuẩn: %s"
+
+#: src/xz/file_io.c:910
+#, c-format
+msgid "%s: Closing the file failed: %s"
+msgstr "%s: Gặp lỗi khi đóng tập tin: %s"
+
+#: src/xz/file_io.c:946 src/xz/file_io.c:1172
+#, c-format
+msgid "%s: Seeking failed when trying to create a sparse file: %s"
+msgstr "%s: Gặp lỗi khi di chuyển vị trí đọc khi cố tạo một tập tin rải rác: %s"
+
+#: src/xz/file_io.c:1041
+#, c-format
+msgid "%s: Read error: %s"
+msgstr "%s: Lỗi đọc: %s"
+
+#: src/xz/file_io.c:1061
+#, c-format
+msgid "%s: Error seeking the file: %s"
+msgstr "%s: Gặp lỗi khi di chuyển vị trí đọc tập tin: %s"
+
+#: src/xz/file_io.c:1071
+#, c-format
+msgid "%s: Unexpected end of file"
+msgstr "%s: Kết thúc tập tin bất ngờ"
+
+#: src/xz/file_io.c:1130
+#, c-format
+msgid "%s: Write error: %s"
+msgstr "%s: Lỗi ghi: %s"
+
+#: src/xz/hardware.c:107
+msgid "Disabled"
+msgstr "Bị tắt"
+
+#. TRANSLATORS: Test with "xz --info-memory" to see if
+#. the alignment looks nice.
+#: src/xz/hardware.c:126
+msgid "Total amount of physical memory (RAM): "
+msgstr "Tổng dung lượng bộ nhớ vật lý (RAM):  "
+
+#: src/xz/hardware.c:128
+msgid "Memory usage limit for compression:    "
+msgstr "Mức giới hạn dùng bộ nhớ cho nén:     "
+
+#: src/xz/hardware.c:130
+msgid "Memory usage limit for decompression:  "
+msgstr "Mức giới hạn dùng bộ nhớ cho giải nén:"
+
+#. TRANSLATORS: Indicates that there is no integrity check.
+#. This string is used in tables, so the width must not
+#. exceed ten columns with a fixed-width font.
+#: src/xz/list.c:65
+msgid "None"
+msgstr "Không"
+
+#. TRANSLATORS: Indicates that integrity check name is not known,
+#. but the Check ID is known (here 2). This and other "Unknown-N"
+#. strings are used in tables, so the width must not exceed ten
+#. columns with a fixed-width font. It's OK to omit the dash if
+#. you need space for one extra letter, but don't use spaces.
+#: src/xz/list.c:72
+msgid "Unknown-2"
+msgstr "Chưa_biết2"
+
+#: src/xz/list.c:73
+msgid "Unknown-3"
+msgstr "Chưa_biết3"
+
+#: src/xz/list.c:75
+msgid "Unknown-5"
+msgstr "Chưa_biết5"
+
+#: src/xz/list.c:76
+msgid "Unknown-6"
+msgstr "Chưa_biết6"
+
+#: src/xz/list.c:77
+msgid "Unknown-7"
+msgstr "Chưa_biết7"
+
+#: src/xz/list.c:78
+msgid "Unknown-8"
+msgstr "Chưa_biết8"
+
+#: src/xz/list.c:79
+msgid "Unknown-9"
+msgstr "Chưa_biết9"
+
+#: src/xz/list.c:81
+msgid "Unknown-11"
+msgstr "ChưaBiết11"
+
+#: src/xz/list.c:82
+msgid "Unknown-12"
+msgstr "ChưaBiết12"
+
+#: src/xz/list.c:83
+msgid "Unknown-13"
+msgstr "ChưaBiết13"
+
+#: src/xz/list.c:84
+msgid "Unknown-14"
+msgstr "ChưaBiết14"
+
+#: src/xz/list.c:85
+msgid "Unknown-15"
+msgstr "ChưaBiết15"
+
+#: src/xz/list.c:153
+#, c-format
+msgid "%s: File is empty"
+msgstr "%s: Tập tin trống rỗng"
+
+#: src/xz/list.c:158
+#, c-format
+msgid "%s: Too small to be a valid .xz file"
+msgstr "%s: Là quá nhỏ đối với tập tin .xz hợp lệ"
+
+#. TRANSLATORS: These are column headings. From Strms (Streams)
+#. to Ratio, the columns are right aligned. Check and Filename
+#. are left aligned. If you need longer words, it's OK to
+#. use two lines here. Test with "xz -l foo.xz".
+#: src/xz/list.c:671
+msgid "Strms  Blocks   Compressed Uncompressed  Ratio  Check   Filename"
+msgstr "Luồng    Khối          Nén     Giải nén  Tỷ lệ  Ktra    Tập tin"
+
+#: src/xz/list.c:711
+#, c-format
+msgid "  Streams:            %s\n"
+msgstr "  Luồng dữ liệu:      %s\n"
+
+#: src/xz/list.c:713
+#, c-format
+msgid "  Blocks:             %s\n"
+msgstr "  Khối:               %s\n"
+
+#: src/xz/list.c:715
+#, c-format
+msgid "  Compressed size:    %s\n"
+msgstr "  Cỡ khi bị nén:      %s\n"
+
+#: src/xz/list.c:718
+#, c-format
+msgid "  Uncompressed size:  %s\n"
+msgstr "  Cỡ sau giải nén:    %s\n"
+
+#: src/xz/list.c:721
+#, c-format
+msgid "  Ratio:              %s\n"
+msgstr "  Tỷ lệ nén:          %s\n"
+
+#: src/xz/list.c:723
+#, c-format
+msgid "  Check:              %s\n"
+msgstr "  Kiểm tra:           %s\n"
+
+#: src/xz/list.c:724
+#, c-format
+msgid "  Stream padding:     %s\n"
+msgstr "  Đệm luồng dữ liệu:  %s\n"
+
+#. TRANSLATORS: The second line is column headings. All except
+#. Check are right aligned; Check is left aligned. Test with
+#. "xz -lv foo.xz".
+#: src/xz/list.c:752
+msgid ""
+"  Streams:\n"
+"    Stream    Blocks      CompOffset    UncompOffset        CompSize      UncompSize  Ratio  Check      Padding"
+msgstr ""
+"  Luồng dữ liệu:\n"
+"     Luồng      Khối           BùNén       BùGiảiNén           CỡNén       CỡGiảiNén   TỷLệ  Ktra           Đệm"
+
+#. TRANSLATORS: The second line is column headings. All
+#. except Check are right aligned; Check is left aligned.
+#: src/xz/list.c:807
+#, c-format
+msgid ""
+"  Blocks:\n"
+"    Stream     Block      CompOffset    UncompOffset       TotalSize      UncompSize  Ratio  Check"
+msgstr ""
+"  Khối:\n"
+"     Luồng      Khối           BùNén       BùGiảiNén          CỡTổng       CỡGiảiNén   TỷLệ  Ktra"
+
+#. TRANSLATORS: These are additional column headings
+#. for the most verbose listing mode. CheckVal
+#. (Check value), Flags, and Filters are left aligned.
+#. Header (Block Header Size), CompSize, and MemUsage
+#. are right aligned. %*s is replaced with 0-120
+#. spaces to make the CheckVal column wide enough.
+#. Test with "xz -lvv foo.xz".
+#: src/xz/list.c:819
+#, c-format
+msgid "      CheckVal %*s Header  Flags        CompSize    MemUsage  Filters"
+msgstr "       GTrịKiểm %*s    Đầu  Cờ              CỡNén     DùngRAM  BộLọc"
+
+#: src/xz/list.c:897 src/xz/list.c:1072
+#, c-format
+msgid "  Memory needed:      %s MiB\n"
+msgstr "  Bộ nhớ cần:         %s MiB\n"
+
+#: src/xz/list.c:899 src/xz/list.c:1074
+#, c-format
+msgid "  Sizes in headers:   %s\n"
+msgstr "  Kích cỡ phần đầu:   %s\n"
+
+#: src/xz/list.c:900 src/xz/list.c:1075
+msgid "Yes"
+msgstr "Có"
+
+#: src/xz/list.c:900 src/xz/list.c:1075
+msgid "No"
+msgstr "Không"
+
+#: src/xz/list.c:901 src/xz/list.c:1076
+#, c-format
+msgid "  Minimum XZ Utils version: %s\n"
+msgstr "  Phiên bản “XZ Utils” tối thiểu: %s\n"
+
+#. TRANSLATORS: %s is an integer. Only the plural form of this
+#. message is used (e.g. "2 files"). Test with "xz -l foo.xz bar.xz".
+#: src/xz/list.c:1051
+#, c-format
+msgid "%s file\n"
+msgid_plural "%s files\n"
+msgstr[0] "%s tập tin\n"
+
+#: src/xz/list.c:1064
+msgid "Totals:"
+msgstr "Tổng cộng:"
+
+#: src/xz/list.c:1065
+#, c-format
+msgid "  Number of files:    %s\n"
+msgstr "  Số tập tin:         %s\n"
+
+#: src/xz/list.c:1140
+msgid "--list works only on .xz files (--format=xz or --format=auto)"
+msgstr "--list chỉ hoạt động trên các tập tin .xz (--format=xz hay --format=auto)"
+
+#: src/xz/list.c:1146
+msgid "--list does not support reading from standard input"
+msgstr "--list không hỗ trợ đọc từ đầu vào tiêu chuẩn"
+
+#: src/xz/main.c:89
+#, c-format
+msgid "%s: Error reading filenames: %s"
+msgstr "%s: Gặp lỗi khi đọc tên tập tin: %s"
+
+#: src/xz/main.c:96
+#, c-format
+msgid "%s: Unexpected end of input when reading filenames"
+msgstr "%s: Gặp kết thúc đầu vào bất ngờ khi đọc các tên tập tin"
+
+#: src/xz/main.c:120
+#, c-format
+msgid "%s: Null character found when reading filenames; maybe you meant to use `--files0' instead of `--files'?"
+msgstr "%s: Gặp ký hiệu Null khi đọc tên tập tin; có lẽ ý bạn muốn là dùng “--files0” chứ không phải “--files'?"
+
+#: src/xz/main.c:174
+msgid "Compression and decompression with --robot are not supported yet."
+msgstr "Nén và giải nén với --robot vẫn chưa được hỗ trợ."
+
+#: src/xz/main.c:231
+msgid "Cannot read data from standard input when reading filenames from standard input"
+msgstr "Không thể đọc dữ liệu từ đầu vào tiêu chuẩn khi đọc tập tin từ đầu vào tiêu chuẩn"
+
+#. TRANSLATORS: This is the program name in the beginning
+#. of the line in messages. Usually it becomes "xz: ".
+#. This is a translatable string because French needs
+#. a space before a colon.
+#: src/xz/message.c:714
+#, c-format
+msgid "%s: "
+msgstr "%s: "
+
+#: src/xz/message.c:777 src/xz/message.c:827
+msgid "Internal error (bug)"
+msgstr "Lỗi nội bộ (lỗi)"
+
+#: src/xz/message.c:784
+msgid "Cannot establish signal handlers"
+msgstr "Không thể thiết lập bộ xử lý tín hiệu"
+
+#: src/xz/message.c:793
+msgid "No integrity check; not verifying file integrity"
+msgstr "Không có kiểm tra toàn vẹn nên không thể thẩm tra tính toàn vẹn của tập tin"
+
+#: src/xz/message.c:796
+msgid "Unsupported type of integrity check; not verifying file integrity"
+msgstr "Kiểu kiểm tra toàn vẹn chưa được hỗ trợ; nên không thể thẩm tra tính toàn vẹn của tập tin"
+
+#: src/xz/message.c:803
+msgid "Memory usage limit reached"
+msgstr "Đã chạm mốc giới hạn sử dụng bộ nhớ"
+
+#: src/xz/message.c:806
+msgid "File format not recognized"
+msgstr "Không nhận ra định dạng tập tin"
+
+#: src/xz/message.c:809
+msgid "Unsupported options"
+msgstr "Tùy chọn không được hỗ trợ"
+
+#: src/xz/message.c:812
+msgid "Compressed data is corrupt"
+msgstr "Dữ liệu đã nén bị hỏng"
+
+#: src/xz/message.c:815
+msgid "Unexpected end of input"
+msgstr "Gặp kết thúc đầu vào bất ngờ"
+
+#: src/xz/message.c:848
+#, c-format
+msgid "%s MiB of memory is required. The limiter is disabled."
+msgstr "Yêu cầu cần có %s MiB bộ nhớ. Nhưng giới hạn bị tắt."
+
+#: src/xz/message.c:876
+#, c-format
+msgid "%s MiB of memory is required. The limit is %s."
+msgstr "Yêu cầu cần có %s MiB bộ nhớ. Nhưng giới hạn là %s."
+
+#: src/xz/message.c:1043
+#, c-format
+msgid "%s: Filter chain: %s\n"
+msgstr "%s: Móc xích lọc: %s\n"
+
+#: src/xz/message.c:1053
+#, c-format
+msgid "Try `%s --help' for more information."
+msgstr "Hãy chạy lệnh “%s --help” để xem thông tin thêm."
+
+#: src/xz/message.c:1079
+#, c-format
+msgid ""
+"Usage: %s [OPTION]... [FILE]...\n"
+"Compress or decompress FILEs in the .xz format.\n"
+"\n"
+msgstr ""
+"Cách dùng: %s [TÙY CHỌN]... [TẬP TIN]...\n"
+"Nén hoặc giải nén các TẬP TIN có định dạng .xz.\n"
+"\n"
+
+#: src/xz/message.c:1086
+msgid "Mandatory arguments to long options are mandatory for short options too.\n"
+msgstr "Các tùy chọn dài bắt buộc phải có đối số thì với tùy chọn ngắn cũng vậy.\n"
+
+#: src/xz/message.c:1090
+msgid " Operation mode:\n"
+msgstr " Chế độ thao tác:\n"
+
+#: src/xz/message.c:1093
+msgid ""
+"  -z, --compress      force compression\n"
+"  -d, --decompress    force decompression\n"
+"  -t, --test          test compressed file integrity\n"
+"  -l, --list          list information about .xz files"
+msgstr ""
+"  -z, --compress      ép buộc nén\n"
+"  -d, --decompress    ép buộc giải nén\n"
+"  -t, --test          kiểm tra tính toàn vẹn của tập tin nén\n"
+"  -l, --list          liệt kê các thông tin về tập tin .xz"
+
+#: src/xz/message.c:1099
+msgid ""
+"\n"
+" Operation modifiers:\n"
+msgstr ""
+"\n"
+" Bộ chỉnh sửa thao tác:\n"
+
+#: src/xz/message.c:1102
+msgid ""
+"  -k, --keep          keep (don't delete) input files\n"
+"  -f, --force         force overwrite of output file and (de)compress links\n"
+"  -c, --stdout        write to standard output and don't delete input files"
+msgstr ""
+"  -k, --keep          giữ lại (đừng xóa) tập tin đầu vào\n"
+"  -f, --force         buộc ghi đè tập tin đầu ra và (giải) nén các liên kết\n"
+"  -c, --stdout        ghi ra đầu ra tiêu chuẩn và không xóa tập tin đầu vào"
+
+#: src/xz/message.c:1108
+msgid ""
+"      --single-stream decompress only the first stream, and silently\n"
+"                      ignore possible remaining input data"
+msgstr ""
+"      --single-stream chỉ giải nén luồng dữ liệu đầu, và bỏ qua\n"
+"                      dữ liệu đầu vào còn lại có thể"
+
+#: src/xz/message.c:1111
+msgid ""
+"      --no-sparse     do not create sparse files when decompressing\n"
+"  -S, --suffix=.SUF   use the suffix `.SUF' on compressed files\n"
+"      --files[=FILE]  read filenames to process from FILE; if FILE is\n"
+"                      omitted, filenames are read from the standard input;\n"
+"                      filenames must be terminated with the newline character\n"
+"      --files0[=FILE] like --files but use the null character as terminator"
+msgstr ""
+"      --no-sparse     đừng tạo các tập tin rải rác khi giải nén\n"
+"  -S, --suffix=.ĐUÔI  dùng hậu tố “.ĐUÔI” trên các tập tin nén\n"
+"      --files[=TẬP-TIN]  đọc các tập tin cần xử lý từ TẬP-TIN; nếu không có\n"
+"                      TẬP-TIN thì tên tập tin sẽ được đọc vào từ đầu vào tiêu\n"
+"                      chuẩn; chúng phải được kết thúc bằng ký tự dòng mới\n"
+"      --files0[=TẬP-TIN] giống --files nhưng ký tự kết thúc là null"
+
+#: src/xz/message.c:1120
+msgid ""
+"\n"
+" Basic file format and compression options:\n"
+msgstr ""
+"\n"
+" Các tùy chọn về định dạng và nén cơ bản:\n"
+
+#: src/xz/message.c:1122
+msgid ""
+"  -F, --format=FMT    file format to encode or decode; possible values are\n"
+"                      `auto' (default), `xz', `lzma', and `raw'\n"
+"  -C, --check=CHECK   integrity check type: `none' (use with caution),\n"
+"                      `crc32', `crc64' (default), or `sha256'"
+msgstr ""
+"  -F, --format=ĐDạng  định dạng tập tin cần mã hóa hoặc giải mã; giá trị có thể\n"
+"                      là “auto” (mặc định), “xz”, “lzma”, và “raw”\n"
+"  -C, --check=KIỂM    kiểu kiểm tra toàn vẹn: “none” (thận trọng khi dùng),\n"
+"                      “crc32”, “crc64” (mặc định), hay “sha256”"
+
+#: src/xz/message.c:1127
+msgid "      --ignore-check  don't verify the integrity check when decompressing"
+msgstr "      --ignore-check  không thẩm tra tính toàn vẹn khi giải nén"
+
+#: src/xz/message.c:1131
+msgid ""
+"  -0 ... -9           compression preset; default is 6; take compressor *and*\n"
+"                      decompressor memory usage into account before using 7-9!"
+msgstr ""
+"  -0 ... -9           đặt mức nén; mặc định là 6; tiêu dùng nhiều bộ nhớ khi nén\n"
+"                      và giải nén, nên tính toán trước khi dùng 7-9!"
+
+#: src/xz/message.c:1135
+msgid ""
+"  -e, --extreme       try to improve compression ratio by using more CPU time;\n"
+"                      does not affect decompressor memory requirements"
+msgstr ""
+"  -e, --extreme       cố gắng nâng cao mức nén bằng cách dùng nhiều CPU hơn;\n"
+"                      nhưng không yêu cần nhiều bộ nhớ khi giải nén"
+
+#: src/xz/message.c:1139
+msgid ""
+"  -T, --threads=NUM   use at most NUM threads; the default is 1; set to 0\n"
+"                      to use as many threads as there are processor cores"
+msgstr ""
+"  -T, --threads=SỐ    dùng tối đa là SỐ tuyến trình; mặc định là 1; đặt\n"
+"                      thành 0 để dùng số lượng bằng số lõi vi xử lý"
+
+#: src/xz/message.c:1144
+msgid ""
+"      --block-size=SIZE\n"
+"                      start a new .xz block after every SIZE bytes of input;\n"
+"                      use this to set the block size for threaded compression"
+msgstr ""
+"      --block-size=CỠ\n"
+"                      bắt đầu một khối .xz mới sau mỗi CỠ byte của đầu vào;\n"
+"                      dùng tùy chọn này để đặt cỡ khối cho nén tuyến trình"
+
+#: src/xz/message.c:1148
+msgid ""
+"      --block-list=SIZES\n"
+"                      start a new .xz block after the given comma-separated\n"
+"                      intervals of uncompressed data"
+msgstr ""
+"      --block-list=CỠ\n"
+"                      bắt đầu một khối .xz mới sau một danh sách ngăn\n"
+"                      cách bằng dấu phẩy nhịp dữ của dữ liệu chưa nén"
+
+#: src/xz/message.c:1152
+msgid ""
+"      --flush-timeout=TIMEOUT\n"
+"                      when compressing, if more than TIMEOUT milliseconds has\n"
+"                      passed since the previous flush and reading more input\n"
+"                      would block, all pending data is flushed out"
+msgstr ""
+"      --flush-timeout=THỜI_GIAN_CHỜ\n"
+"                      khi đang nén, nếu đã trải qua hơn THỜI_GIAN_CHỜ milli-giây\n"
+"                      kể từ lần đẩy dữ liệu lên đĩa trước đó và đang đọc thêm\n"
+"                      khối nữa, mọi dữ liệu đang chờ sẽ được ghi lên đĩa"
+
+#: src/xz/message.c:1158
+#, no-c-format
+msgid ""
+"      --memlimit-compress=LIMIT\n"
+"      --memlimit-decompress=LIMIT\n"
+"  -M, --memlimit=LIMIT\n"
+"                      set memory usage limit for compression, decompression,\n"
+"                      or both; LIMIT is in bytes, % of RAM, or 0 for defaults"
+msgstr ""
+"      --memlimit-compress=GIỚI_HẠN\n"
+"      --memlimit-decompress=GIỚI_HẠN\n"
+"  -M, --memlimit=GIỚI_HẠN\n"
+"                      đặt mức giới hạn dùng bộ nhớ cho việc nén, giải nén,\n"
+"                      hoặc cả hai; GIỚI_HẠN có đơn vị là byte, % của RAM,\n"
+"                      hay 0 cho mặc định"
+
+#: src/xz/message.c:1165
+msgid ""
+"      --no-adjust     if compression settings exceed the memory usage limit,\n"
+"                      give an error instead of adjusting the settings downwards"
+msgstr ""
+"      --no-adjust     nếu các cài đặt nén vượt quá giới hạn dùng bộ nhớ,\n"
+"                      đưa ra một lỗi thay vì sửa đổi các cài đặt xuống"
+
+#: src/xz/message.c:1171
+msgid ""
+"\n"
+" Custom filter chain for compression (alternative for using presets):"
+msgstr ""
+"\n"
+" Móc xích lọc tùy chỉnh cho nén (thay cho việc dùng chỉnh trước):"
+
+#: src/xz/message.c:1180
+msgid ""
+"\n"
+"  --lzma1[=OPTS]      LZMA1 or LZMA2; OPTS is a comma-separated list of zero or\n"
+"  --lzma2[=OPTS]      more of the following options (valid values; default):\n"
+"                        preset=PRE reset options to a preset (0-9[e])\n"
+"                        dict=NUM   dictionary size (4KiB - 1536MiB; 8MiB)\n"
+"                        lc=NUM     number of literal context bits (0-4; 3)\n"
+"                        lp=NUM     number of literal position bits (0-4; 0)\n"
+"                        pb=NUM     number of position bits (0-4; 2)\n"
+"                        mode=MODE  compression mode (fast, normal; normal)\n"
+"                        nice=NUM   nice length of a match (2-273; 64)\n"
+"                        mf=NAME    match finder (hc3, hc4, bt2, bt3, bt4; bt4)\n"
+"                        depth=NUM  maximum search depth; 0=automatic (default)"
+msgstr ""
+"\n"
+"  --lzma1[=CTC]       LZMA1 hay LZMA2; CÁC-TÙY-CHỌN là danh sách của không hoặc\n"
+"  --lzma2[=CTC]       hơn các tùy chọn sau đây (giá trị hợp lệ; mặc định):\n"
+"                        preset=PRE các tùy chọn tối ưu nén (0-9[e])\n"
+"                        dict=SỐ    cỡ từ điển (4KiB - 1536MiB; 8MiB)\n"
+"                        lc=SỐ      số bít ngữ cảnh văn bản (0-4; 3)\n"
+"                        lp=SỐ      số bít vị trí văn bản (0-4; 0)\n"
+"                        pb=SỐ      số bít vị trí (0-4; 2)\n"
+"                        mode=CHẾ_ĐỘ  chế độ nén (fast, normal; normal)\n"
+"                        nice=SỐ    chiều dài “tốt” của khớp (2-273; 64)\n"
+"                        mf=TÊN     bộ tìm khớp (hc3, hc4, bt2, bt3, bt4; bt4)\n"
+"                        depth=SỐ   mức sâu tìm kiếm tối đa; 0=tự động (mặc định)"
+
+#: src/xz/message.c:1195
+msgid ""
+"\n"
+"  --x86[=OPTS]        x86 BCJ filter (32-bit and 64-bit)\n"
+"  --powerpc[=OPTS]    PowerPC BCJ filter (big endian only)\n"
+"  --ia64[=OPTS]       IA-64 (Itanium) BCJ filter\n"
+"  --arm[=OPTS]        ARM BCJ filter (little endian only)\n"
+"  --armthumb[=OPTS]   ARM-Thumb BCJ filter (little endian only)\n"
+"  --sparc[=OPTS]      SPARC BCJ filter\n"
+"                      Valid OPTS for all BCJ filters:\n"
+"                        start=NUM  start offset for conversions (default=0)"
+msgstr ""
+"\n"
+"  --x86[=OPTS]        bộ lọc x86 BCJ (32-bit và 64-bit)\n"
+"  --powerpc[=OPTS]    bộ lọc PowerPC BCJ (chỉ big endian)\n"
+"  --ia64[=OPTS]       IA-64 (Itanium) BCJ\n"
+"  --arm[=OPTS]        bộ lọc ARM BCJ (chỉ little endian)\n"
+"  --armthumb[=OPTS]   bộ lọc ARM-Thumb BCJ (chỉ little endian)\n"
+"  --sparc[=OPTS]      bộ lọc SPARC BCJ\n"
+"                      các tùy chọn hợp lệ cho mọi bộ lọc BCJ:\n"
+"                        start=SỐ khoảng bù khởi đầu cho chuyển đổi (mặc định=0)"
+
+#: src/xz/message.c:1207
+msgid ""
+"\n"
+"  --delta[=OPTS]      Delta filter; valid OPTS (valid values; default):\n"
+"                        dist=NUM   distance between bytes being subtracted\n"
+"                                   from each other (1-256; 1)"
+msgstr ""
+"\n"
+"  --delta[=OPTS]      bộ lọc Delta;\n"
+"                      CÁC-TÙY-CHỌN hợp lệ (giá trị hợp lệ; mặc định):\n"
+"                        dist=SỐ    khoảng cách giữa các byte được trừ từ\n"
+"                                   những cái khác (1-256; 1)"
+
+#: src/xz/message.c:1215
+msgid ""
+"\n"
+" Other options:\n"
+msgstr ""
+"\n"
+" Tùy chọn khác:\n"
+
+#: src/xz/message.c:1218
+msgid ""
+"  -q, --quiet         suppress warnings; specify twice to suppress errors too\n"
+"  -v, --verbose       be verbose; specify twice for even more verbose"
+msgstr ""
+"  -q, --quiet         không xuất các cảnh báo;\n"
+"                      chỉ định hai lần nến bạn muốn chặn cả báo lỗi\n"
+"  -v, --verbose       thông báo chi tiết; dùng hai lần nếu muốn chi tiết hơn"
+
+#: src/xz/message.c:1223
+msgid "  -Q, --no-warn       make warnings not affect the exit status"
+msgstr "  -Q, --no-warn       làm cho các cảnh báo không ảnh hưởng đến trạng thái thoát"
+
+#: src/xz/message.c:1225
+msgid "      --robot         use machine-parsable messages (useful for scripts)"
+msgstr ""
+"      --robot         dùng các thông điệp máy có thể phân tích\n"
+"                      (hữu dụng với scripts)"
+
+#: src/xz/message.c:1228
+msgid ""
+"      --info-memory   display the total amount of RAM and the currently active\n"
+"                      memory usage limits, and exit"
+msgstr ""
+"      --info-memory   hiển thị tổng lượng RAM và mức giới hạn tiêu dùng\n"
+"                      bộ nhớ hiện tại, rồi thoát"
+
+#: src/xz/message.c:1231
+msgid ""
+"  -h, --help          display the short help (lists only the basic options)\n"
+"  -H, --long-help     display this long help and exit"
+msgstr ""
+"  -h, --help          hiển thị trợ giúp dạng ngắn gọn\n"
+"                      (chỉ liệt kê các tùy chọn cơ bản)\n"
+"  -H, --long-help     hiển thị trợ giúp đầy đủ rồi thoát"
+
+#: src/xz/message.c:1235
+msgid ""
+"  -h, --help          display this short help and exit\n"
+"  -H, --long-help     display the long help (lists also the advanced options)"
+msgstr ""
+"  -h, --help          hiển thị trợ giúp dạng ngắn gọn rồi thoát\n"
+"  -H, --long-help     hiển thị trợ giúp đầy đủ\n"
+"                      (liệt kê cả những tùy chọn cấp cao)"
+
+#: src/xz/message.c:1240
+msgid "  -V, --version       display the version number and exit"
+msgstr "  -V, --version       hiển thị số phiên bản và thoát"
+
+#: src/xz/message.c:1242
+msgid ""
+"\n"
+"With no FILE, or when FILE is -, read standard input.\n"
+msgstr ""
+"\n"
+"Không có TẬP_TIN, hoặc TẬP_TIN là “-”, thì đọc đầu vào tiêu chuẩn.\n"
+
+#. TRANSLATORS: This message indicates the bug reporting address
+#. for this package. Please add _another line_ saying
+#. "Report translation bugs to <...>\n" with the email or WWW
+#. address for translation bugs. Thanks.
+#: src/xz/message.c:1248
+#, c-format
+msgid "Report bugs to <%s> (in English or Finnish).\n"
+msgstr ""
+"Hãy báo cáo lỗi cho <%s> (bằng tiếng Anh hoặc Phần Lan).\n"
+"Thông báo lỗi dịch cho: <http://translationproject.org/team/vi.html>.\n"
+
+#: src/xz/message.c:1250
+#, c-format
+msgid "%s home page: <%s>\n"
+msgstr "Trang chủ %s: <%s>.\n"
+
+#: src/xz/message.c:1254
+msgid "THIS IS A DEVELOPMENT VERSION NOT INTENDED FOR PRODUCTION USE."
+msgstr "ĐÂY LÀ PHIÊN BẢN PHÁT TRIỂN VÀ NÓ KHÔNG PHÙ HỢP VỚI MỤC ĐÍCH SẢN XUẤT."
+
+#: src/xz/options.c:86
+#, c-format
+msgid "%s: Options must be `name=value' pairs separated with commas"
+msgstr "%s: Các tùy chọn phải là các cặp “name=value” ngăn cách nhau bằng dấu phẩy"
+
+#: src/xz/options.c:93
+#, c-format
+msgid "%s: Invalid option name"
+msgstr "%s: Tên tùy chọn không hợp lệ"
+
+#: src/xz/options.c:113
+#, c-format
+msgid "%s: Invalid option value"
+msgstr "%s: Giá trị của tùy chọn không hợp lệ"
+
+#: src/xz/options.c:247
+#, c-format
+msgid "Unsupported LZMA1/LZMA2 preset: %s"
+msgstr "Hiện nay chưa hỗ trợ LZMA1/LZMA2: %s"
+
+#: src/xz/options.c:355
+msgid "The sum of lc and lp must not exceed 4"
+msgstr "Tổng số lượng lc và lp không được vượt quá 4"
+
+#: src/xz/options.c:359
+#, c-format
+msgid "The selected match finder requires at least nice=%<PRIu32>"
+msgstr "Bộ tìm khớp đã chọn yêu cầu mức “tốt” ít nhất là nice=%<PRIu32>"
+
+#: src/xz/suffix.c:133 src/xz/suffix.c:258
+#, c-format
+msgid "%s: With --format=raw, --suffix=.SUF is required unless writing to stdout"
+msgstr "%s: Nếu --format=raw, --suffix=.SUF sẽ được yêu cầu trừ trường hợp ghi ra đầu ra tiêu chuẩn"
+
+#: src/xz/suffix.c:164
+#, c-format
+msgid "%s: Filename has an unknown suffix, skipping"
+msgstr "%s: Tên tập tin có phần hậu tố chưa biết nên bỏ qua"
+
+#: src/xz/suffix.c:185
+#, c-format
+msgid "%s: File already has `%s' suffix, skipping"
+msgstr "%s: Tập tin đã sẵn có hậu tố “%s” nên bỏ qua"
+
+#: src/xz/suffix.c:393
+#, c-format
+msgid "%s: Invalid filename suffix"
+msgstr "%s: Hậu tố tên tập tin không hợp lệ"
+
+#: src/xz/util.c:71
+#, c-format
+msgid "%s: Value is not a non-negative decimal integer"
+msgstr "%s: Giá trị không phải là số thập phân nguyên không âm"
+
+#: src/xz/util.c:113
+#, c-format
+msgid "%s: Invalid multiplier suffix"
+msgstr "%s: Hậu tố nhân tố không hợp lệ"
+
+#: src/xz/util.c:115
+msgid "Valid suffixes are `KiB' (2^10), `MiB' (2^20), and `GiB' (2^30)."
+msgstr "Các hậu tố hợp lệ là “KiB” (2^10), “MiB” (2^20), và “GiB” (2^30)."
+
+#: src/xz/util.c:132
+#, c-format
+msgid "Value of the option `%s' must be in the range [%<PRIu64>, %<PRIu64>]"
+msgstr "Giá trị cuả tùy chọn “%s” phải nằm trong vùng [%<PRIu64>, %<PRIu64>]"
+
+#: src/xz/util.c:257
+msgid "Empty filename, skipping"
+msgstr "Tên tập tin trống rỗng nên bỏ qua"
+
+#: src/xz/util.c:271
+msgid "Compressed data cannot be read from a terminal"
+msgstr "Dữ liệu đã nén không thể đọc từ thiết bị cuối"
+
+#: src/xz/util.c:284
+msgid "Compressed data cannot be written to a terminal"
+msgstr "Dữ liệu đã nén không thể ghi ra thiết bị cuối"
+
+#: src/common/tuklib_exit.c:39
+msgid "Writing to standard output failed"
+msgstr "Gặp lỗi khi ghi dữ liệu vào đầu ra tiêu chuẩn"
+
+#: src/common/tuklib_exit.c:42
+msgid "Unknown error"
+msgstr "Lỗi chưa biết"
+
+#~ msgid "Error setting O_NONBLOCK on standard input: %s"
+#~ msgstr "Lỗi cài đặt O_NONBLOCK trên đầu vào tiêu chuẩn: %s"
+
+#~ msgid "Error setting O_NONBLOCK on standard output: %s"
+#~ msgstr "Lỗi cài đặt O_NONBLOCK trên đầu ra tiêu chuẩn: %s"
+
+#~ msgid ""
+#~ "      --block-size=SIZE\n"
+#~ "                      when compressing to the .xz format, start a new block\n"
+#~ "                      after every SIZE bytes of input; 0=disabled (default)"
+#~ msgstr ""
+#~ "      --block-size=CỠ\n"
+#~ "                      khi nén thành định dạng .xz, bắt đầu khối mới\n"
+#~ "                      sau mỗi SỐ byte đầu vào; 0=tắt (mặc định)"

@@ -1,0 +1,98 @@
+.\"
+.\" Original zgrep.1 for gzip: Jean-loup Gailly
+.\"                            Charles Levert <charles@comm.polymtl.ca>
+.\"
+.\" Modifications for XZ Utils: Lasse Collin
+.\"
+.\" License: GNU GPLv2+
+.\"
+.TH XZGREP 1 "2011-03-19" "Tukaani" "XZ Utils"
+.SH NAME
+xzgrep \- search compressed files for a regular expression
+.SH SYNOPSIS
+.B xzgrep
+.RI [ grep_options ]
+.RB [ \-e ]
+.I pattern
+.IR file "..."
+.br
+.B xzegrep
+.RB ...
+.br
+.B xzfgrep
+.RB ...
+.br
+.B lzgrep
+.RB ...
+.br
+.B lzegrep
+.RB ...
+.br
+.B lzfgrep
+.RB ...
+.SH DESCRIPTION
+.B xzgrep
+invokes
+.BR grep (1)
+on
+.I files
+which may be either uncompressed or compressed with
+.BR xz (1),
+.BR lzma (1),
+.BR gzip (1),
+.BR bzip2 (1),
+or
+.BR lzop (1).
+All options specified are passed directly to
+.BR grep (1).
+.PP
+If no
+.I file
+is specified, then standard input is decompressed if necessary
+and fed to
+.BR grep (1).
+When reading from standard input,
+.BR gzip (1),
+.BR bzip2 (1),
+and
+.BR lzop (1)
+compressed files are not supported.
+.PP
+If
+.B xzgrep
+is invoked as
+.B xzegrep
+or
+.B xzfgrep
+then
+.BR egrep (1)
+or
+.BR fgrep (1)
+is used instead of
+.BR grep (1).
+The same applies to names
+.BR lzgrep ,
+.BR lzegrep ,
+and
+.BR lzfgrep ,
+which are provided for backward compatibility with LZMA Utils.
+.PP
+.SH ENVIRONMENT
+.TP
+.B GREP
+If the
+.B GREP
+environment variable is set,
+.B xzgrep
+uses it instead of
+.BR grep (1),
+.BR egrep (1),
+or
+.BR fgrep (1).
+.SH "SEE ALSO"
+.BR grep (1),
+.BR xz (1),
+.BR gzip (1),
+.BR bzip2 (1),
+.BR lzop (1),
+.BR zgrep (1)

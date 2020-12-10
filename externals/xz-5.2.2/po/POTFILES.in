@@ -1,0 +1,13 @@
+# List of source files which contain translatable strings.
+src/xz/args.c
+src/xz/coder.c
+src/xz/file_io.c
+src/xz/hardware.c
+src/xz/list.c
+src/xz/main.c
+src/xz/message.c
+src/xz/options.c
+src/xz/signals.c
+src/xz/suffix.c
+src/xz/util.c
+src/common/tuklib_exit.c
