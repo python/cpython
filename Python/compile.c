@@ -6447,7 +6447,8 @@ optimize_cfg(struct assembler *a, PyObject *consts)
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
         if (b->b_iused > 0) {
             struct instr *b_last_instr = &b->b_instr[b->b_iused - 1];
-            if (is_jump(b_last_instr)) {
+            if (b_last_instr->i_opcode == JUMP_ABSOLUTE ||
+                b_last_instr->i_opcode == JUMP_FORWARD) {
                 basicblock *b_next_act = b->b_next;
                 while (b_next_act != NULL && b_next_act->b_iused == 0) {
                     /* Next line reqd to prevent assertion failure in stackdepth() */
