@@ -2186,6 +2186,34 @@ class TestEnum(unittest.TestCase):
         self.assertEqual([Strings.ONE, Strings.TWO], ['one', 'two'])
 
 
+    def test_dynamic_members_with_static_methods(self):
+        #
+        foo_defines = {'FOO_CAT': 'aloof', 'BAR_DOG': 'friendly', 'FOO_HORSE': 'big'}
+        class Foo(Enum):
+            vars().update({
+                    k: v
+                    for k, v in foo_defines.items()
+                    if k.startswith('FOO_')
+                    })
+            def upper(self):
+                return self.value.upper()
+        self.assertEqual(list(Foo), [Foo.FOO_CAT, Foo.FOO_HORSE])
+        self.assertEqual(Foo.FOO_CAT.value, 'aloof')
+        self.assertEqual(Foo.FOO_HORSE.upper(), 'BIG')
+        #
+        with self.assertRaisesRegex(TypeError, "'FOO_CAT' already defined as: 'aloof'"):
+            class FooBar(Enum):
+                vars().update({
+                        k: v
+                        for k, v in foo_defines.items()
+                        if k.startswith('FOO_')
+                        },
+                        **{'FOO_CAT': 'small'},
+                        )
+                def upper(self):
+                    return self.value.upper()
+
+
 class TestOrder(unittest.TestCase):
 
     def test_same_members(self):
