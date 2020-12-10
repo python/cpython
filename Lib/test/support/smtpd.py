@@ -744,4 +744,3 @@ class Options:
     classname = 'PureProxy'
     size_limit = None
     enable_SMTPUTF8 = False
-
