@@ -142,8 +142,10 @@ _PyObject_IsImmortal(PyObject *ob)
     if ((ob->ob_refcnt & _PyObject_IMMORTAL_BIT) == 0) {
         return 0;
     }
+#ifndef Py_IMMORTAL_CONST_REFCOUNTS
     // Reset it to avoid approaching the boundaries.
     _PyObject_SetImmortal(ob);
+#endif
     return 1;
 }
 

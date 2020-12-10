@@ -121,6 +121,22 @@ typedef struct {
 #define _PyVarObject_CAST(op) ((PyVarObject*)(op))
 #define _PyVarObject_CAST_CONST(op) ((const PyVarObject*)(op))
 
+// This is a static version of _PyObject_IsImmortal(), for the sake
+// of other static functions, like _Py_SET_REFCNT() and _Py_INCREF().
+static inline int _py_is_immortal(PyObject *op)
+{
+#ifdef Py_IMMORTAL_CONST_REFCOUNTS
+#ifndef _PyObject_IMMORTAL_BIT
+// This is duplicated as-is from the internal API.
+#define _PyObject_IMMORTAL_BIT (1LL << (8 * sizeof(Py_ssize_t) - 4))
+#endif
+    return (op->ob_refcnt & _PyObject_IMMORTAL_BIT) != 0;
+#else
+    extern int _PyObject_IsImmortal(PyObject *);
+    return _PyObject_IsImmortal(op);
+#endif
+}
+
 static inline Py_ssize_t _Py_REFCNT(const PyObject *ob) {
     return ob->ob_refcnt;
 }
@@ -141,8 +157,7 @@ static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
 
 
 static inline void _Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
-    extern int _PyObject_IsImmortal(PyObject *);
-    if (_PyObject_IsImmortal((PyObject *)ob)) {
+    if (_py_is_immortal((PyObject *)ob)) {
         return;
     }
     ob->ob_refcnt = refcnt;
@@ -435,6 +450,11 @@ static inline void _Py_INCREF(PyObject *op)
 #ifdef Py_REF_DEBUG
     _Py_RefTotal++;
 #endif
+#ifdef Py_IMMORTAL_CONST_REFCOUNTS
+    if (_py_is_immortal(op)) {
+        return;
+    }
+#endif
     op->ob_refcnt++;
 }
 #define Py_INCREF(op) _Py_INCREF(_PyObject_CAST(op))
@@ -448,13 +468,22 @@ static inline void _Py_DECREF(
 #ifdef Py_REF_DEBUG
     _Py_RefTotal--;
 #endif
+#ifdef Py_IMMORTAL_CONST_REFCOUNTS
+    if (_py_is_immortal(op)) {
+        return;
+    }
+#endif
     if (--op->ob_refcnt != 0) {
 #ifdef Py_REF_DEBUG
         if (op->ob_refcnt < 0) {
+#ifdef Py_IMMORTAL_CONST_REFCOUNTS
+            _Py_NegativeRefcount(filename, lineno, op);
+#else
             extern int _PyObject_IsImmortal(PyObject *);
             if (!_PyObject_IsImmortal(op)) {
                 _Py_NegativeRefcount(filename, lineno, op);
             }
+#endif
         }
 #endif
     }

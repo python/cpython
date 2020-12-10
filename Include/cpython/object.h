@@ -381,7 +381,7 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
  * use of Py_INCREF() in a program.
  */
 
-#ifdef Py_BUILD_CORE
+#if defined(Py_IMMORTAL_CONST_REFCOUNTS) || defined(Py_BUILD_CORE)
 #define _Py_IMMORTAL_OBJECTS 1
 #endif
 
@@ -391,9 +391,14 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
  * room for a shift of two.) */
 #define _PyObject_IMMORTAL_BIT (1LL << (8 * sizeof(Py_ssize_t) - 4))
 
+#ifdef Py_IMMORTAL_CONST_REFCOUNTS
+#define _PyObject_IMMORTAL_INIT_REFCNT \
+    _PyObject_IMMORTAL_BIT
+#else
 // We leave plenty of room to preserve _PyObject_IMMORTAL_BIT.
 #define _PyObject_IMMORTAL_INIT_REFCNT \
     (_PyObject_IMMORTAL_BIT + (_PyObject_IMMORTAL_BIT / 2))
+#endif
 
 #define _PyObject_HEAD_IMMORTAL_INIT(type) \
     { _PyObject_EXTRA_INIT _PyObject_IMMORTAL_INIT_REFCNT, type },
