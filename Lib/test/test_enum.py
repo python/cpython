@@ -1149,6 +1149,7 @@ class TestEnum(unittest.TestCase):
         class auto_enum(type(Enum)):
             def __new__(metacls, cls, bases, classdict):
                 temp = type(classdict)()
+                temp._cls_name = cls
                 names = set(classdict._member_names)
                 i = 0
                 for k in classdict._member_names:
@@ -2117,6 +2118,101 @@ class TestEnum(unittest.TestCase):
             class ThirdFailedStrEnum(StrEnum):
                 one = '1'
                 two = b'2', 'ascii', 9
+                
+    def test_init_subclass(self):
+        class MyEnum(Enum):
+            def __init_subclass__(cls, **kwds):
+                super(MyEnum, cls).__init_subclass__(**kwds)
+                self.assertFalse(cls.__dict__.get('_test', False))
+                cls._test1 = 'MyEnum'
+        #
+        class TheirEnum(MyEnum):
+            def __init_subclass__(cls, **kwds):
+                super().__init_subclass__(**kwds)
+                cls._test2 = 'TheirEnum'
+        class WhoseEnum(TheirEnum):
+            def __init_subclass__(cls, **kwds):
+                pass
+        class NoEnum(WhoseEnum):
+            ONE = 1
+        self.assertEqual(TheirEnum.__dict__['_test1'], 'MyEnum')
+        self.assertEqual(WhoseEnum.__dict__['_test1'], 'MyEnum')
+        self.assertEqual(WhoseEnum.__dict__['_test2'], 'TheirEnum')
+        self.assertFalse(NoEnum.__dict__.get('_test1', False))
+        self.assertFalse(NoEnum.__dict__.get('_test2', False))
+        #
+        class OurEnum(MyEnum):
+            def __init_subclass__(cls, **kwds):
+                cls._test2 = 'OurEnum'
+        class WhereEnum(OurEnum):
+            def __init_subclass__(cls, **kwds):
+                pass
+        class NeverEnum(WhereEnum):
+            ONE = 'one'
+        self.assertEqual(OurEnum.__dict__['_test1'], 'MyEnum')
+        self.assertFalse(WhereEnum.__dict__.get('_test1', False))
+        self.assertEqual(WhereEnum.__dict__['_test2'], 'OurEnum')
+        self.assertFalse(NeverEnum.__dict__.get('_test1', False))
+        self.assertFalse(NeverEnum.__dict__.get('_test2', False))
+
+
+    @unittest.skipUnless(
+            sys.version_info[:2] == (3, 9),
+            'private variables are now normal attributes',
+            )
+    def test_warning_for_private_variables(self):
+        with self.assertWarns(DeprecationWarning):
+            class Private(Enum):
+                __corporal = 'Radar'
+        self.assertEqual(Private._Private__corporal.value, 'Radar')
+        try:
+            with self.assertWarns(DeprecationWarning):
+                class Private(Enum):
+                    __major_ = 'Hoolihan'
+        except ValueError:
+            pass
+
+    def test_private_variable_is_normal_attribute(self):
+        class Private(Enum):
+            __corporal = 'Radar'
+            __major_ = 'Hoolihan'
+        self.assertEqual(Private._Private__corporal, 'Radar')
+        self.assertEqual(Private._Private__major_, 'Hoolihan')
+
+    def test_strenum_auto(self):
+        class Strings(StrEnum):
+            ONE = auto()
+            TWO = auto()
+        self.assertEqual([Strings.ONE, Strings.TWO], ['one', 'two'])
+
+
+    def test_dynamic_members_with_static_methods(self):
+        #
+        foo_defines = {'FOO_CAT': 'aloof', 'BAR_DOG': 'friendly', 'FOO_HORSE': 'big'}
+        class Foo(Enum):
+            vars().update({
+                    k: v
+                    for k, v in foo_defines.items()
+                    if k.startswith('FOO_')
+                    })
+            def upper(self):
+                return self.value.upper()
+        self.assertEqual(list(Foo), [Foo.FOO_CAT, Foo.FOO_HORSE])
+        self.assertEqual(Foo.FOO_CAT.value, 'aloof')
+        self.assertEqual(Foo.FOO_HORSE.upper(), 'BIG')
+        #
+        with self.assertRaisesRegex(TypeError, "'FOO_CAT' already defined as: 'aloof'"):
+            class FooBar(Enum):
+                vars().update({
+                        k: v
+                        for k, v in foo_defines.items()
+                        if k.startswith('FOO_')
+                        },
+                        **{'FOO_CAT': 'small'},
+                        )
+                def upper(self):
+                    return self.value.upper()
+
 
 class TestOrder(unittest.TestCase):
 
@@ -2572,6 +2668,42 @@ class TestFlag(unittest.TestCase):
                 failed,
                 'at least one thread failed while creating composite members')
         self.assertEqual(256, len(seen), 'too many composite members created')
+
+    def test_init_subclass(self):
+        class MyEnum(Flag):
+            def __init_subclass__(cls, **kwds):
+                super().__init_subclass__(**kwds)
+                self.assertFalse(cls.__dict__.get('_test', False))
+                cls._test1 = 'MyEnum'
+        #
+        class TheirEnum(MyEnum):
+            def __init_subclass__(cls, **kwds):
+                super(TheirEnum, cls).__init_subclass__(**kwds)
+                cls._test2 = 'TheirEnum'
+        class WhoseEnum(TheirEnum):
+            def __init_subclass__(cls, **kwds):
+                pass
+        class NoEnum(WhoseEnum):
+            ONE = 1
+        self.assertEqual(TheirEnum.__dict__['_test1'], 'MyEnum')
+        self.assertEqual(WhoseEnum.__dict__['_test1'], 'MyEnum')
+        self.assertEqual(WhoseEnum.__dict__['_test2'], 'TheirEnum')
+        self.assertFalse(NoEnum.__dict__.get('_test1', False))
+        self.assertFalse(NoEnum.__dict__.get('_test2', False))
+        #
+        class OurEnum(MyEnum):
+            def __init_subclass__(cls, **kwds):
+                cls._test2 = 'OurEnum'
+        class WhereEnum(OurEnum):
+            def __init_subclass__(cls, **kwds):
+                pass
+        class NeverEnum(WhereEnum):
+            ONE = 1
+        self.assertEqual(OurEnum.__dict__['_test1'], 'MyEnum')
+        self.assertFalse(WhereEnum.__dict__.get('_test1', False))
+        self.assertEqual(WhereEnum.__dict__['_test2'], 'OurEnum')
+        self.assertFalse(NeverEnum.__dict__.get('_test1', False))
+        self.assertFalse(NeverEnum.__dict__.get('_test2', False))
 
 
 class TestIntFlag(unittest.TestCase):

@@ -67,44 +67,69 @@ static PyObject* pyrun_file(FILE *fp, PyObject *filename, int start,
                             PyCompilerFlags *flags);
 
 
+int
+_PyRun_AnyFileObject(FILE *fp, PyObject *filename, int closeit,
+                     PyCompilerFlags *flags)
+{
+    int decref_filename = 0;
+    if (filename == NULL) {
+        filename = PyUnicode_FromString("???");
+        if (filename == NULL) {
+            PyErr_Print();
+            return -1;
+        }
+        decref_filename = 1;
+    }
+
+    int res;
+    if (_Py_FdIsInteractive(fp, filename)) {
+        res = _PyRun_InteractiveLoopObject(fp, filename, flags);
+        if (closeit) {
+            fclose(fp);
+        }
+    }
+    else {
+        res = _PyRun_SimpleFileObject(fp, filename, closeit, flags);
+    }
+
+    if (decref_filename) {
+        Py_DECREF(filename);
+    }
+    return res;
+}
+
+
 /* Parse input from a file and execute it */
 int
 PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit,
                      PyCompilerFlags *flags)
 {
-    if (filename == NULL)
-        filename = "???";
-    if (Py_FdIsInteractive(fp, filename)) {
-        int err = PyRun_InteractiveLoopFlags(fp, filename, flags);
-        if (closeit)
-            fclose(fp);
-        return err;
+    PyObject *filename_obj;
+    if (filename != NULL) {
+        filename_obj = PyUnicode_DecodeFSDefault(filename);
+        if (filename_obj == NULL) {
+            PyErr_Print();
+            return -1;
+        }
     }
-    else
-        return PyRun_SimpleFileExFlags(fp, filename, closeit, flags);
+    else {
+        filename_obj = NULL;
+    }
+    int res = _PyRun_AnyFileObject(fp, filename_obj, closeit, flags);
+    Py_XDECREF(filename_obj);
+    return res;
 }
 
+
 int
-PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *flags)
+_PyRun_InteractiveLoopObject(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
 {
-    PyObject *filename, *v;
-    int ret, err;
     PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
-    int nomem_count = 0;
-#ifdef Py_REF_DEBUG
-    int show_ref_count = _Py_GetConfig()->show_ref_count;
-#endif
-
-    filename = PyUnicode_DecodeFSDefault(filename_str);
-    if (filename == NULL) {
-        PyErr_Print();
-        return -1;
-    }
-
     if (flags == NULL) {
         flags = &local_flags;
     }
-    v = _PySys_GetObjectId(&PyId_ps1);
+
+    PyObject *v = _PySys_GetObjectId(&PyId_ps1);
     if (v == NULL) {
         _PySys_SetObjectId(&PyId_ps1, v = PyUnicode_FromString(">>> "));
         Py_XDECREF(v);
@@ -114,7 +139,13 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
         _PySys_SetObjectId(&PyId_ps2, v = PyUnicode_FromString("... "));
         Py_XDECREF(v);
     }
-    err = 0;
+
+#ifdef Py_REF_DEBUG
+    int show_ref_count = _Py_GetConfig()->show_ref_count;
+#endif
+    int err = 0;
+    int ret;
+    int nomem_count = 0;
     do {
         ret = PyRun_InteractiveOneObjectEx(fp, filename, flags);
         if (ret == -1 && PyErr_Occurred()) {
@@ -141,9 +172,25 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
         }
 #endif
     } while (ret != E_EOF);
-    Py_DECREF(filename);
     return err;
 }
+
+
+int
+PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flags)
+{
+    PyObject *filename_obj = PyUnicode_DecodeFSDefault(filename);
+    if (filename_obj == NULL) {
+        PyErr_Print();
+        return -1;
+    }
+
+    int err = _PyRun_InteractiveLoopObject(fp, filename_obj, flags);
+    Py_DECREF(filename_obj);
+    return err;
+
+}
+
 
 /* A PyRun_InteractiveOneObject() auxiliary function that does not print the
  * error on failure. */

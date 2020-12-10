@@ -9,6 +9,14 @@ __all__ = [
         ]
 
 
+class _NoInitSubclass:
+    """
+    temporary base class to suppress calling __init_subclass__
+    """
+    @classmethod
+    def __init_subclass__(cls, **kwds):
+        pass
+
 def _is_descriptor(obj):
     """
     Returns True if obj is a descriptor, False otherwise.
@@ -40,6 +48,19 @@ def _is_sunder(name):
             name[1:2] != '_' and
             name[-2:-1] != '_'
             )
+
+def _is_private(cls_name, name):
+    # do not use `re` as `re` imports `enum`
+    pattern = '_%s__' % (cls_name, )
+    if (
+            len(name) >= 5
+            and name.startswith(pattern)
+            and name[len(pattern)] != '_'
+            and (name[-1] != '_' or name[-2] != '_')
+        ):
+        return True
+    else:
+        return False
 
 def _make_class_unpicklable(cls):
     """
@@ -81,7 +102,10 @@ class _EnumDict(dict):
 
         Single underscore (sunder) names are reserved.
         """
-        if _is_sunder(key):
+        if _is_private(self._cls_name, key):
+            # do nothing, name will be a normal attribute
+            pass
+        elif _is_sunder(key):
             if key not in (
                     '_order_', '_create_pseudo_member_',
                     '_generate_next_value_', '_missing_', '_ignore_',
@@ -112,7 +136,7 @@ class _EnumDict(dict):
                 key = '_order_'
         elif key in self._member_names:
             # descriptor overwriting an enum?
-            raise TypeError('Attempted to reuse key: %r' % key)
+            raise TypeError('%r already defined as: %r' % (key, self[key]))
         elif key in self._ignore:
             pass
         elif not _is_descriptor(value):
@@ -133,6 +157,16 @@ class _EnumDict(dict):
             self._last_values.append(value)
         super().__setitem__(key, value)
 
+    def update(self, members, **more_members):
+        try:
+            for name in members.keys():
+                self[name] = members[name]
+        except AttributeError:
+            for name, value in members:
+                self[name] = value
+        for name, value in more_members.items():
+            self[name] = value
+
 
 # Dummy value for Enum as EnumMeta explicitly checks for it, but of course
 # until EnumMeta finishes running the first time the Enum class doesn't exist.
@@ -149,6 +183,7 @@ class EnumMeta(type):
         metacls._check_for_existing_members(cls, bases)
         # create the namespace dict
         enum_dict = _EnumDict()
+        enum_dict._cls_name = cls
         # inherit previous flags and _generate_next_value_ function
         member_type, first_enum = metacls._get_mixins_(cls, bases)
         if first_enum is not None:
@@ -157,7 +192,7 @@ class EnumMeta(type):
                     )
         return enum_dict
 
-    def __new__(metacls, cls, bases, classdict):
+    def __new__(metacls, cls, bases, classdict, **kwds):
         # an Enum class is final once enumeration items have been defined; it
         # cannot be mixed with other types (int, float, etc.) if it has an
         # inherited __new__ unless a new __new__ is defined (or the resulting
@@ -192,8 +227,22 @@ class EnumMeta(type):
         if '__doc__' not in classdict:
             classdict['__doc__'] = 'An enumeration.'
 
+        # postpone calling __init_subclass__
+        if '__init_subclass__' in classdict and classdict['__init_subclass__'] is None:
+            raise TypeError('%s.__init_subclass__ cannot be None')
+        # remove current __init_subclass__ so previous one can be found with getattr
+        new_init_subclass = classdict.pop('__init_subclass__', None)
         # create our new Enum type
-        enum_class = super().__new__(metacls, cls, bases, classdict)
+        if bases:
+            bases = (_NoInitSubclass, ) + bases
+            enum_class = type.__new__(metacls, cls, bases, classdict)
+            enum_class.__bases__ = enum_class.__bases__[1:] #or (object, )
+        else:
+            enum_class = type.__new__(metacls, cls, bases, classdict)
+        old_init_subclass = getattr(enum_class, '__init_subclass__', None)
+        # and restore the new one (if there was one)
+        if new_init_subclass is not None:
+            enum_class.__init_subclass__ = classmethod(new_init_subclass)
         enum_class._member_names_ = []               # names in definition order
         enum_class._member_map_ = {}                 # name->value map
         enum_class._member_type_ = member_type
@@ -305,6 +354,9 @@ class EnumMeta(type):
             if _order_ != enum_class._member_names_:
                 raise TypeError('member order does not match _order_')
 
+        # finally, call parents' __init_subclass__
+        if Enum is not None and old_init_subclass is not None:
+            old_init_subclass(**kwds)
         return enum_class
 
     def __bool__(self):
@@ -682,6 +734,9 @@ class Enum(metaclass=EnumMeta):
         else:
             return start
 
+    def __init_subclass__(cls, **kwds):
+        super().__init_subclass__(**kwds)
+
     @classmethod
     def _missing_(cls, value):
         return None
@@ -780,6 +835,12 @@ class StrEnum(str, Enum):
         return member
 
     __str__ = str.__str__
+
+    def _generate_next_value_(name, start, count, last_values):
+        """
+        Return the lower-cased version of the member name.
+        """
+        return name.lower()
 
 
 def _reduce_ex_by_name(self, proto):
