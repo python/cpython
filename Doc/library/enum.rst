@@ -67,10 +67,12 @@ helper, :class:`auto`.
 
 .. class:: auto
 
-    Instances are replaced with an appropriate value for Enum members.  By default, the initial value starts at 1.
+    Instances are replaced with an appropriate value for Enum members.
+    :class:`StrEnum` defaults to the lower-cased version of the member name,
+    while other Enums default to 1 and increase from there.
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
-
+.. versionadded:: 3.10  ``StrEnum``
 
 Creating an Enum
 ----------------

@@ -826,6 +826,12 @@ class StrEnum(str, Enum):
 
     __str__ = str.__str__
 
+    def _generate_next_value_(name, start, count, last_values):
+        """
+        Return the lower-cased version of the member name.
+        """
+        return name.lower()
+
 
 def _reduce_ex_by_name(self, proto):
     return self.name

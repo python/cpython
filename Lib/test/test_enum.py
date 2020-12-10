@@ -2179,6 +2179,12 @@ class TestEnum(unittest.TestCase):
         self.assertEqual(Private._Private__corporal, 'Radar')
         self.assertEqual(Private._Private__major_, 'Hoolihan')
 
+    def test_strenum_auto(self):
+        class Strings(StrEnum):
+            ONE = auto()
+            TWO = auto()
+        self.assertEqual([Strings.ONE, Strings.TWO], ['one', 'two'])
+
 
 class TestOrder(unittest.TestCase):
 
