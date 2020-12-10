@@ -1,0 +1,2 @@
+Remove asyncore, asynchat, and smtpd from stdlib, see :pep:`594` for details.
+Contributed by Kyle Stanley.
