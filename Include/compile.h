@@ -87,6 +87,9 @@ PyAPI_FUNC(int) PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int j
 typedef struct {
     int optimize;
     int ff_features;
+
+    int recursion_depth;            /* current recursion depth */
+    int recursion_limit;            /* recursion limit */
 } _PyASTOptimizeState;
 
 PyAPI_FUNC(int) _PyAST_Optimize(struct _mod *, PyArena *arena, _PyASTOptimizeState *state);
