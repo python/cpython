@@ -175,11 +175,13 @@ class SearchEngineTest(unittest.TestCase):
 
         engine.setpat('')
         Equal(engine.getprog(), None)
+        Equal(Mbox.showerror.message,
+              'Error: Empty regular expression')
         engine.setpat('+')
         engine.revar.set(1)
         Equal(engine.getprog(), None)
-        self.assertEqual(Mbox.showerror.message,
-                         'Error: nothing to repeat at position 0\nPattern: +')
+        Equal(Mbox.showerror.message,
+              'Error: nothing to repeat\nPattern: +\nOffset: 0')
 
     def test_report_error(self):
         showerror = Mbox.showerror

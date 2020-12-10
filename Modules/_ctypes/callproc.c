@@ -475,7 +475,7 @@ static void
 PyCArg_dealloc(PyCArgObject *self)
 {
     Py_XDECREF(self->obj);
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 static int

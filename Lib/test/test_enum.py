@@ -429,7 +429,7 @@ class TestEnum(unittest.TestCase):
     def test_reserved__sunder_(self):
         with self.assertRaisesRegex(
                 ValueError,
-                '_sunder_ names, such as "_bad_", are reserved',
+                "_sunder_ names, such as '_bad_', are reserved",
             ):
             class Bad(Enum):
                 _bad_ = 1
@@ -585,12 +585,15 @@ class TestEnum(unittest.TestCase):
         class Test1Enum(MyMethodEnum, int, MyStrEnum):
             One = 1
             Two = 2
+        self.assertTrue(Test1Enum._member_type_ is int)
         self.assertEqual(str(Test1Enum.One), 'MyStr')
+        self.assertEqual(format(Test1Enum.One, ''), 'MyStr')
         #
         class Test2Enum(MyStrEnum, MyMethodEnum):
             One = 1
             Two = 2
         self.assertEqual(str(Test2Enum.One), 'MyStr')
+        self.assertEqual(format(Test1Enum.One, ''), 'MyStr')
 
     def test_inherited_data_type(self):
         class HexInt(int):
@@ -2021,6 +2024,32 @@ class TestEnum(unittest.TestCase):
             REVERT_ALL = "REVERT_ALL"
             RETRY = "RETRY"
 
+    def test_multiple_mixin_inherited(self):
+        class MyInt(int):
+            def __new__(cls, value):
+                return super().__new__(cls, value)
+
+        class HexMixin:
+            def __repr__(self):
+                return hex(self)
+
+        class MyIntEnum(HexMixin, MyInt, enum.Enum):
+            pass
+
+        class Foo(MyIntEnum):
+            TEST = 1
+        self.assertTrue(isinstance(Foo.TEST, MyInt))
+        self.assertEqual(repr(Foo.TEST), "0x1")
+
+        class Fee(MyIntEnum):
+            TEST = 1
+            def __new__(cls, value):
+                value += 1
+                member = int.__new__(cls, value)
+                member._value_ = value
+                return member
+        self.assertEqual(Fee.TEST, 2)
+
     def test_empty_globals(self):
         # bpo-35717: sys._getframe(2).f_globals['__name__'] fails with KeyError
         # when using compile and exec because f_globals is empty
@@ -2224,6 +2253,11 @@ class TestFlag(unittest.TestCase):
         self.assertEqual(repr(~Open.AC), '<Open.CE: 524288>')
         self.assertEqual(repr(~(Open.RO | Open.CE)), '<Open.AC: 3>')
         self.assertEqual(repr(~(Open.WO | Open.CE)), '<Open.RW: 2>')
+
+    def test_format(self):
+        Perm = self.Perm
+        self.assertEqual(format(Perm.R, ''), 'Perm.R')
+        self.assertEqual(format(Perm.R | Perm.X, ''), 'Perm.R|X')
 
     def test_or(self):
         Perm = self.Perm
@@ -2564,6 +2598,7 @@ class TestIntFlag(unittest.TestCase):
 
     def test_type(self):
         Perm = self.Perm
+        self.assertTrue(Perm._member_type_ is int)
         Open = self.Open
         for f in Perm:
             self.assertTrue(isinstance(f, Perm))
@@ -2642,6 +2677,11 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(repr(~(Open.RO | Open.CE)), '<Open.AC|RW|WO: -524289>')
         self.assertEqual(repr(~(Open.WO | Open.CE)), '<Open.RW: -524290>')
         self.assertEqual(repr(Open(~4)), '<Open.CE|AC|RW|WO: -5>')
+
+    def test_format(self):
+        Perm = self.Perm
+        self.assertEqual(format(Perm.R, ''), '4')
+        self.assertEqual(format(Perm.R | Perm.X, ''), '5')
 
     def test_or(self):
         Perm = self.Perm

@@ -5,6 +5,7 @@ import os.path
 import re
 import sys
 
+from c_common import fsutil
 from c_common.logging import VERBOSITY, Printer
 from c_common.scriptutil import (
     add_verbosity_cli,
@@ -298,9 +299,9 @@ def cmd_check(filenames, *,
               checks=None,
               ignored=None,
               fmt=None,
-              relroot=None,
               failfast=False,
               iter_filenames=None,
+              relroot=fsutil.USE_CWD,
               track_progress=None,
               verbosity=VERBOSITY,
               _analyze=_analyze,
@@ -317,14 +318,14 @@ def cmd_check(filenames, *,
     (handle_failure, handle_after, div
      ) = _get_check_handlers(fmt, printer, verbosity)
 
-    filenames = filter_filenames(filenames, iter_filenames)
+    filenames, relroot = fsutil.fix_filenames(filenames, relroot=relroot)
+    filenames = filter_filenames(filenames, iter_filenames, relroot)
     if track_progress:
         filenames = track_progress(filenames)
 
     logger.info('analyzing files...')
     analyzed = _analyze(filenames, **kwargs)
-    if relroot:
-        analyzed.fix_filenames(relroot)
+    analyzed.fix_filenames(relroot, normalize=False)
     decls = filter_forward(analyzed, markpublic=True)
 
     logger.info('checking analysis results...')
@@ -374,6 +375,7 @@ def _cli_analyze(parser, **kwargs):
 def cmd_analyze(filenames, *,
                 fmt=None,
                 iter_filenames=None,
+                relroot=fsutil.USE_CWD,
                 track_progress=None,
                 verbosity=None,
                 _analyze=_analyze,
@@ -387,12 +389,14 @@ def cmd_analyze(filenames, *,
     except KeyError:
         raise ValueError(f'unsupported fmt {fmt!r}')
 
-    filenames = filter_filenames(filenames, iter_filenames)
+    filenames, relroot = fsutil.fix_filenames(filenames, relroot=relroot)
+    filenames = filter_filenames(filenames, iter_filenames, relroot)
     if track_progress:
         filenames = track_progress(filenames)
 
     logger.info('analyzing files...')
     analyzed = _analyze(filenames, **kwargs)
+    analyzed.fix_filenames(relroot, normalize=False)
     decls = filter_forward(analyzed, markpublic=True)
 
     for line in do_fmt(decls):
@@ -434,7 +438,7 @@ def cmd_data(datacmd, filenames, known=None, *,
              _analyze=_analyze,
              formats=FORMATS,
              extracolumns=None,
-             relroot=None,
+             relroot=fsutil.USE_CWD,
              track_progress=None,
              **kwargs
              ):
@@ -447,9 +451,11 @@ def cmd_data(datacmd, filenames, known=None, *,
         for line in do_fmt(known):
             print(line)
     elif datacmd == 'dump':
+        filenames, relroot = fsutil.fix_filenames(filenames, relroot=relroot)
         if track_progress:
             filenames = track_progress(filenames)
         analyzed = _analyze(filenames, **kwargs)
+        analyzed.fix_filenames(relroot, normalize=False)
         if known is None or usestdout:
             outfile = io.StringIO()
             _datafiles.write_known(analyzed, outfile, extracolumns,

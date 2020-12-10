@@ -34,8 +34,9 @@ class IncompleteReadError(EOFError):
     - expected: total number of expected bytes (or None if unknown)
     """
     def __init__(self, partial, expected):
+        r_expected = 'undefined' if expected is None else repr(expected)
         super().__init__(f'{len(partial)} bytes read on a total of '
-                         f'{expected!r} expected bytes')
+                         f'{r_expected} expected bytes')
         self.partial = partial
         self.expected = expected
 

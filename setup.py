@@ -9,6 +9,7 @@ import re
 import sys
 import sysconfig
 from glob import glob, escape
+import _osx_support
 
 
 try:
@@ -178,32 +179,9 @@ def macosx_sdk_root():
         MACOS_SDK_ROOT = m.group(1)
         MACOS_SDK_SPECIFIED = MACOS_SDK_ROOT != '/'
     else:
-        MACOS_SDK_ROOT = '/'
+        MACOS_SDK_ROOT = _osx_support._default_sysroot(
+            sysconfig.get_config_var('CC'))
         MACOS_SDK_SPECIFIED = False
-        cc = sysconfig.get_config_var('CC')
-        tmpfile = '/tmp/setup_sdk_root.%d' % os.getpid()
-        try:
-            os.unlink(tmpfile)
-        except:
-            pass
-        ret = run_command('%s -E -v - </dev/null 2>%s 1>/dev/null' % (cc, tmpfile))
-        in_incdirs = False
-        try:
-            if ret == 0:
-                with open(tmpfile) as fp:
-                    for line in fp.readlines():
-                        if line.startswith("#include <...>"):
-                            in_incdirs = True
-                        elif line.startswith("End of search list"):
-                            in_incdirs = False
-                        elif in_incdirs:
-                            line = line.strip()
-                            if line == '/usr/include':
-                                MACOS_SDK_ROOT = '/'
-                            elif line.endswith(".sdk/usr/include"):
-                                MACOS_SDK_ROOT = line[:-12]
-        finally:
-            os.unlink(tmpfile)
 
     return MACOS_SDK_ROOT
 
@@ -241,7 +219,7 @@ def is_macosx_sdk_path(path):
 
 def grep_headers_for(function, headers):
     for header in headers:
-        with open(header, 'r') as f:
+        with open(header, 'r', errors='surrogateescape') as f:
             if function in f.read():
                 return True
     return False
@@ -1037,7 +1015,7 @@ class PyBuildExt(build_ext):
             os_release = int(os.uname()[2].split('.')[0])
             dep_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
             if (dep_target and
-                    (tuple(int(n) for n in dep_target.split('.')[0:2])
+                    (tuple(int(n) for n in str(dep_target).split('.')[0:2])
                         < (10, 5) ) ):
                 os_release = 8
             if os_release < 9:
@@ -1154,18 +1132,12 @@ class PyBuildExt(build_ext):
 
     def detect_socket(self):
         # socket(2)
-        if not VXWORKS:
-            kwargs = {'depends': ['socketmodule.h']}
-            if MACOS:
-                # Issue #35569: Expose RFC 3542 socket options.
-                kwargs['extra_compile_args'] = ['-D__APPLE_USE_RFC_3542']
+        kwargs = {'depends': ['socketmodule.h']}
+        if MACOS:
+            # Issue #35569: Expose RFC 3542 socket options.
+            kwargs['extra_compile_args'] = ['-D__APPLE_USE_RFC_3542']
 
-            self.add(Extension('_socket', ['socketmodule.c'], **kwargs))
-        elif self.compiler.find_library_file(self.lib_dirs, 'net'):
-            libs = ['net']
-            self.add(Extension('_socket', ['socketmodule.c'],
-                               depends=['socketmodule.h'],
-                               libraries=libs))
+        self.add(Extension('_socket', ['socketmodule.c'], **kwargs))
 
     def detect_dbm_gdbm(self):
         # Modules that provide persistent dictionary-like semantics.  You will
@@ -1831,8 +1803,16 @@ class PyBuildExt(build_ext):
 ##         self.add(Extension('xx', ['xxmodule.c']))
 
         if 'd' not in sysconfig.get_config_var('ABIFLAGS'):
+            # Non-debug mode: Build xxlimited with limited API
             self.add(Extension('xxlimited', ['xxlimited.c'],
+                               define_macros=[('Py_LIMITED_API', '0x03100000')]))
+            self.add(Extension('xxlimited_35', ['xxlimited_35.c'],
                                define_macros=[('Py_LIMITED_API', '0x03050000')]))
+        else:
+            # Debug mode: Build xxlimited with the full API
+            # (which is compatible with the limited one)
+            self.add(Extension('xxlimited', ['xxlimited.c']))
+            self.add(Extension('xxlimited_35', ['xxlimited_35.c']))
 
     def detect_tkinter_explicitly(self):
         # Build _tkinter using explicit locations for Tcl/Tk.
