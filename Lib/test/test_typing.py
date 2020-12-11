@@ -446,14 +446,17 @@ class CallableTests(BaseTestCase):
             type(c)()
 
     def test_callable_wrong_forms(self):
-        with self.assertRaises(TypeError):
-            Callable[[...], int]
-        with self.assertRaises(TypeError):
-            Callable[(), int]
-        with self.assertRaises(TypeError):
-            Callable[[()], int]
-        with self.assertRaises(TypeError):
-            Callable[[int, 1], 2]
+        ## These no longer raise TypeError since Callable no longer type checks
+        ## args. That responsiblity is deferred to static type checkers
+        ## to simplify implementation of PEP 612 ParamSpec.
+        # with self.assertRaises(TypeError):
+        #     Callable[[...], int]
+        # with self.assertRaises(TypeError):
+        #     Callable[(), int]
+        # with self.assertRaises(TypeError):
+        #     Callable[[()], int]
+        # with self.assertRaises(TypeError):
+        #     Callable[[int, 1], 2]
         with self.assertRaises(TypeError):
             Callable[int]
 

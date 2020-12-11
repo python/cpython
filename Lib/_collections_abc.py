@@ -434,14 +434,13 @@ class _CallableGenericAlias(GenericAlias):
             raise TypeError(
                 "Callable must be used as Callable[[arg, ...], result].")
         t_args, t_result = args
-        if not isinstance(t_args, (list, EllipsisType)):
-            raise TypeError(
-                f"Callable[args, result]: args must be a list or Ellipsis. "
-                f"Got {_type_repr(t_args)} instead.")
-        if t_args is Ellipsis:
-            ga_args = args
-        else:
+        if isinstance(t_args, list):
             ga_args = tuple(t_args) + (t_result,)
+        # This relaxes what t_args can be on purpose to allow things like
+        # PEP 612 ParamSpec.  Responsibility for whether a user is using
+        # Callable[...] properly is deferred to static type checkers.
+        else:
+            ga_args = args
         return super().__new__(cls, origin, ga_args)
 
     def __repr__(self):
