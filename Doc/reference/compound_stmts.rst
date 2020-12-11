@@ -796,12 +796,12 @@ The :keyword:`!async for` statement
 .. productionlist:: python-grammar
    async_for_stmt: "async" `for_stmt`
 
-An :term:`asynchronous iterable` is able to call asynchronous code in its
-*iter* implementation, and :term:`asynchronous iterator` can call asynchronous
-code in its *next* method.
+An :term:`asynchronous iterable` provides an ``__aiter__`` method that directly
+returns an :term:`asynchronous iterator`, which can call asynchronous code in
+its ``__anext__`` method.
 
 The ``async for`` statement allows convenient iteration over asynchronous
-iterators.
+iterables.
 
 The following code::
 
