@@ -542,8 +542,8 @@ class _Stream:
                     break
             try:
                 buf = self.cmp.decompress(buf)
-            except self.exception as exc:
-                raise ReadError("invalid compressed data") from exc
+            except self.exception as e:
+                raise ReadError("invalid compressed data") from e
             t.append(buf)
             c += len(buf)
         t = b"".join(t)
@@ -1165,8 +1165,8 @@ class TarInfo(object):
         # Fetch the next header and process it.
         try:
             next = self.fromtarfile(tarfile)
-        except HeaderError as exc:
-            raise SubsequentHeaderError(str(exc)) from None
+        except HeaderError as e:
+            raise SubsequentHeaderError(str(e)) from None
 
         # Patch the TarInfo object from the next header with
         # the longname information.
@@ -1278,8 +1278,8 @@ class TarInfo(object):
         # Fetch the next header.
         try:
             next = self.fromtarfile(tarfile)
-        except HeaderError as exc:
-            raise SubsequentHeaderError(str(exc)) from None
+        except HeaderError as e:
+            raise SubsequentHeaderError(str(e)) from None
 
         # Process GNU sparse information.
         if "GNU.sparse.map" in pax_headers:
