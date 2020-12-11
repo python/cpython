@@ -1,0 +1,84 @@
+<HEAD>
+<TITLE> Configuring Subwidget Options Using the <tt>-options</tt> Switch<A NAME=135>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html392 HREF=subsubsection3_3_3_6.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html390 HREF=subsection3_3_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html384 HREF=subsubsection3_3_3_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html394 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html393 HREF=subsubsection3_3_3_6.html> Configuring Subwidget Options </A>
+<B>Up:</B> <A NAME=tex2html391 HREF=subsection3_3_3.html> Accessing The Components </A>
+<B> Previous:</B> <A NAME=tex2html385 HREF=subsubsection3_3_3_4.html> Chaining the subwidget </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00033500000000000000> Configuring Subwidget Options Using the <tt>-options</tt> Switch<A NAME=135>&nbsp;</A></A></H3>
+<P>
+As we have seen above, we can use commands like ``<tt>subwidget</tt> <em>name</em> <tt>configure ...</tt>'' to set the configuration options of
+  subwidgets. However, this can get quite tedious if we want to configure
+  many options of many subwidgets.
+<P>
+There is a more convenient and terse way to configure the subwidget options
+  without using the <tt>subwidget</tt> method: the <tt>-options</tt> switch. All
+  Tix mega-widgets support the <tt>-option</tt> switch, which can be used
+  during the creation of the mega-widget.
+<P>
+<blockquote> <tt> tixControl .income -label &quot;Income: &quot; -variable income -options {<BR>
+    label.width       8<BR>
+    label.anchor      e<BR>
+    entry.width       10<BR>
+    entry.borderWidth 3<BR>
+}<BR>
+tixControl .age    -label &quot;Age: &quot;    -variable age    -options {<BR>
+    label.width       8<BR>
+    label.anchor      e<BR>
+    entry.width       10<BR>
+    entry.borderWidth 3<BR>
+}<BR>
+pack .income .age -side top
+</tt>
+</blockquote>
+<P><CENTER>(Figure 1-5) Using the <tt>-options</tt> switch<A NAME=15>&nbsp;</A>
+  </CENTER>
+<P>
+<blockquote> <P><CENTER><P><IMG ALIGN="LEFT" SRC="../gif/tix/intro/ctl_noopt.gif"> <IMG ALIGN="LEFT" SRC="../gif/tix/intro/ctl_wopt.gif"><BR CLEAR=LEFT><CENTER>(Figure 1-6) Using the <tt>-options</tt> Switch to Align the Labels<A NAME=16>&nbsp;</A></CENTER><P>
+  </CENTER>
+</blockquote>
+<P>
+The use of the <tt>-options</tt> switch is illustrated in program
+  1-5, which creates two TixControl widgets for
+  the user to enter his income and age. Because of the different sizes
+  of the labels of these two widgets, if we create them haphazardly,
+  the output may look like fig 1-6.
+<P>
+To avoid this problem, we set the width of the <tt>label</tt>
+  subwidgets of the <tt>.income</tt> and <tt>.age</tt> widgets to be the
+  same (8 characters wide) and set their <tt>-anchor</tt> option to <tt>e</tt> (flushed to right), so that the labels appear to be
+  well-aligned. Program 1-5 also does other
+  things such as setting the <tt>entry</tt> subwidgets to have a width of
+  10 characters and a border-width of 3 pixels so that they appear
+  wider and ``deeper''. A better result is shown in figure
+  1-6.
+<P>
+  As we can see from program 1-5, the value for
+  the <tt>-options</tt> switch is a list of one or more pairs of
+<P>
+<blockquote> <em>subwidget-option-spec</em> <em>value</em> ..
+</blockquote>
+<P>
+<em>subwidget-option-spec</em> is in the form <em>subwidget-name</em><tt>.</tt><em>option-name</em>. For example, <tt>label.anchor</tt> identifies the
+ <tt>anchor</tt> option of the <tt>label</tt> subwidget, <tt>entry.width</tt>
+ identifies the <tt>width</tt> option of the entry subwidget, and so on.
+<P>
+Notice we must use the <em>name</em> of the option, not the <em>command-line switch</em> of the option. For example, the option that
+ specifies the border-width of the <tt>entry</tt> subwidget has the
+ command-line switch <tt>-borderwidth</tt> but its name is <tt>borderWidth</tt> (notice the capitalization on the name but not on the
+ command-line switch). Therefore, we have used the capitalized version
+ of ``<tt>entry.borderWidth 3</tt>'' in program
+ 1-5 and not ``<tt>entry.borderwidth 3</tt>''. To
+ find out the names of the options of the respective subwidgets,
+ please refer to their manual pages.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

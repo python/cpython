@@ -1,0 +1,35 @@
+<HEAD>
+<TITLE> Handling the Selection and User Event<A NAME=414>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html948 HREF=subsection3_6_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html946 HREF=subsection3_6_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html942 HREF=subsubsection3_6_1_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html950 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html949 HREF=subsection3_6_2.html> Creating Collapsible Tree </A>
+<B>Up:</B> <A NAME=tex2html947 HREF=subsection3_6_1.html> TixHList - The </A>
+<B> Previous:</B> <A NAME=tex2html943 HREF=subsubsection3_6_1_3.html> Controlling the Layout </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00061400000000000000> Handling the Selection and User Event<A NAME=414>&nbsp;</A></A></H3>
+<P>
+The handling of the selection and user events for the HList widget
+  is very similar to the TList widget (see section
+  3.3.5), except that for the HList widget all the
+  operations are based on entry-paths, not list indices. The methods
+  <tt>info selection</tt>, <tt>selection set</tt> and <tt>selection clear</tt>
+  can be used to query, set or clear the selection; the option <tt>-selectmode</tt> controls how many entries can be selected at a time;
+  the options <tt>-browsecmd</tt> and <tt>-command</tt> can be used to
+  specify a command to be called to handle user events.
+<P>
+   There is one more option worth mentioning: the <tt>-wideselection</tt>
+  option. When set to <tt>true</tt>, the selection highlight will be drawn
+  across the whole HList widget (see figure 4-3). When set to
+  false, selection highlight will be drawn as wide as the selected entry
+  (see figure 4-5). Normally, you would set <tt>-wideselection</tt> to <tt>false</tt> when you use <tt>imagetext</tt> items inside
+  (as we did in program 4-4).
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

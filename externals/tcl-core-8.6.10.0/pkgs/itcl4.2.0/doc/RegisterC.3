@@ -1,0 +1,123 @@
+'\"
+'\" Copyright (c) 1993-1998  Lucent Technologies, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Itcl_RegisterC 3 3.0 itcl "[incr\ Tcl] Library Procedures"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Itcl_RegisterC, Itcl_RegisterObjC, Itcl_FindC \- Associate a symbolic name with a C procedure.
+.SH SYNOPSIS
+.nf
+\fB#include <itcl.h>\fR
+
+int
+\fBItcl_RegisterC\fR(\fIinterp, cmdName, argProc, clientData, deleteProc\fR)
+
+int
+\fBItcl_RegisterObjC\fR(\fIinterp, cmdName, objProc, clientData, deleteProc\fR)
+
+int
+\fBItcl_FindC\fR(\fIinterp, cmdName, argProcPtr, objProcPtr, cDataPtr\fR)
+.fi
+.SH ARGUMENTS
+.AP Tcl_Interp *interp in
+Interpreter in which to create new command.
+.VS 8.4
+.AP "CONST char" *cmdName in
+.VE
+Name of command.
+.AP Tcl_CmdProc *argProc in
+Implementation of new command:  \fIargProc\fR will be called whenever
+.AP Tcl_CmdProc **argProcPtr in/out
+The Tcl_CmdProc * to receive the pointer.
+.AP Tcl_ObjCmdProc *objProc in
+Implementation of the new command: \fIobjProc\fR will be called whenever
+.AP Tcl_ObjCmdProc **objProcPtr in/out
+The Tcl_ObjCmdProc * to receive the pointer.
+.AP ClientData clientData in
+Arbitrary one-word value to pass to \fIproc\fR and \fIdeleteProc\fR.
+.AP ClientData *cDataPtr in/out
+The ClientData to receive the pointer.
+.AP Tcl_CmdDeleteProc *deleteProc in
+Procedure to call before \fIcmdName\fR is deleted from the interpreter;
+allows for command-specific cleanup.  If NULL, then no procedure is
+called before the command is deleted.
+.BE
+
+.SH DESCRIPTION
+.PP
+Used to associate a symbolic name with an (argc,argv) C procedure
+that handles a Tcl command.  Procedures that are registered in this
+manner can be referenced in the body of an [incr Tcl] class
+definition to specify C procedures to acting as methods/procs.
+Usually invoked in an initialization routine for an extension,
+called out in Tcl_AppInit() at the start of an application.
+.PP
+Each symbolic procedure can have an arbitrary client data value
+associated with it.  This value is passed into the command
+handler whenever it is invoked.
+.PP
+A symbolic procedure name can be used only once for a given style
+(arg/obj) handler.  If the name is defined with an arg-style
+handler, it can be redefined with an obj-style handler; or if
+the name is defined with an obj-style handler, it can be redefined
+with an arg-style handler.  In either case, any previous client
+data is discarded and the new client data is remembered.  However,
+if a name is redefined to a different handler of the same style,
+this procedure returns an error.
+.PP
+Returns TCL_OK on success, or TCL_ERROR (along with an error message
+in interp->result) if anything goes wrong.
+.PP
+C procedures can be integrated into an \fB[incr\ Tcl]\fR class
+definition to implement methods, procs, and the "config" code
+for public variables.  Any body that starts with "\fB@\fR"
+is treated as the symbolic name for a C procedure.
+.PP
+Symbolic names are established by registering procedures via
+\fBItcl_RegisterC()\fR.  This is usually done in the \fBTcl_AppInit()\fR
+procedure, which is automatically called when the interpreter starts up.
+In the following example, the procedure \fCMy_FooCmd()\fR is registered
+with the symbolic name "foo".  This procedure can be referenced in
+the \fBbody\fR command as "\fC@foo\fR".
+.CS
+int
+Tcl_AppInit(interp)
+    Tcl_Interp *interp;     /* Interpreter for application. */
+{
+    if (Itcl_Init(interp) == TCL_ERROR) {
+        return TCL_ERROR;
+    }
+
+    if (Itcl_RegisterC(interp, "foo", My_FooCmd) != TCL_OK) {
+        return TCL_ERROR;
+    }
+}
+.CE
+C procedures are implemented just like ordinary Tcl commands.
+See the \fBCrtCommand\fR man page for details.  Within the procedure,
+class data members can be accessed like ordinary variables
+using \fBTcl_SetVar()\fR, \fBTcl_GetVar()\fR, \fBTcl_TraceVar()\fR,
+etc.  Class methods and procs can be executed like ordinary commands
+using \fBTcl_Eval()\fR.  \fB[incr\ Tcl]\fR makes this possible by
+automatically setting up the context before executing the C procedure.
+.PP
+This scheme provides a natural migration path for code development.
+Classes can be developed quickly using Tcl code to implement the
+bodies.  An entire application can be built and tested.  When
+necessary, individual bodies can be implemented with C code to
+improve performance.
+.PP
+See the Archetype class in \fB[incr\ Tk]\fR for an example of how this
+C linking method is used.
+
+.SH "SEE ALSO"
+Tcl_CreateCommand, Tcl_CreateObjCommand
+
+.SH KEYWORDS
+class, object
+

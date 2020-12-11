@@ -1,0 +1,252 @@
+'\"
+'\" $Id: tix.n,v 1.5 2004/12/24 00:38:31 hobbs Exp $
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+.TH tix n 8.4 Tix "Tix Built-In Commands"
+.BS
+'\"
+.SH NAME
+tix \- Manipulate internal states of the Tix library
+'\"
+.SH SYNOPSIS
+\fBtix\fR \fIoption \fR?\fIarg arg ...\fR?
+'\"
+'\"----------------------------------------------------------------------
+.SH "CONFIGURATION OPTIONS"
+'\"
+This manual page descripts the \fBtix\fR command, which manipulates
+the internal states of the Tix library. If you're looking for a general
+introduction to the Tix library, please refer to the \fBTixIntro\fR
+manual page.
+.PP
+The Tix application context supports the following configuration
+options. Usually, these options are set using the X resource database,
+i.e., in the user's \fB\.Xdefault\fR file. For example, to choose a
+different color scheme for the Tix widgets, these two lines can be
+added to the user's \fB\.Xdefault\fR file:
+.RS
+.CS
+*TixScheme:  Gray
+*TixFontSet: 14Point
+.CE
+.RE
+'\"
+'\"----------BEGIN
+.OP -binding binding Binding
+This is an obsolete option.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-debug debug Debug
+Specifies whether the Tix widgets should run in debug mode.
+'\"----------END
+'\"
+'\"
+'\"----------BEGIN
+.OP \-fontset tixFontSet TixFontSet
+Specifies the fontset to use for the Tix widgets. Valid options are
+\fBWmDefault\fR,
+\fBTK\fR, \fBTkWin\fR, \fB12Point\fR and \fB14Point\fR. \fBTK\fR specifies that the
+standard TK fonts should be used. The default value is \fBWmDefault\fR.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-scheme tixScheme TixScheme
+Specifies the color scheme to use for the Tix widgets. Valid options
+are \fBWmDefault\fR,
+\fBTK\fR, \fBTkWin\fR, \fBGray\fR, \fBBlue\fR, \fBBisque\fR, \fBSGIGray\fR and
+\fBTixGray\fR. If you want the
+standard TK color scheme, you can use the value \fBTK\fR. 
+The default value is \fBWmDefault\fR.
+ '\"----------END
+'\"
+'\"
+'\"----------BEGIN
+.OP \-schemepriority tixSchemePriority TixSchemePriority
+Specifies the priority level of the TK options set by th Tix
+schemes. Please refer to the TK \fBoption(n)\fR manual page for a
+discussion of the priority level of Tix options. The default value is
+79, which makes the Tix schemes at a higher priority than the
+settings in the .Xdefaults file. If you want to allow the Tix schemes
+to be overridden by the settings in the .Xdefaults file, you can set
+the following line in you .Xdefaults file:
+.CS
+*TixSchemePriority: 21
+.CE
+'\"----------END
+'\"
+.BE
+.SH DESCRIPTION
+.PP
+The \fBtix\fR command provides access to miscellaneous elements of
+Tix's internal state and the Tix \fBapplication context\fR.  Most of
+the information manipulated by this command pertains to the
+application as a whole, or to a screen or display, rather than to a
+particular window.  The command can take any of a number of different
+forms depending on the \fIoption\fR argument.  The legal forms are:
+'\"
+.TP
+\fBtix addbitmapdir\fR \fIdirectory\fR
+'\"
+Tix maintains a list of directory under which which the \fBtix
+getimage\fR and \fBtix getbitmap\fR commands will search for image
+files. The standard bitmap directory is
+\fB$TIX_LIBRARY/bitmaps\fR. The \fBaddbitmapdir\fR command adds
+\fIdirectory\fR into this list. By using this command, the image files
+of an applications can also be located using the \fBtix getimage\fR ot
+\fBtix getbitmap\fR command.
+'\"
+.TP
+\fBtix cget\fR \fIoption\fR
+'\"
+Returns the current value of the configuration option given by
+\fIoption\fR. \fIOption\fR may be any of the options described in the
+\fBCONFIGURATION OPTIONS\fR section.
+'\"
+.TP
+\fBtix configure\fR ?\fIoption\fR? \fI?value option value ...\fR?
+'\"
+Query or modify the configuration options of the Tix application
+context. If no \fIoption\fR is specified, returns a list describing
+all of the available options (see \fBTk_ConfigureInfo\fR for
+information on the format of this list).  If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given option(s) to have the given value(s); in this case
+the command returns an empty string. \fIOption\fR may be any of the
+options described in the \fBCONFIGURATION OPTIONS\fR section.
+'\"
+'\"
+.TP
+\fBtix filedialog \fR?\fIclass\fR?
+'\"
+Returns the file selection dialog that may be shared among different
+modules of this application. This command will create a file selection
+dialog widget when it is called the first time. This dialog will be
+returned by all subsequent calls to \fBtix filedialog\fR. An optional
+\fIclass\fR parameter can be passed to specified what type of file
+selection dialog widget is desired. Possible options are
+\fBtixFileSelectDialog\fR or \fBtixExFileSelectDialog.\fR
+'\"
+.TP
+\fBtix getbitmap \fIname\fR
+'\"
+Locates a bitmap file of the name \fIname\fR.xpm or \fIname\fR in one
+of the bitmap directories (see the \fBaddbitmapdir\fR command
+above). By using \fBtix getbitmap\fR, you can advoid hard coding the
+pathnames of the bitmap files in your application. When successful, it
+returns the complete pathname of the bitmap file, prefixed with the
+character \fB@\fR.  The returned value can be used to configure the
+\fB\-bitmap\fR option of the TK and Tix widgets.
+'\"
+.TP
+\fBtix getimage \fIname\fR
+'\"
+Locates an image file of the name \fIname\fR.xpm, \fIname\fR.xbm or
+\fIname\fR.ppm in one of the bitmap directories (see the
+\fBaddbitmapdir\fR command above). If more than one file with the same
+name (but different extensions) exist, then the image type is chosen
+according to the depth of the X display: xbm images are chosen on
+monochrome displays and color images are chosen on color displays. By
+using \fBtix getimage\fR, you can advoid hard coding the pathnames of
+the image files in your application. When successful, this command
+returns the name of the newly created image, which can be used to
+configure the \fB\-image\fR option of the TK and Tix widgets.
+'\"
+.TP
+\fBtix initstyle\fR
+'\"
+Init the style defaults for Tix.  Prior to Tix 8.4 this was done by
+simply package requiring Tix, but this call is now required to
+explicitly use Tix style.
+'\"
+.TP
+\fBtix option\fR ?\fIargs ...\fR?
+'\"
+Manipulates the options manitained by the Tix scheme
+mechanism. Available options are:
+.CS
+active_bg   active_fg   bg
+bold_font   dark1_bg    dark1_fg
+dark2_bg    dark2_fg    disabled_fg
+fg          fixed_font  font    
+inactive_bg inactive_fg input1_bg    
+input2_bg   italic_font light1_bg
+light1_fg   light2_bg   light2_fg
+menu_font   output1_bg  output2_bg
+select_bg   select_fg   selector
+.CE
+The arguments to the \fBtix option\fR command can take the
+following form(s):
+.RS
+.TP
+\fBtix option get\fR \fIoption\fR
+'\"
+Returns the current value of \fIoption\fR.
+.RE
+'\"
+'\"
+.TP
+\fBtix resetoptions\fR \fInewScheme newFontSet\fR ?\fInewScmPrio\fR?
+'\"
+'\"
+Resets the scheme and fontset of the Tix application to
+\fInewScheme\fR and \fInewFontSet\fR, respectively. This affects only
+those widgets created \fBafter\fR this call. Therefore, it is best to
+call the \fBresetoptions\fR command \fBbefore\fR the creation of any
+widgets in a Tix application.
+
+The optional parameter \fInewScmPrio\fR can be given to reset the
+priority level of the TK options set by the Tix schemes.
+'\"
+'\"
+.SH BUGS
+'\"
+.IP [1]
+In this release of Tix, the following configuration options have been
+disabled. Assigning values to them will cause no effect:
+.CS
+-binding
+-debug
+-fontset
+-scheme
+-schemepriority
+.CE
+In addition, the following options to the \fBtix\fR command have been
+disabled. Invoking the \fBtix\fR command with these options will cause
+no effect:
+.CS
+resetoptions
+.CE
+.IP [2]
+Because of the way TK handles the X option database, after tixwish has
+started up, it is not possible to reset the color schemes and font
+sets using the \fBtix config\fR command. Instead, the \fBtix
+resetoptions\fR command must be used.
+'\"
+.PP
+The tk_setPalette command does not work very well under Tix. To use
+it, one must follow these steps:
+.RS
+.CS
+tix resetoptions TK TK
+tk_setPalette lightblue
+.CE
+.RE
+'\"
+.SH KEYWORDS
+file selection dialog
+

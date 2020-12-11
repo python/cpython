@@ -1,0 +1,55 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2001 Kevin B. Kenny <kennykb@acm.org>.  All rights reserved.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH llength n "" Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+llength \- Count the number of elements in a list
+.SH SYNOPSIS
+\fBllength \fIlist\fR
+.BE
+.SH DESCRIPTION
+.PP
+Treats \fIlist\fR as a list and returns a decimal string giving
+the number of elements in it.
+.SH EXAMPLES
+.PP
+The result is the number of elements:
+.PP
+.CS
+% \fBllength\fR {a b c d e}
+5
+% \fBllength\fR {a b c}
+3
+% \fBllength\fR {}
+0
+.CE
+.PP
+Elements are not guaranteed to be exactly words in a dictionary sense
+of course, especially when quoting is used:
+.PP
+.CS
+% \fBllength\fR {a b {c d} e}
+4
+% \fBllength\fR {a b { } c d e}
+6
+.CE
+.PP
+An empty list is not necessarily an empty string:
+.PP
+.CS
+% set var { }; puts "[string length $var],[\fBllength\fR $var]"
+1,0
+.CE
+.SH "SEE ALSO"
+list(n), lappend(n), lindex(n), linsert(n), lsearch(n),
+lset(n), lsort(n), lrange(n), lreplace(n)
+.SH KEYWORDS
+element, list, length

@@ -1,0 +1,45 @@
+<HEAD>
+<TITLE> The SetBindings Method<A NAME=643>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html1265 HREF=subsection3_8_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html1263 HREF=subsection3_8_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html1259 HREF=subsubsection3_8_4_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html1267 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html1266 HREF=subsection3_8_5.html> Declaring and Using </A>
+<B>Up:</B> <A NAME=tex2html1264 HREF=subsection3_8_4.html> Standard Initialization Methods</A>
+<B> Previous:</B> <A NAME=tex2html1260 HREF=subsubsection3_8_4_4.html> The ConstructWidget Method</A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00084500000000000000> The SetBindings Method<A NAME=643>&nbsp;</A></A></H3>
+<P>
+In your interface, you want to handle a lot of events in the
+  subwidgets that make up your mega-widget.  For instance, when
+  somebody presses the button in a TixArrowButton widget, you want the
+  button to handle the event. The <tt>SetBindings</tt> method is used to
+  creates event bindings for the components inside the mega-widget. In
+  our TixArrowButton example, we use the bind command to specify that
+  the method <tt>tixArrowButton:IncrCount</tt> should be called each
+  time when the user presses the first mouse button. As a result, we
+  can count the number of times the user has pressed on the button
+  (obviously for no better reasons than using it as a dumb example).
+<P>
+<blockquote> <P><tt> proc tixArrowButton:SetBindings {w} {<BR>
+    upvar #0 $w data<BR>
+<BR>
+    tixChainMethod $w SetBindings<BR>
+<BR>
+    bind $data(w:button) $&lt;$1$&gt;$ &quot;tixArrowButton:IncrCount $w&quot;<BR>
+}<BR>
+<BR>
+proc tixArrowButton:IncrCount {w} {<BR>
+    upvar #0 $w data<BR>
+<BR>
+    incr data(count)<BR>
+}</tt>
+<P></blockquote>
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

@@ -1,0 +1,961 @@
+# This file contains a collection of tests for the procedures in the file
+# tclEvent.c, which includes the "update", and "vwait" Tcl commands.  Sourcing
+# this file into Tcl runs the tests and generates output for errors.  No
+# output means no errors were found.
+#
+# Copyright (c) 1995-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2
+namespace import -force ::tcltest::*
+
+catch {
+    ::tcltest::loadTestedCommands
+    package require -exact Tcltest [info patchlevel]
+    set ::tcltestlib [lindex [package ifneeded Tcltest [info patchlevel]] 1]
+}
+
+
+testConstraint testfilehandler [llength [info commands testfilehandler]]
+testConstraint testexithandler [llength [info commands testexithandler]]
+testConstraint testfilewait [llength [info commands testfilewait]]
+testConstraint exec [llength [info commands exec]]
+
+test event-1.1 {Tcl_CreateFileHandler, reading} -setup {
+    testfilehandler close
+    set result ""
+} -constraints {testfilehandler} -body {
+    testfilehandler create 0 readable off
+    testfilehandler clear 0
+    testfilehandler oneevent
+    lappend result [testfilehandler counts 0]
+    testfilehandler fillpartial 0
+    testfilehandler oneevent
+    lappend result [testfilehandler counts 0]
+    testfilehandler oneevent
+    lappend result [testfilehandler counts 0]
+} -cleanup {
+    testfilehandler close
+} -result {{0 0} {1 0} {2 0}}
+test event-1.2 {Tcl_CreateFileHandler, writing} -setup {
+    testfilehandler close
+    set result ""
+} -constraints {testfilehandler nonPortable} -body {
+    # This test is non-portable because on some systems (e.g., SunOS 4.1.3)
+    # pipes seem to be writable always.
+    testfilehandler create 0 off writable
+    testfilehandler clear 0
+    testfilehandler oneevent
+    lappend result [testfilehandler counts 0]
+    testfilehandler fillpartial 0
+    testfilehandler oneevent
+    lappend result [testfilehandler counts 0]
+    testfilehandler fill 0
+    testfilehandler oneevent
+    lappend result [testfilehandler counts 0]
+} -cleanup {
+    testfilehandler close
+} -result {{0 1} {0 2} {0 2}}
+test event-1.3 {Tcl_DeleteFileHandler} -setup {
+    testfilehandler close
+    set result ""
+} -constraints {testfilehandler nonPortable} -body {
+    testfilehandler create 2 disabled disabled
+    testfilehandler create 1 readable writable
+    testfilehandler create 0 disabled disabled
+    testfilehandler fillpartial 1
+    testfilehandler oneevent
+    lappend result [testfilehandler counts 1]
+    testfilehandler oneevent
+    lappend result [testfilehandler counts 1]
+    testfilehandler oneevent
+    lappend result [testfilehandler counts 1]
+    testfilehandler create 1 off off
+    testfilehandler oneevent
+    lappend result [testfilehandler counts 1]
+} -cleanup {
+    testfilehandler close
+} -result {{0 1} {1 1} {1 2} {0 0}}
+
+test event-2.1 {Tcl_DeleteFileHandler} -setup {
+    testfilehandler close
+    set result ""
+} -constraints {testfilehandler nonPortable} -body {
+    testfilehandler create 2 disabled disabled
+    testfilehandler create 1 readable writable
+    testfilehandler fillpartial 1
+    testfilehandler oneevent
+    lappend result [testfilehandler counts 1]
+    testfilehandler oneevent
+    lappend result [testfilehandler counts 1]
+    testfilehandler oneevent
+    lappend result [testfilehandler counts 1]
+    testfilehandler create 1 off off
+    testfilehandler oneevent
+    lappend result [testfilehandler counts 1]
+} -cleanup {
+    testfilehandler close
+} -result {{0 1} {1 1} {1 2} {0 0}}
+test event-2.2 {Tcl_DeleteFileHandler, fd reused & events still pending} -setup {
+    testfilehandler close
+    set result ""
+} -constraints {testfilehandler nonPortable} -body {
+    testfilehandler create 0 readable writable
+    testfilehandler fillpartial 0
+    testfilehandler oneevent
+    lappend result [testfilehandler counts 0]
+    testfilehandler close
+    testfilehandler create 0 readable writable
+    testfilehandler oneevent
+    lappend result [testfilehandler counts 0]
+} -cleanup {
+    testfilehandler close
+} -result {{0 1} {0 0}}
+
+test event-3.1 {FileHandlerCheckProc, TCL_FILE_EVENTS off} -setup {
+    testfilehandler close
+} -constraints {testfilehandler} -body {
+    testfilehandler create 1 readable writable
+    testfilehandler fillpartial 1
+    testfilehandler windowevent
+    testfilehandler counts 1
+} -cleanup {
+    testfilehandler close
+} -result {0 0}
+
+test event-4.1 {FileHandlerEventProc, race between event and disabling} -setup {
+    update
+    testfilehandler close
+    set result ""
+} -constraints {testfilehandler nonPortable} -body {
+    testfilehandler create 2 disabled disabled
+    testfilehandler create 1 readable writable
+    testfilehandler fillpartial 1
+    testfilehandler oneevent
+    lappend result [testfilehandler counts 1]
+    testfilehandler oneevent
+    lappend result [testfilehandler counts 1]
+    testfilehandler oneevent
+    lappend result [testfilehandler counts 1]
+    testfilehandler create 1 disabled disabled
+    testfilehandler oneevent
+    lappend result [testfilehandler counts 1]
+} -cleanup {
+    testfilehandler close
+} -result {{0 1} {1 1} {1 2} {0 0}}
+test event-4.2 {FileHandlerEventProc, TCL_FILE_EVENTS off} -setup {
+    update
+    testfilehandler close
+} -constraints {testfilehandler nonPortable} -body {
+    testfilehandler create 1 readable writable
+    testfilehandler create 2 readable writable
+    testfilehandler fillpartial 1
+    testfilehandler fillpartial 2
+    testfilehandler oneevent
+    set result ""
+    lappend result [testfilehandler counts 1] [testfilehandler counts 2]
+    testfilehandler windowevent
+    lappend result [testfilehandler counts 1] [testfilehandler counts 2]
+} -cleanup {
+    testfilehandler close
+} -result {{0 0} {0 1} {0 0} {0 1}}
+update
+
+test event-5.1 {Tcl_BackgroundError, HandleBgErrors procedures} -setup {
+    catch {rename bgerror {}}
+} -body {
+    proc bgerror msg {
+	global errorInfo errorCode x
+	lappend x [list $msg $errorInfo $errorCode]
+    }
+    after idle {error "a simple error"}
+    after idle {open non_existent}
+    after idle {set errorInfo foobar; set errorCode xyzzy}
+    set x {}
+    update idletasks
+    regsub -all [file join {} non_existent] $x "non_existent"
+} -cleanup {
+    rename bgerror {}
+} -result {{{a simple error} {a simple error
+    while executing
+"error "a simple error""
+    ("after" script)} NONE} {{couldn't open "non_existent": no such file or directory} {couldn't open "non_existent": no such file or directory
+    while executing
+"open non_existent"
+    ("after" script)} {POSIX ENOENT {no such file or directory}}}}
+test event-5.2 {Tcl_BackgroundError, HandleBgErrors procedures} -setup {
+    catch {rename bgerror {}}
+} -body {
+    proc bgerror msg {
+	global x
+	lappend x $msg
+	return -code break
+    }
+    after idle {error "a simple error"}
+    after idle {open non_existent}
+    set x {}
+    update idletasks
+    return $x
+} -cleanup {
+    rename bgerror {}
+} -result {{a simple error}}
+test event-5.3 {HandleBgErrors: [Bug 1670155]} -setup {
+    variable x
+    proc demo args {variable x done}
+    variable target [list [namespace which demo] x]
+    proc trial args {variable target; string length $target}
+    trace add execution demo enter [namespace code trial]
+    variable save [interp bgerror {}]
+    interp bgerror {} $target
+} -body {
+    after 0 {error bar}
+    vwait [namespace which -variable x]
+} -cleanup {
+    interp bgerror {} $save
+    unset x target save
+    rename demo {}
+    rename trial {}
+} -result {}
+test event-5.3.1 {Default [interp bgerror] handler} -body {
+    ::tcl::Bgerror
+} -returnCodes error -match glob -result {*msg options*}
+test event-5.4 {Default [interp bgerror] handler} -body {
+    ::tcl::Bgerror {}
+} -returnCodes error -match glob -result {*msg options*}
+test event-5.5 {Default [interp bgerror] handler} -body {
+    ::tcl::Bgerror {} {} {}
+} -returnCodes error -match glob -result {*msg options*}
+test event-5.6 {Default [interp bgerror] handler} -body {
+    ::tcl::Bgerror {} {}
+} -returnCodes error -match glob -result {*-level*}
+test event-5.7 {Default [interp bgerror] handler} -body {
+    ::tcl::Bgerror {} {-level foo}
+} -returnCodes error -match glob -result {*expected integer*}
+test event-5.8 {Default [interp bgerror] handler} -body {
+    ::tcl::Bgerror {} {-level 0}
+} -returnCodes error -match glob -result {*-code*}
+test event-5.9 {Default [interp bgerror] handler} -body {
+    ::tcl::Bgerror {} {-level 0 -code ok}
+} -returnCodes error -match glob -result {*expected integer*}
+test event-5.10 {Default [interp bgerror] handler} -body {
+    proc bgerror {m} {append ::res $m}
+    set ::res {}
+    ::tcl::Bgerror {} {-level 0 -code 0}
+    return $::res
+} -cleanup {
+    rename bgerror {}
+} -result {}
+test event-5.11 {Default [interp bgerror] handler} -body {
+    proc bgerror {m} {append ::res $m}
+    set ::res {}
+    ::tcl::Bgerror msg {-level 0 -code 1}
+    return $::res
+} -cleanup {
+    rename bgerror {}
+} -result {msg}
+test event-5.12 {Default [interp bgerror] handler} -body {
+    proc bgerror {m} {append ::res $m}
+    set ::res {}
+    ::tcl::Bgerror msg {-level 0 -code 2}
+    return $::res
+} -cleanup {
+    rename bgerror {}
+} -result {command returned bad code: 2}
+test event-5.13 {Default [interp bgerror] handler} -body {
+    proc bgerror {m} {append ::res $m}
+    set ::res {}
+    ::tcl::Bgerror msg {-level 0 -code 3}
+    return $::res
+} -cleanup {
+    rename bgerror {}
+} -result {invoked "break" outside of a loop}
+test event-5.14 {Default [interp bgerror] handler} -body {
+    proc bgerror {m} {append ::res $m}
+    set ::res {}
+    ::tcl::Bgerror msg {-level 0 -code 4}
+    return $::res
+} -cleanup {
+    rename bgerror {}
+} -result {invoked "continue" outside of a loop}
+test event-5.15 {Default [interp bgerror] handler} -body {
+    proc bgerror {m} {append ::res $m}
+    set ::res {}
+    ::tcl::Bgerror msg {-level 0 -code 5}
+    return $::res
+} -cleanup {
+    rename bgerror {}
+} -result {command returned bad code: 5}
+
+test event-6.1 {BgErrorDeleteProc procedure} -setup {
+    catch {interp delete foo}
+    interp create foo
+    set erroutfile [makeFile Unmodified err.out]
+} -body {
+    foo eval [list set erroutfile $erroutfile]
+    foo eval {
+	proc bgerror args {
+	    global errorInfo erroutfile
+	    set f [open $erroutfile r+]
+	    seek $f 0 end
+	    puts $f "$args $errorInfo"
+	    close $f
+	}
+	after 100 {error "first error"}
+	after 100 {error "second error"}
+    }
+    after 100 {interp delete foo}
+    after 200
+    update
+    set f [open $erroutfile r]
+    set result [read $f]
+    close $f
+    return $result
+} -cleanup {
+    removeFile $erroutfile
+} -result {Unmodified
+}
+
+test event-7.1 {bgerror / regular} {
+    set errRes {}
+    proc bgerror {err} {
+	global errRes
+	set errRes $err
+    }
+    after 0 {error err1}
+    vwait errRes
+    return $errRes
+} err1
+test event-7.2 {bgerror / accumulation} {
+    set errRes {}
+    proc bgerror {err} {
+	global errRes
+	lappend errRes $err
+    }
+    after 0 {error err1}
+    after 0 {error err2}
+    after 0 {error err3}
+    update
+    return $errRes
+} {err1 err2 err3}
+test event-7.3 {bgerror / accumulation / break} {
+    set errRes {}
+    proc bgerror {err} {
+	global errRes
+	lappend errRes $err
+	return -code break "skip!"
+    }
+    after 0 {error err1}
+    after 0 {error err2}
+    after 0 {error err3}
+    update
+    return $errRes
+} err1
+test event-7.4 {tkerror is nothing special anymore to tcl} -body {
+    set errRes {}
+    # we don't just rename bgerror to empty because it could then
+    # be autoloaded...
+    proc bgerror {err} {
+	global errRes
+	lappend errRes "bg:$err"
+    }
+    proc tkerror {err} {
+	global errRes
+	lappend errRes "tk:$err"
+    }
+    after 0 {error err1}
+    update
+    return $errRes
+} -cleanup {
+    rename tkerror {}
+} -result bg:err1
+test event-7.5 {correct behaviour when there is no bgerror [Bug 219142]} -body {
+    exec [interpreter] << {
+	after 1000 error hello
+	after 2000 set a 0
+	vwait a
+    }
+} -constraints {exec} -returnCodes error -result {hello
+    while executing
+"error hello"
+    ("after" script)}
+test event-7.6 {safe hidden bgerror fallback} -setup {
+    variable result {}
+    interp create -safe safe
+} -body {
+    safe alias puts puts
+    safe alias result ::append [namespace which -variable result]
+    safe eval {proc bgerror m {result $m\n$::errorCode\n$::errorInfo\n}}
+    safe hide bgerror
+    safe eval after 0 error foo
+    update
+    return $result
+} -cleanup {
+    interp delete safe
+} -result {foo
+NONE
+foo
+    while executing
+"error foo"
+    ("after" script)
+}
+test event-7.7 {safe hidden bgerror fallback} -setup {
+    variable result {}
+    interp create -safe safe
+} -body {
+    safe alias puts puts
+    safe alias result ::append [namespace which -variable result]
+    safe eval {proc bgerror m {result $m\n$::errorCode\n$::errorInfo\n}}
+    safe hide bgerror
+    safe eval {proc bgerror m {error bar soom baz}}
+    safe eval after 0 error foo
+    update
+    return $result
+} -cleanup {
+    interp delete safe
+} -result {foo
+NONE
+foo
+    while executing
+"error foo"
+    ("after" script)
+}
+
+# someday : add a test checking that when there is no bgerror, an error msg
+# goes to stderr ideally one would use sub interp and transfer a fake stderr
+# to it, unfortunatly the current interp tcl API does not allow that. The
+# other option would be to use fork a test but it then becomes more a
+# file/exec test than a bgerror test.
+
+# end of bgerror tests
+catch {rename bgerror {}}
+
+test event-8.1 {Tcl_CreateExitHandler procedure} {stdio testexithandler} {
+    set child [open |[list [interpreter]] r+]
+    puts $child "catch {load $::tcltestlib Tcltest}"
+    puts $child "testexithandler create 41; testexithandler create 4"
+    puts $child "testexithandler create 6; exit"
+    flush $child
+    set result [read $child]
+    close $child
+    return $result
+} {even 6
+even 4
+odd 41
+}
+
+test event-9.1 {Tcl_DeleteExitHandler procedure} {stdio testexithandler} {
+    set child [open |[list [interpreter]] r+]
+    puts $child "catch {load $::tcltestlib Tcltest}"
+    puts $child "testexithandler create 41; testexithandler create 4"
+    puts $child "testexithandler create 6; testexithandler delete 41"
+    puts $child "testexithandler create 16; exit"
+    flush $child
+    set result [read $child]
+    close $child
+    return $result
+} {even 16
+even 6
+even 4
+}
+test event-9.2 {Tcl_DeleteExitHandler procedure} {stdio testexithandler} {
+    set child [open |[list [interpreter]] r+]
+    puts $child "catch {load $::tcltestlib Tcltest}"
+    puts $child "testexithandler create 41; testexithandler create 4"
+    puts $child "testexithandler create 6; testexithandler delete 4"
+    puts $child "testexithandler create 16; exit"
+    flush $child
+    set result [read $child]
+    close $child
+    return $result
+} {even 16
+even 6
+odd 41
+}
+test event-9.3 {Tcl_DeleteExitHandler procedure} {stdio testexithandler} {
+    set child [open |[list [interpreter]] r+]
+    puts $child "catch {load $::tcltestlib Tcltest}"
+    puts $child "testexithandler create 41; testexithandler create 4"
+    puts $child "testexithandler create 6; testexithandler delete 6"
+    puts $child "testexithandler create 16; exit"
+    flush $child
+    set result [read $child]
+    close $child
+    return $result
+} {even 16
+even 4
+odd 41
+}
+test event-9.4 {Tcl_DeleteExitHandler procedure} {stdio testexithandler} {
+    set child [open |[list [interpreter]] r+]
+    puts $child "catch {load $::tcltestlib Tcltest}"
+    puts $child "testexithandler create 41; testexithandler delete 41"
+    puts $child "testexithandler create 16; exit"
+    flush $child
+    set result [read $child]
+    close $child
+    return $result
+} {even 16
+}
+
+test event-10.1 {Tcl_Exit procedure} {stdio} {
+    set child [open |[list [interpreter]] r+]
+    puts $child "exit 3"
+    list [catch {close $child} msg] $msg [lindex $::errorCode 0] \
+        [lindex $::errorCode 2]
+} {1 {child process exited abnormally} CHILDSTATUS 3}
+
+test event-11.1 {Tcl_VwaitCmd procedure} -returnCodes error -body {
+    vwait
+} -result {wrong # args: should be "vwait name"}
+test event-11.2 {Tcl_VwaitCmd procedure} -returnCodes error -body {
+    vwait a b
+} -result {wrong # args: should be "vwait name"}
+test event-11.3 {Tcl_VwaitCmd procedure} -setup {
+    catch {unset x}
+} -body {
+    set x 1
+    vwait x(1)
+} -returnCodes error -result {can't trace "x(1)": variable isn't array}
+test event-11.4 {Tcl_VwaitCmd procedure} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+    after 10; update; # On Mac make sure update won't take long
+} -body {
+    after 100 {set x x-done}
+    after 200 {set y y-done}
+    after 400 {set z z-done}
+    after idle {set q q-done}
+    set x before
+    set y before
+    set z before
+    set q before
+    list [vwait y] $x $y $z $q
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -result {{} x-done y-done before q-done}
+test event-11.5 {Tcl_VwaitCmd procedure: round robin scheduling, 2 sources} -setup {
+    set test1file [makeFile "" test1]
+} -constraints {socket} -body {
+    set f1 [open $test1file w]
+    proc accept {s args} {
+	puts $s foobar
+	close $s
+    }
+    set s1 [socket -server accept -myaddr 127.0.0.1 0]
+    after 1000
+    set s2 [socket 127.0.0.1 [lindex [fconfigure $s1 -sockname] 2]]
+    close $s1
+    set x 0
+    set y 0
+    set z 0
+    fileevent $s2 readable {incr z}
+    vwait z
+    fileevent $f1 writable {incr x; if {$y == 3} {set z done}}
+    fileevent $s2 readable {incr y; if {$x == 3} {set z done}}
+    vwait z
+    close $f1
+    close $s2
+    list $x $y $z
+} -cleanup {
+    removeFile $test1file
+} -result {3 3 done}
+test event-11.6 {Tcl_VwaitCmd procedure: round robin scheduling, same source} {
+    set test1file [makeFile "" test1]
+    set test2file [makeFile "" test2]
+    set f1 [open $test1file w]
+    set f2 [open $test2file w]
+    set x 0
+    set y 0
+    set z 0
+    update
+    fileevent $f1 writable {incr x; if {$y == 3} {set z done}}
+    fileevent $f2 writable {incr y; if {$x == 3} {set z done}}
+    vwait z
+    close $f1
+    close $f2
+    removeFile $test1file
+    removeFile $test2file
+    list $x $y $z
+} {3 3 done}
+test event-11.7 {Bug 16828b3744} {
+    after idle {
+	set ::t::v 1
+	namespace delete ::t
+    }
+    namespace eval ::t {
+	vwait ::t::v
+    }
+} {}
+test event-11.8 {Bug 16828b3744} -setup {
+    oo::class create A {
+	variable continue
+    
+	method start {} {
+           after idle [self] destroy
+        
+           set continue 0
+           vwait [namespace current]::continue
+	}
+	destructor {
+           set continue 1
+	}	
+    }
+} -body {
+    [A new] start
+} -cleanup {
+    A destroy
+} -result {}
+
+test event-12.1 {Tcl_UpdateCmd procedure} -returnCodes error -body {
+    update a b
+} -result {wrong # args: should be "update ?idletasks?"}
+test event-12.2 {Tcl_UpdateCmd procedure} -returnCodes error -body {
+    update bogus
+} -result {bad option "bogus": must be idletasks}
+test event-12.3 {Tcl_UpdateCmd procedure} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    after 500 {set x after}
+    after idle {set y after}
+    after idle {set z "after, y = $y"}
+    set x before
+    set y before
+    set z before
+    update idletasks
+    list $x $y $z
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -result {before after {after, y = after}}
+test event-12.4 {Tcl_UpdateCmd procedure} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    after 10; update; # On Mac make sure update won't take long
+    after 200 {set x x-done}
+    after 600 {set y y-done}
+    after idle {set z z-done}
+    set x before
+    set y before
+    set z before
+    after 300
+    update
+    list $x $y $z
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -result {x-done before z-done}
+
+test event-13.1 {Tcl_WaitForFile procedure, readable} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+    testfilehandler close
+} -constraints {testfilehandler} -body {
+    after 100 set x timeout
+    testfilehandler create 1 off off
+    set x "no timeout"
+    set result [testfilehandler wait 1 readable 0]
+    update
+    list $result $x
+} -cleanup {
+    testfilehandler close
+    foreach i [after info] {
+	after cancel $i
+    }
+} -result {{} {no timeout}}
+test event-13.2 {Tcl_WaitForFile procedure, readable} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+    testfilehandler close
+} -constraints testfilehandler -body {
+    after 100 set x timeout
+    testfilehandler create 1 off off
+    set x "no timeout"
+    set result [testfilehandler wait 1 readable 100]
+    update
+    list $result $x
+} -cleanup {
+    testfilehandler close
+    foreach i [after info] {
+	after cancel $i
+    }
+} -result {{} timeout}
+test event-13.3 {Tcl_WaitForFile procedure, readable} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+    testfilehandler close
+} -constraints testfilehandler -body {
+    after 100 set x timeout
+    testfilehandler create 1 off off
+    testfilehandler fillpartial 1
+    set x "no timeout"
+    set result [testfilehandler wait 1 readable 100]
+    update
+    list $result $x
+} -cleanup {
+    testfilehandler close
+    foreach i [after info] {
+	after cancel $i
+    }
+} -result {readable {no timeout}}
+test event-13.4 {Tcl_WaitForFile procedure, writable} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+    testfilehandler close
+} -constraints {testfilehandler nonPortable} -body {
+    after 100 set x timeout
+    testfilehandler create 1 off off
+    testfilehandler fill 1
+    set x "no timeout"
+    set result [testfilehandler wait 1 writable 0]
+    update
+    list $result $x
+} -cleanup {
+    testfilehandler close
+    foreach i [after info] {
+	after cancel $i
+    }
+} -result {{} {no timeout}}
+test event-13.5 {Tcl_WaitForFile procedure, writable} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+    testfilehandler close
+} -constraints {testfilehandler nonPortable} -body {
+    after 100 set x timeout
+    testfilehandler create 1 off off
+    testfilehandler fill 1
+    set x "no timeout"
+    set result [testfilehandler wait 1 writable 100]
+    update
+    list $result $x
+} -cleanup {
+    testfilehandler close
+    foreach i [after info] {
+	after cancel $i
+    }
+} -result {{} timeout}
+test event-13.6 {Tcl_WaitForFile procedure, writable} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+    testfilehandler close
+} -constraints testfilehandler -body {
+    after 100 set x timeout
+    testfilehandler create 1 off off
+    set x "no timeout"
+    set result [testfilehandler wait 1 writable 100]
+    update
+    list $result $x
+} -cleanup {
+    testfilehandler close
+    foreach i [after info] {
+	after cancel $i
+    }
+} -result {writable {no timeout}}
+test event-13.7 {Tcl_WaitForFile procedure, don't call other event handlers} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+    testfilehandler close
+} -constraints testfilehandler -body {
+    after 100 lappend x timeout
+    after idle lappend x idle
+    testfilehandler create 1 off off
+    set x ""
+    set result [list [testfilehandler wait 1 readable 200] $x]
+    update
+    lappend result $x
+} -cleanup {
+    testfilehandler close
+    foreach i [after info] {
+	after cancel $i
+    }
+} -result {{} {} {timeout idle}}
+test event-13.8 {Tcl_WaitForFile procedure, waiting indefinitely} testfilewait {
+    set f [open "|sleep 2" r]
+    set result ""
+    lappend result [testfilewait $f readable 100]
+    lappend result [testfilewait $f readable -1]
+    close $f
+    return $result
+} {{} readable}
+
+test event-14.1 {Tcl_WaitForFile procedure, readable, big fd} -setup {
+    set chanList {}
+    for {set i 0} {$i < 32} {incr i} {
+	lappend chanList [open /dev/null r]
+    }
+    foreach i [after info] {after cancel $i}
+    testfilehandler close
+} -constraints {testfilehandler unix} -body {
+    after 100 set x timeout
+    testfilehandler create 1 off off
+    set x "no timeout"
+    set result [testfilehandler wait 1 readable 0]
+    update
+    list $result $x
+} -cleanup {
+    testfilehandler close
+    foreach chan $chanList {close $chan}
+    foreach i [after info] {after cancel $i}
+} -result {{} {no timeout}}
+test event-14.2 {Tcl_WaitForFile procedure, readable, big fd} -setup {
+    set chanList {}
+    for {set i 0} {$i < 32} {incr i} {
+	lappend chanList [open /dev/null r]
+    }
+    foreach i [after info] {after cancel $i}
+    testfilehandler close
+} -constraints {testfilehandler unix} -body {
+    after 100 set x timeout
+    testfilehandler create 1 off off
+    set x "no timeout"
+    set result [testfilehandler wait 1 readable 100]
+    update
+    list $result $x
+} -cleanup {
+    testfilehandler close
+    foreach chan $chanList {close $chan}
+    foreach i [after info] {after cancel $i}
+} -result {{} timeout}
+test event-14.3 {Tcl_WaitForFile procedure, readable, big fd} -setup {
+    set chanList {}
+    for {set i 0} {$i < 32} {incr i} {
+	lappend chanList [open /dev/null r]
+    }
+    foreach i [after info] {after cancel $i}
+    testfilehandler close
+} -constraints {testfilehandler unix} -body {
+    after 100 set x timeout
+    testfilehandler create 1 off off
+    testfilehandler fillpartial 1
+    set x "no timeout"
+    set result [testfilehandler wait 1 readable 100]
+    update
+    list $result $x
+} -cleanup {
+    testfilehandler close
+    foreach chan $chanList {close $chan}
+    foreach i [after info] {after cancel $i}
+} -result {readable {no timeout}}
+test event-14.4 {Tcl_WaitForFile procedure, writable, big fd} -setup {
+    set chanList {}
+    for {set i 0} {$i < 32} {incr i} {
+	lappend chanList [open /dev/null r]
+    }
+    foreach i [after info] {after cancel $i}
+    testfilehandler close
+} -constraints {testfilehandler unix nonPortable} -body {
+    after 100 set x timeout
+    testfilehandler create 1 off off
+    testfilehandler fill 1
+    set x "no timeout"
+    set result [testfilehandler wait 1 writable 0]
+    update
+    list $result $x
+} -cleanup {
+    testfilehandler close
+    foreach chan $chanList {close $chan}
+    foreach i [after info] {after cancel $i}
+} -result {{} {no timeout}}
+test event-14.5 {Tcl_WaitForFile procedure, writable, big fd} -setup {
+    set chanList {}
+    for {set i 0} {$i < 32} {incr i} {
+	lappend chanList [open /dev/null r]
+    }
+    foreach i [after info] {after cancel $i}
+    testfilehandler close
+} -constraints {testfilehandler unix nonPortable} -body {
+    after 100 set x timeout
+    testfilehandler create 1 off off
+    testfilehandler fill 1
+    set x "no timeout"
+    set result [testfilehandler wait 1 writable 100]
+    update
+    list $result $x
+} -cleanup {
+    testfilehandler close
+    foreach chan $chanList {close $chan}
+    foreach i [after info] {after cancel $i}
+} -result {{} timeout}
+test event-14.6 {Tcl_WaitForFile procedure, writable, big fd} -setup {
+    set chanList {}
+    for {set i 0} {$i < 32} {incr i} {
+	lappend chanList [open /dev/null r]
+    }
+    foreach i [after info] {after cancel $i}
+    testfilehandler close
+} -constraints {testfilehandler unix} -body {
+    after 100 set x timeout
+    testfilehandler create 1 off off
+    set x "no timeout"
+    set result [testfilehandler wait 1 writable 100]
+    update
+    list $result $x
+} -cleanup {
+    testfilehandler close
+    foreach chan $chanList {close $chan}
+    foreach i [after info] {after cancel $i}
+} -result {writable {no timeout}}
+test event-14.7 {Tcl_WaitForFile, don't call other event handlers, big fd} -setup {
+    set chanList {}
+    for {set i 0} {$i < 32} {incr i} {
+	lappend chanList [open /dev/null r]
+    }
+    foreach i [after info] {after cancel $i}
+    testfilehandler close
+} -constraints {testfilehandler unix} -body {
+    after 100 lappend x timeout
+    after idle lappend x idle
+    testfilehandler create 1 off off
+    set x ""
+    set result [list [testfilehandler wait 1 readable 200] $x]
+    update
+    lappend result $x
+} -cleanup {
+    testfilehandler close
+    foreach chan $chanList {close $chan}
+    foreach i [after info] {after cancel $i}
+} -result {{} {} {timeout idle}}
+test event-14.8 {Tcl_WaitForFile procedure, waiting indefinitely, big fd} -setup {
+    set chanList {}
+    for {set i 0} {$i < 32} {incr i} {
+	lappend chanList [open /dev/null r]
+    }
+} -constraints {testfilewait unix} -body {
+    set f [open "|sleep 2" r]
+    set result ""
+    lappend result [testfilewait $f readable 100]
+    lappend result [testfilewait $f readable -1]
+    close $f
+    return $result
+} -cleanup {
+    foreach chan $chanList {close $chan}
+} -result {{} readable}
+
+# cleanup
+foreach i [after info] {
+    after cancel $i
+}
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

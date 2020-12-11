@@ -1,0 +1,21 @@
+#
+# This is how I run configure.  You'll want to change the
+# pathnames to match your system, of course.
+#
+# Remember that if you use the --enable-sybols, you need to
+# use the thread25d.dll in a tclsh that has also been compiled
+# with symbols (e.g., tclsh84g.exe or tclsh84d.exe).
+# If you want to build both debug and non-debug versions, then
+# create "debug" and "release" directories and run configure
+# from in those directories with the appropriate flags.
+#
+# Note the CC=gcc must be set *before* the "configure" is ran.
+# This is really needed, otherwise configure will not be able
+# to compile the small test file which checks the presence
+# of the MinGW build environment. It is *not* enough to use
+# "--enable-gcc" configure option; you *need* to define CC.
+#
+
+export CC=gcc
+sh ../configure --enable-threads --with-tcl=e:/tcl/win
+

@@ -1,0 +1,648 @@
+# Functionality covered: this file contains a collection of tests for the
+# procedures in tclObj.c that implement Tcl's basic type support and the
+# type managers for the types boolean, double, and integer.
+#
+# Sourcing this file into Tcl runs the tests and generates output for
+# errors. No output means no errors were found.
+#
+# Copyright (c) 1995-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testobj [llength [info commands testobj]]
+testConstraint longIs32bit	[expr {int(0x80000000) < 0}]
+testConstraint wideBiggerThanInt [expr {wide(0x80000000) != int(0x80000000)}]
+
+test obj-1.1 {Tcl_AppendAllObjTypes, and InitTypeTable, Tcl_RegisterObjType} testobj {
+    set r 1
+    foreach {t} {
+	{array search} 
+	bytearray
+	bytecode
+	cmdName
+	dict
+	end-offset
+	regexp
+	string
+    } {
+        set first [string first $t [testobj types]]
+        set r [expr {$r && ($first != -1)}]
+    }
+    set result $r
+} {1}
+
+test obj-2.1 {Tcl_GetObjType error} testobj {
+    list [testintobj set 1 0] [catch {testobj convert 1 foo} msg] $msg
+} {0 1 {no type foo found}}
+test obj-2.2 {Tcl_GetObjType and Tcl_ConvertToType} testobj {
+    set result ""
+    lappend result [testobj freeallvars]
+    lappend result [testintobj set 1 12]
+    lappend result [testobj convert 1 bytearray]
+    lappend result [testobj type 1]
+    lappend result [testobj refcount 1]
+} {{} 12 12 bytearray 3}
+
+test obj-3.1 {Tcl_ConvertToType error} testobj {
+    list [testdoubleobj set 1 12.34] \
+	[catch {testobj convert 1 end-offset} msg] \
+	 $msg
+} {12.34 1 {bad index "12.34": must be end?[+-]integer?}}
+test obj-3.2 {Tcl_ConvertToType error, "empty string" object} testobj {
+    list [testobj newobj 1] [catch {testobj convert 1 end-offset} msg] $msg
+} {{} 1 {bad index "": must be end?[+-]integer?}}
+
+test obj-4.1 {Tcl_NewObj and AllocateFreeObjects} testobj {
+    set result ""
+    lappend result [testobj freeallvars]
+    lappend result [testobj newobj 1]
+    lappend result [testobj type 1]
+    lappend result [testobj refcount 1]
+} {{} {} string 2}
+
+test obj-5.1 {Tcl_FreeObj} testobj {
+    set result ""
+    lappend result [testintobj set 1 12345]
+    lappend result [testobj freeallvars]
+    lappend result [catch {testintobj get 1} msg]
+    lappend result $msg
+} {12345 {} 1 {variable 1 is unset (NULL)}}
+
+test obj-6.1 {Tcl_DuplicateObj, object has internal rep} testobj {
+    set result ""
+    lappend result [testobj freeallvars]
+    lappend result [testintobj set 1 47]
+    lappend result [testobj duplicate 1 2]    
+    lappend result [testintobj get 2]
+    lappend result [testobj refcount 1]
+    lappend result [testobj refcount 2]
+} {{} 47 47 47 2 3}
+test obj-6.2 {Tcl_DuplicateObj, "empty string" object} testobj {
+    set result ""
+    lappend result [testobj freeallvars]
+    lappend result [testobj newobj 1]
+    lappend result [testobj duplicate 1 2]    
+    lappend result [testintobj get 2]
+    lappend result [testobj refcount 1]
+    lappend result [testobj refcount 2]
+} {{} {} {} {} 2 3}
+
+# We assume that testobj is an indicator for test*obj as well
+
+test obj-7.1 {Tcl_GetString, return existing string rep} testobj {
+    set result ""
+    lappend result [testintobj set 1 47]
+    lappend result [testintobj get2 1]
+} {47 47}
+test obj-7.2 {Tcl_GetString, "empty string" object} testobj {
+    set result ""
+    lappend result [testobj newobj 1]
+    lappend result [teststringobj append 1 abc -1]
+    lappend result [teststringobj get2 1]
+} {{} abc abc}
+test obj-7.3 {Tcl_GetString, returns string internal rep (DString)} testobj {
+    set result ""
+    lappend result [teststringobj set 1 xyz]
+    lappend result [teststringobj append 1 abc -1]
+    lappend result [teststringobj get2 1]
+} {xyz xyzabc xyzabc}
+test obj-7.4 {Tcl_GetString, recompute string rep from internal rep} testobj {
+    set result ""
+    lappend result [testintobj set 1 77]
+    lappend result [testintobj mult10 1]
+    lappend result [teststringobj get2 1]
+} {77 770 770}
+
+test obj-8.1 {Tcl_GetStringFromObj, return existing string rep} testobj {
+    set result ""
+    lappend result [testintobj set 1 47]
+    lappend result [testintobj get 1]
+} {47 47}
+test obj-8.2 {Tcl_GetStringFromObj, "empty string" object} testobj {
+    set result ""
+    lappend result [testobj newobj 1]
+    lappend result [teststringobj append 1 abc -1]
+    lappend result [teststringobj get 1]
+} {{} abc abc}
+test obj-8.3 {Tcl_GetStringFromObj, returns string internal rep (DString)} testobj {
+    set result ""
+    lappend result [teststringobj set 1 xyz]
+    lappend result [teststringobj append 1 abc -1]
+    lappend result [teststringobj get 1]
+} {xyz xyzabc xyzabc}
+test obj-8.4 {Tcl_GetStringFromObj, recompute string rep from internal rep} testobj {
+    set result ""
+    lappend result [testintobj set 1 77]
+    lappend result [testintobj mult10 1]
+    lappend result [teststringobj get 1]
+} {77 770 770}
+
+test obj-9.1 {Tcl_NewBooleanObj} testobj {
+    set result ""
+    lappend result [testobj freeallvars]
+    lappend result [testbooleanobj set 1 0]
+    lappend result [testobj type 1]
+    lappend result [testobj refcount 1]
+} {{} 0 int 2}
+
+test obj-10.1 {Tcl_SetBooleanObj, existing "empty string" object} testobj {
+    set result ""
+    lappend result [testobj freeallvars]
+    lappend result [testobj newobj 1]
+    lappend result [testbooleanobj set 1 0]  ;# makes existing obj boolean
+    lappend result [testobj type 1]
+    lappend result [testobj refcount 1]
+} {{} {} 0 int 2}
+test obj-10.2 {Tcl_SetBooleanObj, existing non-"empty string" object} testobj {
+    set result ""
+    lappend result [testobj freeallvars]
+    lappend result [testintobj set 1 98765]
+    lappend result [testbooleanobj set 1 1]  ;# makes existing obj boolean
+    lappend result [testobj type 1]
+    lappend result [testobj refcount 1]
+} {{} 98765 1 int 2}
+
+test obj-11.1 {Tcl_GetBooleanFromObj, existing boolean object} testobj {
+    set result ""
+    lappend result [testbooleanobj set 1 1]
+    lappend result [testbooleanobj not 1]    ;# gets existing boolean rep
+} {1 0}
+test obj-11.2 {Tcl_GetBooleanFromObj, convert to boolean} testobj {
+    set result ""
+    lappend result [testintobj set 1 47]
+    lappend result [testbooleanobj not 1]    ;# must convert to bool
+    lappend result [testobj type 1]
+} {47 0 int}
+test obj-11.3 {Tcl_GetBooleanFromObj, error converting to boolean} testobj {
+    set result ""
+    lappend result [teststringobj set 1 abc]
+    lappend result [catch {testbooleanobj not 1} msg]
+    lappend result $msg
+} {abc 1 {expected boolean value but got "abc"}}
+test obj-11.4 {Tcl_GetBooleanFromObj, error converting from "empty string"} testobj {
+    set result ""
+    lappend result [testobj newobj 1]
+    lappend result [catch {testbooleanobj not 1} msg]
+    lappend result $msg
+} {{} 1 {expected boolean value but got ""}}
+test obj-11.5 {Tcl_GetBooleanFromObj, convert hex to boolean} testobj {
+    set result ""
+    lappend result [teststringobj set 1 0xac]
+    lappend result [testbooleanobj not 1]
+    lappend result [testobj type 1]
+} {0xac 0 int}
+test obj-11.6 {Tcl_GetBooleanFromObj, convert float to boolean} testobj {
+    set result ""
+    lappend result [teststringobj set 1 5.42]
+    lappend result [testbooleanobj not 1]
+    lappend result [testobj type 1]
+} {5.42 0 int}
+
+test obj-12.1 {DupBooleanInternalRep} testobj {
+    set result ""
+    lappend result [testbooleanobj set 1 1]
+    lappend result [testobj duplicate 1 2]   ;# uses DupBooleanInternalRep
+    lappend result [testbooleanobj get 2]
+} {1 1 1}
+
+test obj-13.1 {SetBooleanFromAny, int to boolean special case} testobj {
+    set result ""
+    lappend result [testintobj set 1 1234]
+    lappend result [testbooleanobj not 1]    ;# converts with SetBooleanFromAny
+    lappend result [testobj type 1]
+} {1234 0 int}
+test obj-13.2 {SetBooleanFromAny, double to boolean special case} testobj {
+    set result ""
+    lappend result [testdoubleobj set 1 3.14159]
+    lappend result [testbooleanobj not 1]    ;# converts with SetBooleanFromAny
+    lappend result [testobj type 1]
+} {3.14159 0 int}
+test obj-13.3 {SetBooleanFromAny, special case strings representing booleans} testobj {
+    set result ""
+    foreach s {yes no true false on off} {
+        teststringobj set 1 $s
+        lappend result [testbooleanobj not 1]
+    }
+    lappend result [testobj type 1]
+} {0 1 0 1 0 1 int}
+test obj-13.4 {SetBooleanFromAny, recompute string rep then parse it} testobj {
+    set result ""
+    lappend result [testintobj set 1 456]
+    lappend result [testintobj div10 1]
+    lappend result [testbooleanobj not 1]    ;# converts with SetBooleanFromAny
+    lappend result [testobj type 1]
+} {456 45 0 int}
+test obj-13.5 {SetBooleanFromAny, error parsing string} testobj {
+    set result ""
+    lappend result [teststringobj set 1 abc]
+    lappend result [catch {testbooleanobj not 1} msg]
+    lappend result $msg
+} {abc 1 {expected boolean value but got "abc"}}
+test obj-13.6 {SetBooleanFromAny, error parsing string} testobj {
+    set result ""
+    lappend result [teststringobj set 1 x1.0]
+    lappend result [catch {testbooleanobj not 1} msg]
+    lappend result $msg
+} {x1.0 1 {expected boolean value but got "x1.0"}}
+test obj-13.7 {SetBooleanFromAny, error converting from "empty string"} testobj {
+    set result ""
+    lappend result [testobj newobj 1]
+    lappend result [catch {testbooleanobj not 1} msg]
+    lappend result $msg
+} {{} 1 {expected boolean value but got ""}}
+test obj-13.8 {SetBooleanFromAny, unicode strings} testobj {
+    set result ""
+    lappend result [teststringobj set 1 1\u7777]
+    lappend result [catch {testbooleanobj not 1} msg]
+    lappend result $msg
+} "1\u7777 1 {expected boolean value but got \"1\u7777\"}"
+
+test obj-14.1 {UpdateStringOfBoolean} testobj {
+    set result ""
+    lappend result [testbooleanobj set 1 0]
+    lappend result [testbooleanobj not 1]
+    lappend result [testbooleanobj get 1]    ;# must update string rep
+} {0 1 1}
+
+test obj-15.1 {Tcl_NewDoubleObj} testobj {
+    set result ""
+    lappend result [testobj freeallvars]
+    lappend result [testdoubleobj set 1 3.1459]
+    lappend result [testobj type 1]
+    lappend result [testobj refcount 1]
+} {{} 3.1459 double 2}
+
+test obj-16.1 {Tcl_SetDoubleObj, existing "empty string" object} testobj {
+    set result ""
+    lappend result [testobj freeallvars]
+    lappend result [testobj newobj 1]
+    lappend result [testdoubleobj set 1 0.123]  ;# makes existing obj boolean
+    lappend result [testobj type 1]
+    lappend result [testobj refcount 1]
+} {{} {} 0.123 double 2}
+test obj-16.2 {Tcl_SetDoubleObj, existing non-"empty string" object} testobj {
+    set result ""
+    lappend result [testobj freeallvars]
+    lappend result [testintobj set 1 98765]
+    lappend result [testdoubleobj set 1 27.56]  ;# makes existing obj double
+    lappend result [testobj type 1]
+    lappend result [testobj refcount 1]
+} {{} 98765 27.56 double 2}
+
+test obj-17.1 {Tcl_GetDoubleFromObj, existing double object} testobj {
+    set result ""
+    lappend result [testdoubleobj set 1 16.1]
+    lappend result [testdoubleobj mult10 1]   ;# gets existing double rep
+} {16.1 161.0}
+test obj-17.2 {Tcl_GetDoubleFromObj, convert to double} testobj {
+    set result ""
+    lappend result [testintobj set 1 477]
+    lappend result [testdoubleobj div10 1]    ;# must convert to bool
+    lappend result [testobj type 1]
+} {477 47.7 double}
+test obj-17.3 {Tcl_GetDoubleFromObj, error converting to double} testobj {
+    set result ""
+    lappend result [teststringobj set 1 abc]
+    lappend result [catch {testdoubleobj mult10 1} msg]
+    lappend result $msg
+} {abc 1 {expected floating-point number but got "abc"}}
+test obj-17.4 {Tcl_GetDoubleFromObj, error converting from "empty string"} testobj {
+    set result ""
+    lappend result [testobj newobj 1]
+    lappend result [catch {testdoubleobj div10 1} msg]
+    lappend result $msg
+} {{} 1 {expected floating-point number but got ""}}
+
+test obj-18.1 {DupDoubleInternalRep} testobj {
+    set result ""
+    lappend result [testdoubleobj set 1 17.1]
+    lappend result [testobj duplicate 1 2]      ;# uses DupDoubleInternalRep
+    lappend result [testdoubleobj get 2]
+} {17.1 17.1 17.1}
+
+test obj-19.1 {SetDoubleFromAny, int to double special case} testobj {
+    set result ""
+    lappend result [testintobj set 1 1234]
+    lappend result [testdoubleobj mult10 1] ;# converts with SetDoubleFromAny
+    lappend result [testobj type 1]
+} {1234 12340.0 double}
+test obj-19.2 {SetDoubleFromAny, boolean to double special case} testobj {
+    set result ""
+    lappend result [testbooleanobj set 1 1]
+    lappend result [testdoubleobj mult10 1] ;# converts with SetDoubleFromAny
+    lappend result [testobj type 1]
+} {1 10.0 double}
+test obj-19.3 {SetDoubleFromAny, recompute string rep then parse it} testobj {
+    set result ""
+    lappend result [testintobj set 1 456]
+    lappend result [testintobj div10 1]
+    lappend result [testdoubleobj mult10 1] ;# converts with SetDoubleFromAny
+    lappend result [testobj type 1]
+} {456 45 450.0 double}
+test obj-19.4 {SetDoubleFromAny, error parsing string} testobj {
+    set result ""
+    lappend result [teststringobj set 1 abc]
+    lappend result [catch {testdoubleobj mult10 1} msg]
+    lappend result $msg
+} {abc 1 {expected floating-point number but got "abc"}}
+test obj-19.5 {SetDoubleFromAny, error parsing string} testobj {
+    set result ""
+    lappend result [teststringobj set 1 x1.0]
+    lappend result [catch {testdoubleobj mult10 1} msg]
+    lappend result $msg
+} {x1.0 1 {expected floating-point number but got "x1.0"}}
+test obj-19.6 {SetDoubleFromAny, error converting from "empty string"} testobj {
+    set result ""
+    lappend result [testobj newobj 1]
+    lappend result [catch {testdoubleobj div10 1} msg]
+    lappend result $msg
+} {{} 1 {expected floating-point number but got ""}}
+
+test obj-20.1 {UpdateStringOfDouble} testobj {
+    set result ""
+    lappend result [testdoubleobj set 1 3.14159]
+    lappend result [testdoubleobj mult10 1]
+    lappend result [testdoubleobj get 1]   ;# must update string rep
+} {3.14159 31.4159 31.4159}
+
+test obj-21.1 {Tcl_NewIntObj} testobj {
+    set result ""
+    lappend result [testobj freeallvars]
+    lappend result [testintobj set 1 55]
+    lappend result [testobj type 1]
+    lappend result [testobj refcount 1]
+} {{} 55 int 2}
+
+test obj-22.1 {Tcl_SetIntObj, existing "empty string" object} testobj {
+    set result ""
+    lappend result [testobj freeallvars]
+    lappend result [testobj newobj 1]
+    lappend result [testintobj set 1 77]  ;# makes existing obj int
+    lappend result [testobj type 1]
+    lappend result [testobj refcount 1]
+} {{} {} 77 int 2}
+test obj-22.2 {Tcl_SetIntObj, existing non-"empty string" object} testobj {
+    set result ""
+    lappend result [testobj freeallvars]
+    lappend result [testdoubleobj set 1 12.34]
+    lappend result [testintobj set 1 77]  ;# makes existing obj int
+    lappend result [testobj type 1]
+    lappend result [testobj refcount 1]
+} {{} 12.34 77 int 2}
+
+test obj-23.1 {Tcl_GetIntFromObj, existing int object} testobj {
+    set result ""
+    lappend result [testintobj set 1 22]
+    lappend result [testintobj mult10 1]   ;# gets existing int rep
+} {22 220}
+test obj-23.2 {Tcl_GetIntFromObj, convert to int} testobj {
+    set result ""
+    lappend result [testintobj set 1 477]
+    lappend result [testintobj div10 1]    ;# must convert to bool
+    lappend result [testobj type 1]
+} {477 47 int}
+test obj-23.3 {Tcl_GetIntFromObj, error converting to int} testobj {
+    set result ""
+    lappend result [teststringobj set 1 abc]
+    lappend result [catch {testintobj mult10 1} msg]
+    lappend result $msg
+} {abc 1 {expected integer but got "abc"}}
+test obj-23.4 {Tcl_GetIntFromObj, error converting from "empty string"} testobj {
+    set result ""
+    lappend result [testobj newobj 1]
+    lappend result [catch {testintobj div10 1} msg]
+    lappend result $msg
+} {{} 1 {expected integer but got ""}}
+test obj-23.5 {Tcl_GetIntFromObj, integer too large to represent as non-long error} {testobj} {
+    set result ""
+    lappend result [testobj newobj 1]
+    lappend result [testintobj inttoobigtest 1]
+} {{} 1}
+
+test obj-24.1 {DupIntInternalRep} testobj {
+    set result ""
+    lappend result [testintobj set 1 23]
+    lappend result [testobj duplicate 1 2]    ;# uses DupIntInternalRep
+    lappend result [testintobj get 2]
+} {23 23 23}
+
+test obj-25.1 {SetIntFromAny, int to int special case} testobj {
+    set result ""
+    lappend result [testintobj set 1 1234]
+    lappend result [testintobj mult10 1]  ;# converts with SetIntFromAny
+    lappend result [testobj type 1]
+} {1234 12340 int}
+test obj-25.2 {SetIntFromAny, boolean to int special case} testobj {
+    set result ""
+    lappend result [testbooleanobj set 1 1]
+    lappend result [testintobj mult10 1]  ;# converts with SetIntFromAny
+    lappend result [testobj type 1]
+} {1 10 int}
+test obj-25.3 {SetIntFromAny, recompute string rep then parse it} testobj {
+    set result ""
+    lappend result [testintobj set 1 456]
+    lappend result [testintobj div10 1]
+    lappend result [testintobj mult10 1]  ;# converts with SetIntFromAny
+    lappend result [testobj type 1]
+} {456 45 450 int}
+test obj-25.4 {SetIntFromAny, error parsing string} testobj {
+    set result ""
+    lappend result [teststringobj set 1 abc]
+    lappend result [catch {testintobj mult10 1} msg]
+    lappend result $msg
+} {abc 1 {expected integer but got "abc"}}
+test obj-25.5 {SetIntFromAny, error parsing string} testobj {
+    set result ""
+    lappend result [teststringobj set 1 x17]
+    lappend result [catch {testintobj mult10 1} msg]
+    lappend result $msg
+} {x17 1 {expected integer but got "x17"}}
+test obj-25.6 {SetIntFromAny, integer too large} {testobj} {
+    set result ""
+    lappend result [teststringobj set 1 123456789012345678901]
+    lappend result [catch {testintobj mult10 1} msg]
+    lappend result $msg
+} {123456789012345678901 1 {integer value too large to represent}}
+test obj-25.7 {SetIntFromAny, error converting from "empty string"} testobj {
+    set result ""
+    lappend result [testobj newobj 1]
+    lappend result [catch {testintobj div10 1} msg]
+    lappend result $msg
+} {{} 1 {expected integer but got ""}}
+
+test obj-26.1 {UpdateStringOfInt} testobj {
+    set result ""
+    lappend result [testintobj set 1 512]
+    lappend result [testintobj mult10 1]
+    lappend result [testintobj get 1]       ;# must update string rep
+} {512 5120 5120}
+
+test obj-27.1 {Tcl_NewLongObj} testobj {
+    set result ""
+    lappend result [testobj freeallvars]
+    testintobj setmaxlong 1
+    lappend result [testintobj ismaxlong 1]
+    lappend result [testobj type 1]
+    lappend result [testobj refcount 1]
+} {{} 1 int 1}
+
+test obj-28.1 {Tcl_SetLongObj, existing "empty string" object} testobj {
+    set result ""
+    lappend result [testobj freeallvars]
+    lappend result [testobj newobj 1]
+    lappend result [testintobj setlong 1 77]  ;# makes existing obj long int
+    lappend result [testobj type 1]
+    lappend result [testobj refcount 1]
+} {{} {} 77 int 2}
+test obj-28.2 {Tcl_SetLongObj, existing non-"empty string" object} testobj {
+    set result ""
+    lappend result [testobj freeallvars]
+    lappend result [testdoubleobj set 1 12.34]
+    lappend result [testintobj setlong 1 77]  ;# makes existing obj long int
+    lappend result [testobj type 1]
+    lappend result [testobj refcount 1]
+} {{} 12.34 77 int 2}
+
+test obj-29.1 {Tcl_GetLongFromObj, existing long integer object} testobj {
+    set result ""
+    lappend result [testintobj setlong 1 22]
+    lappend result [testintobj mult10 1]   ;# gets existing long int rep
+} {22 220}
+test obj-29.2 {Tcl_GetLongFromObj, convert to long} testobj {
+    set result ""
+    lappend result [testintobj setlong 1 477]
+    lappend result [testintobj div10 1]    ;# must convert to bool
+    lappend result [testobj type 1]
+} {477 47 int}
+test obj-29.3 {Tcl_GetLongFromObj, error converting to long integer} testobj {
+    set result ""
+    lappend result [teststringobj set 1 abc]
+    lappend result [catch {testintobj ismaxlong 1} msg] ;# cvts to long int
+    lappend result $msg
+} {abc 1 {expected integer but got "abc"}}
+test obj-29.4 {Tcl_GetLongFromObj, error converting from "empty string"} testobj {
+    set result ""
+    lappend result [testobj newobj 1]
+    lappend result [catch {testintobj ismaxlong 1} msg] ;# cvts to long int
+    lappend result $msg
+} {{} 1 {expected integer but got ""}}
+
+test obj-30.1 {Ref counting and object deletion, simple types} testobj {
+    set result ""
+    lappend result [testobj freeallvars]
+    lappend result [testintobj set 1 1024]
+    lappend result [testobj assign 1 2]     ;# vars 1 and 2 share the int obj
+    lappend result [testobj type 2]
+    lappend result [testobj refcount 1]
+    lappend result [testobj refcount 2]
+    lappend result [testbooleanobj set 2 0] ;# must copy on write, now 2 objs
+    lappend result [testobj type 2]
+    lappend result [testobj refcount 1]
+    lappend result [testobj refcount 2]
+} {{} 1024 1024 int 4 4 0 int 3 2}
+
+
+test obj-31.1 {regenerate string rep of "end"} testobj {
+    testobj freeallvars
+    teststringobj set 1 end
+    testobj convert 1 end-offset
+    testobj invalidateStringRep 1
+} end
+test obj-31.2 {regenerate string rep of "end-1"} testobj {
+    testobj freeallvars
+    teststringobj set 1 end-0x1
+    testobj convert 1 end-offset
+    testobj invalidateStringRep 1
+} end-1
+test obj-31.3 {regenerate string rep of "end--1"} testobj {
+    testobj freeallvars
+    teststringobj set 1 end--0x1
+    testobj convert 1 end-offset
+    testobj invalidateStringRep 1
+} end--1
+test obj-31.4 {regenerate string rep of "end-bigInteger"} testobj {
+    testobj freeallvars
+    teststringobj set 1 end-0x7fffffff
+    testobj convert 1 end-offset
+    testobj invalidateStringRep 1
+} end-2147483647
+test obj-31.5 {regenerate string rep of "end--bigInteger"} testobj {
+    testobj freeallvars
+    teststringobj set 1 end--0x7fffffff
+    testobj convert 1 end-offset
+    testobj invalidateStringRep 1
+} end--2147483647
+test obj-31.6 {regenerate string rep of "end--bigInteger"} {testobj longIs32bit} {
+    testobj freeallvars
+    teststringobj set 1 end--0x80000000
+    testobj convert 1 end-offset
+    testobj invalidateStringRep 1
+} end--2147483648
+
+test obj-32.1 {freeing very large object trees} {
+    set x {}
+    for {set i 0} {$i<100000} {incr i} {
+	set x [list $x {}]
+    }
+    unset x
+} {}
+
+test obj-33.1 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
+    set x 0x8000; append x 0000
+    list [string is integer $x] [expr { wide($x) }]
+} {1 2147483648}
+test obj-33.2 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
+    set x 0xffff; append x ffff
+    list [string is integer $x] [expr { wide($x) }]
+} {1 4294967295}
+test obj-33.3 {integer overflow on input} {
+    set x 0x10000; append x 0000
+    list [string is integer $x] [expr { wide($x) }]
+} {0 4294967296}
+test obj-33.4 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
+    set x -0x8000; append x 0000
+    list [string is integer $x] [expr { wide($x) }]
+} {1 -2147483648}
+test obj-33.5 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
+    set x -0x8000; append x 0001
+    list [string is integer $x] [expr { wide($x) }]
+} {1 -2147483649}
+test obj-33.6 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
+    set x -0xffff; append x ffff
+    list [string is integer $x] [expr { wide($x) }]
+} {1 -4294967295}
+test obj-33.7 {integer overflow on input} {
+    set x -0x10000; append x 0000
+    list [string is integer $x] [expr { wide($x) }]
+} {0 -4294967296}
+
+test obj-34.1 {mp_iseven} testobj {
+    set result ""
+    lappend result [testbignumobj set 1 0]
+    lappend result [testbignumobj iseven 1]    ;
+    lappend result [testobj type 1]
+} {0 1 int}
+test obj-34.2 {mp_radix_size} testobj {
+    set result ""
+    lappend result [testbignumobj set 1 9]
+    lappend result [testbignumobj radixsize 1]    ;
+    lappend result [testobj type 1]
+} {9 2 int}
+
+if {[testConstraint testobj]} {
+    testobj freeallvars
+}
+
+# cleanup
+::tcltest::cleanupTests
+return

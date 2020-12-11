@@ -1,0 +1,150 @@
+'\"
+'\" Copyright (c) 1989-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_CreateInterp 3 7.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_CreateInterp, Tcl_DeleteInterp, Tcl_InterpActive, Tcl_InterpDeleted \- create and delete Tcl command interpreters
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+Tcl_Interp *
+\fBTcl_CreateInterp\fR()
+.sp
+\fBTcl_DeleteInterp\fR(\fIinterp\fR)
+.sp
+int
+\fBTcl_InterpDeleted\fR(\fIinterp\fR)
+.sp
+.VS 8.6
+int
+\fBTcl_InterpActive\fR(\fIinterp\fR)
+.VE 8.6
+.SH ARGUMENTS
+.AS Tcl_Interp *interp
+.AP Tcl_Interp *interp in
+Token for interpreter to be destroyed or queried.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTcl_CreateInterp\fR creates a new interpreter structure and returns
+a token for it. The token is required in calls to most other Tcl
+procedures, such as \fBTcl_CreateCommand\fR, \fBTcl_Eval\fR, and
+\fBTcl_DeleteInterp\fR.  The token returned by \fBTcl_CreateInterp\fR
+may only be passed to Tcl routines called from the same thread as
+the original \fBTcl_CreateInterp\fR call.  It is not safe for multiple
+threads to pass the same token to Tcl's routines.
+The new interpreter is initialized with the built-in Tcl commands
+and with standard variables like \fBtcl_platform\fR and \fBenv\fR. To
+bind in additional commands, call \fBTcl_CreateCommand\fR, and to
+create additional variables, call \fBTcl_SetVar\fR.
+.PP
+\fBTcl_DeleteInterp\fR marks an interpreter as deleted; the interpreter
+will eventually be deleted when all calls to \fBTcl_Preserve\fR for it have
+been matched by calls to \fBTcl_Release\fR. At that time, all of the
+resources associated with it, including variables, procedures, and
+application-specific command bindings, will be deleted. After
+\fBTcl_DeleteInterp\fR returns any attempt to use \fBTcl_Eval\fR on the
+interpreter will fail and return \fBTCL_ERROR\fR. After the call to
+\fBTcl_DeleteInterp\fR it is safe to examine the interpreter's result,
+query or set the values of variables, define, undefine or retrieve
+procedures, and examine the runtime evaluation stack. See below, in the
+section \fBINTERPRETERS AND MEMORY MANAGEMENT\fR for details.
+.PP
+\fBTcl_InterpDeleted\fR returns nonzero if \fBTcl_DeleteInterp\fR was
+called with \fIinterp\fR as its argument; this indicates that the
+interpreter will eventually be deleted, when the last call to
+\fBTcl_Preserve\fR for it is matched by a call to \fBTcl_Release\fR. If
+nonzero is returned, further calls to \fBTcl_Eval\fR in this interpreter
+will return \fBTCL_ERROR\fR.
+.PP
+\fBTcl_InterpDeleted\fR is useful in deletion callbacks to distinguish
+between when only the memory the callback is responsible for is being
+deleted and when the whole interpreter is being deleted. In the former case
+the callback may recreate the data being deleted, but this would lead to an
+infinite loop if the interpreter were being deleted.
+.PP
+.VS 8.6
+\fBTcl_InterpActive\fR is useful for determining whether there is any
+execution of scripts ongoing in an interpreter, which is a useful piece of
+information when Tcl is embedded in a garbage-collected environment and it
+becomes necessary to determine whether the interpreter is a candidate for
+deletion. The function returns a true value if the interpreter has at least
+one active execution running inside it, and a false value otherwise.
+.VE 8.6
+.SH "INTERPRETERS AND MEMORY MANAGEMENT"
+.PP
+\fBTcl_DeleteInterp\fR can be called at any time on an interpreter that may
+be used by nested evaluations and C code in various extensions. Tcl
+implements a simple mechanism that allows callers to use interpreters
+without worrying about the interpreter being deleted in a nested call, and
+without requiring special code to protect the interpreter, in most cases.
+This mechanism ensures that nested uses of an interpreter can safely
+continue using it even after \fBTcl_DeleteInterp\fR is called.
+.PP
+The mechanism relies on matching up calls to \fBTcl_Preserve\fR with calls
+to \fBTcl_Release\fR. If \fBTcl_DeleteInterp\fR has been called, only when
+the last call to \fBTcl_Preserve\fR is matched by a call to
+\fBTcl_Release\fR, will the interpreter be freed. See the manual entry for
+\fBTcl_Preserve\fR for a description of these functions.
+.PP
+The rules for when the user of an interpreter must call \fBTcl_Preserve\fR
+and \fBTcl_Release\fR are simple:
+.TP
+\fBInterpreters Passed As Arguments\fR
+.
+Functions that are passed an interpreter as an argument can safely use the
+interpreter without any special protection. Thus, when you write an
+extension consisting of new Tcl commands, no special code is needed to
+protect interpreters received as arguments. This covers the majority of all
+uses.
+.TP
+\fBInterpreter Creation And Deletion\fR
+.
+When a new interpreter is created and used in a call to \fBTcl_Eval\fR,
+\fBTcl_VarEval\fR, \fBTcl_GlobalEval\fR, \fBTcl_SetVar\fR, or
+\fBTcl_GetVar\fR, a pair of calls to \fBTcl_Preserve\fR and
+\fBTcl_Release\fR should be wrapped around all uses of the interpreter.
+Remember that it is unsafe to use the interpreter once \fBTcl_Release\fR
+has been called. To ensure that the interpreter is properly deleted when
+it is no longer needed, call \fBTcl_InterpDeleted\fR to test if some other
+code already called \fBTcl_DeleteInterp\fR; if not, call
+\fBTcl_DeleteInterp\fR before calling \fBTcl_Release\fR in your own code.
+.TP
+\fBRetrieving An Interpreter From A Data Structure\fR
+.
+When an interpreter is retrieved from a data structure (e.g. the client
+data of a callback) for use in one of the evaluation functions
+(\fBTcl_Eval\fR, \fBTcl_VarEval\fR, \fBTcl_GlobalEval\fR, \fBTcl_EvalObjv\fR,
+etc.) or variable access functions (\fBTcl_SetVar\fR, \fBTcl_GetVar\fR,
+\fBTcl_SetVar2Ex\fR, etc.), a pair of
+calls to \fBTcl_Preserve\fR and \fBTcl_Release\fR should be wrapped around
+all uses of the interpreter; it is unsafe to reuse the interpreter once
+\fBTcl_Release\fR has been called. If an interpreter is stored inside a
+callback data structure, an appropriate deletion cleanup mechanism should
+be set up by the code that creates the data structure so that the
+interpreter is removed from the data structure (e.g. by setting the field
+to NULL) when the interpreter is deleted. Otherwise, you may be using an
+interpreter that has been freed and whose memory may already have been
+reused.
+.PP
+All uses of interpreters in Tcl and Tk have already been protected.
+Extension writers should ensure that their code also properly protects any
+additional interpreters used, as described above.
+.PP
+.VS 8.6
+Note that the protection mechanisms do not work well with conventional garbage
+collection systems. When in such a managed environment, \fBTcl_InterpActive\fR
+should be used to determine when an interpreter is a candidate for deletion
+due to inactivity.
+.VE 8.6
+.SH "SEE ALSO"
+Tcl_Preserve(3), Tcl_Release(3)
+.SH KEYWORDS
+command, create, delete, interpreter

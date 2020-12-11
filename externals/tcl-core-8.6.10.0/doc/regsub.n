@@ -1,0 +1,192 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2000 Scriptics Corporation.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH regsub n 8.3 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+regsub \- Perform substitutions based on regular expression pattern matching
+.SH SYNOPSIS
+\fBregsub \fR?\fIswitches\fR? \fIexp string subSpec \fR?\fIvarName\fR?
+.BE
+.SH DESCRIPTION
+.PP
+This command matches the regular expression \fIexp\fR against
+\fIstring\fR,
+and either copies \fIstring\fR to the variable whose name is
+given by \fIvarName\fR or returns \fIstring\fR if \fIvarName\fR is not
+present.
+(Regular expression matching is described in the \fBre_syntax\fR
+reference page.)
+If there is a match, then while copying \fIstring\fR to \fIvarName\fR
+(or to the result of this command if \fIvarName\fR is not present)
+the portion of \fIstring\fR that
+matched \fIexp\fR is replaced with \fIsubSpec\fR.
+If \fIsubSpec\fR contains a
+.QW &
+or
+.QW \e0 ,
+then it is replaced in the substitution with the portion of
+\fIstring\fR that matched \fIexp\fR.
+If \fIsubSpec\fR contains a
+.QW \e\fIn\fR ,
+where \fIn\fR is a digit
+between 1 and 9, then it is replaced in the substitution with
+the portion of \fIstring\fR that matched the \fIn\fR'th
+parenthesized subexpression of \fIexp\fR.
+Additional backslashes may be used in \fIsubSpec\fR to prevent special
+interpretation of
+.QW & ,
+.QW \e0 ,
+.QW \e\fIn\fR
+and backslashes.
+The use of backslashes in \fIsubSpec\fR tends to interact badly
+with the Tcl parser's use of backslashes, so it is generally
+safest to enclose \fIsubSpec\fR in braces if it includes
+backslashes.
+.LP
+If the initial arguments to \fBregsub\fR start with \fB\-\fR then
+they are treated as switches.  The following switches are
+currently supported:
+.TP
+\fB\-all\fR
+.
+All ranges in \fIstring\fR that match \fIexp\fR are found and
+substitution is performed for each of these ranges.
+Without this switch only the first
+matching range is found and substituted.
+If \fB\-all\fR is specified, then
+.QW &
+and
+.QW \e\fIn\fR
+sequences are handled for each substitution using the information
+from the corresponding match.
+.TP
+\fB\-expanded\fR
+.
+Enables use of the expanded regular expression syntax where
+whitespace and comments are ignored.  This is the same as specifying
+the \fB(?x)\fR embedded option (see the \fBre_syntax\fR manual page).
+.TP
+\fB\-line\fR
+.
+Enables newline-sensitive matching.  By default, newline is a
+completely ordinary character with no special meaning.  With this flag,
+.QW [^
+bracket expressions and
+.QW .
+never match newline,
+.QW ^
+matches an empty string after any newline in addition to its normal
+function, and
+.QW $
+matches an empty string before any newline in
+addition to its normal function.  This flag is equivalent to
+specifying both \fB\-linestop\fR and \fB\-lineanchor\fR, or the
+\fB(?n)\fR embedded option (see the \fBre_syntax\fR manual page).
+.TP
+\fB\-linestop\fR
+.
+Changes the behavior of
+.QW [^
+bracket expressions and
+.QW .
+so that they
+stop at newlines.  This is the same as specifying the \fB(?p)\fR
+embedded option (see the \fBre_syntax\fR manual page).
+.TP
+\fB\-lineanchor\fR
+.
+Changes the behavior of
+.QW ^
+and
+.QW $
+(the
+.QW anchors )
+so they match the
+beginning and end of a line respectively.  This is the same as
+specifying the \fB(?w)\fR embedded option (see the \fBre_syntax\fR
+manual page).
+.TP
+\fB\-nocase\fR
+.
+Upper-case characters in \fIstring\fR will be converted to lower-case
+before matching against \fIexp\fR;  however, substitutions specified
+by \fIsubSpec\fR use the original unconverted form of \fIstring\fR.
+.TP
+\fB\-start\fR \fIindex\fR
+.
+Specifies a character index offset into the string to start
+matching the regular expression at.
+The \fIindex\fR value is interpreted in the same manner
+as the \fIindex\fR argument to \fBstring index\fR.
+When using this switch,
+.QW ^
+will not match the beginning of the line, and \eA will still
+match the start of the string at \fIindex\fR.
+\fIindex\fR will be constrained to the bounds of the input string.
+.TP
+\fB\-\|\-\fR
+.
+Marks the end of switches.  The argument following this one will
+be treated as \fIexp\fR even if it starts with a \fB\-\fR.
+.PP
+If \fIvarName\fR is supplied, the command returns a count of the
+number of matching ranges that were found and replaced, otherwise the
+string after replacement is returned.
+See the manual entry for \fBregexp\fR for details on the interpretation
+of regular expressions.
+.SH EXAMPLES
+.PP
+Replace (in the string in variable \fIstring\fR) every instance of
+\fBfoo\fR which is a word by itself with \fBbar\fR:
+.PP
+.CS
+\fBregsub\fR -all {\emfoo\eM} $string bar string
+.CE
+.PP
+or (using the
+.QW "basic regular expression"
+syntax):
+.PP
+.CS
+\fBregsub\fR -all {(?b)\e<foo\e>} $string bar string
+.CE
+.PP
+Insert double-quotes around the first instance of the word
+\fBinteresting\fR, however it is capitalized.
+.PP
+.CS
+\fBregsub\fR -nocase {\eyinteresting\ey} $string {"&"} string
+.CE
+.PP
+Convert all non-ASCII and Tcl-significant characters into \eu escape
+sequences by using \fBregsub\fR and \fBsubst\fR in combination:
+.PP
+.CS
+# This RE is just a character class for almost everything "bad"
+set RE {[][{};#\e\e\e$ \er\et\eu0080-\euffff]}
+
+# We will substitute with a fragment of Tcl script in brackets
+set substitution {[format \e\e\e\eu%04x [scan "\e\e&" %c]]}
+
+# Now we apply the substitution to get a subst-string that
+# will perform the computational parts of the conversion. Note
+# that newline is handled specially through \fBstring map\fR since
+# backslash-newline is a special sequence.
+set quoted [subst [string map {\en {\e\eu000a}} \e
+        [\fBregsub\fR -all $RE $string $substitution]]]
+.CE
+.SH "SEE ALSO"
+regexp(n), re_syntax(n), subst(n), string(n)
+.SH KEYWORDS
+match, pattern, quoting, regular expression, substitution
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

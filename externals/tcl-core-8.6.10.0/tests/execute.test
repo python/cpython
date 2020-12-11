@@ -1,0 +1,1201 @@
+# This file contains tests for the tclExecute.c source file. Tests appear in
+# the same order as the C code that they test. The set of tests is currently
+# incomplete since it currently includes only new tests for code changed for
+# the addition of Tcl namespaces. Other execution-related tests appear in
+# several other test files including namespace.test, basic.test, eval.test,
+# for.test, etc.
+#
+# Sourcing this file into Tcl runs the tests and generates output for errors.
+# No output means no errors were found.
+#
+# Copyright (c) 1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+catch {namespace delete {*}[namespace children :: test_ns_*]}
+catch {rename foo ""}
+catch {unset x}
+catch {unset y}
+catch {unset msg}
+
+testConstraint testobj [expr {
+    [llength [info commands testobj]]
+    && [llength [info commands testdoubleobj]]
+    && [llength [info commands teststringobj]]
+}]
+
+testConstraint longIs32bit [expr {int(0x80000000) < 0}]
+testConstraint testexprlongobj [llength [info commands testexprlongobj]]
+
+
+if {[namespace which -command testbumpinterpepoch] eq ""} {
+  proc testbumpinterpepoch {} { rename ::set ::dummy; rename ::dummy ::set }
+}
+
+# Tests for the omnibus TclExecuteByteCode function:
+
+# INST_DONE not tested
+# INST_PUSH1 not tested
+# INST_PUSH4 not tested
+# INST_POP not tested
+# INST_DUP not tested
+# INST_INVOKE_STK4 not tested
+# INST_INVOKE_STK1 not tested
+# INST_EVAL_STK not tested
+# INST_EXPR_STK not tested
+
+# INST_LOAD_SCALAR1
+test execute-1.1 {TclExecuteByteCode, INST_LOAD_SCALAR1, small opnd} {
+    proc foo {} {
+	set x 1
+	return $x
+    }
+    foo
+} 1
+test execute-1.2 {TclExecuteByteCode, INST_LOAD_SCALAR1, large opnd} {
+    # Bug: 2243
+    set body {}
+    for {set i 0} {$i < 129} {incr i} {
+	append body "set x$i x\n"
+    }
+    append body {
+	set y 1
+	return $y
+    }
+    proc foo {} $body
+    foo
+} 1
+test execute-1.3 {TclExecuteByteCode, INST_LOAD_SCALAR1, error} {
+    proc foo {} {
+	set x 1
+	unset x
+	return $x
+    }
+    list [catch {foo} msg] $msg
+} {1 {can't read "x": no such variable}}
+
+# INST_LOAD_SCALAR4
+test execute-2.1 {TclExecuteByteCode, INST_LOAD_SCALAR4, simple case} {
+    set body {}
+    for {set i 0} {$i < 256} {incr i} {
+	append body "set x$i x\n"
+    }
+    append body {
+	set y 1
+	return $y
+    }
+    proc foo {} $body
+    foo
+} 1
+test execute-2.2 {TclExecuteByteCode, INST_LOAD_SCALAR4, error} {
+    set body {}
+    for {set i 0} {$i < 256} {incr i} {
+	append body "set x$i x\n"
+    }
+    append body {
+	set y 1
+	unset y
+	return $y
+    }
+    proc foo {} $body
+    list [catch {foo} msg] $msg
+} {1 {can't read "y": no such variable}}
+
+# INST_LOAD_SCALAR_STK not tested
+# INST_LOAD_ARRAY4 not tested
+# INST_LOAD_ARRAY1 not tested
+# INST_LOAD_ARRAY_STK not tested
+# INST_LOAD_STK not tested
+# INST_STORE_SCALAR4 not tested
+# INST_STORE_SCALAR1 not tested
+# INST_STORE_SCALAR_STK not tested
+# INST_STORE_ARRAY4 not tested
+# INST_STORE_ARRAY1 not tested
+# INST_STORE_ARRAY_STK not tested
+# INST_STORE_STK not tested
+# INST_INCR_SCALAR1 not tested
+# INST_INCR_SCALAR_STK not tested
+# INST_INCR_STK not tested
+# INST_INCR_ARRAY1 not tested
+# INST_INCR_ARRAY_STK not tested
+# INST_INCR_SCALAR1_IMM not tested
+# INST_INCR_SCALAR_STK_IMM not tested
+# INST_INCR_STK_IMM not tested
+# INST_INCR_ARRAY1_IMM not tested
+# INST_INCR_ARRAY_STK_IMM not tested
+# INST_JUMP1 not tested
+# INST_JUMP4 not tested
+# INST_JUMP_TRUE4 not tested
+# INST_JUMP_TRUE1 not tested
+# INST_JUMP_FALSE4 not tested
+# INST_JUMP_FALSE1 not tested
+# INST_LOR not tested
+# INST_LAND not tested
+# INST_EQ not tested
+# INST_NEQ not tested
+# INST_LT not tested
+# INST_GT not tested
+# INST_LE not tested
+# INST_GE not tested
+# INST_MOD not tested
+# INST_LSHIFT not tested
+# INST_RSHIFT not tested
+# INST_BITOR not tested
+# INST_BITXOR not tested
+# INST_BITAND not tested
+
+# INST_ADD is partially tested:
+test execute-3.1 {TclExecuteByteCode, INST_ADD, op1 is int} {testobj} {
+    set x [testintobj set 0 1]
+    expr {$x + 1}
+} 2
+test execute-3.2 {TclExecuteByteCode, INST_ADD, op1 is double} {testobj} {
+    set x [testdoubleobj set 0 1]
+    expr {$x + 1}
+} 2.0
+test execute-3.3 {TclExecuteByteCode, INST_ADD, op1 is double with string} {testobj} {
+    set x [testintobj set 0 1]
+    testobj convert 0 double
+    expr {$x + 1}
+} 2
+test execute-3.4 {TclExecuteByteCode, INST_ADD, op1 is string int} {testobj} {
+    set x [teststringobj set 0 1]
+    expr {$x + 1}
+} 2
+test execute-3.5 {TclExecuteByteCode, INST_ADD, op1 is string double} {testobj} {
+    set x [teststringobj set 0 1.0]
+    expr {$x + 1}
+} 2.0
+test execute-3.6 {TclExecuteByteCode, INST_ADD, op1 is non-numeric} {testobj} {
+    set x [teststringobj set 0 foo]
+    list [catch {expr {$x + 1}} msg] $msg
+} {1 {can't use non-numeric string as operand of "+"}}
+test execute-3.7 {TclExecuteByteCode, INST_ADD, op2 is int} {testobj} {
+    set x [testintobj set 0 1]
+    expr {1 + $x}
+} 2
+test execute-3.8 {TclExecuteByteCode, INST_ADD, op2 is double} {testobj} {
+    set x [testdoubleobj set 0 1]
+    expr {1 + $x}
+} 2.0
+test execute-3.9 {TclExecuteByteCode, INST_ADD, op2 is double with string} {testobj} {
+    set x [testintobj set 0 1]
+    testobj convert 0 double
+    expr {1 + $x}
+} 2
+test execute-3.10 {TclExecuteByteCode, INST_ADD, op2 is string int} {testobj} {
+    set x [teststringobj set 0 1]
+    expr {1 + $x}
+} 2
+test execute-3.11 {TclExecuteByteCode, INST_ADD, op2 is string double} {testobj} {
+    set x [teststringobj set 0 1.0]
+    expr {1 + $x}
+} 2.0
+test execute-3.12 {TclExecuteByteCode, INST_ADD, op2 is non-numeric} {testobj} {
+    set x [teststringobj set 0 foo]
+    list [catch {expr {1 + $x}} msg] $msg
+} {1 {can't use non-numeric string as operand of "+"}}
+
+# INST_SUB is partially tested:
+test execute-3.13 {TclExecuteByteCode, INST_SUB, op1 is int} {testobj} {
+    set x [testintobj set 0 1]
+    expr {$x - 1}
+} 0
+test execute-3.14 {TclExecuteByteCode, INST_SUB, op1 is double} {testobj} {
+    set x [testdoubleobj set 0 1]
+    expr {$x - 1}
+} 0.0
+test execute-3.15 {TclExecuteByteCode, INST_SUB, op1 is double with string} {testobj} {
+    set x [testintobj set 0 1]
+    testobj convert 0 double
+    expr {$x - 1}
+} 0
+test execute-3.16 {TclExecuteByteCode, INST_SUB, op1 is string int} {testobj} {
+    set x [teststringobj set 0 1]
+    expr {$x - 1}
+} 0
+test execute-3.17 {TclExecuteByteCode, INST_SUB, op1 is string double} {testobj} {
+    set x [teststringobj set 0 1.0]
+    expr {$x - 1}
+} 0.0
+test execute-3.18 {TclExecuteByteCode, INST_SUB, op1 is non-numeric} {testobj} {
+    set x [teststringobj set 0 foo]
+    list [catch {expr {$x - 1}} msg] $msg
+} {1 {can't use non-numeric string as operand of "-"}}
+test execute-3.19 {TclExecuteByteCode, INST_SUB, op2 is int} {testobj} {
+    set x [testintobj set 0 1]
+    expr {1 - $x}
+} 0
+test execute-3.20 {TclExecuteByteCode, INST_SUB, op2 is double} {testobj} {
+    set x [testdoubleobj set 0 1]
+    expr {1 - $x}
+} 0.0
+test execute-3.21 {TclExecuteByteCode, INST_SUB, op2 is double with string} {testobj} {
+    set x [testintobj set 0 1]
+    testobj convert 0 double
+    expr {1 - $x}
+} 0
+test execute-3.22 {TclExecuteByteCode, INST_SUB, op2 is string int} {testobj} {
+    set x [teststringobj set 0 1]
+    expr {1 - $x}
+} 0
+test execute-3.23 {TclExecuteByteCode, INST_SUB, op2 is string double} {testobj} {
+    set x [teststringobj set 0 1.0]
+    expr {1 - $x}
+} 0.0
+test execute-3.24 {TclExecuteByteCode, INST_SUB, op2 is non-numeric} {testobj} {
+    set x [teststringobj set 0 foo]
+    list [catch {expr {1 - $x}} msg] $msg
+} {1 {can't use non-numeric string as operand of "-"}}
+
+# INST_MULT is partially tested:
+test execute-3.25 {TclExecuteByteCode, INST_MULT, op1 is int} {testobj} {
+    set x [testintobj set 1 1]
+    expr {$x * 1}
+} 1
+test execute-3.26 {TclExecuteByteCode, INST_MULT, op1 is double} {testobj} {
+    set x [testdoubleobj set 1 2.0]
+    expr {$x * 1}
+} 2.0
+test execute-3.27 {TclExecuteByteCode, INST_MULT, op1 is double with string} {testobj} {
+    set x [testintobj set 1 2]
+    testobj convert 1 double
+    expr {$x * 1}
+} 2
+test execute-3.28 {TclExecuteByteCode, INST_MULT, op1 is string int} {testobj} {
+    set x [teststringobj set 1 1]
+    expr {$x * 1}
+} 1
+test execute-3.29 {TclExecuteByteCode, INST_MULT, op1 is string double} {testobj} {
+    set x [teststringobj set 1 1.0]
+    expr {$x * 1}
+} 1.0
+test execute-3.30 {TclExecuteByteCode, INST_MULT, op1 is non-numeric} {testobj} {
+    set x [teststringobj set 1 foo]
+    list [catch {expr {$x * 1}} msg] $msg
+} {1 {can't use non-numeric string as operand of "*"}}
+test execute-3.31 {TclExecuteByteCode, INST_MULT, op2 is int} {testobj} {
+    set x [testintobj set 1 1]
+    expr {1 * $x}
+} 1
+test execute-3.32 {TclExecuteByteCode, INST_MULT, op2 is double} {testobj} {
+    set x [testdoubleobj set 1 2.0]
+    expr {1 * $x}
+} 2.0
+test execute-3.33 {TclExecuteByteCode, INST_MULT, op2 is double with string} {testobj} {
+    set x [testintobj set 1 2]
+    testobj convert 1 double
+    expr {1 * $x}
+} 2
+test execute-3.34 {TclExecuteByteCode, INST_MULT, op2 is string int} {testobj} {
+    set x [teststringobj set 1 1]
+    expr {1 * $x}
+} 1
+test execute-3.35 {TclExecuteByteCode, INST_MULT, op2 is string double} {testobj} {
+    set x [teststringobj set 1 1.0]
+    expr {1 * $x}
+} 1.0
+test execute-3.36 {TclExecuteByteCode, INST_MULT, op2 is non-numeric} {testobj} {
+    set x [teststringobj set 1 foo]
+    list [catch {expr {1 * $x}} msg] $msg
+} {1 {can't use non-numeric string as operand of "*"}}
+
+# INST_DIV is partially tested:
+test execute-3.37 {TclExecuteByteCode, INST_DIV, op1 is int} {testobj} {
+    set x [testintobj set 1 1]
+    expr {$x / 1}
+} 1
+test execute-3.38 {TclExecuteByteCode, INST_DIV, op1 is double} {testobj} {
+    set x [testdoubleobj set 1 2.0]
+    expr {$x / 1}
+} 2.0
+test execute-3.39 {TclExecuteByteCode, INST_DIV, op1 is double with string} {testobj} {
+    set x [testintobj set 1 2]
+    testobj convert 1 double
+    expr {$x / 1}
+} 2
+test execute-3.40 {TclExecuteByteCode, INST_DIV, op1 is string int} {testobj} {
+    set x [teststringobj set 1 1]
+    expr {$x / 1}
+} 1
+test execute-3.41 {TclExecuteByteCode, INST_DIV, op1 is string double} {testobj} {
+    set x [teststringobj set 1 1.0]
+    expr {$x / 1}
+} 1.0
+test execute-3.42 {TclExecuteByteCode, INST_DIV, op1 is non-numeric} {testobj} {
+    set x [teststringobj set 1 foo]
+    list [catch {expr {$x / 1}} msg] $msg
+} {1 {can't use non-numeric string as operand of "/"}}
+test execute-3.43 {TclExecuteByteCode, INST_DIV, op2 is int} {testobj} {
+    set x [testintobj set 1 1]
+    expr {2 / $x}
+} 2
+test execute-3.44 {TclExecuteByteCode, INST_DIV, op2 is double} {testobj} {
+    set x [testdoubleobj set 1 1.0]
+    expr {2 / $x}
+} 2.0
+test execute-3.45 {TclExecuteByteCode, INST_DIV, op2 is double with string} {testobj} {
+    set x [testintobj set 1 1]
+    testobj convert 1 double
+    expr {2 / $x}
+} 2
+test execute-3.46 {TclExecuteByteCode, INST_DIV, op2 is string int} {testobj} {
+    set x [teststringobj set 1 1]
+    expr {2 / $x}
+} 2
+test execute-3.47 {TclExecuteByteCode, INST_DIV, op2 is string double} {testobj} {
+    set x [teststringobj set 1 1.0]
+    expr {2 / $x}
+} 2.0
+test execute-3.48 {TclExecuteByteCode, INST_DIV, op2 is non-numeric} {testobj} {
+    set x [teststringobj set 1 foo]
+    list [catch {expr {1 / $x}} msg] $msg
+} {1 {can't use non-numeric string as operand of "/"}}
+
+# INST_UPLUS is partially tested:
+test execute-3.49 {TclExecuteByteCode, INST_UPLUS, op is int} {testobj} {
+    set x [testintobj set 1 1]
+    expr {+ $x}
+} 1
+test execute-3.50 {TclExecuteByteCode, INST_UPLUS, op is double} {testobj} {
+    set x [testdoubleobj set 1 1.0]
+    expr {+ $x}
+} 1.0
+test execute-3.51 {TclExecuteByteCode, INST_UPLUS, op is double with string} {testobj} {
+    set x [testintobj set 1 1]
+    testobj convert 1 double
+    expr {+ $x}
+} 1
+test execute-3.52 {TclExecuteByteCode, INST_UPLUS, op is string int} {testobj} {
+    set x [teststringobj set 1 1]
+    expr {+ $x}
+} 1
+test execute-3.53 {TclExecuteByteCode, INST_UPLUS, op is string double} {testobj} {
+    set x [teststringobj set 1 1.0]
+    expr {+ $x}
+} 1.0
+test execute-3.54 {TclExecuteByteCode, INST_UPLUS, op is non-numeric} {testobj} {
+    set x [teststringobj set 1 foo]
+    list [catch {expr {+ $x}} msg] $msg
+} {1 {can't use non-numeric string as operand of "+"}}
+
+# INST_UMINUS is partially tested:
+test execute-3.55 {TclExecuteByteCode, INST_UMINUS, op is int} {testobj} {
+    set x [testintobj set 1 1]
+    expr {- $x}
+} -1
+test execute-3.56 {TclExecuteByteCode, INST_UMINUS, op is double} {testobj} {
+    set x [testdoubleobj set 1 1.0]
+    expr {- $x}
+} -1.0
+test execute-3.57 {TclExecuteByteCode, INST_UMINUS, op is double with string} {testobj} {
+    set x [testintobj set 1 1]
+    testobj convert 1 double
+    expr {- $x}
+} -1
+test execute-3.58 {TclExecuteByteCode, INST_UMINUS, op is string int} {testobj} {
+    set x [teststringobj set 1 1]
+    expr {- $x}
+} -1
+test execute-3.59 {TclExecuteByteCode, INST_UMINUS, op is string double} {testobj} {
+    set x [teststringobj set 1 1.0]
+    expr {- $x}
+} -1.0
+test execute-3.60 {TclExecuteByteCode, INST_UMINUS, op is non-numeric} {testobj} {
+    set x [teststringobj set 1 foo]
+    list [catch {expr {- $x}} msg] $msg
+} {1 {can't use non-numeric string as operand of "-"}}
+
+# INST_LNOT is partially tested:
+test execute-3.61 {TclExecuteByteCode, INST_LNOT, op is int} {testobj} {
+    set x [testintobj set 1 2]
+    expr {! $x}
+} 0
+test execute-3.62 {TclExecuteByteCode, INST_LNOT, op is int} {testobj} {
+    set x [testintobj set 1 0]
+    expr {! $x}
+} 1
+test execute-3.63 {TclExecuteByteCode, INST_LNOT, op is double} {testobj} {
+    set x [testdoubleobj set 1 1.0]
+    expr {! $x}
+} 0
+test execute-3.64 {TclExecuteByteCode, INST_LNOT, op is double} {testobj} {
+    set x [testdoubleobj set 1 0.0]
+    expr {! $x}
+} 1
+test execute-3.65 {TclExecuteByteCode, INST_LNOT, op is double with string} {testobj} {
+    set x [testintobj set 1 1]
+    testobj convert 1 double
+    expr {! $x}
+} 0
+test execute-3.66 {TclExecuteByteCode, INST_LNOT, op is double with string} {testobj} {
+    set x [testintobj set 1 0]
+    testobj convert 1 double
+    expr {! $x}
+} 1
+test execute-3.67 {TclExecuteByteCode, INST_LNOT, op is string int} {testobj} {
+    set x [teststringobj set 1 1]
+    expr {! $x}
+} 0
+test execute-3.68 {TclExecuteByteCode, INST_LNOT, op is string int} {testobj} {
+    set x [teststringobj set 1 0]
+    expr {! $x}
+} 1
+test execute-3.69 {TclExecuteByteCode, INST_LNOT, op is string double} {testobj} {
+    set x [teststringobj set 1 1.0]
+    expr {! $x}
+} 0
+test execute-3.70 {TclExecuteByteCode, INST_LNOT, op is string double} {testobj} {
+    set x [teststringobj set 1 0.0]
+    expr {! $x}
+} 1
+test execute-3.71 {TclExecuteByteCode, INST_LNOT, op is non-numeric} {testobj} {
+    set x [teststringobj set 1 foo]
+    list [catch {expr {! $x}} msg] $msg
+} {1 {can't use non-numeric string as operand of "!"}}
+
+# INST_BITNOT not tested
+# INST_CALL_BUILTIN_FUNC1 not tested
+# INST_CALL_FUNC1 not tested
+
+# INST_TRY_CVT_TO_NUMERIC is partially tested:
+test execute-3.72 {TclExecuteByteCode, INST_TRY_CVT_TO_NUMERIC, op is int} {testobj} {
+    set x [testintobj set 1 1]
+    expr {$x}
+} 1
+test execute-3.73 {TclExecuteByteCode, INST_TRY_CVT_TO_NUMERIC, op is double} {testobj} {
+    set x [testdoubleobj set 1 1.0]
+    expr {$x}
+} 1.0
+test execute-3.74 {TclExecuteByteCode, INST_TRY_CVT_TO_NUMERIC, op is double with string} {testobj} {
+    set x [testintobj set 1 1]
+    testobj convert 1 double
+    expr {$x}
+} 1
+test execute-3.75 {TclExecuteByteCode, INST_TRY_CVT_TO_NUMERIC, op is string int} {testobj} {
+    set x [teststringobj set 1 1]
+    expr {$x}
+} 1
+test execute-3.76 {TclExecuteByteCode, INST_TRY_CVT_TO_NUMERIC, op is string double} {testobj} {
+    set x [teststringobj set 1 1.0]
+    expr {$x}
+} 1.0
+test execute-3.77 {TclExecuteByteCode, INST_TRY_CVT_TO_NUMERIC, op is non-numeric} {testobj} {
+    set x [teststringobj set 1 foo]
+    expr {$x}
+} foo
+
+# INST_BREAK not tested
+# INST_CONTINUE not tested
+# INST_FOREACH_START4 not tested
+# INST_FOREACH_STEP4 not tested
+# INST_BEGIN_CATCH4 not tested
+# INST_END_CATCH not tested
+# INST_PUSH_RESULT not tested
+# INST_PUSH_RETURN_CODE not tested
+
+test execute-4.1 {Tcl_GetCommandFromObj, convert to tclCmdNameType} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+    unset -nocomplain x
+    unset -nocomplain y
+} -body {
+    namespace eval test_ns_1 {
+        namespace export cmd1
+        proc cmd1 {args} {return "cmd1: $args"}
+        proc cmd2 {args} {return "cmd2: $args"}
+    }
+    namespace eval test_ns_1::test_ns_2 {
+        namespace import ::test_ns_1::*
+    }
+    set x "test_ns_1::"
+    set y "test_ns_2::"
+    list [namespace which -command ${x}${y}cmd1] \
+         [catch {namespace which -command ${x}${y}cmd2} msg] $msg \
+         [catch {namespace which -command ${x}${y}:cmd2} msg] $msg
+} -result {::test_ns_1::test_ns_2::cmd1 0 {} 0 {}}
+test execute-4.2 {Tcl_GetCommandFromObj, check if cached tclCmdNameType is invalid} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+    catch {rename foo ""}
+    unset -nocomplain l
+} -body {
+    proc foo {} {
+        return "global foo"
+    }
+    namespace eval test_ns_1 {
+        proc whichFoo {} {
+            return [namespace which -command foo]
+        }
+    }
+    set l ""
+    lappend l [test_ns_1::whichFoo]
+    namespace eval test_ns_1 {
+        proc foo {} {
+            return "namespace foo"
+        }
+    }
+    lappend l [test_ns_1::whichFoo]
+} -result {::foo ::test_ns_1::foo}
+test execute-4.3 {Tcl_GetCommandFromObj, command never found} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+    catch {rename foo ""}
+} -body {
+    namespace eval test_ns_1 {
+        proc foo {} {
+            return "namespace foo"
+        }
+    }
+    namespace eval test_ns_1 {
+        proc foo {} {
+            return "namespace foo"
+        }
+    }
+    list [namespace eval test_ns_1 {namespace which -command foo}] \
+         [rename test_ns_1::foo ""] \
+         [catch {namespace eval test_ns_1 {namespace which -command foo}} msg] $msg
+} -result {::test_ns_1::foo {} 0 {}}
+
+test execute-5.1 {SetCmdNameFromAny, set cmd name to empty heap string if NULL} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+    unset -nocomplain l
+} -body {
+    proc {} {} {return {}}
+    {}
+    set l {}
+    lindex {} 0
+    {}
+} -result {}
+
+test execute-6.1 {UpdateStringOfCmdName: called for duplicate of empty cmdName object} {
+    proc {} {} {}
+    proc { } {} {}
+    proc p {} {
+        set x {}
+        $x
+        append x { }
+        $x
+    }
+    p
+} {}
+test execute-6.2 {Evaluate an expression in a variable; compile the first time, do not the second} {
+    set w {3*5}
+    proc a {obj} {expr $obj}
+    set res "[a $w]:[a $w]"
+} {15:15}
+test execute-6.3 {Tcl_ExprObj: don't use cached script bytecode [Bug 1899164]} -setup {
+    proc 0+0 {} {return SCRIPT}
+} -body {
+    set e { 0+0 }
+    if 1 $e
+    if 1 {expr $e}
+} -cleanup {
+    rename 0+0 {}
+} -result 0
+test execute-6.4 {TclCompEvalObj: don't use cached expr bytecode [Bug 1899164]} -setup {
+    proc 0+0 {} {return SCRIPT}
+} -body {
+    set e { 0+0 }
+    if 1 {expr $e}
+    if 1 $e
+} -cleanup {
+    rename 0+0 {}
+} -result SCRIPT
+test execute-6.5 {TclCompEvalObj: bytecode epoch validation} -body {
+    set script { llength {} }
+    set result {}
+    lappend result [if 1 $script]
+    set origName [namespace which llength]
+    rename $origName llength.orig
+    proc $origName {args} {return AHA!}
+    lappend result [if 1 $script]
+} -cleanup {
+    rename $origName {}
+    rename llength.orig $origName
+} -result {0 AHA!}
+test execute-6.6 {TclCompEvalObj: proc-body bytecode invalid for script} -body {
+    proc foo {} {set a 1}
+    set a untouched
+    set result {}
+    lappend result [foo] $a
+    lappend result [if 1 [info body foo]] $a
+} -cleanup {
+    rename foo {}
+} -result {1 untouched 1 1}
+test execute-6.7 {TclCompEvalObj: bytecode context validation} -setup {
+    namespace eval foo {}
+} -body {
+    set script { llength {} }
+    namespace eval foo {
+	proc llength {args} {return AHA!}
+    }
+    set result {}
+    lappend result [if 1 $script]
+    lappend result [namespace eval foo $script]
+} -cleanup {
+    namespace delete foo
+} -result {0 AHA!}
+test execute-6.8 {TclCompEvalObj: bytecode name resolution epoch validation} -setup {
+    namespace eval foo {}
+} -body {
+    set script { llength {} }
+    set result {}
+    lappend result [namespace eval foo $script]
+    namespace eval foo {
+	proc llength {args} {return AHA!}
+    }
+    lappend result [namespace eval foo $script]
+} -cleanup {
+    namespace delete foo
+} -result {0 AHA!}
+test execute-6.9 {TclCompEvalObj: bytecode interp validation} -setup {
+    interp create slave
+} -body {
+    set script { llength {} }
+    slave eval {proc llength args {return AHA!}}
+    set result {}
+    lappend result [if 1 $script]
+    lappend result [slave eval $script]
+} -cleanup {
+    interp delete slave
+} -result {0 AHA!}
+test execute-6.10 {TclCompEvalObj: bytecode interp validation} -body {
+    set script { llength {} }
+    interp create slave
+    set result {}
+    lappend result [slave eval $script]
+    interp delete slave
+    interp create slave
+    lappend result [slave eval $script]
+} -cleanup {
+    catch {interp delete slave}
+} -result {0 0}
+test execute-6.11 {Tcl_ExprObj: exprcode interp validation} -setup {
+    interp create slave
+} -constraints testexprlongobj -body {
+    set e { [llength {}]+1 }
+    set result {}
+    load {} Tcltest slave
+    interp alias {} e slave testexprlongobj
+    lappend result [e $e]
+    interp delete slave
+    interp create slave
+    load {} Tcltest slave
+    interp alias {} e slave testexprlongobj
+    lappend result [e $e]
+} -cleanup {
+    interp delete slave
+} -result {{This is a result: 1} {This is a result: 1}}
+test execute-6.12 {Tcl_ExprObj: exprcode interp validation} -setup {
+    interp create slave
+} -body {
+    set e { [llength {}]+1 }
+    set result {}
+    interp alias {} e slave expr
+    lappend result [e $e]
+    interp delete slave
+    interp create slave
+    interp alias {} e slave expr 
+    lappend result [e $e]
+} -cleanup {
+    interp delete slave
+} -result {1 1}
+test execute-6.13 {Tcl_ExprObj: exprcode epoch validation} -body {
+    set e { [llength {}]+1 }
+    set result {}
+    lappend result [expr $e]
+    set origName [namespace which llength]
+    rename $origName llength.orig
+    proc $origName {args} {return 1}
+    lappend result [expr $e]
+} -cleanup {
+    rename $origName {}
+    rename llength.orig $origName
+} -result {1 2}
+test execute-6.14 {Tcl_ExprObj: exprcode context validation} -setup {
+    namespace eval foo {}
+} -body {
+    set e { [llength {}]+1 }
+    namespace eval foo {
+	proc llength {args} {return 1}
+    }
+    set result {}
+    lappend result [expr $e]
+    lappend result [namespace eval foo [list expr $e]]
+} -cleanup {
+    namespace delete foo
+} -result {1 2}
+test execute-6.15 {Tcl_ExprObj: exprcode name resolution epoch validation} -setup {
+    namespace eval foo {}
+} -body {
+    set e { [llength {}]+1 }
+    set result {}
+    lappend result [namespace eval foo [list expr $e]]
+    namespace eval foo {
+	proc llength {args} {return 1}
+    }
+    lappend result [namespace eval foo [list expr $e]]
+} -cleanup {
+    namespace delete foo
+} -result {1 2}
+test execute-6.16 {Tcl_ExprObj: exprcode interp validation} -setup {
+    interp create slave
+} -body {
+    set e { [llength {}]+1 }
+    interp alias {} e slave expr
+    slave eval {proc llength args {return 1}}
+    set result {}
+    lappend result [expr $e]
+    lappend result [e $e]
+} -cleanup {
+    interp delete slave
+} -result {1 2}
+test execute-6.17 {Tcl_ExprObj: exprcode context validation} -body {
+    proc foo e {set v 0; expr $e}
+    proc bar e {set v 1; expr $e}
+    set e { $v }
+    set result {}
+    lappend result [foo $e]
+    lappend result [bar $e]
+} -cleanup {
+    rename foo {}
+    rename bar {}
+} -result {0 1}
+test execute-6.18 {Tcl_ExprObj: exprcode context validation} -body {
+    proc foo e {set v {}; expr $e}
+    proc bar e {set v v; expr $e}
+    set e { [llength $v] }
+    set result {}
+    lappend result [foo $e]
+    lappend result [bar $e]
+} -cleanup {
+    rename foo {}
+    rename bar {}
+} -result {0 1}
+
+test execute-7.0 {Wide int handling in INST_JUMP_FALSE/LAND} {
+    set x 0x100000000
+    expr {$x && 1}
+} 1
+test execute-7.1 {Wide int handling in INST_JUMP_FALSE/LAND} {
+    expr {0x100000000 && 1}
+} 1
+test execute-7.2 {Wide int handling in INST_JUMP_FALSE/LAND} {
+    expr {1 && 0x100000000}
+} 1
+test execute-7.3 {Wide int handling in INST_JUMP_FALSE/LAND} {
+    expr {wide(0x100000000) && 1}
+} 1
+test execute-7.4 {Wide int handling in INST_JUMP_FALSE/LAND} {
+    expr {1 && wide(0x100000000)}
+} 1
+test execute-7.5 {Wide int handling in INST_EQ} {
+    expr {4 == (wide(1)+wide(3))}
+} 1
+test execute-7.6 {Wide int handling in INST_EQ and [incr]} {
+    set x 399999999999
+    expr {400000000000 == [incr x]}
+} 1
+# wide ints have more bits of precision than doubles, but we convert anyway
+test execute-7.7 {Wide int handling in INST_EQ and [incr]} {
+    set x [expr {wide(1)<<62}]
+    set y [expr {$x+1}]
+    expr {double($x) == double($y)}
+} 1
+test execute-7.8 {Wide int conversions can change sign} longIs32bit {
+    set x 0x80000000
+    expr {int($x) < wide($x)}
+} 1
+test execute-7.9 {Wide int handling in INST_MOD} {
+    expr {(wide(1)<<60) % ((wide(47)<<45)-1)}
+} 316659348800185
+test execute-7.10 {Wide int handling in INST_MOD} {
+    expr {((wide(1)<<60)-1) % 0x400000000}
+} 17179869183
+test execute-7.11 {Wide int handling in INST_LSHIFT} {
+    expr wide(42)<<30
+} 45097156608
+test execute-7.12 {Wide int handling in INST_LSHIFT} {
+    expr 12345678901<<3
+} 98765431208
+test execute-7.13 {Wide int handling in INST_RSHIFT} {
+    expr 0x543210febcda9876>>7
+} 47397893236700464
+test execute-7.14 {Wide int handling in INST_RSHIFT} {
+    expr wide(0x9876543210febcda)>>7
+} -58286587177206407
+test execute-7.15 {Wide int handling in INST_BITOR} {
+    expr wide(0x9876543210febcda) | 0x543210febcda9876
+} -2560765885044310786
+test execute-7.16 {Wide int handling in INST_BITXOR} {
+    expr wide(0x9876543210febcda) ^ 0x543210febcda9876
+} -3727778945703861076
+test execute-7.17 {Wide int handling in INST_BITAND} {
+    expr wide(0x9876543210febcda) & 0x543210febcda9876
+} 1167013060659550290
+test execute-7.18 {Wide int handling in INST_ADD} {
+    expr wide(0x7fffffff)+wide(0x7fffffff)
+} 4294967294
+test execute-7.19 {Wide int handling in INST_ADD} {
+    expr 0x7fffffff+wide(0x7fffffff)
+} 4294967294
+test execute-7.20 {Wide int handling in INST_ADD} {
+    expr wide(0x7fffffff)+0x7fffffff
+} 4294967294
+test execute-7.21 {Wide int handling in INST_ADD} {
+    expr double(0x7fffffff)+wide(0x7fffffff)
+} 4294967294.0
+test execute-7.22 {Wide int handling in INST_ADD} {
+    expr wide(0x7fffffff)+double(0x7fffffff)
+} 4294967294.0
+test execute-7.23 {Wide int handling in INST_SUB} {
+    expr 0x123456789a-0x20406080a
+} 69530054800
+test execute-7.24 {Wide int handling in INST_MULT} {
+    expr 0x123456789a*193
+} 15090186251290
+test execute-7.25 {Wide int handling in INST_DIV} {
+    expr 0x123456789a/193
+} 405116546
+test execute-7.26 {Wide int handling in INST_UPLUS} {
+    set x 0x123456871234568
+    expr {+ $x}
+} 81985533099853160
+test execute-7.27 {Wide int handling in INST_UMINUS} {
+    set x 0x123456871234568
+    expr {- $x}
+} -81985533099853160
+test execute-7.28 {Wide int handling in INST_LNOT} {
+    set x 0x123456871234568
+    expr {! $x}
+} 0
+test execute-7.29 {Wide int handling in INST_BITNOT} {
+    set x 0x123456871234568
+    expr {~ $x}
+} -81985533099853161
+test execute-7.30 {Wide int handling in function call} {
+    set x 0x12345687123456
+    incr x
+    expr {log($x) == log(double($x))}
+} 1
+test execute-7.31 {Wide int handling in abs()} {
+    set x 0xa23456871234568
+    incr x
+    set y 0x123456871234568
+    concat [expr {abs($x)}] [expr {abs($y)}]
+} {730503879441204585 81985533099853160}
+test execute-7.32 {Wide int handling} longIs32bit {
+    expr {int(1024 * 1024 * 1024 * 1024)}
+} 0
+test execute-7.33 {Wide int handling} longIs32bit {
+    expr {int(0x1 * 1024 * 1024 * 1024 * 1024)}
+} 0
+test execute-7.34 {Wide int handling} {
+    expr {wide(0x1) * 1024 * 1024 * 1024 * 1024}
+} 1099511627776
+
+test execute-8.1 {Stack protection} -setup {
+    # If [Bug #804681] has not been properly taken care of, this should
+    # segfault
+    proc whatever args {llength $args}
+    trace add variable ::errorInfo {write unset} whatever
+} -body {
+    expr {1+9/0}
+} -cleanup {
+    trace remove variable ::errorInfo {write unset} whatever
+    rename whatever {}
+} -returnCodes error -match glob -result *
+test execute-8.2 {Stack restoration} -setup {
+    # Avoid crashes when system stack size is limited (thread-enabled!)
+    set limit [interp recursionlimit {}]
+    interp recursionlimit {} 100
+} -body {
+    # Test for [Bug #816641], correct restoration of the stack top after the
+    # stack is grown
+    proc f {args} { f bee bop }
+    catch f msg
+    set msg
+} -cleanup {
+    interp recursionlimit {} $limit
+} -result {too many nested evaluations (infinite loop?)}
+test execute-8.3 {Stack restoration} -setup {
+    # Avoid crashes when system stack size is limited (thread-enabled!)
+    set limit [interp recursionlimit {}]
+    interp recursionlimit {} 100
+} -body {
+    # Test for [Bug #1055676], correct restoration of the stack top after the
+    # epoch is bumped and the stack is grown in a call from a nested
+    # evaluation
+    set arglst [string repeat "a " 1000]
+    proc f {args} "f $arglst"
+    proc run {} {
+	# bump the interp's epoch
+	testbumpinterpepoch
+	catch f msg
+	set msg
+    }
+    run
+} -cleanup {
+    interp recursionlimit {} $limit
+} -result {too many nested evaluations (infinite loop?)}
+test execute-8.4 {Compile epoch bump effect on stack trace} -setup {
+    proc foo {} {
+	error bar
+    }
+    proc FOO {} {
+	catch {error bar} m o
+	testbumpinterpepoch
+	return -options $o $m
+    }
+} -body {
+    catch foo m o
+    set stack1 [dict get $o -errorinfo]
+    catch FOO m o
+    set stack2 [string map {FOO foo} [dict get $o -errorinfo]]
+    expr {$stack1 eq $stack2 ? {} : "These differ:\n$stack1\n$stack2"}
+} -cleanup {
+    rename foo {}
+    rename FOO {}
+    unset -nocomplain m o stack1 stack2
+} -result {}
+test execute-8.5 {Bug 2038069} -setup {
+    proc demo {} {
+	catch [list error FOO] m o
+	return $o
+    }
+} -body {
+    demo
+} -cleanup {
+    rename demo {}
+} -match glob -result {-code 1 -level 0 -errorstack * -errorcode NONE -errorinfo {FOO
+    while executing
+"error FOO"
+    invoked from within
+"catch \[list error FOO\] m o"} -errorline 2}
+
+test execute-8.6 {Compile epoch bump in global level (bug [fa6bf38d07])} -setup {
+    interp create slave
+    slave eval {
+	package require tcltest
+	catch [list package require -exact Tcltest [info patchlevel]]
+	::tcltest::loadTestedCommands
+	if {[namespace which -command testbumpinterpepoch] eq ""} {
+	  proc testbumpinterpepoch {} { rename ::set ::dummy; rename ::dummy ::set }
+	}
+    }
+} -body {
+    slave eval {
+	lappend res A; testbumpinterpepoch; lappend res B; return; lappend res C;
+    }
+    slave eval {
+	set i 0; while {[incr i] < 3} {
+	    lappend res A; testbumpinterpepoch; lappend res B; return; lappend res C;
+	}
+    }
+    slave eval {
+	set i 0; while {[incr i] < 3} {
+	    lappend res A; testbumpinterpepoch; lappend res B; break; lappend res C;
+	}
+    }
+    slave eval {
+	catch {
+	    lappend res A; testbumpinterpepoch; lappend res B; error test; lappend res C;
+	}
+    }
+    slave eval {set res}
+} -cleanup {
+    interp delete slave
+} -result [lrepeat 4 A B]
+test execute-8.7 {Compile epoch bump in global level (bug [fa6bf38d07]), exception case} -setup {
+    interp create slave
+    slave eval {
+	package require tcltest
+	catch [list package require -exact Tcltest [info patchlevel]]
+	::tcltest::loadTestedCommands
+	if {[namespace which -command testbumpinterpepoch] eq ""} {
+	  proc testbumpinterpepoch {} { rename ::set ::dummy; rename ::dummy ::set }
+	}
+    }
+} -body {
+    set res {}
+    lappend res [catch {
+	slave eval {
+	   lappend res A; testbumpinterpepoch; lappend res B; return -code error test; lappend res C;
+	}
+    } e] $e
+    lappend res [catch {
+	slave eval {
+	   lappend res A; testbumpinterpepoch; lappend res B; error test; lappend res C;
+	}
+    } e] $e
+    lappend res [catch {
+	slave eval {
+	   lappend res A; testbumpinterpepoch; lappend res B; return -code return test; lappend res C;
+	}
+    } e] $e
+    lappend res [catch {
+	slave eval {
+	   lappend res A; testbumpinterpepoch; lappend res B; break; lappend res C;
+	}
+    } e] $e
+    list $res [slave eval {set res}]
+} -cleanup {
+    interp delete slave
+} -result [list {1 test 1 test 2 test 3 {}} [lrepeat 4 A B]]
+
+test execute-9.1 {Interp result resetting [Bug 1522803]} {
+    set c 0
+    catch {
+	catch {error foo}
+	expr {1/$c}
+    }
+    if {[string match *foo* $::errorInfo]} {
+	set result "Bad errorInfo: $::errorInfo"
+    } else {
+	set result SUCCESS
+    }
+    set result
+} SUCCESS
+
+test execute-10.1 {TclExecuteByteCode, INST_CONCAT1, bytearrays} {
+    apply {s {binary scan $s c x; list $x [scan $s$s %c%c]}} \u0130
+} {48 {304 304}}
+test execute-10.2 {Bug 2802881} -setup {
+    interp create slave
+} -body {
+    # If [Bug 2802881] is not fixed, this will segfault
+    slave eval {
+	trace add variable ::errorInfo write {expr {$foo} ;#}
+	proc demo {} {a {}{}}
+	demo
+    }
+} -cleanup {
+    interp delete slave
+} -returnCodes error -match glob -result *
+test execute-10.3 {Bug 3072640} -setup {
+    proc generate {n} {
+	for {set i 0} {$i < $n} {incr i} {
+	    yield $i
+	}
+    }
+    proc t {args} { 
+	incr ::foo 
+    }
+    set ::foo 0
+    trace add execution ::generate enterstep ::t
+} -body {
+    coroutine coro generate 5
+    trace remove execution ::generate enterstep ::t
+    set ::foo
+} -cleanup {
+    unset ::foo
+    rename generate {}
+    rename t {}
+    rename coro {}
+} -result 4
+
+test execute-11.1 {Bug 3142026: GrowEvaluationStack off-by-one} -setup {
+    interp create slave
+} -body {
+    slave eval {
+	set x [lrepeat 1320 199]
+	for {set i 0} {$i < 20} {incr i} {
+	    lappend x $i
+	    lsort -integer $x
+	}
+	# Crashes on failure
+	return ok
+    }
+} -cleanup {
+    interp delete slave
+} -result ok
+
+test execute-11.2 {Bug 268b23df11} -setup {
+    proc zero {} {return 0}
+    proc crash {} {expr {abs([zero])}}
+    proc noop args {}
+    trace add execution crash enterstep noop
+} -body {
+    crash
+} -cleanup {
+    trace remove execution crash enterstep noop
+    rename noop {}
+    rename crash {}
+    rename zero {}
+} -result 0
+test execute-11.3 {Bug a0ece9d6d4} -setup {
+    proc crash {} {expr {rand()}}
+    trace add execution crash enterstep {apply {args {info frame -2}}}
+} -body {
+    string is double [crash]
+} -cleanup {
+    trace remove execution crash enterstep {apply {args {info frame -2}}}
+    rename crash {}
+} -result 1
+
+test execute-12.1 {failing multi-lappend to unshared} -setup {
+    unset -nocomplain x y
+} -body {
+    set x 1
+    lappend x 2 3
+    trace add variable x write {apply {args {error boo}}}
+    lappend x 4 5
+} -cleanup {
+    unset -nocomplain x y
+} -returnCodes error -result {can't set "x": boo}
+test execute-12.2 {failing multi-lappend to shared} -setup {
+    unset -nocomplain x y
+} -body {
+    set x 1
+    lappend x 2 3
+    set y $x
+    trace add variable x write {apply {args {error boo}}}
+    lappend x 4 5
+} -cleanup {
+    unset -nocomplain x y
+} -returnCodes error -result {can't set "x": boo}
+test execute-12.3 {failing multi-lappend to unshared: LVT} -body {
+    apply {{} {
+	set x 1
+	lappend x 2 3
+	trace add variable x write {apply {args {error boo}}}
+	lappend x 4 5
+    }}
+} -returnCodes error -result {can't set "x": boo}
+test execute-12.4 {failing multi-lappend to shared: LVT} -body {
+    apply {{} {
+	set x 1
+	lappend x 2 3
+	set y $x
+	trace add variable x write {apply {args {error boo}}}
+	lappend x 4 5
+    }}
+} -returnCodes error -result {can't set "x": boo}
+
+# cleanup
+if {[info commands testobj] != {}} {
+   testobj freeallvars
+}
+catch {namespace delete {*}[namespace children :: test_ns_*]}
+catch {rename foo ""}
+catch {rename p ""}
+catch {rename {} ""}
+catch {rename { } ""}
+catch {unset x}
+catch {unset y}
+catch {unset msg}
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:

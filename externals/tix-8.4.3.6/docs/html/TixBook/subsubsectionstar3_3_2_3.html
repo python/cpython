@@ -1,0 +1,41 @@
+<HEAD>
+<TITLE>  Disabling Callbacks Temporarily<A NAME=1221>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html310 HREF=subsubsection3_3_2_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html308 HREF=subsection3_3_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html302 HREF=subsubsection3_3_2_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html312 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html311 HREF=subsubsection3_3_2_4.html> Validating User Inputs</A>
+<B>Up:</B> <A NAME=tex2html309 HREF=subsection3_3_2.html> Getting Started: the </A>
+<B> Previous:</B> <A NAME=tex2html303 HREF=subsubsection3_3_2_2.html> Accessing The Value </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00032300000000000000>  Disabling Callbacks Temporarily<A NAME=1221>&nbsp;</A></A></H3>
+<P>
+Now, if you want to change a value from within the program, you have to
+  disable the callback. The reason is that the callback runs whenever you
+  (as well as the user) makes a change. In particular, if you make a change
+  within the callback procedure and forget to disable the callback, it will
+  recursively call itself and enter an infinite loop. To avoid this
+  problem, you should use the <tt>-disablecallback</tt> option. Here is an
+  example:
+<P>
+<tt>     tixControl .c -command addOne<BR>
+<BR>
+    proc addOne {value} {<BR>
+        .c config -disablecallback true<BR>
+        .c config -value [incr value]<BR>
+        .c config -disablecallback false<BR>
+    }</tt>
+<P>
+The procedure <tt>addOne</tt> adjusts the value of <tt>.c</tt> by one whenever
+  the user enters a new value into <tt>.c</tt>. Notice that it is necessary to
+  set <tt>-disablecallback</tt> here or otherwise <tt>addOne</tt> will be
+  infinitely recursed! That is because <tt>addOne</tt> is called <em>every
+  time</em> the value changes, either by the user or by the program.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

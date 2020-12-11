@@ -1,0 +1,441 @@
+# This file is a Tcl script to test out the option-handling facilities
+# of Tk.  It is organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+
+testConstraint appNameIsTktest [expr {[winfo name .] eq "tktest"}]
+
+deleteWindows
+set appName [winfo name .]
+
+# First, test basic retrievals, being sure to trigger all the various
+# types of NodeElements (EXACT_LEAF_NAME, WILDCARD_NODE_CLASS, and
+# everything in-between).
+
+frame .op1 -class Class1
+frame .op2 -class Class2
+frame .op1.op3 -class Class1
+frame .op1.op4 -class Class3
+frame .op2.op5 -class Class2
+frame .op1.op3.op6 -class Class4
+
+# Configurations for tests 1.* - 12.*
+option clear
+option add *Color1 red
+option add *x blue
+option add *Class1.x yellow
+option add $appName.op1.x green
+option add *Class2.Color1 orange
+option add $appName.op2.op5.Color2 purple
+option add $appName.Class1.Class3.y brown
+option add $appName*op6*Color2 black
+option add $appName*Class1.op1.Color2 grey
+
+test option-1.1 {basic option retrieval} -body {
+    option get . x Color1
+} -result blue
+test option-1.2 {basic option retrieval} -body {
+    option get . y Color1
+} -result red
+test option-1.3 {basic option retrieval} -body {
+    option get . z Color1
+} -result red
+test option-1.4 {basic option retrieval} -body {
+    option get . x Color2
+} -result blue
+test option-1.5 {basic option retrieval} -body {
+    option get . y Color2
+} -result {}
+test option-1.6 {basic option retrieval} -body {
+    option get . z Color2
+} -result {}
+
+
+test option-2.1 {basic option retrieval} -body {
+    option get .op1 x Color1
+} -result green
+test option-2.2 {basic option retrieval} -body {
+    option get .op1 y Color1
+} -result red
+test option-2.3 {basic option retrieval} -body {
+    option get .op1 z Color1
+} -result red
+test option-2.4 {basic option retrieval} -body {
+    option get .op1 x Color2
+} -result green
+test option-2.5 {basic option retrieval} -body {
+    option get .op1 y Color2
+} -result {}
+test option-2.6 {basic option retrieval} -body {
+    option get .op1 z Color2
+} -result {}
+
+
+test option-3.1 {basic option retrieval} -body {
+    option get .op1.op3 x Color1
+} -result yellow
+test option-3.2 {basic option retrieval} -body {
+    option get .op1.op3 y Color1
+} -result red
+test option-3.3 {basic option retrieval} -body {
+    option get .op1.op3 z Color1
+} -result red
+test option-3.4 {basic option retrieval} -body {
+    option get .op1.op3 x Color2
+} -result yellow
+test option-3.5 {basic option retrieval} -body {
+    option get .op1.op3 y Color2
+} -result {}
+test option-3.6 {basic option retrieval} -body {
+    option get .op1.op3 z Color2
+} -result {}
+
+
+test option-4.1 {basic option retrieval} -body {
+    option get .op1.op3.op6 x Color1
+} -result blue
+test option-4.2 {basic option retrieval} -body {
+    option get .op1.op3.op6 y Color1
+} -result red
+test option-4.3 {basic option retrieval} -body {
+    option get .op1.op3.op6 z Color1
+} -result red
+test option-4.4 {basic option retrieval} -body {
+    option get .op1.op3.op6 x Color2
+} -result black
+test option-4.5 {basic option retrieval} -body {
+    option get .op1.op3.op6 y Color2
+} -result black
+test option-4.6 {basic option retrieval} -body {
+    option get .op1.op3.op6 z Color2
+} -result black
+
+
+test option-5.1 {basic option retrieval} -body {
+    option get .op1.op4 x Color1
+} -result blue
+test option-5.2 {basic option retrieval} -body {
+    option get .op1.op4 y Color1
+} -result brown
+test option-5.3 {basic option retrieval} -body {
+    option get .op1.op4 z Color1
+} -result red
+test option-5.4 {basic option retrieval} -body {
+    option get .op1.op4 x Color2
+} -result blue
+test option-5.5 {basic option retrieval} -body {
+    option get .op1.op4 y Color2
+} -result brown
+test option-5.6 {basic option retrieval} -body {
+    option get .op1.op4 z Color2
+} -result {}
+
+
+test option-6.1 {basic option retrieval} -body {
+    option get .op2 x Color1
+} -result orange
+test option-6.2 {basic option retrieval} -body {
+    option get .op2 y Color1
+} -result orange
+test option-6.3 {basic option retrieval} -body {
+    option get .op2 z Color1
+} -result orange
+test option-6.4 {basic option retrieval} -body {
+    option get .op2 x Color2
+} -result blue
+test option-6.5 {basic option retrieval} -body {
+    option get .op2 y Color2
+} -result {}
+test option-6.6 {basic option retrieval} -body {
+    option get .op2 z Color2
+} -result {}
+
+
+test option-7.1 {basic option retrieval} -body {
+    option get .op2.op5 x Color1
+} -result orange
+test option-7.2 {basic option retrieval} -body {
+    option get .op2.op5 y Color1
+} -result orange
+test option-7.3 {basic option retrieval} -body {
+    option get .op2.op5 z Color1
+} -result orange
+test option-7.4 {basic option retrieval} -body {
+    option get .op2.op5 x Color2
+} -result purple
+test option-7.5 {basic option retrieval} -body {
+    option get .op2.op5 y Color2
+} -result purple
+test option-7.6 {basic option retrieval} -body {
+    option get .op2.op5 z Color2
+} -result purple
+
+
+# Now try similar tests to above, except jump around non-hierarchically
+# between windows to make sure that the option stacks are pushed and
+# popped correctly.
+
+option get . foo Foo
+test option-8.1 {stack pushing/popping} -body {
+    option get .op2.op5 x Color1
+} -result orange
+test option-8.2 {stack pushing/popping} -body {
+    option get .op2.op5 y Color1
+} -result orange
+test option-8.3 {stack pushing/popping} -body {
+    option get .op2.op5 z Color1
+} -result orange
+test option-8.4 {stack pushing/popping} -body {
+    option get .op2.op5 x Color2
+} -result purple
+test option-8.5 {stack pushing/popping} -body {
+    option get .op2.op5 y Color2
+} -result purple
+test option-8.6 {stack pushing/popping} -body {
+    option get .op2.op5 z Color2
+} -result purple
+
+
+test option-9.1 {stack pushing/popping} -body {
+    option get . x Color1
+} -result blue
+test option-9.2 {stack pushing/popping} -body {
+    option get . y Color1
+} -result red
+test option-9.3 {stack pushing/popping} -body {
+    option get . z Color1
+} -result red
+test option-9.4 {stack pushing/popping} -body {
+    option get . x Color2
+} -result blue
+test option-9.5 {stack pushing/popping} -body {
+    option get . y Color2
+} -result {}
+test option-9.6 {stack pushing/popping} -body {
+    option get . z Color2
+} -result {}
+
+
+test option-10.1 {stack pushing/popping} -body {
+    option get .op1.op3.op6 x Color1
+} -result blue
+test option-10.2 {stack pushing/popping} -body {
+    option get .op1.op3.op6 y Color1
+} -result red
+test option-10.3 {stack pushing/popping} -body {
+    option get .op1.op3.op6 z Color1
+} -result red
+test option-10.4 {stack pushing/popping} -body {
+    option get .op1.op3.op6 x Color2
+} -result black
+test option-10.5 {stack pushing/popping} -body {
+    option get .op1.op3.op6 y Color2
+} -result black
+test option-10.6 {stack pushing/popping} -body {
+    option get .op1.op3.op6 z Color2
+} -result black
+
+
+test option-11.1 {stack pushing/popping} -body {
+    option get .op1.op3 x Color1
+} -result yellow
+test option-11.2 {stack pushing/popping} -body {
+    option get .op1.op3 y Color1
+} -result red
+test option-11.3 {stack pushing/popping} -body {
+    option get .op1.op3 z Color1
+} -result red
+test option-11.4 {stack pushing/popping} -body {
+    option get .op1.op3 x Color2
+} -result yellow
+test option-11.5 {stack pushing/popping} -body {
+    option get .op1.op3 y Color2
+} -result {}
+test option-11.6 {stack pushing/popping} -body {
+    option get .op1.op3 z Color2
+} -result {}
+
+
+test option-12.1 {stack pushing/popping} -body {
+    option get .op1 x Color1
+} -result green
+test option-12.2 {stack pushing/popping} -body {
+    option get .op1 y Color1
+} -result red
+test option-12.3 {stack pushing/popping} -body {
+    option get .op1 z Color1
+} -result red
+test option-12.4 {stack pushing/popping} -body {
+    option get .op1 x Color2
+} -result green
+test option-12.5 {stack pushing/popping} -body {
+    option get .op1 y Color2
+} -result {}
+test option-12.6 {stack pushing/popping} -body {
+    option get .op1 z Color2
+} -result {}
+
+# Test the major priority levels (widgetDefault, etc.)
+
+# Configurations for tests 13.* 
+option clear
+option add $appName.op1.a 100 100
+option add $appName.op1.A interactive interactive
+option add $appName.op1.b userDefault userDefault
+option add $appName.op1.B startupFile startupFile
+option add $appName.op1.c widgetDefault widgetDefault
+option add $appName.op1.C 0 0
+
+test option-13.1 {priority levels} -body {
+    option get .op1 a A
+} -result 100
+test option-13.2 {priority levels} -body {
+    option get .op1 b A
+} -result interactive
+test option-13.3 {priority levels} -body {
+    option get .op1 b B
+} -result userDefault
+test option-13.4 {priority levels} -body {
+    option get .op1 c B
+} -result startupFile
+test option-13.5 {priority levels} -body {
+    option get .op1 c C
+} -result widgetDefault
+option add $appName.op1.B file2 widget
+test option-13.6 {priority levels} -body {
+    option get .op1 c B
+} -result startupFile
+option add $appName.op1.B file2 startupFile
+test option-13.7 {priority levels} -body {
+    option get .op1 c B
+} -result file2
+
+
+# Test various error conditions
+
+test option-14.1 {error conditions} -body {
+    option
+} -returnCodes error -result {wrong # args: should be "option cmd arg ?arg ...?"}
+test option-14.2 {error conditions} -body {
+    option x
+} -returnCodes error -result {bad option "x": must be add, clear, get, or readfile}
+test option-14.3 {error conditions} -body {
+    option foo 3
+} -returnCodes error -result {bad option "foo": must be add, clear, get, or readfile}
+test option-14.4 {error conditions} -body {
+    option add 3
+} -returnCodes error -result {wrong # args: should be "option add pattern value ?priority?"}
+test option-14.5 {error conditions} -body {
+    option add . a b c
+} -returnCodes error -result {wrong # args: should be "option add pattern value ?priority?"}
+test option-14.6 {error conditions} -body {
+    option add . a -1
+} -returnCodes error -result {bad priority level "-1": must be widgetDefault, startupFile, userDefault, interactive, or a number between 0 and 100}
+test option-14.7 {error conditions} -body {
+    option add . a 101
+} -returnCodes error -result {bad priority level "101": must be widgetDefault, startupFile, userDefault, interactive, or a number between 0 and 100}
+test option-14.8 {error conditions} -body {
+    option add . a gorp
+} -returnCodes error -result {bad priority level "gorp": must be widgetDefault, startupFile, userDefault, interactive, or a number between 0 and 100}
+test option-14.9 {error conditions} -body {
+    option get 3
+} -returnCodes error -result {wrong # args: should be "option get window name class"}
+test option-14.10 {error conditions} -body {
+    option get 3 4
+} -returnCodes error -result {wrong # args: should be "option get window name class"}
+test option-14.11 {error conditions} -body {
+    option get 3 4 5 6
+} -returnCodes error -result {wrong # args: should be "option get window name class"}
+test option-14.12 {error conditions} -body {
+    option get .gorp.gorp a A
+} -returnCodes error -result {bad window path name ".gorp.gorp"}
+
+
+set option1 [file join [testsDirectory] option.file1]
+test option-15.1 {database files} -body {
+    option read non-existent
+} -returnCodes error -result {couldn't open "non-existent": no such file or directory}
+test option-15.2 {database files} -body {
+    option read $option1
+    option get . x1 color
+} -result blue
+test option-15.3 {database files} -constraints appNameIsTktest -body {
+    option read $option1
+    option get . x2 color
+} -result green
+test option-15.4 {database files} -body {
+    option read $option1
+    option get . x3 color
+} -result purple
+test option-15.5 {database files} -body {
+    option read $option1
+    option get . {x 4} color
+} -result brown
+test option-15.6 {database files} -body {
+    option read $option1
+	option get . x6 color
+} -result {}
+test option-15.7 {database files} -body {
+    option read $option1
+	option get . x9 color
+} -result " \\\t\\A\n"
+test option-15.8 {database files} -body {
+    option read $option1 widget foo
+} -returnCodes error -result {wrong # args: should be "option readfile fileName ?priority?"}
+test option-15.9 {database files} -body {
+    option add *x3 burgundy
+    catch {option read $option1 userDefault}
+    option get . x3 color
+} -result burgundy
+test option-15.10 {database files} -body {
+    set option2 [file join [testsDirectory] option.file2]
+    option read $option2
+} -returnCodes error -result {missing colon on line 2}
+set option3 [file join [testsDirectory] option.file3]
+option read $option3
+test option-15.11 {database files} {option get . {x 4} color} br\xf3wn
+
+test option-16.1 {ReadOptionFile} -body {
+    set option4 [makeFile {} option.file3]
+    set file [open $option4 w]
+    fconfigure $file -translation crlf
+    puts $file "*x7: true\n*x8: false"
+    close $file
+    option read $option4 userDefault
+    list [option get . x7 color] [option get . x8 color]
+} -cleanup {
+    removeFile $option4
+} -result {true false}
+
+set opt162val {label {
+  foo bar
+}
+}
+set opt162list [split $opt162val \n]
+
+test option-16.2 {ticket 766ef52f3} {
+    set option5 [makeFile {} option.file4]
+    set file [open $option5 w]
+    fconfigure $file -translation crlf
+    puts $file "*notok: $opt162list"
+    close $file
+    option read $option5 userDefault
+    option get . notok notok
+} $opt162list
+
+deleteWindows
+
+# cleanup
+cleanupTests
+return
+
+
+

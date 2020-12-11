@@ -1,0 +1,181 @@
+'\"
+'\" Copyright (c) 2008 Daniel A. Steffen <das@users.sourceforge.net>
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH fontchooser n "" Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+fontchooser \- control font selection dialog
+.SH SYNOPSIS
+\fBtk fontchooser\fR \fBconfigure\fR ?\fI\-option value \-option value ...\fR?
+.sp
+\fBtk fontchooser\fR \fBshow\fR
+.sp
+\fBtk fontchooser\fR \fBhide\fR
+.BE
+.SH DESCRIPTION
+.PP
+The \fBtk fontchooser\fR command controls the Tk font selection dialog. It uses
+the native platform font selection dialog where available, or a dialog
+implemented in Tcl otherwise.
+.PP
+Unlike most of the other Tk dialog commands, \fBtk fontchooser\fR does not
+return an immediate result, as on some platforms (Mac OS X) the standard font
+dialog is modeless while on others (Windows) it is modal. To accommodate this
+difference, all user interaction with the dialog will be communicated to the
+caller via callbacks or virtual events.
+.PP
+The \fBtk fontchooser\fR command can have one of the following forms:
+.TP
+\fBtk fontchooser\fR \fBconfigure \fR?\fI\-option value \-option value ...\fR?
+.
+Set or query one or more of the configurations options below (analogous to Tk
+widget configuration).
+.TP
+\fBtk fontchooser\fR \fBshow\fR
+.
+Show the font selection dialog. Depending on the platform, may return
+immediately or only once the dialog has been withdrawn.
+.TP
+\fBtk fontchooser\fR \fBhide\fR
+.
+Hide the font selection dialog if it is visible and cause any pending
+\fBtk fontchooser\fR \fBshow\fR command to return.
+.PP
+.SH "CONFIGURATION OPTIONS"
+.TP
+\fB\-parent\fR
+Specifies/returns the logical parent window of the font selection dialog
+(similar to the \fB\-parent\fR option to other dialogs). The font selection
+dialog is hidden if it is visible when the parent window is destroyed.
+.TP
+\fB\-title\fR
+Specifies/returns the title of the dialog. Has no effect on platforms where the
+font selection dialog does not support titles.
+.TP
+\fB\-font\fR
+Specifies/returns the font that is currently selected in the dialog if it is
+visible, or that will be initially selected when the dialog is shown (if
+supported by the platform). Can be set to the empty string to indicate that no
+font should be selected. Fonts can be specified in any form given by the "FONT
+DESCRIPTION" section in the \fBfont\fR manual page.
+.TP
+\fB\-command\fR
+Specifies/returns the command prefix to be called when a font selection has
+been made by the user. The command prefix is evaluated at the global level
+after having the specification of the selected font appended. On platforms
+where the font selection dialog offers the user control of further font
+attributes (such as color), additional key/value pairs may be appended before
+evaluation. Can be set to the empty string to indicate that no callback should
+be invoked. Fonts are specified by a list of form [3] of the "FONT DESCRIPTION"
+section in the \fBfont\fR manual page (i.e. a list of the form
+\fI{family size style ?style ...?}\fR).
+.TP
+\fB\-visible\fR
+Read-only option that returns a boolean indicating whether the font selection
+dialog is currently visible. Attempting to set this option results in an error.
+
+.PP
+.SH "VIRTUAL EVENTS"
+.TP
+\fB<<TkFontchooserVisibility>>\fR
+Sent to the dialog parent whenever the visibility of the font selection dialog
+changes, both as a result of user action (e.g. disposing of the dialog via
+OK/Cancel button or close box) and of the \fBtk fontchooser\fR
+\fBshow\fR/\fBhide\fR commands being called. Binding scripts can determine the
+current visibility of the dialog by querying the \fB\-visible\fR configuration
+option.
+.TP
+\fB<<TkFontchooserFontChanged>>\fR
+Sent to the dialog parent whenever the font selection dialog is visible and the
+selected font changes, both as a result of user action and of the \fB\-font\fR
+configuration option being set. Binding scripts can determine the currently
+selected font by querying the \fB\-font\fR configuration option.
+.PP
+.SH NOTES
+.PP
+Callers should not expect a result from \fBtk fontchooser\fR \fBshow\fR and may
+not assume that the dialog has been withdrawn or closed when the command
+returns. All user interaction with the dialog is communicated to the caller via
+the \fB\-command\fR callback and the \fB<<TkFontchooser*>>\fR virtual events.
+It is implementation dependent which exact user actions result in the callback
+being called resp. the virtual events being sent. Where an Apply or OK button
+is present in the dialog, that button will trigger the \fB\-command\fR callback
+and \fB<<TkFontchooserFontChanged>>\fR virtual event. On some implementations
+other user actions may also have that effect; on Mac OS X for instance, the
+standard font selection dialog immediately reflects all user choices to the
+caller.
+.PP
+In the presence of multiple widgets intended to be influenced by the font
+selection dialog, care needs to be taken to correctly handle focus changes: the
+font selected in the dialog should always match the current font of the widget
+with the focus, and the \fB\-command\fR callback should only act on the widget
+with the focus. The recommended practice is to set font dialog \fB\-font\fR and
+\fB\-command\fR configuration options in per\-widget \fB<FocusIn>\fR handlers
+(and if necessary to unset them \- i.e. set to the empty string \- in
+corresponding \fB<FocusOut>\fR handlers). This is particularly important for
+implementers of library code using the font selection dialog, to avoid
+conflicting with application code that may also want to use the dialog.
+.PP
+Because the font selection dialog is application-global, in the presence of
+multiple interpreters calling \fBtk fontchooser\fR, only the \fB\-command\fR
+callback set by the interpreter that most recently called \fBtk fontchooser\fR
+\fBconfigure\fR or \fBtk fontchooser\fR \fBshow\fR will be invoked in response
+to user action and only the \fB\-parent\fR set by that interpreter will receive
+\fB<<TkFontchooser*>>\fR virtual events.
+.PP
+The font dialog implementation may only store (and return) \fBfont\fR
+\fBactual\fR data as the value of the \fB\-font\fR configuration option. This
+can be an issue when \fB\-font\fR is set to a named font, if that font is
+subsequently changed, the font dialog \fB\-font\fR option needs to be set again
+to ensure its selected font matches the new value of the named font.
+.PP
+.SH EXAMPLE
+.PP
+.CS
+proc fontchooserDemo {} {
+    wm title . "Font Chooser Demo"
+    \fBtk fontchooser\fR \fBconfigure\fR \-parent .
+    button .b \-command fontchooserToggle \-takefocus 0
+    fontchooserVisibility .b
+    bind . \fB<<TkFontchooserVisibility>>\fR \\
+            [list fontchooserVisibility .b]
+    foreach w {.t1 .t2} {
+        text $w \-width 20 \-height 4 \-borderwidth 1 \-relief solid
+        bind $w <FocusIn> [list fontchooserFocus $w]
+        $w insert end "Text Widget $w"
+    }
+    .t1 configure \-font {Courier 14}
+    .t2 configure \-font {Times 16}
+    pack .b .t1 .t2; focus .t1
+}
+proc fontchooserToggle {} {
+    \fBtk fontchooser\fR [expr {
+            [\fBtk fontchooser\fR \fBconfigure\fR \-visible] ?
+            "\fBhide\fR" : "\fBshow\fR"}]
+}
+proc fontchooserVisibility {w} {
+    $w configure \-text [expr {
+            [\fBtk fontchooser\fR \fBconfigure\fR \-visible] ?
+            "Hide Font Dialog" : "Show Font Dialog"}]
+}
+proc fontchooserFocus {w} {
+    \fBtk fontchooser\fR \fBconfigure\fR \-font [$w cget \-font] \\
+            \-command [list fontchooserFontSelection $w]
+}
+proc fontchooserFontSelection {w font args} {
+    $w configure \-font [font actual $font]
+}
+fontchooserDemo
+.CE
+.SH "SEE ALSO"
+font(n), tk(n)
+.SH KEYWORDS
+dialog, font, font selection, font chooser, font panel
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

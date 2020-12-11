@@ -1,0 +1,73 @@
+<HEAD>
+<TITLE> Monitoring the User's Browsing Actions<A NAME=144>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html469 HREF=subsection3_3_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html467 HREF=subsection3_3_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html463 HREF=subsubsection3_3_4_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html471 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html470 HREF=subsection3_3_5.html> The TixSelect Widget</A>
+<B>Up:</B> <A NAME=tex2html468 HREF=subsection3_3_4.html> Another Tix Widget: </A>
+<B> Previous:</B> <A NAME=tex2html464 HREF=subsubsection3_3_4_3.html> Static Options</A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00034400000000000000> Monitoring the User's Browsing Actions<A NAME=144>&nbsp;</A></A></H3>
+<P>
+When the user drags the mouse pointer over the listbox, the listbox
+  item under the pointer will be highlighted and a ``browse event''
+  will be generated. If you want to keep track of what items the user
+  has browses through, you can use the <tt>-browsecmd</tt> option. Here
+  is an example:
+<P>
+<tt>     tixComboBox .c -browsecmd mybrowse<BR>
+    ....<BR>
+<BR>
+    proc mybrowse {item} {<BR>
+        puts &quot;user has browsed $item&quot;<BR>
+    }</tt>
+<P>
+When the Tcl command specified by the <tt>-browsecmd</tt> option is
+  called, it will be called with one parameter: the current item that
+  the user has highlighted.
+<P>
+The <tt>-browsecmd</tt> is useful because it gives the user the
+  possibility of temporarily seeing the results of several choices
+  before committing to a final choice.
+<P>
+For example, we can list a set of image files in a ComboBox. When
+  the user single-clicks on an item on the ComboBox, we want to show a
+  simplified view of that image. After the user has browsed through
+  several images, he can finally decide on which image he wants by
+  double-clicking on that item in the listbox.
+<P>
+The following is some pseudo Tcl code that does this. Please notice
+  that the <tt>-browsecmd</tt> procedure is called every time the user
+  single-clicks on an item or drags the mouse pointer in the listbox.
+  The <tt>-command</tt> procedure is only called when the user
+  double-clicks on an item.
+<P>
+<tt> tixComboBox .c -dropdown false -browsecmd show_simple -command load_fullsize <BR>
+.c insert end &quot;/pkg/images/flowers.gif&quot;<BR>
+.c insert end &quot;/pkg/images/jimmy.gif&quot;<BR>
+.c insert end &quot;/pkg/images/ncsa.gif&quot;<BR>
+<BR>
+proc show_simple {filename} {<BR>
+    # Load in a simplified version of $filename<BR>
+}<BR>
+<BR>
+proc load_fullsize {filename} {<BR>
+    # Load in the full size image in $filename<BR>
+}</tt>
+<P>
+As we shall see, all Tix widgets that let us do some sort of
+  selections have the <tt>-browsecmd</tt> option. The <tt>-browsecmd</tt>
+  option allows us to respond to user events in a simple,
+  straight-forward manner. Of course, you can do the same thing with
+  the Tk <tt>bind</tt> command, but you don't want to do that unless you
+  are very fond of things like <tt>$&lt;$Control-Shift-ButtonRelease-1$&gt;$</tt>
+  and <tt>&quot;%x%X$w%W%w&quot;</tt>.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

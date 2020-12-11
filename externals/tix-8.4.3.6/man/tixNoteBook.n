@@ -1,0 +1,317 @@
+'\"
+'\" $Id: tixNoteBook.n,v 1.2 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH tixNoteBook n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH NAME
+tixNoteBook - Create and manipulate tixNoteBook widgets
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SYNOPSIS
+\fBtixNoteBook \fIpathName \fR?\fIoptions\fR?
+'\"
+'\"
+'\"----------------------------------------------------------------------
+'\"
+'\"----------------------------------------------------------------------
+.SH "STANDARD OPTIONS"
+'\"
+The NoteBook widget supports all the standard options of a frame widget.
+See the options(n) manual entry for details on the standard options.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH "WIDGET-SPECIFIC OPTIONS"
+'\"
+'\"----------BEGIN
+.OP \-dynamicgeometry dynamicGeometry DynamicGeometry
+If set to false, the size of the Notebook will match the size of the
+largest page. If set to true, the size of the Notebook will match the
+size of the current page (therefore, the size may change when the user
+selects different pages). The default value is false. A setting of true
+is discouraged.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-ipadx ipadX Pad
+The amount of internal horizontal paddings around the sides of the
+page subwidgets.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-ipady ipadY Pad
+The amount of internal vertical paddings around the sides of the
+page subwidgets.
+'\"----------END
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SUBWIDGETS
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBnbframe\fR
+Class:		\fBtixNoteBookFrame\fR
+.fi
+.IP
+The "note book frame" widget that displays ths tabs of the notebook.
+Most of the display options of the page tabs are controlled by this
+subwidget. For example, if you need to choose a different font to
+display the tab names of the pages, the color of the inactive tabs or
+the color behind the tabs, you can configure the options of the
+\fBnbframe\fR subwidget.  See the manual page of
+\fBtixNoteBookFrame(n)\fR for more details.
+'\"
+'\"----------END
+'\"
+.LP
+In addition, all the page subwidgets created as a result of the
+\fBadd\fR command can be accessed by the \fBsubwidget\fR command. They
+are identified by the \fBpageName\fR parameter to the \fBadd\fR
+command.
+'\"
+'\"
+.BE
+'\"
+'\"----------------------------------------------------------------------
+.SH DESCRIPTION
+'\"
+.PP
+'\"
+The \fBtixNoteBook\fR command creates a new window (given by the
+\fIpathName\fR argument) and makes it into a NoteBook widget.
+Additional options, described above, may be specified on the command
+line or in the option database to configure aspects of the
+NoteBook widget such as its cursor and relief.
+
+The NoteBook widget can be used to display many windows in a
+limited space using a "notebook" metaphore. The notebook is divided
+into a stack of pages (windows). At one time only one of these pages
+can be shown. The user can navigate through these pages by choosing
+the visual "tabs" at the top of the NoteBook widget.
+'\"
+'\"----------------------------------------------------------------------
+.SH WIDGET COMMANDS
+.PP
+'\"
+The \fBtixNoteBook\fR command creates a new Tcl command whose name is
+the same as the path name of the NoteBook widget's window.  This
+command may be used to invoke various operations on the widget. It has
+the following general form:
+'\"
+.RS
+.CS
+'\"
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+.RE
+'\"
+\fIPathName\fR is the name of the command, which is the same as the
+NoteBook widget's path name. \fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command. The following commands
+are possible for NoteBook widgets:
+'\"
+'\"
+.TP 
+\fIpathName \fBadd\fI pageName \fR?\fIoption value ...\fR?
+'\"
+Adds a new notebook page subwidget into the NoteBook widget.
+Additional parameters may be supplied to configure this page
+subwidget. Possible options are:
+'\"
+.RS
+.TP
+\fB\-anchor\fR
+'\"
+Specifies how the information in a tab (e.g. text or a bitmap) is to
+be displayed in the widget. Must be one of the values \fBn\fR,
+\fBne\fR, \fBe\fR, \fBse\fR, \fBs\fR, \fBsw\fR, \fBw\fR, \fBnw\fR, or
+\fBcenter\fR. For example, nw means display the information such that
+its top-left corner is at the top-left corner of the widget.
+'\"
+.TP
+\fB\-bitmap\fR
+'\"
+Specifies a bitmap to display on the tab of this page. The bitmap is
+displayed only if none of the \fB-label\fR or \fB-image\fR options are
+specified.
+'\"
+.TP
+\fB\-createcmd\fR
+'\"
+Specifies a TCL command to be called the first time a page is shown on
+the screen. This option can be used to delay the creation of the
+contents of a page until necessary. Therefore, it can be used to speed
+up interface creation process especially when there are a large number
+of pages in a NoteBook widget.
+'\"
+.TP
+\fB\-image\fR
+'\"
+Specifies an image to display on the tab of this page. The image is
+displayed only if the \fB-label\fR options is not specified.
+'\"
+.TP
+\fB\-justify\fR
+'\"
+When there are multiple lines of text displayed in a tab, this option
+determines how the lines line up with each other. Must be one of left,
+center, or right.  \fBLeft\fR means that the lines' left edges all
+line up, \fBcenter\fR means that the lines' centers are aligned, and
+\fBright\fR means that the lines' right edges line up.
+'\"
+.TP
+\fB\-label\fR
+'\"
+Specifies a text label string to display on the tab of this page subwidget.
+'\"
+.TP
+\fB\-raisecmd\fR
+'\"
+Specifies a TCL command to be called whenever this page is raised by
+the user.
+'\"
+.TP
+\fB\-state\fR
+'\"
+Specifies whether this page can be raised by the user. Must be either
+\fBnormal\fR or \fBdisabled\fR.
+'\"
+.TP
+\fB\-underline\fR
+'\"
+Specifies the integer index of a character to underline in the tab.
+This option is used by the default bindings to implement keyboard
+traversal for menu buttons and menu entries.  0 corresponds to the
+first character of the text displayed in the widget, 1 to the next
+character, and so on.
+'\"
+.TP
+\fB\-wraplength\fR
+'\"
+This option specifies the maximum line length of the label string on
+this tab. If the line length of the label string exceeds this length,
+it is wrapped onto the next line, so that no line is longer than the
+specified length. The value may be specified in any of the standard
+forms for screen distances. If this value is less than or equal to 0
+then no wrapping is done: lines will break only at newline characters
+in the text.
+'\"
+'\"
+.RE
+'\"
+.TP
+\fIpathName \fBcget\fR \fIoption\fR
+'\"
+Returns the current value of the configuration option given by
+\fIoption\fR.\fIOption\fR may have any of the values accepted by the
+\fBtixNoteBook\fR command.
+'\"
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? \fI?value option value ...\fR?
+'\"
+Query or modify the configuration options of the widget.  If no
+\fIoption\fR is specified, returns a list describing all of the
+available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list). If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s); in
+this case the command returns an empty string.  \fIOption\fR may have
+any of the values accepted by the \fBtixNoteBook\fR command.
+'\"
+'\"
+.TP
+\fIpathName \fBdelete\fI pageName\fR?
+'\"
+Deletes the page identified by \fIpageName\fR.
+'\"
+.TP
+\fIpathName \fBpagecget\fR \fIpageName option\fR
+'\"
+Returns the current value of the configuration option given by
+\fIoption\fR in the page given by \fIpageName\fR. \fIOption\fR may
+have any of the values accepted by the \fBadd\fR widget command.
+'\"
+'\"
+.TP
+\fIpathName \fBpageconfigure\fI pageName \fR?\fIoption\fR? ?\fIvalue ...\fR?
+'\"
+'\"
+When no option is given, prints out the values of all options of this
+page. If \fIoption\fR is specified with no \fIvalue\fR, then the
+command returns the current value of that option. If one or more
+\fIoption\-value\fR pairs are specified, then the command modifies the
+given page's option(s) to have the given value(s); in this case the
+command returns an empty string. \fIOption\fR may be any of options
+accepted by the \fBadd\fR widget command.
+'\"
+.TP
+\fIpathName \fBpages\fR 
+'\"
+Returns a list of the names of all the pages.
+'\"
+.TP
+\fIpathName \fBraise \fIpageName\fR 
+'\"
+Raise the page identified by \fIpageName\fR.
+'\"
+.TP
+\fIpathName \fBraised\fR 
+'\"
+Returns the name of the currently raised page.
+'\"
+.TP
+\fIpathName \fBsubwidget \fI name ?args?\fR 
+'\"
+When no options are given, this command returns the pathname of the
+subwidget of the specified name.
+
+When options are given, the widget command of the specified subwidget
+will be called with these options.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH BINDINGS
+.PP
+.IP [1]
+When the user pressed the left mouse button over a notebook tab, the
+notebook page associated with that tab will be raised to the top of
+the stack of pages.
+'\"
+.PP
+.IP [2]
+The pages can also be selected using the keyboard. The user can type
+the \fB<Tab>\fR key to cycle among the set of pages. When the focus
+appears on the desired page, the user can type \fB<Return>\fR or
+\fB<space>\fR to select that page. Or, if the user wants to cancel the
+selection, he/she can type the \fB<Escape>\fR key.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH KEYWORDS
+Tix(n)
+
+
+

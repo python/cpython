@@ -1,0 +1,149 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH tclsh 1 "" Tcl "Tcl Applications"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+tclsh \- Simple shell containing Tcl interpreter
+.SH SYNOPSIS
+\fBtclsh\fR ?\fB\-encoding \fIname\fR? ?\fIfileName arg arg ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+\fBTclsh\fR is a shell-like application that reads Tcl commands
+from its standard input or from a file and evaluates them.
+If invoked with no arguments then it runs interactively, reading
+Tcl commands from standard input and printing command results and
+error messages to standard output.
+It runs until the \fBexit\fR command is invoked or until it
+reaches end-of-file on its standard input.
+If there exists a file \fB.tclshrc\fR (or \fBtclshrc.tcl\fR on
+the Windows platforms) in the home directory of
+the user, interactive \fBtclsh\fR evaluates the file as a Tcl script
+just before reading the first command from standard input.
+.SH "SCRIPT FILES"
+.PP
+If \fBtclsh\fR is invoked with arguments then the first few arguments
+specify the name of a script file, and, optionally, the encoding of
+the text data stored in that script file. Any additional arguments
+are made available to the script as variables (see below).
+Instead of reading commands from standard input \fBtclsh\fR will
+read Tcl commands from the named file;  \fBtclsh\fR will exit
+when it reaches the end of the file.
+The end of the file may be marked either by the physical end of
+the medium, or by the character,
+.QW \e032
+.PQ \eu001a ", control-Z" .
+If this character is present in the file, the \fBtclsh\fR application
+will read text up to but not including the character.  An application
+that requires this character in the file may safely encode it as
+.QW \e032 ,
+.QW \ex1a ,
+or
+.QW \eu001a ;
+or may generate it by use of commands such as \fBformat\fR or \fBbinary\fR.
+There is no automatic evaluation of \fB.tclshrc\fR when the name
+of a script file is presented on the \fBtclsh\fR command
+line, but the script file can always \fBsource\fR it if desired.
+.PP
+If you create a Tcl script in a file whose first line is
+.PP
+.CS
+\fB#!/usr/local/bin/tclsh\fR
+.CE
+.PP
+then you can invoke the script file directly from your shell if
+you mark the file as executable.
+This assumes that \fBtclsh\fR has been installed in the default
+location in /usr/local/bin;  if it is installed somewhere else
+then you will have to modify the above line to match.
+Many UNIX systems do not allow the \fB#!\fR line to exceed about
+30 characters in length, so be sure that the \fBtclsh\fR
+executable can be accessed with a short file name.
+.PP
+An even better approach is to start your script files with the
+following three lines:
+.PP
+.CS
+\fB#!/bin/sh
+# the next line restarts using tclsh \e
+exec tclsh "$0" ${1+"$@"}\fR
+.CE
+.PP
+This approach has three advantages over the approach in the previous
+paragraph.  First, the location of the \fBtclsh\fR binary does not have
+to be hard-wired into the script:  it can be anywhere in your shell
+search path.  Second, it gets around the 30-character file name limit
+in the previous approach.
+Third, this approach will work even if \fBtclsh\fR is
+itself a shell script (this is done on some systems in order to
+handle multiple architectures or operating systems:  the \fBtclsh\fR
+script selects one of several binaries to run).  The three lines
+cause both \fBsh\fR and \fBtclsh\fR to process the script, but the
+\fBexec\fR is only executed by \fBsh\fR.
+\fBsh\fR processes the script first;  it treats the second
+line as a comment and executes the third line.
+The \fBexec\fR statement cause the shell to stop processing and
+instead to start up \fBtclsh\fR to reprocess the entire script.
+When \fBtclsh\fR starts up, it treats all three lines as comments,
+since the backslash at the end of the second line causes the third
+line to be treated as part of the comment on the second line.
+.PP
+You should note that it is also common practice to install tclsh with
+its version number as part of the name.  This has the advantage of
+allowing multiple versions of Tcl to exist on the same system at once,
+but also the disadvantage of making it harder to write scripts that
+start up uniformly across different versions of Tcl.
+.SH "VARIABLES"
+.PP
+\fBTclsh\fR sets the following global Tcl variables in addition to those
+created by the Tcl library itself (such as \fBenv\fR, which maps
+environment variables such as \fBPATH\fR into Tcl):
+.TP 15
+\fBargc\fR
+.
+Contains a count of the number of \fIarg\fR arguments (0 if none),
+not including the name of the script file.
+.TP 15
+\fBargv\fR
+.
+Contains a Tcl list whose elements are the \fIarg\fR arguments,
+in order, or an empty string if there are no \fIarg\fR arguments.
+.TP 15
+\fBargv0\fR
+.
+Contains \fIfileName\fR if it was specified.
+Otherwise, contains the name by which \fBtclsh\fR was invoked.
+.TP 15
+\fBtcl_interactive\fR
+.
+Contains 1 if \fBtclsh\fR is running interactively (no
+\fIfileName\fR was specified and standard input is a terminal-like
+device), 0 otherwise.
+.SH PROMPTS
+.PP
+When \fBtclsh\fR is invoked interactively it normally prompts for each
+command with
+.QW "\fB% \fR" .
+You can change the prompt by setting the global
+variables \fBtcl_prompt1\fR and \fBtcl_prompt2\fR.  If variable
+\fBtcl_prompt1\fR exists then it must consist of a Tcl script
+to output a prompt;  instead of outputting a prompt \fBtclsh\fR
+will evaluate the script in \fBtcl_prompt1\fR.
+The variable \fBtcl_prompt2\fR is used in a similar way when
+a newline is typed but the current command is not yet complete;
+if \fBtcl_prompt2\fR is not set then no prompt is output for
+incomplete commands.
+.SH "STANDARD CHANNELS"
+.PP
+See \fBTcl_StandardChannels\fR for more explanations.
+.SH "SEE ALSO"
+auto_path(n), encoding(n), env(n), fconfigure(n)
+.SH KEYWORDS
+application, argument, interpreter, prompt, script file, shell

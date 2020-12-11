@@ -1,0 +1,362 @@
+<!-- $Id: tlist.tex.html,v 1.2 2000/11/11 23:35:14 idiscovery Exp $ -->
+
+<H1><A NAME=3>3 Tabular Listbox and Display Items</H1>
+
+<p><H2><A NAME=3.1>3.1 tixTList -- The Tix Tabular Listbox Widget</H2>
+
+<p>  <i> TixTList</i> is the Tabular Listbox Widget. It displays a list of
+  items in a tabular format. For example the TixTList widget in figure
+  <a href=tlist.tex.html#3-1>3-1 </a> displays files in a directory in rows and columns.
+
+<p><blockquote><a name=3-1>
+<center><img src=fig/tlist/tlist.gif></center>
+<hr><center><h3>(Figure 3-1) Files Displayed in a TixTList Widget in a Tabular Format</center></h3>
+
+</blockquote>
+
+<p><blockquote><a name=3-2>
+<center><img src=fig/tlist/joe.gif></center>
+<hr><center><h3>(Figure 3-2) Employee Names Displayed in a TixTList Widget</center></h3>
+
+</blockquote>
+
+<p>  TixTList does all what the standard Tk listbox widget can do, i.e,
+  it displays a list of items. However, TixTList is superior to the
+  listbox widget is many respects. First, TixTList allows you to
+  display the items in a two dimensional format. This way, you can
+  display more items at a time. Usually, the user can locate the
+  desired items much faster in a two dimensional list than the one
+  dimensional list displayed by the Tk listbox widget.
+
+<p>  In addition, while the Tk listbox widget can only display text
+  items, the TixTList widget can display a multitude of types of
+  items: text, images and widgets. Also, while you can use only one
+  font and one color in a listbox widget, you can use many different
+  fonts and colors in a TixTList widget. In figure <a href=tlist.tex.html#3-1>3-1 </a>, we
+  use graphical images inside a tixTList widget to represent file
+  objects. In figure <a href=tlist.tex.html#3-2>3-2 </a>, we display the names of all
+  employees of a hypothetical company. Notice the use of a bold font
+  to highlight all employees whose first name is Joe.
+
+<p><H2><A NAME=3.2>3.2 Display Items</H2>
+
+<p>  Before we rush to discuss how to create the items inside a TixTList
+  widget, let's first spend some time on a very important topic about
+  the Tix library: the repationship between the display items and
+  their host widgets.
+
+<p>  We can better define the terms by taking a quick preview of the
+  TixHList widget, which will be covered in details in the next
+  chapter. Let's compare the items displayed on the two widgets in
+  figure <a href=tlist.tex.html#3-3>3-3 </a>. If we take a close look at the item
+  that shows the <code> usr</code> directory in the TixTList widget on the left
+  versus the TixHList widget on the right, we can see that this item
+  appears exactly the same on both widgets.
+
+<p>  If fact, all the items in these two widgets are of the <i> same</i>
+  type: they all display an image next to a textual name. The only
+  difference between these two widgets is how these items are
+  arranged. The TixTList widget arranges the items in rows and
+  columns, while the TixHList widget arranges the items in a
+  hierachical format.
+
+<p>  With this observation in mind, we can see a separation of tasks
+  berween the widgets and the items they display. We call the TixHList
+  and TixTList widgets in figure <a href=tlist.tex.html#3-3>3-3 </a> <i> host
+  widgets</i>: their task is to arrange the items according to their
+  particular rules. However, they don't really care what these items
+  display; they just treat the items as rectangle boxes. In contrast,
+  these items, which are called <i> display items</i> in Tix
+  terminology, controls the visual information they display, such as
+  the images, text strings, colors, fonts, etc. However, they don't
+  really care where on the host widget they will appear.
+
+<p>
+<blockquote><a name=3-3>
+<center><img src=fig/tlist/widgets.gif></center>
+<hr><center><h3>(Figure 3-3) The Same Type of Items Displayed in a TixTList (left) and a 
+  TixHList(right)</center></h3>
+
+</blockquote>
+
+<p><H3><A NAME=3.2.1>3.2.1 Advantages of Display Items</H3>
+
+<p>  It is easy to see the advantages of seperating the display items
+  from their host widgets. First, the display items are easy to
+  learn. Since they are the same across different types of
+  widgets. Once you learn about a type of display items, you will know
+  how to use them in all Tix widgets that support display items
+  (currently these include TixHList, TixTList and the spreadsheet
+  widget TixGrid, but the number is growing). In contrast, if you want
+  to create a text item for the Tk widgets, you will find out that the
+  listbox, text, canvas and entry widget each have a different method
+  of creating and manipulating text items, and it is quite annoying to
+  learn each of them individually.
+
+<p>  Second, the hosts widgets that use display items are extensible.
+  Because of the separation of task, the host widgets are not involved
+  in the implementation details of the display items. Therefore, if
+  you add a new type of display items, such as a <code> animation</code> type
+  that displays live video, the host widgets will gladly take them in
+  and display them. You don't need to modify the existing host widgets
+  at all. In contrast, if you want to display graphical images in the
+  existing Tk listbox widgets, you'd better set aside 100 hours to
+  rewrite it completely!
+
+<p>  Third, display items are good for writers of host widgets. Because
+  now they just need to implement the arrangement policy of the host
+  widgets. They don't need to worry about drawing at all because it is
+  all handled by the display items. This is a significant saving in
+  code because a widget that does not use display items has to spend
+  30% of its C code to do the drawing.
+
+<p><H3><A NAME=3.2.2>3.2.2 Display Items and Display Styles</H3>
+
+<p>  The appearance of a display item is controlled by a set of
+  attributes. For example, the <code> text</code> attribute controls the text
+  string displayed on the item and the <code> font</code> attribute specifies
+  what font should be used.
+
+<p>  Usually, each of the attributes falls into one of two categroies:
+  ``<i> individual</i>'' or ``<i> collective</i>''. For example, each of
+  the items inside a TixTList widget may display a different text
+  string; therefore we call the text string an <i> individual
+  attribute</i>. However, in most cases, the items share the same color,
+  font and spacing and we call these <i> collective attributes</i>.
+
+<p>  One question concerns where we keep the collective attribute for the
+  display items. Certainly, we can keep a <code> font</code> attribute for
+  each item, but this is not really an efficient solution. In fact, if
+  all the items have the same font, we would be keeping a duplicated
+  copy of the same font for each of the items we create. Since a host
+  widget may have many thousands of items, keeping thousands of
+  dupilcated copys of the same font, or any other collective
+  attributes, would be very wasteful.
+
+<p><blockquote><a name=3-4>
+<center><img src=fig/tlist/relation.gif></center>
+<hr><center><h3>(Figure 3-4) Relationship Between Display Items and Display Styles</center></h3>
+
+</blockquote>
+
+<p>
+  
+  To advoid the unnecessary duplication of resources, Tix stores the
+  collective attributes in special objects called <i> display
+  styles</i>. The relationship between display items and their styles is
+  depicted in figure <a href=tlist.tex.html#3-4>3-4 </a>. Each item holds its own
+  copy of the individual attributes, such as <code> text</code>. However, the
+  collective attributes are stored in the style objects. Each item has
+  a special <code> style</code> attribute that tells it which style it should
+  use. In figure <a href=tlist.tex.html#3-4>3-4 </a>, since items <i> a</i> and <i> b</i>
+  are assigned the same style, therefore, they share the same font and
+  color. Item <i> c</i> is assigned a different style, thus, it uses a
+  different font than <i> a</i> and <i> b</i>.
+
+<p>
+
+<p><H2><A NAME=3.3>3.3 Creating Display Items in the TixTList Widget</H2>
+
+<p>
+<H3><A NAME=3.3.1>3.3.1 Creating Display Items</H3>
+
+<p>  Now it's time to put our knowledge about host widgets, display items
+  and display styles into practice. The following example code creates
+  two items in a TixTList widget using the <code> insert</code> method:
+
+<p><!ignored:setlength>{0.0cm}
+<blockquote><pre>
+tixTList .t
+pack .t
+
+<p>.t insert end -itemtype text -text "First Item"  -underline 0
+.t insert end -itemtype text -text "Second Item" -underline 0
+
+<p>set picture [image create bitmap -file picture.xbm]
+.t insert end -itemtype image -image $picture
+</pre></blockquote>
+<!ignored:setlength>{0.2cm}
+
+<p>  <!ignored:nind> As we can see, the <code> insert</code> method of TixTList is very
+  similar to the <code> insert</code> method of the standard Tk listbox
+  widget: it inserts a new item into the TixTList widget.  The first
+  argument it takes is the location of the new item. For example <code>
+  0</code> indicates the first location in the list, <code> 1</code> indicates the
+  second location, and so on. Also the special keyword <code> end</code>
+  indicates the end of the list.
+
+<p>  Then, we can use the <code> -itemtype</code> switch to specify the type of
+  display item we want to create. There are currently four types of
+  items to choose from: <code> text</code>, <code> image</code>, <code> imagetext</code> and
+  <code> window</code>. In the above example, we create two items of the type
+  <code> text</code> and one item of the type <code> image</code>. The subsequent
+  arguments to the <code> insert</code> method set the configuration options
+  of the individual attributes of the new item. The available
+  options for these items are listed in figures ???
+  through ???.
+
+<p><H3><A NAME=3.3.2>3.3.2 Setting the Styles of the Display Items</H3>
+
+<p>  Note that in the above example, if we want to control the foreground
+  color of the text items, we cannot issue commands such as:
+
+<p><blockquote><pre>
+.t insert end -itemtype text -text "First Item" -foreground black
+</pre></blockquote>
+  because <code> -foreground</code> is not an individual attribute of the text
+  item. Instead, it is a collective attribute and must be accessed
+  using a display style object. To do that we can use the command <code>
+  tixItemStyle</code> to create display styles, as shown in the following
+  example:
+
+<p><blockquote><pre>
+set style1 [tixDisplayStyle text -font 8x13]
+set style2 [tixDisplayStyle text -font 8x13bold]
+
+<p>tixTList .t; pack .t
+
+<p>.t insert end -itemtype text -text "First Item"  -underline 0 <br>    -style $style1
+.t insert end -itemtype text -text "Second Item" -underline 0  <br>    -style $style2
+.t insert end -itemtype text -text "Third Item"  -underline 0  <br>    -style $style1
+</pre></blockquote>
+
+<p>
+  <!ignored:nind> The first argument of <code> tixDisplayStyle</code> specify the type
+  of style we want to create. Each type of display item needs its own
+  type of display styles. Therefore, for example, we cannot create a
+  style of type <code> text</code> and assign it to an item of type <code>
+  image</code>. The subsequent arguments to <code> tixDisplayStyle</code> set the
+  configuration options of the collective attributes defined by this
+  style. A complete list of the configuration options of each type of
+  the display style is in figures ??? through
+  ???.
+
+<p>  The <code> tixDisplayStyle</code> command returns the names of the newly
+  created styles to us and we use the variables <code> style1</code> and <code>
+  style2</code> to store these names. We can then assign the styles to the
+  display items by using the names of the styles. As shown in figure
+  <a href=tlist.tex.html#3-5>3-5 </a>, by assing these two styles to the <code>
+  -style</code> option of the display items, we assigned a medium-weight
+  font to the first and third item and a bold font to the second item.
+
+<p><blockquote><a name=3-5>
+
+<center><TABLE BORDER=0><TR> 
+<p> <td valign=bottom>
+     <img src=fig/tlist/twofont.gif>
+    <p><h4><center>Three <code> text</code> items in a TixTList</center></h4></td>
+<p> <td valign=bottom>
+     <img src=fig/tlist/twofont2.gif>
+    <p><h4><center>The <code> text</code> items with fonts switched</center></h4></td>
+ </TR></TABLE></center>
+<hr><center><h3>(Figure 3-5) Two Display Styles With Different Fonts</center></h3>
+</blockquote>
+
+<p>  The name of the style returned by <code> tixDisplayStyle</code> is also the
+  name of a command which we can use to control the style. For
+  example, we can use the following commands to switch the fonts in
+  the two styles we created in the above example:
+
+<p><blockquote><pre>
+$style1 configure -font 8x13bold
+$style2 configure -font 8x13
+</pre></blockquote>
+  After the execution of the above command, the font in the second
+  item in the TixTList widget becomes medium-weight and the font in
+  the first and third items becomes bold, as shown in figure
+  <a href=tlist.tex.html#3-5>3-5 </a>.
+
+<p><H3><A NAME=3.3.3>3.3.3 Configuring and Deleting the Items</H3>
+
+<p>  You can configure the individual attributes of the items using the
+  <code> entryconfigure</code> method. There is also the entrycget method for
+  querying the attributes of the items. To <code> delete</code> the items, you
+  can use the delete method. In the following example, we use these
+  two methods to change the first and third items to display the text
+  strings <code> One</code> and <code> Two</code> and change the third item to use the
+  style <code> $style2</code>. Then we delete the second item using the <code>
+  delete</code> command.
+  
+<blockquote><pre>
+.t entryconfigure 0 -text One
+.t entryconfigure 2 -text Two
+.t delete 1
+</pre></blockquote>
+
+<p><H3><A NAME=3.3.4>3.3.4 Choosing the Orientation and Number of Rows or Columns</H3>
+
+<p>  There are three options that controls the layout of the items in the
+  TixTList widget. The <code> -orientation</code> option can be set to either
+  vertical or horizontal. When <code> -orientation</code> is set to <code>
+  vertical</code>, the items are laid out vertically from top down and
+  wrapped to the next column when the bottom is reached (see figure
+  <a href=tlist.tex.html#3-6>3-6 </a>). The opposite layout policy is chosen if
+  <code> -orientation</code> is set to <code> horizontal</code> (see figure
+  <a href=tlist.tex.html#3-6>3-6 </a>).
+
+<p>  When the <code> -orientation</code> option is set to <code> vertical</code>,
+  normally the number of columns displayed depends on the number of
+  items in the TixTList widget: the more items there are, the more
+  columns will there be. However, we can use the <code> -columns</code> option
+  to control the number of columns: the items will be wrapped in a way
+  so that the number of columns produced will be exactly as dicated by
+  the <code> -columns</code> option.
+
+<p>  One use of the <code> -columns</code> option is to specify the same layout
+  policy as that of the standard Tk listbox widget. We can do this by
+  setting <code> -orientation</code> to vertical and <code> -columns</code> to <code>
+  1</code>. This way we can get a replacement listbox widget that can
+  display multiple fonts and colors and graphics!
+
+<p>  The counterpart of the <code> -columns</code> option is the <code> -rows</code>
+  option, which is used for the same purpose when the <code>
+  -orientation</code> option is set to <code> horizontal</code>.
+
+<p><blockquote><a name=3-6>
+
+<center><TABLE BORDER=0><TR> 
+<p> <td valign=bottom>
+     <img src=fig/tlist/vertical.gif>
+    <p><h4><center>Vertical Orientation</center></h4></td>
+<p> <td valign=bottom>
+     <img src=fig/tlist/horizontal.gif>
+    <p><h4><center>Horizontal Orientation</center></h4></td>
+ </TR></TABLE></center>
+<hr><center><h3>(Figure 3-6) The <code> -orientation</code> option of the TixSelect Widget</center></h3>
+</blockquote>
+
+<p><H3><A NAME=3.3.5>3.3.5 Event Handling</H3>
+
+<p>  You can handle the events in a TList widget using the <code>
+  -browsecmd</code> and <code> -command</code> options. The meanings of these two
+  options are silimar to their meanings in other Tix widgets such as
+  the ComboBox. Usually, the command specified by <code> -browsecmd</code> is
+  called when the user clicks or drags the mouse over the items or
+  presses the arrow keys. The command specified by <code> -command</code> is
+  called when the user double-clicks or presses the Return key.  These
+  commands are called with one extra argument --- the index of the
+  currently ``active'' item, which is usually the item under the mouse
+  cursor.
+
+<p><H3><A NAME=3.3.6>3.3.6 Selection</H3>
+
+<p>  The <code> -selectmode</code> option controls how many items the user can
+  select at one time. In the <code> single</code> and <code> browse</code> mode, the
+  user can select only one item at a time. In the <code> multiple</code> and
+  <code> extended</code> mode, the user can select multiple items; the <code>
+  extended</code> mode allows disjoint selections while the <code> multiple</code>
+  mode does not.
+
+<p>  Normally, the user selects the items using the mouse or the
+  keyboard. You can find out which items the user has selected with
+  the <code> info selection</code> method, which returns a list of the
+  currently selected items. You can also set the selection using the
+  <code> selection set</code> method. For example, the command <code> .tlist
+  selection set 3</code> selects the item whose index is <code> 3</code>. The
+  command <code> .tlist selection set 2 10</code> selects all the items at
+  index <code> 2</code> through <code> 10</code>. The method <code> selection clear</code>
+  empties the selection.
+
+<p>
+
+

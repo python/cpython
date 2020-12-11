@@ -1,0 +1,38 @@
+'\"
+'\" Copyright (c) 2003 by Simon Geard.  All rights reserved.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH lrepeat n 8.5 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+lrepeat \- Build a list by repeating elements
+.SH SYNOPSIS
+\fBlrepeat \fIcount \fR?\fIelement ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+The \fBlrepeat\fR command creates a list of size \fIcount * number of
+elements\fR by repeating \fIcount\fR times the sequence of elements
+\fIelement ...\fR.  \fIcount\fR must be a non-negative integer,
+\fIelement\fR can be any Tcl value.  Note that \fBlrepeat 1 element ...\fR
+is identical to \fBlist element ...\fR.
+.SH EXAMPLES
+.CS
+\fBlrepeat\fR 3 a
+      \fI\(-> a a a\fR
+\fBlrepeat\fR 3 [\fBlrepeat\fR 3 0]
+      \fI\(-> {0 0 0} {0 0 0} {0 0 0}\fR
+\fBlrepeat\fR 3 a b c
+      \fI\(-> a b c a b c a b c\fR
+\fBlrepeat\fR 3 [\fBlrepeat\fR 2 a] b c
+      \fI\(-> {a a} b c {a a} b c {a a} b c\fR
+.CE
+.SH "SEE ALSO"
+list(n), lappend(n), linsert(n), llength(n), lset(n)
+
+.SH KEYWORDS
+element, index, list

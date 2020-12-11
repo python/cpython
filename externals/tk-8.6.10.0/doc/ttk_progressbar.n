@@ -1,0 +1,124 @@
+'\"
+'\" Copyright (c) 2005 Joe English
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH ttk::progressbar n 8.5 Tk "Tk Themed Widget"
+.so man.macros
+.BS
+.SH NAME
+ttk::progressbar \- Provide progress feedback
+.SH SYNOPSIS
+\fBttk::progressbar\fR \fIpathName \fR?\fIoptions\fR?
+.BE
+.SH DESCRIPTION
+.PP
+A \fBttk::progressbar\fR widget shows the status of a long-running
+operation.  They can operate in two modes: \fIdeterminate\fR mode shows the
+amount completed relative to the total amount of work to be done, and
+\fIindeterminate\fR mode provides an animated display to let the user know
+that something is happening.
+.SO ttk_widget
+\-class	\-cursor	\-takefocus
+\-style
+.SE
+.SH "WIDGET-SPECIFIC OPTIONS"
+.OP \-length length Length
+Specifies the length of the long axis of the progress bar
+(width if horizontal, height if vertical).
+.OP \-maximum maximum Maximum
+A floating point number specifying the maximum \fB\-value\fR.
+Defaults to 100.
+.OP \-mode mode Mode
+One of \fBdeterminate\fR or \fBindeterminate\fR.
+.OP \-orient orient Orient
+One of \fBhorizontal\fR or \fBvertical\fR.
+Specifies the orientation of the progress bar.
+.OP \-phase phase Phase
+Read-only option.
+The widget periodically increments the value of this option
+whenever the \fB\-value\fR is greater than 0 and,
+in \fIdeterminate\fR mode, less than \fB\-maximum\fR.
+This option may be used by the current theme
+to provide additional animation effects.
+.OP \-value value Value
+The current value of the progress bar.
+In \fIdeterminate\fR mode, this represents the amount of work completed.
+In \fIindeterminate\fR mode, it is interpreted modulo \fB\-maximum\fR;
+that is, the progress bar completes one
+.QW cycle
+when the \fB\-value\fR increases by \fB\-maximum\fR.
+If \fB\-variable\fR is set to an existing variable, specifying \fB\-value\fR
+has no effect (the variable value takes precedence).
+.OP \-variable variable Variable
+The name of a global Tcl variable which is linked to the \fB\-value\fR.
+If specified to an existing variable, the \fB\-value\fR of the progress bar is
+automatically set to the value of the variable whenever
+the latter is modified.
+.SH "WIDGET COMMAND"
+.PP
+.TP
+\fIpathName \fBcget \fIoption\fR
+Returns the current value of the specified \fIoption\fR; see \fIttk::widget(n)\fR.
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? ?\fIvalue option value ...\fR?
+Modify or query widget options; see \fIttk::widget(n)\fR.
+.TP
+\fIpathName \fBidentify \fIx y\fR
+Returns the name of the element at position \fIx\fR, \fIy\fR.
+See \fIttk::widget(n)\fR.
+.TP
+\fIpathName \fBinstate \fIstatespec\fR ?\fIscript\fR?
+Test the widget state; see \fIttk::widget(n)\fR.
+.TP
+\fIpathName \fBstart\fR ?\fIinterval\fR?
+Begin autoincrement mode:
+schedules a recurring timer event that calls \fBstep\fR
+every \fIinterval\fR milliseconds.
+If omitted, \fIinterval\fR defaults to 50 milliseconds (20 steps/second).
+.TP
+\fIpathName \fBstate\fR ?\fIstateSpec\fR?
+Modify or query the widget state; see \fIttk::widget(n)\fR.
+.TP
+\fIpathName \fBstep\fR ?\fIamount\fR?
+Increments the \fB\-value\fR by \fIamount\fR.
+\fIamount\fR defaults to 1.0 if omitted.
+.TP
+\fIpathName \fBstop\fR
+Stop autoincrement mode:
+cancels any recurring timer event initiated by \fIpathName \fBstart\fR.
+.SH "STYLING OPTIONS"
+.PP
+The class name for a \fBttk::progressbar\fP is \fBTProgressbar\fP.
+.PP
+\fBTProgressbar\fP styling options configurable with \fBttk::style\fP
+are:
+.PP
+\fB\-background\fP \fIcolor\fP
+.br
+\fB\-bordercolor\fP \fIcolor\fP
+.br
+\fB\-darkcolor\fP \fIcolor\fP
+.br
+\fB\-lightcolor\fP \fIcolor\fP
+.br
+\fB\-maxphase\fP
+.RS
+For the aqua theme.
+.RE
+\fB\-period\fP
+.RS
+For the aqua theme.
+.RE
+\fB\-troughcolor\fP \fIcolor\fP
+.PP
+Some options are only available for specific themes.
+.PP
+See the \fBttk::style\fP manual page for information on how to configure
+ttk styles.
+.SH "SEE ALSO"
+ttk::widget(n)
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

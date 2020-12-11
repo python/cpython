@@ -1,0 +1,136 @@
+'\"
+'\" Copyright (c) 2007 Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH class n 0.1 TclOO "TclOO Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+oo::class \- class of all classes
+.SH SYNOPSIS
+.nf
+package require TclOO
+
+\fBoo::class\fI method \fR?\fIarg ...\fR?
+.fi
+.SH "CLASS HIERARCHY"
+.nf
+\fBoo::object\fR
+   \(-> \fBoo::class\fR
+.fi
+.BE
+.SH DESCRIPTION
+.PP
+Classes are objects that can manufacture other objects according to a pattern
+stored in the factory object (the class). An instance of the class is created
+by calling one of the class's factory methods, typically either \fBcreate\fR
+if an explicit name is being given, or \fBnew\fR if an arbitrary unique name
+is to be automatically selected.
+.PP
+The \fBoo::class\fR class is the class of all classes; every class is an
+instance of this class, which is consequently an instance of itself. This
+class is a subclass of \fBoo::object\fR, so every class is also an object.
+Additional metaclasses (i.e., classes of classes) can be defined if necessary
+by subclassing \fBoo::class\fR. Note that the \fBoo::class\fR object hides the
+\fBnew\fR method on itself, so new classes should always be made using the
+\fBcreate\fR method.
+.SS CONSTRUCTOR
+.PP
+The constructor of the \fBoo::class\fR class takes an optional argument which,
+if present, is sent to the \fBoo::define\fR command (along with the name of
+the newly-created class) to allow the class to be conveniently configured at
+creation time.
+.SS DESTRUCTOR
+The \fBoo::class\fR class does not define an explicit destructor. However,
+when a class is destroyed, all its subclasses and instances are also
+destroyed, along with all objects that it has been mixed into.
+.SS "EXPORTED METHODS"
+.TP
+\fIcls \fBcreate \fIname \fR?\fIarg ...\fR?
+.
+This creates a new instance of the class \fIcls\fR called \fIname\fR (which is
+resolved within the calling context's namespace if not fully qualified),
+passing the arguments, \fIarg ...\fR, to the constructor, and (if that returns
+a successful result) returning the fully qualified name of the created object
+(the result of the constructor is ignored). If the constructor fails (i.e.
+returns a non-OK result) then the object is destroyed and the error message is
+the result of this method call.
+.TP
+\fIcls \fBnew \fR?\fIarg ...\fR?
+.
+This creates a new instance of the class \fIcls\fR with a new unique name,
+passing the arguments, \fIarg ...\fR, to the constructor, and (if that returns
+a successful result) returning the fully qualified name of the created object
+(the result of the constructor is ignored). If the constructor fails (i.e.,
+returns a non-OK result) then the object is destroyed and the error message is
+the result of this method call.
+.RS
+.PP
+Note that this method is not exported by the \fBoo::class\fR object itself, so
+classes should not be created using this method.
+.RE
+.SS "NON-EXPORTED METHODS"
+.PP
+The \fBoo::class\fR class supports the following non-exported methods:
+.TP
+\fIcls \fBcreateWithNamespace\fI name nsName\fR ?\fIarg ...\fR?
+.
+This creates a new instance of the class \fIcls\fR called \fIname\fR (which is
+resolved within the calling context's namespace if not fully qualified),
+passing the arguments, \fIarg ...\fR, to the constructor, and (if that returns
+a successful result) returning the fully qualified name of the created object
+(the result of the constructor is ignored). The name of the instance's
+internal namespace will be \fInsName\fR unless that namespace already exists
+(when an arbitrary name will be chosen instead). If the constructor fails
+(i.e., returns a non-OK result) then the object is destroyed and the error
+message is the result of this method call.
+.SH EXAMPLES
+.PP
+This example defines a simple class hierarchy and creates a new instance of
+it. It then invokes a method of the object before destroying the hierarchy and
+showing that the destruction is transitive.
+.PP
+.CS
+\fBoo::class create\fR fruit {
+    method eat {} {
+        puts "yummy!"
+    }
+}
+\fBoo::class create\fR banana {
+    superclass fruit
+    constructor {} {
+        my variable peeled
+        set peeled 0
+    }
+    method peel {} {
+        my variable peeled
+        set peeled 1
+        puts "skin now off"
+    }
+    method edible? {} {
+        my variable peeled
+        return $peeled
+    }
+    method eat {} {
+        if {![my edible?]} {
+            my peel
+        }
+        next
+    }
+}
+set b [banana \fBnew\fR]
+$b eat               \fI\(-> prints "skin now off" and "yummy!"\fR
+fruit destroy
+$b eat               \fI\(-> error "unknown command"\fR
+.CE
+.SH "SEE ALSO"
+oo::define(n), oo::object(n)
+.SH KEYWORDS
+class, metaclass, object
+.\" Local variables:
+.\" mode: nroff
+.\" fill-column: 78
+.\" End:

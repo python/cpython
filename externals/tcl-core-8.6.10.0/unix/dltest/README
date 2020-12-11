@@ -1,0 +1,4 @@
+This directory contains several files for testing Tcl's dynamic
+loading/unloading capabilities.  If shared libraries are supported
+then the build system in the parent directory will create
+the shared libs and load them into the tcltest executable.

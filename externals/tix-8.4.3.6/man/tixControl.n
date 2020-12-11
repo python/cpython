@@ -1,0 +1,375 @@
+'\"
+'\" $Id: tixControl.n,v 1.2 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH tixControl n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH NAME
+tixControl \- Create and manipulate tixControl widgets
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SYNOPSIS
+\fBtixControl \fIpathName \fR?\fIoptions\fR?
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SUPER-CLASS
+The \fBTixControl\fR class is derived from the \fBTixLabelWidget\fR
+class and inherits all the commands, options and subwidgets of its
+super-class.
+'\"
+'\"----------------------------------------------------------------------
+.SH "STANDARD OPTIONS"
+'\"
+The Control widget supports all the standard options of a frame
+widget. See the \fBoptions(n)\fR manual entry for details on the
+standard options.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH "WIDGET-SPECIFIC OPTIONS"
+'\"
+'\"----------BEGIN
+.OP \-allowempty allowEmpty AllowEmpty
+Specifies whether the Control widget should allow the empty string
+as a valid input.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-autorepeat autorepeat AutoRepeat
+Specifies whether the Control widget should have autorepeat behavior.
+If set to be "true", the value of the Control widget will be
+automatically incremented or decremented when the user holds down the
+mouse button over the arrow buttons. Only values "true" and
+"false" will be recognized.
+'\"----------END
+'\"
+'\"
+'\"----------BEGIN
+.OP \-command command Command
+Specifies the command to be called when the \fB\-value\fR option of
+the Control widget is changed.  The command will be called with one
+arguments -- the new value of the Control widget.
+'\"----------END
+'\"
+'\"
+'\"----------BEGIN
+.OP \-decrcmd decrCmd DecrCmd
+Specifies a TCL command to be called when the the user presses the
+down-arrow button subwidget. This command is called with one parameter
+-- the current \fB\-value\fR of this Control widget. This
+command is to decrement this value by one step, according to its own
+definition of "decrement", and return the decremented value, which
+will be stored in the \fB\-value\fR of this Control widget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-disablecallback disableCallback DisableCallback
+A boolean value indicating whether callbacks should be disabled. When
+set to true, the TCL command specified by the \fB\-command\fR option
+is not executed when the \fB\-value\fR of the Control widget
+changes.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-disableforeground disableForeground DisableForeground
+The foreground color to use for of the entry subwidget when the
+Control widget is disabled.
+'\"----------END
+'\"
+'\"
+'\"----------BEGIN
+.OP \-incrcmd incrCmd IncrCmd
+Specifies a TCL command to be called when the the user presses the
+up-arrow button subwidget. This command is called with one parameter
+-- the current \fB\-value\fR of this Control widget. This
+command is to increment this value by one step, according to its own
+definition of "increment", and return the incremented value, which
+will be stored in the \fB\-value\fR of this Control widget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-initwait initwait Initwait
+Specifies how long the Control widget should wait initially before
+it starts to automatically increment or decrement its value in the
+autorepeat mode. In milliseconds.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-integer integer Integer
+A Boolean value specifying whether only integer numbers are accepted.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-label label Label
+Specifies the string to display as the label of this Control widget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-labelside labelSide LabelSide
+Specifies where the label should be displayed relative to the entry
+subwidget. Valid options are: \fBtop\fR, \fBleft\fR, \fBright\fR,
+\fBbottom\fR, \fBnone\fR or \fBacrosstop\fR.
+'\"----------END
+'\"
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBmax\fR
+Class:		\fBMax\fR
+Switch:		\fB\-max\fR
+Alias:		\fB\-ulimit\fR
+.fi
+.IP
+Specifies the upper limit of the value of the Control widget. When set
+to empty string, the Control widget has no upper limit.
+'\"----------END
+'\"'
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBmin\fR
+Class:		\fBMin\fR
+Switch:		\fB\-min\fR
+Alias:		\fB\-llimit\fR
+.fi
+.IP
+Specifies the lower limit of the value of the Control widget.When set
+to empty string, the Control widget has no lower limit.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-repeatrate repeatRate RepeatRate
+Specifies how often the value of the Control widget should be
+incremented or decremented when it is in the autorepeat mode. In
+milliseconds.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-selectmode selectMode SelectMode
+Specifies how the Control widget should react to \fC<KeyPress>\fR
+events. When set to "immediate", any user keyboard inputs will
+immediately change the \fB\-value\fR option. When set to "normal", the
+user keyboard inputs will be copied to the \fB\-value\fR option only
+if the\fC <Return>\fR key is pressed or the keyboard focus is
+changed. The use of the immediate mode is discouraged. For effective
+use of the Control widget, one should use the normal mode together
+with the \fBupdate\fR widget command (see below).
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-state state State
+Specifies the whether the Control widget is normal or
+disabled.  Only the values "normal" and "disabled" are recognized.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-step step Step
+Specifies by how much the value of the Control widget should be
+incremented or decrmented when the user press the arrow buttons.
+'\"----------END
+'\"
+'\"
+'\"----------BEGIN
+.OP \-validatecmd validateCmd ValidateCmd
+Specifies a TCL command to be called when the -value of the
+Control widget is about to change. This command is called
+with one parameter -- the new \fB\-value\fR entered by the user. This
+command is to validate this new value by returning a value it deems
+valid.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-value value Value
+Specifies the value of the Control widget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-variable variable Variable
+Specifies the global variable in which the value of the
+Control widget should be stored. The value of the Control widget
+will be automatically updated when this variable is changed.
+'\"----------END
+'\"
+'\"----------------------------------------------------------------------
+.SH SUBWIDGETS
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBdecr\fR
+Class:		\fBButton\fR
+.fi
+.IP
+The down arrow button.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBentry\fR
+Class:		\fBEntry\fR
+.fi
+.IP
+The entry that shows the value of this Control widget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBincr\fR
+Class:		\fBButton\fR
+.fi
+.IP
+The up arrow button.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBlabel\fR
+Class:		\fBLabel\fR
+.fi
+.IP
+The label subwidget.
+'\"----------END
+'\"
+.BE
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH DESCRIPTION
+'\"
+.PP
+'\"
+The \fBtixControl\fR command creates a new window (given by the
+\fIpathName\fR argument) and makes it into a Control widget.
+Additional options, described above, may be specified on the command
+line or in the option database to configure aspects of the
+Control widget such as its cursor and relief.
+
+The Control widget is also known as the \fBSpinBox\fR widget.
+It is generally used to control a value. The user can adjust the value
+by pressing the two arrow buttons or by entering the value directly
+into the entry. The new value will be checked against the user-defined
+upper and lower limits.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH WIDGET COMMANDS
+.PP
+'\"
+The \fBtixControl\fR command creates a new Tcl command whose name is
+the same as the path name of the Control widget's window.  This
+command may be used to invoke various operations on the widget. It has
+the following general form:
+'\"
+.RS
+.CS
+'\"
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+.RE
+'\"
+\fIPathName\fR is the name of the command, which is the same as the
+Control widget's path name.  \fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command.  The following commands
+are possible for Control widgets:
+'\"
+.TP
+\fIpathName \fBcget\fR \fIoption\fR
+'\"
+Returns the current value of the configuration option given by
+\fIoption\fR. \fIOption\fR may have any of the values accepted by the
+\fBtixControl\fR command.
+'\"
+'\"
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? \fI?value option value ...\fR?
+'\"
+Query or modify the configuration options of the widget.  If no
+\fIoption\fR is specified, returns a list describing all of the
+available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list).  If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s); in
+this case the command returns an empty string.  \fIOption\fR may have
+any of the values accepted by the \fBtixControl\fR command.
+'\"
+.TP
+\fIpathName \fBdecr\fR
+'\"
+Decrements the value of the Control widget by the step specified
+by the \fI\-step\fR option.
+'\"
+'\"
+.TP
+\fIpathName \fBincr\fR
+'\"
+Increments the value of the Control widget by the step
+specified by the \fI\-step\fR option.
+'\"
+'\"
+.TP
+\fIpathName \fBinvoke\fR
+'\"
+Causes the command specified by the \fI\-command\fR option to be
+invoked.
+'\"
+.TP
+\fIpathName \fBupdate\fR
+'\"
+If the user has modified the entry using keyboard inputs, the update
+command will \fBupdate\fR the \fB\-value\fR of this Control
+widget. When the Control widget's \fB\-selectmode\fR option is set to
+"normal", one should call the \fBupdate\fR command on this widget
+before examining its \fB\-value\fR option. This command has no effect
+in if the \fB\-selectmode\fR option is set to "immediate".
+'\"
+.TP
+\fIpathName \fBsubwidget \fI name ?args?\fR 
+'\"
+When no options are given, this command returns the pathname of the
+subwidget of the specified name.
+
+When options are given, the widget command of the specified subwidget
+will be called with these options.
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH BINDINGS
+.PP
+'\"
+When the user presses the up/down arrow buttons (or press the <Up> and
+<Down> arrow keys on the keyboard), the value of the tixControl widget
+is adjusted according to the \fB\-validatecmd\fR, \fB\-incrcmd\fR,
+\fB\-decrcmd\fR, \fB\-step\fR, \fB\-max\fR and \fB\-min\fR options.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH KEYWORDS
+Tix(n)
+
+

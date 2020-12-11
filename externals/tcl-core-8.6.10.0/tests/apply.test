@@ -1,0 +1,321 @@
+# Commands covered:  apply
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 2005-2006 Miguel Sofer
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2.2
+    namespace import -force ::tcltest::*
+}
+
+if {[info commands ::apply] eq {}} {
+    return
+}
+
+testConstraint memory [llength [info commands memory]]
+
+# Tests for wrong number of arguments
+
+test apply-1.1 {too few arguments} -returnCodes error -body {
+    apply
+} -result {wrong # args: should be "apply lambdaExpr ?arg ...?"}
+
+# Tests for malformed lambda
+
+test apply-2.0 {malformed lambda} -returnCodes error -body {
+    set lambda a
+    apply $lambda
+} -result {can't interpret "a" as a lambda expression}
+test apply-2.1 {malformed lambda} -returnCodes error -body {
+    set lambda [list a b c d]
+    apply $lambda
+} -result {can't interpret "a b c d" as a lambda expression}
+test apply-2.2 {malformed lambda} {
+    set lambda [list {{}} boo]
+    list [catch {apply $lambda} msg] $msg $::errorInfo
+} {1 {argument with no name} {argument with no name
+    (parsing lambda expression "{{}} boo")
+    invoked from within
+"apply $lambda"}}
+test apply-2.3 {malformed lambda} {
+    set lambda [list {{a b c}} boo]
+    list [catch {apply $lambda} msg] $msg $::errorInfo
+} {1 {too many fields in argument specifier "a b c"} {too many fields in argument specifier "a b c"
+    (parsing lambda expression "{{a b c}} boo")
+    invoked from within
+"apply $lambda"}}
+test apply-2.4 {malformed lambda} {
+    set lambda [list a(1) boo]
+    list [catch {apply $lambda} msg] $msg $::errorInfo
+} {1 {formal parameter "a(1)" is an array element} {formal parameter "a(1)" is an array element
+    (parsing lambda expression "a(1) boo")
+    invoked from within
+"apply $lambda"}}
+test apply-2.5 {malformed lambda} {
+    set lambda [list a::b boo]
+    list [catch {apply $lambda} msg] $msg $::errorInfo
+} {1 {formal parameter "a::b" is not a simple name} {formal parameter "a::b" is not a simple name
+    (parsing lambda expression "a::b boo")
+    invoked from within
+"apply $lambda"}}
+
+# Tests for runtime errors in the lambda expression
+
+test apply-3.1 {non-existing namespace} -body {
+    apply [list x {set x 1} ::NONEXIST::FOR::SURE] x
+} -returnCodes error -result {namespace "::NONEXIST::FOR::SURE" not found}
+test apply-3.2 {non-existing namespace} -body {
+    namespace eval ::NONEXIST::FOR::SURE {}
+    set lambda [list x {set x 1} ::NONEXIST::FOR::SURE]
+    apply $lambda x
+    namespace delete ::NONEXIST
+    apply $lambda x
+} -returnCodes error -result {namespace "::NONEXIST::FOR::SURE" not found}
+test apply-3.3 {non-existing namespace} -body {
+    apply [list x {set x 1} NONEXIST::FOR::SURE] x
+} -returnCodes error -result {namespace "::NONEXIST::FOR::SURE" not found}
+test apply-3.4 {non-existing namespace} -body {
+    namespace eval ::NONEXIST::FOR::SURE {}
+    set lambda [list x {set x 1} NONEXIST::FOR::SURE]
+    apply $lambda x
+    namespace delete ::NONEXIST
+    apply $lambda x
+} -returnCodes error -result {namespace "::NONEXIST::FOR::SURE" not found}
+
+test apply-4.1 {error in arguments to lambda expression} -body {
+    set lambda [list x {set x 1}]
+    apply $lambda
+} -returnCodes error -result {wrong # args: should be "apply lambdaExpr x"}
+test apply-4.2 {error in arguments to lambda expression} -body {
+    set lambda [list x {set x 1}]
+    apply $lambda a b
+} -returnCodes error -result {wrong # args: should be "apply lambdaExpr x"}
+test apply-4.3 {error in arguments to lambda expression} -body {
+    interp alias {} foo {} ::apply [list x {set x 1}]
+    foo a b
+} -cleanup {
+    rename foo {}
+} -returnCodes error -result {wrong # args: should be "foo x"}
+test apply-4.4 {error in arguments to lambda expression} -body {
+    interp alias {} foo {} ::apply [list x {set x 1}] a
+    foo b
+} -cleanup {
+    rename foo {}
+} -returnCodes error -result {wrong # args: should be "foo"}
+test apply-4.5 {error in arguments to lambda expression} -body {
+    set lambda [list x {set x 1}]
+    namespace eval a {
+	namespace ensemble create -command ::bar -map {id {::a::const foo}}
+	proc const val { return $val }
+	proc alias {object slot = command args} {
+	    set map [namespace ensemble configure $object -map]
+	    dict set map $slot [linsert $args 0 $command]
+	    namespace ensemble configure $object -map $map
+	}
+	proc method {object name params body} {
+	    set params [linsert $params 0 self]
+	    alias $object $name = ::apply [list $params $body] $object
+	}
+	method ::bar boo x {return "[expr {$x*$x}] - $self"}
+    }
+    bar boo
+} -cleanup {
+    namespace delete ::a
+} -returnCodes error -result {wrong # args: should be "bar boo x"}
+
+test apply-5.1 {runtime error in lambda expression} {
+    set lambda [list {} {error foo}]
+    set res [catch {apply $lambda}]
+    list $res $::errorInfo
+} {1 {foo
+    while executing
+"error foo"
+    (lambda term "{} {error foo}" line 1)
+    invoked from within
+"apply $lambda"}}
+
+# Tests for correct execution; as the implementation is the same as that for
+# procs, the general functionality is mostly tested elsewhere
+
+test apply-6.1 {info level} {
+    set lev [info level]
+    set lambda [list {} {info level}]
+    expr {[apply $lambda] - $lev}
+} 1
+test apply-6.2 {info level} {
+    set lambda [list {} {info level 0}]
+    apply $lambda
+} {apply {{} {info level 0}}}
+test apply-6.3 {info level} {
+    set lambda [list args {info level 0}]
+    apply $lambda x y
+} {apply {args {info level 0}} x y}
+
+# Tests for correct namespace scope
+
+namespace eval ::testApply {
+    proc testApply args {return testApply}
+}
+
+test apply-7.1 {namespace access} {
+    set ::testApply::x 0
+    set body {set x 1; set x}
+    list [apply [list args $body ::testApply]] $::testApply::x
+} {1 0}
+test apply-7.2 {namespace access} {
+    set ::testApply::x 0
+    set body {variable x; set x}
+    list [apply [list args $body ::testApply]] $::testApply::x
+} {0 0}
+test apply-7.3 {namespace access} {
+    set ::testApply::x 0
+    set body {variable x; set x 1}
+    list [apply [list args $body ::testApply]] $::testApply::x
+} {1 1}
+test apply-7.4 {namespace access} {
+    set ::testApply::x 0
+    set body {testApply}
+    apply [list args $body ::testApply]
+} testApply
+test apply-7.5 {namespace access} {
+    set ::testApply::x 0
+    set body {set x 1; set x}
+    list [apply [list args $body testApply]] $::testApply::x
+} {1 0}
+test apply-7.6 {namespace access} {
+    set ::testApply::x 0
+    set body {variable x; set x}
+    list [apply [list args $body testApply]] $::testApply::x
+} {0 0}
+test apply-7.7 {namespace access} {
+    set ::testApply::x 0
+    set body {variable x; set x 1}
+    list [apply [list args $body testApply]] $::testApply::x
+} {1 1}
+test apply-7.8 {namespace access} {
+    set ::testApply::x 0
+    set body {testApply}
+    apply [list args $body testApply]
+} testApply
+
+# Tests for correct argument treatment
+
+set applyBody {
+    set res {}
+    foreach v [info locals] {
+	if {$v eq "res"} continue
+	lappend res [list $v [set $v]]
+    }
+    set res
+}
+
+test apply-8.1 {args treatment} {
+    apply [list args $applyBody] 1 2 3
+} {{args {1 2 3}}}
+test apply-8.2 {args treatment} {
+    apply [list {x args} $applyBody] 1 2
+} {{x 1} {args 2}}
+test apply-8.3 {args treatment} {
+    apply [list {x args} $applyBody] 1 2 3
+} {{x 1} {args {2 3}}}
+test apply-8.4 {default values} {
+    apply [list {{x 1} {y 2}} $applyBody] 
+} {{x 1} {y 2}}
+test apply-8.5 {default values} {
+    apply [list {{x 1} {y 2}} $applyBody] 3 4
+} {{x 3} {y 4}}
+test apply-8.6 {default values} {
+    apply [list {{x 1} {y 2}} $applyBody] 3
+} {{x 3} {y 2}}
+test apply-8.7 {default values} {
+    apply [list {x {y 2}} $applyBody] 1
+} {{x 1} {y 2}}
+test apply-8.8 {default values} {
+    apply [list {x {y 2}} $applyBody] 1 3
+} {{x 1} {y 3}}
+test apply-8.9 {default values} {
+    apply [list {x {y 2} args} $applyBody] 1
+} {{x 1} {y 2} {args {}}}
+test apply-8.10 {default values} {
+    apply [list {x {y 2} args} $applyBody] 1 3
+} {{x 1} {y 3} {args {}}}
+
+# Tests for leaks
+
+test apply-9.1 {leaking internal rep} -setup {
+    proc getbytes {} {
+	set lines [split [memory info] "\n"]
+	lindex $lines 3 3
+    }
+    set lam [list {} {set a 1}]
+} -constraints memory -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	::apply [lrange $lam 0 end]
+	set tmp $end
+	set end [getbytes]
+    }
+    set leakedBytes [expr {$end - $tmp}]
+} -cleanup {
+    rename getbytes {}
+    unset -nocomplain lam end i tmp leakedBytes
+} -result 0
+test apply-9.2 {leaking internal rep} -setup {
+    proc getbytes {} {
+	set lines [split [memory info] "\n"]
+	lindex $lines 3 3
+    }
+} -constraints memory -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	::apply [list {} {set a 1}]
+	set tmp $end
+	set end [getbytes]
+    }
+    set leakedBytes [expr {$end - $tmp}]
+} -cleanup {
+    rename getbytes {}
+    unset -nocomplain end i tmp leakedBytes
+} -result 0
+test apply-9.3 {leaking internal rep} -setup {
+    proc getbytes {} {
+	set lines [split [memory info] "\n"]
+	lindex $lines 3 3
+    }
+} -constraints memory -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	set x [list {} {set a 1} ::NS::THAT::DOES::NOT::EXIST]
+	catch {::apply $x}
+	set x {}
+	set tmp $end
+	set end [getbytes]
+    }
+    set leakedBytes [expr {$end - $tmp}]
+} -cleanup {
+    rename getbytes {}
+    unset -nocomplain end i x tmp leakedBytes
+} -result 0
+
+# Tests for the avoidance of recompilation
+
+# cleanup
+
+namespace delete testApply
+
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:

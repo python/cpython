@@ -1,0 +1,47 @@
+<HEAD>
+<TITLE> Creating Display Items<A NAME=331>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html821 HREF=subsubsection3_5_3_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html819 HREF=subsection3_5_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html813 HREF=subsection3_5_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html823 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html822 HREF=subsubsection3_5_3_2.html> Setting the Styles </A>
+<B>Up:</B> <A NAME=tex2html820 HREF=subsection3_5_3.html> Creating Display Items </A>
+<B> Previous:</B> <A NAME=tex2html814 HREF=subsection3_5_3.html> Creating Display Items </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00053100000000000000> Creating Display Items<A NAME=331>&nbsp;</A></A></H3>
+<P>
+Now it's time to put our knowledge about host widgets, display items
+  and display styles into practice. The following example code creates
+  two items in a TixTList widget using the <tt>insert</tt> method:
+<P>
+<blockquote> <P><tt> tixTList .t<BR>
+pack .t<BR>
+<BR>
+.t insert end -itemtype text -text &quot;First Item&quot;  -underline 0<BR>
+.t insert end -itemtype text -text &quot;Second Item&quot; -underline 0<BR>
+<BR>
+set picture [image create bitmap -file picture.xbm]<BR>
+.t insert end -itemtype image -image $picture</tt>
+<P></blockquote>
+<P>
+As we can see, the <tt>insert</tt> method of TixTList is very similar to the
+  <tt>insert</tt> method of the standard Tk listbox widget: it inserts a new
+  item into the TixTList widget.  The first argument it takes is the
+  location of the new item. For example <tt>0</tt> indicates the first
+  location in the list, <tt>1</tt> indicates the second location, and so
+  on. Also the special keyword <tt>end</tt> indicates the end of the list.
+<P>
+   Then, we can use the <tt>-itemtype</tt> switch to specify the type of
+  display item we want to create. There are currently four types of items
+  to choose from: <tt>text</tt>, <tt>image</tt>, <tt>imagetext</tt> and <tt>window</tt>. In the above example, we create two items of the type <tt>text</tt>
+  and one item of the type <tt>image</tt>. The subsequent arguments to the
+  <tt>insert</tt> method set the configuration options of the individual
+  attributes of the new item.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

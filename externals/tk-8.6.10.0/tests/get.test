@@ -1,0 +1,138 @@
+# This file is a Tcl script to test out the procedures in the file
+# tkGet.c.  It is organized in the standard fashion for Tcl
+# white-box tests.
+#
+# Copyright (c) 1998 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+namespace import -force tcltest::test
+
+test get-1.1 {Tk_GetAnchorFromObj} -setup {
+    button .b
+} -body {
+    .b configure -anchor n
+    .b cget -anchor
+} -cleanup {
+    destroy .b
+} -result {n}
+test get-1.2 {Tk_GetAnchorFromObj} -setup {
+    button .b
+} -body {
+    .b configure -anchor ne
+    .b cget -anchor
+} -cleanup {
+    destroy .b
+} -result {ne}
+test get-1.3 {Tk_GetAnchorFromObj} -setup {
+    button .b
+} -body {
+    .b configure -anchor e
+    .b cget -anchor
+} -cleanup {
+    destroy .b
+} -result {e}
+test get-1.4 {Tk_GetAnchorFromObj} -setup {
+    button .b
+} -body {
+    .b configure -anchor se
+    .b cget -anchor
+} -cleanup {
+    destroy .b
+} -result {se}
+test get-1.5 {Tk_GetAnchorFromObj} -setup {
+    button .b
+} -body {
+    .b configure -anchor s
+    .b cget -anchor
+} -cleanup {
+    destroy .b
+} -result {s}
+test get-1.6 {Tk_GetAnchorFromObj} -setup {
+    button .b
+} -body {
+    .b configure -anchor sw
+    .b cget -anchor
+} -cleanup {
+    destroy .b
+} -result {sw}
+test get-1.7 {Tk_GetAnchorFromObj} -setup {
+    button .b
+} -body {
+    .b configure -anchor w
+    .b cget -anchor
+} -cleanup {
+    destroy .b
+} -result {w}
+test get-1.8 {Tk_GetAnchorFromObj} -setup {
+    button .b
+} -body {
+    .b configure -anchor nw
+    .b cget -anchor
+} -cleanup {
+    destroy .b
+} -result {nw}
+test get-1.9 {Tk_GetAnchorFromObj} -setup {
+    button .b
+} -body {
+    .b configure -anchor n
+    .b cget -anchor
+} -cleanup {
+    destroy .b
+} -result {n}
+test get-1.10 {Tk_GetAnchorFromObj} -setup {
+    button .b
+} -body {
+    .b configure -anchor center
+    .b cget -anchor
+} -cleanup {
+    destroy .b
+} -result {center}
+test get-1.11 {Tk_GetAnchorFromObj - error} -setup {
+    button .b
+} -body {
+    .b configure -anchor unknown
+} -cleanup {
+    destroy .b
+} -returnCodes {error} -result {bad anchor "unknown": must be n, ne, e, se, s, sw, w, nw, or center}
+
+
+test get-2.1 {Tk_GetJustifyFromObj} -setup {
+    button .b
+} -body {
+    .b configure -justify left
+    .b cget -justify
+} -cleanup {
+    destroy .b
+} -result {left}
+test get-2.2 {Tk_GetJustifyFromObj} -setup {
+    button .b
+} -body {
+    .b configure -justify right
+    .b cget -justify
+} -cleanup {
+    destroy .b
+} -result {right}
+test get-2.3 {Tk_GetJustifyFromObj} -setup {
+    button .b
+} -body {
+    .b configure -justify center
+    .b cget -justify
+} -cleanup {
+    destroy .b
+} -result {center}
+test get-2.4 {Tk_GetJustifyFromObj - error} -setup {
+    button .b
+} -body {
+    .b configure -justify stupid
+} -cleanup {
+    destroy .b
+} -returnCodes {error} -result {bad justification "stupid": must be left, right, or center}
+
+# cleanup
+cleanupTests
+return
+

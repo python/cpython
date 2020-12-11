@@ -1,0 +1,309 @@
+# Commands covered:  history
+#
+# This file contains a collection of tests for one or more of the Tcl built-in
+# commands.  Sourcing this file into Tcl runs the tests and generates output
+# for errors.  No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+  
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+# The history command might be autoloaded...
+if {[catch {history}]} {
+    testConstraint history 0
+} else {
+    testConstraint history 1
+}
+
+if {[testConstraint history]} {
+    set num [history nextid]
+    history keep 3
+    history add {set a 12345}
+    history add {set b [format {A test %s} string]}
+    history add {Another test}
+} else {
+    # Dummy value, must be numeric
+    set num 0
+}
+
+# "history event"
+
+test history-1.1 {event option} history {history event -1} \
+	{set b [format {A test %s} string]}
+test history-1.2 {event option} history {history event $num} \
+	{set a 12345}
+test history-1.3 {event option} history {history event [expr $num+2]} \
+	{Another test}
+test history-1.4 {event option} history {history event set} \
+	{set b [format {A test %s} string]}
+test history-1.5 {event option} history {history e "* a*"} \
+	{set a 12345}
+test history-1.6 {event option} history {catch {history event *gorp} msg} 1
+test history-1.7 {event option} history {
+    catch {history event *gorp} msg
+    set msg
+} {no event matches "*gorp"}
+test history-1.8 {event option} history {history event} \
+	{set b [format {A test %s} string]}
+test history-1.9 {event option} history {catch {history event 123 456} msg} 1
+test history-1.10 {event option} history {
+    catch {history event 123 456} msg
+    set msg
+} {wrong # args: should be "history event ?event?"}
+
+# "history redo"
+
+if {[testConstraint history]} {
+    set a 0
+    history redo -2
+}
+test history-2.1 {redo option} history {set a} 12345
+if {[testConstraint history]} {
+    set b 0
+    history redo
+}
+test history-2.2 {redo option} history {set b} {A test string}
+test history-2.3 {redo option} history {catch {history redo -3 -4}} 1
+test history-2.4 {redo option} history {
+    catch {history redo -3 -4} msg
+    set msg
+} {wrong # args: should be "history redo ?event?"}
+
+# "history add"
+
+if {[testConstraint history]} {
+    history add "set a 444" exec
+}
+test history-3.1 {add option} history {set a} 444
+test history-3.2 {add option} history {catch {history add "set a 444" execGorp}} 1
+test history-3.3 {add option} history {
+    catch {history add "set a 444" execGorp} msg
+    set msg
+} {bad argument "execGorp": should be "exec"}
+test history-3.4 {add option} history {catch {history add "set a 444" a} msg} 1
+test history-3.5 {add option} history {
+    catch {history add "set a 444" a} msg
+    set msg
+} {bad argument "a": should be "exec"}
+if {[testConstraint history]} {
+    history add "set a 555" e
+}
+test history-3.6 {add option} history {set a} 555
+if {[testConstraint history]} {
+    history add "set a 666"
+}
+test history-3.7 {add option} history {set a} 555
+test history-3.8 {add option} history {catch {history add "set a 666" e f} msg} 1
+test history-3.9 {add option} history {
+    catch {history add "set a 666" e f} msg
+    set msg
+} {wrong # args: should be "history add event ?exec?"}
+
+# "history change"
+
+if {[testConstraint history]} {
+    history change "A test value"
+}
+test history-4.1 {change option} history {history event [expr {[history n]-1}]} \
+	"A test value"
+if {[testConstraint history]} {
+    history ch "Another test" -1
+}
+test history-4.2 {change option} history {history e} "Another test"
+test history-4.3 {change option} history {history event [expr {[history n]-1}]} \
+	"A test value"
+test history-4.4 {change option} history {catch {history change Foo 4 10}} 1
+test history-4.5 {change option} history {
+    catch {history change Foo 4 10} msg
+    set msg
+} {wrong # args: should be "history change newValue ?event?"}
+test history-4.6 {change option} history {
+    catch {history change Foo [expr {[history n]-4}]}
+} 1
+if {[testConstraint history]} {
+    set num [expr {[history n]-4}]
+}
+test history-4.7 {change option} history {
+    catch {history change Foo $num} msg
+    set msg
+} "event \"$num\" is too far in the past"
+
+# "history info"
+
+if {[testConstraint history]} {
+    set num [history n]
+    history add set\ a\ {b\nc\ d\ e}
+    history add {set b 1234}
+    history add set\ c\ {a\nb\nc}
+}
+test history-5.1 {info option} history {history info} [format {%6d  set a {b
+	c d e}
+%6d  set b 1234
+%6d  set c {a
+	b
+	c}} $num [expr $num+1] [expr $num+2]]
+test history-5.2 {info option} history {history i 2} [format {%6d  set b 1234
+%6d  set c {a
+	b
+	c}} [expr $num+1] [expr $num+2]]
+test history-5.3 {info option} history {catch {history i 2 3}} 1
+test history-5.4 {info option} history {
+    catch {history i 2 3} msg
+    set msg
+} {wrong # args: should be "history info ?count?"}
+test history-5.5 {info option} history {history} [format {%6d  set a {b
+	c d e}
+%6d  set b 1234
+%6d  set c {a
+	b
+	c}} $num [expr $num+1] [expr $num+2]]
+
+# "history keep"
+
+if {[testConstraint history]} {
+    history add "foo1"
+    history add "foo2"
+    history add "foo3"
+    history keep 2
+}
+test history-6.1 {keep option} history {history event [expr [history n]-1]} foo3
+test history-6.2 {keep option} history {history event -1} foo2
+test history-6.3 {keep option} history {catch {history event -3}} 1
+test history-6.4 {keep option} history {
+    catch {history event -3} msg
+    set msg
+} {event "-3" is too far in the past}
+if {[testConstraint history]} {
+    history k 5
+}
+test history-6.5 {keep option} history {history event -1} foo2
+test history-6.6 {keep option} history {history event -2} {}
+test history-6.7 {keep option} history {history event -3} {}
+test history-6.8 {keep option} history {history event -4} {}
+test history-6.9 {keep option} history {catch {history event -5}} 1
+test history-6.10 {keep option} history {catch {history keep 4 6}} 1
+test history-6.11 {keep option} history {
+    catch {history keep 4 6} msg
+    set msg
+} {wrong # args: should be "history keep ?count?"}
+test history-6.12 {keep option} history {catch {history keep}} 0
+test history-6.13 {keep option} history {
+    history keep
+} {5}
+test history-6.14 {keep option} history {catch {history keep -3}} 1
+test history-6.15 {keep option} history {
+    catch {history keep -3} msg
+    set msg
+} {illegal keep count "-3"}
+test history-6.16 {keep option} history {
+    catch {history keep butter} msg
+    set msg
+} {illegal keep count "butter"}
+
+# "history nextid"
+
+if {[testConstraint history]} {
+    set num [history n]
+    history add "Testing"
+    history add "Testing2"
+}
+test history-7.1 {nextid option} history {history event} "Testing"
+test history-7.2 {nextid option} history {history next} [expr $num+2]
+test history-7.3 {nextid option} history {catch {history nextid garbage}} 1
+test history-7.4 {nextid option} history {
+    catch {history nextid garbage} msg
+    set msg
+} {wrong # args: should be "history nextid"}
+
+# "history clear"
+
+if {[testConstraint history]} {
+    set num [history n]
+    history add "Testing"
+    history add "Testing2"
+}
+test history-8.1 {clear option} history {catch {history clear junk}} 1
+test history-8.2 {clear option} history {history clear} {}
+if {[testConstraint history]} {
+    history clear
+    history add "Testing"
+}
+test history-8.3 {clear option} history {history} {     1  Testing}
+
+# miscellaneous
+
+test history-9.1 {miscellaneous} history {catch {history gorp} msg} 1
+test history-9.2 {miscellaneous} history {
+    catch {history gorp} msg
+    set msg
+} {unknown or ambiguous subcommand "gorp": must be add, change, clear, event, info, keep, nextid, or redo}
+
+# History retains references; Bug 1ae12987cb
+test history-10.1 {references kept by history} -constraints history -setup {
+    interp create histtest
+    histtest eval {
+	# Trigger any autoloading that might be present
+	catch {history}
+	proc refcount {x} {
+	    set rep [::tcl::unsupported::representation $x]
+	    regexp {with a refcount of (\d+)} $rep -> rc
+	    # Ignore the references due to calling this procedure
+	    return [expr {$rc - 3}]
+	}
+    }
+} -body {
+    histtest eval {
+	# A fresh object, refcount 1 from the variable we write it to
+	set obj [expr rand()]
+	set baseline [refcount $obj]
+	lappend result [refcount $obj]
+	history add [list list $obj]
+	lappend result [refcount $obj]
+	history clear
+	lappend result [refcount $obj]
+    }
+} -cleanup {
+    interp delete histtest
+} -result {1 2 1}
+test history-10.2 {references kept by history} -constraints history -setup {
+    interp create histtest
+    histtest eval {
+	# Trigger any autoloading that might be present
+	catch {history}
+	proc refcount {x} {
+	    set rep [::tcl::unsupported::representation $x]
+	    regexp {with a refcount of (\d+)} $rep -> rc
+	    # Ignore the references due to calling this procedure
+	    return [expr {$rc - 3}]
+	}
+    }
+} -body {
+    histtest eval {
+	# A fresh object, refcount 1 from the variable we write it to
+	set obj [expr rand()]
+	set baseline [refcount $obj]
+	lappend result [refcount $obj]
+	history add [list list $obj]
+	lappend result [refcount $obj]
+	rename history {}
+	lappend result [refcount $obj]
+    }
+} -cleanup {
+    interp delete histtest
+} -result {1 2 1}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

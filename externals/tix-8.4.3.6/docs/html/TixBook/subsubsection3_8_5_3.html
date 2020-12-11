@@ -1,0 +1,78 @@
+<HEAD>
+<TITLE> Public Variable Configuration Methods<A NAME=652>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html1313 HREF=subsubsectionstar3_8_5_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html1311 HREF=subsection3_8_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html1305 HREF=subsubsectionstar3_8_5_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html1315 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html1314 HREF=subsubsectionstar3_8_5_4.html>  Configuration Methods and </A>
+<B>Up:</B> <A NAME=tex2html1312 HREF=subsection3_8_5.html> Declaring and Using </A>
+<B> Previous:</B> <A NAME=tex2html1306 HREF=subsubsectionstar3_8_5_2.html>  Type Checker</A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00085300000000000000> Public Variable Configuration Methods<A NAME=652>&nbsp;</A></A></H3>
+<P>
+After a widget instance is created, the user can assign new values
+  to the public variables using the configure method. For example, the
+  following code changes the <tt>-direction</tt> variable of the <tt>.arr</tt> instance to <tt>n</tt>.
+<P>
+<blockquote> <P><tt> .arr configure -direction n
+</tt>
+<P></blockquote>
+<P>In order for configuration to work, you have to define a
+  configuration method that does what the programmer expects. The
+  configuration method of a public variable is invoked whenever the
+  user calls the configure method to change the value of this
+  variable. The name of a configuration method must be the name of the
+  public variable prefixed by the creation command of the class and
+  <tt>:config</tt>. For example, the name configuration method for the
+  <tt>-direction</tt> variable of the TixArrowButton class is <tt>tixArrowButton:config-direction</tt>. The following code implements
+  this method:
+<P>
+<blockquote> <P><tt> proc tixArrowButton:config-direction {w value} {<BR>
+    upvar #0 $w data<BR>
+<BR>
+    $data(w:button) config -bitmap @$value.xbm<BR>
+}</tt>
+<P></blockquote>
+<P>Notice that when <tt>tixArrowButton:config-direction</tt> is called,
+  the <tt>value</tt> parameter contains the new value of the <tt>-direction</tt> variable but <tt>data(-direction)</tt> contains the <tt>old</tt> value. This is useful when the configuration method needs to
+  check the previous value of the variable before taking in the new
+  value.
+<P>If a type checker is defined for a variable, it will be called
+  before the configuration method is called. Therefore, the
+  configuration method can assume that the type of the <tt>value</tt>
+  parameter is got is always correct.
+<P>Sometimes it is necessary to override the value supplied by the
+  user. The following code illustrates this idea:
+<P>
+<blockquote> <P><tt> proc tixArrowButton:config-direction {w value} {<BR>
+    upvar #0 $w data<BR>
+<BR>
+    if {$value == &quot;n&quot;} {<BR>
+        set value s<BR>
+        set data(-direction) $value<BR>
+    }<BR>
+<BR>
+    $data(w:button) config -bitmap @$value.xbm<BR>
+    return $data(-direction)<BR>
+}</tt>
+<P></blockquote>
+<P>Notice the above code always overrides values of <tt>n</tt> to <tt>s</tt>. If you need to override the value, you must do the following two
+  things:
+<P>
+<blockquote> <UL><P><LI><P>Explicitly set the instance variable inside the configuration
+  method (the <tt>set data(-direction) $value</tt> line).
+<P><LI><P>Return the modified value from the configuration method.
+</UL>
+</blockquote>
+<P>If you do not need to override the value, you don't need to return
+  anything from the configuration method. In this case, the Tix
+  Intrinsics will assign the new value to the instance variable for
+  you.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

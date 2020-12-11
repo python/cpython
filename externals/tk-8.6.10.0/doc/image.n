@@ -1,0 +1,102 @@
+'\"
+'\" Copyright (c) 1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH image n 4.0 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+image \- Create and manipulate images
+.SH SYNOPSIS
+\fBimage\fR \fIoption \fR?\fIarg arg ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+The \fBimage\fR command is used to create, delete, and query images.
+It can take several different forms, depending on the
+\fIoption\fR argument.  The legal forms are:
+.TP
+\fBimage create \fItype \fR?\fIname\fR? ?\fIoption value ...\fR?
+Creates a new image and a command with the same name and returns its name.
+\fItype\fR specifies the type of the image, which must be one of
+the types currently defined (e.g., \fBbitmap\fR).
+\fIname\fR specifies the name for the image;  if it is omitted then
+Tk picks a name of the form \fBimage\fIx\fR, where \fIx\fR is
+an integer.
+There may be any number of \fIoption\fR\-\fIvalue\fR pairs,
+which provide configuration options for the new image.
+The legal set of options is defined separately for each image
+type;  see below for details on the options for built-in image types.
+If an image already exists by the given name then it is replaced
+with the new image and any instances of that image will redisplay
+with the new contents.
+It is important to note that the image command will silently overwrite any
+procedure that may currently be defined by the given name, so choose the
+name wisely.  It is recommended to use a separate namespace for image names
+(e.g., \fB::img::logo\fR, \fB::img::large\fR).
+.TP
+\fBimage delete \fR?\fIname name\fR ...?
+Deletes each of the named images and returns an empty string.
+If there are instances of the images displayed in widgets,
+the images will not actually be deleted until all of the instances
+are released.
+However, the association between the instances and the image
+manager will be dropped.
+Existing instances will retain their sizes but redisplay as
+empty areas.
+If a deleted image is recreated with another call to \fBimage create\fR,
+the existing instances will use the new image.
+.TP
+\fBimage height \fIname\fR
+Returns a decimal string giving the height of image \fIname\fR
+in pixels.
+.TP
+\fBimage inuse \fIname\fR
+Returns a boolean value indicating whether or not the image given by
+\fIname\fR is in use by any widgets.
+.TP
+\fBimage names\fR
+Returns a list containing the names of all existing images.
+.TP
+\fBimage type \fIname\fR
+Returns the type of image \fIname\fR (the value of the \fItype\fR
+argument to \fBimage create\fR when the image was created).
+.TP
+\fBimage types\fR
+Returns a list whose elements are all of the valid image types
+(i.e., all of the values that may be supplied for the \fItype\fR
+argument to \fBimage create\fR).
+.TP
+\fBimage width \fIname\fR
+Returns a decimal string giving the width of image \fIname\fR
+in pixels.
+.PP
+Additional operations (e.g. writing the image to a file) may be
+available as subcommands of the image instance command. See the manual
+page for the particular image type for details.
+.SH "BUILT-IN IMAGE TYPES"
+.PP
+The following image types are defined by Tk so they will be available
+in any Tk application.
+Individual applications or extensions may define additional types.
+.TP
+\fBbitmap\fR
+Each pixel in the image displays a foreground color, a background
+color, or nothing.
+See the \fBbitmap\fR manual entry for more information.
+.TP
+\fBphoto\fR
+Displays a variety of full-color images, using dithering to
+approximate colors on displays with limited color capabilities.
+See the \fBphoto\fR manual entry for more information.
+.SH "SEE ALSO"
+bitmap(n), options(n), photo(n)
+.SH KEYWORDS
+height, image, types of images, width
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

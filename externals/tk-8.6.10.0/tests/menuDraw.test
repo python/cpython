@@ -1,0 +1,717 @@
+# This file is a Tcl script to test drawing of menus in Tk.  It is
+# organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1996-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+namespace import -force tcltest::test
+imageInit
+
+test menuDraw-1.1 {TkMenuInitializeDrawingFields} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+} -cleanup {
+    deleteWindows
+} -result {.m1}
+
+
+test menuDraw-2.1 {TkInitializeMenuEntryDrawingFields} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command
+} -cleanup {
+    deleteWindows
+} -result {}
+
+
+test menuDraw-3.1 {TkMenuFreeDrawOptions} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    destroy .m1
+} -result {}
+
+
+test menuDraw-4.1 {TkMenuEntryFreeDrawOptions} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "This is a test"
+    destroy .m1
+} -result {}
+test menuDraw-4.2 {TkMenuEntryFreeDrawOptions} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add checkbutton -label "This is a test." -font "Courier 12" \
+        -activeforeground red -background green -selectcolor purple
+    destroy .m1
+} -result {}
+
+
+test menuDraw-5.1 {TkMenuConfigureDrawOptions - new menu} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+} -cleanup {
+    deleteWindows
+} -result {.m1}
+test menuDraw-5.2 {TkMenuConfigureDrawOptions - old menu} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 configure -fg red
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-5.3 {TkMenuConfigureDrawOptions - no disabledFg} -setup {
+    deleteWindows
+} -body {
+    menu .m1 -disabledforeground ""
+} -cleanup {
+    deleteWindows
+} -result {.m1}  
+
+
+test menuDraw-6.1 {TkMenuConfigureEntryDrawOptions - no tkfont specified} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "foo"
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-6.2 {TkMenuConfigureEntryDrawOptions - tkfont specified} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "foo" -font "Courier 12"
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-6.3 {TkMenuConfigureEntryDrawOptions - active state - wrong entry} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "foo"
+    .m1 entryconfigure 1 -state active
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-6.4 {TkMenuConfigureEntryDrawOptions - active state - correct entry} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "foo"
+    .m1 activate 1
+    .m1 entryconfigure 1 -state active
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-6.5 {TkMenuConfigureEntryDrawOptions - deactivate entry} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "foo"
+    .m1 activate 1
+    .m1 entryconfigure 1 -state normal
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-6.6 {TkMenuConfigureEntryDrawOptions - bad state} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "foo"
+    .m1 entryconfigure 1 -state foo
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {bad state "foo": must be active, normal, or disabled}
+test menuDraw-6.7 {TkMenuConfigureEntryDrawOptions - tkfont specified} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "foo" -font "Courier 12"
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-6.8 {TkMenuConfigureEntryDrawOptions - border specified} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "foo" -background "red"
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-6.9 {TkMenuConfigureEntryDrawOptions - foreground specified} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "foo" -foreground "red"
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-6.10 {TkMenuConfigureEntryDrawOptions - activeBorder specified} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "foo" -activebackground "red"
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-6.11 {TkMenuConfigureEntryDrawOptions - activeforeground specified} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "foo" -activeforeground "red"
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-6.12 {TkMenuConfigureEntryDrawOptions - selectcolor specified} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add radiobutton -label "foo" -selectcolor "red"
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-6.13 {TkMenuConfigureEntryDrawOptions - textGC disposal} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "foo" -font "Helvetica 12"
+    .m1 entryconfigure 1 -font "Courier 12"
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-6.14 {TkMenuConfigureEntryDrawOptions - activeGC disposal} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "foo" -activeforeground "red"
+    .m1 entryconfigure 1 -activeforeground "green"
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-6.15 {TkMenuConfigureEntryDrawOptions - disabledGC disposal} -setup {
+    deleteWindows
+} -body {
+    menu .m1 -disabledforeground "red"
+    .m1 add command -label "foo"
+    .m1 configure -disabledforeground "green"
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-6.16 {TkMenuConfigureEntryDrawOptions - indicatorGC disposal} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add radiobutton -label "foo" -selectcolor "red"
+    .m1 entryconfigure 1 -selectcolor "green"
+} -cleanup {
+    deleteWindows
+} -result {}
+
+
+test menuDraw-7.1 {TkEventuallyRecomputeMenu} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "This is a long label"
+    set tearoff [tk::TearOffMenu .m1]
+    update idletasks
+    .m1 entryconfigure 1 -label "foo"
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-7.2 {TkEventuallyRecomputeMenu - update pending} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "This is a long label"
+    set tearoff [tk::TearOffMenu .m1]
+    .m1 entryconfigure 1 -label "foo"
+} -cleanup {
+    deleteWindows
+} -result {}
+
+
+test menuDraw-8.1 {TkRecomputeMenu} -constraints {
+    win userInteraction
+} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 configure -postcommand [.m1 add command -label foo]
+    .m1 add command -label "Hit ESCAPE to make this menu go away."
+    .m1 post 0 0
+} -cleanup {
+    deleteWindows
+} -result {}
+
+
+test menuDraw-9.1 {TkEventuallyRedrawMenu - entry test} -setup {
+    deleteWindows
+} -body {
+    catch {unset foo}
+    menu .m1
+    set foo 0
+    .m1 add radiobutton -variable foo -label test
+    tk::TearOffMenu .m1
+    update idletasks
+    list [set foo test] [destroy .m1] [unset foo]
+} -result {test {} {}}
+test menuDraw-9.2 {TkEventuallyRedrawMenu - whole menu} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    tk::TearOffMenu .m1
+} -cleanup {
+    deleteWindows
+} -returnCodes ok -match glob -result *
+
+
+# Don't know how to test when window has been deleted and ComputeMenuGeometry
+# gets called.
+test menuDraw-10.1 {ComputeMenuGeometry - menubar} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label test
+    . configure -menu .m1
+    list [update idletasks] [. configure -menu ""]
+} -cleanup {
+    deleteWindows
+} -result {{} {}}
+test menuDraw-10.2 {ComputeMenuGeometry - non-menubar} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label test
+    update idletasks
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-10.3 {ComputeMenuGeometry - Resize necessary} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label test
+    update idletasks
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-10.4 {ComputeMenuGeometry - resize not necessary} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label test
+    update idletasks
+    .m1 entryconfigure 1 -label test
+    update idletasks
+} -cleanup {
+    deleteWindows
+} -result {}
+
+
+test menuDraw-11.1 {TkMenuSelectImageProc - entry selected; redraw not pending} -constraints {
+    testImageType 
+} -setup {
+    deleteWindows
+    imageCleanup
+} -body {
+    image create test image1
+    image create test image2
+    menu .m1
+    .m1 add checkbutton -image image1 -selectimage image2
+    .m1 invoke 1
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    update idletasks
+    list [image delete image2] [destroy .m1]
+} -cleanup {
+    imageCleanup
+} -result {{} {}}
+test menuDraw-11.2 {TkMenuSelectImageProc - entry selected; redraw pending} -constraints {
+    testImageType 
+} -setup {
+    deleteWindows
+    imageCleanup
+} -body {
+    image create test image1
+    image create test image2
+    menu .m1
+    .m1 add checkbutton -image image1 -selectimage image2
+    .m1 invoke 1
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [image delete image2] [destroy .m1]
+} -cleanup {
+    imageCleanup
+} -result {{} {}}
+test menuDraw-11.3 {TkMenuSelectImageProc - entry not selected} -constraints {
+    testImageType 
+} -setup {
+    deleteWindows
+    imageCleanup
+} -body {
+    image create test image1
+    image create test image2
+    menu .m1
+    .m1 add checkbutton -image image1 -selectimage image2
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    update idletasks
+    list [image delete image2] [destroy .m1]
+} -cleanup {
+    imageCleanup
+} -result {{} {}}
+
+#Don't know how to test missing tkwin in DisplayMenu
+test menuDraw-12.1 {DisplayMenu - menubar background} -constraints unix -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add cascade -label foo -menu .m2
+    . configure -menu .m1
+    list [update] [. configure -menu ""]
+} -cleanup {
+    deleteWindows
+} -result {{} {}}
+test menuDraw-12.2 {Display menu - no entries} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    update
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-12.3 {DisplayMenu - one entry} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label foo
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    update
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-12.4 {DisplayMenu - two entries} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "one"
+    .m1 add command -label "two"
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    update
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw.12.5 {DisplayMenu - two columns - first bigger} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "one"
+    .m1 add command -label "two"
+    .m1 add command -label "three" -columnbreak 1
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    update
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-12.5 {DisplayMenu - two column - second  bigger} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "one"
+    .m1 add command -label "two" -columnbreak 1
+    .m1 add command -label "three"
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    update
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw.12.7 {DisplayMenu - three columns} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "one"
+    .m1 add command -label "two" -columnbreak 1
+    .m1 add command -label "three"
+    .m1 add command -label "four"
+    .m1 add command -label "five"
+    .m1 add command -label "six"
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    update
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-12.6 {Display menu - testing for extra space and menubars} -constraints {
+    unix 
+} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add cascade -label foo
+    . configure -menu .m1
+    update
+    . configure -menu ""
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-12.7 {Display menu - extra space at end of menu} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add cascade -label foo
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    wm geometry $tearoff 200x100
+    update
+} -cleanup {
+    deleteWindows
+} -result {}
+
+
+test menuDraw-13.1 {TkMenuEventProc - Expose} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "one"
+    menu .m2
+    .m2 add command -label "two"
+    set tearoff1 [tk::TearOffMenu .m1 40 40]
+    set tearoff2 [tk::TearOffMenu .m2 40 40]
+    list [raise $tearoff2] [update]
+} -cleanup {
+    deleteWindows
+} -result {{} {}}
+test menuDraw-13.2 {TkMenuEventProc - ConfigureNotify} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "foo"
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [wm geometry $tearoff 200x100] [update]
+} -cleanup {
+    deleteWindows
+} -result {{} {}}
+# Testing deletes is hard, and I am going to do my best. Don't know how
+# to test the case where we have already cleared the tkwin field in the
+# menuPtr.
+test menuDraw-13.4 {TkMenuEventProc - simple delete} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    destroy .m1
+} -result {}
+test menuDraw-13.5 {TkMenuEventProc - nothing pending} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label foo
+    update idletasks
+    destroy .m1
+} -result {}
+
+
+test menuDraw-14.1 {TkMenuImageProc} -constraints testImageType -setup {
+    deleteWindows
+} -body {
+    catch {image delete image1}
+    menu .m1
+    image create test image1
+    .m1 add command -image image1
+    update idletasks
+    image delete image1
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-14.2 {TkMenuImageProc} -constraints testImageType -setup {
+    deleteWindows
+} -body {
+    catch {image delete image1}
+    menu .m1
+    image create test image1
+    .m1 add command -image image1
+    image delete image1
+} -cleanup {
+    deleteWindows
+} -result {}
+
+
+test menuDraw-15.1 {TkPostTearoffMenu - Basic posting} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "foo"
+    tk::TearOffMenu .m1 40 40
+} -cleanup {
+    deleteWindows
+} -returnCodes ok -match glob -result *
+test menuDraw-15.2 {TkPostTearoffMenu - Deactivation} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "foo" -state active
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    $tearoff index active
+} -cleanup {
+    deleteWindows
+} -result {none}
+test menuDraw-15.3 {TkPostTearoffMenu - post command} -setup {
+    deleteWindows
+} -body {
+    catch {unset foo}
+    menu .m1 -postcommand "set foo .m1"
+    .m1 add command -label "foo"
+    list [catch {tk::TearOffMenu .m1 40 40}] [set foo] [unset foo] [destroy .m1]
+} -result {0 .m1 {} {}}
+test menuDraw-15.4 {TkPostTearoffMenu - post command deleting the menu} -setup {
+    deleteWindows
+} -body {
+    menu .m1 -postcommand "destroy .m1"
+    .m1 add command -label "foo"
+    list [catch {tk::TearOffMenu .m1 40 40} msg] $msg [winfo exists .m1]
+} -result {0 {} 0}
+test menuDraw-15.5 {TkPostTearoffMenu - tearoff at edge of screen} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "foo"
+    set height [winfo screenheight .m1]
+    tk::TearOffMenu .m1 40 $height
+} -cleanup {
+    deleteWindows
+} -returnCodes ok -match glob -result *
+test menuDraw-15.6 {TkPostTearoffMenu - tearoff off right} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "foo"
+    set width [winfo screenwidth .m1]
+    tk::TearOffMenu .m1 $width 40
+} -cleanup {
+    deleteWindows
+} -returnCodes ok -match glob -result *
+
+
+test menuDraw-16.1 {TkPostSubmenu} -constraints nonUnixUserInteraction -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add cascade -label test -menu .m2
+    menu .m2
+    .m2 add command -label "Hit ESCAPE to make this menu go away."
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    $tearoff postcascade 0
+    $tearoff postcascade 0
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-16.2 {TkPostSubMenu} -constraints nonUnixUserInteraction -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add cascade -label "two" -menu .m2
+    .m1 add cascade -label "three" -menu .m3
+    menu .m2
+    .m2 add command -label "two"
+    menu .m3
+    .m3 add command -label "three"
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    $tearoff postcascade 0
+    $tearoff postcascade 1
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-16.3 {TkPostSubMenu} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add cascade -label test -menu .m2
+    .m1 postcascade 1
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-16.4 {TkPostSubMenu} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add cascade -label test
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    $tearoff postcascade 0
+} -cleanup {
+    deleteWindows
+} -result {}
+test menuDraw-16.5 {TkPostSubMenu} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add cascade -label test -menu .m2
+    menu .m2 -postcommand "glorp"
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    $tearoff postcascade test
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {invalid command name "glorp"}
+test menuDraw-16.6 {TkPostSubMenu} -constraints {
+    win userInteraction
+} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add cascade -label test -menu .m2
+    menu .m2
+    .m2 add command -label "Hit ESCAPE to get rid of this menu"
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    $tearoff postcascade 0 
+} -cleanup {
+    deleteWindows
+} -result {}
+
+
+test menuDraw-17.1 {AdjustMenuCoords - menubar} -constraints unix -setup {
+    deleteWindows
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add cascade -label test -menu .m2
+    menu .m2 -tearoff 0
+    .m2 add command -label foo
+    . configure -menu .m1
+    foreach w [winfo children .] {
+        if {[$w cget -type] == "menubar"} {
+            break
+        }
+    }
+    list [$w postcascade 0] [. configure -menu ""]
+} -cleanup {
+    deleteWindows
+} -result {{} {}}
+test menuDraw-17.2 {AdjustMenuCoords - menu} -constraints {
+    win userInteraction
+} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add cascade -label test -menu .m2
+    menu .m2
+    .m2 add command -label "Hit ESCAPE to make this menu go away"
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    $tearoff postcascade 0
+} -cleanup {
+    deleteWindows
+} -result {}
+
+# cleanup
+imageFinish
+deleteWindows
+cleanupTests
+return
+
+# Local variables:
+# mode: tcl
+# End:

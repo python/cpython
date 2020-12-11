@@ -1,0 +1,34 @@
+'\"
+'\" Copyright (c) 2006 by Donal K. Fellows.  All rights reserved.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH lreverse n 8.5 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+lreverse \- Reverse the order of a list
+.SH SYNOPSIS
+\fBlreverse \fIlist\fR
+.BE
+.SH DESCRIPTION
+.PP
+The \fBlreverse\fR command returns a list that has the same elements as its
+input list, \fIlist\fR, except with the elements in the reverse order.
+.SH EXAMPLES
+.CS
+\fBlreverse\fR {a a b c}
+      \fI\(-> c b a a\fR
+\fBlreverse\fR {a b {c d} e f}
+      \fI\(-> f e {c d} b a\fR
+.CE
+.SH "SEE ALSO"
+list(n), lsearch(n), lsort(n)
+
+.SH KEYWORDS
+element, list, reverse
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

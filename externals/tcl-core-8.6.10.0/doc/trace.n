@@ -1,0 +1,426 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2000 Ajuba Solutions.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH trace n "8.4" Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+trace \- Monitor variable accesses, command usages and command executions
+.SH SYNOPSIS
+\fBtrace \fIoption\fR ?\fIarg arg ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+This command causes Tcl commands to be executed whenever certain operations are
+invoked.  The legal \fIoption\fRs (which may be abbreviated) are:
+.TP
+\fBtrace add \fItype name ops ?args?\fR
+Where \fItype\fR is \fBcommand\fR, \fBexecution\fR, or \fBvariable\fR.
+.RS
+.TP
+\fBtrace add command\fR \fIname ops commandPrefix\fR
+.
+Arrange for \fIcommandPrefix\fR to be executed (with additional arguments)
+whenever command \fIname\fR is modified in one of the ways given by the list
+\fIops\fR. \fIName\fR will be resolved using the usual namespace resolution
+rules used by commands. If the command does not exist, an error will be
+thrown.
+.RS
+.PP
+\fIOps\fR indicates which operations are of interest, and is a list of
+one or more of the following items:
+.TP
+\fBrename\fR
+.
+Invoke \fIcommandPrefix\fR whenever the traced command is renamed.  Note that
+renaming to the empty string is considered deletion, and will not be traced
+with
+.QW \fBrename\fR .
+.TP
+\fBdelete\fR
+.
+Invoke \fIcommandPrefix\fR when the traced command is deleted. Commands can be
+deleted explicitly by using the \fBrename\fR command to rename the command to
+an empty string. Commands are also deleted when the interpreter is deleted,
+but traces will not be invoked because there is no interpreter in which to
+execute them.
+.PP
+When the trace triggers, depending on the operations being traced, a number of
+arguments are appended to \fIcommandPrefix\fR so that the actual command is as
+follows:
+.PP
+.CS
+\fIcommandPrefix oldName newName op\fR
+.CE
+.PP
+\fIOldName\fR and \fInewName\fR give the traced command's current (old) name,
+and the name to which it is being renamed (the empty string if this is a
+.QW delete
+operation).
+\fIOp\fR indicates what operation is being performed on the
+command, and is one of \fBrename\fR or \fBdelete\fR as
+defined above.  The trace operation cannot be used to stop a command
+from being deleted.  Tcl will always remove the command once the trace
+is complete.  Recursive renaming or deleting will not cause further traces
+of the same type to be evaluated, so a delete trace which itself
+deletes the command, or a rename trace which itself renames the
+command will not cause further trace evaluations to occur.
+Both \fIoldName\fR and \fInewName\fR are fully qualified with any namespace(s)
+in which they appear.
+.RE
+.TP
+\fBtrace add execution\fR \fIname ops commandPrefix\fR
+.
+Arrange for \fIcommandPrefix\fR to be executed (with additional arguments)
+whenever command \fIname\fR is executed, with traces occurring at the points
+indicated by the list \fIops\fR.  \fIName\fR will be resolved using the usual
+namespace resolution rules used by commands.  If the command does not exist,
+an error will be thrown.
+.RS
+.PP
+\fIOps\fR indicates which operations are of interest, and is a list of
+one or more of the following items:
+.TP
+\fBenter\fR
+Invoke \fIcommandPrefix\fR whenever the command \fIname\fR is executed,
+just before the actual execution takes place.
+.TP
+\fBleave\fR
+Invoke \fIcommandPrefix\fR whenever the command \fIname\fR is executed,
+just after the actual execution takes place.
+.TP
+\fBenterstep\fR
+.
+Invoke \fIcommandPrefix\fR for every Tcl command which is executed from the
+start of the execution of the procedure \fIname\fR until that
+procedure finishes. \fICommandPrefix\fR is invoked just before the actual
+execution of the Tcl command being reported takes place.  For example
+if we have
+.QW "proc foo {} { puts \N'34'hello\N'34' }" ,
+then an \fIenterstep\fR trace would be invoked just before
+.QW "\fIputs \N'34'hello\N'34'\fR"
+is executed.
+Setting an \fIenterstep\fR trace on a command \fIname\fR that does not refer
+to a procedure will not result in an error and is simply ignored.
+.TP
+\fBleavestep\fR
+.
+Invoke \fIcommandPrefix\fR for every Tcl command which is executed from the
+start of the execution of the procedure \fIname\fR until that
+procedure finishes. \fICommandPrefix\fR is invoked just after the actual
+execution of the Tcl command being reported takes place.
+Setting a \fIleavestep\fR trace on a command \fIname\fR that does not refer to
+a procedure will not result in an error and is simply ignored.
+.PP
+When the trace triggers, depending on the operations being traced, a
+number of arguments are appended to \fIcommandPrefix\fR so that the actual
+command is as follows:
+.PP
+For \fBenter\fR and \fBenterstep\fR operations:
+.PP
+.CS
+\fIcommandPrefix command-string op\fR
+.CE
+.PP
+\fICommand-string\fR gives the complete current command being
+executed (the traced command for a \fBenter\fR operation, an
+arbitrary command for a \fBenterstep\fR operation), including
+all arguments in their fully expanded form.
+\fIOp\fR indicates what operation is being performed on the
+command execution, and is one of \fBenter\fR or \fBenterstep\fR as
+defined above.  The trace operation can be used to stop the
+command from executing, by deleting the command in question.  Of
+course when the command is subsequently executed, an
+.QW "invalid command"
+error will occur.
+.PP
+For \fBleave\fR and \fBleavestep\fR operations:
+.PP
+.CS
+\fIcommandPrefix command-string code result op\fR
+.CE
+.PP
+\fICommand-string\fR gives the complete current command being
+executed (the traced command for a \fBenter\fR operation, an
+arbitrary command for a \fBenterstep\fR operation), including
+all arguments in their fully expanded form.
+\fICode\fR gives the result code of that execution, and \fIresult\fR
+the result string.
+\fIOp\fR indicates what operation is being performed on the
+command execution, and is one of \fBleave\fR or \fBleavestep\fR as
+defined above.
+Note that the creation of many \fBenterstep\fR or
+\fBleavestep\fR traces can lead to unintuitive results, since the
+invoked commands from one trace can themselves lead to further
+command invocations for other traces.
+.PP
+\fICommandPrefix\fR executes in the same context as the code that invoked
+the traced operation: thus the \fIcommandPrefix\fR, if invoked from a
+procedure, will have access to the same local variables as code in the
+procedure. This context may be different than the context in which the trace
+was created. If \fIcommandPrefix\fR invokes a procedure (which it normally
+does) then the procedure will have to use \fBupvar\fR or \fBuplevel\fR
+commands if it wishes to access the local variables of the code which invoked
+the trace operation.
+.PP
+While \fIcommandPrefix\fR is executing during an execution trace, traces
+on \fIname\fR are temporarily disabled. This allows the \fIcommandPrefix\fR
+to execute \fIname\fR in its body without invoking any other traces again.
+If an error occurs while executing the \fIcommandPrefix\fR, then the
+command \fIname\fR as a whole will return that same error.
+.PP
+When multiple traces are set on \fIname\fR, then for \fIenter\fR
+and \fIenterstep\fR operations, the traced commands are invoked
+in the reverse order of how the traces were originally created;
+and for \fIleave\fR and \fIleavestep\fR operations, the traced
+commands are invoked in the original order of creation.
+.PP
+The behavior of execution traces is currently undefined for a command
+\fIname\fR imported into another namespace.
+.RE
+.TP
+\fBtrace add variable\fI name ops commandPrefix\fR
+Arrange for \fIcommandPrefix\fR to be executed whenever variable \fIname\fR
+is accessed in one of the ways given by the list \fIops\fR.  \fIName\fR may
+refer to a normal variable, an element of an array, or to an array
+as a whole (i.e. \fIname\fR may be just the name of an array, with no
+parenthesized index).  If \fIname\fR refers to a whole array, then
+\fIcommandPrefix\fR is invoked whenever any element of the array is
+manipulated.  If the variable does not exist, it will be created but
+will not be given a value, so it will be visible to \fBnamespace which\fR
+queries, but not to \fBinfo exists\fR queries.
+.RS
+.PP
+\fIOps\fR indicates which operations are of interest, and is a list of
+one or more of the following items:
+.TP
+\fBarray\fR
+Invoke \fIcommandPrefix\fR whenever the variable is accessed or modified via
+the \fBarray\fR command, provided that \fIname\fR is not a scalar
+variable at the time that the \fBarray\fR command is invoked.  If
+\fIname\fR is a scalar variable, the access via the \fBarray\fR
+command will not trigger the trace.
+.TP
+\fBread\fR
+Invoke \fIcommandPrefix\fR whenever the variable is read.
+.TP
+\fBwrite\fR
+Invoke \fIcommandPrefix\fR whenever the variable is written.
+.TP
+\fBunset\fR
+Invoke \fIcommandPrefix\fR whenever the variable is unset.  Variables
+can be unset explicitly with the \fBunset\fR command, or
+implicitly when procedures return (all of their local variables
+are unset).  Variables are also unset when interpreters are
+deleted, but traces will not be invoked because there is no
+interpreter in which to execute them.
+.PP
+When the trace triggers, three arguments are appended to
+\fIcommandPrefix\fR so that the actual command is as follows:
+.PP
+.CS
+\fIcommandPrefix name1 name2 op\fR
+.CE
+.PP
+\fIName1\fR and \fIname2\fR give the name(s) for the variable
+being accessed:  if the variable is a scalar then \fIname1\fR
+gives the variable's name and \fIname2\fR is an empty string;
+if the variable is an array element then \fIname1\fR gives the
+name of the array and name2 gives the index into the array;
+if an entire array is being deleted and the trace was registered
+on the overall array, rather than a single element, then \fIname1\fR
+gives the array name and \fIname2\fR is an empty string.
+\fIName1\fR and \fIname2\fR are not necessarily the same as the
+name used in the \fBtrace variable\fR command:  the \fBupvar\fR
+command allows a procedure to reference a variable under a
+different name.
+\fIOp\fR indicates what operation is being performed on the
+variable, and is one of \fBread\fR, \fBwrite\fR, or \fBunset\fR as
+defined above.
+.PP
+\fICommandPrefix\fR executes in the same context as the code that invoked
+the traced operation:  if the variable was accessed as part of a Tcl
+procedure, then \fIcommandPrefix\fR will have access to the same local
+variables as code in the procedure.  This context may be different
+than the context in which the trace was created. If \fIcommandPrefix\fR
+invokes a procedure (which it normally does) then the procedure will
+have to use \fBupvar\fR or \fBuplevel\fR if it wishes to access the
+traced variable.  Note also that \fIname1\fR may not necessarily be
+the same as the name used to set the trace on the variable;
+differences can occur if the access is made through a variable defined
+with the \fBupvar\fR command.
+.PP
+For read and write traces, \fIcommandPrefix\fR can modify the variable to
+affect the result of the traced operation.  If \fIcommandPrefix\fR modifies
+the value of a variable during a read or write trace, then the new
+value will be returned as the result of the traced operation.  The
+return value from  \fIcommandPrefix\fR is ignored except that if it returns
+an error of any sort then the traced operation also returns an error
+with the same error message returned by the trace command (this
+mechanism can be used to implement read-only variables, for example).
+For write traces, \fIcommandPrefix\fR is invoked after the variable's value
+has been changed; it can write a new value into the variable to
+override the original value specified in the write operation.  To
+implement read-only variables, \fIcommandPrefix\fR will have to restore the
+old value of the variable.
+.PP
+While \fIcommandPrefix\fR is executing during a read or write trace, traces
+on the variable are temporarily disabled.  This means that reads and
+writes invoked by \fIcommandPrefix\fR will occur directly, without invoking
+\fIcommandPrefix\fR (or any other traces) again.  However, if
+\fIcommandPrefix\fR unsets the variable then unset traces will be invoked.
+.PP
+When an unset trace is invoked, the variable has already been deleted:
+it will appear to be undefined with no traces.  If an unset occurs
+because of a procedure return, then the trace will be invoked in the
+variable context of the procedure being returned to:  the stack frame
+of the returning procedure will no longer exist.  Traces are not
+disabled during unset traces, so if an unset trace command creates a
+new trace and accesses the variable, the trace will be invoked.  Any
+errors in unset traces are ignored.
+.PP
+If there are multiple traces on a variable they are invoked in order
+of creation, most-recent first.  If one trace returns an error, then
+no further traces are invoked for the variable.  If an array element
+has a trace set, and there is also a trace set on the array as a
+whole, the trace on the overall array is invoked before the one on the
+element.
+.PP
+Once created, the trace remains in effect either until the trace is
+removed with the \fBtrace remove variable\fR command described below,
+until the variable is unset, or until the interpreter is deleted.
+Unsetting an element of array will remove any traces on that element,
+but will not remove traces on the overall array.
+.PP
+This command returns an empty string.
+.RE
+.RE
+.TP
+\fBtrace remove \fItype name opList commandPrefix\fR
+Where \fItype\fR is either \fBcommand\fR, \fBexecution\fR or \fBvariable\fR.
+.RS
+.TP
+\fBtrace remove command\fI name opList commandPrefix\fR
+If there is a trace set on command \fIname\fR with the operations and
+command given by \fIopList\fR and \fIcommandPrefix\fR, then the trace is
+removed, so that \fIcommandPrefix\fR will never again be invoked.  Returns
+an empty string.   If \fIname\fR does not exist, the command will throw
+an error.
+.TP
+\fBtrace remove execution\fI name opList commandPrefix\fR
+If there is a trace set on command \fIname\fR with the operations and
+command given by \fIopList\fR and \fIcommandPrefix\fR, then the trace is
+removed, so that \fIcommandPrefix\fR will never again be invoked.  Returns
+an empty string.   If \fIname\fR does not exist, the command will throw
+an error.
+.TP
+\fBtrace remove variable\fI name opList commandPrefix\fR
+If there is a trace set on variable \fIname\fR with the operations and
+command given by \fIopList\fR and \fIcommandPrefix\fR, then the trace is
+removed, so that \fIcommandPrefix\fR will never again be invoked.  Returns
+an empty string.
+.RE
+.TP
+\fBtrace info \fItype name\fR
+Where \fItype\fR is either \fBcommand\fR, \fBexecution\fR or \fBvariable\fR.
+.RS
+.TP
+\fBtrace info command\fI name\fR
+Returns a list containing one element for each trace currently set on
+command \fIname\fR. Each element of the list is itself a list
+containing two elements, which are the \fIopList\fR and \fIcommandPrefix\fR
+associated with the trace.  If \fIname\fR does not have any traces set,
+then the result of the command will be an empty string.  If \fIname\fR
+does not exist, the command will throw an error.
+.TP
+\fBtrace info execution\fI name\fR
+Returns a list containing one element for each trace currently set on
+command \fIname\fR. Each element of the list is itself a list
+containing two elements, which are the \fIopList\fR and \fIcommandPrefix\fR
+associated with the trace.  If \fIname\fR does not have any traces set,
+then the result of the command will be an empty string.  If \fIname\fR
+does not exist, the command will throw an error.
+.TP
+\fBtrace info variable\fI name\fR
+Returns a list containing one element for each trace currently set on
+variable \fIname\fR.  Each element of the list is itself a list
+containing two elements, which are the \fIopList\fR and \fIcommandPrefix\fR
+associated with the trace.  If \fIname\fR does not exist or does not
+have any traces set, then the result of the command will be an empty
+string.
+.RE
+.PP
+For backwards compatibility, three other subcommands are available:
+.RS
+.TP
+\fBtrace variable \fIname ops command\fR
+This is equivalent to \fBtrace add variable \fIname ops command\fR.
+.TP
+\fBtrace vdelete \fIname ops command\fR
+This is equivalent to \fBtrace remove variable \fIname ops command\fR
+.TP
+\fBtrace vinfo \fIname\fR
+This is equivalent to \fBtrace info variable \fIname\fR
+.RE
+.PP
+These subcommands are deprecated and will likely be removed in a
+future version of Tcl.  They use an older syntax in which \fBarray\fR,
+\fBread\fR, \fBwrite\fR, \fBunset\fR are replaced by \fBa\fR, \fBr\fR,
+\fBw\fR and \fBu\fR respectively, and the \fIops\fR argument is not a
+list, but simply a string concatenation of the operations, such as
+\fBrwua\fR.
+.SH EXAMPLES
+.PP
+Print a message whenever either of the global variables \fBfoo\fR and
+\fBbar\fR are updated, even if they have a different local name at the
+time (which can be done with the \fBupvar\fR command):
+.PP
+.CS
+proc tracer {varname args} {
+    upvar #0 $varname var
+    puts "$varname was updated to be \e"$var\e""
+}
+\fBtrace add\fR variable foo write "tracer foo"
+\fBtrace add\fR variable bar write "tracer bar"
+.CE
+.PP
+Ensure that the global variable \fBfoobar\fR always contains the
+product of the global variables \fBfoo\fR and \fBbar\fR:
+.PP
+.CS
+proc doMult args {
+    global foo bar foobar
+    set foobar [expr {$foo * $bar}]
+}
+\fBtrace add\fR variable foo write doMult
+\fBtrace add\fR variable bar write doMult
+.CE
+.PP
+Print a trace of what commands are executed during the processing of a Tcl
+procedure:
+.PP
+.CS
+proc x {} { y }
+proc y {} { z }
+proc z {} { puts hello }
+proc report args {puts [info level 0]}
+\fBtrace add\fR execution x enterstep report
+x
+  \(-> \fIreport y enterstep\fR
+    \fIreport z enterstep\fR
+    \fIreport {puts hello} enterstep\fR
+    \fIhello\fR
+.CE
+.SH "SEE ALSO"
+set(n), unset(n)
+.SH KEYWORDS
+read, command, rename, variable, write, trace, unset
+.\" Local Variables:
+.\" mode: nroff
+.\" End:

@@ -1,0 +1,58 @@
+'\"
+'\" Copyright (c) 1998-2000 by Scriptics Corporation.
+'\" All rights reserved.
+'\" 
+.TH Tk_Grab 3 "" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_Grab, Tk_Ungrab \- manipulate grab state in an application
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+int
+\fBTk_Grab\fR(\fIinterp, tkwin, grabGlobal\fR)
+.sp
+void
+\fBTk_Ungrab\fR(\fItkwin\fR)
+.SH ARGUMENTS
+.AP Tcl_Interp *interp in
+Interpreter to use for error reporting
+.AP Tk_Window tkwin in
+Window on whose behalf the pointer is to be grabbed or released
+.AP int grabGlobal in
+Boolean indicating whether the grab is global or application local
+.BE
+.SH DESCRIPTION
+.PP
+These functions are used to set or release a global or
+application local grab.  When a grab is set on a particular window
+in a Tk application, mouse and keyboard events can only be received by
+that window and its descendants.  Mouse and keyboard events for
+windows outside the tree rooted at \fItkwin\fR will be redirected to
+\fItkwin\fR.  If the grab is global, then all mouse and keyboard
+events for windows outside the tree rooted at \fItkwin\fR (even those
+intended for windows in other applications) will be redirected to
+\fItkwin\fR.  If the grab is application local, only mouse and
+keyboard events intended for a windows within the same application
+(but outside the tree rooted at \fItkwin\fR) will be redirected.
+.PP
+\fBTk_Grab\fR sets a grab on a particular window.  \fITkwin\fR
+specifies the window on whose behalf the pointer is to be grabbed.
+\fIGrabGlobal\fR indicates whether the grab should be global or
+application local; if it is non-zero, it means the grab should be
+global.  Normally, \fBTk_Grab\fR returns \fBTCL_OK\fR; if an error occurs
+and the grab cannot be set, \fBTCL_ERROR\fR is returned and an error message
+is left if \fIinterp\fR's result.  Once this call completes
+successfully, no window outside the tree rooted at \fItkwin\fR will
+receive pointer- or keyboard-related events until the next call to
+Tk_Ungrab.  If a previous grab was in effect within the application,
+then it is replaced with a new one.
+.PP
+\fBTk_Ungrab\fR releases a grab on the mouse pointer and keyboard, if
+there is one set on the window given by \fItkwin\fR.  Once a grab is
+released, pointer and keyboard events will start being delivered to
+other windows again.
+.SH KEYWORDS
+grab, window

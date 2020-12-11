@@ -1,0 +1,62 @@
+<HEAD>
+<TITLE> Other Scrolled Widgets<A NAME=232>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html729 HREF=section3_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html727 HREF=subsection3_4_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html723 HREF=subsubsection3_4_3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html731 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html730 HREF=section3_5.html> Tabular Listbox and </A>
+<B>Up:</B> <A NAME=tex2html728 HREF=subsection3_4_3.html> The Family of </A>
+<B> Previous:</B> <A NAME=tex2html724 HREF=subsubsection3_4_3_1.html> The Scrolled Listbox </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00043200000000000000> Other Scrolled Widgets<A NAME=232>&nbsp;</A></A></H3>
+<P>
+The <b>TixScrolledText</b> widget is very similar to the
+  TixScrolledListBox widget, except it scrolls a text subwidget, which
+  is called <tt>text</tt>. One problem with the TixScrolledText widget,
+  though, is its <tt>-scrollbar</tt> option doesn't work in the <b>auto</b> mode. This is due to a bug in Tk which doesn't report the
+  width of the <b>text</b> subwidget correctly. Until this bug is fixed
+  in TK, the <b>auto</b> mode will behave the same way as the both mode
+  for the TixScrolledText widget.
+<P>
+   Another scrolled-widget is <b>TixScrolledWindow</b>. Sometimes you have a
+  large number of widgets that can't possibly be shown in the screen all at
+  once and your application doesn't allow you to divide the widgets into
+  several pages of a TixNoteBook. In this case you can use
+  TixScrolledWindow. It contains a frame subwidget called <tt>window</tt>. You
+  can just create as many widgets as you need as children of the <tt>window</tt> subwidget. An example is shown in program 2-9, which uses the
+  TixScrolledWindow widget to implement a ``cheap'' spreadsheet
+  application. The boxes of the spreadsheet are just entry widgets and they
+  are packed inside the <tt>window</tt> subwidget. The user will be able to
+  scroll to different parts of the spreadsheet if it is too large to fit in
+  one screen.
+<P>
+<blockquote> <P><tt> tixScrolledWindow .sw -scrollbar auto<BR>
+set f [.sw subwidget window]<BR>
+<BR>
+for {set x 0} {$x $&lt;$ 10} {incr x} {<BR>
+    frame $f.f$x<BR>
+    pack  $f.f$x -side top -expand yes -fill both<BR>
+    for {set y 0} {$y $&lt;$ 10} {incr y} {<BR>
+        entry $f.f$x.e$y -width 10<BR>
+        pack $f.f$x.e$y -side left -fill x<BR>
+    }<BR>
+}<BR>
+<BR>
+pack .sw -side left -expand yes -fill both
+</tt>
+<P></blockquote>
+<P><CENTER>(Figure 2-9) Cheap Spreadsheet Application with TixScrolledWindow<A NAME=29>&nbsp;</A>
+  </CENTER>
+<P>
+There are two more scrolled-widgets in the Tix library: <b>TixScrolledTList</b> scrolls a TixTList widget and <b>TixScrolledHList</b>
+  scrolls a TixHList widget. The subwidgets that they scroll are called
+  <tt>tlist</tt> and <tt>hlist</tt>, respectively. The use of the TList and HList
+  widgets will be described in the next chapters.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

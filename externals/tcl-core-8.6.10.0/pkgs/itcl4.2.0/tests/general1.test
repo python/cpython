@@ -1,0 +1,237 @@
+#
+# Tests for general class handling
+# ----------------------------------------------------------------------
+#   AUTHOR:  Wolfgang Großer, Arnulf Wiedemann
+#            wolfgang@grosser-erding.de, arnulf@wiedemann-pri.de
+# ----------------------------------------------------------------------
+#            Copyright (c) Wolfgang Großer, Arnulf Wiedemann
+# ======================================================================
+# See the file "license.terms" for information on usage and
+# redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2.1
+namespace import ::tcltest::test
+::tcltest::loadTestedCommands
+package require itcl
+
+# ----------------------------------------------------------------------
+#  Test protection with inheritance
+# ----------------------------------------------------------------------
+test general1-1.1 {define classes with different protection} {
+    variable ::test_cd_watch ""
+    itcl::class ClassA {
+	private variable priv privA
+	private variable privA privAA
+	protected variable prov provA
+	public variable pubv pubvA
+
+	constructor {args} {
+		lappend ::test_cd_watch constructorA
+	}
+	private method primA {} {
+		lappend ::test_cd_watch primA
+		set privA Hallo
+		lappend ::test_cd_watch [set priv]
+	}
+	protected method promA {} {
+		lappend ::test_cd_watch promA
+		lappend ::test_cd_watch [set prov]
+	}
+	public method pubmA {} {
+		lappend ::test_cd_watch pubmA
+		lappend ::test_cd_watch [set pubv]
+	}
+        public method doA {args} {eval $args}
+    }
+
+    itcl::class ClassB {
+	inherit ClassA
+
+	private variable priv privB
+	private variable privB privBB
+	protected variable prov provB
+	public variable pubv pubvB
+
+	constructor {args} {
+	    lappend ::test_cd_watch [list constructorB $args]
+	}
+	destructor {
+	    lappend ::test_cd_watch destructorB
+	}
+	private method primB {} {
+	    lappend ::test_cd_watch primB
+	    lappend ::test_cd_watch [set priv]
+	}
+	protected method promB {} {
+	    lappend ::test_cd_watch promB
+	    lappend ::test_cd_watch [set prov]
+	}
+	public method pubmB {} {
+	    lappend ::test_cd_watch pubmB
+	    lappend ::test_cd_watch [set pubv]
+	}
+        public method doB {args} {eval $args}
+        public method chkThis {} { set prov $this }
+    }
+
+    itcl::class ClassC {
+	inherit ClassB
+
+	private variable priv privC
+	protected variable prov provC
+	public variable pubv pubvC
+
+	constructor {args} {
+	    eval ClassB::constructor $args
+	} {
+	    lappend ::test_cd_watch [list "start constructorC" $args]
+            ClassA::constructor $args
+	    lappend ::test_cd_watch [list "end constructorC"]
+	}
+	private method primC {} {
+	    lappend ::test_cd_watch primC
+	    lappend ::test_cd_watch [set priv]
+	}
+	protected method promC {} {
+	    lappend ::test_cd_watch promC
+	    lappend ::test_cd_watch [set prov]
+	}
+	public method pubmC {} {
+	    lappend ::test_cd_watch pubmC
+	    lappend ::test_cd_watch [set pubv]
+	    $this primC
+	}
+	public method pubmC2 {arg1 {arg2 {}} {arg3 xxx}} {
+	    lappend ::test_cd_watch "orig pubmC2"
+	}
+        public method doC {args} {
+            eval $args
+        }
+    }
+} {}
+
+test general1-1.2 {constructor of classA should be called twice} {
+    set ::test_cd_watch ""
+    list [ClassC #auto] [set ::test_cd_watch]
+} {classC0 {constructorA {constructorB {}} {{start constructorC} {}} constructorA {{end constructorC}}}}
+
+test general1-1.3 {body command should not produce error} {
+    set ::test_cd_watch ""
+    list [catch {
+        itcl::body ClassC::pubmC2 {aarg1 {aarg2 {}} {arg3 {xxx}}} {
+            lappend ::test_cd_watch "new body command for pubmC2 [list $aarg1 $aarg2 $arg3]"
+        }
+    } msg] $msg [classC0 pubmC2 Hallo]
+} {0 {} {{new body command for pubmC2 Hallo {} xxx}}}
+
+test general1-1.4 {call of configure} {
+    set ::test_cd_watch ""
+    list [lsort [classC0 configure]]
+} {{{-ClassA::pubv pubvA pubvA} {-ClassB::pubv pubvB pubvB} {-pubv pubvC pubvC}}}
+
+test general1-1.5 {call of configure with variable} {
+    set ::test_cd_watch ""
+    list [classC0 configure -pubv Arnulf]
+} {{}}
+
+test general1-1.6 {call of configure to check for changes} {
+    set ::test_cd_watch ""
+    list [lsort [classC0 configure]]
+} {{{-ClassA::pubv pubvA pubvA} {-ClassB::pubv pubvB pubvB} {-pubv pubvC Arnulf}}}
+
+test general1-1.7 {call of cget} {
+    set ::test_cd_watch ""
+    list [classC0 cget -pubv]
+} {Arnulf}
+
+test general1-1.8 {private method may not be called} {
+    set ::test_cd_watch ""
+    list [catch {classC0 primC} msg] $msg
+} {1 {bad option "primC": should be one of...
+  classC0 cget -option
+  classC0 chkThis
+  classC0 configure ?-option? ?value -option value...?
+  classC0 doA ?arg arg ...?
+  classC0 doB ?arg arg ...?
+  classC0 doC ?arg arg ...?
+  classC0 isa className
+  classC0 pubmA
+  classC0 pubmB
+  classC0 pubmC
+  classC0 pubmC2 aarg1 ?aarg2? ?arg3?}}
+
+test general1-1.9 {protected method may not be called} {
+    set ::test_cd_watch ""
+    list [catch {classC0 promC} msg] $msg
+} {1 {bad option "promC": should be one of...
+  classC0 cget -option
+  classC0 chkThis
+  classC0 configure ?-option? ?value -option value...?
+  classC0 doA ?arg arg ...?
+  classC0 doB ?arg arg ...?
+  classC0 doC ?arg arg ...?
+  classC0 isa className
+  classC0 pubmA
+  classC0 pubmB
+  classC0 pubmC
+  classC0 pubmC2 aarg1 ?aarg2? ?arg3?}}
+
+test general1-1.10 {can call private and protected methods from within the class} {
+    set ::test_cd_watch ""
+    list [catch {classC0 doC primC} msg] $msg [catch {classC0 doC promC} msg] $msg
+} {0 {primC privC} 0 {primC privC promC provC}}
+
+test general1-1.11 {*cannot* call private methods of inherited classes} {
+    set ::test_cd_watch ""
+    list [catch {classC0 doC primB} msg] $msg [catch {classC0 doC primA} msg] $msg
+} {1 {invalid command name "primB"} 1 {invalid command name "primA"}}
+
+test general1-1.12 {can call protected and public methods of inherited classes} {
+    set ::test_cd_watch ""
+    list [catch {classC0 doC promB} msg] $msg [catch {classC0 doC pubmC} msg] $msg [catch {classC0 doC promA} msg] $msg [catch {classC0 doC pubmA} msg] $msg
+} {0 {promB provB} 0 {promB provB pubmC Arnulf primC privC} 0 {promB provB pubmC Arnulf primC privC promA provA} 0 {promB provB pubmC Arnulf primC privC promA provA pubmA pubvA}}
+
+test general1-1.13 {"this" variable} {
+    set ::test_cd_watch ""
+    list [catch {classC0 doC doB set $this} msg] $msg
+} {1 {can't read "this": no such variable}}
+
+test general1-1.14 {can indirect calls through middle class} {
+    set ::test_cd_watch ""
+    list [catch {classC0 doC doB doA primA} msg] $msg [catch {classC0 doC doB doA promA} msg] $msg [catch {classC0 doC doB doA pubmA} msg] $msg
+} {0 {primA privA} 0 {primA privA promA provA} 0 {primA privA promA provA pubmA pubvA}}
+
+test general1-1.15 {*cannot* indirect private calls through middle class} {
+    set ::test_cd_watch ""
+    list [catch {classC0 doC doB primA} msg] $msg [catch {classC0 doC doB primC} msg] $msg
+} {1 {invalid command name "primA"} 1 {invalid command name "primC"}}
+
+test general1-1.16 {*cannot* indirect protected calls through middle class} {
+    set ::test_cd_watch ""
+    list [catch {classC0 doC doB promA} msg] $msg [catch {classC0 doC doB promC} msg] $msg
+} {0 {promA provA} 1 {invalid command name "promC"}}
+
+test general1-1.17 {access variables through calls through middle class} {
+    set ::test_cd_watch ""
+    list [catch {classC0 doC doB set privB} msg] $msg [catch {classC0 doC doB doA set pubv} msg] $msg
+} {0 privBB 0 pubvA}
+
+test general1-1.18 {"this" variable} {
+    set ::test_cd_watch ""
+    list [catch {classC0 doB set prov $this} msg] $msg \
+    [catch {classC0 chkThis} msg] $msg
+} {1 {can't read "this": no such variable} 0 ::classC0}
+
+test general1-1.20 {*cannot* read private variable from inherited class} {
+    set ::test_cd_watch ""
+    list [catch {classC0 doC set privA} msg] $msg [catch {classC0 doA set privA} msg] $msg [catch {classC0 doC set privB} msg] $msg [catch {classC0 doB set privB} msg] $msg
+} {1 {can't read "privA": no such variable} 0 Hallo 1 {can't read "privB": no such variable} 0 privBB}
+
+if {0} {
+c publicC
+}
+
+::itcl::delete class ClassA
+
+::tcltest::cleanupTests
+return

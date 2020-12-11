@@ -1,0 +1,198 @@
+'\"
+'\" $Id: tixwish.1,v 1.2 2001/01/22 00:33:19 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+.TH tixwish 1 8.0 Tix "Tix Applications"
+.BS
+'\"
+.SH NAME
+tixwish \-  Windowing shell for interpreting Tix commands.
+'\"
+.SH SYNOPSIS
+\fBtixwish\fR ?\fIfileName arg arg ...\fR?
+'\"
+.SH OPTIONS
+'\"
+.IP "\fB\-display \fIdisplay\fR" 20
+Display (and screen) on which to display window.
+'\"
+.IP "\fB\-geometry \fIgeometry\fR" 20
+Initial geometry to use for window.  If this option is specified, its
+value is stored in the \fBgeometry\fR global variable of the application's
+Tcl interpreter.
+'\"
+.IP "\fB\-name \fIname\fR" 20
+'\"
+Use \fIname\fR as the title to be displayed in the window, and
+as the name of the interpreter for \fBsend\fR commands.
+'\"
+.IP "\fB\-sync\fR" 20
+'\"
+Execute all X server commands synchronously, so that errors are
+reported immediately. This will result in much slower execution, but
+it is useful for debugging.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBTixwish\fR is a simple program consisting of the Tcl command
+language, the Tk toolkit, and a main program that reads commands from
+standard input or from a file.  It creates a main window and then
+processes Tcl commands.
+'\"
+If \fBtixwish\fR is invoked with no arguments, or with a first
+argument that starts with ``\-'', then it reads Tcl commands
+interactively from standard input.
+'\"
+It will continue processing commands until all windows have been
+deleted or until end-of-file is reached on standard input.  If there
+exists a file \fB.tixwishrc\fR in the home directory of the user,
+\fBtixwish\fR evaluates the file as a Tcl script just before reading
+the first command from standard input.
+'\"
+.PP
+'\"
+If \fBtixwish\fR is invoked with an initial \fIfileName\fR argument,
+then \fIfileName\fR is treated as the name of a script file.
+\fBTixwish\fR will evaluate the script in \fIfileName\fR (which
+presumably creates a user interface), then it will respond to events
+until all windows have been deleted.  Commands will not be read from
+standard input.  There is no automatic evaluation of \fB.tixwishrc\fR
+in this case, but the script file can always \fBsource\fR it if
+desired.
+
+.SH "OPTIONS"
+.PP
+\fBTixwish\fR automatically processes all of the command-line options
+described in the \fBOPTIONS\fR summary above.  Any other command-line
+arguments besides these are passed through to the application using
+the \fBargc\fR and \fBargv\fR variables described later.
+
+.SH "APPLICATION NAME AND CLASS"
+.PP
+.VS
+The name of the application, which is used for purposes such as
+\fBsend\fR commands, is taken from the \fB\-name\fR option,
+if it is specified;  otherwise it is taken from \fIfileName\fR,
+if it is specified, or from the command name by which
+\fBtixwish\fR was invoked.  In the last two cases, if the name contains a ``/''
+character, then only the characters after the last slash are used
+as the application name.
+.PP
+The class of the application, which is used for purposes such as
+specifying options with a \fBRESOURCE_MANAGER\fR property or .Xdefaults
+file, is the same as its name except that the first letter is
+capitalized.
+.VE
+
+.SH "VARIABLES"
+.PP
+\fBTixwish\fR sets the following Tcl variables:
+.TP 15
+\fBargc\fR
+Contains a count of the number of \fIarg\fR arguments (0 if none),
+not including the options described above.
+.TP 15
+\fBargv\fR
+Contains a Tcl list whose elements are the \fIarg\fR arguments (not
+including the options described above), in order, or an empty string
+if there are no \fIarg\fR arguments.
+.TP 15
+\fBargv0\fR
+Contains \fIfileName\fR if it was specified.
+Otherwise, contains the name by which \fBtixwish\fR was invoked.
+.TP 15
+\fBgeometry\fR
+If the \fB\-geometry\fR option is specified, \fBtixwish\fR copies its
+value into this variable.  If the variable still exists after
+\fIfileName\fR has been evaluated, \fBtixwish\fR uses the value of
+the variable in a \fBwm geometry\fR command to set the main
+window's geometry.
+.TP 15
+\fBtcl_interactive\fR
+'\"
+Contains 1 if \fBtixwish\fR is reading commands interactively
+(\fBfileName\fR was not specified and standard input is a
+terminal-like device), 0 otherwise.
+'\"
+.SH "X RESOURCES"
+'\"
+\fBTixwish\fR makes use of several X Resources to determine the
+\fBToolkit Options\fR for the Tix library. These X resources must be
+set using \fBRESOURCE_MANAGER\fR properties or .Xdefaults files
+\fBbefore\fR \fBtixwish\fR starts running. These resources must be
+associated with the main window of the \fBtixwish\fR application.
+These options include:
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBtixScheme\fR
+Class:		\fBTixScheme\fR
+.fi
+.IP
+Specifies the color scheme to use for the Tix application. Currently
+only these schemes are supported: Blue, Gray, SGIGray, TixGray, and
+TK.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBtixFontSet\fR
+Class:		\fBTixFontSet\fR
+.fi
+.IP
+Specifies the FontSet to use for the Tix application. A FontSet
+designates the fonts to use for different types of widgets. Currently
+only these FontSets are supported: 12Point, 14Point and TK.
+'\"----------END
+.PP
+For example, you may put these two lines in your .Xdefaults file
+.nf
+    *tixwish.tixScheme: Gray
+    *tixwish.tixFontSet: 12Point
+.fi
+.SH "SCRIPT FILES"
+.PP
+If you create a Tcl script in a file whose first line is
+.RS
+.CS
+\fB#!/usr/local/bin/tixwish\fR
+.CE
+.RE
+then you can invoke the script file directly from your shell if you
+mark it as executable.  This assumes that \fBtixwish\fR has been
+installed in the default location in /usr/local/bin; if it's installed
+somewhere else then you'll have to modify the above line to match.
+Many UNIX systems do not allow the \fB#!\fR line to exceed about 30
+characters in length, so be sure that the \fBtixwish\fR executable can be
+accessed with a short file name.
+
+.SH PROMPTS
+.PP
+When \fBtixwish\fR is invoked interactively it normally prompts for each
+command with ``\fB% \fR''.  You can change the prompt by setting the
+variables \fBtcl_prompt1\fR and \fBtcl_prompt2\fR.  If variable
+\fBtcl_prompt1\fR exists then it must consist of a Tcl script to
+output a prompt; instead of outputting a prompt \fBtixwish\fR will
+evaluate the script in \fBtcl_prompt1\fR.  The variable
+\fBtcl_prompt2\fR is used in a similar way when a newline is typed but
+the current command isn't yet complete; if \fBtcl_prompt2\fR isn't set
+then no prompt is output for incomplete commands.
+
+.SH KEYWORDS
+shell, wish, Tk, toolkit
+

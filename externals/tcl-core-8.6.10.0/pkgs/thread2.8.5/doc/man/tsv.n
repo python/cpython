@@ -1,0 +1,628 @@
+'\"
+'\" Generated from file '' by tcllib/doctools with format 'nroff'
+'\"
+.TH "tsv" n 2\&.8  "Tcl Threading"
+.\" The -*- nroff -*- definitions below are for supplemental macros used
+.\" in Tcl/Tk manual entries.
+.\"
+.\" .AP type name in/out ?indent?
+.\"	Start paragraph describing an argument to a library procedure.
+.\"	type is type of argument (int, etc.), in/out is either "in", "out",
+.\"	or "in/out" to describe whether procedure reads or modifies arg,
+.\"	and indent is equivalent to second arg of .IP (shouldn't ever be
+.\"	needed;  use .AS below instead)
+.\"
+.\" .AS ?type? ?name?
+.\"	Give maximum sizes of arguments for setting tab stops.  Type and
+.\"	name are examples of largest possible arguments that will be passed
+.\"	to .AP later.  If args are omitted, default tab stops are used.
+.\"
+.\" .BS
+.\"	Start box enclosure.  From here until next .BE, everything will be
+.\"	enclosed in one large box.
+.\"
+.\" .BE
+.\"	End of box enclosure.
+.\"
+.\" .CS
+.\"	Begin code excerpt.
+.\"
+.\" .CE
+.\"	End code excerpt.
+.\"
+.\" .VS ?version? ?br?
+.\"	Begin vertical sidebar, for use in marking newly-changed parts
+.\"	of man pages.  The first argument is ignored and used for recording
+.\"	the version when the .VS was added, so that the sidebars can be
+.\"	found and removed when they reach a certain age.  If another argument
+.\"	is present, then a line break is forced before starting the sidebar.
+.\"
+.\" .VE
+.\"	End of vertical sidebar.
+.\"
+.\" .DS
+.\"	Begin an indented unfilled display.
+.\"
+.\" .DE
+.\"	End of indented unfilled display.
+.\"
+.\" .SO ?manpage?
+.\"	Start of list of standard options for a Tk widget. The manpage
+.\"	argument defines where to look up the standard options; if
+.\"	omitted, defaults to "options". The options follow on successive
+.\"	lines, in three columns separated by tabs.
+.\"
+.\" .SE
+.\"	End of list of standard options for a Tk widget.
+.\"
+.\" .OP cmdName dbName dbClass
+.\"	Start of description of a specific option.  cmdName gives the
+.\"	option's name as specified in the class command, dbName gives
+.\"	the option's name in the option database, and dbClass gives
+.\"	the option's class in the option database.
+.\"
+.\" .UL arg1 arg2
+.\"	Print arg1 underlined, then print arg2 normally.
+.\"
+.\" .QW arg1 ?arg2?
+.\"	Print arg1 in quotes, then arg2 normally (for trailing punctuation).
+.\"
+.\" .PQ arg1 ?arg2?
+.\"	Print an open parenthesis, arg1 in quotes, then arg2 normally
+.\"	(for trailing punctuation) and then a closing parenthesis.
+.\"
+.\"	# Set up traps and other miscellaneous stuff for Tcl/Tk man pages.
+.if t .wh -1.3i ^B
+.nr ^l \n(.l
+.ad b
+.\"	# Start an argument description
+.de AP
+.ie !"\\$4"" .TP \\$4
+.el \{\
+.   ie !"\\$2"" .TP \\n()Cu
+.   el          .TP 15
+.\}
+.ta \\n()Au \\n()Bu
+.ie !"\\$3"" \{\
+\&\\$1 \\fI\\$2\\fP (\\$3)
+.\".b
+.\}
+.el \{\
+.br
+.ie !"\\$2"" \{\
+\&\\$1	\\fI\\$2\\fP
+.\}
+.el \{\
+\&\\fI\\$1\\fP
+.\}
+.\}
+..
+.\"	# define tabbing values for .AP
+.de AS
+.nr )A 10n
+.if !"\\$1"" .nr )A \\w'\\$1'u+3n
+.nr )B \\n()Au+15n
+.\"
+.if !"\\$2"" .nr )B \\w'\\$2'u+\\n()Au+3n
+.nr )C \\n()Bu+\\w'(in/out)'u+2n
+..
+.AS Tcl_Interp Tcl_CreateInterp in/out
+.\"	# BS - start boxed text
+.\"	# ^y = starting y location
+.\"	# ^b = 1
+.de BS
+.br
+.mk ^y
+.nr ^b 1u
+.if n .nf
+.if n .ti 0
+.if n \l'\\n(.lu\(ul'
+.if n .fi
+..
+.\"	# BE - end boxed text (draw box now)
+.de BE
+.nf
+.ti 0
+.mk ^t
+.ie n \l'\\n(^lu\(ul'
+.el \{\
+.\"	Draw four-sided box normally, but don't draw top of
+.\"	box if the box started on an earlier page.
+.ie !\\n(^b-1 \{\
+\h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.el \}\
+\h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.\}
+.fi
+.br
+.nr ^b 0
+..
+.\"	# VS - start vertical sidebar
+.\"	# ^Y = starting y location
+.\"	# ^v = 1 (for troff;  for nroff this doesn't matter)
+.de VS
+.if !"\\$2"" .br
+.mk ^Y
+.ie n 'mc \s12\(br\s0
+.el .nr ^v 1u
+..
+.\"	# VE - end of vertical sidebar
+.de VE
+.ie n 'mc
+.el \{\
+.ev 2
+.nf
+.ti 0
+.mk ^t
+\h'|\\n(^lu+3n'\L'|\\n(^Yu-1v\(bv'\v'\\n(^tu+1v-\\n(^Yu'\h'-|\\n(^lu+3n'
+.sp -1
+.fi
+.ev
+.\}
+.nr ^v 0
+..
+.\"	# Special macro to handle page bottom:  finish off current
+.\"	# box/sidebar if in box/sidebar mode, then invoked standard
+.\"	# page bottom macro.
+.de ^B
+.ev 2
+'ti 0
+'nf
+.mk ^t
+.if \\n(^b \{\
+.\"	Draw three-sided box if this is the box's first page,
+.\"	draw two sides but no top otherwise.
+.ie !\\n(^b-1 \h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\h'|0u'\c
+.el \h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\h'|0u'\c
+.\}
+.if \\n(^v \{\
+.nr ^x \\n(^tu+1v-\\n(^Yu
+\kx\h'-\\nxu'\h'|\\n(^lu+3n'\ky\L'-\\n(^xu'\v'\\n(^xu'\h'|0u'\c
+.\}
+.bp
+'fi
+.ev
+.if \\n(^b \{\
+.mk ^y
+.nr ^b 2
+.\}
+.if \\n(^v \{\
+.mk ^Y
+.\}
+..
+.\"	# DS - begin display
+.de DS
+.RS
+.nf
+.sp
+..
+.\"	# DE - end display
+.de DE
+.fi
+.RE
+.sp
+..
+.\"	# SO - start of list of standard options
+.de SO
+'ie '\\$1'' .ds So \\fBoptions\\fR
+'el .ds So \\fB\\$1\\fR
+.SH "STANDARD OPTIONS"
+.LP
+.nf
+.ta 5.5c 11c
+.ft B
+..
+.\"	# SE - end of list of standard options
+.de SE
+.fi
+.ft R
+.LP
+See the \\*(So manual entry for details on the standard options.
+..
+.\"	# OP - start of full description for a single option
+.de OP
+.LP
+.nf
+.ta 4c
+Command-Line Name:	\\fB\\$1\\fR
+Database Name:	\\fB\\$2\\fR
+Database Class:	\\fB\\$3\\fR
+.fi
+.IP
+..
+.\"	# CS - begin code excerpt
+.de CS
+.RS
+.nf
+.ta .25i .5i .75i 1i
+..
+.\"	# CE - end code excerpt
+.de CE
+.fi
+.RE
+..
+.\"	# UL - underline word
+.de UL
+\\$1\l'|0\(ul'\\$2
+..
+.\"	# QW - apply quotation marks to word
+.de QW
+.ie '\\*(lq'"' ``\\$1''\\$2
+.\"" fix emacs highlighting
+.el \\*(lq\\$1\\*(rq\\$2
+..
+.\"	# PQ - apply parens and quotation marks to word
+.de PQ
+.ie '\\*(lq'"' (``\\$1''\\$2)\\$3
+.\"" fix emacs highlighting
+.el (\\*(lq\\$1\\*(rq\\$2)\\$3
+..
+.\"	# QR - quoted range
+.de QR
+.ie '\\*(lq'"' ``\\$1''\\-``\\$2''\\$3
+.\"" fix emacs highlighting
+.el \\*(lq\\$1\\*(rq\\-\\*(lq\\$2\\*(rq\\$3
+..
+.\"	# MT - "empty" string
+.de MT
+.QW ""
+..
+.BS
+.SH NAME
+tsv \- Part of the Tcl threading extension allowing script level manipulation of data shared between threads\&.
+.SH SYNOPSIS
+package require \fBTcl  8\&.4\fR
+.sp
+package require \fBThread  ?2\&.8?\fR
+.sp
+\fBtsv::names\fR ?pattern?
+.sp
+\fBtsv::object\fR \fIvarname\fR \fIelement\fR
+.sp
+\fBtsv::set\fR \fIvarname\fR \fIelement\fR ?value?
+.sp
+\fBtsv::get\fR \fIvarname\fR \fIelement\fR ?namedvar?
+.sp
+\fBtsv::unset\fR \fIvarname\fR ?element?
+.sp
+\fBtsv::exists\fR \fIvarname\fR \fIelement\fR
+.sp
+\fBtsv::pop\fR \fIvarname\fR \fIelement\fR
+.sp
+\fBtsv::move\fR \fIvarname\fR \fIoldname\fR \fInewname\fR
+.sp
+\fBtsv::incr\fR \fIvarname\fR \fIelement\fR ?count?
+.sp
+\fBtsv::append\fR \fIvarname\fR \fIelement\fR \fIvalue\fR ?value \&.\&.\&.?
+.sp
+\fBtsv::lock\fR \fIvarname\fR \fIarg\fR ?arg \&.\&.\&.?
+.sp
+\fBtsv::handlers\fR
+.sp
+\fBtsv::lappend\fR \fIvarname\fR \fIelement\fR \fIvalue\fR ?value \&.\&.\&.?
+.sp
+\fBtsv::linsert\fR \fIvarname\fR \fIelement\fR \fIindex\fR \fIvalue\fR ?value \&.\&.\&.?
+.sp
+\fBtsv::lreplace\fR \fIvarname\fR \fIelement\fR \fIfirst\fR \fIlast\fR ?value \&.\&.\&.?
+.sp
+\fBtsv::llength\fR \fIvarname\fR \fIelement\fR
+.sp
+\fBtsv::lindex\fR \fIvarname\fR \fIelement\fR ?index?
+.sp
+\fBtsv::lrange\fR \fIvarname\fR \fIelement\fR \fIfrom\fR \fIto\fR
+.sp
+\fBtsv::lsearch\fR \fIvarname\fR \fIelement\fR ?options? \fIpattern\fR
+.sp
+\fBtsv::lset\fR \fIvarname\fR \fIelement\fR \fIindex\fR ?index \&.\&.\&.? \fIvalue\fR
+.sp
+\fBtsv::lpop\fR \fIvarname\fR \fIelement\fR ?index?
+.sp
+\fBtsv::lpush\fR \fIvarname\fR \fIelement\fR ?index?
+.sp
+\fBtsv::array set\fR \fIvarname\fR \fIlist\fR
+.sp
+\fBtsv::array get\fR \fIvarname\fR ?pattern?
+.sp
+\fBtsv::array names\fR \fIvarname\fR ?pattern?
+.sp
+\fBtsv::array size\fR \fIvarname\fR
+.sp
+\fBtsv::array reset\fR \fIvarname\fR \fIlist\fR
+.sp
+\fBtsv::array bind\fR \fIvarname\fR \fIhandle\fR
+.sp
+\fBtsv::array unbind\fR \fIvarname\fR
+.sp
+\fBtsv::array isbound\fR \fIvarname\fR
+.sp
+\fBtsv::keyldel\fR \fIvarname\fR \fIkeylist\fR \fIkey\fR
+.sp
+\fBtsv::keylget\fR \fIvarname\fR \fIkeylist\fR \fIkey\fR ?retvar?
+.sp
+\fBtsv::keylkeys\fR \fIvarname\fR \fIkeylist\fR ?key?
+.sp
+\fBtsv::keylset\fR \fIvarname\fR \fIkeylist\fR \fIkey\fR \fIvalue\fR ?key value\&.\&.?
+.sp
+.BE
+.SH DESCRIPTION
+This section describes commands implementing thread shared variables\&.
+A thread shared variable is very similar to a Tcl array but in
+contrast to a Tcl array it is created in shared memory and can
+be accessed from many threads at the same time\&. Important feature of
+thread shared variable is that each access to the variable is internaly
+protected by a mutex so script programmer does not have to take care
+about locking the variable himself\&.
+.PP
+Thread shared variables are not bound to any thread explicitly\&. That
+means that when a thread which created any of thread shared variables
+exits, the variable and associated memory is not unset/reclaimed\&.
+User has to explicitly unset the variable to reclaim the memory
+consumed by the variable\&.
+.SH "ELEMENT COMMANDS"
+.TP
+\fBtsv::names\fR ?pattern?
+Returns names of shared variables matching optional ?pattern?
+or all known variables if pattern is ommited\&.
+.TP
+\fBtsv::object\fR \fIvarname\fR \fIelement\fR
+Creates object accessor command for the \fIelement\fR in the
+shared variable \fIvarname\fR\&. Using this command, one can apply most
+of the other shared variable commands as method functions of
+the element object command\&. The object command is automatically
+deleted when the element which this command is pointing to is unset\&.
+.CS
+
+
+    % tsv::set foo bar "A shared string"
+    % set string [tsv::object foo bar]
+    % $string append " appended"
+    => A shared string appended
+
+.CE
+.TP
+\fBtsv::set\fR \fIvarname\fR \fIelement\fR ?value?
+Sets the value of the \fIelement\fR in the shared variable \fIvarname\fR
+to \fIvalue\fR and returns the value to caller\&. The \fIvalue\fR
+may be ommited, in which case the command will return the current
+value of the element\&. If the element cannot be found, error is triggered\&.
+.TP
+\fBtsv::get\fR \fIvarname\fR \fIelement\fR ?namedvar?
+Retrieves the value of the \fIelement\fR from the shared variable \fIvarname\fR\&.
+If the optional argument \fInamedvar\fR is given, the value is
+stored in the named variable\&. Return value of the command depends
+of the existence of the optional argument \fInamedvar\fR\&.
+If the argument is ommited and the requested element cannot be found
+in the shared array, the command triggers error\&. If, however, the
+optional argument is given on the command line, the command returns
+true (1) if the element is found or false (0) if the element is not found\&.
+.TP
+\fBtsv::unset\fR \fIvarname\fR ?element?
+Unsets the \fIelement\fR from the shared variable \fIvarname\fR\&.
+If the optional element is not given, it deletes the variable\&.
+.TP
+\fBtsv::exists\fR \fIvarname\fR \fIelement\fR
+Checks wether the \fIelement\fR exists in the shared variable \fIvarname\fR
+and returns true (1) if it does or false (0) if it doesn't\&.
+.TP
+\fBtsv::pop\fR \fIvarname\fR \fIelement\fR
+Returns value of the \fIelement\fR in the shared variable \fIvarname\fR
+and unsets the element, all in one atomic operation\&.
+.TP
+\fBtsv::move\fR \fIvarname\fR \fIoldname\fR \fInewname\fR
+Renames the element \fIoldname\fR to the \fInewname\fR in the
+shared variable \fIvarname\fR\&. This effectively performs an get/unset/set
+sequence of operations but all in one atomic step\&.
+.TP
+\fBtsv::incr\fR \fIvarname\fR \fIelement\fR ?count?
+Similar to standard Tcl \fBincr\fR command but increments the value
+of the \fIelement\fR in shared variaboe \fIvarname\fR instead of
+the Tcl variable\&.
+.TP
+\fBtsv::append\fR \fIvarname\fR \fIelement\fR \fIvalue\fR ?value \&.\&.\&.?
+Similar to standard Tcl \fBappend\fR command but appends one or more
+values to the \fIelement\fR in shared variable \fIvarname\fR instead of the
+Tcl variable\&.
+.TP
+\fBtsv::lock\fR \fIvarname\fR \fIarg\fR ?arg \&.\&.\&.?
+This command concatenates passed arguments and evaluates the
+resulting script under the internal mutex protection\&. During the
+script evaluation, the entire shared variable is locked\&. For shared
+variable commands within the script, internal locking is disabled
+so no deadlock can occur\&. It is also allowed to unset the shared
+variable from within the script\&. The shared variable is automatically
+created if it did not exists at the time of the first lock operation\&.
+.CS
+
+
+    % tsv::lock foo {
+        tsv::lappend foo bar 1
+        tsv::lappend foo bar 2
+        puts stderr [tsv::set foo bar]
+        tsv::unset foo
+    }
+
+.CE
+.TP
+\fBtsv::handlers\fR
+Returns the names of all persistent storage handlers enabled at compile time\&.
+See \fBARRAY COMMANDS\fR for details\&.
+.PP
+.SH "LIST COMMANDS"
+Those command are similar to the equivalently named Tcl command\&. The difference
+is that they operate on elements of shared arrays\&.
+.TP
+\fBtsv::lappend\fR \fIvarname\fR \fIelement\fR \fIvalue\fR ?value \&.\&.\&.?
+Similar to standard Tcl \fBlappend\fR command but appends one
+or more values to the \fIelement\fR in shared variable \fIvarname\fR
+instead of the Tcl variable\&.
+.TP
+\fBtsv::linsert\fR \fIvarname\fR \fIelement\fR \fIindex\fR \fIvalue\fR ?value \&.\&.\&.?
+Similar to standard Tcl \fBlinsert\fR command but inserts one
+or more values at the \fIindex\fR list position in the
+\fIelement\fR in the shared variable \fIvarname\fR instead of the Tcl variable\&.
+.TP
+\fBtsv::lreplace\fR \fIvarname\fR \fIelement\fR \fIfirst\fR \fIlast\fR ?value \&.\&.\&.?
+Similar to standard Tcl \fBlreplace\fR command but replaces one
+or more values between the \fIfirst\fR and \fIlast\fR position
+in the \fIelement\fR of the shared variable \fIvarname\fR instead of
+the Tcl variable\&.
+.TP
+\fBtsv::llength\fR \fIvarname\fR \fIelement\fR
+Similar to standard Tcl \fBllength\fR command but returns length
+of the \fIelement\fR in the shared variable \fIvarname\fR instead of the Tcl
+variable\&.
+.TP
+\fBtsv::lindex\fR \fIvarname\fR \fIelement\fR ?index?
+Similar to standard Tcl \fBlindex\fR command but returns the value
+at the \fIindex\fR list position of the \fIelement\fR from
+the shared variable \fIvarname\fR instead of the Tcl variable\&.
+.TP
+\fBtsv::lrange\fR \fIvarname\fR \fIelement\fR \fIfrom\fR \fIto\fR
+Similar to standard Tcl \fBlrange\fR command but returns values
+between \fIfrom\fR and \fIto\fR list positions from the
+\fIelement\fR in the shared variable \fIvarname\fR instead of the Tcl variable\&.
+.TP
+\fBtsv::lsearch\fR \fIvarname\fR \fIelement\fR ?options? \fIpattern\fR
+Similar to standard Tcl \fBlsearch\fR command but searches the \fIelement\fR
+in the shared variable \fIvarname\fR instead of the Tcl variable\&.
+.TP
+\fBtsv::lset\fR \fIvarname\fR \fIelement\fR \fIindex\fR ?index \&.\&.\&.? \fIvalue\fR
+Similar to standard Tcl \fBlset\fR command but sets the \fIelement\fR
+in the shared variable \fIvarname\fR instead of the Tcl variable\&.
+.TP
+\fBtsv::lpop\fR \fIvarname\fR \fIelement\fR ?index?
+Similar to the standard Tcl \fBlindex\fR command but in addition to
+returning, it also splices the value out of the \fIelement\fR
+from the shared variable \fIvarname\fR in one atomic operation\&.
+In contrast to the Tcl \fBlindex\fR command, this command returns
+no value to the caller\&.
+.TP
+\fBtsv::lpush\fR \fIvarname\fR \fIelement\fR ?index?
+This command performes the opposite of the \fBtsv::lpop\fR command\&.
+As its counterpart, it returns no value to the caller\&.
+.PP
+.SH "ARRAY COMMANDS"
+This command supports most of the options of the standard Tcl
+\fBarray\fR command\&. In addition to those, it allows binding
+a shared variable to some persisten storage databases\&. Currently the persistent
+options supported are the famous GNU Gdbm and LMDB\&. These options have to be
+selected during the package compilation time\&.
+The implementation provides hooks for defining other persistency layers, if
+needed\&.
+.TP
+\fBtsv::array set\fR \fIvarname\fR \fIlist\fR
+Does the same as standard Tcl \fBarray set\fR\&.
+.TP
+\fBtsv::array get\fR \fIvarname\fR ?pattern?
+Does the same as standard Tcl \fBarray get\fR\&.
+.TP
+\fBtsv::array names\fR \fIvarname\fR ?pattern?
+Does the same as standard Tcl \fBarray names\fR\&.
+.TP
+\fBtsv::array size\fR \fIvarname\fR
+Does the same as standard Tcl \fBarray size\fR\&.
+.TP
+\fBtsv::array reset\fR \fIvarname\fR \fIlist\fR
+Does the same as standard Tcl \fBarray set\fR but it clears
+the \fIvarname\fR and sets new values from the list atomically\&.
+.TP
+\fBtsv::array bind\fR \fIvarname\fR \fIhandle\fR
+Binds the \fIvarname\fR to the persistent storage \fIhandle\fR\&.
+The format of the \fIhandle\fR is <handler>:<address>, where <handler> is
+"gdbm" for GNU Gdbm and "lmdb" for LMDB and <address> is the path to the
+database file\&.
+.TP
+\fBtsv::array unbind\fR \fIvarname\fR
+Unbinds the shared \fIarray\fR from its bound persistent storage\&.
+.TP
+\fBtsv::array isbound\fR \fIvarname\fR
+Returns true (1) if the shared \fIvarname\fR is bound to some
+persistent storage or zero (0) if not\&.
+.PP
+.SH "KEYED LIST COMMANDS"
+Keyed list commands are borrowed from the TclX package\&. Keyed lists provide
+a structured data type built upon standard Tcl lists\&. This is a functionality
+similar to structs in the C programming language\&.
+.PP
+A keyed list is a list in which each element contains a key and value
+pair\&. These element pairs are stored as lists themselves, where the key
+is the first element of the list, and the value is the second\&. The
+key-value pairs are referred to as fields\&.  This is an example of a
+keyed list:
+.CS
+
+
+    {{NAME  {Frank  Zappa}} {JOB {musician and composer}}}
+
+.CE
+Fields may contain subfields; `\&.' is the separator character\&. Subfields
+are actually fields  where the value is another keyed list\&. Thus the
+following list has the top level fields ID and NAME, and subfields
+NAME\&.FIRST and NAME\&.LAST:
+.CS
+
+
+    {ID 106} {NAME {{FIRST Frank} {LAST Zappa}}}
+
+.CE
+There is no limit to the recursive depth of subfields,
+allowing one to build complex data structures\&. Keyed lists are constructed
+and accessed via a number of commands\&. All  keyed  list management
+commands take the name of the variable containing the keyed list as an
+argument (i\&.e\&. passed by reference), rather than passing the list directly\&.
+.TP
+\fBtsv::keyldel\fR \fIvarname\fR \fIkeylist\fR \fIkey\fR
+Delete the field specified by \fIkey\fR from the keyed list \fIkeylist\fR
+in the shared variable \fIvarname\fR\&.
+This removes both the key and the value from the keyed list\&.
+.TP
+\fBtsv::keylget\fR \fIvarname\fR \fIkeylist\fR \fIkey\fR ?retvar?
+Return the value associated with \fIkey\fR from the keyed list \fIkeylist\fR
+in the shared variable \fIvarname\fR\&.
+If the optional \fIretvar\fR is not specified, then the value will be
+returned as the result of the command\&. In this case, if key is not found
+in the list, an error will result\&.
+.sp
+If \fIretvar\fR is specified and \fIkey\fR is in the list, then the value
+is returned in the variable \fIretvar\fR and the command returns 1 if the
+key was present within the list\&. If \fIkey\fR isn't in the list, the
+command will return 0, and \fIretvar\fR will be left unchanged\&. If {} is
+specified for \fIretvar\fR, the value is not returned, allowing the Tcl
+programmer to determine if a \fIkey\fR is present in a keyed list without
+setting a variable as a side-effect\&.
+.TP
+\fBtsv::keylkeys\fR \fIvarname\fR \fIkeylist\fR ?key?
+Return  the a list of the keys in the keyed list \fIkeylist\fR in the
+shared variable \fIvarname\fR\&. If \fIkey\fR is specified, then it is
+the name of a key field who's subfield keys are to be retrieved\&.
+.TP
+\fBtsv::keylset\fR \fIvarname\fR \fIkeylist\fR \fIkey\fR \fIvalue\fR ?key value\&.\&.?
+Set the value associated with \fIkey\fR, in the keyed list \fIkeylist\fR
+to \fIvalue\fR\&. If the \fIkeylist\fR does not exists, it is created\&.
+If \fIkey\fR is not currently in the list, it will be added\&. If it already
+exists, \fIvalue\fR replaces the existing value\&. Multiple keywords and
+values may be specified, if desired\&.
+.PP
+.SH DISCUSSION
+The current implementation of thread shared variables allows for easy and
+convenient access to data shared between different threads\&.
+Internally, the data is stored in Tcl objects and all package commands
+operate on internal data representation, thus minimizing shimmering and
+improving performance\&. Special care has been taken to assure that all
+object data is properly locked and deep-copied when moving objects between
+threads\&.
+.PP
+Due to the internal design of the Tcl core, there is no provision of full
+integration of shared variables within the Tcl syntax, unfortunately\&. All
+access to shared data must be performed with the supplied package commands\&.
+Also, variable traces are not supported\&. But even so, benefits of easy,
+simple and safe shared data manipulation outweights imposed limitations\&.
+.SH CREDITS
+Thread shared variables are inspired by the nsv interface found in
+AOLserver, a highly scalable Web server from America Online\&.
+.SH "SEE ALSO"
+thread, tpool, ttrace
+.SH KEYWORDS
+locking, synchronization, thread shared data, threads

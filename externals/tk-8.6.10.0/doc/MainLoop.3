@@ -1,0 +1,28 @@
+'\"
+'\" Copyright (c) 1990-1992 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_MainLoop 3 "" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_MainLoop \- loop for events until all windows are deleted
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+\fBTk_MainLoop\fR()
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_MainLoop\fR is a procedure that loops repeatedly calling
+\fBTcl_DoOneEvent\fR.  It returns only when there are no applications
+left in this process (i.e. no main windows exist anymore).  Most
+windowing applications will call \fBTk_MainLoop\fR after
+initialization; the main execution of the application will consist
+entirely of callbacks invoked via \fBTcl_DoOneEvent\fR.
+.SH KEYWORDS
+application, event, main loop

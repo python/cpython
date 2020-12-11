@@ -1,0 +1,91 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH unknown n "" Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+unknown \- Handle attempts to use non-existent commands
+.SH SYNOPSIS
+\fBunknown \fIcmdName \fR?\fIarg arg ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+This command is invoked by the Tcl interpreter whenever a script
+tries to invoke a command that does not exist.  The default implementation
+of \fBunknown\fR is a library procedure defined when Tcl initializes an
+interpreter.  You can override the default \fBunknown\fR to change its
+functionality, or you can register a new handler for individual namespaces
+using the \fBnamespace unknown\fR command.  Note that there is no default
+implementation of \fBunknown\fR in a safe interpreter.
+.PP
+If the Tcl interpreter encounters a command name for which there
+is not a defined command (in either the current namespace, or the
+global namespace), then Tcl checks for the existence of
+an unknown handler for the current namespace. By default, this
+handler is a command named \fB::unknown\fR.  If there is no such
+command, then the interpreter returns an error.
+If the \fBunknown\fR command exists (or a new handler has been
+registered for the current namespace), then it is invoked with
+arguments consisting of the fully-substituted name and arguments
+for the original non-existent command.
+The \fBunknown\fR command typically does things like searching
+through library directories for a command procedure with the name
+\fIcmdName\fR, or expanding abbreviated command names to full-length,
+or automatically executing unknown commands as sub-processes.
+In some cases (such as expanding abbreviations) \fBunknown\fR will
+change the original command slightly and then (re-)execute it.
+The result of the \fBunknown\fR command is used as the result for
+the original non-existent command.
+.PP
+The default implementation of \fBunknown\fR behaves as follows.
+It first calls the \fBauto_load\fR library procedure to load the command.
+If this succeeds, then it executes the original command with its
+original arguments.
+If the auto-load fails then \fBunknown\fR calls \fBauto_execok\fR
+to see if there is an executable file by the name \fIcmd\fR.
+If so, it invokes the Tcl \fBexec\fR command
+with \fIcmd\fR and all the \fIargs\fR as arguments.
+If \fIcmd\fR cannot be auto-executed, \fBunknown\fR checks to
+see if the command was invoked at top-level and outside of any
+script.  If so, then \fBunknown\fR takes two additional steps.
+First, it sees if \fIcmd\fR has one of the following three forms:
+\fB!!\fR, \fB!\fIevent\fR, or \fB^\fIold\fB^\fInew\fR?\fB^\fR?.
+If so, then \fBunknown\fR carries out history substitution
+in the same way that \fBcsh\fR would for these constructs.
+Finally, \fBunknown\fR checks to see if \fIcmd\fR is
+a unique abbreviation for an existing Tcl command.
+If so, it expands the command name and executes the command with
+the original arguments.
+If none of the above efforts has been able to execute
+the command, \fBunknown\fR generates an error return.
+If the global variable \fBauto_noload\fR is defined, then the auto-load
+step is skipped.
+If the global variable \fBauto_noexec\fR is defined then the
+auto-exec step is skipped.
+Under normal circumstances the return value from \fBunknown\fR
+is the return value from the command that was eventually
+executed.
+.SH EXAMPLE
+Arrange for the \fBunknown\fR command to have its standard behavior
+except for first logging the fact that a command was not found:
+.PP
+.CS
+# Save the original one so we can chain to it
+rename \fBunknown\fR _original_unknown
+
+# Provide our own implementation
+proc \fBunknown\fR args {
+    puts stderr "WARNING: unknown command: $args"
+    uplevel 1 [list _original_unknown {*}$args]
+}
+.CE
+.SH "SEE ALSO"
+info(n), proc(n), interp(n), library(n), namespace(n)
+.SH KEYWORDS
+error, non-existent command, unknown

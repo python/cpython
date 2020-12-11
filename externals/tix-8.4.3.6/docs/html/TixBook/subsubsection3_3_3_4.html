@@ -1,0 +1,42 @@
+<HEAD>
+<TITLE> Chaining the <tt>subwidget</tt> Method<A NAME=134>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html381 HREF=subsubsection3_3_3_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html379 HREF=subsection3_3_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html373 HREF=subsubsection3_3_3_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html383 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html382 HREF=subsubsection3_3_3_5.html> Configuring Subwidget Options </A>
+<B>Up:</B> <A NAME=tex2html380 HREF=subsection3_3_3.html> Accessing The Components </A>
+<B> Previous:</B> <A NAME=tex2html374 HREF=subsubsection3_3_3_3.html> The subwidget Method</A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00033400000000000000> Chaining the <tt>subwidget</tt> Method<A NAME=134>&nbsp;</A></A></H3>
+<P>
+Some Tix mega-widgets may have subwidgets that in turn contain
+  subwidgets. For example, the TixExFileSelectDialog (section
+  5.1.3) widget contains a TixExFileSelectBox subwidget
+  called <tt>fsbox</tt>, which in turn contains a TixComboBox (section
+  1.4) subwidget called <tt>dir</tt>. If we want to access
+  the <tt>dir</tt> subwidget, we can just ``chain'' the <tt>subwidget</tt>
+  method. For example, if we have a TixExFileSelectDialog called <tt>.file</tt>, the following command will return the pathname of the <tt>dir</tt> subwidget of the <tt>fsbox</tt> subwidget of <tt>.file</tt>:
+<P>
+<blockquote> <tt>   .file subwidget fsbox subwidget dir
+</tt>
+</blockquote>
+<P>
+Moreover, the following command configures the <tt>dir</tt> subwidget to
+  have a border of the groove type with a border width of 2 pixels:
+<P>
+<blockquote> <tt>   .file subwidget fsbox subwidget dir configure -bd 2 -relief groove
+</tt>
+</blockquote>
+<P>
+The chaining of the subwidget command can be applied for arbitrarily
+  many levels, depending whether your widget has a subwidget that has
+  a subwidget that has a subwidget that has a subwidget ... and so on.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

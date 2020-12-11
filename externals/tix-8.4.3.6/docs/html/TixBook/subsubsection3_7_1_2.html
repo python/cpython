@@ -1,0 +1,42 @@
+<HEAD>
+<TITLE> The Subwidget in the TixFileSelectDialog<A NAME=512>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html1013 HREF=subsubsection3_7_1_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html1011 HREF=subsection3_7_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html1005 HREF=subsubsection3_7_1_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html1015 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html1014 HREF=subsubsection3_7_1_3.html> The TixExFileSelectDialog Widget</A>
+<B>Up:</B> <A NAME=tex2html1012 HREF=subsection3_7_1.html> File Selection Dialog </A>
+<B> Previous:</B> <A NAME=tex2html1006 HREF=subsubsection3_7_1_1.html> Using the TixFileSelectDialog </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00071200000000000000> The Subwidget in the TixFileSelectDialog<A NAME=512>&nbsp;</A></A></H3>
+<P>
+We may also want to set other options for the file dialog such as its file
+  filter and working directory. To do this, we must know the composition of
+  the TixFileSelectDialog widget. As shown in figure 5-2, the
+  TixFileSelectDialog contains a subwidget <tt>fsbox</tt> of the type
+  TixFileSelectBox and a subwidget <tt>bbox</tt> of the type TixStdButtonBox.
+<P>
+   The <tt>fsbox</tt> subwidget supports the <tt>-pattern</tt> and <tt>-directory</tt> options. At line 2 of figure 5-1, we use the <tt>-directory</tt> option to tell the <tt>fsbox</tt> subwidget to display files in
+the directory <tt>/usr/info</tt>; we also use the <tt>-pattern</tt> option to
+specify we only want the filenames that has the <tt>txt</tt> extension.
+<P>
+   The <tt>fsbox</tt> subwidget also supports the <tt>-selection</tt> option,
+  which stores the filename currently selected by the user. We can
+  query this value by the <tt>cget</tt> widget command of the <tt>fsbox</tt>
+  subwidget.
+<P>
+Remember that the <tt>-pattern</tt>, <tt>-directory</tt> and <tt>-selection</tt>
+  options do not belong to the TixFileSelectDialog widget. A common mistake
+  that people make is to try to configure the non-existent <tt>-pattern</tt>
+  option of the TixFileSelectDialog, which causes much despair, long error
+  messages and great loss of self-confidence. <em>Always remember:</em>, when
+  you want to configure an option, find out whether it belongs to the
+  widget or its subwidgets.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

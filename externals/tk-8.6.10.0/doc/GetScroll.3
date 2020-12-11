@@ -1,0 +1,75 @@
+'\"
+'\" Copyright (c) 1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_GetScrollInfo 3 8.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_GetScrollInfoObj, Tk_GetScrollInfo \- parse arguments for scrolling commands
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+int
+\fBTk_GetScrollInfoObj(\fIinterp, objc, objv, fractionPtr, stepsPtr\fB)\fR
+.sp
+int
+\fBTk_GetScrollInfo(\fIinterp, argc, argv, fractionPtr, stepsPtr\fB)\fR
+.SH ARGUMENTS
+.AS "Tcl_Interp" *fractionPtr
+.AP Tcl_Interp *interp in
+Interpreter to use for error reporting.
+.AP int objc in
+Number of Tcl_Obj's in \fIobjv\fR array.
+.AP "Tcl_Obj *const" objv[] in
+Argument objects.  These represent the entire widget command, of
+which the first word is typically the widget name and the second
+word is typically \fBxview\fR or \fByview\fR.
+.AP int argc in
+Number of strings in \fIargv\fR array.
+.AP "const char" *argv[] in
+Argument strings.  These represent the entire widget command, of
+which the first word is typically the widget name and the second
+word is typically \fBxview\fR or \fByview\fR.
+.AP double *fractionPtr out
+Filled in with fraction from \fBmoveto\fR option, if any.
+.AP int *stepsPtr out
+Filled in with line or page count from \fBscroll\fR option, if any.
+The value may be negative.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_GetScrollInfoObj\fR parses the arguments expected by widget
+scrolling commands such as \fBxview\fR and \fByview\fR.
+It receives the entire list of words that make up a widget command
+and parses the words starting with \fIobjv\fR[2].
+The words starting with \fIobjv\fR[2] must have one of the following forms:
+.CS
+\fBmoveto \fIfraction\fR
+\fBscroll \fInumber\fB units\fR
+\fBscroll \fInumber\fB pages\fR
+.CE
+.LP
+Any of the \fBmoveto\fR, \fBscroll\fR, \fBunits\fR, and \fBpages\fR
+keywords may be abbreviated.
+If \fIobjv\fR has the \fBmoveto\fR form, \fBTK_SCROLL_MOVETO\fR
+is returned as result and \fI*fractionPtr\fR is filled in with the
+\fIfraction\fR argument to the command, which must be a proper real
+value.
+If \fIobjv\fR has the \fBscroll\fR form, \fBTK_SCROLL_UNITS\fR
+or \fBTK_SCROLL_PAGES\fR is returned and \fI*stepsPtr\fR is filled
+in with the \fInumber\fR value, which must be a proper integer.
+If an error occurs in parsing the arguments, \fBTK_SCROLL_ERROR\fR
+is returned and an error message is left in interpreter
+\fIinterp\fR's result.
+.PP
+\fBTk_GetScrollInfo\fR is identical in function to
+\fBTk_GetScrollInfoObj\fR.  However, \fBTk_GetScrollInfo\fR accepts
+string arguments, making it more appropriate for use with legacy
+widgets.
+.SH KEYWORDS
+parse, scrollbar, scrolling command, xview, yview

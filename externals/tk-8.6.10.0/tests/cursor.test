@@ -1,0 +1,846 @@
+# This file is a Tcl script to test out the procedures in the file
+# tkCursor.c.  It is organized in the standard white-box fashion for
+# Tcl tests.
+#
+# Copyright (c) 1998 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+
+
+# Tests 2.3 and 2.4 need a helper file with a very specific name and
+# controlled format.
+proc setWincur {wincurName} {
+	upvar $wincurName wincur
+	set wincur(data_octal) {
+	    000 000 002 000 001 000 040 040 000 000 007 000 007 000 060 001
+	    000 000 026 000 000 000 050 000 000 000 040 000 000 000 100 000
+	    000 000 001 000 001 000 000 000 000 000 000 000 000 000 000 000
+	    000 000 000 000 000 000 000 000 000 000 000 000 000 000 000 000
+	    000 000 377 377 377 000 000 000 000 000 000 000 000 000 000 000
+	    000 000 000 000 000 000 000 000 000 000 000 000 000 000 000 000
+	    000 000 000 000 000 000 000 000 000 000 000 000 000 000 000 000
+	    000 000 000 000 000 000 000 000 000 000 000 000 000 000 000 000
+	    000 000 000 000 000 000 000 000 000 000 160 016 000 000 170 036
+	    000 000 174 076 000 000 076 174 000 000 037 370 000 000 017 360
+	    000 000 007 340 000 000 007 340 000 000 017 360 000 000 037 370
+	    000 000 076 174 000 000 174 076 000 000 170 036 000 000 160 016
+	    000 000 000 000 000 000 377 377 377 377 377 377 377 377 377 377
+	    377 377 377 377 377 377 377 377 377 377 377 377 377 377 377 377
+	    377 377 377 377 377 377 377 377 377 377 377 377 377 377 377 377
+	    377 377 377 377 377 377 377 377 377 377 377 377 377 377 377 377
+	    377 377 377 377 377 377 017 360 377 377 007 340 377 377 003 300
+	    377 377 001 200 377 377 200 001 377 377 300 003 377 377 340 007
+	    377 377 360 017 377 377 360 017 377 377 340 007 377 377 300 003
+	    377 377 200 001 377 377 001 200 377 377 003 300 377 377 007 340
+	    377 377 017 360 377 377
+	}
+	set wincur(data_binary) {}
+	foreach wincur(num) $wincur(data_octal) {
+	    append wincur(data_binary) [binary format c [scan $wincur(num) %o]]
+	}
+	set wincur(dir) [makeDirectory {dir with spaces}]
+	set wincur(file) [makeFile $wincur(data_binary) "test file.cur" $wincur(dir)]
+}
+
+
+test cursor-1.1 {Tk_AllocCursorFromObj - converting internal reps} -constraints {
+    testcursor
+} -body {
+    set x watch
+    lindex $x 0
+    button .b -cursor $x
+    lindex $x 0
+    testcursor watch
+} -cleanup {
+    destroy .b
+} -result {{1 0}}
+test cursor-1.2 {Tk_AllocCursorFromObj - discard stale cursor} -constraints {
+    testcursor
+} -body {
+    set x watch
+    set result {}
+    button .b1 -cursor $x
+    destroy .b1
+    lappend result [testcursor watch]
+    button .b2 -cursor $x
+    lappend result [testcursor watch]
+} -cleanup {
+    destroy .b2
+} -result {{} {{1 1}}}
+test cursor-1.3 {Tk_AllocCursorFromObj - reuse existing cursor} -constraints {
+    testcursor
+} -body {
+    set x watch
+    set result {}
+    button .b1 -cursor $x
+    lappend result [testcursor watch]
+    button .b2 -cursor $x
+    pack .b1 .b2 -side top
+    lappend result [testcursor watch]
+} -cleanup {
+    destroy .b1 .b2
+} -result {{{1 1}} {{2 1}}}
+
+test cursor-2.1 {Tk_GetCursor procedure} -body {
+    button .b -cursor bad_name
+} -cleanup {
+    destroy .b
+} -returnCodes error -result {bad cursor spec "bad_name"}
+test cursor-2.2 {Tk_GetCursor procedure} -body {
+    button .b -cursor @xyzzy
+} -cleanup {
+    destroy .b
+} -returnCodes error -result {bad cursor spec "@xyzzy"}
+
+test cursor-2.3 {Tk_GetCursor procedure: cursor specs are lists} -constraints {
+    win
+} -setup {
+	unset -nocomplain wincur
+	set wincur(file) ""
+} -body {
+	setWincur wincur
+    button .b -cursor [list @$wincur(file)]
+} -cleanup {
+    destroy .b
+	removeDirectory $wincur(dir)
+	unset wincur	
+} -result {.b}
+test cursor-2.4 {Tk_GetCursor procedure: cursor specs are lists} -constraints {
+    win
+} -setup {
+	unset -nocomplain wincur
+	set wincur(file) ""
+} -body {
+	setWincur wincur
+    button .b -cursor @[regsub -all {[][ \\{}""$#]} $wincur(file) {\\&}]
+} -cleanup {
+    destroy .b
+	removeDirectory $wincur(dir)
+	unset wincur
+} -result {.b}
+
+test cursor-3.1 {Tk_FreeCursorFromObj - reference counts} -constraints {
+    testcursor
+} -setup {
+    set x heart
+    set result {}
+} -body {
+    button .b1 -cursor $x
+    button .b3 -cursor $x
+    button .b2 -cursor $x
+    lappend result [testcursor heart]
+    destroy .b1
+    lappend result [testcursor heart]
+    destroy .b2
+    lappend result [testcursor heart]
+    destroy .b3
+    lappend result [testcursor heart]
+} -result {{{3 1}} {{2 1}} {{1 1}} {}}
+
+test cursor-4.1 {FreeCursorObjProc} -constraints {
+    testcursor
+} -setup {
+    proc copy {s} {return [string index $s 0][string range $s 1 end]}
+} -body {
+    set x [copy heart]
+    button .b -cursor $x
+    set y [copy heart]
+    .b configure -cursor $y
+    set z [copy heart]
+    .b configure -cursor $z
+    set result {}
+    lappend result [testcursor heart]
+    set x red
+    lappend result [testcursor heart]
+    set z 32
+    lappend result [testcursor heart]
+    destroy .b
+    lappend result [testcursor heart]
+    set y bogus
+    set result
+} -cleanup {
+    rename copy {}
+    destroy .b
+} -result {{{1 3}} {{1 2}} {{1 1}} {}}
+
+# -------------------------------------------------------------------------
+test cursor-5.1 {assert consistent cursor configuration command} -setup {
+    button .b
+} -body {
+    .b configure -cursor {watch red black}
+} -cleanup {
+    destroy .b
+} -result {}
+
+# -------------------------------------------------------------------------
+# Check for the standard set of cursors.
+test cursor-6.1 {check cursor-font cursor X_cursor} -setup {
+	button .b -text X_cursor
+} -body {
+	.b configure -cursor X_cursor
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.2 {check cursor-font cursor arrow} -setup {
+	button .b -text arrow
+} -body {
+	.b configure -cursor arrow
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.3 {check cursor-font cursor based_arrow_down} -setup {
+	button .b -text based_arrow_down
+} -body {
+	.b configure -cursor based_arrow_down
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.4 {check cursor-font cursor based_arrow_up} -setup {
+	button .b -text based_arrow_up
+} -body {
+	.b configure -cursor based_arrow_up
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.5 {check cursor-font cursor boat} -setup {
+	button .b -text boat
+} -body {
+	.b configure -cursor boat
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.6 {check cursor-font cursor bogosity} -setup {
+	button .b -text bogosity
+} -body {
+	.b configure -cursor bogosity
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.7 {check cursor-font cursor bottom_left_corner} -setup {
+	button .b -text bottom_left_corner
+} -body {
+	.b configure -cursor bottom_left_corner
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.8 {check cursor-font cursor bottom_right_corner} -setup {
+	button .b -text bottom_right_corner
+} -body {
+	.b configure -cursor bottom_right_corner
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.9 {check cursor-font cursor bottom_side} -setup {
+	button .b -text bottom_side
+} -body {
+	.b configure -cursor bottom_side
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.10 {check cursor-font cursor bottom_tee} -setup {
+	button .b -text bottom_tee
+} -body {
+	.b configure -cursor bottom_tee
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.11 {check cursor-font cursor box_spiral} -setup {
+	button .b -text box_spiral
+} -body {
+	.b configure -cursor box_spiral
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.12 {check cursor-font cursor center_ptr} -setup {
+	button .b -text center_ptr
+} -body {
+	.b configure -cursor center_ptr
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.13 {check cursor-font cursor circle} -setup {
+	button .b -text circle
+} -body {
+	.b configure -cursor circle
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.14 {check cursor-font cursor clock} -setup {
+	button .b -text clock
+} -body {
+	.b configure -cursor clock
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.15 {check cursor-font cursor coffee_mug} -setup {
+	button .b -text coffee_mug
+} -body {
+	.b configure -cursor coffee_mug
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.16 {check cursor-font cursor cross} -setup {
+	button .b -text cross
+} -body {
+	.b configure -cursor cross
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.17 {check cursor-font cursor cross_reverse} -setup {
+	button .b -text cross_reverse
+} -body {
+	.b configure -cursor cross_reverse
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.18 {check cursor-font cursor crosshair} -setup {
+	button .b -text crosshair
+} -body {
+	.b configure -cursor crosshair
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.19 {check cursor-font cursor diamond_cross} -setup {
+	button .b -text diamond_cross
+} -body {
+	.b configure -cursor diamond_cross
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.20 {check cursor-font cursor dot} -setup {
+	button .b -text dot
+} -body {
+	.b configure -cursor dot
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.21 {check cursor-font cursor dotbox} -setup {
+	button .b -text dotbox
+} -body {
+	.b configure -cursor dotbox
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.22 {check cursor-font cursor double_arrow} -setup {
+	button .b -text double_arrow
+} -body {
+	.b configure -cursor double_arrow
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.23 {check cursor-font cursor draft_large} -setup {
+	button .b -text draft_large
+} -body {
+	.b configure -cursor draft_large
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.24 {check cursor-font cursor draft_small} -setup {
+	button .b -text draft_small
+} -body {
+	.b configure -cursor draft_small
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.25 {check cursor-font cursor draped_box} -setup {
+	button .b -text draped_box
+} -body {
+	.b configure -cursor draped_box
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.26 {check cursor-font cursor exchange} -setup {
+	button .b -text exchange
+} -body {
+	.b configure -cursor exchange
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.27 {check cursor-font cursor fleur} -setup {
+	button .b -text fleur
+} -body {
+	.b configure -cursor fleur
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.28 {check cursor-font cursor gobbler} -setup {
+	button .b -text gobbler
+} -body {
+	.b configure -cursor gobbler
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.29 {check cursor-font cursor gumby} -setup {
+	button .b -text gumby
+} -body {
+	.b configure -cursor gumby
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.30 {check cursor-font cursor hand1} -setup {
+	button .b -text hand1
+} -body {
+	.b configure -cursor hand1
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.31 {check cursor-font cursor hand2} -setup {
+	button .b -text hand2
+} -body {
+	.b configure -cursor hand2
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.32 {check cursor-font cursor heart} -setup {
+	button .b -text heart
+} -body {
+	.b configure -cursor heart
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.33 {check cursor-font cursor icon} -setup {
+	button .b -text icon
+} -body {
+	.b configure -cursor icon
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.34 {check cursor-font cursor iron_cross} -setup {
+	button .b -text iron_cross
+} -body {
+	.b configure -cursor iron_cross
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.35 {check cursor-font cursor left_ptr} -setup {
+	button .b -text left_ptr
+} -body {
+	.b configure -cursor left_ptr
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.36 {check cursor-font cursor left_side} -setup {
+	button .b -text left_side
+} -body {
+	.b configure -cursor left_side
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.37 {check cursor-font cursor left_tee} -setup {
+	button .b -text left_tee
+} -body {
+	.b configure -cursor left_tee
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.38 {check cursor-font cursor leftbutton} -setup {
+	button .b -text leftbutton
+} -body {
+	.b configure -cursor leftbutton
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.39 {check cursor-font cursor ll_angle} -setup {
+	button .b -text ll_angle
+} -body {
+	.b configure -cursor ll_angle
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.40 {check cursor-font cursor lr_angle} -setup {
+	button .b -text lr_angle
+} -body {
+	.b configure -cursor lr_angle
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.41 {check cursor-font cursor man} -setup {
+	button .b -text man
+} -body {
+	.b configure -cursor man
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.42 {check cursor-font cursor middlebutton} -setup {
+	button .b -text middlebutton
+} -body {
+	.b configure -cursor middlebutton
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.43 {check cursor-font cursor mouse} -setup {
+	button .b -text mouse
+} -body {
+	.b configure -cursor mouse
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.44 {check cursor-font cursor pencil} -setup {
+	button .b -text pencil
+} -body {
+	.b configure -cursor pencil
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.45 {check cursor-font cursor pirate} -setup {
+	button .b -text pirate
+} -body {
+	.b configure -cursor pirate
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.46 {check cursor-font cursor plus} -setup {
+	button .b -text plus
+} -body {
+	.b configure -cursor plus
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.47 {check cursor-font cursor question_arrow} -setup {
+	button .b -text question_arrow
+} -body {
+	.b configure -cursor question_arrow
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.48 {check cursor-font cursor right_ptr} -setup {
+	button .b -text right_ptr
+} -body {
+	.b configure -cursor right_ptr
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.49 {check cursor-font cursor right_side} -setup {
+	button .b -text right_side
+} -body {
+	.b configure -cursor right_side
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.50 {check cursor-font cursor right_tee} -setup {
+	button .b -text right_tee
+} -body {
+	.b configure -cursor right_tee
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.51 {check cursor-font cursor rightbutton} -setup {
+	button .b -text rightbutton
+} -body {
+	.b configure -cursor rightbutton
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.52 {check cursor-font cursor rtl_logo} -setup {
+	button .b -text rtl_logo
+} -body {
+	.b configure -cursor rtl_logo
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.53 {check cursor-font cursor sailboat} -setup {
+	button .b -text sailboat
+} -body {
+	.b configure -cursor sailboat
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.54 {check cursor-font cursor sb_down_arrow} -setup {
+	button .b -text sb_down_arrow
+} -body {
+	.b configure -cursor sb_down_arrow
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.55 {check cursor-font cursor sb_h_double_arrow} -setup {
+	button .b -text sb_h_double_arrow
+} -body {
+	.b configure -cursor sb_h_double_arrow
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.56 {check cursor-font cursor sb_left_arrow} -setup {
+	button .b -text sb_left_arrow
+} -body {
+	.b configure -cursor sb_left_arrow
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.57 {check cursor-font cursor sb_right_arrow} -setup {
+	button .b -text sb_right_arrow
+} -body {
+	.b configure -cursor sb_right_arrow
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.58 {check cursor-font cursor sb_up_arrow} -setup {
+	button .b -text sb_up_arrow
+} -body {
+	.b configure -cursor sb_up_arrow
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.59 {check cursor-font cursor sb_v_double_arrow} -setup {
+	button .b -text sb_v_double_arrow
+} -body {
+	.b configure -cursor sb_v_double_arrow
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.60 {check cursor-font cursor shuttle} -setup {
+	button .b -text shuttle
+} -body {
+	.b configure -cursor shuttle
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.61 {check cursor-font cursor sizing} -setup {
+	button .b -text sizing
+} -body {
+	.b configure -cursor sizing
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.62 {check cursor-font cursor spider} -setup {
+	button .b -text spider
+} -body {
+	.b configure -cursor spider
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.63 {check cursor-font cursor spraycan} -setup {
+	button .b -text spraycan
+} -body {
+	.b configure -cursor spraycan
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.64 {check cursor-font cursor star} -setup {
+	button .b -text star
+} -body {
+	.b configure -cursor star
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.65 {check cursor-font cursor target} -setup {
+	button .b -text target
+} -body {
+	.b configure -cursor target
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.66 {check cursor-font cursor tcross} -setup {
+	button .b -text tcross
+} -body {
+	.b configure -cursor tcross
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.67 {check cursor-font cursor top_left_arrow} -setup {
+	button .b -text top_left_arrow
+} -body {
+	.b configure -cursor top_left_arrow
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.68 {check cursor-font cursor top_left_corner} -setup {
+	button .b -text top_left_corner
+} -body {
+	.b configure -cursor top_left_corner
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.69 {check cursor-font cursor top_right_corner} -setup {
+	button .b -text top_right_corner
+} -body {
+	.b configure -cursor top_right_corner
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.70 {check cursor-font cursor top_side} -setup {
+	button .b -text top_side
+} -body {
+	.b configure -cursor top_side
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.71 {check cursor-font cursor top_tee} -setup {
+	button .b -text top_tee
+} -body {
+	.b configure -cursor top_tee
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.72 {check cursor-font cursor trek} -setup {
+	button .b -text trek
+} -body {
+	.b configure -cursor trek
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.73 {check cursor-font cursor ul_angle} -setup {
+	button .b -text ul_angle
+} -body {
+	.b configure -cursor ul_angle
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.74 {check cursor-font cursor umbrella} -setup {
+	button .b -text umbrella
+} -body {
+	.b configure -cursor umbrella
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.75 {check cursor-font cursor ur_angle} -setup {
+	button .b -text ur_angle
+} -body {
+	.b configure -cursor ur_angle
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.76 {check cursor-font cursor watch} -setup {
+	button .b -text watch
+} -body {
+	.b configure -cursor watch
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-6.77 {check cursor-font cursor xterm} -setup {
+	button .b -text xterm
+} -body {
+	.b configure -cursor xterm
+} -cleanup {
+	destroy .b
+} -result {}
+
+# Test cursor named "none", it is not defined in
+# the X cursor table. It is defined in a Tk specific
+# table of named cursors and should be available on
+# all platforms.
+test cursor-6.78 {test cursor named "none"} -setup {
+    button .b -text CButton
+} -body {
+    .b configure -cursor none
+    .b cget -cursor
+} -cleanup {
+    destroy .b
+} -result none
+
+test cursor-6.79 {test cursor named "none"} -setup {
+    button .b -text CButton
+} -body {
+    .b configure -cursor none
+    .b configure -cursor {}
+    .b cget -cursor
+} -cleanup {
+    destroy .b
+} -result {}
+
+test cursor-6.80 {test cursor named "none"} -setup {
+    button .b -text CButton
+} -body {
+    .b configure -cursor none
+    .b configure -cursor {}
+    .b configure -cursor none
+    .b cget -cursor
+} -cleanup {
+    destroy .b
+} -result none
+
+test cursor-6.81 {test cursor named "none"} -setup {
+    button .b -text CButton
+} -body {
+    # Setting fg and bg does nothing for the none cursor
+    # because it displays no fg or bg pixels.
+    set results [list]
+    .b configure -cursor none
+    lappend results [.b cget -cursor]
+    .b configure -cursor {none blue}
+    lappend results [.b cget -cursor]
+    .b configure -cursor {none blue green}
+    lappend results [.b cget -cursor]
+    .b configure -cursor {}
+    lappend results [.b cget -cursor]
+    set results
+} -cleanup {
+    destroy .b
+    unset results
+} -result {none {none blue} {none blue green} {}}
+
+# -------------------------------------------------------------------------
+# Check the Windows specific cursors
+test cursor-7.1 {check Windows cursor no} -constraints win -setup {
+	button .b -text no
+} -body {
+	.b configure -cursor no
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-7.2 {check Windows cursor starting} -constraints win -setup {
+	button .b -text starting
+} -body {
+	.b configure -cursor starting
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-7.3 {check Windows cursor size} -constraints win -setup {
+	button .b -text size
+} -body {
+	.b configure -cursor size
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-7.4 {check Windows cursor size_ne_sw} -constraints win -setup {
+	button .b -text size_ne_sw
+} -body {
+	.b configure -cursor size_ne_sw
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-7.5 {check Windows cursor size_ns} -constraints win -setup {
+	button .b -text size_ns
+} -body {
+	.b configure -cursor size_ns
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-7.6 {check Windows cursor size_nw_se} -constraints win -setup {
+	button .b -text size_nw_se
+} -body {
+	.b configure -cursor size_nw_se
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-7.7 {check Windows cursor size_we} -constraints win -setup {
+	button .b -text size_we
+} -body {
+	.b configure -cursor size_we
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-7.8 {check Windows cursor uparrow} -constraints win -setup {
+	button .b -text uparrow
+} -body {
+	.b configure -cursor uparrow
+} -cleanup {
+	destroy .b
+} -result {}
+test cursor-7.9 {check Windows cursor wait} -constraints win -setup {
+	button .b -text wait
+} -body {
+	.b configure -cursor wait
+} -cleanup {
+	destroy .b
+} -result {}
+
+# -------------------------------------------------------------------------
+
+# cleanup
+cleanupTests
+return

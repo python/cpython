@@ -1,0 +1,88 @@
+'\"
+'\" Copyright (c) 2004 Joe English
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH ttk::label n 8.5 Tk "Tk Themed Widget"
+.so man.macros
+.BS
+.SH NAME
+ttk::label \- Display a text string and/or image
+.SH SYNOPSIS
+\fBttk::label\fR \fIpathName \fR?\fIoptions\fR?
+.BE
+.SH DESCRIPTION
+.PP
+A \fBttk::label\fR widget displays a textual label and/or image.
+The label may be linked to a Tcl variable
+to automatically change the displayed text.
+.SO ttk_widget
+\-class	\-compound	\-cursor
+\-image	\-padding	\-state	\-style	\-takefocus
+\-text	\-textvariable	\-underline
+\-width
+.SE
+.SH "WIDGET-SPECIFIC OPTIONS"
+.OP \-anchor anchor Anchor
+Specifies how the information in the widget is positioned
+relative to the inner margins.  Legal values are
+\fBn\fR, \fBne\fR, \fBe\fR, \fBse\fR,
+\fBs\fR, \fBsw\fR, \fBw\fR, \fBnw\fR, and \fBcenter\fR.
+See also \fB\-justify\fR.
+.OP \-background frameColor FrameColor
+The widget's background color.
+If unspecified, the theme default is used.
+.OP \-font font Font
+Font to use for label text.
+.OP \-foreground textColor TextColor
+The widget's foreground color.
+If unspecified, the theme default is used.
+.OP \-justify justify Justify
+If there are multiple lines of text, specifies how
+the lines are laid out relative to one another.
+One of \fBleft\fR, \fBcenter\fR, or \fBright\fR.
+See also \fB\-anchor\fR.
+.OP \-relief relief Relief
+.\" Rewrite this:
+Specifies the 3-D effect desired for the widget border.
+Valid values are
+\fBflat\fR, \fBgroove\fR, \fBraised\fR, \fBridge\fR, \fBsolid\fR,
+and \fBsunken\fR.
+.OP \-wraplength wrapLength WrapLength
+Specifies the maximum line length (in pixels).
+If this option is less than or equal to zero,
+then automatic wrapping is not performed; otherwise
+the text is split into lines such that no line is longer
+than the specified value.
+.SH "WIDGET COMMAND"
+.PP
+Supports the standard widget commands
+\fBconfigure\fR, \fBcget\fR, \fBidentify\fR, \fBinstate\fR, and \fBstate\fR;
+see \fIttk::widget(n)\fR.
+.SH "STYLING OPTIONS"
+.PP
+The class name for a \fBttk::label\fP is \fBTLabel\fP.
+.PP
+Dynamic states: \fBdisabled\fP, \fBreadonly\fP.
+.PP
+\fBTLabel\fP styling options configurable with \fBttk::style\fP
+are:
+.PP
+\fB\-background\fP \fIcolor\fP
+.br
+\fB\-compound\fP \fIcompound\fP
+.br
+\fB\-foreground\fP \fIcolor\fP
+.br
+\fB\-font\fP \fIfont\fP
+.PP
+Some options are only available for specific themes.
+.PP
+See the \fBttk::style\fP manual page for information on how to configure
+ttk styles.
+.SH "SEE ALSO"
+ttk::widget(n), label(n)
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

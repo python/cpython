@@ -1,0 +1,85 @@
+'\"
+'\" Copyright (c) 1995-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_Init 3 8.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_Init, Tk_SafeInit \- add Tk to an interpreter and make a new Tk application.
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+int
+\fBTk_Init\fR(\fIinterp\fR)
+.sp
+int
+\fBTk_SafeInit\fR(\fIinterp\fR)
+.SH ARGUMENTS
+.AP Tcl_Interp *interp in
+Interpreter in which to load Tk.  Tk should not already be loaded
+in this interpreter.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_Init\fR is the package initialization procedure for Tk.
+It is normally invoked by the \fBTcl_AppInit\fR procedure
+for an application or by the \fBload\fR command.
+\fBTk_Init\fR adds all of Tk's commands to \fIinterp\fR
+and creates a new Tk application, including its main window.
+If the initialization is successful \fBTk_Init\fR returns
+\fBTCL_OK\fR;  if there is an error it returns \fBTCL_ERROR\fR.
+\fBTk_Init\fR also leaves a result or error message
+in interpreter \fIinterp\fR's result.
+.PP
+If there is a variable \fBargv\fR in \fIinterp\fR, \fBTk_Init\fR
+treats the contents of this variable as a list of options for the
+new Tk application.
+The options may have any of the forms documented for the
+\fBwish\fR application (in fact, \fBwish\fR uses Tk_Init to process
+its command-line arguments).
+.PP
+\fBTk_SafeInit\fR is identical to \fBTk_Init\fR except that it removes
+all Tk commands that are considered unsafe.  Those commands and the
+reasons for their exclusion are:
+.TP
+\fBbell\fR
+Continuous ringing of the bell is a nuisance.
+.TP
+\fBclipboard\fR
+A malicious script could replace the contents of the clipboard with
+the string
+.QW "\fBrm \-r *\fR"
+and lead to surprises when the contents of the clipboard are pasted.
+.TP
+\fBgrab\fR
+Grab can be used to block the user from using any other applications.
+.TP
+\fBmenu\fR
+Menus can be used to cover the entire screen and to steal input from
+the user.
+.TP
+\fBselection\fR
+See clipboard.
+.TP
+\fBsend\fR
+Send can be used to cause unsafe interpreters to execute commands.
+.TP
+\fBtk\fR
+The tk command recreates the send command, which is unsafe.
+.TP
+\fBtkwait\fR
+Tkwait can block the containing process forever
+.TP
+\fBtoplevel\fR
+Toplevels can be used to cover the entire screen and to steal input
+from the user.
+.TP
+\fBwm\fR
+If toplevels are ever allowed, wm can be used to remove decorations,
+move windows around, etc.
+.SH KEYWORDS
+safe, application, initialization, load, main window

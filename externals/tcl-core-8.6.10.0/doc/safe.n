@@ -1,0 +1,359 @@
+'\"
+'\" Copyright (c) 1995-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH "Safe Tcl" n 8.0 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+safe \- Creating and manipulating safe interpreters
+.SH SYNOPSIS
+\fB::safe::interpCreate\fR ?\fIslave\fR? ?\fIoptions...\fR?
+.sp
+\fB::safe::interpInit\fR \fIslave\fR ?\fIoptions...\fR?
+.sp
+\fB::safe::interpConfigure\fR \fIslave\fR ?\fIoptions...\fR?
+.sp
+\fB::safe::interpDelete\fR \fIslave\fR
+.sp
+\fB::safe::interpAddToAccessPath\fR \fIslave\fR \fIdirectory\fR
+.sp
+\fB::safe::interpFindInAccessPath\fR \fIslave\fR \fIdirectory\fR
+.sp
+\fB::safe::setLogCmd\fR ?\fIcmd arg...\fR?
+.SS OPTIONS
+.PP
+?\fB\-accessPath\fR \fIpathList\fR?
+?\fB\-statics\fR \fIboolean\fR? ?\fB\-noStatics\fR?
+?\fB\-nested\fR \fIboolean\fR? ?\fB\-nestedLoadOk\fR?
+?\fB\-deleteHook\fR \fIscript\fR?
+.BE
+.SH DESCRIPTION
+Safe Tcl is a mechanism for executing untrusted Tcl scripts
+safely and for providing mediated access by such scripts to
+potentially dangerous functionality.
+.PP
+Safe Tcl ensures that untrusted Tcl scripts cannot harm the
+hosting application.
+It prevents integrity and privacy attacks. Untrusted Tcl
+scripts are prevented from corrupting the state of the hosting
+application or computer. Untrusted scripts are also prevented from
+disclosing information stored on the hosting computer or in the
+hosting application to any party.
+.PP
+Safe Tcl allows a master interpreter to create safe, restricted
+interpreters that contain a set of predefined aliases for the \fBsource\fR,
+\fBload\fR, \fBfile\fR, \fBencoding\fR, and \fBexit\fR commands and
+are able to use the auto-loading and package mechanisms.
+.PP
+No knowledge of the file system structure is leaked to the
+safe interpreter, because it has access only to a virtualized path
+containing tokens. When the safe interpreter requests to source a file, it
+uses the token in the virtual path as part of the file name to source; the
+master interpreter transparently
+translates the token into a real directory name and executes the
+requested operation (see the section \fBSECURITY\fR below for details).
+Different levels of security can be selected by using the optional flags
+of the commands described below.
+.PP
+All commands provided in the master interpreter by Safe Tcl reside in
+the \fBsafe\fR namespace.
+.SH COMMANDS
+The following commands are provided in the master interpreter:
+.TP
+\fB::safe::interpCreate\fR ?\fIslave\fR? ?\fIoptions...\fR?
+Creates a safe interpreter, installs the aliases described in the section
+\fBALIASES\fR and initializes the auto-loading and package mechanism as
+specified by the supplied \fIoptions\fR.
+See the \fBOPTIONS\fR section below for a description of the
+optional arguments.
+If the \fIslave\fR argument is omitted, a name will be generated.
+\fB::safe::interpCreate\fR always returns the interpreter name.
+.TP
+\fB::safe::interpInit\fR \fIslave\fR ?\fIoptions...\fR?
+This command is similar to \fBinterpCreate\fR except it that does not
+create the safe interpreter. \fIslave\fR must have been created by some
+other means, like \fBinterp create\fR \fB\-safe\fR.
+.TP
+\fB::safe::interpConfigure\fR \fIslave\fR ?\fIoptions...\fR?
+If no \fIoptions\fR are given, returns the settings for all options for the
+named safe interpreter as a list of options and their current values
+for that \fIslave\fR.
+If a single additional argument is provided,
+it will return a list of 2 elements \fIname\fR and \fIvalue\fR where
+\fIname\fR is the full name of that option and \fIvalue\fR the current value
+for that option and the \fIslave\fR.
+If more than two additional arguments are provided, it will reconfigure the
+safe interpreter and change each and only the provided options.
+See the section on \fBOPTIONS\fR below for options description.
+Example of use:
+.RS
+.PP
+.CS
+# Create new interp with the same configuration as "$i0":
+set i1 [safe::interpCreate {*}[safe::interpConfigure $i0]]
+
+# Get the current deleteHook
+set dh [safe::interpConfigure $i0  \-del]
+
+# Change (only) the statics loading ok attribute of an
+# interp and its deleteHook (leaving the rest unchanged):
+safe::interpConfigure $i0  \-delete {foo bar} \-statics 0
+.CE
+.RE
+.TP
+\fB::safe::interpDelete\fR \fIslave\fR
+Deletes the safe interpreter and cleans up the corresponding
+master interpreter data structures.
+If a \fIdeleteHook\fR script was specified for this interpreter it is
+evaluated before the interpreter is deleted, with the name of the
+interpreter as an additional argument.
+.TP
+\fB::safe::interpFindInAccessPath\fR \fIslave\fR \fIdirectory\fR
+This command finds and returns the token for the real directory
+\fIdirectory\fR in the safe interpreter's current virtual access path.
+It generates an error if the directory is not found.
+Example of use:
+.RS
+.PP
+.CS
+$slave eval [list set tk_library \e
+      [::safe::interpFindInAccessPath $name $tk_library]]
+.CE
+.RE
+.TP
+\fB::safe::interpAddToAccessPath\fR \fIslave\fR \fIdirectory\fR
+This command adds \fIdirectory\fR to the virtual path maintained for the
+safe interpreter in the master, and returns the token that can be used in
+the safe interpreter to obtain access to files in that directory.
+If the directory is already in the virtual path, it only returns the token
+without adding the directory to the virtual path again.
+Example of use:
+.RS
+.PP
+.CS
+$slave eval [list set tk_library \e
+      [::safe::interpAddToAccessPath $name $tk_library]]
+.CE
+.RE
+.TP
+\fB::safe::setLogCmd\fR ?\fIcmd arg...\fR?
+This command installs a script that will be called when interesting
+life cycle events occur for a safe interpreter.
+When called with no arguments, it returns the currently installed script.
+When called with one argument, an empty string, the currently installed
+script is removed and logging is turned off.
+The script will be invoked with one additional argument, a string
+describing the event of interest.
+The main purpose is to help in debugging safe interpreters.
+Using this facility you can get complete error messages while the safe
+interpreter gets only generic error messages.
+This prevents a safe interpreter from seeing messages about failures
+and other events that might contain sensitive information such as real
+directory names.
+.RS
+.PP
+Example of use:
+.PP
+.CS
+::safe::setLogCmd puts stderr
+.CE
+.PP
+Below is the output of a sample session in which a safe interpreter
+attempted to source a file not found in its virtual access path.
+Note that the safe interpreter only received an error message saying that
+the file was not found:
+.PP
+.CS
+NOTICE for slave interp10 : Created
+NOTICE for slave interp10 : Setting accessPath=(/foo/bar) staticsok=1 nestedok=0 deletehook=()
+NOTICE for slave interp10 : auto_path in interp10 has been set to {$p(:0:)}
+ERROR for slave interp10 : /foo/bar/init.tcl: no such file or directory
+.CE
+.RE
+.SS OPTIONS
+The following options are common to
+\fB::safe::interpCreate\fR, \fB::safe::interpInit\fR,
+and \fB::safe::interpConfigure\fR.
+Any option name can be abbreviated to its minimal
+non-ambiguous name.
+Option names are not case sensitive.
+.TP
+\fB\-accessPath\fR \fIdirectoryList\fR
+This option sets the list of directories from which the safe interpreter
+can \fBsource\fR and \fBload\fR files.
+If this option is not specified, or if it is given as the
+empty list, the safe interpreter will use the same directories as its
+master for auto-loading.
+See the section \fBSECURITY\fR below for more detail about virtual paths,
+tokens and access control.
+.TP
+\fB\-statics\fR \fIboolean\fR
+This option specifies if the safe interpreter will be allowed
+to load statically linked packages (like \fBload {} Tk\fR).
+The default value is \fBtrue\fR :
+safe interpreters are allowed to load statically linked packages.
+.TP
+\fB\-noStatics\fR
+This option is a convenience shortcut for \fB\-statics false\fR and
+thus specifies that the safe interpreter will not be allowed
+to load statically linked packages.
+.TP
+\fB\-nested\fR \fIboolean\fR
+This option specifies if the safe interpreter will be allowed
+to load packages into its own sub-interpreters.
+The default value is \fBfalse\fR :
+safe interpreters are not allowed to load packages into
+their own sub-interpreters.
+.TP
+\fB\-nestedLoadOk\fR
+This option is a convenience shortcut for \fB\-nested true\fR and
+thus specifies the safe interpreter will be allowed
+to load packages into its own sub-interpreters.
+.TP
+\fB\-deleteHook\fR \fIscript\fR
+When this option is given a non-empty \fIscript\fR, it will be
+evaluated in the master with the name of
+the safe interpreter as an additional argument
+just before actually deleting the safe interpreter.
+Giving an empty value removes any currently installed deletion hook
+script for that safe interpreter.
+The default value (\fB{}\fR) is not to have any deletion call back.
+.SH ALIASES
+The following aliases are provided in a safe interpreter:
+.TP
+\fBsource\fR \fIfileName\fR
+The requested file, a Tcl source file, is sourced into the safe interpreter
+if it is found.
+The \fBsource\fR alias can only source files from directories in
+the virtual path for the safe interpreter. The \fBsource\fR alias requires
+the safe interpreter to
+use one of the token names in its virtual path to denote the directory in
+which the file to be sourced can be found.
+See the section on \fBSECURITY\fR for more discussion of restrictions on
+valid filenames.
+.TP
+\fBload\fR \fIfileName\fR
+The requested file, a shared object file, is dynamically loaded into the
+safe interpreter if it is found.
+The filename must contain a token name mentioned in the virtual path for
+the safe interpreter for it to be found successfully.
+Additionally, the shared object file must contain a safe entry point; see
+the manual page for the \fBload\fR command for more details.
+.TP
+\fBfile\fR ?\fIsubCmd args...\fR?
+The \fBfile\fR alias provides access to a safe subset of the subcommands of
+the \fBfile\fR command; it allows only \fBdirname\fR, \fBjoin\fR,
+\fBextension\fR, \fBroot\fR, \fBtail\fR, \fBpathname\fR and \fBsplit\fR
+subcommands. For more details on what these subcommands do see the manual
+page for the \fBfile\fR command.
+.TP
+\fBencoding\fR ?\fIsubCmd args...\fR?
+The \fBencoding\fR alias provides access to a safe subset of the
+subcommands of the \fBencoding\fR command;  it disallows setting of
+the system encoding, but allows all other subcommands including
+\fBsystem\fR to check the current encoding.
+.TP
+\fBexit\fR
+The calling interpreter is deleted and its computation is stopped, but the
+Tcl process in which this interpreter exists is not terminated.
+.SH SECURITY
+Safe Tcl does not attempt to completely prevent annoyance and
+denial of service attacks. These forms of attack prevent the
+application or user from temporarily using the computer to perform
+useful work, for example by consuming all available CPU time or
+all available screen real estate.
+These attacks, while aggravating, are deemed to be of lesser importance
+in general than integrity and privacy attacks that Safe Tcl
+is to prevent.
+.PP
+The commands available in a safe interpreter, in addition to
+the safe set as defined in \fBinterp\fR manual page, are mediated aliases
+for \fBsource\fR, \fBload\fR, \fBexit\fR, and safe subsets of
+\fBfile\fR and \fBencoding\fR. The safe interpreter can also auto-load
+code and it can request that packages be loaded.
+.PP
+Because some of these commands access the local file system, there is a
+potential for information leakage about its directory structure.
+To prevent this, commands that take file names as arguments in a safe
+interpreter use tokens instead of the real directory names.
+These tokens are translated to the real directory name while a request to,
+e.g., source a file is mediated by the master interpreter.
+This virtual path system is maintained in the master interpreter for each safe
+interpreter created by \fB::safe::interpCreate\fR or initialized by
+\fB::safe::interpInit\fR and
+the path maps tokens accessible in the safe interpreter into real path
+names on the local file system thus preventing safe interpreters
+from gaining knowledge about the
+structure of the file system of the host on which the interpreter is
+executing.
+The only valid file names arguments
+for the \fBsource\fR and \fBload\fR aliases provided to the slave
+are path in the form of
+\fB[file join \fItoken filename\fB]\fR (i.e. when using the
+native file path formats: \fItoken\fB/\fIfilename\fR
+on Unix and \fItoken\fB\e\fIfilename\fR on Windows),
+where \fItoken\fR is representing one of the directories
+of the \fIaccessPath\fR list and \fIfilename\fR is
+one file in that directory (no sub directories access are allowed).
+.PP
+When a token is used in a safe interpreter in a request to source or
+load a file, the token is checked and
+translated to a real path name and the file to be
+sourced or loaded is located on the file system.
+The safe interpreter never gains knowledge of the actual path name under
+which the file is stored on the file system.
+.PP
+To further prevent potential information leakage from sensitive files that
+are accidentally included in the set of files that can be sourced by a safe
+interpreter, the \fBsource\fR alias restricts access to files
+meeting the following constraints: the file name must
+fourteen characters or shorter, must not contain more than one dot
+.PQ \fB.\fR "" ,
+must end up with the extension
+.PQ \fB.tcl\fR
+or be called
+.PQ \fBtclIndex\fR .
+.PP
+Each element of the initial access path
+list will be assigned a token that will be set in
+the slave \fBauto_path\fR and the first element of that list will be set as
+the \fBtcl_library\fR for that slave.
+.PP
+If the access path argument is not given or is the empty list,
+the default behavior is to let the slave access the same packages
+as the master has access to (Or to be more precise:
+only packages written in Tcl (which by definition cannot be dangerous
+as they run in the slave interpreter) and C extensions that
+provides a _SafeInit entry point). For that purpose, the master's
+\fBauto_path\fR will be used to construct the slave access path.
+In order that the slave successfully loads the Tcl library files
+(which includes the auto-loading mechanism itself) the \fBtcl_library\fR will be
+added or moved to the first position if necessary, in the
+slave access path, so the slave
+\fBtcl_library\fR will be the same as the master's (its real
+path will still be invisible to the slave though).
+In order that auto-loading works the same for the slave and
+the master in this by default case, the first-level
+sub directories of each directory in the master \fBauto_path\fR will
+also be added (if not already included) to the slave access path.
+You can always specify a more
+restrictive path for which sub directories will never be searched by
+explicitly specifying your directory list with the \fB\-accessPath\fR flag
+instead of relying on this default mechanism.
+.PP
+When the \fIaccessPath\fR is changed after the first creation or
+initialization (i.e. through \fBinterpConfigure -accessPath \fR\fIlist\fR),
+an \fBauto_reset\fR is automatically evaluated in the safe interpreter
+to synchronize its \fBauto_index\fR with the new token list.
+.SH "SEE ALSO"
+interp(n), library(n), load(n), package(n), source(n), unknown(n)
+.SH KEYWORDS
+alias, auto\-loading, auto_mkindex, load, master interpreter, safe
+interpreter, slave interpreter, source
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

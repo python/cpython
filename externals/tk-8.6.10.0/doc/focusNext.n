@@ -1,0 +1,60 @@
+'\"
+'\" Copyright (c) 1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH tk_focusNext n 4.0 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+tk_focusNext, tk_focusPrev, tk_focusFollowsMouse \- Utility procedures for managing the input focus.
+.SH SYNOPSIS
+\fBtk_focusNext \fIwindow\fR
+.sp
+\fBtk_focusPrev \fIwindow\fR
+.sp
+\fBtk_focusFollowsMouse\fR
+.BE
+.SH DESCRIPTION
+.PP
+\fBtk_focusNext\fR is a utility procedure used for keyboard traversal.
+It returns the
+.QW next
+window after \fIwindow\fR in focus order. The focus order is determined by
+the stacking order of windows and the structure of the window hierarchy.
+Among siblings, the focus order is the same as the stacking order, with the
+lowest window being first.
+If a window has children, the window is visited first, followed by
+its children (recursively), followed by its next sibling.
+Top-level windows other than \fIwindow\fR are skipped, so that
+\fBtk_focusNext\fR never returns a window in a different top-level
+from \fIwindow\fR.
+.PP
+After computing the next window, \fBtk_focusNext\fR examines the
+window's \fB\-takefocus\fR option to see whether it should be skipped.
+If so, \fBtk_focusNext\fR continues on to the next window in the focus
+order, until it eventually finds a window that will accept the focus
+or returns back to \fIwindow\fR.
+.PP
+\fBtk_focusPrev\fR is similar to \fBtk_focusNext\fR except that it
+returns the window just before \fIwindow\fR in the focus order.
+.PP
+\fBtk_focusFollowsMouse\fR changes the focus model for the application
+to an implicit one where the window under the mouse gets the focus.
+After this procedure is called, whenever the mouse enters a window
+Tk will automatically give it the input focus.
+The \fBfocus\fR command may be used to move the focus to a window
+other than the one under the mouse, but as soon as the mouse moves
+into a new window the focus will jump to that window.
+Note: at present there is no built-in support for returning the
+application to an explicit focus model;  to do this you will have
+to write a script that deletes the bindings created by
+\fBtk_focusFollowsMouse\fR.
+.SH KEYWORDS
+focus, keyboard traversal, top-level
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

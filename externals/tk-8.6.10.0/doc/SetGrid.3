@@ -1,0 +1,63 @@
+'\"
+'\" Copyright (c) 1990-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_SetGrid 3 4.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_SetGrid, Tk_UnsetGrid \- control the grid for interactive resizing
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+\fBTk_SetGrid\fR(\fItkwin, reqWidth, reqHeight, widthInc, heightInc\fR)
+.sp
+\fBTk_UnsetGrid\fR(\fItkwin\fR)
+.SH ARGUMENTS
+.AS Tk_Window heightInc
+.AP Tk_Window tkwin in
+Token for window.
+.AP int reqWidth in
+Width in grid units that corresponds to the pixel dimension \fItkwin\fR
+has requested via \fBTk_GeometryRequest\fR.
+.AP int reqHeight in
+Height in grid units that corresponds to the pixel dimension \fItkwin\fR
+has requested via \fBTk_GeometryRequest\fR.
+.AP int widthInc in
+Width of one grid unit, in pixels.
+.AP int heightInc in
+Height of one grid unit, in pixels.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_SetGrid\fR turns on gridded geometry management for \fItkwin\fR's
+toplevel window and specifies the geometry of the grid.
+\fBTk_SetGrid\fR is typically invoked by a widget when its \fBsetGrid\fR
+option is true.
+It restricts interactive resizing of \fItkwin\fR's toplevel window so
+that the space allocated to the toplevel is equal to its requested
+size plus or minus even multiples of \fIwidthInc\fR and \fIheightInc\fR.
+Furthermore, the \fIreqWidth\fR and \fIreqHeight\fR values are
+passed to the window manager so that it can report the window's
+size in grid units during interactive resizes.
+If \fItkwin\fR's configuration changes (e.g., the size of a grid unit
+changes) then the widget should invoke \fBTk_SetGrid\fR again with the new
+information.
+.PP
+\fBTk_UnsetGrid\fR cancels gridded geometry management for
+\fItkwin\fR's toplevel window.
+.PP
+For each toplevel window there can be at most one internal window
+with gridding enabled.
+If \fBTk_SetGrid\fR or \fBTk_UnsetGrid\fR is invoked when some
+other window is already controlling gridding for \fItkwin\fR's
+toplevel, the calls for the new window have no effect.
+.PP
+See the \fBwm\fR manual entry for additional information on gridded geometry
+management.
+.SH KEYWORDS
+grid, window, window manager

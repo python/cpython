@@ -1,0 +1,74 @@
+'\"
+'\" Copyright (c) 2005 Joe English
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH ttk::frame n 8.5 Tk "Tk Themed Widget"
+.so man.macros
+.BS
+.SH NAME
+ttk::frame \- Simple container widget
+.SH SYNOPSIS
+\fBttk::frame\fR \fIpathName \fR?\fIoptions\fR?
+.BE
+.SH DESCRIPTION
+.PP
+A \fBttk::frame\fR widget is a container, used to group other widgets
+together.
+.SO ttk_widget
+\-class	\-cursor	\-padding	\-style
+\-takefocus
+.SE
+.SH "WIDGET-SPECIFIC OPTIONS"
+.OP \-borderwidth borderWidth BorderWidth
+The desired width of the widget border.  Defaults to 0.
+May be ignored depending on the theme used.
+.OP \-relief relief Relief
+One of the standard Tk border styles:
+\fBflat\fR, \fBgroove\fR, \fBraised\fR, \fBridge\fR,
+\fBsolid\fR, or \fBsunken\fR.
+Defaults to \fBflat\fR.
+.OP \-width width Width
+If specified, the widget's requested width in pixels.
+.OP \-height height Height
+If specified, the widget's requested height in pixels.
+.SH "WIDGET COMMAND"
+.PP
+Supports the standard widget commands
+\fBconfigure\fR, \fBcget\fR, \fBidentify\fR, \fBinstate\fR, and \fBstate\fR;
+see \fIttk::widget(n)\fR.
+.SH "NOTES"
+.PP
+Note that if the \fBpack\fR, \fBgrid\fR, or other geometry managers
+are used to manage the children of the \fBframe\fR,
+by the GM's requested size will normally take precedence
+over the \fBframe\fR widget's \fB\-width\fR and \fB\-height\fR options.
+\fBpack propagate\fR and \fBgrid propagate\fR can be used
+to change this.
+.SH "STYLING OPTIONS"
+.PP
+The class name for a \fBttk::frame\fP is \fBTFrame\fP.
+.PP
+\fBTFrame\fP styling options configurable with \fBttk::style\fP
+are:
+.PP
+\fB\-background\fP \fIcolor\fP
+.br
+\fB\-relief\fP \fIrelief\fP
+.PP
+Some options are only available for specific themes.
+.PP
+See the \fBttk::style\fP manual page for information on how to configure
+ttk styles.
+.SH BINDINGS
+.PP
+When a new \fBttk::frame\fR is created, it has no default event bindings;
+\fBttk::frame\fRs are not intended to be interactive.
+.SH "SEE ALSO"
+ttk::widget(n), ttk::labelframe(n), frame(n)
+.SH "KEYWORDS"
+widget, frame, container
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

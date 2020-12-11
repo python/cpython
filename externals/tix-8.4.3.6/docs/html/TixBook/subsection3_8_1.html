@@ -1,0 +1,53 @@
+<HEAD>
+<TITLE> Introduction to Tix Object Oriented Programming<A NAME=61>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html1096 HREF=subsubsection3_8_1_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html1094 HREF=section3_8.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html1088 HREF=section3_8.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html1098 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html1097 HREF=subsubsection3_8_1_1.html> Widget Classes and </A>
+<B>Up:</B> <A NAME=tex2html1095 HREF=section3_8.html> Tix Object Oriented </A>
+<B> Previous:</B> <A NAME=tex2html1089 HREF=section3_8.html> Tix Object Oriented </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H2><A NAME=SECTION00081000000000000000> Introduction to Tix Object Oriented Programming<A NAME=61>&nbsp;</A></A></H2>
+<P>
+Tix comes with a simple object oriented programming (OOP) framework,
+  the <em>Tix Intrinsics</em>, for writing mega-widgets. The Tix
+  Intrinsics is not a general purpose OOP system and it does not
+  support some features found in general purpose OOP systems such as
+  <tt>[incr Tcl]</tt>. However, the Tix Intrinsics is specially designed
+  for writing mega-widgets. It provides a simple and efficient
+  interface for creating mega-widgets so that you can avoid the
+  complexity and overheads of the general purpose OOP extensions to
+  Tcl.
+<P>The hard thing about programming with mega-widgets is to make sure
+  that each instance you create can handle its own activities.  Events
+  must be directed to the right widget, procedures must act on data
+  that is internal to that widget, and users should be able to change
+  the options associated with the widget.  For instance, we'll show an
+  arrow widget that needs to know what direction it's pointing; this
+  requires each instance of the widget to have its own variable.
+<P>Furthermore, each widget should respond properly to changes
+  requested by the application programmer during the program's run.
+  The whole reason people use Tcl/Tk is because they can alter things
+  on the fly.
+<P>The advantage of an object-oriented programming system is that you
+  can easily associate a widget with its own data and procedures
+  (methods).  This chapter shows how to do that, and how to configure
+  data both at the time the widget is initialized and later during the
+  program.
+<P>
+<HR>
+<UL> 
+<LI> <A NAME=tex2html1099 HREF=subsubsection3_8_1_1.html#SECTION00081100000000000000> Widget Classes and Widget Instances<A NAME=611>&nbsp;</A></A>
+<LI> <A NAME=tex2html1100 HREF=subsubsection3_8_1_2.html#SECTION00081200000000000000> What is in a Widget Instance<A NAME=612>&nbsp;</A></A>
+<LI> <A NAME=tex2html1101 HREF=subsubsectionstar3_8_1_3.html#SECTION00081300000000000000>  Variables<A NAME=6121>&nbsp;</A></A>
+<LI> <A NAME=tex2html1102 HREF=subsubsectionstar3_8_1_4.html#SECTION00081400000000000000>  Methods<A NAME=6122>&nbsp;</A></A>
+<LI> <A NAME=tex2html1103 HREF=subsubsectionstar3_8_1_5.html#SECTION00081500000000000000>  Component Widgets<A NAME=6123>&nbsp;</A></A>
+</UL>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

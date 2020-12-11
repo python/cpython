@@ -1,0 +1,384 @@
+2014-01-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* configure.in:
+	* README:	Advanced version number to 1.0.3.
+	* configure:	TEA update; autoconf 2.69
+
+2014-10-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* configure.in:
+	* README:	Advanced version number to 1.0.2.
+	* configure:	TEA update; autoconf 2.68
+
+	* doc/*.n: [TDBC Bug 00b792] OpenBSD friendly docs.
+
+2014-08-14  Don Porter  <dgp@users.sourceforge.net>
+
+	* configure.in:
+	* README:	Advanced version number to 1.0.1.
+	* configure: 	autoconf 2.68
+
+2012-11-15  KevinB. Kenny  <kennykb@acm.org>
+
+	* configure.in: Made change so that `make test` works even
+	* Makefile.in:  against an uninstalled version of tdbc.
+	* configure:    autoconf 2.68
+		*** ADVANCED THE VERSION OF AUTOCONF IN USE ***
+
+2012-11-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* configure.in:
+	* README:	Advanced version number to 1.0.0.
+	* configure: 	autoconf 2.59
+
+2012-07-26  Jan Nijtmans  <jan.nijtmans@gmail.com>
+
+	* generic/mysqlStubInit.c: Fix [14a8b7c3bd]: package tdbc::mysql fails
+	to load under Fedora 17. Make some tables "const".
+	* tclconfig/install-sh:    Update to latest TEA
+	* tclconfig/tcl.m4
+	* configure:		       autoconf-2.59
+
+2012-07-13  Kevin B. Kenny  <kennykb@acm.org>
+
+	* test/tdbcmysql.test: Make functional tests refuse to run unless
+			       the environment variable TDBCMYSQL_TEST_DB
+			       explicitly designates a database.
+
+2012-07-10  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tdbcmysql.c: Fixed a non-static table argument to
+			       Tcl_GetIndexFromObjStruct.
+
+2012-06-10  Jan Nijtmans  <jan.nijtmans@gmail.com>
+
+	* configure.in:	make TDBC API functions MODULE_SCOPE
+	* configure:	autoconf-2.59
+
+2012-06-08  Jan Nijtmans  <jan.nijtmans@gmail.com>
+
+	* tclconfig/tcl.m4:	Update to latest TEA
+	* configure:		autoconf-2.59
+
+2011-09-19  Kevin B. Kenny  <kennykb@acm.org>
+
+	* Makefie.in: Added a 'valgrind' rule for memory leak checking.
+	* tests/all.tcl: Changed behaviour to 'fall off the end' to
+			 facilitate 'valgrind.
+
+2011-07-19  Kevin B. Kenny  <kennykb@acm.org>
+
+	* configure.in:
+	* Makefile.in:
+	* README:	Advanced version number to 1.0b17.
+
+	* configure: 	autoconf 2.59
+
+2011-07-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* configure.in: Update to latest TEA 3.9 revisions.
+	* Makefile.in:
+	* tclconfig/*:
+
+	* configure:    autoconf-2.59
+
+2011-02-20  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tests/tdbcmysql.test:
+		Added rudimentary test for 'nextresults' - the method
+		is a dummy because the calls supported by tdbc::mysql
+		do not allow for multiple result sets.
+
+2011-01-26  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/tdbc_mysql.n:
+	Added empty comment at the start of each manpage because 'man'
+	interprets comments there as directives. Thanks to Konstantin
+	Kohmoutov for reporting and diagnosing this error.
+
+2011-01-25  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tdbcmysql.c: Fixed a bug in data types of small integers
+			       on 64-bit machines. Who would have imagined
+			       that MSYQL_TYPE_LONG doesn't mean 'long' but
+			       rather 'int'?
+	* tests/tdbcmysql.test (tdbc::mysql-1.6,24.[4567]):
+		Quieted test cases on 64-bit machines and on MySQL earlier
+		than 5.1.16, which is the first version on which
+		'foreignkeys' functions correctly.
+	Thanks to Damon Courtney for reporting these bugs.
+
+2010-12-28  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/fakemysql.h: Added the MYSQL data structure and the
+			       nest of other definitions that it depends on.
+	* generic/mysqlStubDefs.txt: Added mysql_affected_rows and
+				     mysql_field_count.
+	* generic/mysqlStubInit.c, generic/mysqlStubs.h: Regenerated.
+	* generic/tdbcmysql.c: Added 'evaldirect' method that allows
+			       executing statements that are unimplemented
+			       in the MySQL prepared statement API.
+	* generic/tdbcmysql.tcl: Did a rough (not really functional) hack
+	                         at formatting prepared statements.
+	* tests/tdbcmysql.test (tdbc::mysql-25.*): Added two tests for
+	creating a (parameterless) stored procedure and executing it.
+
+2010-09-03  Kevin B. Kenny  <kennykb@acm.org>
+
+	* configure.in: Added missing TCLOO_CFLAGS because Windows build
+			failed to link without it.
+	* configure: autoconf 2-59
+
+	* generic/mysqlStubInit.c:
+			Made changes to attempt to open the
+			MySQL client library by SONAME as well as
+			pathname, in an effort to fit in better
+			with systems where libmysqlclient-devel
+			is not installed.
+
+	* library/tdbcmysql.tcl:
+	* tests/tdbcmysql.test:
+			Changed 'keySequence' to 'ordinalPosition' in
+			'foreignkeys' for consistency with 'primarykeys'.
+
+	* configure.in:
+	* Makefile.in:
+	* pkgIndex.tcl.in (new file):
+	* README:
+	* tclconfig/:	Upgraded the build to use TEA 3.9. Changed the
+			approach to pkgIndex.tcl generation. (It's now built
+			at configure time, rather than from the Makefile.)
+			Advanced version number to 1.0b16.
+
+	* configure: 	autoconf 2.59
+
+2010-06-19  Kevin B. Kenny  <kennykb@acm.org>
+
+	* Makefile.in:			Revised the code at the suggestion
+	* generic/tdbcmysql.c:		of Andreas Kupries to avoid using
+	* tests/all.tcl:		'tcl_findLibrary' and instead execute
+	* tests/tdbcmysql.test:		both 'source' and 'load' commands from
+					'pkgIndex.tcl'. Revised the 'make test'
+					rule, and the test scripts, to
+					test successfully under the new regime.
+					Thanks to Andreas for providing the
+					original patch, and to Joe English
+					for providing ideas for simplifying
+					and repairing 'make test' under the
+					new regime.
+
+2010-05-23  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tdbcmysql.tcl: Added a 'BuildForeignKeysStatement' method
+	                         to tdbcmysql::connection that overrides the
+				 one in the base class and accommodates the
+				 nonstandard INFORMATION_SCHEMA provided in
+				 MySQL.
+	* tests/tdbcmysql.test: Added test cases for '$db primarykeys'
+	                        and '$db foreignkeys'
+
+2010-05-12  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/fakesql.h:
+			Added dual definitions of data structures that change
+			between MySQL 5.0 and 5.1.
+	* generic/mysqlStubDefs.h:
+			Added code to link to mysqlclient_r and mysqlclient
+			as well as mysql so that client libs can be found
+			on Unix. Added query of the client lib version.
+	* generic/mysqlStubInit.c:
+			Regenerate
+	* generic/mysqlStubs.h:
+			Regenerate
+	* generic/tdbcmysql.c:
+			Modified to make MYSQL_BIND and MYSQL_FIELD accesses
+			go through accessor functions that hit the correct
+			versions of the structures according to the client
+			library version. (Tcl can provide ABI stability,
+			even if MySQL can't!)
+	* configure.in: Advance release to 1.0b15.1
+	* README:	Advance release to 1.0b15.1
+	* configure:	autoconf-2.59
+
+2010-05-10  Kevin B. Kenny  <kennykb@acm.org>
+
+	* aclocal.m4:	Synchronize with tdbc.
+	* configure.in:	Advance TEA version to 3.7. Advance release to 1.0b15.
+			Corrected the TDBC stub library specification so that
+			it works under MSVC.
+	* generic/mysqlStubDefs.txt:
+			Split out the linkage convention so that
+			genExtStubs.tcl can generate syntactically correct
+			VC++ pointer-to-function declarations.
+	* generic/mysqlStubInit.c:
+	* generic/mysqlStubs.h:
+			Regenerate
+	* generic/tdbcmysql.c:
+			Added code to silence VC++ warnings.
+	* README:	Advance release to 1.0b15
+	* tclconfig/:	Advance to TEA 3.7
+	* configure:	autoconf-2.59
+
+2010-05-10  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tdbcmysql.c: Fixed violations of strict C89.
+	* Makefile.in: Removed attempt to generate a stub library. Drivers
+	  do not export stub tables.
+
+2010-05-07  Andreas Kupries  <andreask@activestate.com>
+
+	* configure.in: Disabled TEA_*_TKCONFIG. Code doesn't depend on Tk.
+	* configure: Regenerated.
+
+2010-04-30  Kevin B. Kenny  <kennykb@acm.org>
+
+	* Makefile.in: Added explicit reference to the TDBC library in the
+		       TCLSH_ENV. Updated the 'dist' rule to include new files.
+		       Added a 'genstubs' rule to make the stubs to load
+	               the MySQL libraries at run time.
+	* configure.in: Removed compile-time references to the MySQL headers
+	                and libraries. Added new files to SOURCES and HEADERS.
+	* generic/fakemysql.h (new file):
+		Minimal subset of mysql.h needed to make tdbc::mysql compile.
+	* generic/mysqlStubDefs.txt (new file):
+		Definitions of MySQL runtime library routines brought
+		in by dynamic loading.
+	* generic/mysqlStubInit.c (new file):
+		Code to load the MySQL runtime library and build a stub
+		table for it.
+	* generic/mysqlStubDefs.txt (new file):
+		Definitions of the routines to be resolved when loading
+		the MySQL library at run time.
+	* generic/tdbcmysql.c:
+		Changed tdbc::mysql to load the MySQL library at run time
+		and to have no compile-time dependencies on MySQL.
+	* tests/tdbcodbc.test (tdbc::mysql-14.8):
+		Corrected a misnamed test.
+
+2010-04-25  Kevin B. Kenny  <kennykb@acm.org>
+
+	* configure.in: Adjusted TDBC_* environment vars to be tdbc_*
+	* README:	for better TEA compatibility. Advanced version number
+			to 1.0b14.
+	* configure:	autoconf-2.59
+
+2009-09-29  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tests/tdbcmysql.test: Changed all TEST_* environment variables
+				to TDBCMYSQL_* for easier high-level scripting
+				of the tests.
+
+2009-09-20  Kevin B. Kenny  <kennykb@acm.org>
+
+	* README:
+	* configure.in:		Advance version number to 1.0b13
+	* configure:		autoconf-2.59
+
+2009-07-03  Kevin B. Kenny  <kennykb@acm.org>
+
+	* README:
+	* configure.in:		Advance version number to 1.0b12
+	* configure:		autoconf-2.59
+
+2009-05-29  Kevin B. Kenny  <kennykb@acm.org>
+
+	* README:
+	* configure.in:		Advance version number to 1.0b11
+	* configure:		autoconf-2.59
+
+2009-04-19  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tdbcmysql.c: Silenced a compiler warning about 'fields'
+	                       being used uninitialized.
+	* doc/tdbc_mysql.n: Added missing documentation for 'new' constructors.
+
+2009-04-18  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tdbcmysql.c: Changed so that an inappropriate access to
+	                       an array or a failing read trace yields NULL.
+	* tests/tdbcmysql.test: Revised test cases according to the above
+				change.
+	* doc/tdbc_mysql.n: Made changes so that NROFF formatting matches
+	                    the Tcl standard.
+
+2009-04-16  Kevin B. Kenny  <kennykb@acm.org>
+
+	* README:
+	* configure.in:		Advance version number to 1.0b10
+	* configure:		autoconf-2.59
+
+	* generic/tdbcmysql.c: Reworked the allocation of result buffers
+			       so that they belong to the result set and
+			       are not allocated per row. Pushed binding the
+	                       results up before mysql_stmt_execute,
+	                       avoiding a crash if the same statement handle
+	                       has been used before [Ticket 39a78606aa].
+			       No update made to test suite because
+			       valgrind detected the error with existing
+			       tests on a -DPURIFY build.
+
+2009-03-03  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tdbcmysql.c:
+	* library/tdbcmysql.tcl: Replaced 'init' methods with constructors
+	written in C.  Added 'statementCreate' and 'resultSetCreate' forwarding
+	in place of the 'statementClass' and 'resultSetClass' variables.
+	Removed some classes that were the result of overeager copying
+	from tclodbc. Replaced 'my variable' with variables declared at
+	class level.
+
+2009-02-14  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/tdbc_mysql.n:	Many small format changes to make 'man2html'
+				work.
+	* README:
+	* configure.in:		Advance version number to 1.0b8
+	* configure:		autoconf-2.59
+
+2009-02-01  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tdbcmysql.c:
+	* configure.in: Changed the <my_global.h> tests to use the
+	correct conditionals on mingw.
+	* configure: Autoconf 2.59
+
+2009-01-31  Kevin B. Kenny  <kennykb@acm.org>
+
+	* README:
+	* configure.in: Advanced version to 1.0b7.
+	* configure: Regenerated.
+	* generic/tdbcmysql.c: Revised errorCode generation to be
+	more [try]-friendly. Changed include to <mysql/mysql.h> so that
+	the include path isn't necessary.
+	* tests/tdbcmysql.test: Added test flags so that a nonstandard port
+	or socket can be specified. Changed errorCode-dependent tests to
+	look for the new form of errorCode.
+
+2009-01-05  Kevin B. Kenny  <kennykb@acm.org>
+
+	* README: Added a few more hints for building on Windows.
+	* configure.in: Changes to make tdbcmysql build on Windows.
+	* generic/tdbcmysql.c: Changed to #include <my_global.h> on Windows.
+	Advanced release to 1.0b6
+	* configure: autoconf 2.59
+
+2009-01-04  Kevin B. Kenny  <kennykb@acm.org>
+
+	* README:
+	* Makefile.in:
+	* doc/tdbc_mysql.n: Updated so that files are no longer clones
+	of the 'tdbcodbc' package. Added installation and distribution code.
+	* configure.in: Advanced version to 1.0b5
+	* generic/tdbcmysql.c: Added code to track the declared data types
+	of parameters and the actual data types of results. Added code to
+	do direct binary conversions of integers, floating point numbers,
+	and bit strings. Added checks for binary data on results.
+	Added disambiguation of duplicated colmn names.
+	* tests/tdbcmysql.test: Revised test cases to include all the
+	MySQL data types handled in this driver. Added a test case that
+	column names are correctly disambiguated.
+	* configure: autoconf 2.59
+
+2009-01-02  Kevin B. Kenny  <kennykb@acm.org>
+
+	Initial baseline of a TDBC driver for MySQL.

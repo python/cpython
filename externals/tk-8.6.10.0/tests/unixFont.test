@@ -1,0 +1,318 @@
+# This file is a Tcl script to test out the procedures in tkUnixFont.c.
+# It is organized in the standard fashion for Tcl tests.
+#
+# Many of these tests are visually oriented and cannot be checked
+# programmatically (such as "does an underlined font appear to be
+# underlined?"); these tests attempt to exercise the code in question,
+# but there are no results that can be checked.  Some tests depend on the
+# fonts having or not having certain properties, which may not be valid
+# at all sites.
+#
+# Copyright (c) 1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.1
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+
+if {[tk windowingsystem] eq "x11"} {
+    set xlsf [auto_execok xlsfonts]
+}
+foreach {constraint font} {
+    hasArial	arial
+    hasCourierNew	"courier new"
+    hasTimesNew	"times new roman"
+} {
+    if {[tk windowingsystem] eq "x11"} {
+	testConstraint $constraint 1
+	if {[llength $xlsf]} {
+	    if {![catch {eval exec $xlsf [list *-$font-*]} res]
+		    && ![string match *unmatched* $res]} {
+		# Newer Unix systems have more default fonts installed,
+		# so we can't rely on fallbacks for fonts to need to
+		# fall back on anything.
+		testConstraint $constraint 0
+	    }
+	}
+    } else {
+	testConstraint $constraint 0
+    }
+}
+
+catch {destroy .b}
+toplevel .b
+wm geom .b +0+0
+update idletasks
+
+# Font should be fixed width and have chars missing below char 32, so can
+# test control char expansion and missing character code.
+
+set courier {Courier -10}
+set cx [font measure $courier 0]
+
+label .b.l -padx 0 -pady 0 -bd 0 -highlightthickness 0 -justify left -text "0" -font fixed
+pack .b.l
+canvas .b.c -closeenough 0
+
+set t [.b.c create text 0 0 -anchor nw -just left -font $courier]
+pack .b.c
+update
+
+set ax [winfo reqwidth .b.l]
+set ay [winfo reqheight .b.l]
+proc getsize {} {
+    update
+    return "[winfo reqwidth .b.l] [winfo reqheight .b.l]"
+}
+
+test unixfont-1.1 {TkpGetNativeFont procedure: not native} {x11 noExceed} {
+    list [catch {font measure {} xyz} msg] $msg
+} {1 {font "" doesn't exist}}
+test unixfont-1.2 {TkpGetNativeFont procedure: native} x11 {
+    font measure fixed 0
+} {6}
+
+test unixfont-2.1 {TkpGetFontFromAttributes procedure: no family} x11 {
+    font actual {-size 10}
+    set x {}
+} {}
+test unixfont-2.2 {TkpGetFontFromAttributes procedure: Times relatives} \
+	{x11 noExceed hasTimesNew} {
+    set x {}
+    lappend x [lindex [font actual {-family "Times New Roman"}] 1]
+    lappend x [lindex [font actual {-family "New York"}] 1]
+    lappend x [lindex [font actual {-family "Times"}] 1]
+} {times times times}
+test unixfont-2.3 {TkpGetFontFromAttributes procedure: Courier relatives} \
+	{x11 noExceed hasCourierNew} {
+    set x {}
+    lappend x [lindex [font actual {-family "Courier New"}] 1]
+    lappend x [lindex [font actual {-family "Monaco"}] 1]
+    lappend x [lindex [font actual {-family "Courier"}] 1]
+} {courier courier courier}
+test unixfont-2.4 {TkpGetFontFromAttributes procedure: Helvetica relatives} \
+	{x11 noExceed hasArial} {
+    set x {}
+    lappend x [lindex [font actual {-family "Arial"}] 1]
+    lappend x [lindex [font actual {-family "Geneva"}] 1]
+    lappend x [lindex [font actual {-family "Helvetica"}] 1]
+} {helvetica helvetica helvetica}
+test unixfont-2.5 {TkpGetFontFromAttributes procedure: fallback} x11 {
+    font actual {-xyz-xyz-*-*-*-*-*-*-*-*-*-*-*-*}
+    set x {}
+} {}
+test unixfont-2.6 {TkpGetFontFromAttributes: fallback to fixed family} x11 {
+    lindex [font actual {-family fixed -size 10}] 1
+} {fixed}
+test unixfont-2.7 {TkpGetFontFromAttributes: fixed family not available!} x11 {
+    # no test available
+} {}
+test unixfont-2.8 {TkpGetFontFromAttributes: loop over returned font names} x11 {
+    lindex [font actual {-family fixed -size 31}] 1
+} {fixed}
+test unixfont-2.9 {TkpGetFontFromAttributes: reject adobe courier if possible} {x11 noExceed} {
+    lindex [font actual {-family courier}] 1
+} {courier}
+test unixfont-2.10 {TkpGetFontFromAttributes: scalable font found} x11 {
+    lindex [font actual {-family courier -size 37}] 3
+} {37}
+test unixfont-2.11 {TkpGetFontFromAttributes: font cannot be loaded} x11 {
+    # On Linux, XListFonts() was returning names for fonts that do not
+    # actually exist, causing the subsequent XLoadQueryFont() to fail
+    # unexpectedly.  Now falls back to another font if that happens.
+
+    font actual {-size 14}
+    set x {}
+} {}
+
+test unixfont-3.1 {TkpDeleteFont procedure} x11 {
+    font actual {-family xyz}
+    set x {}
+} {}
+
+test unixfont-4.1 {TkpGetFontFamilies procedure} x11 {
+    font families
+    set x {}
+} {}
+
+test unixfont-5.1 {Tk_MeasureChars procedure: no chars to be measured} x11 {
+    .b.l config -text "000000" -wrap [expr $ax*3]
+    .b.l config -wrap 0
+} {}
+test unixfont-5.2 {Tk_MeasureChars procedure: no right margin} x11 {
+    .b.l config -text "000000"
+} {}
+test unixfont-5.3 {Tk_MeasureChars procedure: loop over chars} x11 {
+    .b.l config -text "0"
+    .b.l config -text "\377"
+    .b.l config -text "0\3770\377"
+    .b.l config -text "000000000000000"
+} {}
+.b.l config -wrap [expr $ax*10]
+test unixfont-5.4 {Tk_MeasureChars procedure: reached right edge} x11 {
+    .b.l config -text "0000000000000"
+    getsize
+} "[expr $ax*10] [expr $ay*2]"
+test unixfont-5.5 {Tk_MeasureChars procedure: ran out of chars} x11 {
+    .b.l config -text "000000"
+    getsize
+} "[expr $ax*6] $ay"
+test unixfont-5.6 {Tk_MeasureChars procedure: find last word} x11 {
+    .b.l config -text "000000 00000"
+    getsize
+} "[expr $ax*6] [expr $ay*2]"
+test unixfont-5.7 {Tk_MeasureChars procedure: already saw space in line} x11 {
+    .b.l config -text "000000     00000"
+    getsize
+} "[expr $ax*6] [expr $ay*2]"
+test unixfont-5.8 {Tk_MeasureChars procedure: internal spaces significant} x11 {
+    .b.l config -text "00  000     00000"
+    getsize
+} "[expr $ax*7] [expr $ay*2]"
+test unixfont-5.9 {Tk_MeasureChars procedure: TK_PARTIAL_OK} x11 {
+    .b.c dchars $t 0 end
+    .b.c insert $t 0 "0000"
+    .b.c index $t @[expr int($ax*2.5)],1
+} {2}
+test unixfont-5.10 {Tk_MeasureChars procedure: TK_AT_LEAST_ONE} x11 {
+    .b.l config -text "000000000000"
+    getsize
+} "[expr $ax*10] [expr $ay*2]"
+test unixfont-5.11 {Tk_MeasureChars: TK_AT_LEAST_ONE + not even one char fit!} x11 {
+    set a [.b.l cget -wrap]
+    .b.l config -text "000000" -wrap 1
+    set x [getsize]
+    .b.l config -wrap $a
+    set x
+} "$ax [expr $ay*6]"
+test unixfont-5.12 {Tk_MeasureChars procedure: include eol spaces} x11 {
+    .b.l config -text "000   \n000"
+    getsize
+} "[expr $ax*6] [expr $ay*2]"
+
+test unixfont-6.1 {Tk_DrawChars procedure: loop test} x11 {
+    .b.l config -text "a"
+    update
+} {}
+test unixfont-6.2 {Tk_DrawChars procedure: loop test} x11 {
+    .b.l config -text "abcd"
+    update
+} {}
+test unixfont-6.3 {Tk_DrawChars procedure: special char} x11 {
+    .b.l config -text "\001"
+    update
+} {}
+test unixfont-6.4 {Tk_DrawChars procedure: normal then special} x11 {
+    .b.l config -text "ab\001"
+    update
+} {}
+test unixfont-6.5 {Tk_DrawChars procedure: ends with special} x11 {
+    .b.l config -text "ab\001"
+    update
+} {}
+test unixfont-6.6 {Tk_DrawChars procedure: more normal chars at end} x11 {
+    .b.l config -text "ab\001def"
+    update
+} {}
+
+test unixfont-7.1 {DrawChars procedure: no effects} x11 {
+    .b.l config -text "abc"
+    update
+} {}
+test unixfont-7.2 {DrawChars procedure: underlining} x11 {
+    set f [.b.l cget -font]
+    .b.l config -text "abc" -font "courier 10 underline"
+    update
+    .b.l config -font $f
+} {}
+test unixfont-7.3 {DrawChars procedure: overstrike} x11 {
+    set f [.b.l cget -font]
+    .b.l config -text "abc" -font "courier 10 overstrike"
+    update
+    .b.l config -font $f
+} {}
+
+test unixfont-8.1 {AllocFont procedure: use old font} x11 {
+    font create xyz
+    button .c -font xyz
+    font configure xyz -family times
+    update
+    destroy .c
+    font delete xyz
+} {}
+test unixfont-8.2 {AllocFont procedure: parse information from XLFD} x11 {
+    expr {[lindex [font actual {-family times -size 0}] 3] == 0}
+} {0}
+test unixfont-8.3 {AllocFont procedure: can't parse info from name} x11 {
+    catch {unset fontArray}
+    # check that font actual returns the correct attributes.
+    # the values of those attributes are system dependent.
+    array set fontArray [font actual a12biluc]
+    set result [lsort [array names fontArray]]
+    catch {unset fontArray}
+    set result
+} {-family -overstrike -size -slant -underline -weight}
+test unixfont-8.4 {AllocFont procedure: classify characters} x11 {
+    set x 0
+    incr x [font measure $courier "\u4000"]   ;# 6
+    incr x [font measure $courier "\002"]   ;# 4
+    incr x [font measure $courier "\012"]   ;# 2
+    incr x [font measure $courier "\101"]   ;# 1
+    set x
+} [expr $cx*13]
+test unixfont-8.5 {AllocFont procedure: setup widths of normal chars} x11 {
+    font metrics $courier -fixed
+} {1}
+test unixfont-8.6 {AllocFont procedure: setup widths of special chars} x11 {
+    set x 0
+    incr x [font measure $courier "\001"]   ;# 4
+    incr x [font measure $courier "\002"]   ;# 4
+    incr x [font measure $courier "\012"]   ;# 2
+    set x
+} [expr $cx*10]
+test unixfont-8.7 {AllocFont procedure: XA_UNDERLINE_POSITION} x11 {
+    catch {font actual -adobe-courier-bold-i-normal--0-0-0-0-m-0-iso8859-1}
+    set x {}
+} {}
+test unixfont-8.8 {AllocFont procedure: no XA_UNDERLINE_POSITION} x11 {
+    catch {font actual --symbol-medium-r-normal--0-0-0-0-p-0-sun-fontspecific}
+    set x {}
+} {}
+test unixfont-8.9 {AllocFont procedure: XA_UNDERLINE_THICKNESS} x11 {
+    catch {font actual -adobe-courier-bold-i-normal--0-0-0-0-m-0-iso8859-1}
+    set x {}
+} {}
+test unixfont-8.10 {AllocFont procedure: no XA_UNDERLINE_THICKNESS} x11 {
+    catch {font actual --symbol-medium-r-normal--0-0-0-0-p-0-sun-fontspecific}
+    set x {}
+} {}
+test unixfont-8.11 {AllocFont procedure: XA_UNDERLINE_POSITION was 0} x11 {
+    catch {font actual -adobe-courier-bold-i-normal--0-0-0-0-m-0-iso8859-1}
+    set x {}
+} {}
+
+test unixfont-9.1 {GetControlCharSubst procedure: 2 chars subst} x11 {
+    .b.c dchars $t 0 end
+    .b.c insert $t 0 "0\a0"
+    set x {}
+    lappend x [.b.c index $t @[expr $ax*0],0]
+    lappend x [.b.c index $t @[expr $ax*1],0]
+    lappend x [.b.c index $t @[expr $ax*2],0]
+    lappend x [.b.c index $t @[expr $ax*3],0]
+} {0 1 1 2}
+test unixfont-9.2 {GetControlCharSubst procedure: 4 chars subst} x11 {
+    .b.c dchars $t 0 end
+    .b.c insert $t 0 "0\0010"
+    set x {}
+    lappend x [.b.c index $t @[expr $ax*0],0]
+    lappend x [.b.c index $t @[expr $ax*1],0]
+    lappend x [.b.c index $t @[expr $ax*2],0]
+    lappend x [.b.c index $t @[expr $ax*3],0]
+    lappend x [.b.c index $t @[expr $ax*4],0]
+    lappend x [.b.c index $t @[expr $ax*5],0]
+} {0 1 1 1 1 2}
+
+# cleanup
+cleanupTests
+return

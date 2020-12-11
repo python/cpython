@@ -1,0 +1,423 @@
+2008-03-17  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	**** 8.4.3 TAGGED ****
+
+	* win/makefile.vc: Use rd/md instead of old bat files [Bug 1455369]
+	Use default libs to build [Bug 1455375]
+	
+	* win/make_pkgIndex.tcl: Tix dll should be found in lib dir.
+	[Bug 1455377]
+
+	* library/Tix.tcl (tixAppContext:getimage): don't add '.' [Bug 1863977]
+
+	* demos/widget: add tix initstyle. [Bug 1611197]
+
+	* library/pref/WmDefault.tcl (setup-kde): allow space in font
+	name. [Bug 1907828]
+	improve code quality - use Tcl 8.4-isms.
+
+2008-02-28  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tixNBFrame.c (DrawTab): ensure anchor isn't NULL.
+	[Bug 1644742]
+
+	* library/ComboBox.tcl (tixComboBox:EscKey): return 0 when
+	disabled. [Bug 1190201]
+
+	* win/makefile.vc: update to v8.4.3 and use TCLSH_EXE for test driver
+
+	* generic/tixInit.c (configSpecs): change tixSchemePriority to use
+	-schemepriority (was dup of -scheme). [Bug 1167592]
+
+	* library/pref/tixmkpref: s/Bacground/Background/g [Bug 1165876]
+
+2008-02-27  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tix.h (TIX_PATCH_LEVEL): updated to 8.4.3
+	* library/Init.tcl, README.txt, configure.in, configure:
+
+	* generic/tixInt.h, generic/tixUtils.c, tixWidget.c: reduce
+	touches into tcl internals, remove ERR_IN_PROGRESS usage.
+
+	* generic/tixClass.c (SetupDefault): use safer method to add
+	options to the defaults.
+
+	* generic/tixTList.c, generic/tixNBFrame.c, generic/tixMethod.c:
+	* generic/tixInputO.c, generic/tixImgXpm.c, generic/tixImgCmp.c:
+	* generic/tixHList.c, generic/tixGrSort.c, generic/tixOption.c:
+	* generic/tixAppInit.c, generic/tixGrid.c: remove refs to interp->result
+
+	* generic/tix.h: include string.h and stdlib.h
+
+	* library/Console.tcl, library/Balloon.tcl: remove use of left_ptr
+	* demos/samples/SListBox.tcl:		    and fix Aqua handling
+	for balloon help.
+
+2007-02-21  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* configure.in, configure, tclconfig/tcl.m4: TEA 3.6 update
+
+2006-11-16  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	**** 8.4.2 TAGGED ****
+
+	* generic/tix.h (TIX_PATCH_LEVEL): updated to 8.4.2
+	* library/Init.tcl, README.txt, configure.in, configure:
+
+	* generic/tixInit.c, generic/tixInitScript.h: inline initScript
+	into tixInit.c, use patchlevel info for tcl_findLibrary.
+
+	* win/makefile.vc: note that this isn't actually maintained.
+
+	* Makefile.in (dist): make simple and effective dist target.
+	Changes source tarball to Tix$patchLevel-src.tar.gz.
+
+2006-11-15  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	**** 8.4.1 TAGGED ****
+
+	* generic/tix.h (TIX_PATCH_LEVEL): updated to 8.4.1
+	* library/Init.tcl:
+	* README.txt, configure.in, configure, tclconfig/tcl.m4:
+
+	* unix/tixUnixXpm.c: define TkPutImage to XPutImage on X11.
+
+	* generic/tixInit.c (Tix_Init): provide patchlevel version detail.
+
+2006-04-11  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/make_pkgIndex.tcl: correctly escape \$dir.
+
+	* generic/tix.h (strcasecmp): define to _stricmp on Win32, as
+	VS2005 requires this (and that works still with VC6).
+
+2006-01-25  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* configure, configure.in: update to TEA 3.5
+	* tclconfig/tcl.m4:        TEA rcs 1.89 2006/01/25 21:25:02
+
+2005-03-25  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tclconfig/tcl.m4, configure, configure.in: update to TEA 3.2
+	* generic/tixGeometry.c, generic/tixInit.c: OS X patch from Steffen
+	* generic/tixInputO.c, generic/tixPort.h:
+	* generic/tixUtils.c, generic/tixWidget.c:
+	* man/index.html, unix/tixUnixDraw.c, unix/tixUnixMwm.c:
+	* unix/tixUnixPort.h, unix/tixUnixWm.c, unix/tixUnixXpm.c:
+
+2004-12-23  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	**** 8.4.0 TAGGED ****
+
+	* README.txt, index.html: updated with 8.4.0 release info
+	* docs/Files.txt, docs/Release.html, docs/Release-8.4.0.txt:
+
+	* generic/tixInit.c (Tix_Init): remove USE_TIX_SAM refs
+
+	* tools/README.txt: update for removed tools
+	* tools/icon.tcl, tools/etags.tcl, tools/Makefile (removed): 
+	* tools/tixverify.tcl, tools/tclc_s.tcl (removed): 
+	* tools/makescript.tcl, tools/makebitmap.tcl (removed): 
+	* tools/doconfig.tcl, tools/domakefile.tcl (removed): 
+	* tools/doxx.tcl, tools/dosstrip.tcl (removed): removed old tools
+
+	* Makefile.in: add 'demo' makefile target
+
+	* library/Tix.tcl (tixAppContext:Constructor): init
+	tixOption(fixed_font) to Courier
+
+	* demos/tixwidgets.tcl: add 'tix initstyle', use real menus,
+	remove impotent "Manager Widgets" tab.
+
+	* docs/SAModule.txt (removed):
+	* docs/FAQ.txt, docs/FAQ.html: removed old info
+
+	* man/tix.n:
+	* library/Tix.tcl (tixAppContext:Constructor, tix initstyle): 
+	* library/Init.tcl: reintroduce the 'tixAppContext tix' removed on
+	2004-04-09 as that defines the 'tix' command.  Instead, move the
+	style initialization in that to an explicit 'tix initstyle'
+	command.  This preserves the 'tix' command as well as separation
+	of package require and use of tix style.
+
+	* library/pkgIndex.tcl (removed): this is now generated by the TEA
+	configure/makefile script.  Other makefiles not creating this need
+	to be fixed.
+
+	* tests/class.test: fix test to note updated args handling
+
+	* tests/method.test: remove dead code
+
+2004-10-08  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* Makefile.in (PKG_CFLAGS): removed EXTRA_CFLAGS ref
+
+2004-10-01  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tk8.0/console.tcl, generic/tk8.0/tk.tcl (removed): no
+	longer relevant
+
+	* configure, configure.in, tclconfig/tcl.m4: updated to TEA 3.1
+	This corrects some unix 64-bit builds.
+
+	* README.txt, unix/README.txt, win/README.txt: updated notes to be
+	not so out of date.
+
+	* win/example.vc6, win/makefile.vc: made these more relevant, but
+	no attempt to actually test them.
+
+	* README.html, Roadmap.html (removed):            Removed lots of
+	* unix/Makefile.in, unix/aclocal.m4 (removed):    crufty build stuff
+	* unix/configure, unix/configure.in (removed):    that is no longer
+	* unix/install-sh, unix/mkIndex.tcl.in (removed): supported and/or
+	* unix/pkgIndex.tcl.in, unix/tcl.m4 (removed):    correct.
+	* unix/tixConfig.sh.in (removed):
+	* win/makefile.gnu, win/patch_win_main.tcl (removed):
+	* win/common.mak, win/example.gnu (removed):       There is only the
+	* win/example.vc5, win/makefile.bc (removed):      Tix as library
+	* win/winMain_patch.c (removed):                   now.
+	* win/rc/tixwish.ico, win/rc/tixwish.rc (removed):
+
+	* Makefile.in: set TIX_LIBRARY to $(srcdir)/library
+
+2004-04-09  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* library/pref/WmDefault.tcl: improve default font sizes.
+
+	* generic/tixInit.c: lower Tix default scheme prio to 20 from 79.
+		**** POTENTIAL INCOMPATABILITY ****
+
+	* library/Event.tcl (tixEvalCmdBinding): account for the case that
+	tixAppContext has not been called.
+
+	* library/SHList.tcl (tixScrolledHList:GeometryInfo): handle case
+	that child frame isn't a true Frame.
+
+	* library/Tree.tcl: make Tree recognize HList methods and pass
+	them on accordingly.
+
+	* library/Tix.tcl (tixAppContext:Constructor): do not reset
+	certain toplevel config options (like -menu).  Remove all refs to
+	monochrome scheme settings.
+
+	* library/Init.tcl: DO NOT CALL 'tixAppContext tix' on init.
+	This means that the Tix defaults do not kick in on the package
+	require of Tix.  You must call 'tixAppContext tix' after the
+	package require to kick in Tix' defaults.
+		**** POTENTIAL INCOMPATABILITY ****
+
+2004-03-27  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tixWinXpm.c (TixpXpmRealizePixmap): fix unreleased DC that
+	caused palette panic on exit
+
+	* ChangeLog.txt (removed), ChangeLog (new): renamed ChangeLog to
+	editor-standard unprefixed version
+
+	* config/acinclude.m4 (removed):
+	* Makefile.in, aclocal.m4, configure, configure.in,
+	* tclconfig/* (new):
+	new TEA based build system.  This build Tix as a standard Tcl
+	extension, and does not have support for stand-alone tixwish.
+
+	* generic/tixMwm.c (removed), unix/tixUnixMwm.c (new): renamed
+	* generic/tix.h, generic/tixClass.c, generic/tixCmds.c
+	* generic/tixDItem.c, generic/tixDef.h, generic/tixDiITxt.c
+	* generic/tixDiImg.c, generic/tixDiStyle.c, generic/tixDiText.c
+	* generic/tixDiWin.c, generic/tixError.c, generic/tixForm.c
+	* generic/tixForm.h, generic/tixFormMisc.c, generic/tixGeometry.c
+	* generic/tixGrData.c, generic/tixGrFmt.c, generic/tixGrRC.c
+	* generic/tixGrSel.c, generic/tixGrSort.c, generic/tixGrUtl.c
+	* generic/tixGrid.c, generic/tixGrid.h, generic/tixHLCol.c
+	* generic/tixHLHdr.c, generic/tixHLInd.c, generic/tixHList.c
+	* generic/tixHList.h, generic/tixImgCmp.c, generic/tixImgXpm.c
+	* generic/tixInit.c, generic/tixInitScript.h, generic/tixInputO.c
+	* generic/tixInt.h, generic/tixMethod.c, generic/tixNBFrame.c
+	* generic/tixOption.c, generic/tixPort.h, generic/tixScroll.c
+	* generic/tixTList.c, generic/tixUtils.c, generic/tixWidget.c
+	* unix/tixUnixDraw.c, unix/tixUnixXpm.c
+	* win/tixWCmpt.c, win/tixWinDraw.c, win/tixWinPort.h
+	* win/tixWinXpm.c:
+	rewrite for proper CONST-ification and various code cleanup.
+
+	* library/Balloon.tcl, library/ChkList.tcl, library/ComboBox.tcl
+	* library/Compat.tcl, library/Control.tcl, library/DialogS.tcl
+	* library/DirBox.tcl, library/DirList.tcl, library/DirTree.tcl
+	* library/EFileBox.tcl, library/Event.tcl, library/FileBox.tcl
+	* library/FileCbx.tcl, library/FileEnt.tcl, library/FloatEnt.tcl
+	* library/Grid.tcl, library/HList.tcl, library/Init.tcl
+	* library/LabEntry.tcl, library/ListNBk.tcl, library/NoteBook.tcl
+	* library/OldUtil.tcl, library/PanedWin.tcl, library/PopMenu.tcl
+	* library/Primitiv.tcl, library/SHList.tcl, library/SListBox.tcl
+	* library/StackWin.tcl, library/Tix.tcl, library/Utils.tcl
+	* library/VResize.tcl, library/VStack.tcl, library/VTree.tcl
+	* library/fs.tcl, library/pkgIndex.tcl, library/pref/WmDefault.tcl:
+	Code cleanup to use newer Tcl 8.4 code features.
+	Rewrite of FS handling routines using Tcl core features.
+
+	* library/FileCmpt.tcl (removed): removed or consolidated cruft.
+	* library/FileUtil.tcl (removed):
+	* library/TAGS (removed):
+	* library/UnixFile.tcl (removed):
+	* library/Verify.tcl (removed):
+	* library/Version.tcl (removed):
+	* library/WinFile.tcl (removed):
+	* library/tclIndex (removed):
+
+	* demos/MkChoose.tcl:
+	* demos/MkDirLis.tcl:
+	* demos/tixwidgets.tcl:
+	* demos/samples/STList3.tcl: minor demo updates
+
+	* docs/Files.txt: note FS docs are out of date.
+
+	* tests/basic.test:          minor changes.  The tests likely don't
+	* tests/general/dirbox.tcl:  work right now as they have references
+	* tests/general/fs.tcl:      to a lot of old FS routines.
+	* tests/hlist/DirList.tcl:
+	* tests/library/CaseData.tcl:
+	* tests/library/TestLib.tcl:
+
+	*** Start of major revision to Tix        ***
+	*** Tcl/Tk 8.4+ compatible from here on   ***
+	*** Use older versions for earlier Tcl/Tk ***
+
+2002-01-25  Mike Clarkson  <mikeclarkson@users.sourceforge.net>
+
+	* win/: Fixed Windows makefile.vc and rc/tixwish.rc
+	
+	* Released as tix-8.2.0b3
+	
+2002-01-23  Mike Clarkson  <mikeclarkson@users.sourceforge.net>
+
+	* unix/: Fixed unix configure, configure.in and Makefile.in
+	
+	* Released as tix-8.2.0b2
+	
+2001-12-01  Mike Clarkson  <mikeclarkson@users.sourceforge.net>
+
+	* library/Tix.tcl: Restored fontsets and schemes that were 
+	missing from 8.2.0EA. Defaults to WmDefault like 8.1.3.
+
+	* tests/general/samples.tcl: Restored the 8.1.x widgets demo
+	missing from 8.2.0EA and renamed them to tixwidgets.tcl - 
+	they give a more visual overview and are used by the test suite.
+
+2001-11-21  Mike Clarkson  <mikeclarkson@users.sourceforge.net>
+
+	* library/pref/: Added WmDefault.* files, a Package for making Tix
+	   apps use the CDE/GNOME/KDE/Windows scheme.
+	* library/: Many minor bug fixes to the library files.
+	* demo/samples/: Removed font and color overrides from the demos,
+	   so that the native look and feel would be preserved.
+	* On Windows, initialize the console even if there is no script.
+	See the release notes for details of the $TIX_CONSOLE
+	* A site wide initialization file tixwishrc.tcl is now used.
+	See the release notes for details of the tixwishrc.tcl file.
+	* Removed the patches to Tkinter.py as it is now standard in Python.
+	* Released as 8.1.2.
+
+2001-01-21  Ioi K. Lam	<ioilam@users.sourceforge.net>
+	* Added new tools/tix-man2html.tcl for generating HTML version
+	  of the Tix man pages.
+	* Files in man/*.html are now auto-generated (with
+	  GNUmakefile) so they are no longer kept in the CVS tree.
+	* Renamed the man pages like HList.n to tixHList.n so that
+	  they can be easily picked up by the Unix man command (e.g.,
+	  man tixHList).
+
+2001-01-14  Ioi K. Lam	<ioilam@users.sourceforge.net>
+	* The DItem API has been changed to better separate the DItem
+	  rendering from the host widgets. Now background, highlight
+	  and anchor line rendering are all done by the DItems
+	  themselves.
+
+2001-01-11  Ioi K. Lam	<ioilam@users.sourceforge.net>
+	* Removed old4176.zip. There has been many incompatible changes
+	  that made building Tix with pre-8.0 Tcl very difficult.
+
+2001-01-08  Ioi K. Lam	<ioilam@users.sourceforge.net>
+	* Tix_LoadTclLibrary() is removed. Use tcl_findLibrary instead.
+
+2001-01-07  Ioi K. Lam	<ioilam@users.sourceforge.net>
+	* SAM support for the Tix library itself has been restored
+	  (unix only). You can use the --enable-sam option for
+	  unix/configure to include all the Tix script files in
+	  libtix.{a,so}. 
+
+	  There is no SAM support for building the TCL and TK
+	  libraries, though.
+
+	  Also, there is no libtixsam.{a,so} anymore. The Tix scripts
+	  are linked into libtix.{a,so} directly if SAM is enabled.
+----------------------------------------------------------------------
+2001-01-05  Ioi K. Lam	<ioilam@users.sourceforge.net>
+	* Tix 8.2.0 EA released.
+----------------------------------------------------------------------	
+2001-01-04  Ioi K. Lam	<ioilam@users.sourceforge.net>
+	* New file win/makefile.gnu for building Tix with the free
+	  Cygwin tools instead of VC++.
+	
+2001-01-03  Ioi K. Lam	<ioilam@users.sourceforge.net>
+	* Tix version changed to Tix 8.2.0.
+	
+2000-12-29  Ioi K. Lam	<ioilam@users.sourceforge.net>
+	* New "HTML-like" widget demo front-end "demos/widget", copied
+	  from Tk 8.x.
+	
+2000-12-28  Ioi K. Lam	<ioilam@users.sourceforge.net>
+	* Windows build is updated to the standard procedure defined in
+	  the Tcl Extension Architecture (TEA). Only VC++ makefile
+	  is supported in the moment.
+	* New win32 executable tixwishc81.exe uses the "DOS" console
+	  instead of the GUI TK console. This is usually better for
+	  debugging purposes during Tix core development. The old
+	  tixwish81.exe remains, without change, for end-user apps.
+	* Support for ET (Embedded Tk) is now officially removed. See
+	  notes about Stand-Alone Module (SAM) below.
+
+2000-12-26  Ioi K. Lam	<ioilam@users.sourceforge.net>
+	* !!! FEATURE REMOVED !!!
+	  The Stand-Alone Module (SAM) feature is now dropped from
+	  Tix. If you wish to package scripts inside an executable
+	  binary, use one of the "wrap" extensions (such as ProWrap)
+	  instead. The following files are removed from the
+	  repository:
+		unix/tixUnixSam.c
+		unix/samAppInit.c
+	* Namespace handling code has been updated to the Tcl 8.0+
+	  API. Therefore, the old special handling code for Itcl is no
+	  longer necessary. The following files are removed from the
+	  repository:
+		generic/tixItcl.h
+		generic/tixItcl.c
+	* Unix build is updated to the standard procedure defined in
+	  the Tcl Extension Architecture (TEA). Now there is a single
+	  configure script that builds Tix for different versions of
+	  Tcl 8.x. All the old build subdirectories such as unix/tk8.3
+	  are now removed.
+	  
+	  This new build procedure also uses the "Stubs" interface to
+	  link to Tcl and Tk. This way, the same libtix.so can be
+	  loaded into any version of wish that supports stubs.
+
+2000-12-23  Ioi K. Lam	<ioilam@users.sourceforge.net>
+	* New option -usetkdialog for tixFileEntry widget.
+	* !!! INCOMPATIBILITY !!! -scheme and -fontset options are now
+	  silently ignored in the [tix] command. This is done to achieve
+	  better native look-and-feel. Support for the -fontset and
+	  -scheme options will be reimplemented in a future version.
+	
+2000-12-16  Ioi K. Lam	<ioilam@users.sourceforge.net>
+	!!! INCOMPATIBILITY !!!
+	* [tixWidgetClass] behavior has changed in incompatible ways:
+	  (1) Tcl-style comments (prefixed by #) are no longer allowed.
+	      The second argument to [tixWidgetClass] is treated strictly
+	      as a list accepted by Tcl_SplitList().
+	  (2) the [subst] command is no longer applied on certained
+	      entries in the second argument to [tixWidgetClass]. If you
+	      want substitution to happen, use [tixWidgetClassEx] instead.
+
+======================================================================
+Log started 2000-12-16
+======================================================================

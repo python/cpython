@@ -1,0 +1,222 @@
+'\"
+'\" $Id: tixGrid.n,v 1.2 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+.TH tixGrid n 4.1 Tix "Tix Built-In Commands"
+.BS
+.SH NAME
+tixGrid \- Create and manipulate Tix Grid widgets
+.SO
+\-background	\-borderWidth	\-cursor
+\-font	\-foreground	\-height
+\-highlightColor	\-highlightThickness	\-relief
+\-selectBackground	\-selectForeground	\-width
+\-xScrollCommand	\-yScrollCommand
+.SE
+'\"----------------------------------------------------------------------
+.SH "WIDGET-SPECIFIC OPTIONS"
+.OP -editdonecmd editDoneCmd EditDoneCmd
+If non-empty, gives a Tcl command to be executed when the user has
+edited grid cell. When this command is called, it is passed with two
+additional parameters: \fIx\fR \fIy\fR, where (\fIx\fR,\fIy\fR) is the
+location of the cell that has just been edited.
+'\"
+.OP -editnotifycmd editNotifyCmd EditNotifyCmd
+If non-empty, gives a Tcl command to be executed when the user tries to edit a grid cell. When this command is called, it is passed with two additional parameters: \fIx\fR \fIy\fR, where (\fIx\fR,\fIy\fR,) is the location of the cell. This command should return a boolean value: \fBtrue\fR indicates that the cells is editable and \fBfalse\fR otherwise.
+'\"
+.OP -formatcmd formatCmd FormatCmd
+If non-empty, gives a Tcl command to be executed when the grid cells
+need to be formatted on the screen. Normally, this command calls the
+\fBformat\fR widget command (see below). When this command is called,
+it is passed with five additional parameters: \fItype\fR \fIx1\fR
+\fIy1\fR \fIx2\fR \fIy2\fR. \fItype\fR gives the logical type of the
+region in the grid. It may be one of the following. \fBx-region\fR:
+the horizontal margin; \fBy-region\fR: the vertical margin;
+\fBs-region\fR, the area where the the horizontal and vertical margins
+are joined; \fBmain\fR: all the cells that do not fall into the above
+three types.  \fIx1\fR \fIy1\fR \fIx2\fR \fIy2\fR gives the extent of
+the region that needs formatting.
+'\"
+.OP -leftmargin leftMargin LeftMargin
+In the number of cells, gives the width of vertical margin. A zero
+indicates that no vertical should be drawn.
+'\"
+.OP -selectmode selectMode SelectMode
+Specifies one of several styles for manipulating the selection. The
+value of the option may be arbitrary, but the default bindings expect
+it to be either \fBsingle\fR, \fBbrowse\fR, \fBmultiple\fR, or
+\fBextended\fR; the default value is \fBsingle\fR.
+'\"
+.OP -selectunit selectUnit SelectUnit
+Specifies the selection unit. Valid values are \fBcell\fR,
+\fBcolumn\fR or \fBrow\fR.
+'\"
+.OP -topmargin topMargin TopMargin
+In the number of cells, gives the height of horizontal margin. A zero
+indicates that no horizontal should be drawn.
+.BE
+'\"
+.SH DESCRIPTION
+The \fBtixGrid\fR command creates a new window (given by the
+\fIpathName\fR argument) and makes it into a \fBtixGrid\fR widget.
+Additional options, described above, may be specified on the command
+line or in the option database to configure aspects of the
+\fBtixGrid\fR widget such as its cursor and relief.
+.PP
+A Grid widget displays its contents in a two dimensional grid of
+cells. Each cell may contain one Tix \fBdisplay item\fR, which
+may be in text, graphics or other formats. See the
+\fBtixDisplayStyle\fR manual page for more information about Tix
+display items. Individual cells, or groups of cells, can be formatted
+with a wide range of attributes, such as its color, relief and border.
+'\"
+.SH "WIDGET COMMAND"
+.PP
+The \fBtixGrid\fR command creates a new Tcl command whose name is the
+same as the path name of the \fBtixGrid\fR widget's window. This
+command may be used to invoke various operations on the widget. It has
+the following general form:
+.RS
+.CS
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+.RE
+\fIPathName\fR is the name of the command, which is the same as the
+\fBtixGrid\fR widget's path name. \fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command. The following commands
+are possible for \fBtixGrid\fR widgets:
+.TP
+\fIpathName \fBanchor \fIoption \fR?\fIargs ...\fR?
+Manipulates the \fBanchor cell\fR of the \fBtixGrid\fR widget. The
+anchor cell is the end of the selection that is fixed while the user
+is dragging out a selection with the mouse.
+.TP
+\fIpathName \fBbdtype\fR
+TODO place holder
+.TP
+\fIpathName \fBcget\fR \fIoption\fR
+Returns the current value of the configuration option given by
+\fIoption\fR. \fIOption\fR may have any of the values accepted by the
+\fBtixGrid\fR command.
+.TP
+\fIpathName \fBconfigure \fR?\fIoption\fR? ?\fIvalue option value ...\fR?
+Query or modify the configuration options of the widget.  If no
+\fIoption\fR is specified, returns a list describing all of the
+available options for \fIpathName\fR (see \fBTk_ConfigureInfo(n)\fR
+for information on the format of this list.) If \fIoption\fR is
+specified with no \fIvalue\fR, then the command returns a list
+describing the one named option (this list will be identical to the
+corresponding sublist of the value returned if no \fIoption\fR is
+specified). If one or more \fIoption\-value\fR pairs are specified,
+then the command modifies the given widget option(s) to have the given
+value(s); in this case the command returns an empty
+string. \fIOption\fR may have any of the values accepted by the
+\fBtixGrid\fR command.
+.TP
+\fIpathName \fBdelete\fR \fIdim\fR \fIfrom \fR?\fIto\fR?
+\fIDim\fR may be \fBrow\fR or \fBcolumn\fR. If \fIto\fR is not given,
+deletes a single row (or column) at the position \fIfrom\fR. If
+\fIto\fR is given, deletes the range of rows (or columns) from
+position \fIfrom\fR through \fIto\fR.
+.TP
+\fIpathName \fBedit apply\fR
+If any cell is being edited, de-highlight the cell and applies the
+changes.
+.TP
+\fIpathName \fBedit set\fR \fIx\fR \fIy\fR
+Highlights the cell at (\fIx\fR,\fIy\fR) for editing, if the
+\fB-editnotify\fR command returns true for this cell.
+.TP
+\fIpathName \fBentrycget\fR \fIx\fR \fIy\fR \fIoption\fR
+Returns the current value of the configuration option given by
+\fIoption\fR of the cell at (\fIx\fR,\fIy\fR). \fIOption\fR may have
+any of the values accepted by the \fBset\fR widget command.
+.TP
+\fIpathName \fBentryconfigure \fIx y \fR?\fIoption\fR? ?\fIvalue option value ...\fR?
+Query or modify the configuration options of the cell at
+(\fIx\fR,\fIy\fR).  If no \fIoption\fR is specified, returns a list
+describing all of the available options for the cell (see
+\fBTk_ConfigureInfo(n)\fR for information on the format of this list.)
+If \fIoption\fR is specified with no \fIvalue\fR, then the command
+returns a list describing the one named option (this list will be
+identical to the corresponding sublist of the value returned if no
+\fIoption\fR is specified.) If one or more \fIoption\-value\fR pairs
+are specified, then the command modifies the given widget option(s) to
+have the given value(s); in this case the command returns an empty
+string.  \fIOption\fR may have any of the values accepted by the
+\fBset\fR widget command.
+.TP
+\fIpathName \fBformat\fR
+TODO place holder
+.TP
+\fIpathName \fBindex\fR
+TODO place holder
+.TP
+\fIpathName \fBmove\fR \fIdim\fR \fIfrom\fR \fIto\fR \fIoffset\fR
+\fIDim\fR may be \fBrow\fR or \fBcolumn\fR. Moves the the range of
+rows (or columns) from position \fIfrom\fR through \fIto\fR by the
+distance indicated by \fIoffset\fR. For example, \fBmove row
+2 4 1\fR moves the rows 2,3,4 to rows 3,4,5.
+.TP
+\fIpathName \fBset \fIx y \fR?-itemtype \fItype\fR? ?\fIoption value...\fR?
+Creates a new display item at the cell at (\fIx\fR,\fIy\fR). The
+optional \fB-itemtype\fR parameter gives the type of the display
+item. An additional list of \fIoption-value\fR pairs specify options
+of the display item. If a display item already exists at this cell,
+the old item will be deleted automatically.
+.TP
+\fIpathName \fBsize \fIdim index \fR?\fIoption value ...\fR?
+Queries or sets the size of the row or column given by \fIdim\fR and
+\fIindex\fR. \fIDim\fR may be \fBrow\fR or \fBcolumn\fR.  \fIIndex\fR
+may be any non-negative integer that gives the position of a given row
+(or column). \fIIndex\fR can also be the string \fBdefault\fR; in this
+case, this command queries or sets the default size of all rows (or
+columns).
+.PP
+When no \fIoption\fR-\fIvalue\fR pair is given, this command returns a
+list containing the current size setting of the given row (or
+column). When \fIoption\fR-\fIvalue\fR pairs are given, the
+corresponding options of the size setting of the given row are
+changed. \fIOption\fR may be one of the follwing:
+.RS
+.TP
+\fB-pad0\fR \fIpixels\fR
+Specifies the paddings to the left or a column or the top of a row.
+.TP
+\fB-pad1\fR \fIpixels\fR
+Specifies the paddings to the right or a column or the bottom of a row.
+.TP
+\fB-size\fR \fIval\fR
+Specifies the width of a column or the height of a row. \fIVal\fR may
+be: \fBauto\fR -- the width of the column is set the the widest cell
+in the column; a valid Tk screen distance unit (see
+\fBTk_GetPixels(n)\fR); or a real number following by the word
+\fBchars\fR (e.g. \fB3.4chars\fR) that sets the width of the column to
+the given number of characters.
+.RE
+.TP
+\fIpathName \fBunset\fR \fIx\fR \fIy\fR
+Clears the cell at (\fIx\fR,\fIy\fR) by removing its display item.
+.TP
+\fIpathName \fBxview\fR
+TODO place holder
+.TP
+\fIpathName \fByview\fR
+TODO place holder
+.SH KEYWORDS
+grid, spread sheet, table
+
+
+
+

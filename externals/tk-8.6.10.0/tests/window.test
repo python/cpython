@@ -1,0 +1,351 @@
+# This file is a Tcl script to test the procedures in the file
+# tkWindow.c.  It is organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1995 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+tcltest::configure {*}$argv
+tcltest::loadTestedCommands
+namespace import ::tk::test::loadTkCommand
+update
+
+# XXX This file is woefully incomplete.  Right now it only tests
+# a few parts of a few procedures in tkWindow.c
+
+# ----------------------------------------------------------------------
+
+test window-1.1 {Tk_CreateWindowFromPath procedure, parent dead} -setup {
+    destroy .t
+} -body {
+    proc bgerror msg {
+        global x errorInfo
+        set x [list $msg $errorInfo]
+    }
+
+    set x unchanged
+    frame .t -width 100 -height 50
+    place .t -x 10 -y 10
+    bind .t <Destroy> {button .t.b -text hello; pack .t.b}
+    update
+    destroy .t
+    update
+    set x
+} -cleanup {
+    rename bgerror {}
+} -result {{can't create window: parent has been destroyed} {can't create window: parent has been destroyed
+    while executing
+"button .t.b -text hello"
+    (command bound to event)}}
+
+
+# Most of the tests below don't produce meaningful results;  they
+# will simply dump core if there are bugs.
+
+test window-2.1 {Tk_DestroyWindow procedure, destroy handler deletes parent} -setup {
+    destroy .t
+} -body {
+    toplevel .t -width 300 -height 200
+    wm geometry .t +0+0
+    frame .t.f  -width 200 -height 200 -relief raised -bd 2
+    place .t.f -x 0 -y 0
+    frame .t.f.f -width 100 -height 100 -relief raised -bd 2
+    place .t.f.f -relx 1 -rely 1 -anchor se
+    bind .t.f <Destroy> {destroy .t}
+    update
+    destroy .t.f
+} -result {}
+test window-2.2 {Tk_DestroyWindow procedure, destroy handler deletes parent} -setup {
+    destroy .t
+} -body {
+    toplevel .t -width 300 -height 200
+    wm geometry .t +0+0
+    frame .t.f  -width 200 -height 200 -relief raised -bd 2
+    place .t.f -x 0 -y 0
+    frame .t.f.f -width 100 -height 100 -relief raised -bd 2
+    place .t.f.f -relx 1 -rely 1 -anchor se
+    bind .t.f.f <Destroy> {destroy .t}
+    update
+    destroy .t.f
+} -result {}
+test window-2.3 {Tk_DestroyWindow procedure, destroy handler deletes parent} -setup {
+    destroy .f
+} -body {
+    frame .f -width 80 -height 120 -relief raised -bd 2
+    place .f -relx 0.5 -rely 0.5 -anchor center
+    toplevel .f.t -width 300 -height 200
+    wm geometry .f.t +0+0
+    frame .f.t.f  -width 200 -height 200 -relief raised -bd 2
+    place .f.t.f -x 0 -y 0
+    frame .f.t.f.f -width 100 -height 100 -relief raised -bd 2
+    place .f.t.f.f -relx 1 -rely 1 -anchor se
+    update
+    destroy .f
+} -result {}
+
+test window-2.4 {Tk_DestroyWindow, cleanup half dead window at exit} -constraints {
+    unixOrWin
+} -body {
+    set code [loadTkCommand]
+    append code {
+        update
+        bind . <Destroy> exit
+        destroy .
+    }
+    set script [makeFile $code script]
+    if {[catch {exec [interpreter] $script -geometry 10x10+0+0} msg]} {
+        set error 1
+    } else {
+        set error 0
+    }
+    removeFile script
+    list $error $msg
+} -result {0 {}}
+
+test window-2.5 {Tk_DestroyWindow, cleanup half dead windows at exit} -constraints {
+    unixOrWin
+} -body {
+    set code [loadTkCommand]
+    append code {
+        toplevel .t
+        update
+        bind .t <Destroy> exit
+        destroy .t
+    }
+    set script [makeFile $code script]
+    if {[catch {exec [interpreter] $script -geometry 10x10+0+0} msg]} {
+        set error 1
+    } else {
+        set error 0
+    }
+    removeFile script
+    list $error $msg
+} -result {0 {}}
+
+test window-2.6 {Tk_DestroyWindow, cleanup half dead windows at exit} -constraints {
+    unixOrWin
+} -body {
+    set code [loadTkCommand]
+    append code {
+        toplevel .t
+        update
+        bind .t <Destroy> exit
+        destroy .
+    }
+    set script [makeFile $code script]
+    if {[catch {exec [interpreter] $script -geometry 10x10+0+0} msg]} {
+        set error 1
+    } else {
+        set error 0
+    }
+    removeFile script
+    list $error $msg
+} -result {0 {}}
+
+test window-2.7 {Tk_DestroyWindow, cleanup half dead windows at exit} -constraints {
+    unixOrWin
+} -body {
+    set code [loadTkCommand]
+    append code {
+        toplevel .t
+        toplevel .t.f
+        update
+        bind .t.f <Destroy> exit
+        destroy .
+    }
+    set script [makeFile $code script]
+    if {[catch {exec [interpreter] $script -geometry 10x10+0+0} msg]} {
+        set error 1
+    } else {
+        set error 0
+    }
+    removeFile script
+    list $error $msg
+} -result {0 {}}
+
+test window-2.8 {Tk_DestroyWindow, cleanup half dead windows at exit} -constraints {
+    unixOrWin
+} -body {
+    set code [loadTkCommand]
+    append code {
+        toplevel .t1
+        toplevel .t2
+        toplevel .t3
+        update
+        bind .t3 <Destroy> {destroy .t2}
+        bind .t2 <Destroy> {destroy .t1}
+        bind .t1 <Destroy> {exit 0}
+        destroy .t3
+    }
+    set script [makeFile $code script]
+    if {[catch {exec [interpreter] $script -geometry 10x10+0+0} msg]} {
+        set error 1
+    } else {
+        set error 0
+    }
+    removeFile script
+    list $error $msg
+} -result {0 {}}
+
+test window-2.9 {Tk_DestroyWindow, Destroy bindings evaluated after exit} -constraints {
+    unixOrWin
+} -body {
+    set code [loadTkCommand]
+    append code {
+        toplevel .t1
+        toplevel .t2
+        update
+        bind .t2 <Destroy> {puts "Destroy .t2" ; exit 1}
+        bind .t1 <Destroy> {puts "Destroy .t1" ; exit 0}
+        destroy .t2
+    }
+    set script [makeFile $code script]
+    if {[catch {exec [interpreter] $script -geometry 10x10+0+0} msg]} {
+        set error 1
+    } else {
+        set error 0
+    }
+    removeFile script
+    list $error $msg
+} -result {0 {Destroy .t2
+Destroy .t1}}
+
+test window-2.10 {Tk_DestroyWindow, Destroy binding evaluated once} -constraints {
+    unixOrWin
+} -body {
+    set code [loadTkCommand]
+    append code {
+        update
+        bind . <Destroy> {
+            puts "Destroy ."
+            bind . <Destroy> {puts "Re-Destroy ."}
+            exit 0
+        }
+        destroy .
+    }
+    set script [makeFile $code script]
+    if {[catch {exec [interpreter] $script -geometry 10x10+0+0} msg]} {
+        set error 1
+    } else {
+        set error 0
+    }
+    removeFile script
+    list $error $msg
+} -result {0 {Destroy .}}
+
+test window-2.11 {Tk_DestroyWindow, don't reanimate a half-dead window} -constraints {
+    unixOrWin
+} -body {
+    set code [loadTkCommand]
+    append code {
+        toplevel .t1
+        toplevel .t2
+        update
+        bind .t1 <Destroy> {
+            if {[catch {entry .t2.newchild}]} {
+                puts YES
+            } else {
+                puts NO
+            }
+        }
+        bind .t2 <Destroy> {exit}
+        destroy .t2
+    }
+    set script [makeFile $code script]
+    if {[catch {exec [interpreter] $script -geometry 10x10+0+0} msg]} {
+        set error 1
+    } else {
+        set error 0
+    }
+    removeFile script
+    list $error $msg
+} -result {0 YES}
+
+
+test window-3.1 {Tk_MakeWindowExist procedure, stacking order and menubars} -constraints {
+    unix testmenubar
+} -setup {
+    destroy .t
+} -body {
+    toplevel .t -width 300 -height 200
+    wm geometry .t +0+0
+    pack [entry .t.e]
+    frame .t.f -bd 2 -relief raised
+    testmenubar window .t .t.f
+    update
+    # If stacking order isn't handle properly, generates an X error.
+} -cleanup {
+    destroy .t
+} -result {}
+test window-3.2 {Tk_MakeWindowExist procedure, stacking order and menubars} -constraints {
+    unix testmenubar
+} -setup {
+    destroy .t
+} -body {
+    toplevel .t -width 300 -height 200
+    wm geometry .t +0+0
+    pack [entry .t.e]
+    pack [entry .t.e2]
+    update
+    frame .t.f -bd 2 -relief raised
+    raise .t.f .t.e
+    testmenubar window .t .t.f
+    update
+    # If stacking order isn't handled properly, generates an X error.
+} -cleanup {
+    destroy .t
+} -result {}
+
+
+test window-4.1 {Tk_NameToWindow procedure} -constraints {
+    testmenubar
+} -setup {
+    destroy .t
+} -body {
+    winfo geometry .t
+} -cleanup {
+    destroy .t
+} -returnCodes error -result {bad window path name ".t"}
+test window-4.2 {Tk_NameToWindow procedure} -constraints {
+    testmenubar
+} -setup {
+    destroy .t
+} -body {
+    frame .t -width 100 -height 50
+    place .t -x 10 -y 10
+    update
+    winfo geometry .t
+} -cleanup {
+    destroy .t
+} -returnCodes ok -result {100x50+10+10}
+
+
+test window-5.1 {Tk_MakeWindowExist procedure, stacking order and menubars} -constraints {
+    unix testmenubar
+} -setup {
+    destroy .t
+} -body {
+    toplevel .t -width 300 -height 200
+    wm geometry .t +0+0
+    pack [entry .t.e]
+    pack [entry .t.e2]
+    frame .t.f -bd 2 -relief raised
+    testmenubar window .t .t.f
+    update
+    lower .t.e2 .t.f
+    update
+    # If stacking order isn't handled properly, generates an X error.
+} -cleanup {
+    destroy .t
+} -result {}
+
+
+# cleanup
+cleanupTests
+return
+
+# Local variables:
+# mode: tcl
+# End:

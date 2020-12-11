@@ -1,0 +1,56 @@
+# -*- mode: text; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
+# $Id: TestLib.txt,v 1.2 2002/11/13 21:12:18 idiscovery Exp $
+
+HIGH LEVEL INTERFACE FOR INTERACTIVE TESTING
+--------------------------------------------
+Click:
+
+     Simulates a the event when a user moves the mouse pointer into
+     the widget (if the cursor is still outside of the widget), press
+     the button and release it.
+
+
+Double:
+
+     Simulates a the event when a user moves the mouse pointer into
+     the widget (if the cursor is still outside of the widget), double-click
+     the button and release it.
+
+
+MESSAGE PRINTING
+----------------
+
+PutP
+
+    Prints a progress message.
+
+PutTitle
+
+    Prints the title of a test file
+
+PutSubTitle
+
+    Print the title of a part of a test file
+
+PutSubSubTitle
+
+    One more level than PutSubTitle
+
+TestWarn
+
+    Print a warning message. This will be counted in the final report.
+
+TestError {msg {printErrInfo 0} {abortMode cont}}
+
+    Print an error message. abortMode controls how the error affects
+    other test cases:
+
+	cont:		simply print the message and continue
+	abortfile:	skip other test cases in this file
+	abortall:	abort the all other tests and exit the test
+			program.
+
+   printErrInfo specifies whether the "$errorInfo" variable should be
+   printed.
+
+

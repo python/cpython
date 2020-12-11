@@ -1,0 +1,4 @@
+OUT_DIR = \
+C:\cpython\externals\tcl-core-8.6.10.0\win\Release_AMD64_VC13
+TMP_DIR = \
+C:\cpython\externals\tcl-core-8.6.10.0\win\Release_AMD64_VC13\tcl_ThreadedDynamic

@@ -1,0 +1,107 @@
+'\"
+'\" Copyright (c) 2004 Joe English
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH ttk::checkbutton n 8.5 Tk "Tk Themed Widget"
+.so man.macros
+.BS
+.SH NAME
+ttk::checkbutton \- On/off widget
+.SH SYNOPSIS
+\fBttk::checkbutton\fR \fIpathName \fR?\fIoptions\fR?
+.BE
+.SH DESCRIPTION
+A \fBttk::checkbutton\fR widget is used to show or change a setting.
+It has two states, selected and deselected.
+The state of the checkbutton may be linked to a Tcl variable.
+.SO ttk_widget
+\-class	\-compound	\-cursor
+\-image	\-state	\-style
+\-takefocus	\-text	\-textvariable
+\-underline	\-width
+.SE
+.SH "WIDGET-SPECIFIC OPTIONS"
+.OP \-command command Command
+A Tcl script to execute whenever the widget is invoked.
+.OP \-offvalue offValue OffValue
+The value to store in the associated \fB\-variable\fR
+when the widget is deselected.  Defaults to \fB0\fR.
+.OP \-onvalue onValue OnValue
+The value to store in the associated \fB\-variable\fR
+when the widget is selected.  Defaults to \fB1\fR.
+.OP \-variable variable Variable
+The name of a global variable whose value is linked to the widget.
+Defaults to the widget pathname if not specified.
+.SH "WIDGET COMMAND"
+.PP
+In addition to the standard
+\fBcget\fR, \fBconfigure\fR, \fBidentify\fR, \fBinstate\fR, and \fBstate\fR
+commands, checkbuttons support the following additional
+widget commands:
+.TP
+\fIpathname\fB invoke\fR
+Toggles between the selected and deselected states
+and evaluates the associated \fB\-command\fR.
+If the widget is currently selected, sets the \fB\-variable\fR
+to the \fB\-offvalue\fR and deselects the widget;
+otherwise, sets the \fB\-variable\fR to the \fB\-onvalue\fR
+Returns the result of the \fB\-command\fR.
+.\" Missing: select, deselect, toggle
+.\" Are these useful?  They don't invoke the -command
+.\" Missing: flash.  This is definitely not useful.
+.SH "WIDGET STATES"
+.PP
+The widget does not respond to user input if the \fBdisabled\fR state is set.
+The widget sets the \fBselected\fR state whenever
+the linked \fB\-variable\fR is set to the widget's \fB\-onvalue\fR,
+and clears it otherwise.
+The widget sets the \fBalternate\fR state whenever the
+linked \fB\-variable\fR is unset.
+(The \fBalternate\fR state may be used to indicate a
+.QW tri-state
+or
+.QW indeterminate
+selection.)
+.SH "STANDARD STYLES"
+.PP
+\fBTtk::checkbutton\fR widgets support the \fBToolbutton\fR style in all
+standard themes, which is useful for creating widgets for toolbars.
+.SH "STYLING OPTIONS"
+.PP
+The class name for a \fBttk::checkbutton\fP is \fBTCheckbutton\fP.
+.PP
+Dynamic states: \fBactive\fP, \fBalternate\fP, \fBdisabled\fP,
+\fBpressed\fP, \fBselected\fP, \fBreadonly\fP.
+.PP
+\fBTCheckbutton\fP styling options configurable with \fBttk::style\fP
+are:
+.PP
+\fB\-background\fP \fIcolor\fP
+.br
+\fB\-compound\fP \fIcompound\fP
+.br
+\fB\-foreground\fP \fIcolor\fP
+.br
+\fB\-indicatorbackground\fP \fIcolor\fP
+.br
+\fB\-indicatorcolor\fP \fIcolor\fP
+.br
+\fB\-indicatormargin\fP \fIpadding\fP
+.br
+\fB\-indicatorrelief\fP \fIrelief\fP
+.br
+\fB\-padding\fP \fIpadding\fP
+.PP
+Some options are only available for specific themes.
+.PP
+See the \fBttk::style\fP manual page for information on how to configure
+ttk styles.
+.SH "SEE ALSO"
+ttk::widget(n), ttk::radiobutton(n), checkbutton(n)
+.SH "KEYWORDS"
+widget, button, toggle, check, option
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

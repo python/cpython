@@ -1,0 +1,75 @@
+<HEAD>
+<TITLE> Setting the Styles of the Display Items<A NAME=332>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html832 HREF=subsubsection3_5_3_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html830 HREF=subsection3_5_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html824 HREF=subsubsection3_5_3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html834 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html833 HREF=subsubsection3_5_3_3.html> Configuring and Deleting </A>
+<B>Up:</B> <A NAME=tex2html831 HREF=subsection3_5_3.html> Creating Display Items </A>
+<B> Previous:</B> <A NAME=tex2html825 HREF=subsubsection3_5_3_1.html> Creating Display Items</A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00053200000000000000> Setting the Styles of the Display Items<A NAME=332>&nbsp;</A></A></H3>
+<P>
+Note that in the above example, if we want to control the foreground color
+  of the text items, we cannot issue commands such as:
+<P>
+<blockquote> <tt> .t insert end -itemtype text -text &quot;First Item&quot; -foreground black
+</tt>
+<P></blockquote>
+<P>
+ because <tt>-foreground</tt> is not an individual attribute of the text
+  item. Instead, it is a collective attribute and must be accessed using a
+  display style object. To do that we can use the command <tt>tixItemStyle</tt> to create display styles, as shown in the following
+  example:
+<P>
+<blockquote> <P><tt> set style1 [tixDisplayStyle text -font 8x13]<BR>
+set style2 [tixDisplayStyle text -font 8x13bold]<BR>
+<BR>
+tixTList .t; pack .t<BR>
+<BR>
+.t insert end -itemtype text -text &quot;First Item&quot;  -underline 0 <BR>    -style $style1<BR>
+.t insert end -itemtype text -text &quot;Second Item&quot; -underline 0  <BR>    -style $style2<BR>
+.t insert end -itemtype text -text &quot;Third Item&quot;  -underline 0  <BR>    -style $style1</tt>
+<P></blockquote>
+<P>
+The first argument of <tt>tixDisplayStyle</tt> specify the type of style we
+  want to create. Each type of display item needs its own type of display
+  styles. Therefore, for example, we cannot create a style of type <tt>text</tt> and assign it to an item of type <tt>image</tt>. The subsequent
+  arguments to <tt>tixDisplayStyle</tt> set the configuration options of the
+  collective attributes defined by this style. A complete list of the
+  configuration options of each type of the display style is in figures ???
+  through ???.
+<P>
+   The <tt>tixDisplayStyle</tt> command returns the names of the newly created
+  styles to us and we use the variables <tt>style1</tt> and <tt>style2</tt> to
+  store these names. We can then assign the styles to the display items by
+  using the names of the styles. As shown in figure 3-5, by
+  assing these two styles to the <tt>-style</tt> option of the display items,
+  we assigned a medium-weight font to the first and third item and a bold
+  font to the second item.
+<P>
+<blockquote> <P><CENTER><P><IMG ALIGN="LEFT" SRC="../gif/tix/tlist/twofont.gif"> <IMG ALIGN="LEFT" SRC="../gif/tix/tlist/twofont2.gif"><BR CLEAR=LEFT><CENTER>(Figure 3-5) Two Display Styles With Different Fonts<A NAME=35>&nbsp;</A></CENTER><P>
+  </CENTER>
+</blockquote>
+<P>
+   The name of the style returned by <tt>tixDisplayStyle</tt> is also the name
+  of a command which we can use to control the style. For example, we can
+  use the following commands to switch the fonts in the two styles we
+  created in the above example:
+<P>
+<blockquote> <P><tt> $style1 configure -font 8x13bold<BR>
+$style2 configure -font 8x13
+</tt>
+<P></blockquote>
+<P>
+   After the execution of the above command, the font in the second item in
+  the TixTList widget becomes medium-weight and the font in the first and
+  third items becomes bold, as shown in figure 3-5.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

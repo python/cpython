@@ -1,0 +1,225 @@
+[comment {-*- tcl -*- doctools manpage}]
+[manpage_begin tpool n 2.8]
+[moddesc {Tcl Threading}]
+[titledesc {Part of the Tcl threading extension implementing pools of worker threads.}]
+[require Tcl 8.4]
+[require Thread [opt 2.8]]
+
+[description]
+This package creates and manages pools of worker threads. It allows you
+to post jobs to worker threads and wait for their completion. The
+threadpool implementation is Tcl event-loop aware. That means that any
+time a caller is forced to wait for an event (job being completed or
+a worker thread becoming idle or initialized), the implementation will
+enter the event loop and allow for servicing of other pending file or
+timer (or any other supported) events.
+
+[section COMMANDS]
+
+[list_begin definitions]
+
+[call [cmd tpool::create] [opt options]]
+
+This command creates new threadpool. It accepts several options as
+key-value pairs. Options are used to tune some threadpool parameters.
+The command returns the ID of the newly created threadpool.
+[para]
+Following options are supported:
+
+[list_begin options]
+
+[opt_def -minworkers [arg number]]
+Minimum number of worker threads needed for this threadpool instance.
+During threadpool creation, the implementation will create somany
+worker threads upfront and will keep at least number of them alive
+during the lifetime of the threadpool instance.
+Default value of this parameter is 0 (zero). which means that a newly
+threadpool will have no worker threads initially. All worker threads
+will be started on demand by callers running [cmd tpool::post] command
+and posting jobs to the job queue.
+
+[opt_def -maxworkers [arg number]]
+Maximum number of worker threads allowed for this threadpool instance.
+If a new job is pending and there are no idle worker threads available,
+the implementation will try to create new worker thread. If the number
+of available worker threads is lower than the given number,
+new worker thread will start. The caller will automatically enter the
+event loop and wait until the worker thread has initialized. If. however,
+the number of available worker threads is equal to the given number,
+the caller will enter the event loop and wait for the first worker thread
+to get idle, thus ready to run the job.
+Default value of this parameter is 4 (four), which means that the
+threadpool instance will allow maximum of 4 worker threads running jobs
+or being idle waiting for new jobs to get posted to the job queue.
+
+[opt_def -idletime [arg seconds]]
+Time in seconds an idle worker thread waits for the job to get posted
+to the job queue. If no job arrives during this interval and the time
+expires, the worker thread will check the number of currently available
+worker threads and if the number is higher than the number set by the
+[option minthreads] option, it will exit.
+If an [option exitscript] has been defined, the exiting worker thread
+will first run the script and then exit. Errors from the exit script,
+if any, are ignored.
+[para]
+The idle worker thread is not servicing the event loop. If you, however,
+put the worker thread into the event loop, by evaluating the
+[cmd vwait] or other related Tcl commands, the worker thread
+will not be in the idle state, hence the idle timer will not be
+taken into account.
+Default value for this option is unspecified.
+
+[opt_def -initcmd [arg script]]
+Sets a Tcl script used to initialize new worker thread. This is usually
+used to load packages and commands in the worker, set default variables,
+create namespaces, and such. If the passed script runs into a Tcl error,
+the worker will not be created and the initiating command (either the
+[cmd tpool::create] or [cmd tpool::post]) will throw error.
+Default value for this option is unspecified, hence, the Tcl interpreter of
+the worker thread will contain just the initial set of Tcl commands.
+
+[opt_def -exitcmd [arg script]]
+Sets a Tcl script run when the idle worker thread exits. This is normally
+used to cleanup the state of the worker thread, release reserved resources,
+cleanup memory and such.
+Default value for this option is unspecified, thus no Tcl script will run
+on the worker thread exit.
+
+[list_end]
+
+[para]
+
+[call [cmd tpool::names]]
+
+This command returns a list of IDs of threadpools created with the
+[cmd tpool::create] command. If no threadpools were found, the
+command will return empty list.
+
+[call [cmd tpool::post] [opt -detached] [opt -nowait] [arg tpool] [arg script]]
+
+This command sends a [arg script] to the target [arg tpool] threadpool
+for execution. The script will be executed in the first available idle
+worker thread. If there are no idle worker threads available, the command
+will create new one, enter the event loop and service events until the
+newly created thread is initialized. If the current number of worker
+threads is equal to the maximum number of worker threads, as defined
+during the threadpool creation, the command will enter the event loop and
+service events while waiting for one of the worker threads to become idle.
+If the optional [opt -nowait] argument is given, the command will not wait
+for one idle worker. It will just place the job in the pool's job queue
+and return immediately.
+[para]
+The command returns the ID of the posted job. This ID is used for subsequent
+[cmd tpool::wait], [cmd tpool::get] and [cmd tpool::cancel] commands to wait
+for and retrieve result of the posted script, or cancel the posted job
+respectively. If the optional [opt -detached] argument is specified, the
+command will post a detached job. A detached job can not be cancelled or
+waited upon and is not identified by the job ID.
+[para]
+If the threadpool [arg tpool] is not found in the list of active
+thread pools, the command will throw error. The error will also be triggered
+if the newly created worker thread fails to initialize.
+
+[call [cmd tpool::wait] [arg tpool] [arg joblist] [opt varname]]
+
+This command waits for one or many jobs, whose job IDs are given in the
+[arg joblist] to get processed by the worker thread(s). If none of the
+specified jobs are ready, the command will enter the event loop, service
+events and wait for the first job to get ready.
+[para]
+The command returns the list of completed job IDs. If the optional variable
+[opt varname] is given, it will be set to the list of jobs in the
+[arg joblist] which are still pending. If the threadpool [arg tpool]
+is not found in the list of active thread pools, the command will throw error.
+
+[call [cmd tpool::cancel] [arg tpool] [arg joblist] [opt varname]]
+
+This command cancels the previously posted jobs given by the [arg joblist]
+to the pool [arg tpool]. Job cancellation succeeds only for job still
+waiting to be processed. If the job is already being executed by one of
+the worker threads, the job will not be cancelled.
+The command returns the list of cancelled job IDs. If the optional variable
+[opt varname] is given, it will be set to the list of jobs in the
+[arg joblist] which were not cancelled. If the threadpool [arg tpool]
+is not found in the list of active thread pools, the command will throw error.
+
+[call [cmd tpool::get] [arg tpool] [arg job]]
+
+This command retrieves the result of the previously posted [arg job].
+Only results of jobs waited upon with the [cmd tpool::wait] command
+can be retrieved. If the execution of the script resulted in error,
+the command will throw the error and update the [var errorInfo] and
+[var errorCode] variables correspondingly. If the pool [arg tpool]
+is not found in the list of threadpools, the command will throw error.
+If the job [arg job] is not ready for retrieval, because it is currently
+being executed by the worker thread, the command will throw error.
+
+[call [cmd tpool::preserve] [arg tpool]]
+
+Each call to this command increments the reference counter of the
+threadpool [arg tpool] by one (1). Command returns the value of the
+reference counter after the increment.
+By incrementing the reference counter, the caller signalizes that
+he/she wishes to use the resource for a longer period of time.
+
+[call [cmd tpool::release] [arg tpool]]
+
+Each call to this command decrements the reference counter of the
+threadpool [arg tpool] by one (1).Command returns the value of the
+reference counter after the decrement.
+When the reference counter reaches zero (0), the threadpool [arg tpool]
+is marked for termination. You should not reference the threadpool
+after the [cmd tpool::release] command returns zero. The [arg tpool]
+handle goes out of scope and should not be used any more. Any following
+reference to the same threadpool handle will result in Tcl error.
+
+[call [cmd tpool::suspend] [arg tpool]]
+
+Suspends processing work on this queue. All pool workers are paused
+but additional work can be added to the pool. Note that adding the
+additional work will not increase the number of workers dynamically
+as the pool processing is suspended. Number of workers is maintained
+to the count that was found prior suspending worker activity.
+If you need to assure certain number of worker threads, use the
+[option minworkers] option of the [cmd tpool::create] command.
+
+[call [cmd tpool::resume] [arg tpool]]
+
+Resume processing work on this queue. All paused (suspended)
+workers are free to get work from the pool. Note that resuming pool
+operation will just let already created workers to proceed.
+It will not create additional worker threads to handle the work
+posted to the pool's work queue.
+
+[list_end]
+
+
+[section DISCUSSION]
+
+Threadpool is one of the most common threading paradigm when it comes
+to server applications handling a large number of relatively small tasks.
+A very simplistic model for building a server application would be to
+create a new thread each time a request arrives and service the request
+in the new thread. One of the disadvantages of this approach is that
+the overhead of creating a new thread for each request is significant;
+a server that created a new thread for each request would spend more time
+and consume more system resources in creating and destroying threads than
+in processing actual user requests. In addition to the overhead of
+creating and destroying threads, active threads consume system resources.
+Creating too many threads can cause the system to run out of memory or
+trash due to excessive memory consumption.
+[para]
+A thread pool offers a solution to both the problem of thread life-cycle
+overhead and the problem of resource trashing. By reusing threads for
+multiple tasks, the thread-creation overhead is spread over many tasks.
+As a bonus, because the thread already exists when a request arrives,
+the delay introduced by thread creation is eliminated. Thus, the request
+can be serviced immediately. Furthermore, by properly tuning the number
+of threads in the thread pool, resource thrashing may also be eliminated
+by forcing any request to wait until a thread is available to process it.
+
+[see_also tsv ttrace thread]
+
+[keywords thread threadpool]
+
+[manpage_end]

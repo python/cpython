@@ -1,0 +1,99 @@
+#------------------------------------------------------------- -*- makefile -*-
+#
+# Makefile for TBDC Core
+#
+# Basic build, test and install
+#   nmake /s /nologo /f makefile.vc INSTALLDIR=c:\path\to\installdir
+#   nmake /s /nologo /f makefile.vc INSTALLDIR=c:\path\to\installdir
+#   nmake /s /nologo /f makefile.vc INSTALLDIR=c:\path\to\installdir
+#
+# For other build options (debug, static etc.)
+# See TIP 477 (https://core.tcl.tk/tips/doc/trunk/tip/477.md) for
+# detailed documentation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+#------------------------------------------------------------------------------
+
+PROJECT         = tdbc
+RCFILE      = tdbc.rc
+
+!include "rules-ext.vc"
+
+!if [echo REM = This file is generated from Makefile.vc > versions.vc]
+!endif
+!if [echo TCL_VERSION_REQ = \>> versions.vc] \
+   && [nmakehlp -V ..\configure.ac TCL_VERSION_REQ >> versions.vc]
+!endif
+!if [echo TCL_VERSION_DESIRED = \>> versions.vc] \
+   && [nmakehlp -V ..\configure.ac TCL_VERSION_DESIRED >> versions.vc]
+!endif
+!if [echo TCLOO_VERSION_REQ = \>> versions.vc] \
+   && [nmakehlp -V ..\configure.ac TCLOO_VERSION_REQ >> versions.vc]
+!endif
+
+!include "versions.vc"
+
+PRJ_OBJS = \
+	$(TMP_DIR)\tdbc.obj \
+	$(TMP_DIR)\tdbcStubInit.obj \
+	$(TMP_DIR)\tdbcTokenize.obj
+
+PRJ_STUBOBJS = \
+	$(TMP_DIR)\tdbcStubLib.obj
+
+PRJ_HEADERS_PUBLIC = \
+	$(GENERICDIR)\tdbc.h \
+	$(GENERICDIR)\tdbcDecls.h
+
+PRJ_HEADERS = \
+	$(PRJ_HEADERS_PUBLIC) \
+	 $(GENERICDIR)\tdbcInt.h
+
+# Define the standard targets including install, test, shell
+!include "$(_RULESDIR)\targets.vc"
+
+# The TIP 477 generation of pkgIndex.tcl from pkgIndex.tcl.in does not include
+# all replacements below so define our own it.
+pkgindex:   $(OUT_DIR)\pkgIndex.tcl
+$(OUT_DIR)\pkgIndex.tcl: $(ROOT)\pkgIndex.tcl.in
+	@nmakehlp -s << $** > $@
+@PACKAGE_NAME@        $(PROJECT)
+@PACKAGE_VERSION@     $(DOTVERSION)
+@TCL_VERSION_REQ@     $(TCL_VERSION_REQ)
+@TCL_VERSION_DESIRED@ $(TCL_VERSION_DESIRED)
+@TCLOO_VERSION_REQ@   $(TCLOO_VERSION_REQ)
+@PKG_LIB_FILE@        $(PRJLIBNAME)
+@TCL_VERSION@         $(TCL_DOTVERSION)
+<<
+
+.PHONY: $(OUT_DIR)\tdbcConfig.sh
+
+# TBD - this (meaning using nmake builds for autoconf) does not really work
+# and never has. Perhaps it should be removed.
+$(OUT_DIR)\tdbcConfig.sh: $(ROOT)\tdbcConfig.sh.in
+	nmakehlp -s << $** > $@
+@PACKAGE_VERSION@            $(DOTVERSION)
+@PKG_LIB_FILE@               $(PRJLIBNAME)
+@tdbc_LIB_SPEC@              $(LIB_INSTALL_DIR)\$(PRJLIBNAME)
+@PKG_STUB_LIB_FILE@          $(PRJSTUBLIBNAME)
+@tdbc_BUILD_STUB_LIB_SPEC@   $(PRJSTUBLIB)
+@tdbc_STUB_LIB_SPEC@         $(LIB_INSTALL_DIR)\$(PRJSTUBLIBNAME)
+@tdbc_BUILD_STUB_LIB_PATH@   $(PRJSTUBLIB)
+@tdbc_STUB_LIB_PATH@         $(LIB_INSTALL_DIR)\$(PRJSTUBLIBNAME)
+@tdbc_SRC_DIR@               $(ROOT)
+@tdbc_INCLUDE_SPEC@          -I$(INCLUDE_INSTALL_DIR)
+@tdbc_BUILD_INCLUDE_SPEC@    -I$(GENERICDIR)
+@tdbc_LIB_DIR@               $(LIB_INSTALL_DIR)
+<<
+
+# TDBC has additional installation in addition to that provided by
+# the default installation targets.
+install: default-install-docs-n
+default-install-libraries: install-tdbc-extras
+
+install-tdbc-extras: $(OUT_DIR)\tdbcConfig.sh
+	@$(CPY) $(OUT_DIR)\tdbcConfig.sh "$(LIB_INSTALL_DIR)"
+
+

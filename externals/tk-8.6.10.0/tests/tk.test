@@ -1,0 +1,184 @@
+# This file is a Tcl script to test the tk command.
+# It is organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 2002 ActiveState Corporation.
+
+package require tcltest 2.2
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+namespace import -force tcltest::test
+
+test tk-1.1 {tk command: general} -body {
+    tk
+} -returnCodes error -result {wrong # args: should be "tk subcommand ?arg ...?"}
+test tk-1.2 {tk command: general} -body {
+    tk xyz
+} -returnCodes error -result {unknown or ambiguous subcommand "xyz": must be appname, busy, caret, fontchooser, inactive, scaling, useinputmethods, or windowingsystem}
+
+# Value stored to restore default settings after 2.* tests
+set appname [tk appname]
+test tk-2.1 {tk command: appname} -body {
+    tk appname xyz abc
+} -returnCodes error -result {wrong # args: should be "tk appname ?newName?"}
+test tk-2.2 {tk command: appname} -body {
+    tk appname foobazgarply
+} -result {foobazgarply}
+test tk-2.3 {tk command: appname} -constraints unix -body {
+    tk appname bazfoogarply
+    expr {[lsearch -exact [winfo interps] [tk appname]] >= 0}
+} -result {1}
+test tk-2.4 {tk command: appname} -body {
+    tk appname [tk appname]
+} -result [tk appname]
+tk appname $appname
+
+# Value stored to restore default settings after 3.* tests
+set scaling [tk scaling]
+test tk-3.1 {tk command: scaling} -body {
+    tk scaling -displayof
+} -returnCodes error -result {value for "-displayof" missing}
+test tk-3.2 {tk command: scaling: get current} -body {
+    tk scaling 1
+    format %.2g [tk scaling]
+}  -result 1
+test tk-3.3 {tk command: scaling: get current} -body {
+    tk scaling -displayof . 1.25
+    format %.3g [tk scaling]
+}  -result 1.25
+test tk-3.4 {tk command: scaling: set new} -body {
+    tk scaling xyz
+} -returnCodes error -result {expected floating-point number but got "xyz"}
+test tk-3.5 {tk command: scaling: set new} -body {
+    tk scaling -displayof . xyz
+} -returnCodes error -result {expected floating-point number but got "xyz"}
+test tk-3.6 {tk command: scaling: set new} -body {
+    tk scaling 1
+    format %.2g [tk scaling]
+} -result 1
+test tk-3.7 {tk command: scaling: set new} -body {
+    tk scaling -displayof . 1.25
+    format %.3g [tk scaling]
+} -result 1.25
+test tk-3.8 {tk command: scaling: negative} -body {
+    tk scaling -1
+    expr {[tk scaling] > 0}
+} -result {1}
+test tk-3.9 {tk command: scaling: too big} -body {
+    tk scaling 1000000
+    expr {[tk scaling] < 10000}
+} -result {1}
+test tk-3.10 {tk command: scaling: widthmm} -body {
+    tk scaling 1.25
+    expr {int((25.4*[winfo screenwidth .])/(72*1.25) + 0.5) \
+        - [winfo screenmmwidth .]}
+} -result {0}
+test tk-3.11 {tk command: scaling: heightmm} -body {
+    tk scaling 1.25
+    expr {int((25.4*[winfo screenheight .])/(72*1.25) + 0.5) \
+        - [winfo screenmmheight .]}
+} -result {0}
+tk scaling $scaling
+
+# Value stored to restore default settings after 4.* tests
+set useim [tk useinputmethods]
+test tk-4.1 {tk command: useinputmethods} -body {
+    tk useinputmethods -displayof
+} -returnCodes error -result {value for "-displayof" missing}
+test tk-4.2 {tk command: useinputmethods: get current} -body {
+    tk useinputmethods no
+} -cleanup {
+    tk useinputmethods $useim
+} -result 0
+test tk-4.3 {tk command: useinputmethods: get current} -body {
+    tk useinputmethods no
+    tk useinputmethods -displayof .
+} -cleanup {
+    tk useinputmethods $useim
+} -result 0
+test tk-4.4 {tk command: useinputmethods: set new} -body {
+    tk useinputmethods xyz
+} -returnCodes error -result {expected boolean value but got "xyz"}
+test tk-4.5 {tk command: useinputmethods: set new} -body {
+    tk useinputmethods -displayof . xyz
+} -returnCodes error -result {expected boolean value but got "xyz"}
+test tk-4.6 {tk command: useinputmethods: set new} -body {
+    # This isn't really a test, but more of a check... The answer is what was
+    # given, because we may be on a Unix system that doesn't have the XIM
+    # stuff
+    if {[tk useinputmethods 1] == 0} {
+	puts "this wish doesn't have XIM (X Input Methods) support"
+    }
+    return $useim
+} -result $useim
+test tk-4.7 {tk command: useinputmethods: set new} -constraints win -body {
+    # Mac and Windows don't have X Input Methods, so this should always return
+    # 0
+    tk useinputmethods 1
+} -cleanup {
+    tk useinputmethods $useim
+} -result 0
+
+test tk-5.1 {tk caret} -body {
+    tk caret
+} -returnCodes error -result {wrong # args: should be "tk caret window ?-x x? ?-y y? ?-height height?"}
+test tk-5.2 {tk caret} -body {
+    tk caret bogus
+} -returnCodes error -result {bad window path name "bogus"}
+test tk-5.3 {tk caret} -body {
+    tk caret . -foo
+} -returnCodes error -result {bad caret option "-foo": must be -x, -y, or -height}
+test tk-5.4 {tk caret} -body {
+    tk caret . -x 0 -y
+} -returnCodes error -result {wrong # args: should be "tk caret window ?-x x? ?-y y? ?-height height?"}
+test tk-5.5 {tk caret} -body {
+    tk caret . -x 10 -y 11 -h 12; tk caret .
+} -result {-height 12 -x 10 -y 11}
+test tk-5.6 {tk caret} -body {
+    tk caret . -x 20 -y 25 -h 30; tk caret . -hei
+} -result {30}
+
+# tk inactive
+test tk-6.1 {tk inactive} -body {
+    string is integer [tk inactive]
+} -result 1
+test tk-6.2 {tk inactive reset} -body {
+    tk inactive reset
+} -returnCodes ok -match glob -result *
+test tk-6.3 {tk inactive wrong argument} -body {
+    tk inactive foo
+} -returnCodes 1 -result {bad option "foo": must be reset}
+test tk-6.4 {tk inactive too many arguments} -body {
+    tk inactive reset foo
+} -returnCodes 1 -result {wrong # args: should be "tk inactive ?-displayof window? ?reset?"}
+test tk-6.5 {tk inactive} -body {
+    tk inactive reset
+    update
+    after 100
+    set i [tk inactive]
+    expr {$i == -1 || ( $i > 90 && $i < 200 )}
+} -result 1
+
+test tk-7.1 {tk inactive in a safe interpreter} -body {
+# tk inactive in safe interpreters
+    safe::interpCreate foo
+    safe::loadTk foo
+    foo eval {tk inactive}
+} -cleanup {
+    ::safe::interpDelete foo
+} -result -1
+test tk-7.2 {tk inactive reset in a safe interpreter} -body {
+# tk inactive in safe interpreters
+    safe::interpCreate foo
+    safe::loadTk foo
+    foo eval {tk inactive reset}
+} -cleanup {
+    ::safe::interpDelete foo
+} -returnCodes 1 -result {resetting the user inactivity timer is not allowed in a safe interpreter}
+
+# tests of [tk busy] in busy.test
+
+# cleanup
+cleanupTests
+return

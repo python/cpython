@@ -1,0 +1,9 @@
+# -*-mode: python; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
+#
+# $Id: BUGS-2.1.txt,v 1.2 2001/12/09 05:01:28 idiscovery Exp $
+#
+
+1)	There seems to be a problem with ComboBox that shows up
+in the ExFileSelectBox demo. The popdown scrolled list widget
+is being created, then destroyed. This does not happen in Tcl Tix.
+

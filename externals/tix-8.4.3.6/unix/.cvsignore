@@ -1,0 +1,13 @@
+config.log
+config.cache
+config.status
+Makefile
+tixwish8.1
+tixwish8.1g
+tixwish8.2
+tixwish8.2g
+pkgIndex.tcl
+tixConfig.sh
+mkIndex.tcl
+tixBitmaps.h
+tixSamLib.h

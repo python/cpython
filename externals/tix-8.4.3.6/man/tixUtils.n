@@ -1,0 +1,83 @@
+'\"
+'\" $Id: tixUtils.n,v 1.2 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH Utils n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+.SH NAME
+tixUtils \- Utility commands in Tix.
+'\"
+'\"
+'\"
+.SH SYNOPSIS
+.nf
+\fBtixDescendants \fIpathName\fR
+\fBtixDisableAll \fIpathName\fR
+\fBtixEnableAll \fIpathName\fR
+\fBtixPushGrab\fR ?\fI-global\fR? \fIwindow\fR
+\fBtixPopGrab\fR
+.fi
+.BE
+.PP
+.SH DESCRIPTION
+.PP
+.TP
+\fBtixDescendants\fR \fIpathName\fR
+'\"
+Returns a list of all the descendant widgets of \fIpathName\fR plus
+\fIpathName\fR itself.
+'\"
+.TP
+\fBtixDisableAll\fR \fIpathName\fR
+'\"
+Disables \fIpathName\fR and all its descendants.
+'\"
+'\"
+.TP
+\fBtixEnableAll\fR \fIpathName\fR
+'\"
+Enables \fIpathName\fR and all its descendants.
+'\"
+'\"
+.TP
+\fBtixPushGrab\fR ?\fI-global\fR? \fIwindow\fR
+'\"
+The \fBtixPushGrab\fR and \fBtixPopGrab\fR commands allows you to
+perform "cascade-grabbing". \fBtixPushGrab\fR calls the \fBgrab(n)\fR
+command on \fIwindow\fR and saves \fIwindow\fR on a grabbing
+stack.
+'\"
+.TP
+\fBtixPopGrab\fR
+'\"
+\fBtixPopGrab\fR pops the top-most element from the grabbing stack and
+release its grab. If the grabbing stack is not empty, then
+\fBtixPopGrab\fR will execute grab(n) on the current top-most element
+in the grabbing stack.
+'\"
+.SH NOTES
+.PP
+Some Tix widgets (for example, tixComboBox and tixPanedWindow) grabs
+the screen on certain occasions using \fBtixPushGrab\fR and
+\fBtixPopGrab\fR. Therefore, if you need to grab the screen when these
+widgets are present, you should also call \fBtixPushGrab\fR and
+\fBtixPopGrab\fR in place of the Tk \fBgrab\fR and \fBgrab release\fR
+commands. Otherwise, the behavior of these widgets may be undefined.
+'\"
+.SH KEYWORDS
+Tix(n), grab(n)

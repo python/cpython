@@ -1,0 +1,677 @@
+# Commands covered: expr
+#
+# This file contains the original set of tests for the compilation (and
+# indirectly execution) of Tcl's expr command. A new set of tests covering
+# the new implementation are in the files "parseExpr.test" and
+# "compExpr.test". Sourcing this file into Tcl runs the tests and generates
+# output for errors. No output means no errors were found.
+#
+# Copyright (c) 1996-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+if {[catch {expr T1()} msg] && $msg eq {invalid command name "tcl::mathfunc::T1"}} {
+    testConstraint testmathfunctions 0
+} else {
+    testConstraint testmathfunctions 1
+}
+
+# Big test for correct ordering of data in [expr]
+
+proc testIEEE {} {
+    variable ieeeValues
+    binary scan [binary format dd -1.0 1.0] c* c
+    switch -exact -- $c {
+	{0 0 0 0 0 0 -16 -65 0 0 0 0 0 0 -16 63} {
+	    # little endian
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xff d \
+		ieeeValues(-Infinity)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xbf d \
+		ieeeValues(-Normal)
+	    binary scan \x00\x00\x00\x00\x00\x00\x08\x80 d \
+		ieeeValues(-Subnormal)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x80 d \
+		ieeeValues(-0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x08\x00 d \
+		ieeeValues(+Subnormal)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x3f d \
+		ieeeValues(+Normal)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x7f d \
+		ieeeValues(+Infinity)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf8\x7f d \
+		ieeeValues(NaN)
+	    set ieeeValues(littleEndian) 1
+	    return 1
+	}
+	{-65 -16 0 0 0 0 0 0 63 -16 0 0 0 0 0 0} {
+	    binary scan \xff\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Infinity)
+	    binary scan \xbf\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Normal)
+	    binary scan \x80\x08\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Subnormal)
+	    binary scan \x80\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+0)
+	    binary scan \x00\x08\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Subnormal)
+	    binary scan \x3f\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Normal)
+	    binary scan \x7f\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Infinity)
+	    binary scan \x7f\xf8\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(NaN)
+	    set ieeeValues(littleEndian) 0
+	    return 1
+	}
+	default {
+	    return 0
+	}
+    }
+}
+testConstraint ieeeFloatingPoint [testIEEE]
+
+testConstraint longIs32bit [expr {int(0x80000000) < 0}]
+testConstraint longIs64bit [expr {int(0x8000000000000000) < 0}]
+
+# procedures used below
+
+proc put_hello_char {c} {
+    global a
+    append a [format %c $c]
+    return $c
+}
+proc hello_world {} {
+    global a
+    set a ""
+    set L1 [set l0 [set h_1 [set q 0]]]
+    for {put_hello_char [expr [put_hello_char [expr [set h 7]*10+2]]+29]} {$l0?[put_hello_char $l0]
+        :!$h_1} {put_hello_char $ll;expr {$L1==2?[set ll [expr 32+0-0+[set bar 0]]]:0}} {expr {[incr L1]==[expr 1+([string length "abc"]-[string length "abc"])]
+        ?[set ll [set l0 [expr 54<<1]]]:$ll==108&&$L1<3?
+        [incr ll [expr 1|1<<1]; set ll $ll; set ll $ll; set ll $ll; set ll $ll; set l0 [expr ([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])]; set l0; set l0 $l0; set l0; set l0]:$L1==4&&$ll==32?[set ll [expr 19+$h1+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])+[set foo [expr ([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])]]]]
+        :[set q [expr $q-$h1+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])]]};expr {$L1==5?[incr ll -8; set ll $ll; set ll]:$q&&$h1&&1};expr {$L1==4+2
+        ?[incr ll 3]:[expr ([string length "abc"]-[string length "abc"])+1]};expr {$ll==($h<<4)+2+0&&$L1!=6?[incr ll -6]:[set h1 [expr 100+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])]]}
+        expr {$L1!=1<<3?[incr q [expr ([string length "abc"]-[string length "abc"])-1]]:[set h_1 [set ll $h1]]}
+    }
+    set a
+}
+
+proc 12days {a b c} {
+    global xxx
+    expr {1<$a?[expr {$a<3?[12days -79 -13 [string range $c [12days -87 \
+	[expr 1-$b] [string range $c [12days -86 0 [string range $c 1 end]] \
+	end]] end]]:1};expr {$a<$b?[12days [expr $a+1] $b $c]:3};expr {[12days \
+	-94 [expr $a-27] $c]&&$a==2?$b<13?[12days 2 [expr $b+1] "%s %d %d\n"]:9
+	:16}]:$a<0?$a<-72?[12days $b $a "@n'+,#'/*\{\}w+/w#cdnr/+,\{\}r/*de\}+,/*\{*+,/w\{%+,/w#q#n+,/#\{l+,/n\{n+,/+#n+,/#;#q#n+,/+k#;*+,/'r :'d*'3,\}\{w+K w'K:'+\}e#';dq#'l q#'+d'K#!/+k#;q#'r\}eKK#\}w'r\}eKK\{nl\]'/#;#q#n')\{)#\}w')\{)\{nl\]'/+#n';d\}rw' i;# )\{nl\]!/n\{n#'; r\{#w'r nc\{nl\]'/#\{l,+'K \{rw' iK\{;\[\{nl\]'/w#q#n'wk nw' iwk\{KK\{nl\]!/w\{%'l##w#' i; :\{nl\]'/*\{q#'ld;r'\}\{nlwb!/*de\}'c ;;\{nl'-\{\}rw\]'/+,\}##'*\}#nc,',#nw\]'/+kd'+e\}+;#'rdq#w! nr'/ ') \}+\}\{rl#'\{n' ')# \}'+\}##(!!/"]
+	:$a<-50?[string compare [format %c $b] [string index $c 0]]==0?[append \
+	xxx [string index $c 31];scan [string index $c 31] %c x;set x]
+	:[12days -65 $b [string range $c 1 end]]:[12days [expr ([string compare \
+	[string index $c 0] "/"]==0)+$a] $b [string range $c 1 end]]:0<$a
+	?[12days 2 2 "%s"]:[string compare [string index $c 0] "/"]==0||
+	[12days 0 [12days -61 [scan [string index $c 0] %c x; set x] \
+	"!ek;dc i@bK'(q)-\[w\]*%n+r3#l,\{\}:\nuwloca-O;m .vpbks,fxntdCeghiry"] \
+	[string range $c 1 end]]}
+}
+proc do_twelve_days {} {
+    global xxx
+    set xxx ""
+    12days 1 1 1
+    set result [string length $xxx]
+    unset xxx
+    return $result
+}
+
+# start of tests
+
+catch {unset a b i x}
+
+test compExpr-old-1.1 {TclCompileExprCmd: no expression} {
+    list [catch {expr  } msg] $msg
+} {1 {wrong # args: should be "expr arg ?arg ...?"}}
+test compExpr-old-1.2 {TclCompileExprCmd: one expression word} {
+    expr -25
+} -25
+test compExpr-old-1.3 {TclCompileExprCmd: two expression words} {
+    expr -8.2   -6
+} -14.2
+test compExpr-old-1.4 {TclCompileExprCmd: five expression words} {
+    expr 20 - 5 +10 -7
+} 18
+test compExpr-old-1.5 {TclCompileExprCmd: quoted expression word} {
+    expr "0005"
+} 5
+test compExpr-old-1.6 {TclCompileExprCmd: quoted expression word} {
+    catch {expr "0005"zxy} msg
+    set msg
+} {extra characters after close-quote}
+test compExpr-old-1.7 {TclCompileExprCmd: expression word in braces} {
+    expr {-0005}
+} -5
+test compExpr-old-1.8 {TclCompileExprCmd: expression word in braces} {
+    expr {{-0x1234}}
+} -4660
+test compExpr-old-1.9 {TclCompileExprCmd: expression word in braces} {
+    catch {expr {-0005}foo} msg
+    set msg
+} {extra characters after close-brace}
+test compExpr-old-1.10 {TclCompileExprCmd: other expression word in braces} {
+    expr 4*[llength "6 2"]
+} 8
+test compExpr-old-1.11 {TclCompileExprCmd: expression word terminated by ;} {
+    expr 4*[llength "6 2"];
+} 8
+test compExpr-old-1.12 {TclCompileExprCmd: inlined expr (in "catch") inside other catch} {
+    set a xxx
+    catch {
+	# Might not be a number
+	set a [expr 10*$a]
+    }
+} 1
+test compExpr-old-1.13 {TclCompileExprCmd: second level of substitutions in expr not in braces with single var reference} {
+    set a xxx
+    set x 27;  set bool {$x};  if $bool {set a foo}
+    set a
+} foo
+test compExpr-old-1.14 {TclCompileExprCmd: second level of substitutions in expr with comparison as top-level operator} {
+    set a xxx
+    set x 2;  set b {$x};  set a [expr $b == 2]
+    set a
+} 1
+
+test compExpr-old-2.1 {TclCompileExpr: are builtin functions registered?} {
+    expr double(5*[llength "6 2"])
+} 10.0
+test compExpr-old-2.2 {TclCompileExpr: error in expr} -body {
+    expr 2***3
+} -returnCodes error -match glob -result *
+test compExpr-old-2.3 {TclCompileExpr: junk after legal expr} -body {
+    expr 7*[llength "a b"]foo
+} -returnCodes error -match glob -result *
+test compExpr-old-2.4 {TclCompileExpr: numeric expr string rep == formatted int rep} {
+    expr {0001}
+} 1
+
+test compExpr-old-3.1 {CompileCondExpr: just lor expr} {expr 3||0} 1
+test compExpr-old-3.2 {CompileCondExpr: error in lor expr} -body {
+    expr x||3
+} -returnCodes error -match glob -result *
+test compExpr-old-3.3 {CompileCondExpr: test true arm} {expr 3>2?44:66} 44
+test compExpr-old-3.4 {CompileCondExpr: error compiling true arm} -body {
+    expr 3>2?2***3:66
+} -returnCodes error -match glob -result *
+test compExpr-old-3.5 {CompileCondExpr: test false arm} {expr 2>3?44:66} 66
+test compExpr-old-3.6 {CompileCondExpr: error compiling false arm} -body {
+    expr 2>3?44:2***3
+} -returnCodes error -match glob -result *
+test compExpr-old-3.7 {CompileCondExpr: long arms & nested cond exprs} {
+    hello_world
+} {Hello world}
+test compExpr-old-3.8 {CompileCondExpr: long arms & nested cond exprs} unix {
+    # Fails with a stack overflow on threaded Windows builds
+    do_twelve_days
+} 2358
+
+test compExpr-old-4.1 {CompileLorExpr: just land expr} {expr 1.3&&3.3} 1
+test compExpr-old-4.2 {CompileLorExpr: error in land expr} -body {
+    expr x&&3
+} -returnCodes error -match glob -result *
+test compExpr-old-4.3 {CompileLorExpr: simple lor exprs} {expr 0||1.0} 1
+test compExpr-old-4.4 {CompileLorExpr: simple lor exprs} {expr 3.0||0.0} 1
+test compExpr-old-4.5 {CompileLorExpr: simple lor exprs} {expr 0||0||1} 1
+test compExpr-old-4.6 {CompileLorExpr: error compiling lor arm} -body {
+    expr 2***3||4.0
+} -returnCodes error -match glob -result *
+test compExpr-old-4.7 {CompileLorExpr: error compiling lor arm} -body {
+    expr 1.3||2***3
+} -returnCodes error -match glob -result *
+test compExpr-old-4.8 {CompileLorExpr: error compiling lor arms} {
+    list [catch {expr {"a"||"b"}} msg] $msg
+} {1 {expected boolean value but got "a"}}
+test compExpr-old-4.9 {CompileLorExpr: long lor arm} {
+    set a "abcdefghijkl"
+    set i 7
+    expr {[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]] || [string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]] || [string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]] || [string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]}
+} 1
+
+test compExpr-old-5.1 {CompileLandExpr: just bitor expr} {expr 7|0x13} 23
+test compExpr-old-5.2 {CompileLandExpr: error in bitor expr} -body {
+    expr x|3
+} -returnCodes error -match glob -result *
+test compExpr-old-5.3 {CompileLandExpr: simple land exprs} {expr 0&&1.0} 0
+test compExpr-old-5.4 {CompileLandExpr: simple land exprs} {expr 0&&0} 0
+test compExpr-old-5.5 {CompileLandExpr: simple land exprs} {expr 3.0&&1.2} 1
+test compExpr-old-5.6 {CompileLandExpr: simple land exprs} {expr 1&&1&&2} 1
+test compExpr-old-5.7 {CompileLandExpr: error compiling land arm} -body {
+    expr 2***3&&4.0
+} -returnCodes error -match glob -result *
+test compExpr-old-5.8 {CompileLandExpr: error compiling land arm} -body {
+    expr 1.3&&2***3
+} -returnCodes error -match glob -result *
+test compExpr-old-5.9 {CompileLandExpr: error compiling land arm} {
+    list [catch {expr {"a"&&"b"}} msg] $msg
+} {1 {expected boolean value but got "a"}}
+test compExpr-old-5.10 {CompileLandExpr: long land arms} {
+    set a "abcdefghijkl"
+    set i 7
+    expr {[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]] && [string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]] && [string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]] && [string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]^[string compare [format %c 103] [string index $a $i]]^[string compare [format %c 105] [string index $a $i]]}
+} 1
+
+test compExpr-old-6.1 {CompileBitXorExpr: just bitand expr} {expr 7&0x13} 3
+test compExpr-old-6.2 {CompileBitXorExpr: error in bitand expr} -body {
+    expr x|3
+} -returnCodes error -match glob -result *
+test compExpr-old-6.3 {CompileBitXorExpr: simple bitxor exprs} {expr 7^0x13} 20
+test compExpr-old-6.4 {CompileBitXorExpr: simple bitxor exprs} {expr 3^0x10} 19
+test compExpr-old-6.5 {CompileBitXorExpr: simple bitxor exprs} {expr 0^7} 7
+test compExpr-old-6.6 {CompileBitXorExpr: simple bitxor exprs} {expr -1^7} -8
+test compExpr-old-6.7 {CompileBitXorExpr: error compiling bitxor arm} -body {
+    expr 2***3|6
+} -returnCodes error -match glob -result *
+test compExpr-old-6.8 {CompileBitXorExpr: error compiling bitxor arm} -body {
+    expr 2^x
+} -returnCodes error -match glob -result *
+test compExpr-old-6.9 {CompileBitXorExpr: runtime error in bitxor arm} {
+    list [catch {expr {24.0^3}} msg] $msg
+} {1 {can't use floating-point value as operand of "^"}}
+test compExpr-old-6.10 {CompileBitXorExpr: runtime error in bitxor arm} {
+    list [catch {expr {"a"^"b"}} msg] $msg
+} {1 {can't use non-numeric string as operand of "^"}}
+
+test compExpr-old-7.1 {CompileBitAndExpr: just equality expr} {expr 3==2} 0
+test compExpr-old-7.2 {CompileBitAndExpr: just equality expr} {expr 2.0==2} 1
+test compExpr-old-7.3 {CompileBitAndExpr: just equality expr} {expr 3.2!=2.2} 1
+test compExpr-old-7.4 {CompileBitAndExpr: just equality expr} {expr {"abc" == "abd"}} 0
+test compExpr-old-7.5 {CompileBitAndExpr: error in equality expr} -body {
+    expr x==3
+} -returnCodes error -match glob -result *
+test compExpr-old-7.6 {CompileBitAndExpr: simple bitand exprs} {expr 7&0x13} 3
+test compExpr-old-7.7 {CompileBitAndExpr: simple bitand exprs} {expr 0xf2&0x53} 82
+test compExpr-old-7.8 {CompileBitAndExpr: simple bitand exprs} {expr 3&6} 2
+test compExpr-old-7.9 {CompileBitAndExpr: simple bitand exprs} {expr -1&-7} -7
+test compExpr-old-7.10 {CompileBitAndExpr: error compiling bitand arm} -body {
+    expr 2***3&6
+} -returnCodes error -match glob -result *
+test compExpr-old-7.11 {CompileBitAndExpr: error compiling bitand arm} -body {
+    expr 2&x
+} -returnCodes error -match glob -result *
+test compExpr-old-7.12 {CompileBitAndExpr: runtime error in bitand arm} {
+    list [catch {expr {24.0&3}} msg] $msg
+} {1 {can't use floating-point value as operand of "&"}}
+test compExpr-old-7.13 {CompileBitAndExpr: runtime error in bitand arm} {
+    list [catch {expr {"a"&"b"}} msg] $msg
+} {1 {can't use non-numeric string as operand of "&"}}
+
+test compExpr-old-8.1 {CompileEqualityExpr: just relational expr} {expr 3>=2} 1
+test compExpr-old-8.2 {CompileEqualityExpr: just relational expr} {expr 2<=2.1} 1
+test compExpr-old-8.3 {CompileEqualityExpr: just relational expr} {expr 3.2>"2.2"} 1
+test compExpr-old-8.4 {CompileEqualityExpr: just relational expr} {expr {"0y"<"0x12"}} 0
+test compExpr-old-8.5 {CompileEqualityExpr: error in relational expr} -body {
+    expr x>3
+} -returnCodes error -match glob -result *
+test compExpr-old-8.6 {CompileEqualityExpr: simple equality exprs} {expr 7==0x13} 0
+test compExpr-old-8.7 {CompileEqualityExpr: simple equality exprs} {expr -0xf2!=0x53} 1
+test compExpr-old-8.8 {CompileEqualityExpr: simple equality exprs} {expr {"12398712938788234-1298379" != ""}} 1
+test compExpr-old-8.9 {CompileEqualityExpr: simple equality exprs} {expr -1!="abc"} 1
+test compExpr-old-8.10 {CompileEqualityExpr: error compiling equality arm} -body {
+    expr 2***3==6
+} -returnCodes error -match glob -result *
+test compExpr-old-8.11 {CompileEqualityExpr: error compiling equality arm} -body {
+    expr 2!=x
+} -returnCodes error -match glob -result *
+
+
+test compExpr-old-9.1 {CompileRelationalExpr: just shift expr} {expr 3<<2} 12
+test compExpr-old-9.2 {CompileRelationalExpr: just shift expr} {expr 0xff>>2} 63
+test compExpr-old-9.3 {CompileRelationalExpr: just shift expr} {expr -1>>2} -1
+test compExpr-old-9.4 {CompileRelationalExpr: just shift expr} {expr {1<<3}} 8
+
+# The following test is different for 32-bit versus 64-bit
+# architectures because LONG_MIN is different
+
+test compExpr-old-9.5a {CompileRelationalExpr: shift expr producing LONG_MIN} longIs64bit {
+    expr {int(1<<63)}
+} -9223372036854775808
+test compExpr-old-9.5b {CompileRelationalExpr: shift expr producing LONG_MIN} longIs32bit {
+    expr {int(1<<31)}
+} -2147483648
+
+test compExpr-old-9.6 {CompileRelationalExpr: error in shift expr} -body {
+    expr x>>3
+} -returnCodes error -match glob -result *
+test compExpr-old-9.7 {CompileRelationalExpr: simple relational exprs} {expr 0xff>=+0x3} 1
+test compExpr-old-9.8 {CompileRelationalExpr: simple relational exprs} {expr -0xf2<0x3} 1
+test compExpr-old-9.9 {CompileRelationalExpr: error compiling relational arm} -body {
+    expr 2***3>6
+} -returnCodes error -match glob -result *
+test compExpr-old-9.10 {CompileRelationalExpr: error compiling relational arm} -body {
+    expr 2<x
+} -returnCodes error -match glob -result *
+
+test compExpr-old-10.1 {CompileShiftExpr: just add expr} {expr 4+-2} 2
+test compExpr-old-10.2 {CompileShiftExpr: just add expr} {expr 0xff-2} 253
+test compExpr-old-10.3 {CompileShiftExpr: just add expr} {expr -1--2} 1
+test compExpr-old-10.4 {CompileShiftExpr: just add expr} {expr 1-0o123} -82
+test compExpr-old-10.5 {CompileShiftExpr: error in add expr} -body {
+    expr x+3
+} -returnCodes error -match glob -result *
+test compExpr-old-10.6 {CompileShiftExpr: simple shift exprs} {expr 0xff>>0x3} 31
+test compExpr-old-10.7 {CompileShiftExpr: simple shift exprs} {expr -0xf2<<0x3} -1936
+test compExpr-old-10.8 {CompileShiftExpr: error compiling shift arm} -body {
+    expr 2***3>>6
+} -returnCodes error -match glob -result *
+test compExpr-old-10.9 {CompileShiftExpr: error compiling shift arm} -body {
+    expr 2<<x
+} -returnCodes error -match glob -result *
+test compExpr-old-10.10 {CompileShiftExpr: runtime error} {
+    list [catch {expr {24.0>>43}} msg] $msg
+} {1 {can't use floating-point value as operand of ">>"}}
+test compExpr-old-10.11 {CompileShiftExpr: runtime error} {
+    list [catch {expr {"a"<<"b"}} msg] $msg
+} {1 {can't use non-numeric string as operand of "<<"}}
+
+test compExpr-old-11.1 {CompileAddExpr: just multiply expr} {expr 4*-2} -8
+test compExpr-old-11.2 {CompileAddExpr: just multiply expr} {expr 0xff%2} 1
+test compExpr-old-11.3 {CompileAddExpr: just multiply expr} {expr -1/2} -1
+test compExpr-old-11.4 {CompileAddExpr: just multiply expr} {expr 7891%0o123} 6
+test compExpr-old-11.5 {CompileAddExpr: error in multiply expr} -body {
+    expr x*3
+} -returnCodes error -match glob -result *
+test compExpr-old-11.6 {CompileAddExpr: simple add exprs} {expr 0xff++0x3} 258
+test compExpr-old-11.7 {CompileAddExpr: simple add exprs} {expr -0xf2--0x3} -239
+test compExpr-old-11.8 {CompileAddExpr: error compiling add arm} -body {
+    expr 2***3+6
+} -returnCodes error -match glob -result *
+test compExpr-old-11.9 {CompileAddExpr: error compiling add arm} -body {
+    expr 2-x
+} -returnCodes error -match glob -result *
+test compExpr-old-11.10 {CompileAddExpr: runtime error} {
+    list [catch {expr {24.0+"xx"}} msg] $msg
+} {1 {can't use non-numeric string as operand of "+"}}
+test compExpr-old-11.11 {CompileAddExpr: runtime error} {
+    list [catch {expr {"a"-"b"}} msg] $msg
+} {1 {can't use non-numeric string as operand of "-"}}
+test compExpr-old-11.12 {CompileAddExpr: runtime error} {
+    list [catch {expr {3/0}} msg] $msg
+} {1 {divide by zero}}
+test compExpr-old-11.13a {CompileAddExpr: runtime error} ieeeFloatingPoint {
+    list [catch {expr {2.3/0.0}} msg] $msg
+} {0 Inf}
+test compExpr-old-11.13b {CompileAddExpr: runtime error} !ieeeFloatingPoint {
+    list [catch {expr {2.3/0.0}} msg] $msg
+} {1 {divide by zero}}
+
+test compExpr-old-12.1 {CompileMultiplyExpr: just unary expr} {expr ~4} -5
+test compExpr-old-12.2 {CompileMultiplyExpr: just unary expr} {expr --5} 5
+test compExpr-old-12.3 {CompileMultiplyExpr: just unary expr} {expr !27} 0
+test compExpr-old-12.4 {CompileMultiplyExpr: just unary expr} {expr ~0xff00ff} -16711936
+test compExpr-old-12.5 {CompileMultiplyExpr: error in unary expr} -body {
+    expr ~x
+} -returnCodes error -match glob -result *
+test compExpr-old-12.6 {CompileMultiplyExpr: simple multiply exprs} {expr 0xff*0x3} 765
+test compExpr-old-12.7 {CompileMultiplyExpr: simple multiply exprs} {expr -0xf2%-0x3} -2
+test compExpr-old-12.8 {CompileMultiplyExpr: error compiling multiply arm} -body {
+    expr 2*3%%6
+} -returnCodes error -match glob -result *
+test compExpr-old-12.9 {CompileMultiplyExpr: error compiling multiply arm} -body {
+    expr 2*x
+} -returnCodes error -match glob -result *
+test compExpr-old-12.10 {CompileMultiplyExpr: runtime error} {
+    list [catch {expr {24.0*"xx"}} msg] $msg
+} {1 {can't use non-numeric string as operand of "*"}}
+test compExpr-old-12.11 {CompileMultiplyExpr: runtime error} {
+    list [catch {expr {"a"/"b"}} msg] $msg
+} {1 {can't use non-numeric string as operand of "/"}}
+
+test compExpr-old-13.1 {CompileUnaryExpr: unary exprs} {expr -0xff} -255
+test compExpr-old-13.2 {CompileUnaryExpr: unary exprs} {expr +0o00123} 83
+test compExpr-old-13.3 {CompileUnaryExpr: unary exprs} {expr +--++36} 36
+test compExpr-old-13.4 {CompileUnaryExpr: unary exprs} {expr !2} 0
+test compExpr-old-13.5 {CompileUnaryExpr: unary exprs} {expr +--+-62.0} -62.0
+test compExpr-old-13.6 {CompileUnaryExpr: unary exprs} {expr !0.0} 1
+test compExpr-old-13.7 {CompileUnaryExpr: unary exprs} {expr !0xef} 0
+test compExpr-old-13.8 {CompileUnaryExpr: error compiling unary expr} -body {
+    expr ~x
+} -returnCodes error -match glob -result *
+test compExpr-old-13.9 {CompileUnaryExpr: error compiling unary expr} -body {
+    expr !1.x
+    set msg
+} -returnCodes error -match glob -result *
+test compExpr-old-13.10 {CompileUnaryExpr: runtime error} {
+    list [catch {expr {~"xx"}} msg] $msg
+} {1 {can't use non-numeric string as operand of "~"}}
+test compExpr-old-13.11 {CompileUnaryExpr: runtime error} {
+    list [catch {expr ~4.0} msg] $msg
+} {1 {can't use floating-point value as operand of "~"}}
+test compExpr-old-13.12 {CompileUnaryExpr: just primary expr} {expr 0x123} 291
+test compExpr-old-13.13 {CompileUnaryExpr: just primary expr} {
+    set a 27
+    expr $a
+} 27
+test compExpr-old-13.14 {CompileUnaryExpr: just primary expr} {
+    expr double(27)
+} 27.0
+test compExpr-old-13.15 {CompileUnaryExpr: just primary expr} {expr "123"} 123
+test compExpr-old-13.16 {CompileUnaryExpr: error in primary expr} {
+    catch {expr [set]} msg
+    set msg
+} {wrong # args: should be "set varName ?newValue?"}
+test compExpr-old-14.1 {CompilePrimaryExpr: literal primary} {expr 1} 1
+test compExpr-old-14.2 {CompilePrimaryExpr: literal primary} {expr 123} 123
+test compExpr-old-14.3 {CompilePrimaryExpr: literal primary} {expr 0xff} 255
+test compExpr-old-14.4 {CompilePrimaryExpr: literal primary} {expr 0o0010} 8
+test compExpr-old-14.5 {CompilePrimaryExpr: literal primary} {expr 62.0} 62.0
+test compExpr-old-14.6 {CompilePrimaryExpr: literal primary} {
+    expr 3.1400000
+} 3.14
+test compExpr-old-14.7 {CompilePrimaryExpr: literal primary} {expr {{abcde}<{abcdef}}} 1
+test compExpr-old-14.8 {CompilePrimaryExpr: literal primary} {expr {{abc\
+def} < {abcdef}}} 1
+test compExpr-old-14.9 {CompilePrimaryExpr: literal primary} {expr {{abc\tde} > {abc\tdef}}} 0
+test compExpr-old-14.10 {CompilePrimaryExpr: literal primary} {expr {{123}}} 123
+test compExpr-old-14.11 {CompilePrimaryExpr: var reference primary} {
+    set i 789
+    list [expr {$i}] [expr $i]
+} {789 789}
+test compExpr-old-14.12 {CompilePrimaryExpr: var reference primary} {
+    set i {789}    ;# test expr's aggressive conversion to numeric semantics
+    list [expr {$i}] [expr $i]
+} {789 789}
+test compExpr-old-14.13 {CompilePrimaryExpr: var reference primary} {
+    catch {unset a}
+    set a(foo) foo
+    set a(bar) bar
+    set a(123) 123
+    set result ""
+    lappend result [expr $a(123)] [expr {$a(bar)<$a(foo)}]
+    catch {unset a}
+    set result
+} {123 1}
+test compExpr-old-14.14 {CompilePrimaryExpr: var reference primary} {
+    set i 123    ;# test "$var.0" floating point conversion hack
+    list [expr $i] [expr $i.0] [expr $i.0/12.0]
+} {123 123.0 10.25}
+test compExpr-old-14.15 {CompilePrimaryExpr: var reference primary} {
+    set i 123
+    catch {expr $i.2} msg
+    set msg
+} 123.2
+test compExpr-old-14.16 {CompilePrimaryExpr: error compiling var reference primary} -body {
+    expr {$a(foo}
+} -returnCodes error -match glob -result *
+test compExpr-old-14.17 {CompilePrimaryExpr: string primary that looks like var ref} -body {
+    expr $
+} -returnCodes error -match glob -result *
+test compExpr-old-14.18 {CompilePrimaryExpr: quoted string primary} {
+    expr "21"
+} 21
+test compExpr-old-14.19 {CompilePrimaryExpr: quoted string primary} {
+    set i 123
+    set x 456
+    expr "$i+$x"
+} 579
+test compExpr-old-14.20 {CompilePrimaryExpr: quoted string primary} {
+    set i 3
+    set x 6
+    expr 2+"$i.$x"
+} 5.6
+test compExpr-old-14.21 {CompilePrimaryExpr: error in quoted string primary} {
+    catch {expr "[set]"} msg
+    set msg
+} {wrong # args: should be "set varName ?newValue?"}
+test compExpr-old-14.22 {CompilePrimaryExpr: subcommand primary} {
+    expr {[set i 123; set i]}
+} 123
+test compExpr-old-14.23 {CompilePrimaryExpr: error in subcommand primary} -body {
+    catch {expr {[set]}} msg
+    set ::errorInfo
+} -match glob -result {wrong # args: should be "set varName ?newValue?"
+    while *ing
+"set"*}
+test compExpr-old-14.24 {CompilePrimaryExpr: error in subcommand primary} -body {
+    expr {[set i}
+} -returnCodes error -match glob -result *
+test compExpr-old-14.25 {CompilePrimaryExpr: math function primary} {
+    format %.6g [expr exp(1.0)]
+} 2.71828
+test compExpr-old-14.26 {CompilePrimaryExpr: math function primary} {
+    format %.6g [expr pow(2.0+0.1,3.0+0.1)]
+} 9.97424
+test compExpr-old-14.27 {CompilePrimaryExpr: error in math function primary} -body {
+    expr sinh::(2.0)
+} -returnCodes error -match glob -result *
+test compExpr-old-14.28 {CompilePrimaryExpr: subexpression primary} {
+    expr 2+(3*4)
+} 14
+test compExpr-old-14.29 {CompilePrimaryExpr: error in subexpression primary} -body {
+    catch {expr 2+(3*[set])} msg
+    set ::errorInfo
+} -match glob -result {wrong # args: should be "set varName ?newValue?"
+    while *ing
+"set"*}
+test compExpr-old-14.30 {CompilePrimaryExpr: missing paren in subexpression primary} -body {
+    expr 2+(3*(4+5)
+} -returnCodes error -match glob -result *
+test compExpr-old-14.31 {CompilePrimaryExpr: just var ref in subexpression primary} {
+    set i "5+10"
+    list "[expr $i] == 15" "[expr ($i)] == 15" "[eval expr ($i)] == 15"
+} {{15 == 15} {15 == 15} {15 == 15}}
+test compExpr-old-14.32 {CompilePrimaryExpr: unexpected token} -body {
+    expr @
+} -returnCodes error -match glob -result *
+
+test compExpr-old-15.1 {CompileMathFuncCall: missing parenthesis} -body {
+    expr sinh2.0)
+} -returnCodes error -match glob -result *
+test compExpr-old-15.2 {CompileMathFuncCall: unknown math function} -body {
+    catch {expr whazzathuh(1)} msg
+    set ::errorInfo
+} -match glob -result {* "*whazzathuh"
+    while *ing
+"expr whazzathuh(1)"}
+test compExpr-old-15.3 {CompileMathFuncCall: too many arguments} -body {
+    catch {expr sin(1,2,3)} msg
+    set ::errorInfo
+} -match glob -result {too many arguments for math function*
+    while *ing
+"expr sin(1,2,3)"}
+test compExpr-old-15.4 {CompileMathFuncCall: ')' found before last required arg} -body {
+    catch {expr sin()} msg
+    set ::errorInfo
+} -match glob -result {too few arguments for math function*
+    while *ing
+"expr sin()"}
+test compExpr-old-15.5 {CompileMathFuncCall: too few arguments} -body {
+    catch {expr pow(1)} msg
+    set ::errorInfo
+} -match glob -result {too few arguments for math function*
+    while *ing
+"expr pow(1)"}
+test compExpr-old-15.6 {CompileMathFuncCall: missing ')'} -body {
+    expr sin(1
+} -returnCodes error -match glob -result *
+test compExpr-old-15.7 {CompileMathFuncCall: call registered math function} testmathfunctions {
+    expr 2*T1()
+} 246
+test compExpr-old-15.8 {CompileMathFuncCall: call registered math function} testmathfunctions {
+    expr T2()*3
+} 1035
+test compExpr-old-15.9 {CompileMathFuncCall: call registered math function} testmathfunctions {
+    expr T3(21, 37)
+} 37
+test compExpr-old-15.10 {CompileMathFuncCall: call registered math function} testmathfunctions {
+    expr T3(21.2, 37)
+} 37.0
+test compExpr-old-15.11 {CompileMathFuncCall: call registered math function} testmathfunctions {
+    expr T3(-21.2, -17.5)
+} -17.5
+
+test compExpr-old-16.1 {GetToken: checks whether integer token starting with "0x" (e.g., "0x$") is invalid} {
+    catch {unset a}
+    set a(VALUE) ff15
+    set i 123
+    if {[expr 0x$a(VALUE)] & 16} {
+        set i {}
+    }
+    set i
+} {}
+test compExpr-old-16.2 {GetToken: check for string literal in braces} {
+    expr {{1}}
+} {1}
+
+# Check "expr" and computed command names.
+
+test compExpr-old-17.1 {expr and computed command names} {
+    set i 0
+    set z expr
+    $z 1+2
+} 3
+
+# Check correct conversion of operands to numbers: If the string looks like
+# an integer, convert to integer. Otherwise, if the string looks like a
+# double, convert to double.
+
+test compExpr-old-18.1 {expr and conversion of operands to numbers} {
+    set x [lindex 11 0]
+    catch {expr int($x)}
+    expr {$x}
+} 11
+
+# Check "expr" and interpreter result object resetting before appending
+# an error msg during evaluation of exprs not in {}s
+
+test compExpr-old-19.1 {expr and interpreter result object resetting} {
+    proc p {} {
+        set t  10.0
+        set x  2.0
+        set dx 0.2
+        set f  {$dx-$x/10}
+        set g  {-$x/5}
+        set center 1.0
+        set x  [expr $x-$center]
+        set dx [expr $dx+$g]
+        set x  [expr $x+$f+$center]
+        set x  [expr $x+$f+$center]
+        set y  [expr round($x)]
+    }
+    p
+} 3
+
+# cleanup
+if {[info exists a]} {
+    unset a
+}
+::tcltest::cleanupTests
+return

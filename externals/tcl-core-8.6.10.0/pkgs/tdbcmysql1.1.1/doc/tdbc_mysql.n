@@ -1,0 +1,175 @@
+'\"
+.\" tdbc_mysql.n --
+.\"
+.\" Copyright (c) 2008 by Kevin B. Kenny.
+.\"
+.\" See the file "license.terms" for information on usage and redistribution of
+.\" this file, and for a DISCLAIMER OF ALL WARRANTIES.
+.TH "tdbc::mysql" n 8.6 Tcl "Tcl Database Connectivity"
+.\" .so man.macros
+.if t .wh -1.3i ^B
+.nr ^l \n(.l
+.ad b
+.\"	# BS - start boxed text
+.\"	# ^y = starting y location
+.\"	# ^b = 1
+.de BS
+.br
+.mk ^y
+.nr ^b 1u
+.if n .nf
+.if n .ti 0
+.if n \l'\\n(.lu\(ul'
+.if n .fi
+..
+.\"	# BE - end boxed text (draw box now)
+.de BE
+.nf
+.ti 0
+.mk ^t
+.ie n \l'\\n(^lu\(ul'
+.el \{\
+.\"	Draw four-sided box normally, but don't draw top of
+.\"	box if the box started on an earlier page.
+.ie !\\n(^b-1 \{\
+\h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.el \}\
+\h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.\}
+.fi
+.br
+.nr ^b 0
+..
+.\"	# CS - begin code excerpt
+.de CS
+.RS
+.nf
+.ta .25i .5i .75i 1i
+..
+.\"	# CE - end code excerpt
+.de CE
+.fi
+.RE
+..
+.BS
+.SH "NAME"
+tdbc::mysql \- TDBC-MYSQL bridge
+.SH "SYNOPSIS"
+package require \fBtdbc::mysql 1.0\fR
+.sp
+\fBtdbc::mysql::connection create\fR \fIdb\fR ?\fI-option value...\fR?
+.br
+\fBtdbc::mysql::connection new\fR ?\fI-option value...\fR?
+.sp
+\fBtdbc::mysql::datasources\fR ?\fB-system\fR|\fB-user\fR?
+.sp
+\fBtdbc::mysql::drivers\fR
+.sp
+\fBtdbc::mysql::datasource\fR \fIcommand\fR \fIdriverName\fR ?\fIkeyword\fR-\fIvalue\fR?...
+.BE
+.SH "DESCRIPTION"
+.PP
+The \fBtdbc::mysql\fR driver provides a database interface that conforms
+to Tcl DataBase Connectivity (TDBC) and allows a Tcl script to connect
+to a MySQL database.
+.PP
+Connection to an MYSQL database is established by invoking
+\fBtdbc::mysql::connection create\fR, passing it the name to give the
+database handle and a set of \fI-option-value\fR pairs. The available
+options are enumerated under CONNECTION OPTIONS below.
+As an alternative, \fBtdbc::mysql::connection new\fR may be used to create
+a database connection with an automatically assigned name. The return value
+from \fBtdbc::mysql::connection new\fR is the name that was chosen for the
+connection handle.
+.PP
+The side effect of \fBtdbc::mysql::connection create\fR is to create a
+new database connection.. See \fBtdbc::connection(n)\fR for the
+details of how to use the connection to manipulate a database.
+.SH "CONNECTION OPTIONS"
+.PP
+The \fBtdbc::mysql::connection create\fR object command supports the
+\fB-encoding\fR, \fB-isolation\fR, \fB-readonly\fR and \fB-timeout\fR
+options common to all TDBC drivers. The \fB-encoding\fR option will
+always fail unless the encoding is \fButf-8\fR; the database connection
+always uses UTF-8 encoding to be able to transfer arbitrary Unicode
+characters. The \fB-readonly\fR option must be \fB0\fR, because
+MySQL does not offer read-only connections.
+.PP
+In addition, the following options are recognized:
+.IP "\fB-host\fR \fIhostname\fR"
+Connects to the host specified by \fIhostname\fR. This option must be
+set on the initial creation of the connection; it cannot be changed
+after connecting. Default is to connect to the local host.
+.IP "\fB-port\fR \fInumber\fR"
+Connects to a MySQL server listening on the port specified by \fInumber\fR.
+This option may not be changed after connecting. It is used only when
+\fIhost\fR is specified and is not \fBlocalhost\fR.
+.IP "\fB-socket\fR \fIpath\fR"
+Connects to a MySQL server listening on the Unix socket or named
+pipe specified by \fIpath\fR . This option may not be changed after connecting.
+It is used only when \fI-host\fR is not specified or is \fBlocalhost\fR.
+.IP "\fB-user\fR \fIname\fR"
+Presents \fIname\fR as the user name to the MySQL server. Default is the
+current user ID.
+.IP "\fB-passwd\fR \fIpassword\fR"
+.IP "\fB-password\fR \fIpassword\fR"
+These two options are synonymous. They present the given \fIpassword\fR as
+the user's password to the MySQL server. Default is not to present a password.
+.IP "\fB-database\fR \fIname\fR"
+.IP "\fB-db\fR \fIname\fR"
+These two options are synonymous.  They present the given \fIname\fR as the
+name of the default database to use in MySQL queries. If not specified,
+the default database for the current user is used.
+.IP "\fB-interactive\fR \fIflag\fR"
+The \fIflag\fR value must be a Boolean value. If it is \fBtrue\fR (or
+any equivalent), the default timeout is set for an interactive user,
+otherwise, the default timeout is set for a batch user. This option
+is meaningful only on initial connection. When using the \fBconfigure\fR
+method on a MySQL connection use the \fB-timeout\fR option to set the
+timeout desired.
+.IP \fB-ssl_ca\fR \fIstring\fR
+.IP \fB-ssl_capath\fR \fIstring\fR
+.IP \fB-ssl_cert\fR \fIstring\fR
+.IP \fB-ssl_cipher\fR \fIstring\fR
+.IP \fB-ssl_key\fR \fIstring\fR
+These five options set the certificate authority, certificate authority
+search path, SSL certificate, transfer cipher, and SSL key to the
+given \fIstring\fR arguments. These options may be specified only
+on initial connection to a database, not in the \fBconfigure\fR method
+of an existing connection. Default is not to use SSL.
+.SH EXAMPLES
+.PP
+.CS
+tdbc::mysql::connection -user joe -passwd sesame -db joes_database
+.CE
+Connects to the MySQL server on the local host using the default
+connection method, presenting user ID 'joe' and password 'sesame'.
+Uses 'joes_database' as the default database name.
+.SH "ADDITIONAL CONNECTION METHODS"
+In addition to the usual methods on the tdbc::connection(n) object,
+connections to a MySQL database support one additional method:
+.IP "\fI$connection\fR \fBevaldirect\fR \fIsqlStatement\fR"
+This method takes the given \fIsqlStatement\fR and interprets as
+MySQL native SQL code and evaluates it without preparing it. The
+statement may not contain variable substitutions. The result set
+is returned as a list of lists, with each sublist being the list
+of columns of a result row formatted as character strings. Note that
+the string formatting is done by MySQL and not by Tcl, so details
+like the appearance of floating point numbers may differ.
+\fIThis command is not recommended\fR for anything where the usual
+\fIprepare\fR or \fIpreparecall\fR methods work correctly. It is
+provided so that data management language statements that are
+not implemented in MySQL's prepared statement API, such as
+\fBCREATE DATABASE\fR or \fBCREATE PROCEDURE\fR, can be executed.
+.SH "SEE ALSO"
+tdbc(n), tdbc::connection(n), tdbc::resultset(n), tdbc::statement(n)
+.SH "KEYWORDS"
+TDBC, SQL, MySQL, database, connectivity, connection
+.SH "COPYRIGHT"
+Copyright (c) 2009 by Kevin B. Kenny.
+.\" Local Variables:
+.\" mode: nroff
+.\" End:
+.\"

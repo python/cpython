@@ -1,0 +1,162 @@
+# Commands covered:  if
+#
+# This file contains the original set of tests for Tcl's if command.
+# Since the if command is now compiled, a new set of tests covering
+# the new implementation is in the file "if.test". Sourcing this file
+# into Tcl runs the tests and generates output for errors.
+# No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+test if-old-1.1 {taking proper branch} {
+    set a {}
+    if 0 {set a 1} else {set a 2}
+    set a
+} 2
+test if-old-1.2 {taking proper branch} {
+    set a {}
+    if 1 {set a 1} else {set a 2}
+    set a
+} 1
+test if-old-1.3 {taking proper branch} {
+    set a {}
+    if 1<2 {set a 1}
+    set a
+} 1
+test if-old-1.4 {taking proper branch} {
+    set a {}
+    if 1>2 {set a 1}
+    set a
+} {}
+test if-old-1.5 {taking proper branch} {
+    set a {}
+    if 0 {set a 1} else {}
+    set a
+} {}
+test if-old-1.6 {taking proper branch} {
+    set a {}
+    if 0 {set a 1} elseif 1 {set a 2} elseif 1 {set a 3} else {set a 4}
+    set a
+} {2}
+test if-old-1.7 {taking proper branch} {
+    set a {}
+    if 0 {set a 1} elseif 0 {set a 2} elseif 1 {set a 3} else {set a 4}
+    set a
+} {3}
+test if-old-1.8 {taking proper branch} {
+    set a {}
+    if 0 {set a 1} elseif 0 {set a 2} elseif 0 {set a 3} else {set a 4}
+    set a
+} {4}
+test if-old-1.9 {taking proper branch, multiline test expr} {
+    set a {}
+    if {($tcl_platform(platform) != "foobar1") && \
+	($tcl_platform(platform) != "foobar2")} {set a 3} else {set a 4}
+    set a
+} {3}
+
+
+test if-old-2.1 {optional then-else args} {
+    set a 44
+    if 0 then {set a 1} elseif 0 then {set a 3} else {set a 2}
+    set a
+} 2
+test if-old-2.2 {optional then-else args} {
+    set a 44
+    if 1 then {set a 1} else {set a 2}
+    set a
+} 1
+test if-old-2.3 {optional then-else args} {
+    set a 44
+    if 0 {set a 1} else {set a 2}
+    set a
+} 2
+test if-old-2.4 {optional then-else args} {
+    set a 44
+    if 1 {set a 1} else {set a 2}
+    set a
+} 1
+test if-old-2.5 {optional then-else args} {
+    set a 44
+    if 0 then {set a 1} {set a 2}
+    set a
+} 2
+test if-old-2.6 {optional then-else args} {
+    set a 44
+    if 1 then {set a 1} {set a 2}
+    set a
+} 1
+test if-old-2.7 {optional then-else args} {
+    set a 44
+    if 0 then {set a 1} else {set a 2}
+    set a
+} 2
+test if-old-2.8 {optional then-else args} {
+    set a 44
+    if 0 then {set a 1} elseif 0 {set a 2} elseif 0 {set a 3} {set a 4}
+    set a
+} 4
+
+test if-old-3.1 {return value} {
+    if 1 then {set a 22; concat abc}
+} abc
+test if-old-3.2 {return value} {
+    if 0 then {set a 22; concat abc} elseif 1 {concat def} {concat ghi}
+} def
+test if-old-3.3 {return value} {
+    if 0 then {set a 22; concat abc} else {concat def}
+} def
+test if-old-3.4 {return value} {
+    if 0 then {set a 22; concat abc}
+} {}
+test if-old-3.5 {return value} {
+    if 0 then {set a 22; concat abc} elseif 0 {concat def}
+} {}
+
+test if-old-4.1 {error conditions} {
+    list [catch {if} msg] $msg
+} {1 {wrong # args: no expression after "if" argument}}
+test if-old-4.2 {error conditions} {
+    list [catch {if {[error "error in condition"]} foo} msg] $msg
+} {1 {error in condition}}
+test if-old-4.3 {error conditions} {
+    list [catch {if 2} msg] $msg
+} {1 {wrong # args: no script following "2" argument}}
+test if-old-4.4 {error conditions} {
+    list [catch {if 2 then} msg] $msg
+} {1 {wrong # args: no script following "then" argument}}
+test if-old-4.5 {error conditions} {
+    list [catch {if 2 the} msg] $msg
+} {1 {invalid command name "the"}}
+test if-old-4.6 {error conditions} {
+    list [catch {if 2 then {[error "error in then clause"]}} msg] $msg
+} {1 {error in then clause}}
+test if-old-4.7 {error conditions} {
+    list [catch {if 0 then foo elseif} msg] $msg
+} {1 {wrong # args: no expression after "elseif" argument}}
+test if-old-4.8 {error conditions} {
+    list [catch {if 0 then foo elsei} msg] $msg
+} {1 {invalid command name "elsei"}}
+test if-old-4.9 {error conditions} {
+    list [catch {if 0 then foo elseif 0 bar else} msg] $msg
+} {1 {wrong # args: no script following "else" argument}}
+test if-old-4.10 {error conditions} {
+    list [catch {if 0 then foo elseif 0 bar els} msg] $msg
+} {1 {invalid command name "els"}}
+test if-old-4.11 {error conditions} {
+    list [catch {if 0 then foo elseif 0 bar else {[error "error in else clause"]}} msg] $msg
+} {1 {error in else clause}}
+
+# cleanup
+::tcltest::cleanupTests
+return

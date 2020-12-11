@@ -1,0 +1,73 @@
+#
+# ttk::checkbutton widget tests.
+#
+
+package require Tk
+package require tcltest ; namespace import -force tcltest::*
+loadTestedCommands
+
+test checkbutton-1.1 "Checkbutton check" -body {
+    pack [ttk::checkbutton .cb -text "TCheckbutton" -variable cb]
+}
+test checkbutton-1.2 "Checkbutton invoke" -body {
+    .cb invoke
+    list [set ::cb] [.cb instate selected]
+} -result [list 1 1]
+test checkbutton-1.3 "Checkbutton reinvoke" -body {
+    .cb invoke
+    list [set ::cb] [.cb instate selected]
+} -result [list 0 0]
+
+test checkbutton-1.4 "Checkbutton variable" -body {
+    set result []
+    set ::cb 1
+    lappend result [.cb instate selected]
+    set ::cb 0
+    lappend result [.cb instate selected]
+} -result {1 0}
+
+test checkbutton-1.5 "Unset checkbutton variable" -body {
+    set result []
+    unset ::cb
+    lappend result [.cb instate alternate] [info exists ::cb]
+    set ::cb 1
+    lappend result [.cb instate alternate] [info exists ::cb]
+} -result {1 0 0 1}
+
+# See #1257319
+test checkbutton-1.6 "Checkbutton default variable" -body {
+    destroy .cb ; unset -nocomplain {} ; set result [list]
+    ttk::checkbutton .cb -onvalue on -offvalue off
+    lappend result [.cb cget -variable] [info exists .cb] [.cb state]
+    .cb invoke
+    lappend result [info exists .cb] [set .cb] [.cb state]
+    .cb invoke
+    lappend result [info exists .cb] [set .cb] [.cb state]
+} -result [list .cb 0 alternate   1 on selected  1 off {}]
+
+# Bug [109865fa01]
+test checkbutton-1.7 "Button destroyed by click" -body {
+    proc destroy_button {} {
+        destroy .top
+    }
+    toplevel .top
+    ttk::menubutton .top.mb -text Button -style TLabel
+    bind .top.mb <ButtonRelease-1> destroy_button
+    pack .top.mb
+    focus -force .top.mb
+    update
+    event generate .top.mb <1>
+    event generate .top.mb <ButtonRelease-1>
+    update  ; # shall not trigger error  invalid command name ".top.b"
+} -result {}
+
+# Bug [fa8de77936]
+test checkbutton-1.8 "Empty -variable" -body {
+    # shall simply not crash
+    ttk::checkbutton .cbev -variable {}
+    .cbev invoke
+} -cleanup {
+    destroy .cbev
+} -result {}
+
+tcltest::cleanupTests

@@ -1,0 +1,55 @@
+<HEAD>
+<TITLE> Creating a Hierarchical List<A NAME=411>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html917 HREF=subsubsection3_6_1_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html915 HREF=subsection3_6_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html909 HREF=subsection3_6_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html919 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html918 HREF=subsubsection3_6_1_2.html> Creating Entries in </A>
+<B>Up:</B> <A NAME=tex2html916 HREF=subsection3_6_1.html> TixHList - The </A>
+<B> Previous:</B> <A NAME=tex2html910 HREF=subsection3_6_1.html> TixHList - The </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00061100000000000000> Creating a Hierarchical List<A NAME=411>&nbsp;</A></A></H3>
+<P>
+A TixHList widget can be created by the command <tt>tixHList</tt>. However, most likely, you would want to create a TixHList
+  with scrollbars attached. Therefore, usually you will use the <tt>tixScrolledHList</tt> command to create a scrolled hierarchical listbox
+  (line 1 in program 4-2). The <tt>tixScrolledHList</tt>
+  command is very similar to the <tt>TixScrolledListBox</tt> command we
+  saw in section 2.3.1. It creates a TixHList subwidget
+  of the name <tt>hlist</tt> and attaches two scrollbars to it.
+<P>
+   As shown in the first five lines in program 4-2, we
+  create a scrolled TixHList widget, using the <tt>-options</tt> switch
+  (see section 1.3.5) to set several options for the <tt>hlist</tt> subwidget (we'll talk about these options shortly). Then, we
+  can access the HList subwidget widget using the <tt>subwidget
+  hlist</tt> method (line 7 in program 4-2).
+<P>
+<blockquote> <P><tt> tixScrolledHList .sh -options {<BR>
+    hlist.itemType text<BR>
+    hlist.drawBranch false<BR>
+    hlist.indent     8<BR>
+}<BR>
+pack .sh -expand yes -fill both<BR>
+set hlist [.sh subwidget hlist]<BR>
+<BR>
+$hlist add foo         -text &quot;foo&quot;<BR>
+$hlist add foo.bar     -text &quot;foo's 1st son&quot;<BR>
+$hlist add foo.bor     -text &quot;foo's 2nd son&quot;<BR>
+$hlist add foo.bar.bao -text &quot;foo's 1st son's 1st son&quot;<BR>
+$hlist add foo.bar.kao -text &quot;foo's 1st son's 2nd son&quot;<BR>
+$hlist add dor         -text &quot;dor, who has no son&quot;
+</tt>
+<P></blockquote>
+<P><CENTER>(Figure 4-2) Creating Entries in a HList Widget<A NAME=42>&nbsp;</A>
+  </CENTER>
+<P>
+<P><blockquote> <P><P><CENTER><IMG SRC="../gif/tix/hlist/hlist_ex1.gif">
+  </CENTER>
+</blockquote>
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

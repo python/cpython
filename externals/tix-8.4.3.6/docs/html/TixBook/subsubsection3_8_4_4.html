@@ -1,0 +1,41 @@
+<HEAD>
+<TITLE> The ConstructWidget Method<A NAME=642>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html1256 HREF=subsubsection3_8_4_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html1254 HREF=subsection3_8_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html1248 HREF=subsubsectionstar3_8_4_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html1258 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html1257 HREF=subsubsection3_8_4_5.html> The SetBindings Method</A>
+<B>Up:</B> <A NAME=tex2html1255 HREF=subsection3_8_4.html> Standard Initialization Methods</A>
+<B> Previous:</B> <A NAME=tex2html1249 HREF=subsubsectionstar3_8_4_3.html>  The tixChainMethod call</A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00084400000000000000> The ConstructWidget Method<A NAME=642>&nbsp;</A></A></H3>
+<P>
+The <tt>ConstructWidget</tt> method is used to creates the components
+  of a widget instance. In the case of TixArrowButton, we want to
+  create a new button subwidget, whose name is <tt>button</tt>, and use a
+  bitmap to display an arrow on this button. Assuming the bitmap files
+  are stored in the files <tt>up.xbm</tt>, <tt>down.xbm</tt>, <tt>left.xbm</tt>
+  and <tt>right.xbm</tt>, the string substitution <tt>@$data(-direction).xbm</tt> will give us the appropriate bitmap
+  depending on the current direction option of the widget instance.
+<P>
+<blockquote> <P><tt> proc tixArrowButton:ConstructWidget {w} {<BR>
+    upvar #0 $w data<BR>
+<BR>
+    tixChainMethod $w ConstructWidget<BR>
+<BR>
+    set data(w:button) [button $w.button -bitmap @$data(-direction).xbm]<BR>
+    pack $data(w:button) -expand yes -fill both<BR>
+}</tt>
+<P></blockquote>
+<P>The <tt>tixArrowButton:ConstructWidget</tt> method shown above sets
+  the variable <tt>data(w:button)</tt> to be the pathname of the <tt>button</tt> subwidget. As a convention of the Tix Intrinsics, we must
+  declare a public subwidget <em>swid</em> by storing its pathname in the
+  variable <tt>data(w:</tt><em>swid</em><tt>)</tt>.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

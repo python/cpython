@@ -1,0 +1,458 @@
+# -*- mode: makefile; fill-column: 75; tab-width: 8; coding: iso-latin-1-dos -*-
+# $Id: makefile.vc,v 1.22 2008/03/17 23:16:01 hobbs Exp $
+#
+#----------------------------------------------------------------------
+# makefile.vc --
+#
+#       Visual C++ 6.0 makefile for Tix.
+#
+#       This makefile builds the Tix DLL and EXE files. You can also
+#       use this makefile to install Tix in your local machine (see
+#       common.mak) for details.
+#
+#       This makefile requires Tcl/Tk versions 8.2 or later.
+#
+# Copyright (c) 1993-1999 Ioi Kim Lam.
+# Copyright (c) 2000-2001 Tix Project Group.
+#
+# See the file "license.terms" for information on usage and
+# redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#----------------------------------------------------------------------
+
+#
+# XXX makefile.vc no longer maintained - it *may* work ... or not
+# XXX use the toplevel configure/make with msys or cygwin on Windows
+#
+
+######################################################################
+# Customization section:
+#
+#	Normally you shouldn't modify this file directory to customize
+#	the make procedure. See README.txt in this directory for a better
+#	way.
+#
+######################################################################
+
+# Where the Tcl and Tk. They must be in the same directory
+
+!IFNDEF SRC_ROOT
+SRC_ROOT	= ..\..
+!ENDIF
+
+# Set the TCL version. The TK version are assumed to be equal. The default
+# is 8.3.3.
+
+!IFNDEF TCL_MAJOR
+TCL_MAJOR	= 8
+!ENDIF
+!IFNDEF TCL_MINOR
+TCL_MINOR	= 6
+!ENDIF
+!IFNDEF TCL_PATCH
+TCL_PATCH	= 1
+!ENDIF
+
+TK_MAJOR	= $(TCL_MAJOR)
+TK_MINOR	= $(TCL_MINOR)
+TK_PATCH	= $(TCL_PATCH)
+
+# Uncomment the following if you had compiled Tcl with debugging symbols
+
+!IFNDEF TCL_DBGX
+#TCL_DBGX	= d
+!ENDIF
+
+# Uncomment the following if you had compiled Tk with debugging symbols
+
+!IFNDEF TK_DBGX
+#TK_DBGX	= d
+!ENDIF
+
+# TOOLS32     	= location of VC++ 32-bit development tools.
+# TOOLS32_rc  	= location of VC++ rc program
+
+!IFNDEF TOOLS32
+#
+# Visual C++ 6.0
+#
+TOOLS32 	= c:\Program Files\Microsoft Visual Studio\VC98
+TOOLS32_rc 	= c:\Program Files\Microsoft Visual Studio\Common\MSDev98
+!ENDIF
+
+# Set this to the appropriate value of /MACHINE: for your platform
+
+!IFNDEF MACHINE
+MACHINE 	= IX86
+!ENDIF
+
+# Comment this out if you don't want to compile with stubs
+
+!IFNDEF USESTUBS
+USESTUBS	= 1
+!ENDIF
+
+# Comment this out if you want to compile with debugging symbols
+
+!IFNDEF NODEBUG
+NODEBUG		= 1
+!ENDIF
+
+# Where to install Tix. By default it installs at the default Tcl 
+# installation directory C:\Tcl
+
+!IFNDEF INSTALLDIR
+INSTALLDIR	= C:\Tcl
+!ENDIF
+
+
+######################################################################
+# Do not modify below this line
+######################################################################
+default:	all
+
+######################################################################
+# Development tool specific definitions
+######################################################################
+
+#
+# Build tools
+#
+
+cc32   		= cl.exe
+link32 		= link.exe
+include32 	= -I"$(TOOLS32)\include"
+
+RMDIR		= rd
+MKDIR		= md
+RM		= del
+
+#
+# Compile flags
+#
+
+cflags = -c -W3 -nologo
+
+!IF "$(UCRT)" == "1"
+cflags	= $(cflags) -MT
+!else
+cflags	= $(cflags) -MD
+!endif
+
+
+#
+# Link flags
+#
+
+!IF "$(NODEBUG)" == "1"
+ldebug 		= /RELEASE
+!ELSE
+ldebug 		= -debug -debugtype:cv
+!ENDIF
+
+# declarations common to all linker options
+lcommon 	= /RELEASE /NOLOGO
+
+# declarations for use on Intel i386, i486, and Pentium systems
+!IF "$(MACHINE)" == "IX86"
+lflags	 	= $(lcommon) /MACHINE:$(MACHINE)
+!ELSE
+lflags	 	= $(lcommon) /MACHINE:$(MACHINE)
+!ENDIF
+
+!IF "$(UCRT)" == "1"
+lflags	= $(lflags) -nodefaultlib:libucrt.lib
+optlibs	= $(optlibs) ucrt.lib
+!endif
+
+dlllflags 	= $(lflags) -dll
+
+baselibs   	= kernel32.lib $(optlibs) advapi32.lib user32.lib
+winlibs    	= $(baselibs) gdi32.lib comdlg32.lib
+
+#
+# Compile flags
+#
+
+# makefile.vc in Tk claims -O2 is buggy and so uses -Ot, so we do the same)
+
+!IF "$(NODEBUG)" == "1"
+optflags 	= -Oti -Gs
+!ELSE
+optflags 	= -Od -Zi
+!ENDIF
+
+cvarsdll  	= -DWIN32 -D_WIN32 -D_MT -DSTDC_HEADERS
+!IF "$(UCRT)" != "1"
+cvarsdll  	= $(cvarsdll) -D_DLL
+!ENDIF
+cflagsdll 	= $(cvarsdll) $(cflags) -Fp$(TMPDIR)\ \
+	          $(optflags)
+
+######################################################################
+# Project specific definitions
+######################################################################
+
+TIX_MAJOR	= 8
+TIX_MINOR	= 4
+TIX_PATCH	= 3
+
+ROOT            = ..
+WINDIR          = $(ROOT)\win
+GENERICDIR      = $(ROOT)\generic
+DOTVERSION      = $(TIX_MAJOR).$(TIX_MINOR).$(TIX_PATCH)
+
+#
+# Choose to build with stubs or not
+#
+
+!IF ("$(TCL_MAJOR)" == "8") && ("$(TCL_MINOR)" == "0")
+
+#
+# Tcl 8.0 does not support stubs
+#
+
+STUBS_CFLAGS	= 
+DLLDEPENDS	= $(TK_LIB) $(TCL_LIB) 
+
+!ELSE
+
+#
+# Tcl 8.1 or later support stubs
+#
+
+!IF "$(USESTUBS)" == "1"
+STUBS_CFLAGS	= -DUSE_TCL_STUBS=1 -DUSE_TK_STUBS=1
+DLLDEPENDS	= $(TK_STUBLIB) $(TCL_STUBLIB) 
+!ELSE
+STUBS_CFLAGS	=
+DLLDEPENDS	= $(TK_LIB) $(TCL_LIB) 
+!ENDIF
+
+!ENDIF
+
+#
+# Debugging options and where to output .obj and .dll files
+#
+
+!IF "$(NODEBUG)" == "1"
+DBGX    	=
+!ELSE
+DBGX 		= g
+!ENDIF
+
+TMPDIR 		= $(BUILDDIRTOP)
+
+#
+# File and dir names for Tcl
+#
+
+TCL_TMPDIR	= $(BUILDDIRTOP)
+
+!IF "$(TCL_PATCH)" == ""
+TCL_DIR		= $(SRC_ROOT)\tcl$(TCL_MAJOR).$(TCL_MINOR)
+TK_DIR		= $(SRC_ROOT)\tk$(TCL_MAJOR).$(TCL_MINOR)
+!ELSE
+TCL_DIR		= $(SRC_ROOT)\tcl$(TCL_MAJOR).$(TCL_MINOR).$(TCL_PATCH)
+TK_DIR		= $(SRC_ROOT)\tk$(TCL_MAJOR).$(TCL_MINOR)
+!ENDIF
+
+TCL_LIBDIR      = $(TCL_DIR)\win\$(TCL_TMPDIR)
+TCL_LIB  	= $(TCL_LIBDIR)\tcl$(TCL_MAJOR)$(TCL_MINOR)$(TCL_DBGX).lib
+TCL_DLL  	= $(TCL_LIBDIR)\tcl$(TCL_MAJOR)$(TCL_MINOR)$(TCL_DBGX).dll
+TCL_STUBLIB  	= $(TCL_LIBDIR)\tclstub$(TCL_MAJOR)$(TCL_MINOR).lib
+TCLSH_EXE	= $(TCL_LIBDIR)\tclsh$(TCL_MAJOR)$(TCL_MINOR)t$(TCL_DBGX).exe
+
+TK_LIBDIR       = $(TK_DIR)\win\$(TK_TMPDIR)
+TK_LIB  	= $(TK_LIBDIR)\tk$(TCL_MAJOR)$(TCL_MINOR)$(TCL_DBGX).lib
+TK_DLL  	= $(TK_LIBDIR)\tk$(TCL_MAJOR)$(TCL_MINOR)$(TCL_DBGX).dll
+
+#
+# File and dir names for Tk
+#
+
+TK_TMPDIR	= $(BUILDDIRTOP)
+
+!IF "$(TK_PATCH)" == ""
+TK_DIR		= $(SRC_ROOT)\tk$(TK_MAJOR).$(TK_MINOR)
+!ELSE
+TK_DIR		= $(SRC_ROOT)\tk$(TK_MAJOR).$(TK_MINOR).$(TK_PATCH)
+!ENDIF
+
+TK_LIBDIR       = $(TK_DIR)\win\$(TK_TMPDIR)
+TK_LIB  	= $(TK_LIBDIR)\tk$(TK_MAJOR)$(TK_MINOR)$(TK_DBGX).lib
+TK_STUBLIB  	= $(TK_LIBDIR)\tkstub$(TK_MAJOR)$(TK_MINOR).lib
+
+#
+# File and dir names for Tix
+#
+
+TIX_LIB		= $(TMPDIR)\tix$(TIX_MAJOR)$(TIX_MINOR)$(DBGX).lib
+TIX_DLL		= $(TMPDIR)\tix$(TIX_MAJOR)$(TIX_MINOR)$(DBGX).dll
+TIX_PKGIDX	= $(TMPDIR)\pkgIndex.tcl.src
+
+TIX_DEFINES     = -D__WIN32__  -D_CRT_SECURE_NO_WARNINGS
+TIX_INCLUDES 	= $(include32) \
+		  -I$(ROOT)\win -I$(ROOT)\generic \
+		  -I$(TK_DIR)\generic -I$(TK_DIR)\win -I$(TK_DIR)\xlib \
+		  -I$(TCL_DIR)\generic -I$(TCL_DIR)\win
+TIX_CFLAGS      = $(cflagsdll) $(TIX_INCLUDES) $(TIX_DEFINES)
+
+######################################################################
+# Project specific targets
+######################################################################
+
+all: $(TMPDIR) $(TIX_DLL) $(TIX_PKGIDX)
+
+$(TMPDIR):
+        -$(MKDIR) $@
+
+#
+# Object files
+#
+
+TIX_DLL_OBJS = \
+	$(TMPDIR)\tixClass.obj    \
+	$(TMPDIR)\tixCmds.obj     \
+	$(TMPDIR)\tixCompat.obj   \
+	$(TMPDIR)\tixDiImg.obj    \
+	$(TMPDIR)\tixDiITxt.obj   \
+	$(TMPDIR)\tixDiStyle.obj  \
+	$(TMPDIR)\tixDItem.obj    \
+	$(TMPDIR)\tixDiText.obj   \
+	$(TMPDIR)\tixDiWin.obj    \
+	$(TMPDIR)\tixError.obj    \
+	$(TMPDIR)\tixForm.obj     \
+	$(TMPDIR)\tixFormMisc.obj \
+	$(TMPDIR)\tixGeometry.obj \
+	$(TMPDIR)\tixGrid.obj     \
+	$(TMPDIR)\tixGrData.obj   \
+	$(TMPDIR)\tixGrRC.obj     \
+	$(TMPDIR)\tixGrFmt.obj    \
+	$(TMPDIR)\tixGrSel.obj    \
+	$(TMPDIR)\tixGrUtl.obj    \
+	$(TMPDIR)\tixHLCol.obj    \
+	$(TMPDIR)\tixHLHdr.obj    \
+	$(TMPDIR)\tixHLInd.obj    \
+	$(TMPDIR)\tixHList.obj    \
+	$(TMPDIR)\tixImgCmp.obj   \
+	$(TMPDIR)\tixImgXpm.obj   \
+	$(TMPDIR)\tixInit.obj     \
+	$(TMPDIR)\tixList.obj     \
+	$(TMPDIR)\tixMethod.obj   \
+	$(TMPDIR)\tixNBFrame.obj  \
+	$(TMPDIR)\tixOption.obj   \
+	$(TMPDIR)\tixSmpLs.obj    \
+	$(TMPDIR)\tixScroll.obj   \
+	$(TMPDIR)\tixTList.obj    \
+	$(TMPDIR)\tixUtils.obj    \
+	$(TMPDIR)\tixWCmpt.obj    \
+	$(TMPDIR)\tixWidget.obj   \
+	$(TMPDIR)\tixWinDraw.obj  \
+	$(TMPDIR)\tixWinXpm.obj   \
+	$(TMPDIR)\tixWinWm.obj
+
+#
+# .EXE and .DLL files
+#
+
+# (ToDo) $(TIX_DLL) doesn't have resources to define its icon, etc.
+#
+$(TIX_DLL): $(TIX_DLL_OBJS)
+	$(link32) $(ldebug) $(dlllflags) $(DLLDEPENDS) $(winlibs) \
+		-out:$@ @<<
+			$(TIX_DLL_OBJS)
+<<
+	$(_VC_MANIFEST_EMBED_DLL)
+
+$(TIX_PKGIDX): make_pkgIndex.tcl makefile.vc
+	set TCL_LIBRARY=$(TCL_DIR)\library
+	$(TCLSH_EXE) make_pkgIndex.tcl $@ $(TIX_DLL) $(DOTVERSION)
+
+#
+# Implicit rules
+#
+
+{$(GENERICDIR)}.c{$(TMPDIR)}.obj:
+	$(cc32) $(TIX_CFLAGS) $(STUBS_CFLAGS) -DBUILD_tix -Fo$@ $<
+
+{$(WINDIR)}.c{$(TMPDIR)}.obj:
+	$(cc32) $(TIX_CFLAGS) $(STUBS_CFLAGS) -DBUILD_tix -Fo$@ $<
+
+######################################################################
+# Test:
+######################################################################
+oldtest:
+	set TCL_LIBRARY=$(TCL_DIR)\library
+	set TK_LIBRARY=$(TK_DIR)\library
+	@echo "===================================================="
+	@echo "running old-style tests"
+	@echo "===================================================="
+        $(TCLSH_EXE) ../tests/Driver.tcl
+
+newtest:
+	set TCL_LIBRARY=$(TCL_DIR)\library
+	set TK_LIBRARY=$(TK_DIR)\library
+	@echo "===================================================="
+	@echo "running new-style tests"
+	@echo "===================================================="
+	set TIX_LIBRARY=$(ROOT)\library
+        $(TCLSH_EXE) ..\tests\all.tcl
+
+copydlls::
+	copy /y $(TCL_DLL) $(TMPDIR)
+	copy /y $(TK_DLL) $(TMPDIR)
+
+test: copydlls  newtest
+tests: copydlls newtest
+
+rundemos:
+	set TCL_LIBRARY=$(TCL_DIR)\library
+	set TK_LIBRARY=$(TK_DIR)\library
+	set TIX_LIBRARY=$(ROOT)\library
+        $(WISH) ..\demos\widget
+
+######################################################################
+# Clean up
+######################################################################
+
+clean:
+	-del $(TIX_LIB)
+	-del $(TIX_DLL)
+	-del $(TIX_PKGIDX)
+	-del $(TMPDIR)\*.obj
+	-del $(TMPDIR)\*.exp
+	-del $(TMPDIR)\*.res
+	-del $(TMPDIR)\*.def
+	-del $(TMPDIR)\*.pch
+	-del $(TMPDIR)\*.pdb
+	-del $(TMPDIR)\*.lib
+	-del *.pdb
+
+######################################################################
+# Install
+######################################################################
+
+LIB_INSTALL_DIR		= $(INSTALL_DIR)\lib\tix$(DOTVERSION)
+INCLUDE_INSTALL_DIR	= $(INSTALL_DIR)\include
+
+install: all
+	-@$(MKDIR) "$(LIB_INSTALL_DIR)"
+	@echo installing $(TIX_DLL)
+	@copy "$(TIX_DLL)" "$(LIB_INSTALL_DIR)"
+	@echo installing $(TIX_LIB)
+	@copy "$(TIX_LIB)" "$(LIB_INSTALL_DIR)"
+	@echo installing library files
+	-@$(MKDIR) "$(LIB_INSTALL_DIR)"
+	-@$(MKDIR) "$(LIB_INSTALL_DIR)\pref"
+	-@$(MKDIR) "$(LIB_INSTALL_DIR)\bitmaps"
+	-@$(MKDIR) "$(LIB_INSTALL_DIR)\demos"
+	-@$(MKDIR) "$(LIB_INSTALL_DIR)\demos\bitmaps"
+	-@$(MKDIR) "$(LIB_INSTALL_DIR)\demos\samples"
+	xcopy /y "$(ROOT)\library"          "$(LIB_INSTALL_DIR)"
+	 copy /y "$(TIX_PKGIDX)"            "$(LIB_INSTALL_DIR)\pkgIndex.tcl"
+	xcopy /y "$(ROOT)\library\pref"     "$(LIB_INSTALL_DIR)\pref"
+	xcopy /y "$(ROOT)\library\bitmaps"  "$(LIB_INSTALL_DIR)\bitmaps"
+	xcopy /y "$(ROOT)\demos"            "$(LIB_INSTALL_DIR)\demos"
+	xcopy /y "$(ROOT)\demos\samples"    "$(LIB_INSTALL_DIR)\demos\samples"
+	xcopy /y "$(ROOT)\demos\bitmaps"    "$(LIB_INSTALL_DIR)\demos\bitmaps"
+

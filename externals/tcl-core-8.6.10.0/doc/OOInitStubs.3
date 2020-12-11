@@ -1,0 +1,54 @@
+'\"
+'\" Copyright (c) 2012 Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_OOInitStubs 3 1.0 TclOO "TclOO Library Functions"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Tcl_OOInitStubs \- initialize library access to TclOO functionality
+.SH SYNOPSIS
+.nf
+\fB#include <tclOO.h>\fR
+.sp
+const char *
+\fBTcl_OOInitStubs\fR(\fIinterp\fR)
+.fi
+.SH ARGUMENTS
+.AS Tcl_Interp *interp in
+.AP Tcl_Interp *interp in
+The Tcl interpreter that the TclOO API is integrated with and whose C
+interface is going to be used.
+.BE
+.SH DESCRIPTION
+.PP
+When an extension library is going to use the C interface exposed by TclOO, it
+should use \fBTcl_OOInitStubs\fR to initialize its access to that interface
+from within its \fI*\fB_Init\fR (or \fI*\fB_SafeInit\fR) function, passing in
+the \fIinterp\fR that was passed into that routine as context. If the result
+of calling \fBTcl_OOInitStubs\fR is NULL, the initialization failed and an
+error message will have been left in the interpreter's result. Otherwise, the
+initialization succeeded and the TclOO API may thereafter be used; the
+version of the TclOO API is returned.
+.PP
+When using this function, either the C #define symbol \fBUSE_TCLOO_STUBS\fR
+should be defined and your library code linked against the Tcl stub library,
+or that #define symbol should \fInot\fR be defined and your library code
+linked against the Tcl main library directly.
+.SH "BACKWARD COMPATIBILITY NOTE"
+.PP
+If you are linking against the Tcl 8.5 forward compatibility package for
+TclOO, \fIonly\fR the stub-enabled configuration is supported and you should
+also link against the TclOO independent stub library; that library is an
+integrated part of the main Tcl stub library in Tcl 8.6.
+.SH KEYWORDS
+stubs
+.SH "SEE ALSO"
+Tcl_InitStubs(3)
+.\" Local variables:
+.\" mode: nroff
+.\" fill-column: 78
+.\" End:

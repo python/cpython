@@ -1,0 +1,320 @@
+# This file is a Tcl script to test out Tk's "raise" and
+# "lower" commands, plus associated code to manage window
+# stacking order.  It is organized in the standard fashion
+# for Tcl tests.
+#
+# Copyright (c) 1993-1994 The Regents of the University of California.
+# Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+namespace import -force tcltest::test
+
+# Procedure to create a bunch of overlapping windows, which should
+# make it easy to detect differences in order.
+
+proc raise_setup {} {
+    foreach i [winfo child .raise] {
+	        destroy $i
+        }
+    foreach i {a b c d e} {
+	    label .raise.$i -text $i -relief raised -bd 2
+    }
+    place .raise.a -x 20 -y 60 -width 60 -height 80
+    place .raise.b -x 60 -y 60 -width 60 -height 80
+    place .raise.c -x 100 -y 60 -width 60 -height 80
+    place .raise.d -x 40 -y 20 -width 100 -height 60
+    place .raise.e -x 40 -y 120 -width 100 -height 60
+}
+
+# Procedure to return information about which windows are on top
+# of which other windows.
+
+proc raise_getOrder {} {
+    set x [winfo rootx .raise]
+    set y [winfo rooty .raise]
+    list [winfo name [winfo containing [expr $x+50] [expr $y+70]]] \
+	    [winfo name [winfo containing [expr $x+90] [expr $y+70]]] \
+	    [winfo name [winfo containing [expr $x+130] [expr $y+70]]] \
+	    [winfo name [winfo containing [expr $x+70] [expr $y+100]]] \
+	    [winfo name [winfo containing [expr $x+110] [expr $y+100]]] \
+	    [winfo name [winfo containing [expr $x+50] [expr $y+130]]] \
+	    [winfo name [winfo containing [expr $x+90] [expr $y+130]]] \
+	    [winfo name [winfo containing [expr $x+130] [expr $y+130]]]
+}
+
+# Procedure to set up a collection of top-level windows
+
+proc raise_makeToplevels {} {
+    deleteWindows
+    foreach i {.raise1 .raise2 .raise3} {
+	toplevel $i
+	wm geom $i 150x100+0+0
+	update
+    }
+}
+
+toplevel .raise
+wm geom .raise 250x200+0+0
+
+
+test raise-1.1 {preserve creation order} -body {
+    raise_setup
+    tkwait visibility .raise.e
+    raise_getOrder
+} -result {d d d b c e e e}
+test raise-1.2 {preserve creation order} -constraints testmakeexist -body {
+    raise_setup
+    testmakeexist .raise.a
+    update
+    raise_getOrder
+} -result {d d d b c e e e}
+test raise-1.3 {preserve creation order} -constraints testmakeexist -body {
+    raise_setup
+    testmakeexist .raise.c
+    update
+    raise_getOrder
+} -result {d d d b c e e e}
+test raise-1.4 {preserve creation order} -constraints testmakeexist -body {
+    raise_setup
+    testmakeexist .raise.e
+    update
+    raise_getOrder
+} -result {d d d b c e e e}
+test raise-1.5 {preserve creation order} -constraints testmakeexist -body {
+    raise_setup
+    testmakeexist .raise.d .raise.c .raise.b
+    update
+    raise_getOrder
+} -result {d d d b c e e e}
+
+
+test raise-2.1 {raise internal windows before creation} -body {
+    raise_setup
+    raise .raise.a
+    update
+    raise_getOrder
+} -result {a d d a c a e e}
+test raise-2.2 {raise internal windows before creation} -body {
+    raise_setup
+    raise .raise.c
+    update
+    raise_getOrder
+} -result {d d c b c e e c}
+test raise-2.3 {raise internal windows before creation} -body {
+    raise_setup
+    raise .raise.e
+    update
+    raise_getOrder
+} -result {d d d b c e e e}
+test raise-2.4 {raise internal windows before creation} -body {
+    raise_setup
+    raise .raise.e .raise.a
+    update
+    raise_getOrder
+} -result {d d d b c e b c}
+test raise-2.5 {raise internal windows before creation} -body {
+    raise_setup
+    raise .raise.a .raise.d
+    update
+    raise_getOrder
+} -result {a d d a c e e e}
+
+
+test raise-3.1 {raise internal windows after creation} -body {
+    raise_setup
+    update
+    raise .raise.a .raise.d
+    raise_getOrder
+} -result {a d d a c e e e}
+test raise-3.2 {raise internal windows after creation} -constraints {
+	testmakeexist
+} -body {
+    raise_setup
+    testmakeexist .raise.a .raise.b
+    raise .raise.a .raise.b
+    update
+    raise_getOrder
+} -result {d d d a c e e e}
+test raise-3.3 {raise internal windows after creation} -constraints {
+	testmakeexist
+} -body {
+    raise_setup
+    testmakeexist .raise.a .raise.d
+    raise .raise.a .raise.b
+    update
+    raise_getOrder
+} -result {d d d a c e e e}
+test raise-3.4 {raise internal windows after creation} -constraints {
+	testmakeexist
+} -body {
+    raise_setup
+    testmakeexist .raise.a .raise.c .raise.d
+    raise .raise.a .raise.b
+    update
+    raise_getOrder
+} -result {d d d a c e e e}
+
+
+test raise-4.1 {raise relative to nephews} -body {
+    raise_setup
+    update
+    frame .raise.d.child
+    raise .raise.a .raise.d.child
+    raise_getOrder
+} -result {a d d a c e e e}
+test raise-4.2 {raise relative to nephews} -setup {
+    destroy .raise2
+} -body {
+    raise_setup
+    update
+    frame .raise2
+    raise .raise.a .raise2
+} -cleanup {
+    destroy .raise2
+} -returnCodes error -result {can't raise ".raise.a" above ".raise2"}
+
+
+test raise-5.1 {lower internal windows} -body {
+    raise_setup
+    update
+    lower .raise.d
+    raise_getOrder
+} -result {a b c b c e e e}
+test raise-5.2 {lower internal windows} -body {
+    raise_setup
+    update
+    lower .raise.d .raise.b
+    raise_getOrder
+} -result {d b c b c e e e}
+test raise-5.3 {lower internal windows} -body {
+    raise_setup
+    update
+    lower .raise.a .raise.e
+    raise_getOrder
+} -result {a d d a c e e e}
+test raise-5.4 {lower internal windows} -setup {
+    destroy .raise2
+} -body {
+    raise_setup
+    update
+    frame .raise2
+    lower .raise.a .raise2
+} -cleanup {
+    destroy .raise2
+} -returnCodes error -result {can't lower ".raise.a" below ".raise2"}
+
+
+test raise-6.1 {raise/lower toplevel windows} -constraints {
+	nonPortable
+} -body {
+    raise_makeToplevels
+    update
+    raise .raise1
+    winfo containing [winfo rootx .raise1] [winfo rooty .raise1]
+} -result {.raise1}
+test raise-6.2 {raise/lower toplevel windows} -constraints {
+	nonPortable
+} -body {
+    raise_makeToplevels
+    update
+    raise .raise2
+    winfo containing [winfo rootx .raise1] [winfo rooty .raise1]
+} -result {.raise2}
+test raise-6.3 {raise/lower toplevel windows} -constraints {
+	nonPortable
+} -body {
+    raise_makeToplevels
+    update
+    raise .raise3
+    raise .raise2
+    raise .raise1 .raise3
+    set result [winfo containing [winfo rootx .raise1] \
+	    [winfo rooty .raise1]]
+    destroy .raise2
+    update
+    after 500
+    list $result [winfo containing [winfo rootx .raise1] \
+	    [winfo rooty .raise1]]
+} -result {.raise2 .raise1}
+test raise-6.4 {raise/lower toplevel windows} -constraints {
+	nonPortable
+} -body {
+    raise_makeToplevels
+    update
+    raise .raise2
+    raise .raise1
+    lower .raise3 .raise1
+    set result [winfo containing [winfo rootx .raise1] \
+	    [winfo rooty .raise1]]
+    wm geometry .raise2 +30+30
+    wm geometry .raise1 +60+60
+    destroy .raise1
+    update
+    after 500
+    list $result [winfo containing [winfo rootx .raise2] \
+	    [winfo rooty .raise2]]
+} -result {.raise1 .raise3}
+test raise-6.5 {raise/lower toplevel windows} -constraints {
+	nonPortable
+} -body {
+    raise_makeToplevels
+    raise .raise1
+    set time [lindex [time {raise .raise1}] 0]
+    expr {$time < 2000000}
+} -result 1
+test raise-6.6 {raise/lower toplevel windows} -constraints {
+	nonPortable
+} -body {
+    raise_makeToplevels
+    update
+    raise .raise2
+    raise .raise1
+    raise .raise3
+    frame .raise1.f1
+    frame .raise1.f1.f2
+    lower .raise3 .raise1.f1.f2
+    set result [winfo containing [winfo rootx .raise1] \
+	    [winfo rooty .raise1]]
+    destroy .raise1
+    update
+    after 500
+    list $result [winfo containing [winfo rootx .raise2] \
+	    [winfo rooty .raise2]]
+} -result {.raise1 .raise3}
+
+
+test raise-7.1 {errors in raise/lower commands} -body {
+    raise
+} -returnCodes error -result {wrong # args: should be "raise window ?aboveThis?"}
+test raise-7.2 {errors in raise/lower commands} -body {
+    raise a b c
+} -returnCodes error -result {wrong # args: should be "raise window ?aboveThis?"}
+test raise-7.3 {errors in raise/lower commands} -body {
+    raise badName
+} -returnCodes error -result {bad window path name "badName"}
+test raise-7.4 {errors in raise/lower commands} -body {
+    raise . badName2
+} -returnCodes error -result {bad window path name "badName2"}
+test raise-7.5 {errors in raise/lower commands} -body {
+    lower
+} -returnCodes error -result {wrong # args: should be "lower window ?belowThis?"}
+test raise-7.6 {errors in raise/lower commands} -body {
+    lower a b c
+} -returnCodes error -result {wrong # args: should be "lower window ?belowThis?"}
+test raise-7.7 {errors in raise/lower commands} -body {
+    lower badName3
+} -returnCodes error -result {bad window path name "badName3"}
+test raise-7.8 {errors in raise/lower commands} -body {
+    lower . badName4
+} -returnCodes error -result {bad window path name "badName4"}
+
+deleteWindows
+
+# cleanup
+cleanupTests
+return
+

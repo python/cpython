@@ -1,0 +1,1582 @@
+# This file is a Tcl script to test the code in the file tkTextWind.c.
+# This file is organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1994 The Regents of the University of California.
+# Copyright (c) 1994-1995 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+tcltest::configure {*}$argv
+tcltest::loadTestedCommands
+
+deleteWindows
+
+set fixedFont {"Courier New" -12}
+set fixedHeight [font metrics $fixedFont -linespace]
+set fixedWidth [font measure $fixedFont m]
+set fixedAscent [font metrics $fixedFont -ascent]
+
+# Widget used in almost all tests
+set tWidth 30
+set tHeight 6
+text .t -width $tWidth -height $tHeight -bd 2 -highlightthickness 2 \
+        -font $fixedFont
+pack .t -expand 1 -fill both
+update
+.t debug on
+
+set color [expr {[winfo depth .t] > 1 ? "green" : "black"}]
+
+wm geometry . {}
+
+# The statements below reset the main window;  it's needed if the window
+# manager is mwm to make mwm forget about a previous minimum size setting.
+
+wm withdraw .
+wm minsize . 1 1
+wm positionfrom . user
+wm deiconify .
+
+# This update is needed on MacOS to make sure that the window is mapped
+# when the tests begin.
+
+update 
+
+set bw [.t cget -borderwidth]
+set px [.t cget -padx]
+set py [.t cget -pady]
+set hlth [.t cget -highlightthickness]
+set padx [expr {$bw+$px+$hlth}]
+set pady [expr {$bw+$py+$hlth}]
+
+# ----------------------------------------------------------------------
+
+test textWind-1.1 {basic tests of options} -setup {
+    .t delete 1.0 end
+} -body {
+    .t insert end "This is the first line"
+    .t insert end "\nAnd this is a second line, which wraps around"
+    frame .f -width 3 -height 3 -bg $color
+    .t window create 2.2 -window .f
+    update
+    list [winfo ismapped .f] [winfo geom .f] [.t bbox .f] \
+        [.t window configure .f -window]
+} -result [list \
+    1 \
+    3x3+[expr {$padx+2*$fixedWidth}]+[expr {$pady+$fixedHeight+(($fixedHeight-3)/2)}] \
+    [list [expr {$padx+2*$fixedWidth}] [expr {$pady+$fixedHeight+(($fixedHeight-3)/2)}] 3 3] \
+    {-window {} {} {} .f}]
+
+test textWind-1.2 {basic tests of options} -setup {
+    .t delete 1.0 end
+} -body {
+    .t insert end "This is the first line"
+    .t insert end "\nAnd this is a second line, which wraps around"
+    frame .f -width 3 -height 3 -bg $color
+    .t window create 2.2 -window .f -align top
+    update
+    list [winfo ismapped .f] [winfo geom .f] [.t bbox .f] \
+        [.t window configure .f -align]
+} -result [list \
+    1 \
+    3x3+[expr {$padx+2*$fixedWidth}]+[expr {$pady+$fixedHeight}] \
+    [list [expr {$padx+2*$fixedWidth}] [expr {$pady+$fixedHeight}] 3 3] \
+    {-align {} {} center top}]
+
+test textWind-1.3 {basic tests of options} -setup {
+    .t delete 1.0 end
+} -body {
+    .t insert end "This is the first line"
+    .t insert end "\nAnd this is a second line, which wraps around"
+    .t window create 2.2 -create "Test script"
+    .t window configure 2.2 -create
+} -result {-create {} {} {} {Test script}}
+
+test textWind-1.4 {basic tests of options} -setup {
+    .t delete 1.0 end
+} -body {
+    .t insert end "This is the first line"
+    .t insert end "\nAnd this is a second line, which wraps around"
+    # the window .f should be wider than the fixed width
+    frame .f -width 10 -height 20 -bg $color
+    .t window create 2.2 -window .f -padx 5
+    update
+    list [winfo geom .f] [.t window configure .f -padx] [.t bbox 2.3]
+} -result [list \
+    10x20+[expr {$padx+2*$fixedWidth+5}]+[expr {$pady+$fixedHeight}] \
+    {-padx {} {} 0 5} \
+    [list [expr {$padx+2*$fixedWidth+10+2*5}] [expr {$pady+$fixedHeight+((20-$fixedHeight)/2)}] $fixedWidth $fixedHeight]]
+
+test textWind-1.5 {basic tests of options} -setup {
+    .t delete 1.0 end
+} -body {
+    .t insert end "This is the first line"
+    .t insert end "\nAnd this is a second line, which wraps around"
+    frame .f -width 10 -height 20 -bg $color
+    .t window create 2.2 -window .f -pady 4
+    update
+    list [winfo geom .f] [.t window configure .f -pady] [.t bbox 2.31]
+} -result [list \
+    10x20+[expr {$padx+2*$fixedWidth}]+[expr {$pady+$fixedHeight+4}] \
+    {-pady {} {} 0 4} \
+    [list [expr {$padx+2*$fixedWidth}] [expr {$pady+$fixedHeight+20+2*4}] $fixedWidth $fixedHeight]]
+
+test textWind-1.6 {basic tests of options} -setup {
+    .t delete 1.0 end
+} -body {
+    .t insert end "This is the first line"
+    .t insert end "\nAnd this is a second line, which wraps around"
+    frame .f -width 5 -height 5 -bg $color
+    .t window create 2.2 -window .f -stretch 1
+    update
+    list [winfo geom .f] [.t window configure .f -stretch]
+} -result [list \
+    5x$fixedHeight+[expr {$padx+2*$fixedWidth}]+[expr {$pady+$fixedHeight}] \
+    {-stretch {} {} 0 1}]
+
+
+.t delete 1.0 end
+.t insert end "This is the first line"
+test textWind-2.1 {TkTextWindowCmd procedure} -body {
+    .t window
+} -returnCodes error -result {wrong # args: should be ".t window option ?arg ...?"}
+test textWind-2.2 {TkTextWindowCmd procedure, "cget" option} -body {
+    .t window cget
+} -returnCodes error -result {wrong # args: should be ".t window cget index option"}
+test textWind-2.3 {TkTextWindowCmd procedure, "cget" option} -body {
+    .t window cget a b c
+} -returnCodes error -result {wrong # args: should be ".t window cget index option"}
+test textWind-2.4 {TkTextWindowCmd procedure, "cget" option} -body {
+    .t window cget gorp -padx
+} -returnCodes error -result {bad text index "gorp"}
+test textWind-2.5 {TkTextWindowCmd procedure, "cget" option} -body {
+    .t window cget 1.2 -padx
+} -returnCodes error -result {no embedded window at index "1.2"}
+test textWind-2.6 {TkTextWindowCmd procedure, "cget" option} -setup {
+    destroy .f
+} -body {
+    frame .f -width 10 -height 6 -bg $color
+    .t window create 1.3 -window .f -padx 1 -pady 2
+    .t window cget .f -bogus
+} -cleanup {
+    destroy .f
+} -returnCodes error -result {unknown option "-bogus"}
+test textWind-2.7 {TkTextWindowCmd procedure, "cget" option} -setup {
+    destroy .f
+} -body {
+    frame .f -width 10 -height 6 -bg $color
+    .t window create 1.3 -window .f -padx 1 -pady 2
+    .t window cget .f -pady
+} -cleanup {
+    destroy .f
+} -returnCodes ok -result {2}
+test textWind-2.8 {TkTextWindowCmd procedure} -body {
+    .t window co
+} -returnCodes error -result {wrong # args: should be ".t window configure index ?-option value ...?"}
+test textWind-2.9 {TkTextWindowCmd procedure} -body {
+    .t window configure gorp
+} -returnCodes error -result {bad text index "gorp"}
+test textWind-2.10 {TkTextWindowCmd procedure} -body {
+    .t delete 1.0 end
+    .t window configure 1.0
+} -returnCodes error -result {no embedded window at index "1.0"}
+test textWind-2.11 {TkTextWindowCmd procedure} -setup {
+# I kept this as it "influenced" the test case in previous releases
+    destroy .f
+    frame .f -width 10 -height 6 -bg $color
+    .t window create 1.3 -window .f -padx 1 -pady 2
+    .t delete 1.0 end
+} -body {
+    .t insert end "This is the first line"
+    .t insert end "\nAnd this is a second line, which wraps around"
+    frame .f -width 10 -height 6 -bg $color
+    .t window create 2.2 -window .f -align baseline -padx 1 -pady 2 -create foo
+    update
+    .t window configure .f
+} -cleanup {
+    destroy .f
+} -result  {{-align {} {} center baseline} {-create {} {} {} foo} {-padx {} {} 0 1} {-pady {} {} 0 2} {-stretch {} {} 0 0} {-window {} {} {} .f}}
+test textWind-2.12 {TkTextWindowCmd procedure} -setup {
+# I kept this as it "influenced" the test case in previous releases
+    destroy .f
+    frame .f -width 10 -height 6 -bg $color
+    .t window create 2.2 -window .f -align baseline -padx 1 -pady 2 -create foo
+    .t delete 1.0 end
+} -body {
+    .t insert end "This is the first line"
+    .t insert end "\nAnd this is a second line, which wraps around"
+    frame .f -width 10 -height 6 -bg $color
+    .t window create 2.2 -window .f -align baseline -padx 1 -pady 2 -create foo
+    update
+    list [.t window configure .f -padx 33] [.t window configure .f -padx]
+} -cleanup {
+    destroy .f
+} -result {{} {-padx {} {} 0 33}}
+test textWind-2.13 {TkTextWindowCmd procedure} -setup {
+# I kept this as it "influenced" the test case in previous releases
+    destroy .f
+    frame .f -width 10 -height 6 -bg $color
+    .t window create 2.2 -window .f -align baseline -padx 1 -pady 2 -create foo
+    .t delete 1.0 end
+} -body {
+    .t insert end "This is the first line"
+    .t insert end "\nAnd this is a second line, which wraps around"
+    frame .f -width 10 -height 6 -bg $color
+    .t window create 2.2 -window .f -align baseline -padx 1 -pady 2
+    update
+    list [.t window configure .f -padx 14 -pady 15] \
+        [.t window configure .f -padx] [.t window configure .f -pady]
+} -cleanup {
+    destroy .f
+} -result {{} {-padx {} {} 0 14} {-pady {} {} 0 15}}
+test textWind-2.14 {TkTextWindowCmd procedure} -setup {
+    .t delete 1.0 end
+} -body {
+    .t window create
+} -returnCodes error -result {wrong # args: should be ".t window create index ?-option value ...?"}
+test textWind-2.15 {TkTextWindowCmd procedure} -setup {
+    .t delete 1.0 end
+} -body {
+    .t window create gorp
+} -returnCodes error -result {bad text index "gorp"}
+test textWind-2.16 {TkTextWindowCmd procedure, don't insert after end} -setup {
+# I kept this as it "influenced" the test case in previous releases
+    destroy .f
+    frame .f -width 10 -height 6 -bg $color
+    .t window create 2.2 -window .f -align baseline -padx 1 -pady 2
+    .t delete 1.0 end
+} -body {
+    .t insert end "Line 1\nLine 2"
+    frame .f -width 20 -height 10 -bg $color
+    .t window create end -window .f
+    .t index .f
+} -result {2.6}
+test textWind-2.17 {TkTextWindowCmd procedure} -setup {
+    .t delete 1.0 end
+} -body {
+    list [catch {.t window create 1.0} msg] $msg [.t window configure 1.0]
+} -result {0 {} {{-align {} {} center center} {-create {} {} {} {}} {-padx {} {} 0 0} {-pady {} {} 0 0} {-stretch {} {} 0 0} {-window {} {} {} {}}}}
+test textWind-2.18 {TkTextWindowCmd procedure} -setup {
+# I kept this as it "influenced" the test case in previous releases
+    destroy .f
+    frame .f -width 20 -height 10 -bg $color
+    .t window create end -window .f
+    .t delete 1.0 end
+} -body {
+    frame .f -width 10 -height 6 -bg $color
+    .t window create 1.0 -window .f -gorp stupid
+} -returnCodes error -result {unknown option "-gorp"}
+test textWind-2.19 {TkTextWindowCmd procedure} -setup {
+# I kept this as it "influenced" the test case in previous releases
+    destroy .f
+    frame .f -width 20 -height 10 -bg $color
+    .t window create end -window .f
+    .t delete 1.0 end
+} -body {
+    frame .f -width 10 -height 6 -bg $color
+    catch {.t window create 1.0 -window .f -gorp stupid}
+    list [winfo exists .f] [.t index 1.end] [catch {.t index .f}]
+} -result {0 1.0 1}
+test textWind-2.20 {TkTextWindowCmd procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    frame .f -width 10 -height 6 -bg $color
+    .t window create 1.0 -gorp -window .f stupid
+} -returnCodes error -result {unknown option "-gorp"}
+test textWind-2.21 {TkTextWindowCmd procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    frame .f -width 10 -height 6 -bg $color
+    catch {.t window create 1.0 -gorp -window .f stupid}
+    list [winfo exists .f] [.t index 1.end] [catch {.t index .f}]
+} -result {1 1.0 1}
+test textWind-2.22 {TkTextWindowCmd procedure} -setup {
+    .t delete 1.0 end
+} -body {
+    .t window c
+} -returnCodes error -result {ambiguous window option "c": must be cget, configure, create, or names}
+destroy .f
+test textWind-2.23 {TkTextWindowCmd procedure, "names" option} -setup {
+    .t delete 1.0 end
+} -body {
+    .t window names foo
+} -returnCodes error -result {wrong # args: should be ".t window names"}
+test textWind-2.24 {TkTextWindowCmd procedure, "names" option} -setup {
+    .t delete 1.0 end
+} -body {
+    .t window names
+} -result {}
+test textWind-2.25 {TkTextWindowCmd procedure, "names" option} -setup {
+    .t delete 1.0 end
+    destroy .f .f2 .t.f .t.f2
+} -body {
+    foreach i {.f .f2 .t.f .t.f2} {
+        frame $i -width 20 -height 20
+        .t window create end -window $i
+    }
+    lsort [.t window names]
+} -cleanup {
+    destroy .f .f2 .t.f .t.f2
+} -result {.f .f2 .t.f .t.f2}
+
+
+test textWind-3.1 {EmbWinConfigure procedure} -setup {
+    destroy .f
+} -body {
+    frame .f -width 10 -height 6 -bg $color
+    .t window create 1.0 -window .f
+    .t window configure 1.0 -foo bar
+} -cleanup {
+    destroy .f
+} -returnCodes error -result {unknown option "-foo"}
+
+test textWind-3.2 {EmbWinConfigure procedure} -setup {
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 10 -height 20 -bg $color
+    .t window create 1.3 -window .f
+    update
+    .t window configure 1.3 -window {}
+    update
+    .t index .f
+} -cleanup {
+    destroy .f
+} -returnCodes error -result {bad text index ".f"}
+
+test textWind-3.3 {EmbWinConfigure procedure} -setup {
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 10 -height 20 -bg $color
+    .t window create 1.3 -window .f
+    update
+    .t window configure 1.3 -window {}
+    update
+    catch {.t index .f}
+    list [winfo ismapped .f] [.t bbox 1.4]
+} -cleanup {
+    destroy .f
+} -result [list 0 \
+    [list [expr {$padx+3*$fixedWidth}] $pady $fixedWidth $fixedHeight]]
+
+test textWind-3.4 {EmbWinConfigure procedure} -setup {
+    destroy .t.f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .t.f -width 10 -height 20 -bg $color
+    .t window create 1.3 -window .t.f
+    update
+    .t window configure 1.3 -window {}
+    update
+    .t index .t.f
+} -cleanup {
+    destroy .t.f
+} -returnCodes error -result {bad text index ".t.f"}
+
+test textWind-3.5 {EmbWinConfigure procedure} -setup {
+    destroy .t.f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .t.f -width 10 -height 20 -bg $color
+    .t window create 1.3 -window .t.f
+    update
+    .t window configure 1.3 -window {}
+    update
+    catch {.t index .t.f}
+    list [winfo ismapped .t.f] [.t bbox 1.4]
+} -cleanup {
+    destroy .t.f
+} -result [list 0 \
+    [list [expr {$padx+3*$fixedWidth}] $pady $fixedWidth $fixedHeight]]
+
+test textWind-3.6 {EmbWinConfigure procedure} -setup {
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 10 -height 20 -bg $color
+    .t window create 1.3
+    update
+    .t window configure 1.3 -window .f
+    update
+    list [catch {.t index .f} msg] $msg [winfo ismapped .f] [.t bbox 1.4]
+} -cleanup {
+    destroy .f
+} -result [list 0 1.3 1 \
+    [list [expr {$padx+3*$fixedWidth+10}] [expr {$pady+((20-$fixedHeight)/2)}] $fixedWidth $fixedHeight]]
+
+test textWind-3.7 {EmbWinConfigure procedure} -setup {
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f
+    frame .f.f -width 15 -height 20 -bg $color
+    pack .f.f
+    .t window create 1.3 -window .f.f
+} -cleanup {
+    destroy .f
+} -returnCodes error -result {can't embed .f.f in .t}
+test textWind-3.8 {EmbWinConfigure procedure} -setup {
+    destroy .t2
+} -body {
+    .t insert 1.0 "Some sample text"
+    toplevel .t2 -width 20 -height 10 -bg $color
+    .t window create 1.3
+    .t window configure 1.3 -window .t2
+} -cleanup {
+    destroy .t2
+} -returnCodes error -result {can't embed .t2 in .t}
+test textWind-3.9 {EmbWinConfigure procedure} -setup {
+    destroy .t2
+} -body {
+    .t insert 1.0 "Some sample text"
+    toplevel .t2 -width 20 -height 10 -bg $color
+    .t window create 1.3
+    catch {.t window configure 1.3 -window .t2}
+    .t window configure 1.3 -window
+} -cleanup {
+    destroy .t2
+} -result {-window {} {} {} {}}
+test textWind-3.10 {EmbWinConfigure procedure} -setup {
+    .t delete 1.0 end
+} -body {
+    .t insert 1.0 "Some sample text"
+    .t window create 1.3
+    .t window configure 1.3 -window .t
+} -returnCodes error -result {can't embed .t in .t}
+test textWind-3.11 {EmbWinConfigure procedure} -setup {
+    .t delete 1.0 end
+} -body {
+    # This test checks for various errors when the text claims
+    # a window away from itself.
+    .t insert 1.0 "Some sample text"
+    button .t.b -text "Hello!"
+    .t window create 1.4 -window .t.b
+    .t window create 1.6 -window .t.b
+    update
+    .t index .t.b
+} -result {1.6}
+
+
+.t delete 1.0 end
+frame .f -width 10 -height 20 -bg $color
+.t window create 1.0 -window .f
+test textWind-4.1 {AlignParseProc and AlignPrintProc procedures} -body {
+    .t window configure 1.0 -align baseline
+    .t window configure 1.0 -align
+} -result {-align {} {} center baseline}
+test textWind-4.2 {AlignParseProc and AlignPrintProc procedures} -body {
+    .t window configure 1.0 -align bottom
+    .t window configure 1.0 -align
+} -result {-align {} {} center bottom}
+test textWind-4.3 {AlignParseProc and AlignPrintProc procedures} -body {
+    .t window configure 1.0 -align center
+    .t window configure 1.0 -align
+} -result {-align {} {} center center}
+test textWind-4.4 {AlignParseProc and AlignPrintProc procedures} -body {
+    .t window configure 1.0 -align top
+    .t window configure 1.0 -align
+} -result {-align {} {} center top}
+test textWind-4.5 {AlignParseProc and AlignPrintProc procedures} -body {
+    .t window configure 1.0 -align top
+    .t window configure 1.0 -align gorp
+} -returnCodes error -result {bad align "gorp": must be baseline, bottom, center, or top}
+test textWind-4.6 {AlignParseProc and AlignPrintProc procedures} -body {
+    .t window configure 1.0 -align top
+    catch {.t window configure 1.0 -align gorp}
+    .t window configure 1.0 -align
+} -result {-align {} {} center top}
+
+test textWind-5.1 {EmbWinStructureProc procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 10 -height 20 -bg $color
+    .t window create 1.2 -window .f
+    update
+    destroy .f
+    .t index .f
+} -returnCodes error -result {bad text index ".f"}
+
+test textWind-5.2 {EmbWinStructureProc procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 10 -height 20 -bg $color
+    .t window create 1.2 -window .f
+    update
+    destroy .f
+    catch {.t index .f}
+    list [.t bbox 1.2] [.t bbox 1.3]
+} -result [list \
+    [list [expr {$padx+2*$fixedWidth}] [expr {$pady+($fixedHeight/2)}] 0 0] \
+    [list [expr {$padx+2*$fixedWidth}] $pady $fixedWidth $fixedHeight]]
+
+test textWind-5.3 {EmbWinStructureProc procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 10 -height 20 -bg $color
+    .t window create 1.2 -align bottom
+    .t window configure 1.2 -window .f
+    update
+    destroy .f
+    .t index .f
+} -returnCodes error -result {bad text index ".f"}
+
+test textWind-5.4 {EmbWinStructureProc procedure} -setup {
+    .t delete 1.0 end
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 10 -height 20 -bg $color
+    .t window create 1.2 -align bottom
+    .t window configure 1.2 -window .f
+    update
+    destroy .f
+    catch {.t index .f}
+    list [.t bbox 1.2] [.t bbox 1.3]
+} -result [list \
+    [list [expr {$padx+2*$fixedWidth}] [expr {$pady+$fixedHeight}] 0 0] \
+    [list [expr {$padx+2*$fixedWidth}] $pady $fixedWidth $fixedHeight]]
+
+test textWind-5.5 {EmbWinStructureProc procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    .t window create 1.2 -create {frame .f -width 10 -height 20 -bg $color}
+    update
+    .t window configure 1.2 -create {frame .f -width 20 -height 10 -bg $color}
+    destroy .f
+    update
+    list [catch {.t index .f} msg] $msg [.t bbox 1.2] [.t bbox 1.3]
+} -result [list 0 1.2 \
+    [list [expr {$padx+2*$fixedWidth}] [expr {$pady+(($fixedHeight-10)/2)}] 20 10] \
+    [list [expr {$padx+2*$fixedWidth+20}] $pady $fixedWidth $fixedHeight]]
+
+
+test textWind-6.1 {EmbWinRequestProc procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+    set result {}
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 10 -height 20 -bg $color
+    .t window create 1.2 -window .f
+    lappend result [.t bbox 1.2] [.t bbox 1.3]
+    .f configure -width 25 -height 30
+    lappend result [.t bbox 1.2] [.t bbox 1.3]
+} -cleanup {
+    destroy .f
+} -result [list \
+    [list [expr {$padx+2*$fixedWidth}] $pady 10 20] \
+    [list [expr {$padx+2*$fixedWidth+10}] [expr {$pady+((20-$fixedHeight)/2)}] $fixedWidth $fixedHeight] \
+    [list [expr {$padx+2*$fixedWidth}] $pady 25 30] \
+    [list [expr {$padx+2*$fixedWidth+25}] [expr {$pady+((30-$fixedHeight)/2)}] $fixedWidth $fixedHeight]]
+
+
+test textWind-7.1 {EmbWinLostSlaveProc procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 10 -height 20 -bg $color
+    .t window create 1.2 -window .f
+    update
+    place .f -in .t -x 100 -y 50
+    update
+    list [winfo geom .f] [.t bbox 1.2]
+} -cleanup {
+    destroy .f
+} -result [list \
+    10x20+[expr {$padx+100}]+[expr {$pady+50}] \
+    [list [expr {$padx+2*$fixedWidth}] [expr {$pady+($fixedHeight/2)}] 0 0]]
+
+test textWind-7.2 {EmbWinLostSlaveProc procedure} -setup {
+    .t delete 1.0 end
+    destroy .t.f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .t.f -width 10 -height 20 -bg $color
+    .t window create 1.2 -window .t.f
+    update
+    place .t.f -x 100 -y 50
+    update
+    list [winfo geom .t.f] [.t bbox 1.2]
+} -cleanup {
+    destroy .t.f
+} -result [list \
+    10x20+[expr {$padx+100}]+[expr {$pady+50}] \
+    [list [expr {$padx+2*$fixedWidth}] [expr {$pady+($fixedHeight/2)}] 0 0]]
+
+test textWind-8.1 {EmbWinDeleteProc procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 10 -height 20 -bg $color
+    .t window create 1.2 -window .f
+    bind .f <Destroy> {set x destroyed}
+    set x XXX
+    .t delete 1.2
+    list $x [.t bbox 1.2] [.t bbox 1.3] [winfo exists .f]
+} -result [list destroyed \
+    [list [expr {$padx+2*$fixedWidth}] $pady $fixedWidth $fixedHeight] \
+    [list [expr {$padx+3*$fixedWidth}] $pady $fixedWidth $fixedHeight] \
+    0]
+
+test textWind-8.2 {EmbWinDeleteProc procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 10 -height 20 -bg $color
+    .t window create 1.2 -window .f
+    bind .f <Destroy> {set x destroyed}
+    set x XXX
+    .t delete 1.2
+    .t index .f
+} -returnCodes error -result {bad text index ".f"}
+
+
+test textWind-9.1 {EmbWinCleanupProc procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text\nA second line."
+    frame .f -width 10 -height 20 -bg $color
+    .t window create 2.3 -window .f
+    .t delete 1.5 2.1
+    .t index .f
+} -cleanup {
+    destroy .f
+} -result {1.7}
+
+
+test textWind-10.1 {EmbWinLayoutProc procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    .t window create 1.5 -create {
+        frame .f -width 10 -height 20 -bg $color
+    }
+    update
+    list [winfo exists .f] [winfo width .f] [winfo height .f] [.t index .f]
+} -cleanup {
+    destroy .f
+} -result {1 10 20 1.5}
+
+test textWind-10.2 {EmbWinLayoutProc procedure, error in creating window} -setup {
+    .t delete 1.0 end
+    proc bgerror args {
+        global msg
+        set msg $args
+    }
+} -body {
+    .t insert 1.0 "Some sample text"
+    .t window create 1.5 -create {
+        error "couldn't create window"
+    }
+    set msg xyzzy
+    update
+    list $msg [.t bbox 1.5]
+} -cleanup {
+    rename bgerror {}
+} -result [list \
+    {{couldn't create window}} \
+    [list [expr {$padx+5*$fixedWidth}] [expr {$pady+($fixedHeight/2)}] 0 0]]
+
+test textWind-10.3 {EmbWinLayoutProc procedure, error in creating window} -setup {
+    .t delete 1.0 end
+    proc bgerror args {
+        global msg
+        set msg $args
+    }
+} -body {
+    .t insert 1.0 "Some sample text"
+    .t window create 1.5 -create {
+        concat gorp
+    }
+    set msg xyzzy
+    update
+    list $msg [.t bbox 1.5]
+} -cleanup {
+    rename bgerror {}
+} -result [list \
+    {{bad window path name "gorp"}} \
+    [list [expr {$padx+5*$fixedWidth}] [expr {$pady+($fixedHeight/2)}] 0 0]]
+
+test textWind-10.4 {EmbWinLayoutProc procedure, error in creating window} -setup {
+    .t delete 1.0 end
+    destroy .t.f
+    proc bgerror args {
+        global msg
+	lappend msg $args
+    }
+} -body {
+    .t insert 1.0 "Some sample text"
+    set msg {}
+    after idle {
+        .t window create 1.5 -create {
+            frame .t.f
+            frame .t.f.f -width 10 -height 20 -bg $color
+        }
+    }
+    set count 0
+    while {([llength $msg] < 2) && ($count < 100)} {
+        update
+        incr count
+        .t bbox 1.5
+        after 10
+    }
+    lappend msg [.t bbox 1.5] [winfo exists .t.f.f]
+} -cleanup {
+    destroy .t.f
+    rename bgerror {}
+} -result [list \
+    {{can't embed .t.f.f relative to .t}} {{window name "f" already exists in parent}} \
+    [list [expr {$padx+5*$fixedWidth}] [expr {$pady+($fixedHeight/2)}] 0 0] \
+    1]
+
+test textWind-10.5 {EmbWinLayoutProc procedure, error in creating window} -setup {
+    .t delete 1.0 end
+    destroy .t.f
+    proc bgerror args {
+        global msg
+	lappend msg $args
+    }
+} -body {
+    .t insert 1.0 "Some sample text"
+    .t window create 1.5 -create {
+        frame .t.f
+        frame .t.f.f -width 10 -height 20 -bg $color
+    }
+    set msg {}
+    update idletasks
+    lappend msg [winfo exists .t.f.f]
+} -cleanup {
+    destroy .t.f
+    rename bgerror {}
+} -result {{{can't embed .t.f.f relative to .t}} 1}
+
+test textWind-10.6 {EmbWinLayoutProc procedure, error in creating window} -setup {
+    .t delete 1.0 end
+    proc bgerror args {
+        global msg
+        if {[lsearch -exact $msg $args] == -1} {
+            lappend msg $args
+        }
+    }
+} -body {
+    .t insert 1.0 "Some sample text"
+    update
+    .t window create 1.5 -create {
+        concat .t
+    }
+    set msg {}
+    update
+    lappend msg [.t bbox 1.5]
+} -cleanup {
+    rename bgerror {}
+} -result [list \
+    {{can't embed .t relative to .t}} \
+    [list [expr {$padx+5*$fixedWidth}] [expr {$pady+($fixedHeight/2)}] 0 0]]
+
+test textWind-10.7 {EmbWinLayoutProc procedure, error in creating window} -setup {
+    .t delete 1.0 end
+    destroy .t2
+    proc bgerror args {
+        global msg
+	lappend msg $args
+    }
+} -body {
+    .t insert 1.0 "Some sample text"
+    .t window create 1.5 -create {
+        toplevel .t2 -width 100 -height 150
+        wm geom .t2 +0+0
+        concat .t2
+    }
+    set msg {}
+    update
+    lappend msg [.t bbox 1.5]
+} -cleanup {
+    rename bgerror {}
+} -result [list \
+    {{can't embed .t2 relative to .t}} {{window name "t2" already exists in parent}} \
+    [list [expr {$padx+5*$fixedWidth}] [expr {$pady+($fixedHeight/2)}] 0 0]]
+
+test textWind-10.8 {EmbWinLayoutProc procedure, error in creating window} -setup {
+    .t delete 1.0 end
+    destroy .t2
+    proc bgerror args {
+        global msg
+	lappend msg $args
+    }
+} -body {
+    .t insert 1.0 "Some sample text"
+    .t window create 1.5 -create {
+        toplevel .t2 -width 100 -height 150
+        wm geom .t2 +0+0
+        concat .t2
+    }
+    set msg {}
+    update
+    set i 0
+    while {[llength $msg] == 1 && [incr i] < 200} { update }
+    return $msg
+} -cleanup {
+    destroy .t2
+    rename bgerror {}
+} -result {{{can't embed .t2 relative to .t}} {{window name "t2" already exists in parent}}}
+
+test textWind-10.9 {EmbWinLayoutProc procedure, steal window from self} -setup {
+    .t delete 1.0 end
+    destroy .t.b
+} -body {
+    .t insert 1.0 ABCDEFGHIJKLMNOP
+    button .t.b -text "Hello!"
+    .t window create 1.5 -window .t.b
+    update
+    .t window create 1.3 -create {concat .t.b}
+    update
+    .t index .t.b
+} -cleanup {
+    destroy .t.b
+} -result {1.3}
+
+test textWind-10.10 {EmbWinLayoutProc procedure, doesn't fit on line} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t configure -wrap char
+    .t insert 1.0 "Some sample text"
+    frame .f -width 125 -height 20 -bg $color -bd 2 -relief raised
+    .t window create 1.12 -window .f
+    list [.t bbox .f] [.t bbox 1.13]
+} -cleanup {
+    destroy .f
+} -result [list \
+    [list [expr {$padx+12*$fixedWidth}] $pady [expr {$tWidth*$fixedWidth-12*$fixedWidth}] 20] \
+    [list $padx [expr {$pady+20}] $fixedWidth $fixedHeight]]
+
+test textWind-10.11 {EmbWinLayoutProc procedure, doesn't fit on line} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t configure -wrap char
+    .t insert 1.0 "Some sample text"
+    frame .f -width 126 -height 20 -bg $color -bd 2 -relief raised
+    .t window create 1.12 -window .f
+    update
+    list [.t bbox .f] [.t bbox 1.13]
+} -cleanup {
+    destroy .f
+} -result [list \
+    [list [expr {$padx+12*$fixedWidth}] $pady [expr {$tWidth*$fixedWidth-12*$fixedWidth}] 20] \
+    [list $padx [expr {$pady+20}] $fixedWidth $fixedHeight]]
+
+test textWind-10.12 {EmbWinLayoutProc procedure, doesn't fit on line} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t configure -wrap char
+    .t insert 1.0 "Some sample text"
+    frame .f -width 127 -height 20 -bg $color -bd 2 -relief raised
+    .t window create 1.12 -window .f
+    update
+    list [.t bbox .f] [.t bbox 1.13]
+} -cleanup {
+    destroy .f
+} -result [list \
+    [list $padx [expr {$pady+$fixedHeight}] 127 20] \
+    [list [expr {$padx+127}] [expr {$pady+$fixedHeight+((20-$fixedHeight)/2)}] $fixedWidth $fixedHeight]]
+
+test textWind-10.13 {EmbWinLayoutProc procedure, doesn't fit on line} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t configure -wrap none
+    .t insert 1.0 "Some sample text"
+    frame .f -width 130 -height 20 -bg $color -bd 2 -relief raised
+    .t window create 1.12 -window .f
+    update
+    list [.t bbox .f] [.t bbox 1.13]
+} -cleanup {
+    destroy .f
+} -result [list \
+    [list [expr {$padx+12*$fixedWidth}] $pady [expr {$tWidth*$fixedWidth-12*$fixedWidth}] 20] \
+    {}]
+
+test textWind-10.14 {EmbWinLayoutProc procedure, doesn't fit on line} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t configure -wrap none
+    .t insert 1.0 "Some sample text"
+    frame .f -width 130 -height 220 -bg $color -bd 2 -relief raised
+    .t window create 1.12 -window .f
+    update
+    list [.t bbox .f] [.t bbox 1.13]
+} -cleanup {
+    destroy .f
+} -result [list \
+    [list [expr {$padx+12*$fixedWidth}] $pady [expr {$tWidth*$fixedWidth-12*$fixedWidth}] [expr {$tHeight*$fixedHeight}]] \
+    {}]
+
+test textWind-10.15 {EmbWinLayoutProc procedure, doesn't fit on line} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t configure -wrap char
+    .t insert 1.0 "Some sample text"
+    frame .f -width 250 -height 220 -bg $color -bd 2 -relief raised
+    .t window create 1.12 -window .f
+    update
+    list [.t bbox .f] [.t bbox 1.13]
+} -cleanup {
+    destroy .f
+} -result [list \
+    [list $padx [expr {$pady+$fixedHeight}] [expr {$tWidth*$fixedWidth}] [expr {($tHeight-1)*$fixedHeight}]] \
+    {}]
+
+test textWind-11.1 {EmbWinDisplayProc procedure, geometry transforms} -setup {
+    .t delete 1.0 end
+    destroy .f
+    place forget .t
+    pack .t
+# Make sure the Text is mapped before we start
+    update
+} -body {
+    .t insert 1.0 "Some sample text"
+    pack forget .t
+    place .t -x 30 -y 50
+    frame .f -width 30 -height 20 -bg $color
+    .t window create 1.12 -window .f
+    update ; after 100 ; update
+    winfo geom .f
+} -cleanup {
+    destroy .f
+    place forget .t
+} -result [list 30x20+[expr {$padx+30+12*$fixedWidth}]+[expr {$pady+50}]]
+
+test textWind-11.2 {EmbWinDisplayProc procedure, geometry transforms} -setup {
+    .t delete 1.0 end
+    destroy .t.f
+    place forget .t
+    pack .t
+# Make sure the Text is mapped before we start
+    update
+} -body {
+    .t insert 1.0 "Some sample text"
+    pack forget .t
+    place .t -x 30 -y 50
+    frame .t.f -width 30 -height 20 -bg $color
+    .t window create 1.12 -window .t.f
+    update ; after 100 ; update
+    winfo geom .t.f
+} -cleanup {
+    destroy .t.f
+    place forget .t
+    pack .t
+} -result [list 30x20+[expr {$padx+12*$fixedWidth}]+$pady]
+
+test textWind-11.3 {EmbWinDisplayProc procedure, configuration optimization} -setup {
+    .t delete 1.0 end
+    destroy .f
+    place forget .t
+    pack .t
+# Make sure the Text is mapped before we start
+    update
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 30 -height 20 -bg $color
+    .t window create 1.12 -window .f
+    update
+    bind .f <Configure> {set x ".f configured"}
+    set x {no configures}
+    .t delete 1.0
+    .t insert 1.0 "X"
+    update
+    return $x
+} -cleanup {
+    destroy .f
+    place forget .t
+    pack .t
+} -result {no configures}
+
+test textWind-11.4 {EmbWinDisplayProc procedure, horizontal scrolling} -setup {
+    .t delete 1.0 end
+    destroy .f .f2
+} -body {
+    .t insert 1.0 "xyzzy\nFirst window here: "
+    .t configure -wrap none
+    frame .f -width 30 -height 20 -bg $color
+    .t window create end -window .f
+    .t insert end " and second here: "
+    frame .f2 -width 40 -height 10 -bg $color
+    .t window create end -window .f2
+    .t insert end " with junk after it."
+    .t xview moveto 0
+    .t xview scroll 5 units
+    update
+    list [winfo ismapped .f] [winfo geom .f] [.t bbox .f] [winfo ismapped .f2]
+} -cleanup {
+    destroy .f .f2
+} -result [list 1 \
+    30x20+[expr {$padx+14*$fixedWidth}]+[expr {$pady+$fixedHeight}] \
+    [list [expr {$padx+14*$fixedWidth}] [expr {$pady+$fixedHeight}] 30 20] \
+    0]
+
+test textWind-11.5 {EmbWinDisplayProc procedure, horizontal scrolling} -setup {
+    .t delete 1.0 end
+    destroy .f .f2
+} -body {
+    .t insert 1.0 "xyzzy\nFirst window here: "
+    .t configure -wrap none
+    frame .f -width 30 -height 20 -bg $color
+    .t window create end -window .f
+    .t insert end " and second here: "
+    frame .f2 -width 40 -height 10 -bg $color
+    .t window create end -window .f2
+    .t insert end " with junk after it."
+    update
+    .t xview moveto 0
+    .t xview scroll 25 units
+    update
+    list [winfo ismapped .f] [winfo ismapped .f2] [winfo geom .f2] [.t bbox .f2]
+} -cleanup {
+  destroy .f .f2
+  .t configure -wrap char
+} -result [list 0 1 \
+    40x10+[expr {$padx+37*$fixedWidth+30-25*$fixedWidth}]+[expr {$pady+$fixedHeight+((20-10)/2)}] \
+    [list [expr {$padx+37*$fixedWidth+30-25*$fixedWidth}] [expr {$pady+$fixedHeight+((20-10)/2)}] 40 10]]
+
+test textWind-12.1 {EmbWinUndisplayProc procedure, mapping/unmapping} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 30 -height 20 -bg $color
+    .t window create 1.2 -window .f
+    bind .f <Map> {lappend x mapped}
+    bind .f <Unmap> {lappend x unmapped}
+    set x created
+    update
+    lappend x modified
+    .t delete 1.0
+    update
+    lappend x replaced
+    .t window configure .f -window {}
+    .t delete 1.1
+    .t window create 1.4 -window .f
+    update
+    lappend x off-screen
+    .t configure -wrap none
+    .t insert 1.0 "Enough text to make the line run off-screen"
+    update
+    return $x
+} -cleanup {
+    destroy .f
+} -result {created mapped modified replaced unmapped mapped off-screen unmapped}
+
+
+test textWind-13.1 {EmbWinBboxProc procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 5 -height 5 -bg $color
+    .t window create 1.2 -window .f -align top -padx 2 -pady 1
+    update
+    list [winfo geom .f] [.t bbox .f]
+} -cleanup {
+    destroy .f
+} -result [list \
+    5x5+[expr {$padx+2*$fixedWidth+2}]+[expr {$pady+1}] \
+    [list [expr {$padx+2*$fixedWidth+2}] [expr {$pady+1}] 5 5]]
+
+test textWind-13.2 {EmbWinBboxProc procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 5 -height 5 -bg $color
+    .t window create 1.2 -window .f -align center -padx 2 -pady 1
+    update
+    list [winfo geom .f] [.t bbox .f]
+} -cleanup {
+    destroy .f
+} -result [list \
+    5x5+[expr {$padx+2*$fixedWidth+2}]+[expr {$pady+1+(($fixedHeight-7)/2)}] \
+    [list [expr {$padx+2*$fixedWidth+2}] [expr {$pady+1+(($fixedHeight-7)/2)}] 5 5]]
+
+test textWind-13.3 {EmbWinBboxProc procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 5 -height 5 -bg $color
+    .t window create 1.2 -window .f -align baseline -padx 2 -pady 1
+    update
+    list [winfo geom .f] [.t bbox .f]
+} -cleanup {
+    destroy .f
+} -result [list \
+    5x5+[expr {$padx+2*$fixedWidth+2}]+[expr {$pady+1+($fixedAscent-6)}] \
+    [list [expr {$padx+2*$fixedWidth+2}] [expr {$pady+1+($fixedAscent-6)}] 5 5]]
+
+test textWind-13.4 {EmbWinBboxProc procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 5 -height 5 -bg $color
+    .t window create 1.2 -window .f -align bottom -padx 2 -pady 1
+    update
+    list [winfo geom .f] [.t bbox .f]
+} -cleanup {
+    destroy .f
+} -result [list \
+    5x5+[expr {$padx+2*$fixedWidth+2}]+[expr {$pady+1+($fixedHeight-7)}] \
+    [list [expr {$padx+2*$fixedWidth+2}] [expr {$pady+1+($fixedHeight-7)}] 5 5]]
+
+test textWind-13.5 {EmbWinBboxProc procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 5 -height 5 -bg $color
+    .t window create 1.2 -window .f -align top -padx 2 -pady 1 -stretch 1
+    update
+    list [winfo geom .f] [.t bbox .f]
+} -cleanup {
+    destroy .f
+} -result [list \
+    5x[expr {$fixedHeight-2}]+[expr {$padx+2*$fixedWidth+2}]+[expr {$pady+1}] \
+    [list [expr {$padx+2*$fixedWidth+2}] [expr {$pady+1}] 5 [expr {$fixedHeight-2}]]]
+
+test textWind-13.6 {EmbWinBboxProc procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 5 -height 5 -bg $color
+    .t window create 1.2 -window .f -align center -padx 2 -pady 1 -stretch 1
+    update
+    list [winfo geom .f] [.t bbox .f]
+} -cleanup {
+    destroy .f
+} -result [list \
+    5x[expr {$fixedHeight-2}]+[expr {$padx+2*$fixedWidth+2}]+[expr {$pady+1}] \
+    [list [expr {$padx+2*$fixedWidth+2}] [expr {$pady+1}] 5 [expr {$fixedHeight-2}]]]
+
+test textWind-13.7 {EmbWinBboxProc procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 5 -height 5 -bg $color
+    .t window create 1.2 -window .f -align baseline -padx 2 -pady 1 -stretch 1
+    update
+    list [winfo geom .f] [.t bbox .f]
+} -cleanup {
+    destroy .f
+} -result [list \
+    5x[expr {$fixedAscent-1}]+[expr {$padx+2*$fixedWidth+2}]+[expr {$pady+1}] \
+    [list [expr {$padx+2*$fixedWidth+2}] [expr {$pady+1}] 5 [expr {$fixedAscent-1}]]]
+
+test textWind-13.8 {EmbWinBboxProc procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 5 -height 5 -bg $color
+    .t window create 1.2 -window .f -align bottom -padx 2 -pady 1 -stretch 1
+    update
+    list [winfo geom .f] [.t bbox .f]
+} -cleanup {
+    destroy .f
+} -result [list \
+    5x[expr {$fixedHeight-2}]+[expr {$padx+2*$fixedWidth+2}]+[expr {$pady+1}] \
+    [list [expr {$padx+2*$fixedWidth+2}] [expr {$pady+1}] 5 [expr {$fixedHeight-2}]]]
+
+test textWind-13.9 {EmbWinBboxProc procedure, spacing options} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t configure -spacing1 5 -spacing3 2
+    .t delete 1.0 end
+    .t insert 1.0 "Some sample text"
+    frame .f -width 5 -height 5 -bg $color
+    .t window create 1.2 -window .f -align center -padx 2 -pady 1
+    update
+    list [winfo geom .f] [.t bbox .f]
+} -cleanup {
+    .t configure -spacing1 0 -spacing3 0
+    destroy .f
+} -result [list \
+    5x5+[expr {$padx+2*$fixedWidth+2}]+[expr {$pady+5+(($fixedHeight-5)/2)}] \
+    [list [expr {$padx+2*$fixedWidth+2}] [expr {$pady+5+(($fixedHeight-5)/2)}] 5 5]]
+
+
+test textWind-14.1 {EmbWinDelayedUnmap procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 30 -height 20 -bg $color
+    .t window create 1.2 -window .f
+    update
+    bind .f <Unmap> {lappend x unmapped}
+    set x modified
+    .t insert 1.0 x
+    lappend x removed
+    .t window configure .f -window {}
+    lappend x updated
+    update
+    return $x
+} -cleanup {
+    destroy .f
+} -result {modified removed unmapped updated}
+
+test textWind-14.2 {EmbWinDelayedUnmap procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text"
+    frame .f -width 30 -height 20 -bg $color
+    .t window create 1.2 -window .f
+    update
+    bind .f <Unmap> {lappend x unmapped}
+    set x modified
+    .t insert 1.0 x
+    lappend x deleted
+    .t delete .f
+    lappend x updated
+    update
+    return $x
+} -cleanup {
+    destroy .f
+} -result {modified deleted updated}
+
+test textWind-14.3 {EmbWinDelayedUnmap procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t insert 1.0 "Some sample text\nAnother line\n3\n4\n5\n6\n7\n8\n9"
+    frame .f -width 30 -height 20 -bg $color
+    .t window create 1.2 -window .f
+    update
+    .t yview 2.0
+    set result [winfo ismapped .f]
+    update ; after 10
+    list $result [winfo ismapped .f]
+} -cleanup {
+    destroy .f
+} -result {1 0}
+
+test textWind-14.4 {EmbWinDelayedUnmap procedure} -setup {
+    .t delete 1.0 end
+    destroy .t.f
+} -body {
+    .t insert 1.0 "Some sample text\nAnother line\n3\n4\n5\n6\n7\n8\n9"
+    frame .t.f -width 30 -height 20 -bg $color
+    .t window create 1.2 -window .t.f
+    update
+    .t yview 2.0
+    set result [winfo ismapped .t.f]
+    update
+    list $result [winfo ismapped .t.f]
+} -cleanup {
+    destroy .t.f
+} -result {1 0}
+
+test textWind-15.1 {TkTextWindowIndex procedure} -setup {
+    .t delete 1.0 end
+} -body {
+    .t index .foo
+} -returnCodes error -result {bad text index ".foo"}
+
+test textWind-15.2 {TkTextWindowIndex procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t configure -spacing1 0 -spacing2 0 -spacing3 0 \
+        -wrap none
+    .t insert 1.0 "Some sample text"
+    frame .f -width 30 -height 20 -bg $color
+    .t window create 1.6 -window .f
+    .t tag add a 1.1
+    .t tag add a 1.3
+    list [.t index .f] [.t bbox 1.7]
+} -cleanup {
+    destroy .f
+} -result [list 1.6 \
+    [list [expr {$padx+6*$fixedWidth+30}] [expr {$pady+((20-$fixedHeight)/2)}] $fixedWidth $fixedHeight]]
+
+
+test textWind-16.1 {EmbWinTextStructureProc procedure} -setup {
+    .t delete 1.0 end
+    destroy .f
+} -body {
+    .t configure -wrap none
+    .t insert 1.0 "Some sample text"
+    frame .f -width 30 -height 20 -bg $color
+    .t window create 1.6 -window .f
+    update
+    pack forget .t
+    update
+    winfo ismapped .f
+} -cleanup {
+    pack .t
+} -result 0
+
+test textWind-16.2 {EmbWinTextStructureProc procedure} -setup {
+    .t delete 1.0 end
+    destroy .f .f2
+} -body {
+    .t configure -spacing1 0 -spacing2 0 -spacing3 0 \
+        -wrap none
+    .t insert 1.0 "Some sample text"
+    frame .f -width 30 -height 20 -bg $color
+    .t window create 1.6 -window .f
+    update
+    set result {}
+    lappend result [winfo geom .f] [.t bbox .f]
+    frame .f2 -width 150 -height 30 -bd 2 -relief raised
+    pack .f2 -before .t
+    update
+    lappend result [winfo geom .f] [.t bbox .f]
+} -cleanup {
+    destroy .f .f2
+} -result [list \
+    30x20+[expr {$padx+6*$fixedWidth}]+$pady \
+    [list [expr {$padx+6*$fixedWidth}] $pady 30 20] \
+    30x20+[expr {$padx+6*$fixedWidth}]+[expr {$pady+30}] \
+    [list [expr {$padx+6*$fixedWidth}] $pady 30 20]]
+
+test textWind-16.3 {EmbWinTextStructureProc procedure} -setup {
+    .t delete 1.0 end
+} -body {
+    .t configure -wrap none
+    .t insert 1.0 "Some sample text"
+    .t window create 1.6
+    update
+    pack forget .t
+    update
+} -cleanup {
+    pack .t
+} -result {}
+
+test textWind-16.4 {EmbWinTextStructureProc procedure} -setup {
+    .t delete 1.0 end
+} -body {
+    .t configure -spacing1 0 -spacing2 0 -spacing3 0 \
+        -wrap none
+    .t insert 1.0 "Some sample text"
+    frame .t.f -width 30 -height 20 -bg $color
+    .t window create 1.6 -window .t.f
+    update
+    pack forget .t
+    update
+    list [winfo ismapped .t.f] [.t bbox .t.f]
+} -cleanup {
+    pack .t
+} -result [list 1 [list [expr {$padx+6*$fixedWidth}] $pady 30 20]]
+
+
+test textWind-17.1 {peer widgets and embedded windows} -setup {
+    destroy .t .tt .f
+} -body {
+    pack [text .t]
+    .t insert end "Line 1"
+    frame .f -width 20 -height 10 -bg blue
+    .t window create 1.3 -window .f
+    toplevel .tt
+    pack [.t peer create .tt.t]
+    update ; update
+    destroy .t .tt
+    winfo exists .f
+} -result {0}
+
+test textWind-17.2 {peer widgets and embedded windows} -setup {
+    destroy .t .f .tt
+} -body {
+    pack [text .t]
+    .t insert end "Line 1\nLine 2"
+    frame .f -width 20 -height 10 -bg blue
+    .t window create 1.4 -window .f
+    toplevel .tt
+    pack [.t peer create .tt.t]
+    update ; update
+    destroy .t
+    .tt.t insert 1.0 "foo"
+    update
+    destroy .tt
+} -result {}
+
+test textWind-17.3 {peer widget and -create} -setup {
+    destroy .t .tt
+} -body {
+    pack [text .t]
+    .t delete 1.0 end
+    .t insert 1.0 "Some sample text"
+    toplevel .tt
+    pack [.t peer create .tt.t]
+    update ; update
+    .t window create 1.2 -create {frame %W.f -width 10 -height 20 -bg blue}
+    update
+    destroy .t .tt
+} -result {}
+
+test textWind-17.4 {peer widget deleted one window shouldn't delete others} -setup {
+    destroy .t .tt
+    set res {}
+} -body {
+    pack [text .t]
+    .t delete 1.0 end
+    .t insert 1.0 "Some sample text"
+    toplevel .tt
+    pack [.t peer create .tt.t]
+    .t window create 1.2 -create {frame %W.f -width 10 -height 20 -bg blue}
+    update ; update
+    destroy .tt
+    lappend res [.t get 1.2]
+    update
+    lappend res [.t get 1.2]
+} -cleanup {
+    destroy .t
+} -result {{} {}}
+
+test textWind-17.5 {peer widget window configuration} -setup {
+    destroy .t .tt
+} -body {
+    pack [text .t]
+    .t delete 1.0 end
+    .t insert 1.0 "Some sample text"
+    toplevel .tt
+    pack [.t peer create .tt.t]
+    .t window create 1.2 -create {frame %W.f -width 10 -height 20 -bg blue}
+    update ; update
+    list [.t window cget 1.2 -window] [.tt.t window cget 1.2 -window]
+} -cleanup {
+    destroy .tt .t
+} -result {.t.f .tt.t.f}
+
+test textWind-17.6 {peer widget window configuration} -setup {
+    destroy .t .tt
+} -body {
+    pack [text .t]
+    .t delete 1.0 end
+    .t insert 1.0 "Some sample text"
+    toplevel .tt
+    pack [.t peer create .tt.t]
+    .t window create 1.2 -create {frame %W.f -width 10 -height 20 -bg blue}
+    update ; update
+    list [.t window configure 1.2 -window] \
+        [.tt.t window configure 1.2 -window]
+} -cleanup {
+    destroy .tt .t
+}  -result {{-window {} {} {} .t.f} {-window {} {} {} .tt.t.f}}
+
+test textWind-17.7 {peer widget window configuration} -setup {
+    destroy .t .tt
+} -body {
+    pack [text .t]
+    .t delete 1.0 end
+    .t insert 1.0 "Some sample text"
+    toplevel .tt
+    pack [.t peer create .tt.t]
+    .t window create 1.2 -window [frame .t.f -width 10 -height 20 -bg blue]
+    update ; update
+    list [.t window cget 1.2 -window] [.tt.t window cget 1.2 -window]
+} -cleanup {
+    destroy .tt .t
+}  -result {.t.f {}}
+
+test textWind-17.8 {peer widget window configuration} -setup {
+    destroy .t .tt
+} -body {
+    pack [text .t]
+    .t delete 1.0 end
+    .t insert 1.0 "Some sample text"
+    toplevel .tt
+    pack [.t peer create .tt.t]
+    .t window create 1.2 -window [frame .t.f -width 10 -height 20 -bg blue]
+    update ; update
+    list [.t window configure 1.2 -window] \
+        [.tt.t window configure 1.2 -window]
+} -cleanup {
+    destroy .tt .t
+}  -result {{-window {} {} {} .t.f} {-window {} {} {} {}}}
+
+test textWind-17.9 {peer widget window configuration} -setup {
+    destroy .t .tt
+} -body {
+    pack [text .t]
+    .t delete 1.0 end
+    .t insert 1.0 "Some sample text"
+    toplevel .tt
+    pack [.t peer create .tt.t]
+    .t window create 1.2 -window [frame .t.f -width 10 -height 20 -bg blue]
+    update ; update
+    .tt.t window configure 1.2 -window [frame .tt.t.f -width 10 -height 20 -bg red]
+    list [.t window configure 1.2 -window] [.tt.t window configure 1.2 -window]
+} -cleanup {
+    destroy .tt .t
+}  -result {{-window {} {} {} .t.f} {-window {} {} {} .tt.t.f}}
+
+test textWind-17.10 {peer widget window configuration} -setup {
+    destroy .t .tt
+} -body {
+    pack [text .t]
+    .t delete 1.0 end
+    .t insert 1.0 "Some sample text"
+    toplevel .tt
+    pack [.t peer create .tt.t]
+    .t window create 1.2 -window [frame .t.f -width 10 -height 20 -bg blue]
+    .tt.t window create 1.2 -window [frame .tt.t.f -width 25 -height 20 -bg blue]
+    update ; update
+    .t window configure 1.2 -create \
+      {destroy %W.f ; frame %W.f -width 50 -height 7 -bg red}
+    .tt.t window configure 1.2 -window {}
+    .t window configure 1.2 -window {}
+    set res [list [.t window configure 1.2 -window] \
+        [.tt.t window configure 1.2 -window]]
+    update
+    lappend res [.t window configure 1.2 -window] \
+        [.tt.t window configure 1.2 -window]
+} -cleanup {
+    destroy .tt .t
+}  -result {{-window {} {} {} {}} {-window {} {} {} {}} {-window {} {} {} .t.f} {-window {} {} {} .tt.t.f}}
+
+test textWind-18.1 {embedded window deletion triggered by a script bound to <Map>} -setup {
+    catch {destroy .t .f .f2}
+} -body {
+    pack [text .t]
+    for {set i 1} {$i < 100} {incr i} {.t insert end "Line $i\n"}
+    .t window create end -window [frame .f -background red -width 80 -height 80]
+    .t window create end -window [frame .f2 -background blue -width 80 -height 80]
+    bind .f <Map> {.t delete .f}
+    update
+    # this shall not crash (bug 1501749)
+    after 100 {.t yview end}
+    tkwait visibility .f2
+    update
+} -cleanup {
+    destroy .t .f .f2
+} -result {}
+
+option clear
+
+# cleanup
+cleanupTests
+return

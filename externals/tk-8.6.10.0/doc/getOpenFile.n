@@ -1,0 +1,207 @@
+'\"
+'\" Copyright (c) 1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH tk_getOpenFile n 4.2 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+tk_getOpenFile, tk_getSaveFile \- pop up a dialog box for the user to select a file to open or save.
+.SH SYNOPSIS
+.nf
+\fBtk_getOpenFile \fR?\fIoption value ...\fR?
+\fBtk_getSaveFile \fR?\fIoption value ...\fR?
+.fi
+.BE
+.SH DESCRIPTION
+.PP
+The procedures \fBtk_getOpenFile\fR and \fBtk_getSaveFile\fR pop up a
+dialog box for the user to select a file to open or save. The
+\fBtk_getOpenFile\fR command is usually associated with the \fBOpen\fR
+command in the \fBFile\fR menu. Its purpose is for the user to select an
+existing file \fIonly\fR. If the user enters a non-existent file, the
+dialog box gives the user an error prompt and requires the user to give
+an alternative selection. If an application allows the user to create
+new files, it should do so by providing a separate \fBNew\fR menu command.
+.PP
+The \fBtk_getSaveFile\fR command is usually associated with the \fBSave
+as\fR command in the \fBFile\fR menu. If the user enters a file that
+already exists, the dialog box prompts the user for confirmation
+whether the existing file should be overwritten or not.
+.PP
+The following \fIoption\-value\fR pairs are possible as command line
+arguments to these two commands:
+.TP
+\fB\-command\fR \fIstring\fR
+Specifies the prefix of a Tcl command to invoke when the user closes the
+dialog after having selected an item. This callback is not called if the
+user cancelled the dialog. The actual command consists of \fIstring\fR
+followed by a space and the value selected by the user in the dialog. This
+is only available on Mac OS X.
+.TP
+\fB\-confirmoverwrite\fR \fIboolean\fR
+Configures how the Save dialog reacts when the selected file already
+exists, and saving would overwrite it.  A true value requests a
+confirmation dialog be presented to the user.  A false value requests
+that the overwrite take place without confirmation.  Default value is true.
+.TP
+\fB\-defaultextension\fR \fIextension\fR
+.
+Specifies a string that will be appended to the filename if the user
+enters a filename without an extension. The default value is the empty
+string, which means no extension will be appended to the filename in
+any case. This option is ignored on Mac OS X, which
+does not require extensions to filenames,
+and the UNIX implementation guesses reasonable values for this from
+the \fB\-filetypes\fR option when this is not supplied.
+.TP
+\fB\-filetypes\fR \fIfilePatternList\fR
+.
+If a \fBFile types\fR listbox exists in the file dialog on the particular
+platform, this option gives the \fIfiletype\fRs in this listbox. When
+the user choose a filetype in the listbox, only the files of that type
+are listed. If this option is unspecified, or if it is set to the
+empty list, or if the \fBFile types\fR listbox is not supported by the
+particular platform then all files are listed regardless of their
+types. See the section \fBSPECIFYING FILE PATTERNS\fR below for a
+discussion on the contents of \fIfilePatternList\fR.
+.TP
+\fB\-initialdir\fR \fIdirectory\fR
+.
+Specifies that the files in \fIdirectory\fR should be displayed
+when the dialog pops up. If this parameter is not specified,
+the initial directory defaults to the current working directory
+on non-Windows systems and on Windows systems prior to Vista.
+On Vista and later systems, the initial directory defaults to the last
+user-selected directory for the application. If the
+parameter specifies a relative path, the return value will convert the
+relative path to an absolute path.
+.TP
+\fB\-initialfile\fR \fIfilename\fR
+.
+Specifies a filename to be displayed in the dialog when it pops up.
+.TP
+\fB\-message\fR \fIstring\fR
+.
+Specifies a message to include in the client area of the dialog.
+This is only available on Mac OS X.
+.TP
+\fB\-multiple\fR \fIboolean\fR
+.
+Allows the user to choose multiple files from the Open dialog.
+.TP
+\fB\-parent\fR \fIwindow\fR
+.
+Makes \fIwindow\fR the logical parent of the file dialog. The file
+dialog is displayed on top of its parent window. On Mac OS X, this
+turns the file dialog into a sheet attached to the parent window.
+.TP
+\fB\-title\fR \fItitleString\fR
+.
+Specifies a string to display as the title of the dialog box. If this
+option is not specified, then a default title is displayed.
+.TP
+\fB\-typevariable\fR \fIvariableName\fR
+.
+The global variable \fIvariableName\fR is used to preselect which filter is
+used from \fIfilterList\fR when the dialog box is opened and is
+updated when the dialog box is closed, to the last selected
+filter. The variable is read once at the beginning to select the
+appropriate filter. If the variable does not exist, or its value does
+not match any filter typename, or is empty (\fB{}\fR), the dialog box
+will revert to the default behavior of selecting the first filter in
+the list. If the dialog is canceled, the variable is not modified.
+.PP
+If the user selects a file, both \fBtk_getOpenFile\fR and
+\fBtk_getSaveFile\fR return the full pathname of this file. If the
+user cancels the operation, both commands return the empty string.
+.SH "SPECIFYING FILE PATTERNS"
+.PP
+The \fIfilePatternList\fR value given by the \fB\-filetypes\fR option
+is a list of file patterns. Each file pattern is a list of the
+form
+.CS
+\fItypeName\fR {\fIextension\fR ?\fIextension ...\fR?} ?{\fImacType\fR ?\fImacType ...\fR?}?
+.CE
+\fItypeName\fR is the name of the file type described by this
+file pattern and is the text string that appears in the \fBFile types\fR
+listbox. \fIextension\fR is a file extension for this file pattern.
+\fImacType\fR is a four-character Macintosh file type. The list of
+\fImacType\fRs is optional and may be omitted for applications that do
+not need to execute on the Macintosh platform.
+.PP
+Several file patterns may have the same \fItypeName,\fR in which case
+they refer to the same file type and share the same entry in the
+listbox. When the user selects an entry in the listbox, all the files
+that match at least one of the file patterns corresponding
+to that entry are listed. Usually, each file pattern corresponds to a
+distinct type of file. The use of more than one file pattern for one
+type of file is only necessary on the Macintosh platform.
+.PP
+On the Macintosh platform, a file matches a file pattern if its
+name matches at least one of the \fIextension\fR(s) AND it
+belongs to at least one of the \fImacType\fR(s) of the
+file pattern. For example, the \fBC Source Files\fR file pattern in the
+sample code matches with files that have a \fB\.c\fR extension AND
+belong to the \fImacType\fR \fBTEXT\fR. To use the OR rule instead,
+you can use two file patterns, one with the \fIextensions\fR only and
+the other with the \fImacType\fR only. The \fBGIF Files\fR file type
+in the sample code matches files that \fIeither\fR have a \fB\.gif\fR
+extension OR belong to the \fImacType\fR \fBGIFF\fR.
+.PP
+On the Unix and Windows platforms, a file matches a file pattern
+if its name matches at least one of the \fIextension\fR(s) of
+the file pattern. The \fImacType\fRs are ignored.
+.SH "SPECIFYING EXTENSIONS"
+.PP
+On the Unix and Macintosh platforms, extensions are matched using
+glob-style pattern matching. On the Windows platform, extensions are
+matched by the underlying operating system. The types of possible
+extensions are:
+.IP (1)
+the special extension
+.QW *
+matches any file;
+.IP (2)
+the special extension
+.MT
+matches any files that do not have an extension (i.e., the filename
+contains no full stop character);
+.IP (3)
+any character string that does not contain any wild card characters (*
+and ?).
+.PP
+Due to the different pattern matching rules on the various platforms,
+to ensure portability, wild card characters are not allowed in the
+extensions, except as in the special extension
+.QW * .
+Extensions without a full stop character (e.g.
+.QW ~ )
+are allowed but may not work on all platforms.
+.SH EXAMPLE
+.PP
+.CS
+set types {
+    {{Text Files}       {.txt}        }
+    {{TCL Scripts}      {.tcl}        }
+    {{C Source Files}   {.c}      TEXT}
+    {{GIF Files}        {.gif}        }
+    {{GIF Files}        {}        GIFF}
+    {{All Files}        *             }
+}
+set filename [\fBtk_getOpenFile\fR \-filetypes $types]
+
+if {$filename ne ""} {
+    # Open the file ...
+}
+.CE
+.SH "SEE ALSO"
+tk_chooseDirectory
+.SH KEYWORDS
+file selection dialog
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

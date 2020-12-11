@@ -1,0 +1,283 @@
+'\"
+'\" Copyright (c) 1994 The Australian National University
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+'\" Author: Paul Mackerras (paulus@cs.anu.edu.au),
+'\"	    Department of Computer Science,
+'\"	    Australian National University.
+'\"
+.TH Tk_FindPhoto 3 8.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_FindPhoto, Tk_PhotoPutBlock, Tk_PhotoPutZoomedBlock, Tk_PhotoGetImage, Tk_PhotoBlank, Tk_PhotoExpand, Tk_PhotoGetSize, Tk_PhotoSetSize \- manipulate the image data stored in a photo image.
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Tk_PhotoHandle
+\fBTk_FindPhoto\fR(\fIinterp, imageName\fR)
+.sp
+int
+\fBTk_PhotoPutBlock\fR(\fIinterp, handle, blockPtr, x, y, width, height,\
+compRule\fR)
+.sp
+int
+\fBTk_PhotoPutZoomedBlock\fR(\fIinterp, handle, blockPtr, x, y, width, height,\
+zoomX, zoomY, subsampleX, subsampleY, compRule\fR)
+.sp
+int
+\fBTk_PhotoGetImage\fR(\fIhandle, blockPtr\fR)
+.sp
+void
+\fBTk_PhotoBlank\fR(\fIhandle\fR)
+.sp
+int
+\fBTk_PhotoExpand\fR(\fIinterp, handle, width, height\fR)
+.sp
+void
+\fBTk_PhotoGetSize\fR(\fIhandle, widthPtr, heightPtr\fR)
+.sp
+int
+\fBTk_PhotoSetSize\fR(\fIinterp. handle, width, height\fR)
+.SH ARGUMENTS
+.AS Tk_PhotoImageBlock window_path
+.AP Tcl_Interp *interp in
+Interpreter in which image was created and in which error reporting is
+to be done.
+.AP "const char" *imageName in
+Name of the photo image.
+.AP Tk_PhotoHandle handle in
+Opaque handle identifying the photo image to be affected.
+.AP Tk_PhotoImageBlock *blockPtr in
+Specifies the address and storage layout of image data.
+.AP int x in
+Specifies the X coordinate where the top-left corner of the block is
+to be placed within the image.
+.AP int y in
+Specifies the Y coordinate where the top-left corner of the block is
+to be placed within the image.
+.AP int width in
+Specifies the width of the image area to be affected (for
+\fBTk_PhotoPutBlock\fR) or the desired image width (for
+\fBTk_PhotoExpand\fR and \fBTk_PhotoSetSize\fR).
+.AP int compRule in
+Specifies the compositing rule used when combining transparent pixels
+in a block of data with a photo image.  Must be one of
+\fBTK_PHOTO_COMPOSITE_OVERLAY\fR (which puts the block of data over the top
+of the existing photo image, with the previous contents showing
+through in the transparent bits) or \fBTK_PHOTO_COMPOSITE_SET\fR (which
+discards the existing photo image contents in the rectangle covered by
+the data block.)
+.AP int height in
+Specifies the height of the image area to be affected (for
+\fBTk_PhotoPutBlock\fR) or the desired image height (for
+\fBTk_PhotoExpand\fR and \fBTk_PhotoSetSize\fR).
+.AP int *widthPtr out
+Pointer to location in which to store the image width.
+.AP int *heightPtr out
+Pointer to location in which to store the image height.
+.AP int subsampleX in
+Specifies the subsampling factor in the X direction for input
+image data.
+.AP int subsampleY in
+Specifies the subsampling factor in the Y direction for input
+image data.
+.AP int zoomX in
+Specifies the zoom factor to be applied in the X direction to pixels
+being written to the photo image.
+.AP int zoomY in
+Specifies the zoom factor to be applied in the Y direction to pixels
+being written to the photo image.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_FindPhoto\fR returns an opaque handle that is used to identify a
+particular photo image to the other procedures.  The parameter is the
+name of the image, that is, the name specified to the \fBimage create
+photo\fR command, or assigned by that command if no name was specified.
+If \fIimageName\fR does not exist or is not a photo image,
+\fBTk_FindPhoto\fR returns NULL.
+.PP
+\fBTk_PhotoPutBlock\fR is used to supply blocks of image data to be
+displayed.  The call affects an area of the image of size
+\fIwidth\fR x \fIheight\fR pixels, with its top-left corner at
+coordinates (\fIx\fR,\fIy\fR).  All of \fIwidth\fR, \fIheight\fR,
+\fIx\fR, and \fIy\fR must be non-negative.
+If part of this area lies outside the
+current bounds of the image, the image will be expanded to include the
+area, unless the user has specified an explicit image size with the
+\fB\-width\fR and/or \fB\-height\fR widget configuration options
+(see photo(n)); in that
+case the area is silently clipped to the image boundaries.
+.PP
+The \fIblock\fR parameter is a pointer to a
+\fBTk_PhotoImageBlock\fR structure, defined as follows:
+.CS
+typedef struct {
+    unsigned char *\fIpixelPtr\fR;
+    int \fIwidth\fR;
+    int \fIheight\fR;
+    int \fIpitch\fR;
+    int \fIpixelSize\fR;
+    int \fIoffset\fR[4];
+} \fBTk_PhotoImageBlock\fR;
+.CE
+The \fIpixelPtr\fR field points to the first pixel, that is, the
+top-left pixel in the block.
+The \fIwidth\fR and \fIheight\fR fields specify the dimensions of the
+block of pixels.  The \fIpixelSize\fR field specifies the address
+difference between two horizontally adjacent pixels.  It should be 4 for
+RGB and 2 for grayscale image data.  Other values are possible, if the
+offsets in the \fIoffset\fR array are adjusted accordingly (e.g. for
+red, green and blue data stored in different planes).  Using such a
+layout is strongly discouraged, though. Due to a bug, it might not work
+correctly if an alpha channel is provided. (see the \fBBUGS\fR section
+below). The \fIpitch\fR field specifies the
+address difference between two vertically adjacent pixels.  The
+\fIoffset\fR array contains the offsets from the address of a pixel
+to the addresses of the bytes containing the red, green, blue and alpha
+(transparency) components.  If the offsets for red, green and blue are
+equal, the image is interpreted as grayscale. If they differ, RGB data
+is assumed. Normally the offsets will be 0, 1, 2, 3 for RGB data
+and 0, 0, 0, 1 for grayscale.  It is possible to provide image data
+without an alpha channel by setting the offset for alpha to a negative
+value and adjusting the \fIpixelSize\fR field accordingly. This use is
+discouraged, though (see the \fBBUGS\fR section below).
+.PP
+The \fIcompRule\fR parameter to \fBTk_PhotoPutBlock\fR specifies a
+compositing rule that says what to do with transparent pixels.  The
+value \fBTK_PHOTO_COMPOSITE_OVERLAY\fR says that the previous contents of
+the photo image should show through, and the value
+\fBTK_PHOTO_COMPOSITE_SET\fR says that the previous contents of the photo
+image should be completely ignored, and the values from the block be
+copied directly across.  The behavior in Tk8.3 and earlier was
+equivalent to having \fBTK_PHOTO_COMPOSITE_OVERLAY\fR as a compositing rule.
+.PP
+The value given for the \fIwidth\fR and \fIheight\fR parameters to
+\fBTk_PhotoPutBlock\fR do not have to correspond to the values specified
+in \fIblock\fR.  If they are smaller, \fBTk_PhotoPutBlock\fR extracts a
+sub-block from the image data supplied.  If they are larger, the data
+given are replicated (in a tiled fashion) to fill the specified area.
+These rules operate independently in the horizontal and vertical
+directions.
+.PP
+\fBTk_PhotoPutBlock\fR normally returns \fBTCL_OK\fR, though if it cannot
+allocate sufficient memory to hold the resulting image, \fBTCL_ERROR\fR is
+returned instead and, if the \fIinterp\fR argument is non-NULL, an
+error message is placed in the interpreter's result.
+.PP
+\fBTk_PhotoPutZoomedBlock\fR works like \fBTk_PhotoPutBlock\fR except that
+the image can be reduced or enlarged for display.  The
+\fIsubsampleX\fR and \fIsubsampleY\fR parameters allow the size of the
+image to be reduced by subsampling.
+\fBTk_PhotoPutZoomedBlock\fR will use only pixels from the input image
+whose X coordinates are multiples of \fIsubsampleX\fR, and whose Y
+coordinates are multiples of \fIsubsampleY\fR.  For example, an image
+of 512x512 pixels can be reduced to 256x256 by setting
+\fIsubsampleX\fR and \fIsubsampleY\fR to 2.
+.PP
+The \fIzoomX\fR and \fIzoomY\fR parameters allow the image to be
+enlarged by pixel replication.  Each pixel of the (possibly subsampled)
+input image will be written to a block \fIzoomX\fR pixels wide and
+\fIzoomY\fR pixels high of the displayed image.  Subsampling and
+zooming can be used together for special effects.
+.PP
+\fBTk_PhotoGetImage\fR can be used to retrieve image data from a photo
+image.  \fBTk_PhotoGetImage\fR fills
+in the structure pointed to by the \fIblockPtr\fR parameter with values
+that describe the address and layout of the image data that the
+photo image has stored internally.  The values are valid
+until the image is destroyed or its size is changed.
+.PP
+It is possible to modify an image by writing directly to the data
+the \fIpixelPtr\fR field points to. The size of the image cannot be
+changed this way, though.
+Also, changes made by writing directly to \fIpixelPtr\fR will not be
+immediately visible, but only after a call to
+\fBTk_ImageChanged\fR or after an event that causes the interested
+widgets to redraw themselves.
+For these reasons usually it is preferable to make changes to
+a copy of the image data and write it back with
+\fBTk_PhotoPutBlock\fR or \fBTk_PhotoPutZoomedBlock\fR.
+.PP
+\fBTk_PhotoGetImage\fR returns 1 for compatibility with the
+corresponding procedure in the old photo widget.
+.PP
+\fBTk_PhotoBlank\fR blanks the entire area of the
+photo image.  Blank areas of a photo image are transparent.
+.PP
+\fBTk_PhotoExpand\fR requests that the widget's image be expanded to be
+at least \fIwidth\fR x \fIheight\fR pixels in size.  The width and/or
+height are unchanged if the user has specified an explicit image width
+or height with the \fB\-width\fR and/or \fB\-height\fR configuration
+options, respectively.
+If the image data
+are being supplied in many small blocks, it is more efficient to use
+\fBTk_PhotoExpand\fR or \fBTk_PhotoSetSize\fR at the beginning rather than
+allowing the image to expand in many small increments as image blocks
+are supplied.
+.PP
+\fBTk_PhotoExpand\fR normally returns \fBTCL_OK\fR, though if it cannot
+allocate sufficient memory to hold the resulting image, \fBTCL_ERROR\fR is
+returned instead and, if the \fIinterp\fR argument is non-NULL, an
+error message is placed in the interpreter's result.
+.PP
+\fBTk_PhotoSetSize\fR specifies the size of the image, as if the user
+had specified the given \fIwidth\fR and \fIheight\fR values to the
+\fB\-width\fR and \fB\-height\fR configuration options.  A value of
+zero for \fIwidth\fR or \fIheight\fR does not change the image's width
+or height, but allows the width or height to be changed by subsequent
+calls to \fBTk_PhotoPutBlock\fR, \fBTk_PhotoPutZoomedBlock\fR or
+\fBTk_PhotoExpand\fR.
+.PP
+\fBTk_PhotoSetSize\fR normally returns \fBTCL_OK\fR, though if it cannot
+allocate sufficient memory to hold the resulting image, \fBTCL_ERROR\fR is
+returned instead and, if the \fIinterp\fR argument is non-NULL, an
+error message is placed in the interpreter's result.
+.PP
+\fBTk_PhotoGetSize\fR returns the dimensions of the image in
+*\fIwidthPtr\fR and *\fIheightPtr\fR.
+.SH PORTABILITY
+.PP
+In Tk 8.3 and earlier, \fBTk_PhotoPutBlock\fR and
+\fBTk_PhotoPutZoomedBlock\fR had different signatures. If you want to
+compile code that uses the old interface against 8.4 without updating
+your code, compile it with the flag
+-DUSE_COMPOSITELESS_PHOTO_PUT_BLOCK.  Code linked using Stubs against
+older versions of Tk will continue to work.
+.PP
+In Tk 8.4, \fBTk_PhotoPutBlock\fR, \fBTk_PhotoPutZoomedBlock\fR,
+\fBTk_PhotoExpand\fR and \fBTk_PhotoSetSize\fR did not take an
+\fIinterp\fR argument or return any result code.  If insufficient
+memory was available for an image, Tk would panic.  This behaviour is
+still supported if you compile your extension with the additional flag
+-DUSE_PANIC_ON_PHOTO_ALLOC_FAILURE.  Code linked using Stubs against
+older versions of Tk will continue to work.
+.SH BUGS
+The \fBTk_PhotoImageBlock\fR structure used to provide image data to
+\fBTk_PhotoPutBlock\fR promises great flexibility in the layout of the
+data (e.g. separate planes for the red, green, blue and alpha
+channels).  Unfortunately, the implementation fails to hold this
+promise.  The problem is that the \fIpixelSize\fR field is
+(incorrectly) used to determine whether the image has an alpha channel.
+Currently, if the offset for the alpha channel is greater or equal than
+\fIpixelSize\fR, \fBtk_PhotoPutblock\fR assumes no alpha data is
+present and makes the image fully opaque.  This means that for layouts
+where the channels are separate (or any other exotic layout where
+\fIpixelSize\fR has to be smaller than the alpha offset), the alpha
+channel will not be read correctly.  In order to be on the safe side
+if this issue will be corrected in a future release, it is strongly
+recommended you always provide alpha data - even if the image has no
+transparency - and only use the "standard" layout with a
+\fIpixelSize\fR of 2 for grayscale and 4 for RGB data with
+\fIoffset\fRs of 0, 0, 0, 1 or 0, 1, 2, 3 respectively.
+.SH CREDITS
+.PP
+The code for the photo image type was developed by Paul Mackerras,
+based on his earlier photo widget code.
+.SH KEYWORDS
+photo, image

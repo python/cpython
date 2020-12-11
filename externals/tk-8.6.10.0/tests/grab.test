@@ -1,0 +1,218 @@
+# Tests for the grab command.
+#
+# This file contains a collection of tests for one or more of the Tk
+# built-in commands.  Sourcing this file runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1998-2000 by Ajuba Solutions.
+# All rights reserved.
+
+package require tcltest 2.2
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+namespace import -force tcltest::test
+
+# The macOS test module includes the pressbutton command to simulate a
+# mouse button press event by injecting events into the NSApplication
+# event queue.  On other platforms there is currently no way to test
+# the actual grab effect, per se, in an automated test.  Therefore,
+# this test suite only covers the interface to the grab command (ie,
+# error messages, etc.) on platforms other than macOS.
+
+testConstraint pressbutton [llength [info commands pressbutton]]
+
+test grab-1.1 {Tk_GrabObjCmd} -body {
+    grab
+} -returnCodes error -result {wrong # args: should be "grab ?-global? window" or "grab option ?arg ...?"}
+test grab-1.2 {Tk_GrabObjCmd} -body {
+    rename grab grabTest1.2
+    grabTest1.2
+} -cleanup {
+    rename grabTest1.2 grab
+} -returnCodes error -result {wrong # args: should be "grabTest1.2 ?-global? window" or "grabTest1.2 option ?arg ...?"}
+
+test grab-1.3 {Tk_GrabObjCmd, "grab ?-global? window"} -body {
+    grab .foo bar baz
+} -returnCodes error -result {wrong # args: should be "grab ?-global? window"}
+test grab-1.4 {Tk_GrabObjCmd, "grab ?-global? window"} -body {
+    destroy .foo
+    grab .foo
+} -returnCodes error -result {bad window path name ".foo"}
+test grab-1.5 {Tk_GrabObjCmd, "grab ?-global? window"} -body {
+    grab -foo bar
+} -returnCodes error -result {bad option "-foo": must be -global}
+test grab-1.6 {Tk_GrabObjCmd, "grab ?-global? window"} -body {
+    destroy .foo
+    grab -global .foo
+} -returnCodes error -result {bad window path name ".foo"}
+
+test grab-1.7 {Tk_GrabObjCmd} -body {
+    grab foo
+} -returnCodes error -result {bad option "foo": must be current, release, set, or status}
+
+test grab-1.8 {Tk_GrabObjCmd, "grab current ?window?"} -body {
+    grab current foo bar
+} -returnCodes error -result {wrong # args: should be "grab current ?window?"}
+test grab-1.9 {Tk_GrabObjCmd, "grab current ?window?"} -body {
+    destroy .foo
+    grab current .foo
+} -returnCodes error -result {bad window path name ".foo"}
+
+test grab-1.10 {Tk_GrabObjCmd, "grab release window"} -body {
+    grab release
+} -returnCodes error -result {wrong # args: should be "grab release window"}
+test grab-1.11 {Tk_GrabObjCmd, "grab release window"} -body {
+    destroy .foo
+    grab release .foo
+} -returnCodes ok -result {}
+test grab-1.12 {Tk_GrabObjCmd, "grab release window"} -body {
+    grab release foo
+} -returnCodes ok -result {}
+
+test grab-1.13 {Tk_GrabObjCmd, "grab set ?-global? window"} -body {
+    grab set
+} -returnCodes error -result {wrong # args: should be "grab set ?-global? window"}
+test grab-1.14 {Tk_GrabObjCmd, "grab set ?-global? window"} -body {
+    grab set foo bar baz
+} -returnCodes error -result {wrong # args: should be "grab set ?-global? window"}
+test grab-1.15 {Tk_GrabObjCmd, "grab set ?-global? window"} -body {
+    destroy .foo
+    grab set .foo
+} -returnCodes error -result {bad window path name ".foo"}
+test grab-1.16 {Tk_GrabObjCmd, "grab set ?-global? window"} -body {
+    grab set -foo bar
+} -returnCodes error -result {bad option "-foo": must be -global}
+test grab-1.17 {Tk_GrabObjCmd, "grab set ?-global? window"} -body {
+    destroy .foo
+    grab set -global .foo
+} -returnCodes error -result {bad window path name ".foo"}
+
+test grab-1.18 {Tk_GrabObjCmd, "grab status window"} -body {
+    grab status
+} -returnCodes error -result {wrong # args: should be "grab status window"}
+test grab-1.19 {Tk_GrabObjCmd, "grab status window"} -body {
+    grab status foo bar
+} -returnCodes error -result {wrong # args: should be "grab status window"}
+test grab-1.20 {Tk_GrabObjCmd, "grab status window"} -body {
+    destroy .foo
+    grab status .foo
+} -returnCodes error -result {bad window path name ".foo"}
+
+
+test grab-2.1 {Tk_GrabObjCmd, grab status gives correct status} -body {
+    set curr [grab current .]
+    if { [string length $curr] > 0 } {
+	grab release $curr
+    }
+    grab status .
+} -cleanup {
+    grab release .
+} -result {none}
+test grab-2.2 {Tk_GrabObjCmd, grab status gives correct status} -body {
+    set curr [grab current .]
+    if { [string length $curr] > 0 } {
+	grab release $curr
+    }
+    grab .
+    grab status .
+} -cleanup {
+    grab release .
+} -result {local}
+test grab-2.3 {Tk_GrabObjCmd, grab status gives correct status} -body {
+    set curr [grab current .]
+    if { [string length $curr] > 0 } {
+	grab release $curr
+    }
+    grab -global .
+    grab status .
+} -cleanup {
+    grab release .
+} -result {global}
+
+
+test grab-3.1 {Tk_GrabObjCmd, grab current gives correct information} -body {
+    set curr [grab current .]
+    if { [string length $curr] > 0 } {
+	grab release $curr
+    }
+    return $curr
+} -result {}
+test grab-3.2 {Tk_GrabObjCmd, grab current gives correct information} -body {
+    set curr [grab current .]
+    if { [string length $curr] > 0 } {
+	grab release $curr
+    }
+    grab .
+    grab current
+} -cleanup {
+    grab release .
+} -result {.}
+
+
+test grab-4.1 {Tk_GrabObjCmd, grab release releases grab} -body {
+    set curr [grab current .]
+    if { [string length $curr] > 0 } {
+	grab release $curr
+    }
+    grab .
+    set result [grab status .]
+    grab release .
+    lappend result [grab status .]
+    grab -global .
+    lappend result [grab status .]
+    grab release .
+    lappend result [grab status .]
+} -result {local none global none}
+
+
+test grab-5.1 {Tk_GrabObjCmd, grab set} -body {
+    set curr [grab current .]
+    if { [string length $curr] > 0 } {
+	grab release $curr
+    }
+    grab set .
+    list [grab current .] [grab status .]
+} -cleanup {
+    grab release .
+} -result {. local}
+test grab-5.2 {Tk_GrabObjCmd, grab set} -body {
+    set curr [grab current .]
+    if { [string length $curr] > 0 } {
+	grab release $curr
+    }
+    grab set -global .
+    list [grab current .] [grab status .]
+} -cleanup {
+    grab release .
+} -result {. global}
+
+test grab-6.1 {local grab on child window} -constraints {
+    pressbutton
+} -body {
+    wm geometry . 100x200+200+100
+    set result {}
+    frame .f -background red -padx 10 -pady 10 -height 100 -width 80
+    bind . <Button-1> {lappend result "outside"}
+    bind .f <Button-1> {lappend result "inside"}
+    pack .f
+    update idletasks
+    pressbutton 250 150
+    update
+    lappend result ":"
+    pressbutton 250 250
+    update
+    lappend result ":"
+    grab set .f
+    pressbutton 250 150
+    update
+    lappend result ":"
+    pressbutton 250 250
+    update
+    return $result
+} -cleanup {
+    grab release .f
+} -result {inside outside : outside : inside outside :}
+
+cleanupTests
+return
+

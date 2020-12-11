@@ -1,0 +1,114 @@
+'\"
+'\" $Id: tixMwm.n,v 1.2 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH tixMwm n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+.SH NAME
+tixMwm - Communicate with the Motif(tm) window manager.
+'\"
+'\"
+'\"
+.SH SYNOPSIS
+\fBtixMwm\fI option pathName \fR?\fIargs\fR?
+.SH COMMAND OPTIONS
+.PP
+.TP
+\fBtixMwm decoration \fIpathName\fR ?\fIoption\fR? ?\fIvalue ...\fR? 
+'\"
+When no options are given, this command returns the values of all the
+decorations options for the toplevel window with the \fIpathName\fR.
+
+When only one option is given without specifying the value, the
+current value of that option is returned.
+
+When more than one "option value" pairs are passed to this command,
+the specified values will be assigned to the corresponding options. As
+a result, the appearance of the Motif decorations around the toplevel
+window will be changed.
+
+Possible options are: \fB-border\fR, \fB-menu\fR, \fB-maximize\fR,
+\fB-minimize\fR, \fB-resizeh\fR and \fB-title\fR. The value must be a
+Boolean value. The values returned by this command are undefined when
+the window is not managed by mwm.
+'\"
+'\"
+.TP
+\fBtixMwm ismwmrunning \fIpathName\fR
+This returns true if mwm is running on the screen where the specified
+window is located, false otherwise.
+'\"
+'\"
+.TP
+\fBtixMwm protocol \fIpathName\fR
+'\"
+When no additional options are given, this command returns all
+protocols associated with this toplevel window.
+'\"
+.TP
+\fBtixMwm protocol \fIpathName \fBactivate\fI protocol_name\fR
+'\"
+Activate the mwm protocol message in mwm's menu.
+'\"
+.TP
+\fBtixMwm protocol \fIpathName \fBadd\fI protocol_name menu_message\fR
+'\"
+Add a new mwm protocol message for this toplevel window. The
+message is identified by the string name specified in
+\fIprotocol_name\fR. A menu item will be added into mwm's menu as
+specified by \fImenu_message\fR. Once a new mwm protocol message is
+added to a toplevel, it can be catched by the TK \fBwm protocol\fR
+command. Here is an example:
+.CS
+tixMwm protocol . add MY_PRINT_HELLO \\
+    {"Print Hello"  _H Ctrl<Key>H}
+wm protocol . MY_PRINT_HELLO {puts Hello}
+.CE
+'\"
+.TP
+\fBtixMwm protocol \fIpathName \fBdeactivate\fI protocol_name\fR
+'\"
+Deactivate the mwm protocol message in mwm's menu.
+'\"
+.TP
+\fBtixMwm protocol \fIpathName \fBdelete\fI protocol_name\fR
+'\"
+Delete the mwm protocol message from mwm's menu. Please note that the
+window manager protocol handler associated with this protocol (by the
+\fBwm protocol\fR command) is not deleted automatically. You have to
+delete the protocol handle explicitly.  E.g.:
+.CS
+tixMwm protocol . delete MY_PRINT_HELLO
+wm protocol . MY_PRINT_HELLO {}
+.CE
+'\"
+.PP
+.SH BUGS
+'\"
+On some versions of Mwm, the \fB-border\fR will not disappear unless
+\fB-resizeh\fR is turned off. Also, the -title will not disappear
+unless all of \fB-title\fR, \fB-menu\fR, \fB-maximize\fR and
+\fB-minimize\fR are turned off.
+'\"
+'\"
+'\"
+.PP
+.SH KEYWORDS
+Tix(n)
+
+

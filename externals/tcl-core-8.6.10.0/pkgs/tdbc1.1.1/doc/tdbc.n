@@ -1,0 +1,86 @@
+'\"
+'\" tdbc.n --
+'\"
+'\" Copyright (c) 2008 by Kevin B. Kenny.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution of
+'\" this file, and for a DISCLAIMER OF ALL WARRANTIES.
+.TH "tdbc" n 8.6 Tcl "Tcl Database Connectivity"
+'\" .so man.macros
+'\" IGNORE
+.if t .wh -1.3i ^B
+.nr ^l \n(.l
+.ad b
+'\"	# BS - start boxed text
+'\"	# ^y = starting y location
+'\"	# ^b = 1
+.de BS
+.br
+.mk ^y
+.nr ^b 1u
+.if n .nf
+.if n .ti 0
+.if n \l'\\n(.lu\(ul'
+.if n .fi
+..
+'\"	# BE - end boxed text (draw box now)
+.de BE
+.nf
+.ti 0
+.mk ^t
+.ie n \l'\\n(^lu\(ul'
+.el \{\
+'\"	Draw four-sided box normally, but don't draw top of
+'\"	box if the box started on an earlier page.
+.ie !\\n(^b-1 \{\
+\h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.el \}\
+\h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.\}
+.fi
+.br
+.nr ^b 0
+..
+'\" END IGNORE
+.BS
+.SH "NAME"
+tdbc \- Tcl Database Connectivity
+.SH "SYNOPSIS"
+.nf
+package require \fBtdbc 1.0\fR
+package require \fBtdbc::\fIdriver version\fR
+
+\fBtdbc::\fIdriver\fB::connection create \fIdb\fR ?\fI\-option value\fR...?
+.fi
+.BE
+.SH "DESCRIPTION"
+.PP
+Tcl Database Connectivity (TDBC) is a common interface for Tcl
+programs to access SQL databases. It is implemented by a series of
+database \fIdrivers\fR: separate modules, each of which adapts Tcl to
+the interface of one particular database system.  All of the drivers
+implement a common series of commands for manipulating the database.
+These commands are all named dynamically, since they all represent
+objects in the database system. They include \fBconnections,\fR
+which represent connections to a database; \fBstatements,\fR which
+represent SQL statements, and \fBresult sets,\fR which represent
+the sets of rows that result from executing statements. All of these
+have manual pages of their own, listed under \fBSEE ALSO\fR.
+.PP
+In addition, TDBC itself has a few service procedures that are chiefly
+of interest to driver writers. \fBSEE ALSO\fR also enumerates them.
+.SH "SEE ALSO"
+Tdbc_Init(3),
+tdbc::connection(n), tdbc::mapSqlState(n), 
+tdbc::resultset(n), tdbc::statement(n), tdbc::tokenize(n),
+tdbc::mysql(n), tdbc::odbc(n), tdbc::postgres(n), tdbc::sqlite3(n)
+.SH "KEYWORDS"
+TDBC, SQL, database, connectivity, connection, resultset, statement
+.SH "COPYRIGHT"
+Copyright (c) 2008 by Kevin B. Kenny.
+'\" Local Variables:
+'\" mode: nroff
+'\" End:
+'\"

@@ -1,0 +1,127 @@
+'\"
+'\" Copyright (c) 1993-1998  Lucent Technologies, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH configbody n 3.0 itcl "[incr\ Tcl]"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+itcl::configbody \- change the "config" code for a public variable
+.SH SYNOPSIS
+\fBitcl::configbody \fIclassName\fB::\fIvarName body\fR
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBconfigbody\fR command is used outside of an \fB[incr\ Tcl]\fR
+class definition to define or redefine the configuration code
+associated with a public variable.  Public variables act like
+configuration options for an object.  They can be modified
+outside the class scope using the built-in \fBconfigure\fR method.
+Each variable can have a bit of "config" code associate with it
+that is automatically executed when the variable is configured.
+The \fBconfigbody\fR command can be used to define or redefine
+this body of code.
+.PP
+Like the \fBbody\fR command, this facility allows a class definition
+to have separate "interface" and "implementation" parts.
+The "interface" part is a \fBclass\fR command with declarations
+for methods, procs, instance variables and common variables.
+The "implementation" part is a series of \fBbody\fR and
+\fBconfigbody\fR commands.  If the "implementation" part
+is kept in a separate file, it can be sourced again and
+again as bugs are fixed, to support interactive development.
+When using the "tcl" mode in the \fBemacs\fR editor, the
+"interface" and "implementation" parts can be kept in the
+same file; as bugs are fixed, individual bodies can be
+highlighted and sent to the test application.
+.PP
+The name "\fIclassName\fB::\fIvarName\fR"
+identifies the public variable being updated.
+If the \fIbody\fR string starts with "\fB@\fR", it is treated
+as the symbolic name for a C procedure.  Otherwise, it is
+treated as a Tcl command script.
+.PP
+Symbolic names for C procedures are established by registering
+procedures via \fBItcl_RegisterC()\fR.  This is usually done
+in the \fBTcl_AppInit()\fR procedure, which is automatically called
+when the interpreter starts up.  In the following example,
+the procedure \fCMy_FooCmd()\fR is registered with the
+symbolic name "foo".  This procedure can be referenced in
+the \fBconfigbody\fR command as "\fC@foo\fR".
+.CS
+int
+Tcl_AppInit(interp)
+    Tcl_Interp *interp;     /* Interpreter for application. */
+{
+    if (Itcl_Init(interp) == TCL_ERROR) {
+        return TCL_ERROR;
+    }
+
+    if (Itcl_RegisterC(interp, "foo", My_FooCmd) != TCL_OK) {
+        return TCL_ERROR;
+    }
+}
+.CE
+
+.SH EXAMPLE
+In the following example, a "File" class is defined to represent
+open files.  Whenever the "-name" option is configured, the
+existing file is closed, and a new file is opened.  Note that
+the "config" code for a public variable is optional.  The "-access"
+option, for example, does not have it.
+.CS
+itcl::class File {
+    private variable fid ""
+
+    public variable name ""
+    public variable access "r"
+
+    constructor {args} {
+        eval configure $args
+    }
+    destructor {
+        if {$fid != ""} {
+            close $fid
+        }
+    }
+
+    method get {}
+    method put {line}
+    method eof {}
+}
+
+itcl::body File::get {} {
+    return [gets $fid]
+}
+itcl::body File::put {line} {
+    puts $fid $line
+}
+itcl::body File::eof {} {
+    return [::eof $fid]
+}
+
+itcl::configbody File::name {
+    if {$fid != ""} {
+        close $fid
+    }
+    set fid [open $name $access]
+}
+
+#
+# See the File class in action:
+#
+File x
+
+x configure -name /etc/passwd
+while {![x eof]} {
+    puts "=> [x get]"
+}
+itcl::delete object x
+.CE
+
+.SH KEYWORDS
+class, object, variable, configure

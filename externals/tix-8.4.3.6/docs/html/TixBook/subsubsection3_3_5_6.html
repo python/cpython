@@ -1,0 +1,36 @@
+<HEAD>
+<TITLE> Accessing the Value of a TixSelect Widget<A NAME=153>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html551 HREF=subsubsection3_3_5_7.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html549 HREF=subsection3_3_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html543 HREF=subsubsection3_3_5_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html553 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html552 HREF=subsubsection3_3_5_7.html> Specifying Complex Selection </A>
+<B>Up:</B> <A NAME=tex2html550 HREF=subsection3_3_5.html> The TixSelect Widget</A>
+<B> Previous:</B> <A NAME=tex2html544 HREF=subsubsection3_3_5_5.html> Specifying Selection Rules</A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00035600000000000000> Accessing the Value of a TixSelect Widget<A NAME=153>&nbsp;</A></A></H3>
+<P>
+The <em>value</em> of a TixSelect widget is a list of the names of the
+  button subwidgets that are currently selected. For example, in
+  program 1-11, if the user has selected the apple
+  button, then the value of the TixSelect widget will be <tt>apple</tt>. If the user has selected both the apple and the orange
+  buttons, then the value will be the list <tt>&quot;apple orange&quot;</tt>.
+<P>
+The TixSelect widget supports same set of options as the TixControl widget
+  for you to access its value: the <tt>-value</tt> option stores the current
+  value, which can be queried and modified using the cget and configure
+  methods. You can also use the <tt>-variable</tt> option to specify a global
+  variable to store the value of the TixSelect widget. The <tt>-command</tt>
+  option specifies a TCL command to be called whenever the user changes the
+  selection inside a TixSelect widget. This command is called with one
+  argument: the new value of the TixSelect widget. There is also the <tt>-disablecallback</tt> option which you can use to control whether the command
+  specified by the <tt>-command</tt> option should be called when the value of
+  the TixSelect changes.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

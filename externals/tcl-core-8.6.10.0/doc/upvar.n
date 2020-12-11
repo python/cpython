@@ -1,0 +1,122 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH upvar n "" Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+upvar \- Create link to variable in a different stack frame
+.SH SYNOPSIS
+\fBupvar \fR?\fIlevel\fR? \fIotherVar myVar \fR?\fIotherVar myVar \fR...?
+.BE
+
+.SH DESCRIPTION
+.PP
+This command arranges for one or more local variables in the current
+procedure to refer to variables in an enclosing procedure call or
+to global variables.
+\fILevel\fR may have any of the forms permitted for the \fBuplevel\fR
+command, and may be omitted (it defaults to \fB1\fR).
+For each \fIotherVar\fR argument, \fBupvar\fR makes the variable
+by that name in the procedure frame given by \fIlevel\fR (or at
+global level, if \fIlevel\fR is \fB#0\fR) accessible
+in the current procedure by the name given in the corresponding
+\fImyVar\fR argument.
+The variable named by \fIotherVar\fR need not exist at the time of the
+call;  it will be created the first time \fImyVar\fR is referenced, just like
+an ordinary variable.  There must not exist a variable by the
+name \fImyVar\fR at the time \fBupvar\fR is invoked.
+\fIMyVar\fR is always treated as the name of a variable, not an
+array element.  An error is returned if the name looks like an array element,
+such as \fBa(b)\fR.
+\fIOtherVar\fR may refer to a scalar variable, an array,
+or an array element.
+\fBUpvar\fR returns an empty string.
+.PP
+The \fBupvar\fR command simplifies the implementation of call-by-name
+procedure calling and also makes it easier to build new control constructs
+as Tcl procedures.
+For example, consider the following procedure:
+.PP
+.CS
+proc \fIadd2\fR name {
+    \fBupvar\fR $name x
+    set x [expr {$x + 2}]
+}
+.CE
+.PP
+If \fIadd2\fR is invoked with an argument giving the name of a variable,
+it adds two to the value of that variable.
+Although \fIadd2\fR could have been implemented using \fBuplevel\fR
+instead of \fBupvar\fR, \fBupvar\fR makes it simpler for \fIadd2\fR
+to access the variable in the caller's procedure frame.
+.PP
+\fBnamespace eval\fR is another way (besides procedure calls)
+that the Tcl naming context can change.
+It adds a call frame to the stack to represent the namespace context.
+This means each \fBnamespace eval\fR command
+counts as another call level for \fBuplevel\fR and \fBupvar\fR commands.
+For example, \fBinfo level\fR \fB1\fR will return a list
+describing a command that is either
+the outermost procedure call or the outermost \fBnamespace eval\fR command.
+Also, \fBuplevel #0\fR evaluates a script
+at top-level in the outermost namespace (the global namespace).
+.PP
+If an upvar variable is unset (e.g. \fBx\fR in \fBadd2\fR above), the
+\fBunset\fR operation affects the variable it is linked to, not the
+upvar variable.  There is no way to unset an upvar variable except
+by exiting the procedure in which it is defined.  However, it is
+possible to retarget an upvar variable by executing another \fBupvar\fR
+command.
+.SH "TRACES AND UPVAR"
+.PP
+Upvar interacts with traces in a straightforward but possibly
+unexpected manner.  If a variable trace is defined on \fIotherVar\fR, that
+trace will be triggered by actions involving \fImyVar\fR.  However,
+the trace procedure will be passed the name of \fImyVar\fR, rather
+than the name of \fIotherVar\fR.  Thus, the output of the following code
+will be
+.QW "\fIlocalVar\fR"
+rather than
+.QW "\fIoriginalVar\fR" :
+.PP
+.CS
+proc \fItraceproc\fR { name index op } {
+    puts $name
+}
+proc \fIsetByUpvar\fR { name value } {
+    \fBupvar\fR $name localVar
+    set localVar $value
+}
+set originalVar 1
+trace variable originalVar w \fItraceproc\fR
+\fIsetByUpvar\fR originalVar 2
+.CE
+.PP
+If \fIotherVar\fR refers to an element of an array, then variable
+traces set for the entire array will not be invoked when \fImyVar\fR
+is accessed (but traces on the particular element will still be
+invoked).  In particular, if the array is \fBenv\fR, then changes
+made to \fImyVar\fR will not be passed to subprocesses correctly.
+.SH EXAMPLE
+A \fBdecr\fR command that works like \fBincr\fR except it subtracts
+the value from the variable instead of adding it:
+.PP
+.CS
+proc decr {varName {decrement 1}} {
+    \fBupvar\fR 1 $varName var
+    incr var [expr {-$decrement}]
+}
+.CE
+.SH "SEE ALSO"
+global(n), namespace(n), uplevel(n), variable(n)
+.SH KEYWORDS
+context, frame, global, level, namespace, procedure, upvar, variable
+.\" Local Variables:
+.\" mode: nroff
+.\" End:

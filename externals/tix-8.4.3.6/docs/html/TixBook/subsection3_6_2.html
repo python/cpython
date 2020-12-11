@@ -1,0 +1,72 @@
+<HEAD>
+<TITLE> Creating Collapsible Tree Structures with TixTree<A NAME=42>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html957 HREF=section3_7.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html955 HREF=section3_6.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html951 HREF=subsubsection3_6_1_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html959 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html958 HREF=section3_7.html> Selecting Files and </A>
+<B>Up:</B> <A NAME=tex2html956 HREF=section3_6.html> Hierarchical Listbox</A>
+<B> Previous:</B> <A NAME=tex2html952 HREF=subsubsection3_6_1_4.html> Handling the Selection </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H2><A NAME=SECTION00062000000000000000> Creating Collapsible Tree Structures with TixTree<A NAME=42>&nbsp;</A></A></H2>
+<P>
+The TixTree widget is based on the TixScrolledHList widget; you can
+  use it to create a collapsible hierarchical structure so that the
+  user can conveniently navigate through a large number of list
+  entries. As shown in figure 4-7, the TixTree puts
+  the little ``<tt>+</tt>'' and ``<tt>-</tt>'' icons next to the branches of
+  an HList entry that has descendants. These two icons are knows as
+  the open and close icons, respectively. When the user presses the
+  open icon next to an entry, its immediate children of an entry will
+  be displayed. Conversely, when the user presses the close icon, the
+  entry's children will become hidden.
+<P>
+   Program 4-6 shows how to create a collapsible tree. We
+  first create a TixTree widget. Then we add the entries in your
+  hierarchical structure into its <tt>hlist</tt> subwidget using the add
+  method of this subwidget. When we are finished with adding the entries,
+  we just call the <tt>autosetmode</tt> method of the TixTree widget, which
+  will automatically adds the open and close icons next to the entries who
+  have children.
+<P>
+<P><blockquote> <P><tt> set folder [tix getimage folder]<BR>
+tixTree .tree -command Command -options {<BR>
+    hlist.separator  /<BR>
+    hlist.itemType   imagetext<BR>
+    hlist.drawBranch true<BR>
+    hlist.indent     18<BR>
+}<BR>
+pack .tree -expand yes -fill both<BR>
+set hlist [.tree subwidget hlist]<BR>
+<BR>
+foreach directory {/ /usr /usr/bin /usr/local /etc /etc/rc.d} {<BR>
+    $hlist add $directory -image $folder -text $directory<BR>
+}<BR>
+.tree autosetmode<BR>
+<BR>
+proc Command {entry} {<BR>
+    puts &quot;you have selected $entry&quot;<BR>
+}</tt>
+<P></blockquote>
+<P><CENTER>(Figure 4-6) Creating a Collapsible Hierarchy<A NAME=46>&nbsp;</A>
+  </CENTER>
+<P>
+<blockquote> <P>
+<P><CENTER><IMG SRC="../gif/tix/hlist/hlist_ex3.gif">
+  </CENTER>
+</blockquote>
+<P>
+   Note that in program 4-6 we use the <tt>-command</tt> option of the TixTree
+  widget, not the <tt>-command</tt> option of its <tt>hlist</tt> subwidget. This
+  is because the TixTree actually used the <tt>-command</tt> option of its
+  <tt>hlist</tt> subwidget to process some low-level events. In general, if
+  both a mega-widget and its subwidget have the options of the same name,
+  you would always use the option that belongs to the mega-widget.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

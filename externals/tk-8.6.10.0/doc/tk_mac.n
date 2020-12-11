@@ -1,0 +1,306 @@
+'\"
+'\" Copyright (c) 2011 Kevin Walzer.
+'\" Copyright (c) 2011 Donal K. Fellows.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH tk::mac n 8.6 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+tk::mac \- Access Mac-Specific Functionality on OS X from Tk
+.SH SYNOPSIS
+.nf
+\fB::tk::mac::DoScriptFile\fR
+\fB::tk::mac::DoScriptText\fR
+\fB::tk::mac::ShowPreferences\fR
+\fB::tk::mac::OpenApplication\fR
+\fB::tk::mac::ReopenApplication\fR
+\fB::tk::mac::OpenDocument \fIfile...\fR
+\fB::tk::mac::PrintDocument \fIfile...\fR
+\fB::tk::mac::Quit\fR
+\fB::tk::mac::OnHide\fR
+\fB::tk::mac::OnShow\fR
+\fB::tk::mac::ShowHelp\fR
+\fB::tk::mac::PerformService\fR
+\fB::tk::mac::LaunchURL \fIURL...\fR
+\fB::tk::mac::GetAppPath\fR
+
+\fB::tk::mac::standardAboutPanel\fR
+
+\fB::tk::mac::useCompatibilityMetrics \fIboolean\fR
+\fB::tk::mac::CGAntialiasLimit \fIlimit\fR
+\fB::tk::mac::antialiasedtext \fInumber\fR
+\fB::tk::mac::useThemedToplevel \fIboolean\fR
+
+
+\fB::tk::mac::iconBitmap \fIname width height \-kind value\fR
+.fi
+.BE
+.SH "EVENT HANDLER CALLBACKS"
+.PP
+The Aqua/Mac OS X application environment defines a number of additional
+events that applications should respond to. These events are mapped by Tk to
+calls to commands in the \fB::tk::mac\fR namespace; unless otherwise noted, if
+the command is absent, no action will be taken.
+.TP
+\fB::tk::mac::DoScriptFile\fR
+.
+The default Apple Event handler for AEDoScriptHandler. This command 
+executes a Tcl file when an AppleScript sends a
+.QW "do script"
+command to Wish with a file path as a parameter. 
+.TP
+\fB::tk::mac::DoScriptText\fR
+.
+The default Apple Event handler for AEDoScriptHandler. This command
+executes Tcl code when an AppleScript sends a
+.QW "do script"
+command to Wish with Tcl code or a Tcl procedure as a parameter.
+.TP
+\fB::tk::mac::ShowPreferences\fR
+.
+The default Apple Event handler for kAEShowPreferences,
+.QW pref .
+The application menu
+.QW "Preferences"
+menu item is only enabled when this proc is defined. Typically this command is
+used to wrap a specific own preferences command, which pops up a preferences
+window. Something like:
+.RS
+.PP
+.CS
+proc ::tk::mac::ShowPreferences {} {
+    setPref
+}
+.CE
+.RE
+.TP
+\fB::tk::mac::OpenApplication\fR
+.
+If a proc of this name is defined, this proc fill fire when your application
+is initially opened. It is the default Apple Event handler for
+kAEOpenApplication,
+.QW oapp .
+.TP
+\fB::tk::mac::ReopenApplication\fR
+.
+If a proc of this name is defined it is the default Apple Event handler for
+kAEReopenApplication,
+.QW rapp ,
+the Apple Event sent when your application is opened when it is already
+running (e.g. by clicking its icon in the Dock). Here is a sample that raises
+a minimized window when the Dock icon is clicked:
+.RS
+.PP
+.CS
+proc ::tk::mac::ReopenApplication {} {
+    if {[wm state .] eq "withdrawn"} {
+        wm state . normal
+    } else {
+        wm deiconify .
+    }
+    raise .
+}
+.CE
+.RE
+.TP
+\fB::tk::mac::OpenDocument \fIfile...\fR
+.
+If a proc of this name is defined it is the default Apple Event handler for
+kAEOpenDocuments,
+.QW odoc ,
+the Apple Event sent when your application is asked to open one or more
+documents (e.g., by drag & drop onto the app or by opening a document of a
+type associated to the app). The proc should take as arguments paths to the
+files to be opened, like so:
+.RS
+.PP
+.CS
+proc ::tk::mac::OpenDocument {args} {
+    foreach f $args {my_open_document $f}
+}
+.CE
+.RE
+.TP
+\fB::tk::mac::PrintDocument \fIfile...\fR
+.
+If a proc of this name is defined it is the default Apple Event handler for
+kAEPrintDocuments,
+.QW pdoc ,
+the Apple Event sent when your application is asked to print a
+document.  It takes a single absolute file path as an argument. 
+.TP
+\fB::tk::mac::Quit\fR
+.
+If a proc of this name is defined it is the default Apple Event handler for
+kAEQuitApplication,
+.QW quit ,
+the Apple Event sent when your application is asked to be quit, e.g. via the
+quit menu item in the application menu, the quit menu item in the Dock menu,
+or during a logout/restart/shutdown etc. If this is not defined, \fBexit\fR is
+called instead.
+.TP
+\fB::tk::mac::OnHide\fR
+.
+If defined, this is called when your application receives a kEventAppHidden
+event, e.g. via the hide menu item in the application or Dock menus.
+.TP
+\fB::tk::mac::OnShow\fR
+.
+If defined, this is called when your application receives a kEventAppShown
+event, e.g. via the show all menu item in the application menu, or by clicking
+the Dock icon of a hidden application.
+.TP
+\fB::tk::mac::ShowHelp\fR
+.
+Customizes behavior of Apple Help menu; if this procedure is not defined, the
+platform-specific standard Help menu item
+.QW "YourApp Help"
+performs the default Cocoa action of showing the Help Book configured in the
+application's Info.plist (or displaying an alert if no Help Book is
+set).
+.TP
+\fB::tk::mac::PerformService\fR
+.
+Executes a Tcl procedure called from the macOS 
+.QW Services 
+menu in the Application menu item. The
+.QW Services
+menu item allows for inter-application communication; data from one
+application, such as selected text, can be sent to another application
+for processing, for example to Safari as a search item for Google, or
+to TextEdit to be appended to a file. An example of the proc is below,
+and should be rewritten in an application script for customization: 
+.RS
+.PP
+.CS
+proc ::tk::mac::PerformService {} {
+    set data [clipboard get]
+    $w insert end $data
+}
+.CE
+.RE
+Note that the mechanism for retrieving the data is from the clipboard;
+there is no other supported way to obtain the data.  If the Services 
+process is not desired, the NSServices keys can be deleted from
+the application's Info.plist file. The underlying code supporting this
+command also allows the text, entry and ttk::entry widgets to access
+services from other applications via the Services menu. The NSPortName
+key in Wish's Info.plist file is currently set as
+.QW "Wish"
+; if a developer changes the name of the Wish executable to something
+  else, this key should be modified with the same name.
+.TP
+\fB::tk::mac::LaunchURL \fIURL...\fR
+.
+If defined, launches a URL within Tk. This would be used if a Tk
+application wants to handle a URL itself, such as displaying data from
+an RSS feed, rather than launching a default application to handle the
+URL, although it can defined as such. Wish includes a stub URL scheme
+of
+.QW foo://
+in the CFBundleURLSchemes key of its Info.plist file; this should be customized for the specific URL
+scheme the developer wants to support. 
+.TP
+\fB::tk::mac::GetAppPath\fR
+.
+Returns the current applications's file path.
+.TP
+
+
+.SH "ADDITIONAL DIALOGS"
+.PP
+The Aqua/Mac OS X defines additional dialogs that applications should
+support.
+.TP
+\fB::tk::mac::standardAboutPanel\fR
+.
+Brings the standard Cocoa about panel to the front, with all its information
+filled in from your application bundle files (standard about panel with no
+options specified). See Apple Technote TN2179 and the AppKit documentation for
+-[NSApplication orderFrontStandardAboutPanelWithOptions:] for details on the
+Info.plist keys and app bundle files used by the about panel.
+.SH "SYSTEM CONFIGURATION"
+.PP
+There are a number of additional global configuration options that control the
+details of how Tk renders by default.
+.TP
+\fB::tk::mac::useCompatibilityMetrics \fIboolean\fR
+.
+Preserves compatibility with older Tk/Aqua metrics; set to \fBfalse\fR for
+more native spacing.
+.TP
+\fB::tk::mac::CGAntialiasLimit \fIlimit\fR
+.
+Sets the antialiasing limit; lines thinner that \fIlimit\fR pixels will not be
+antialiased. Integer, set to 0 by default, making all lines be antialiased.
+.TP
+\fB::tk::mac::antialiasedtext \fInumber\fR
+.
+Sets anti-aliased text.  Controls text antialiasing, possible values for
+\fInumber\fR are -1 (default, use system default for text AA), 0 (no text AA),
+1 (use text AA).
+.TP
+\fB::tk::mac::useThemedToplevel \fIboolean\fR
+.
+Sets toplevel windows to draw with the modern grayish/ pinstripe Mac
+background. Equivalent to configuring the toplevel with
+.QW "\fB\-background systemWindowHeaderBackground\fR" ,
+or to using a \fBttk::frame\fR.
+.SH "SUPPORT COMMANDS"
+.TP
+\fB::tk::mac::iconBitmap \fIname width height \-kind value\fR
+.
+Renders native icons and bitmaps in Tk applications (including any image file
+readable by NSImage). A native bitmap name is interpreted as follows (in
+order):
+.RS
+.IP \(bu 3
+predefined builtin 32x32 icon name (\fBstop\fR, \fBcaution\fR, \fBdocument\fR,
+etc.)
+.IP \(bu 3
+\fIname\fR, as defined by \fBtk::mac::iconBitmap\fR
+.IP \(bu 3
+NSImage named image name
+.IP \(bu 3
+NSImage url string
+.IP \(bu 3
+4-char OSType of IconServices icon
+.PP
+The \fIwidth\fR and \fIheight\fR arguments to \fBtk::mac::iconBitmap\fR define
+the dimensions of the image to create, and \fI\-kind\fR must be one of:
+.TP
+\fB\-file\fR
+.
+icon of file at given path
+.TP
+\fB\-fileType\fR
+.
+icon of given file type
+.TP
+\fB\-osType\fR
+.
+icon of given 4-char OSType file type
+.TP
+\fB\-systemType\fR
+.
+icon for given IconServices 4-char OSType
+.TP
+\fB\-namedImage\fR
+.
+named NSImage for given name
+.TP
+\fB\-imageFile\fR
+.
+image at given path
+.RE
+.SH "SEE ALSO"
+bind(n), wm(n)
+.SH KEYWORDS
+about dialog, antialiasing, Apple event, icon, NSImage
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

@@ -1,0 +1,146 @@
+'\"
+'\" Copyright (c) 2005 Sergey Brester aka sebres.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH timerate n "" Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+timerate \- Calibrated performance measurements of script execution time
+.SH SYNOPSIS
+\fBtimerate \fIscript\fR ?\fItime\fR? ?\fImax-count\fR?
+.sp
+\fBtimerate \fR?\fB\-direct\fR? ?\fB\-overhead\fI double\fR? \fIscript\fR ?\fItime\fR? ?\fImax-count\fR?
+.sp
+\fBtimerate \fR?\fB\-calibrate\fR? ?\fB\-direct\fR? \fIscript\fR ?\fItime\fR? ?\fImax-count\fR?
+.BE
+.SH DESCRIPTION
+.PP
+The \fBtimerate\fR command does calibrated performance measurement of a Tcl
+command or script, \fIscript\fR. The \fIscript\fR should be written so that it
+can be executed multiple times during the performance measurement process.
+Time is measured in elapsed time using the finest timer resolution as possible,
+not CPU time; if \fIscript\fR interacts with the OS, the cost of that
+interaction is included.
+This command may be used to provide information as to how well a script or
+Tcl command is performing, and can help determine bottlenecks and fine-tune
+application performance.
+.PP
+The first and second form will evaluate \fIscript\fR until the interval
+\fItime\fR given in milliseconds elapses, or for 1000 milliseconds (1 second)
+if \fItime\fR is not specified.
+.sp
+The parameter \fImax-count\fR could additionally impose a further restriction
+by the maximal number of iterations to evaluate the script.
+If \fImax-count\fR is specified, the evalution will stop either this count of
+iterations is reached or the time is exceeded.
+.sp
+It will then return a canonical tcl-list of the form:
+.PP
+.CS
+\fB0.095977 \(mcs/# 52095836 # 10419167 #/sec 5000.000 net-ms\fR
+.CE
+.PP
+which indicates:
+.IP \(bu 3
+the average amount of time required per iteration, in microseconds ([\fBlindex\fR $result 0])
+.IP \(bu 3
+the count how many times it was executed ([\fBlindex\fR $result 2])
+.IP \(bu 3
+the estimated rate per second ([\fBlindex\fR $result 4])
+.IP \(bu 3
+the estimated real execution time without measurement overhead ([\fBlindex\fR $result 6])
+.PP
+The following options may be supplied to the \fBtimerate\fR command:
+.TP
+\fB\-calibrate\fR
+.
+To measure very fast scripts as exactly as possible, a calibration process
+may be required.
+The \fB\-calibrate\fR option is used to calibrate \fBtimerate\fR itself,
+calculating the estimated overhead of the given script as the default overhead
+for future invocations of the \fBtimerate\fR command. If the \fItime\fR
+parameter is not specified, the calibrate procedure runs for up to 10 seconds.
+.RS
+.PP
+Note that calibration is not thread safe in the current implementation.
+.RE
+.TP
+\fB\-overhead \fIdouble\fR
+.
+The \fB\-overhead\fR parameter supplies an estimate (in microseconds) of the
+measurement overhead of each iteration of the tested script. This quantity
+will be subtracted from the measured time prior to reporting results. This can
+be useful for removing the cost of interpreter state reset commands from the
+script being measured.
+.TP
+\fB\-direct\fR
+.
+The \fB-direct\fR option causes direct execution of the supplied script,
+without compilation, in a manner similar to the \fBtime\fR command. It can be
+used to measure the cost of \fBTcl_EvalObjEx\fR, of the invocation of canonical
+lists, and of the uncompiled versions of bytecoded commands.
+.PP
+As opposed to the \fBtime\fR commmand, which runs the tested script for a fixed
+number of iterations, the timerate command runs it for a fixed time.
+Additionally, the compiled variant of the script will be used during the entire
+measurement, as if the script were part of a compiled procedure, if the \fB\-direct\fR
+option is not specified. The fixed time period and possibility of compilation allow
+for more precise results and prevent very long execution times by slow scripts, making
+it practical for measuring scripts with highly uncertain execution times.
+.SH EXAMPLES
+Estimate how fast it takes for a simple Tcl \fBfor\fR loop (including
+operations on variable \fIi\fR) to count to ten:
+.PP
+.CS
+\fI# calibrate\fR
+\fBtimerate\fR -calibrate {}
+
+\fI# measure\fR
+\fBtimerate\fR { for {set i 0} {$i<10} {incr i} {} } 5000
+.CE
+.PP
+Estimate how fast it takes for a simple Tcl \fBfor\fR loop, ignoring the
+overhead of the management of the variable that controls the loop:
+.PP
+.CS
+\fI# calibrate for overhead of variable operations\fR
+set i 0; \fBtimerate\fR -calibrate {expr {$i<10}; incr i} 1000
+
+\fI# measure\fR
+\fBtimerate\fR {
+    for {set i 0} {$i<10} {incr i} {}
+} 5000
+.CE
+.PP
+Estimate the speed of calculating the hour of the day using \fBclock format\fR only,
+ignoring overhead of the portion of the script that prepares the time for it to
+calculate:
+.PP
+.CS
+\fI# calibrate\fR
+\fBtimerate\fR -calibrate {}
+
+\fI# estimate overhead\fR
+set tm 0
+set ovh [lindex [\fBtimerate\fR {
+    incr tm [expr {24*60*60}]
+}] 0]
+
+\fI# measure using estimated overhead\fR
+set tm 0
+\fBtimerate\fR -overhead $ovh {
+    clock format $tm -format %H
+    incr tm [expr {24*60*60}]; # overhead for this is ignored
+} 5000
+.CE
+.SH "SEE ALSO"
+time(n)
+.SH KEYWORDS
+performance measurement, script, time
+.\" Local Variables:
+.\" mode: nroff
+.\" End:

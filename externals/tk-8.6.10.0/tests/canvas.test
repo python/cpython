@@ -1,0 +1,960 @@
+# This file is a Tcl script to test out the procedures in tkCanvas.c, which
+# implements generic code for canvases. It is organized in the standard
+# fashion for Tcl tests.
+#
+# Copyright (c) 1995-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-2000 Ajuba Solutions.
+# Copyright (c) 2008 Donal K. Fellows
+# All rights reserved.
+
+package require tcltest 2.1
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+imageInit
+
+# XXX - This test file is woefully incomplete. At present, only a few of the
+# features are tested.
+
+# Canvas used in 1.* test cases
+canvas .c
+pack .c
+update
+
+test canvas-1.1 {configuration options: good value for "background"} -body {
+    .c configure -background #ff0000
+    .c cget -background
+} -result {#ff0000}
+test canvas-1.2 {configuration options: bad value for "background"} -body {
+    .c configure -background non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+test canvas-1.3 {configuration options: good value for "bg"} -body {
+    .c configure -bg #ff0000
+    .c cget -bg
+} -result {#ff0000}
+test canvas-1.4 {configuration options: bad value for "bg"} -body {
+    .c configure -bg non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+test canvas-1.5 {configuration options: good value for "bd"} -body {
+    .c configure -bd 4
+    .c cget -bd
+} -result {4}
+test canvas-1.6 {configuration options: bad value for "bd"} -body {
+    .c configure -bd badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+test canvas-1.7 {configuration options: good value for "borderwidth"} -body {
+    .c configure -borderwidth 1.3
+    .c cget -borderwidth
+} -result {1}
+test canvas-1.8 {configuration options: bad value for "borderwidth"} -body {
+    .c configure -borderwidth badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+test canvas-1.9 {configuration options: good value for "closeenough"} -body {
+    .c configure -closeenough 24
+    .c cget -closeenough
+} -result {24.0}
+test canvas-1.10 {configuration options: bad value for "closeenough"} -body {
+    .c configure -closeenough bogus
+} -returnCodes error -result {expected floating-point number but got "bogus"}
+test canvas-1.11 {configuration options: good value for "confine"} -body {
+    .c configure -confine true
+    .c cget -confine
+} -result {1}
+test canvas-1.12 {configuration options: bad value for "confine"} -body {
+    .c configure -confine silly
+} -returnCodes error -result {expected boolean value but got "silly"}
+test canvas-1.13 {configuration options: good value for "cursor"} -body {
+    .c configure -cursor arrow
+    .c cget -cursor
+} -result {arrow}
+test canvas-1.14 {configuration options: bad value for "cursor"} -body {
+    .c configure -cursor badValue
+} -returnCodes error -result {bad cursor spec "badValue"}
+test canvas-1.15 {configuration options: good value for "height"} -body {
+    .c configure -height 2.1
+    .c cget -height
+} -result {2}
+test canvas-1.16 {configuration options: bad value for "height"} -body {
+    .c configure -height x42
+} -returnCodes error -result {bad screen distance "x42"}
+test canvas-1.17 {configuration options: good value for "highlightbackground"} -body {
+    .c configure -highlightbackground #112233
+    .c cget -highlightbackground
+} -result {#112233}
+test canvas-1.18 {configuration options: bad value for "highlightbackground"} -body {
+    .c configure -highlightbackground ugly
+} -returnCodes error -result {unknown color name "ugly"}
+test canvas-1.19 {configuration options: good value for "highlightcolor"} -body {
+    .c configure -highlightcolor #110022
+    .c cget -highlightcolor
+} -result {#110022}
+test canvas-1.20 {configuration options: bad value for "highlightcolor"} -body {
+    .c configure -highlightcolor bogus
+} -returnCodes error -result {unknown color name "bogus"}
+test canvas-1.21 {configuration options: good value for "highlightthickness"} -body {
+    .c configure -highlightthickness 18
+    .c cget -highlightthickness
+} -result {18}
+test canvas-1.22 {configuration options: bad value for "highlightthickness"} -body {
+    .c configure -highlightthickness badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+test canvas-1.23 {configuration options: good value for "insertbackground"} -body {
+    .c configure -insertbackground #110022
+    .c cget -insertbackground
+} -result {#110022}
+test canvas-1.24 {configuration options: bad value for "insertbackground"} -body {
+    .c configure -insertbackground bogus
+} -returnCodes error -result {unknown color name "bogus"}
+test canvas-1.25 {configuration options: good value for "insertborderwidth"} -body {
+    .c configure -insertborderwidth 1.3
+    .c cget -insertborderwidth
+} -result {1}
+test canvas-1.26 {configuration options: bad value for "insertborderwidth"} -body {
+    .c configure -insertborderwidth 2.6x
+} -returnCodes error -result {bad screen distance "2.6x"}
+test canvas-1.27 {configuration options: good value for "insertofftime"} -body {
+    .c configure -insertofftime 100
+    .c cget -insertofftime
+} -result {100}
+test canvas-1.28 {configuration options: bad value for "insertofftime"} -body {
+    .c configure -insertofftime 3.2
+} -returnCodes error -result {expected integer but got "3.2"}
+test canvas-1.29 {configuration options: good value for "insertontime"} -body {
+    .c configure -insertontime 100
+    .c cget -insertontime
+} -result {100}
+test canvas-1.30 {configuration options: bad value for "insertontime"} -body {
+    .c configure -insertontime 3.2
+} -returnCodes error -result {expected integer but got "3.2"}
+test canvas-1.31 {configuration options: good value for "insertwidth"} -body {
+    .c configure -insertwidth 1.3
+    .c cget -insertwidth
+} -result {1}
+test canvas-1.32 {configuration options: bad value for "insertwidth"} -body {
+    .c configure -insertwidth 6x
+} -returnCodes error -result {bad screen distance "6x"}
+test canvas-1.33 {configuration options: good value for "relief"} -body {
+    .c configure -relief groove
+    .c cget -relief
+} -result {groove}
+test canvas-1.34 {configuration options: bad value for "relief"} -body {
+    .c configure -relief 1.5
+} -returnCodes error -result {bad relief "1.5": must be flat, groove, raised, ridge, solid, or sunken}
+test canvas-1.35 {configuration options: good value for "selectbackground"} -body {
+    .c configure -selectbackground #110022
+    .c cget -selectbackground
+} -result {#110022}
+test canvas-1.36 {configuration options: bad value for "selectbackground"} -body {
+    .c configure -selectbackground bogus
+} -returnCodes error -result {unknown color name "bogus"}
+test canvas-1.37 {configuration options: good value for "selectborderwidth"} -body {
+    .c configure -selectborderwidth 1.3
+    .c cget -selectborderwidth
+} -result {1}
+test canvas-1.38 {configuration options: bad value for "selectborderwidth"} -body {
+    .c configure -selectborderwidth badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+test canvas-1.39 {configuration options: good value for "selectforeground"} -body {
+    .c configure -selectforeground #654321
+    .c cget -selectforeground
+} -result {#654321}
+test canvas-1.40 {configuration options: bad value for "selectforeground"} -body {
+    .c configure -selectforeground bogus
+} -returnCodes error -result {unknown color name "bogus"}
+test canvas-1.41 {configuration options: good value for "takefocus"} -body {
+    .c configure -takefocus "any string"
+    .c cget -takefocus
+} -result {any string}
+test canvas-1.42 {configuration options: good value for "width"} -body {
+    .c configure -width 402
+    .c cget -width
+} -result {402}
+test canvas-1.43 {configuration options: bad value for "width"} -body {
+    .c configure -width xyz
+} -returnCodes error -result {bad screen distance "xyz"}
+test canvas-1.44 {configuration options: good value for "xscrollcommand"} -body {
+    .c configure -xscrollcommand {Some command}
+    .c cget -xscrollcommand
+} -result {Some command}
+test canvas-1.45 {configuration options: good value for "yscrollcommand"} -body {
+    .c configure -yscrollcommand {Another command}
+    .c cget -yscrollcommand
+} -result {Another command}
+test canvas-1.46 {configure throws error on bad option} -body {
+    .c configure -gorp foo
+} -returnCodes error -match glob -result {*}
+test canvas-1.47 {configure throws error on bad option} -body {
+    catch {.c configure -gorp foo}
+    .c create rect 10 10 100 100
+    .c configure -gorp foo
+} -returnCodes error -match glob -result {*}
+catch {destroy .c}
+
+# Canvas used in 2.* test cases
+canvas .c -width 60 -height 40 -scrollregion {0 0 200 150} -bd 0 \
+	-highlightthickness 0
+pack .c
+update
+
+test canvas-2.1 {CanvasWidgetCmd, bind option} -body {
+    set i [.c create rect 10 10 100 100]
+    .c bind $i <a>
+} -cleanup {
+    .c delete $i
+} -returnCodes ok
+test canvas-2.2 {CanvasWidgetCmd, bind option} -body {
+    set i [.c create rect 10 10 100 100]
+    .c bind $i <
+} -cleanup {
+    .c delete $i
+} -returnCodes error -result {no event type or button # or keysym}
+test canvas-2.3 {CanvasWidgetCmd, xview option} -body {
+    .c configure -xscrollincrement 40 -yscrollincrement 5
+    .c xview moveto 0
+    update
+    set x [list [.c xview]]
+    .c xview scroll 2 units
+    update
+    lappend x [.c xview]
+} -result {{0.0 0.3} {0.4 0.7}}
+test canvas-2.4 {CanvasWidgetCmd, xview option} -constraints nonPortable -body {
+    # This test gives slightly different results on platforms such as NetBSD.
+    # I don't know why...
+    .c configure -xscrollincrement 0 -yscrollincrement 5
+    .c xview moveto 0.6
+    update
+    set x [list [.c xview]]
+    .c xview scroll 2 units
+    update
+    lappend x [.c xview]
+} -result {{0.6 0.9} {0.66 0.96}}
+catch {destroy .c}
+
+# Canvas used in 3.* test cases
+canvas .c -width 60 -height 40 -scrollregion {0 0 200 80} \
+	-borderwidth 0 -highlightthickness 0
+pack .c
+update
+
+test canvas-3.1 {CanvasWidgetCmd, yview option} -body {
+    .c configure -xscrollincrement 40 -yscrollincrement 5
+    .c yview moveto 0
+    update
+    set x [list [.c yview]]
+    .c yview scroll 3 units
+    update
+    lappend x [.c yview]
+} -result {{0.0 0.5} {0.1875 0.6875}}
+test canvas-3.2 {CanvasWidgetCmd, yview option} -body {
+    .c configure -xscrollincrement 40 -yscrollincrement 0
+    .c yview moveto 0
+    update
+    set x [list [.c yview]]
+    .c yview scroll 2 units
+    update
+    lappend x [.c yview]
+} -result {{0.0 0.5} {0.1 0.6}}
+destroy .c
+
+test canvas-4.1 {ButtonEventProc procedure} -setup {
+    deleteWindows
+    set x {}
+} -body {
+    canvas .c1 -bg #543210
+    rename .c1 .c2
+    lappend x [winfo children .]
+    lappend x [.c2 cget -bg]
+    destroy .c1
+    lappend x [info command .c*] [winfo children .]
+} -result {.c1 #543210 {} {}}
+
+test canvas-5.1 {ButtonCmdDeletedProc procedure} -body {
+    canvas .c1
+    rename .c1 {}
+    list [info command .c*] [winfo children .]
+} -cleanup {
+    destroy .c1
+} -result {{} {}}
+
+# Canvas used in 6.* test cases
+canvas .c -width 100 -height 50 -scrollregion {-200 -100 305 102} \
+	-borderwidth 2 -highlightthickness 3
+pack .c
+update
+
+test canvas-6.1 {CanvasSetOrigin procedure} -body {
+    .c configure -xscrollincrement 0 -yscrollincrement 0
+    .c xview moveto 0
+    .c yview moveto 0
+    update
+    list [.c canvasx 0] [.c canvasy 0]
+} -result {-205.0 -105.0}
+test canvas-6.2 {CanvasSetOrigin procedure} -body {
+    .c configure -xscrollincrement 20 -yscrollincrement 10
+    set x ""
+    foreach i {.08 .10 .48 .50} {
+	.c xview moveto $i
+	update
+	lappend x [.c canvasx 0]
+    }
+    return $x
+} -result {-165.0 -145.0 35.0 55.0}
+test canvas-6.3 {CanvasSetOrigin procedure} -body {
+    .c configure -xscrollincrement 20 -yscrollincrement 10
+    set x ""
+    foreach i {.06 .08 .70 .72} {
+	.c yview moveto $i
+	update
+	lappend x [.c canvasy 0]
+    }
+    return $x
+} -result {-95.0 -85.0 35.0 45.0}
+test canvas-6.4 {CanvasSetOrigin procedure} -body {
+    .c configure -xscrollincrement 20 -yscrollincrement 10
+    .c xview moveto 1.0
+    .c canvasx 0
+} -result {215.0}
+test canvas-6.5 {CanvasSetOrigin procedure} -body {
+    .c configure -xscrollincrement 20 -yscrollincrement 10
+    .c yview moveto 1.0
+    .c canvasy 0
+} -result {55.0}
+deleteWindows
+
+test canvas-7.1 {canvas widget vs hidden commands} -setup {
+    canvas .c
+} -body {
+    interp hide {} .c
+    destroy .c
+    list [winfo children .] [lsort [interp hidden]]
+} -cleanup {
+    destroy .c
+} -result [list {} [lsort [interp hidden]]]
+
+test canvas-8.1 {canvas arc bbox} -setup {
+    catch {destroy .c}
+    canvas .c
+} -body {
+    .c create arc -100 10 100 210 -start 10 -extent 50 -style arc -tags arc1
+    set arcBox [.c bbox arc1]
+    .c create arc 100 10 300 210 -start 10 -extent 50 -style chord -tags arc2
+    set coordBox [.c bbox arc2]
+    .c create arc 300 10 500 210 -start 10 -extent 50 -style pieslice -tags arc3
+    set pieBox [.c bbox arc3]
+    list $arcBox $coordBox $pieBox
+} -result {{48 21 100 94} {248 21 300 94} {398 21 500 112}}
+
+test canvas-9.1 {canvas id creation and deletion} -setup {
+    catch {destroy .c}
+    canvas .c
+} -body {
+    # With Tk 8.0.4 the ids are now stored in a hash table. You can use this
+    # test as a performance test with older versions by changing the value of
+    # size.
+    set size 15
+    for {set i 0} {$i < $size} {incr i} {
+	set x [expr {-10 + 3*$i}]
+	for {set j 0; set y -10} {$j < 10} {incr j; incr y 3} {
+	    .c create rect ${x}c ${y}c [expr {$x+2}]c [expr {$y+2}]c \
+		    -outline black -fill blue -tags rect
+	    .c create text [expr {$x+1}]c [expr {$y+1}]c -text "$i,$j" \
+		    -anchor center -tags text
+	}
+    }
+    # The actual bench mark - this code also exercises all the hash table
+    # changes.
+    set time [lindex [time {
+	foreach id [.c find withtag all] {
+	    .c lower $id
+	    .c raise $id
+	    .c find withtag $id
+	    .c bind <Return> $id {}
+	    .c delete $id
+	}
+    }] 0]
+    set x ""
+} -result {}
+
+test canvas-10.1 {find items using tag expressions} -setup {
+    catch {destroy .c}
+    canvas .c
+    set res {}
+} -body {
+    .c create oval 20 20 40 40 -fill red -tag [list a b c d]
+    .c create oval 20 60 40 80 -fill yellow -tag [list b a]
+    .c create oval 20 100 40 120 -fill green -tag [list c b]
+    .c create oval 20 140 40 160 -fill blue -tag [list b]
+    .c create oval 20 180 40 200 -fill bisque -tag [list a d e]
+    .c create oval 20 220 40 240 -fill bisque -tag b
+    .c create oval 20 260 40 280 -fill bisque -tag [list d "tag with spaces"]
+    lappend res [.c find withtag {!a}]
+    lappend res [.c find withtag {b&&c}]
+    lappend res [.c find withtag {b||c}]
+    lappend res [.c find withtag {a&&!b}]
+    lappend res [.c find withtag {!b&&!c}]
+    lappend res [.c find withtag {d&&a&&c&&b}]
+    lappend res [.c find withtag {b^a}]
+    lappend res [.c find withtag {(a&&!b)||(!a&&b)}]
+    lappend res [.c find withtag { ( a && ! b ) || ( ! a && b ) }]
+    lappend res [.c find withtag {a&&!(c||d)}]
+    lappend res [.c find withtag {d&&"tag with spaces"}]
+    lappend res [.c find withtag "tag with spaces"]
+} -result {{3 4 6 7} {1 3} {1 2 3 4 6} 5 {5 7} 1 {3 4 5 6} {3 4 5 6} {3 4 5 6} 2 7 7}
+test canvas-10.2 {check errors from tag expressions} -setup {
+    catch {destroy .c}
+    canvas .c
+    .c create oval 20 20 40 40 -fill red -tag [list a b c d]
+    .c create oval 20 260 40 280 -fill bisque -tag [list d "tag with spaces"]
+} -body {
+    .c find withtag {&&c}
+} -returnCodes error -result {unexpected operator in tag search expression}
+test canvas-10.3 {check errors from tag expressions} -setup {
+    catch {destroy .c}
+    canvas .c
+    .c create oval 20 20 40 40 -fill red -tag [list a b c d]
+    .c create oval 20 260 40 280 -fill bisque -tag [list d "tag with spaces"]
+} -body {
+    .c find withtag {!!c}
+} -returnCodes error -result {too many '!' in tag search expression}
+test canvas-10.4 {check errors from tag expressions} -setup {
+    catch {destroy .c}
+    canvas .c
+    .c create oval 20 20 40 40 -fill red -tag [list a b c d]
+    .c create oval 20 260 40 280 -fill bisque -tag [list d "tag with spaces"]
+} -body {
+    .c find withtag {b||}
+} -returnCodes error -result {missing tag in tag search expression}
+test canvas-10.5 {check errors from tag expressions} -setup {
+    catch {destroy .c}
+    canvas .c
+    .c create oval 20 20 40 40 -fill red -tag [list a b c d]
+    .c create oval 20 260 40 280 -fill bisque -tag [list d "tag with spaces"]
+} -body {
+    .c find withtag {b&&(c||)}
+} -returnCodes error -result {unexpected operator in tag search expression}
+test canvas-10.6 {check errors from tag expressions} -setup {
+    catch {destroy .c}
+    canvas .c
+    .c create oval 20 20 40 40 -fill red -tag [list a b c d]
+    .c create oval 20 260 40 280 -fill bisque -tag [list d "tag with spaces"]
+} -body {
+    .c find withtag {d&&""}
+} -returnCodes error -result {null quoted tag string in tag search expression}
+test canvas-10.7 {check errors from tag expressions} -setup {
+    catch {destroy .c}
+    canvas .c
+    .c create oval 20 20 40 40 -fill red -tag [list a b c d]
+    .c create oval 20 260 40 280 -fill bisque -tag [list d "tag with spaces"]
+} -body {
+    .c find withtag "d&&\"tag with spaces"
+} -returnCodes error -result {missing endquote in tag search expression}
+test canvas-10.8 {check errors from tag expressions} -setup {
+    catch {destroy .c}
+    canvas .c
+    .c create oval 20 20 40 40 -fill red -tag [list a b c d]
+    .c create oval 20 260 40 280 -fill bisque -tag [list d "tag with spaces"]
+} -returnCodes error -body {
+    .c find withtag {a&&"tag with spaces"z}
+} -result {invalid boolean operator in tag search expression}
+test canvas-10.9 {check errors from tag expressions} -setup {
+    catch {destroy .c}
+    canvas .c
+    .c create oval 20 20 40 40 -fill red -tag [list a b c d]
+    .c create oval 20 260 40 280 -fill bisque -tag [list d "tag with spaces"]
+} -body {
+    .c find withtag {a&&b&c}
+} -returnCodes error -result {singleton '&' in tag search expression}
+test canvas-10.10 {check errors from tag expressions} -setup {
+    catch {destroy .c}
+    canvas .c
+    .c create oval 20 20 40 40 -fill red -tag [list a b c d]
+    .c create oval 20 260 40 280 -fill bisque -tag [list d "tag with spaces"]
+} -body {
+    .c find withtag {a||b|c}
+} -returnCodes error -result {singleton '|' in tag search expression}
+test canvas-10.11 {backward compatility - strange tags that are not expressions} -setup {
+    catch {destroy .c}
+    canvas .c
+    .c create oval 20 20 40 40 -fill red \
+	-tag [list { strange tag(xxx&yyy|zzz) " && \" || ! ^ " }]
+} -body {
+    .c find withtag { strange tag(xxx&yyy|zzz) " && \" || ! ^ " }
+} -result 1
+test canvas-10.12 {multple events bound to same tag expr} -setup {
+    catch {destroy .c}
+    canvas .c
+} -body {
+    .c bind {a && b} <Enter> {puts Enter}
+    .c bind {a && b} <Leave> {puts Leave}
+} -result {}
+test canvas-10.13 {more long tag searches; Bug 2931374} -setup {
+    catch {destroy .c}
+    canvas .c
+} -body {
+    .c find withtag {(A&&B&&C&&D)&&area&&!text}
+    # memory errors on failure
+} -cleanup {
+    destroy .c
+} -result {}
+
+test canvas-11.1 {canvas poly fill check, bug 5783} -setup {
+    destroy .c
+    pack [canvas .c]
+} -body {
+    # This would crash in 8.3.0 and 8.3.1
+    .c create polygon 0 0 100 100 200 50 \
+	    -fill {} -stipple gray50 -outline black
+} -result 1
+test canvas-11.2 {canvas poly overlap fill check, bug 226357} -setup {
+    destroy .c
+    pack [canvas .c]
+    set result {}
+} -body {
+    .c create poly 30 30 90 90 30 90 90 30
+    lappend result [.c find over 40 40 45 45];	# rect region inc. edge
+    lappend result [.c find over 60 40 60 40];	# top-center point
+    lappend result [.c find over 0 0 0 0];	# not on poly
+    lappend result [.c find over 60 60 60 60];	# center-point
+    lappend result [.c find over 45 50 45 50];	# outside poly
+    .c itemconfig 1 -fill "" -outline black
+    lappend result [.c find over 40 40 45 45];	# rect region inc. edge
+    lappend result [.c find over 60 40 60 40];	# top-center point
+    lappend result [.c find over 0 0 0 0];	# not on poly
+    lappend result [.c find over 60 60 60 60];	# center-point
+    lappend result [.c find over 45 50 45 50];	# outside poly
+    .c itemconfig 1 -width 8
+    lappend result [.c find over 45 50 45 50];	# outside poly
+} -result {1 1 {} 1 {} 1 1 {} 1 {} 1}
+test canvas-11.3 {canvas poly dchars, bug 3291543} {
+    # This would crash
+    destroy .c
+    pack [canvas .c]
+    .c create polygon 0 0 0 10 10 0
+    .c dchars 1 2 end
+    .c coords 1
+} {}
+
+test canvas-12.1 {canvas mm obj, patch SF-403327, 102471} -setup {
+    destroy .c
+    pack [canvas .c]
+} -body {
+    set qx [expr {1.+1.}] 
+    # qx has type double and no string representation 
+    .c scale all $qx 0 1. 1.
+    # qx has now type MMRep and no string representation 
+    list $qx [string length $qx]
+} -result {2.0 3}
+test canvas-12.2 {canvas mm obj, patch SF-403327, 102471} -setup {
+    destroy .c
+    pack [canvas .c]
+} -body {
+    set val 10
+    incr val
+    # qx has type double and no string representation 
+    .c scale all $val 0 1 1
+    # qx has now type MMRep and no string representation 
+    incr val
+} -result 12
+
+# procedure used in 13.1 test case
+proc kill_canvas {w} {
+    destroy $w
+    pack [canvas $w -height 200 -width 200] -fill both -expand yes
+    update idle
+    $w create rectangle 80 80 120 120 -fill blue -tags blue
+    # bind a button press to re-build the canvas
+    $w bind blue <ButtonRelease-1> [subst {
+	[lindex [info level 0] 0] $w
+	append ::x ok
+    }]
+}
+test canvas-13.1 {canvas delete during event, SF bug-228024} -body {
+    kill_canvas .c
+    set ::x {}
+    # do this many times to improve chances of triggering the crash
+    for {set i 0} {$i < 30} {incr i} {
+	event generate .c <1> -x 100 -y 100
+	event generate .c <ButtonRelease-1> -x 100 -y 100
+    }
+    return $::x
+} -result {okokokokokokokokokokokokokokokokokokokokokokokokokokokokokok}
+
+test canvas-14.1 {canvas scan SF bug 581560} -setup {
+    destroy .c
+    canvas .c
+} -returnCodes error -body {
+    .c scan
+} -result {wrong # args: should be ".c scan mark|dragto x y ?dragGain?"}
+test canvas-14.2 {canvas scan} -setup {
+    destroy .c
+    canvas .c
+} -returnCodes error -body {
+    .c scan bogus
+} -result {wrong # args: should be ".c scan mark|dragto x y ?dragGain?"}
+test canvas-14.3 {canvas scan} -setup {
+    destroy .c
+    canvas .c
+} -returnCodes error -body {
+    .c scan mark
+} -result {wrong # args: should be ".c scan mark|dragto x y ?dragGain?"}
+test canvas-14.4 {canvas scan} -setup {
+    destroy .c
+    canvas .c
+} -body {
+    .c scan mark 10 10
+} -result {}
+test canvas-14.5 {canvas scan} -setup {
+    destroy .c
+    canvas .c
+} -body {
+    .c scan mark 10 10 5
+} -returnCodes error -result {wrong # args: should be ".c scan mark x y"}
+test canvas-14.6 {canvas scan} -setup {
+    destroy .c
+    canvas .c
+} -body {
+    .c scan dragto 10 10 5
+} -result {}
+
+test canvas-15.1 {basic types check: arc requires coords} -setup {
+    destroy .c
+    canvas .c
+} -returnCodes error -body {
+    .c create arc
+} -result {wrong # args: should be ".c create arc coords ?arg ...?"}
+test canvas-15.2 "basic coords check: arc coords are paired" -setup {
+    destroy .c
+    canvas .c
+} -body {
+    .c create arc 0
+} -returnCodes error -result {wrong # coordinates: expected 4, got 1}
+test canvas-15.3 {basic types check: bitmap requires coords} -setup {
+    destroy .c
+    canvas .c
+} -returnCodes error -body {
+    .c create bitmap
+} -result {wrong # args: should be ".c create bitmap coords ?arg ...?"}
+test canvas-15.4 "basic coords check: bitmap coords are paired" -setup {
+    destroy .c
+    canvas .c
+} -body {
+    .c create bitmap 0
+} -returnCodes error -result {wrong # coordinates: expected 2, got 1}
+test canvas-15.5 {basic types check: image requires coords} -setup {
+    destroy .c
+    canvas .c
+} -returnCodes error -body {
+    .c create image
+} -result {wrong # args: should be ".c create image coords ?arg ...?"}
+test canvas-15.6 "basic coords check: image coords are paired" -setup {
+    destroy .c
+    canvas .c
+} -returnCodes error -body {
+    .c create image 0
+} -result {wrong # coordinates: expected 2, got 1}
+test canvas-15.7 {basic types check: line requires coords} -setup {
+    destroy .c
+    canvas .c
+} -returnCodes error -body {
+    .c create line
+} -result {wrong # args: should be ".c create line coords ?arg ...?"}
+test canvas-15.8 "basic coords check: line coords are paired" -setup {
+    destroy .c
+    canvas .c
+} -returnCodes error -body {
+    .c create line 0
+} -result {wrong # coordinates: expected an even number, got 1}
+test canvas-15.9 {basic types check: oval requires coords} -setup {
+    destroy .c
+    canvas .c
+} -returnCodes error -body {
+    .c create oval
+} -result {wrong # args: should be ".c create oval coords ?arg ...?"}
+test canvas-15.10 "basic coords check: oval coords are paired" -setup {
+    destroy .c
+    canvas .c
+} -returnCodes error -body {
+    .c create oval 0
+} -result {wrong # coordinates: expected 0 or 4, got 1}
+test canvas-15.11 {basic types check: polygon requires coords} -setup {
+    destroy .c
+    canvas .c
+} -returnCodes error -body {
+    .c create polygon
+} -result {wrong # args: should be ".c create polygon coords ?arg ...?"}
+test canvas-15.12 "basic coords check: polygon coords are paired" -setup {
+    destroy .c
+    canvas .c
+} -returnCodes error -body {
+    .c create polygon 0
+} -result {wrong # coordinates: expected an even number, got 1}
+test canvas-15.13 {basic types check: rect requires coords} -setup {
+    destroy .c
+    canvas .c
+} -returnCodes error -body {
+    .c create rect
+} -result {wrong # args: should be ".c create rect coords ?arg ...?"}
+test canvas-15.14 "basic coords check: rect coords are paired" -setup {
+    destroy .c
+    canvas .c
+} -returnCodes error -body {
+    .c create rect 0
+} -result {wrong # coordinates: expected 0 or 4, got 1}
+test canvas-15.15 {basic types check: text requires coords} -setup {
+    destroy .c
+    canvas .c
+} -returnCodes error -body {
+    .c create text
+} -result {wrong # args: should be ".c create text coords ?arg ...?"}
+test canvas-15.16 "basic coords check: text coords are paired" -setup {
+    destroy .c
+    canvas .c
+} -returnCodes error -body {
+    .c create text 0
+} -result {wrong # coordinates: expected 2, got 1}
+test canvas-15.17 {basic types check: window requires coords} -setup {
+    destroy .c
+    canvas .c
+} -returnCodes error -body {
+    .c create window
+} -result {wrong # args: should be ".c create window coords ?arg ...?"}
+test canvas-15.18 "basic coords check: window coords are paired" -setup {
+    destroy .c
+    canvas .c
+} -returnCodes error -body {
+    .c create window 0
+} -result {wrong # coordinates: expected 2, got 1}
+test canvas-15.19 "basic coords check: centimeters are larger than pixels" -setup {
+    destroy .c
+    canvas .c
+} -body {
+    set id [.c create rect 0 0 1cm 1cm] 
+    expr {[lindex [.c coords $id] 2]>1}
+} -result {1}
+destroy .c
+
+test canvas-16.1 {arc coords check} -setup {
+    canvas .c
+} -body {
+    set id [.c create arc {0 10 20 30} -start 33]
+    .c itemcget $id -start
+} -cleanup {
+    destroy .c
+} -result {33.0}
+
+test canvas-17.1 {default smooth method handling} -setup {
+    canvas .c
+} -body {
+    set id [.c create line {0 0 1 1 2 2 3 3 4 4 5 5 6 6}]
+    set result [.c itemcget $id -smooth]
+    foreach smoother {yes 1 bezier raw r b} {
+	.c itemconfigure $id -smooth $smoother
+	lappend result [.c itemcget $id -smooth]
+    }
+    return $result
+} -cleanup {
+    destroy .c
+} -result {0 true true true raw raw true}
+
+test canvas-18.1 {imove method - lines} -setup {
+    canvas .c
+} -body {
+    set id [.c create line 0 0 1 1 2 2 3 3]
+    .c imove $id 0 4 4
+    .c coords $id
+} -cleanup {
+    destroy .c
+} -result {4.0 4.0 1.0 1.0 2.0 2.0 3.0 3.0}
+test canvas-18.2 {imove method - lines} -setup {
+    canvas .c
+} -body {
+    set id [.c create line 0 0 1 1]
+    .c imove $id 0 4 4
+    .c coords $id
+} -cleanup {
+    destroy .c
+} -result {4.0 4.0 1.0 1.0}
+test canvas-18.3 {imove method - lines} -setup {
+    canvas .c
+} -body {
+    set id [.c create line 0 0 1 1 2 2 3 3]
+    .c imove $id @1,1 4 4
+    .c coords $id
+} -cleanup {
+    destroy .c
+} -result {0.0 0.0 4.0 4.0 2.0 2.0 3.0 3.0}
+test canvas-18.4 {imove method - lines} -constraints knownBug -setup {
+    canvas .c
+} -body {
+    set id [.c create line 0 0 1 1 2 2 3 3]
+    .c imove $id end 4 4
+    .c coords $id
+} -cleanup {
+    destroy .c
+} -result {0.0 0.0 1.0 1.0 2.0 2.0 4.0 4.0}
+test canvas-18.5 {imove method - polygon} -setup {
+    canvas .c
+} -body {
+    set id [.c create polygon 0 0 1 1 2 2 3 3]
+    .c imove $id 0 4 4
+    .c coords $id
+} -cleanup {
+    destroy .c
+} -result {4.0 4.0 1.0 1.0 2.0 2.0 3.0 3.0}
+test canvas-18.6 {imove method - polygon} -setup {
+    canvas .c
+} -body {
+    set id [.c create polygon 0 0 1 1]
+    .c imove $id 0 4 4
+    .c coords $id
+} -cleanup {
+    destroy .c
+} -result {4.0 4.0 1.0 1.0}
+test canvas-18.7 {imove method - polygon} -setup {
+    canvas .c
+} -body {
+    set id [.c create polygon 0 0 1 1 2 2 3 3]
+    .c imove $id @1,1 4 4
+    .c coords $id
+} -cleanup {
+    destroy .c
+} -result {0.0 0.0 4.0 4.0 2.0 2.0 3.0 3.0}
+test canvas-18.8 {imove method - polygon} -constraints knownBug -setup {
+    canvas .c
+} -body {
+    set id [.c create polygon 0 0 1 1 2 2 3 3]
+    .c imove $id end 4 4
+    .c coords $id
+} -cleanup {
+    destroy .c
+} -result {0.0 0.0 1.0 1.0 2.0 2.0 4.0 4.0}
+test canvas-18.9 {imove method - errors} -setup {
+    canvas .c
+} -body {
+    set id [.c create line 0 0 1 1 2 2 3 3]
+    .c imove $id foobar 4 4
+} -cleanup {
+    destroy .c
+} -returnCodes error -result {bad index "foobar"}
+test canvas-18.10 {imove method - errors} -setup {
+    canvas .c
+} -body {
+    set id [.c create line 0 0 1 1 2 2 3 3]
+    .c imove $id 0 foobar 4
+} -cleanup {
+    destroy .c
+} -returnCodes error -result {bad screen distance "foobar"}
+test canvas-18.11 {imove method - errors} -setup {
+    canvas .c
+} -body {
+    set id [.c create line 0 0 1 1 2 2 3 3]
+    .c imove $id 0 4 foobar
+} -cleanup {
+    destroy .c
+} -returnCodes error -result {bad screen distance "foobar"}
+
+test canvas-19.1 {rchars method - lines} -setup {
+    canvas .c
+} -body {
+    set id [.c create line 0 0 1 1 2 2 3 3]
+    .c rchars $id 2 4 {4 4}
+    .c coords $id
+} -cleanup {
+    destroy .c
+} -result {0.0 0.0 4.0 4.0 3.0 3.0}
+test canvas-19.2 {rchars method - lines} -setup {
+    canvas .c
+} -body {
+    set id [.c create line 0 0 1 1 2 2 3 3]
+    .c rchars $id 2 4 {}
+    .c coords $id
+} -cleanup {
+    destroy .c
+} -result {0.0 0.0 3.0 3.0}
+test canvas-19.3 {rchars method - lines} -setup {
+    canvas .c
+} -body {
+    set id [.c create line 0 0 1 1 2 2 3 3]
+    .c rchars $id 2 4 {10 11 12 13 14 15}
+    .c coords $id
+} -cleanup {
+    destroy .c
+} -result {0.0 0.0 10.0 11.0 12.0 13.0 14.0 15.0 3.0 3.0}
+test canvas-19.4 {rchars method - polygon} -setup {
+    canvas .c
+} -body {
+    set id [.c create polygon 0 0 1 1 2 2 3 3]
+    .c rchars $id 2 4 {4 4}
+    .c coords $id
+} -cleanup {
+    destroy .c
+} -result {0.0 0.0 4.0 4.0 3.0 3.0}
+test canvas-19.5 {rchars method - polygon} -setup {
+    canvas .c
+} -body {
+    set id [.c create polygon 0 0 1 1 2 2 3 3]
+    .c rchars $id 2 4 {}
+    .c coords $id
+} -cleanup {
+    destroy .c
+} -result {0.0 0.0 3.0 3.0}
+test canvas-19.6 {rchars method - polygon} -setup {
+    canvas .c
+} -body {
+    set id [.c create polygon 0 0 1 1 2 2 3 3]
+    .c rchars $id 2 4 {10 11 12 13 14 15}
+    .c coords $id
+} -cleanup {
+    destroy .c
+} -result {0.0 0.0 10.0 11.0 12.0 13.0 14.0 15.0 3.0 3.0}
+test canvas-19.7 {rchars method - text} -setup {
+    canvas .c
+} -body {
+    set id [.c create text 0 0 -text abcde]
+    .c rchars $id 1 3 XYZ
+    .c itemcget $id -text
+} -cleanup {
+    destroy .c
+} -result aXYZe
+test canvas-19.8 {rchars method - text} -setup {
+    canvas .c
+} -body {
+    set id [.c create text 0 0 -text abcde]
+    .c rchars $id 1 3 {}
+    .c itemcget $id -text
+} -cleanup {
+    destroy .c
+} -result ae
+test canvas-19.9 {rchars method - text} -setup {
+    canvas .c
+} -body {
+    set id [.c create text 0 0 -text abcde]
+    .c rchars $id 1 3 FOOBAR
+    .c itemcget $id -text
+} -cleanup {
+    destroy .c
+} -result aFOOBARe
+test canvas-19.10 {rchars method - errors} -setup {
+    canvas .c
+} -body {
+    set id [.c create line 0 0 1 1]
+    .c rchars $id foo 1 {2 2}
+} -cleanup {
+    destroy .c
+} -returnCodes error -result {bad index "foo"}
+test canvas-19.11 {rchars method - errors} -setup {
+    canvas .c
+} -body {
+    set id [.c create line 0 0 1 1]
+    .c rchars $id 1 foo {2 2}
+} -cleanup {
+    destroy .c
+} -returnCodes error -result {bad index "foo"}
+
+# cleanup
+imageCleanup
+cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

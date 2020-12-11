@@ -1,0 +1,71 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH gets n 7.5 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+gets \- Read a line from a channel
+.SH SYNOPSIS
+\fBgets \fIchannelId\fR ?\fIvarName\fR?
+.BE
+
+.SH DESCRIPTION
+.PP
+This command reads the next line from \fIchannelId\fR, returns everything
+in the line up to (but not including) the end-of-line character(s), and
+discards the end-of-line character(s).
+.PP
+\fIChannelId\fR must be an identifier for an open channel such as the
+Tcl standard input channel (\fBstdin\fR), the return value from an
+invocation of \fBopen\fR or \fBsocket\fR, or the result of a channel
+creation command provided by a Tcl extension. The channel must have
+been opened for input.
+.PP
+If \fIvarName\fR is omitted the line is returned as the result of the
+command.
+If \fIvarName\fR is specified then the line is placed in the variable by
+that name and the return value is a count of the number of characters
+returned.
+.PP
+If end of file occurs while scanning for an end of
+line, the command returns whatever input is available up to the end of file.
+If \fIchannelId\fR is in non-blocking mode and there is not a full
+line of input available, the command returns an empty string and
+does not consume any input.
+If \fIvarName\fR is specified and an empty string is returned in
+\fIvarName\fR because of end-of-file or because of insufficient
+data in non-blocking mode, then the return count is -1.
+Note that if \fIvarName\fR is not specified then the end-of-file
+and no-full-line-available cases can
+produce the same results as if there were an input line consisting
+only of the end-of-line character(s).
+The \fBeof\fR and \fBfblocked\fR commands can be used to distinguish
+these three cases.
+.SH "EXAMPLE"
+This example reads a file one line at a time and prints it out with
+the current line number attached to the start of each line.
+.PP
+.CS
+set chan [open "some.file.txt"]
+set lineNumber 0
+while {[\fBgets\fR $chan line] >= 0} {
+    puts "[incr lineNumber]: $line"
+}
+close $chan
+.CE
+
+.SH "SEE ALSO"
+file(n), eof(n), fblocked(n), Tcl_StandardChannels(3)
+
+.SH KEYWORDS
+blocking, channel, end of file, end of line, line, non-blocking, read
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

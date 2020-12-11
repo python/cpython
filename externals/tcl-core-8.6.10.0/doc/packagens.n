@@ -1,0 +1,50 @@
+'\"
+'\" Copyright (c) 1998-2000 by Scriptics Corporation.
+'\" All rights reserved.
+'\" 
+.TH pkg::create n 8.3 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+pkg::create \- Construct an appropriate 'package ifneeded' command for a given package specification
+.SH SYNOPSIS
+\fB::pkg::create\fR \fB\-name \fIpackageName \fB\-version \fIpackageVersion\fR ?\fB\-load \fIfilespec\fR? ... ?\fB\-source \fIfilespec\fR? ...
+.BE
+
+.SH DESCRIPTION
+.PP
+\fB::pkg::create\fR is a utility procedure that is part of the standard Tcl
+library.  It is used to create an appropriate \fBpackage ifneeded\fR
+command for a given package specification.  It can be used to construct a
+\fBpkgIndex.tcl\fR file for use with the \fBpackage\fR mechanism.
+
+.SH OPTIONS
+The parameters supported are:
+.TP
+\fB\-name \fIpackageName\fR
+This parameter specifies the name of the package.  It is required.
+.TP
+\fB\-version \fIpackageVersion\fR
+This parameter specifies the version of the package.  It is required.
+.TP
+\fB\-load \fIfilespec\fR
+This parameter specifies a binary library that must be loaded with the
+\fBload\fR command.  \fIfilespec\fR is a list with two elements.  The
+first element is the name of the file to load.  The second, optional
+element is a list of commands supplied by loading that file.  If the
+list of procedures is empty or omitted, \fB::pkg::create\fR will
+set up the library for direct loading (see \fBpkg_mkIndex\fR).  Any
+number of \fB\-load\fR parameters may be specified.
+.TP
+\fB\-source \fIfilespec\fR
+This parameter is similar to the \fB\-load\fR parameter, except that it
+specifies a Tcl library that must be loaded with the
+\fBsource\fR command.  Any number of \fB\-source\fR parameters may be
+specified.
+.PP
+At least one \fB\-load\fR or \fB\-source\fR parameter must be given.
+.SH "SEE ALSO"
+package(n)
+.SH KEYWORDS
+auto-load, index, package, version

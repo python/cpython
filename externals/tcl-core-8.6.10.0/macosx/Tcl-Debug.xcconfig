@@ -1,0 +1,20 @@
+//
+// Tcl-Debug.xcconfig --
+//
+//	This file contains the Xcode build settings for all Debug
+//	project configurations in Tcl.xcodeproj.
+//
+// Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
+//
+// See the file "license.terms" for information on usage and redistribution
+// of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+#include "Tcl-Common.xcconfig"
+
+DEBUG_INFORMATION_FORMAT = dwarf
+DEAD_CODE_STRIPPING = NO
+DEPLOYMENT_POSTPROCESSING = NO
+GCC_OPTIMIZATION_LEVEL = 0
+GCC_PREPROCESSOR_DEFINITIONS = $(TCL_DEFS) $(GCC_PREPROCESSOR_DEFINITIONS)
+CONFIGURE_ARGS = --enable-symbols $(TCL_CONFIGURE_ARGS) $(CONFIGURE_ARGS)
+MAKE_TARGET = develop

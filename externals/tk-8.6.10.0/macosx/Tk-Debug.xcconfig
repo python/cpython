@@ -1,0 +1,19 @@
+//
+// Tk-Debug.xcconfig --
+//
+//	This file contains the Xcode build settings for all Debug
+//	project configurations in Wish.xcodeproj.
+//
+// Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
+//
+// See the file "license.terms" for information on usage and redistribution
+// of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+#include "Tk-Common.xcconfig"
+
+DEBUG_INFORMATION_FORMAT = dwarf
+DEPLOYMENT_POSTPROCESSING = NO
+GCC_OPTIMIZATION_LEVEL = 0
+GCC_PREPROCESSOR_DEFINITIONS = DEBUGLEVEL=4 $(TCL_DEFS) $(TK_DEFS) $(GCC_PREPROCESSOR_DEFINITIONS)
+CONFIGURE_ARGS = --enable-symbols $(TCL_CONFIGURE_ARGS) $(CONFIGURE_ARGS)
+MAKE_TARGET = develop

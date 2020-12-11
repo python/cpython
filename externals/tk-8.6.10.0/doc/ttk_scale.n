@@ -1,0 +1,132 @@
+.\"
+.\" Copyright (c) 2008 Donal Fellows
+.\"
+.\" See the file "license.terms" for information on usage and redistribution
+.\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+.\"
+.TH ttk::scale n 8.5 Tk "Tk Themed Widget"
+.so man.macros
+.BS
+.SH NAME
+ttk::scale \- Create and manipulate a scale widget
+.SH SYNOPSIS
+\fBttk::scale \fIpathName \fR?\fIoptions...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+A \fBttk::scale\fR widget is typically used to control the numeric value of a
+linked variable that varies uniformly over some range. A scale displays a
+\fIslider\fR that can be moved along over a \fItrough\fR, with the relative
+position of the slider over the trough indicating the value of the variable.
+.SO ttk_widget
+\-class	\-cursor	\-style
+\-takefocus
+.SE
+.SH "WIDGET-SPECIFIC OPTIONS"
+.OP \-command command Command
+Specifies the prefix of a Tcl command to invoke whenever the scale's value is
+changed via a widget command. The actual command consists of this option
+followed by a space and a real number indicating the new value of the scale.
+.OP \-from from From
+A real value corresponding to the left or top end of the scale.
+.OP \-length length Length
+Specifies the desired long dimension of the scale in screen units (i.e. any of
+the forms acceptable to \fBTk_GetPixels\fR). For vertical scales this is the
+scale's height; for horizontal scales it is the scale's width.
+.OP \-orient orient Orient
+Specifies which orientation whether the widget should be laid out horizontally
+or vertically. Must be either \fBhorizontal\fR or \fBvertical\fR or an
+abbreviation of one of these.
+.OP \-to to To
+Specifies a real value corresponding to the right or bottom end of the scale.
+This value may be either less than or greater than the \fB\-from\fR option.
+.OP \-value value Value
+Specifies the current floating-point value of the variable.
+If \fB\-variable\fR is set to an existing variable, specifying \fB\-value\fR
+has no effect (the variable value takes precedence).
+.OP \-variable variable Variable
+Specifies the name of a global variable to link to the scale. Whenever the
+value of the variable changes, the scale will update to reflect this value.
+Whenever the scale is manipulated interactively, the variable will be modified
+to reflect the scale's new value.
+.SH "WIDGET COMMAND"
+.PP
+.TP
+\fIpathName \fBcget \fIoption\fR
+.
+Returns the current value of the specified \fIoption\fR; see
+\fIttk::widget(n)\fR.
+.TP
+\fIpathName \fBconfigure \fR?\fIoption\fR? ?\fIvalue option value ...\fR?
+.
+Modify or query widget options; see \fIttk::widget(n)\fR.
+.TP
+\fIpathName \fBget \fR?\fIx y\fR?
+.
+Get the current value of the \fB\-value\fR option, or the value corresponding
+to the coordinates \fIx,y\fR if they are specified. \fIX\fR and \fIy\fR are
+pixel coordinates relative to the scale widget origin.
+.TP
+\fIpathName \fBidentify \fIx y\fR
+Returns the name of the element at position \fIx\fR, \fIy\fR.
+See \fIttk::widget(n)\fR.
+.TP
+\fIpathName \fBinstate \fIstatespec\fR ?\fIscript\fR?
+.
+Test the widget state; see \fIttk::widget(n)\fR.
+.TP
+\fIpathName \fBset \fIvalue\fR
+.
+Set the value of the widget (i.e. the \fB\-value\fR option) to \fIvalue\fR.
+The value will be clipped to the range given by the \fB\-from\fR and
+\fB\-to\fR options. Note that setting the linked variable (i.e. the variable
+named in the \fB\-variable\fR option) does not cause such clipping.
+.TP
+\fIpathName \fBstate\fR ?\fIstateSpec\fR?
+.
+Modify or query the widget state; see \fIttk::widget(n)\fR.
+.SH "INTERNAL COMMANDS"
+.PP
+.TP
+\fIpathName \fBcoords \fR?\fIvalue\fR?
+.
+Get the coordinates corresponding to \fIvalue\fR, or the coordinates
+corresponding to the current value of the \fB\-value\fR option if \fIvalue\fR
+is omitted.
+.SH "STYLING OPTIONS"
+.PP
+The class name for a \fBttk::scale\fP is \fBTScale\fP.
+.PP
+Dynamic states: \fBactive\fP.
+.PP
+\fBTProgressbar\fP styling options configurable with \fBttk::style\fP
+are:
+.PP
+\fB\-background\fP \fIcolor\fP
+.br
+\fB\-borderwidth\fP \fIamount\fP
+.br
+\fB\-darkcolor\fP \fIcolor\fP
+.br
+\fB\-groovewidth\fP \fIamount\fP
+.br
+\fB\-lightcolor\fP \fIcolor\fP
+.br
+\fB\-sliderwidth\fP \fIamount\fP
+.br
+\fB\-troughcolor\fP \fIcolor\fP
+.br
+\fB\-troughrelief\fP \fIrelief\fP
+.PP
+Some options are only available for specific themes.
+.PP
+See the \fBttk::style\fP manual page for information on how to configure
+ttk styles.
+.SH "SEE ALSO"
+ttk::widget(n), scale(n)
+.SH KEYWORDS
+scale, slider, trough, widget
+.\" Local Variables:
+.\" mode: nroff
+.\" fill-column: 78
+.\" End:

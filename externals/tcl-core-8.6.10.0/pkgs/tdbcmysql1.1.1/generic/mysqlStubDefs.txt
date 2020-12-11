@@ -1,0 +1,58 @@
+# mysqlStubDefs.txt --
+#
+#	Definitions of routines in the MySQL libraries that will be
+#	resolved and imported at run time.
+#
+# This file contains only function declarations necessary to interoperability
+# with the SQL/CLI application programming interface. The programmers believe
+# that the material in this file is not subject to copyright, under the
+# doctrines of scenes a faire and of the merger of idea and expression.
+# Accordingly, this file is in the public domain.
+#
+#-----------------------------------------------------------------------------
+
+* STUBSTRUCT: mysqlStubs
+* LIBRARY: mysqlclient_r mysqlclient mysql
+* CONVENTION: STDCALL
+
+int mysql_server_init(int, char**, char**);
+void mysql_server_end(void);
+my_ulonglong mysql_affected_rows(MYSQL*);
+my_bool mysql_autocommit(MYSQL*, my_bool);
+my_bool mysql_change_user(MYSQL*, const char*, const char*, const char*);
+my_bool mysql_close(MYSQL*);
+my_bool mysql_commit(MYSQL*);
+unsigned int mysql_errno(MYSQL*);
+const char* mysql_error(MYSQL*);
+MYSQL_FIELD* mysql_fetch_fields(MYSQL_RES*);
+unsigned long* mysql_fetch_lengths(MYSQL_RES*);
+MYSQL_ROW mysql_fetch_row(MYSQL_RES*);
+unsigned int mysql_field_count(MYSQL*);
+void mysql_free_result(MYSQL_RES*);
+unsigned long mysql_get_client_version(void);
+MYSQL* mysql_init(MYSQL*);
+MYSQL_RES* mysql_list_fields(MYSQL*, const char*, const char*);
+MYSQL_RES* mysql_list_tables(MYSQL*, const char*);
+unsigned int mysql_num_fields(MYSQL_RES*);
+int mysql_options(MYSQL*, enum mysql_option, const void*);
+int mysql_query(MYSQL*, const char*);
+MYSQL* mysql_real_connect(MYSQL*, const char*, const char*, const char*, const char*, unsigned int, const char*, unsigned long);
+my_bool mysql_rollback(MYSQL*);
+int mysql_select_db(MYSQL*, const char*);
+const char* mysql_sqlstate(MYSQL*);
+my_bool mysql_ssl_set(MYSQL*, const char*, const char*, const char*, const char*, const char*);
+my_ulonglong mysql_stmt_affected_rows(MYSQL_STMT*);
+my_bool mysql_stmt_bind_param(MYSQL_STMT*, MYSQL_BIND*);
+my_bool mysql_stmt_bind_result(MYSQL_STMT*, MYSQL_BIND*);
+my_bool mysql_stmt_close(MYSQL_STMT*);
+unsigned int mysql_stmt_errno(MYSQL_STMT*);
+const char* mysql_stmt_error(MYSQL_STMT*);
+int mysql_stmt_execute(MYSQL_STMT*);
+int mysql_stmt_fetch(MYSQL_STMT*);
+int mysql_stmt_fetch_column(MYSQL_STMT*, MYSQL_BIND*, unsigned int, unsigned long);
+MYSQL_STMT* mysql_stmt_init(MYSQL*);
+int mysql_stmt_prepare(MYSQL_STMT*, const char*, unsigned long);
+MYSQL_RES* mysql_stmt_result_metadata(MYSQL_STMT*);
+const char* mysql_stmt_sqlstate(MYSQL_STMT*);
+int mysql_stmt_store_result(MYSQL_STMT*);
+MYSQL_RES* mysql_store_result(MYSQL*);

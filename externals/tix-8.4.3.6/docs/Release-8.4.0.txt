@@ -1,0 +1,100 @@
+        ---   Tix 8.4.0 Release Notes   ---
+
+CHANGES
+=======
+
+    For a full list of the changes, see ChangeLog in the parent
+    directory. Here's a list of the major changes and improvements:
+
+    + Complete rewrite of the build system to use TEA
+    + Separation of Tix package require and Tix style usage
+    + Code cleanup to use Tcl 8.4 as a base version
+
+    The python binding has not been updated and may require some
+    maintenance work to function with this release.
+
+
+DOWNLOAD TIX
+============
+
+    The sources to this release of Tix can be downloaded from
+
+        http://tix.sourceforge.net/
+
+    You also need to download Tcl and Tk sources from
+
+        http://www.tck.tk/
+
+BUILD TIX
+=========
+
+1. Uncompress and unpack the distribution
+
+   ON UNIX / OS X:
+	gzip -cd Tix<version>.tar.gz | tar xf -
+
+   ON WINDOWS:
+	use something like WinZip to unpack the archive.
+
+   Because of major changes in the build system, you may run into
+   difficulties when building Tix. Do not despair. If you have
+   questions, bug reports or, better yet, bug fixes, please send post
+   them on http://tix.sourceforge.net.
+
+2. Configure
+
+   ON UNIX / OS X:
+        cd Tix<version>
+	./configure
+
+   Tix uses information left in tkConfig.sh when you built tk.  This
+   file will be found in $exec_prefix/lib/.  You might set the --prefix and
+   --exec-prefix options of configure if you don't want the default
+   (/usr/local).  If building on multiple unix platforms, the following is
+   recommended to isolate build conflicts:
+	mkdir <builddir>/<platform>
+	cd !$
+	/path/to/Tix<version>/configure
+
+   ON WINDOWS:
+
+   Version 8.4 added support for building in the cygwin environment on
+   Windows based on TEA (http://www.tcl.tk/doc/tea/).  You can retrieve
+   cygwin from:
+	http://sources.redhat.com/cygwin/
+
+   Inside the cygwin environment, you build the same as on Unix.
+
+   Otherwise, hack makefile.vc until it works and compile.  It has problems
+   executing wish from a path with a space in it, but the DLL builds just
+   fine.  A DLL should be available where you found this archive.
+
+3. Make and Install
+
+   ON UNIX, OS X or WINDOWS (with cygwin):
+	make
+	make test (OPTIONAL)
+	make install
+
+   ON WINDOWS (makefile.vc):
+	nmake -f makefile.vc
+	nmake -f makefile.vc test (OPTIONAL)
+	nmake -f makefile.vc install
+
+RUN TESTS AND DEMOS
+===================
+
+    Refer to the win/README.txt and unix/README.txt files for
+    instructions. You just need to type "make test" and "make
+    rundemos" in most cases.
+
+FEEDBACK
+========
+
+    Please send us feedback so that we know about the quality of this
+    release. If it works fine, consider sending us a message such as
+    "it works" and noting the versions of OS, Tcl/Tk and other
+    relevant components. If you encounter problems, please let us know
+    so that we can fix them. 
+
+    Again, thank you for helping with Tix testing.

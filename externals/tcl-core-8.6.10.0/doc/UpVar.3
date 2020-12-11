@@ -1,0 +1,74 @@
+'\"
+'\" Copyright (c) 1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_UpVar 3 7.4 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_UpVar, Tcl_UpVar2 \- link one variable to another
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_UpVar(\fIinterp, frameName, sourceName, destName, flags\fB)\fR
+.sp
+int
+\fBTcl_UpVar2(\fIinterp, frameName, name1, name2, destName, flags\fB)\fR
+.SH ARGUMENTS
+.AS "const char" *sourceName
+.AP Tcl_Interp *interp in
+Interpreter containing variables;  also used for error reporting.
+.AP "const char" *frameName in
+Identifies the stack frame containing source variable.
+May have any of the forms accepted by
+the \fBupvar\fR command, such as \fB#0\fR or \fB1\fR.
+.AP "const char" *sourceName in
+Name of source variable, in the frame given by \fIframeName\fR.
+May refer to a scalar variable or to an array variable with a
+parenthesized index.
+.AP "const char" *destName in
+Name of destination variable, which is to be linked to source
+variable so that references to \fIdestName\fR
+refer to the other variable.  Must not currently exist except as
+an upvar-ed variable.
+.AP int flags in
+One of \fBTCL_GLOBAL_ONLY\fR, \fBTCL_NAMESPACE_ONLY\fR or 0;  if non-zero,
+then \fIdestName\fR is a global or namespace variable;  otherwise it is
+local to the current procedure (or current namespace if no procedure is
+active).
+.AP "const char" *name1 in
+First part of source variable's name (scalar name, or name of array
+without array index).
+.AP "const char" *name2 in
+If source variable is an element of an array, gives the index of the element.
+For scalar source variables, is NULL.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBTcl_UpVar\fR and \fBTcl_UpVar2\fR provide the same functionality
+as the \fBupvar\fR command:  they make a link from a source variable
+to a destination variable, so that references to the destination are
+passed transparently through to the source.
+The name of the source variable may be specified either as a single
+string such as \fBxyx\fR or \fBa(24)\fR (by calling \fBTcl_UpVar\fR)
+or in two parts where the array name has been separated from the
+element name (by calling \fBTcl_UpVar2\fR).
+The destination variable name is specified in a single string;  it
+may not be an array element.
+.PP
+Both procedures return either \fBTCL_OK\fR or \fBTCL_ERROR\fR, and they
+leave an error message in the interpreter's result if an error occurs.
+.PP
+As with the \fBupvar\fR command, the source variable need not exist;
+if it does exist, unsetting it later does not destroy the link.  The
+destination variable may exist at the time of the call, but if so
+it must exist as a linked variable.
+
+.SH KEYWORDS
+linked variable, upvar, variable

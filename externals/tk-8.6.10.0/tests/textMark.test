@@ -1,0 +1,306 @@
+# This file is a Tcl script to test the code in the file tkTextMark.c.
+# This file is organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1994 The Regents of the University of California.
+# Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+tcltest::configure {*}$argv
+tcltest::loadTestedCommands
+
+destroy .t
+text .t -width 20 -height 10
+pack .t -expand 1 -fill both
+update
+.t debug on
+wm geometry . {}
+entry .t.e
+.t peer create .pt
+
+.t insert 1.0 "Line 1
+abcdefghijklm
+12345
+Line 4
+bOy GIrl .#@? x_yz
+!@#$%
+Line 7"
+  
+# The statements below reset the main window; it's needed if the window
+# manager is mwm to make mwm forget about a previous minimum size setting.
+
+wm withdraw .
+wm minsize . 1 1
+wm positionfrom . user
+wm deiconify .
+
+test textMark-1.1 {TkTextMarkCmd - missing option} -returnCodes error -body {
+    .t mark
+} -result {wrong # args: should be ".t mark option ?arg ...?"}
+test textMark-1.2 {TkTextMarkCmd - bogus option} -returnCodes error -body {
+    .t mark gorp
+} -match glob -result {bad mark option "gorp": must be *}
+test textMark-1.3 {TkTextMarkCmd - "gravity" option} -returnCodes error -body {
+    .t mark gravity foo
+} -result {there is no mark named "foo"}
+test textMark-1.4 {TkTextMarkCmd - "gravity" option} -body {
+    .t mark set x 1.3
+    .t insert 1.3 x
+    list [.t mark gravity x] [.t index x]
+} -result {right 1.4}
+test textMark-1.5 {TkTextMarkCmd - "gravity" option} -body {
+    .t mark set x 1.3
+    .t mark g x left
+    .t insert 1.3 x
+    list [.t mark gravity x] [.t index x]
+} -result {left 1.3}
+test textMark-1.6 {TkTextMarkCmd - "gravity" option} -body {
+    .t mark set x 1.3
+    .t mark gravity x right
+    .t insert 1.3 x
+    list [.t mark gravity x] [.t index x]
+} -result {right 1.4}
+test textMark-1.7 {TkTextMarkCmd - "gravity" option} -returnCodes error -body {
+    .t mark set x 1.3
+    .t mark gravity x gorp
+} -result {bad mark gravity "gorp": must be left or right}
+test textMark-1.8 {TkTextMarkCmd - "gravity" option} -returnCodes error -body {
+    .t mark gravity
+} -result {wrong # args: should be ".t mark gravity markName ?gravity?"}
+
+test textMark-2.1 {TkTextMarkCmd - "names" option} -body {
+    .t mark names 2
+} -returnCodes error -result {wrong # args: should be ".t mark names"}
+test textMark-2.2 {TkTextMarkCmd - "names" option} -setup {
+    .t mark unset {*}[.t mark names]
+} -body {
+    lsort [.t mark na]
+} -result {current insert}
+test textMark-2.3 {TkTextMarkCmd - "names" option} -setup {
+    .t mark unset {*}[.t mark names]
+} -body {
+    .t mark set a 1.1
+    .t mark set "b c" 2.3
+    lsort [.t mark names]
+} -result {a {b c} current insert}
+
+test textMark-3.1 {TkTextMarkCmd - "set" option} -returnCodes error -body {
+    .t mark set a
+} -result {wrong # args: should be ".t mark set markName index"}
+test textMark-3.2 {TkTextMarkCmd - "set" option} -returnCodes error -body {
+    .t mark s a b c
+} -result {wrong # args: should be ".t mark set markName index"}
+test textMark-3.3 {TkTextMarkCmd - "set" option} -body {
+    .t mark set a @x
+} -returnCodes error -result {bad text index "@x"}
+test textMark-3.4 {TkTextMarkCmd - "set" option} -body {
+    .t mark set a 1.2
+    .t index a
+} -result 1.2
+test textMark-3.5 {TkTextMarkCmd - "set" option} -body {
+    .t mark set a end
+    .t index a
+} -result {8.0}
+
+test textMark-4.1 {TkTextMarkCmd - "unset" option} -body {
+    .t mark unset
+} -result {}
+test textMark-4.2 {TkTextMarkCmd - "unset" option} -body {
+    .t mark set a 1.2
+    .t mark set b 2.3
+    .t mark unset a b
+    .t index a
+} -returnCodes error -result {bad text index "a"}
+test textMark-4.2.1 {TkTextMarkCmd - "unset" option} -body {
+    .t mark set a 1.2
+    .t mark set b 2.3
+    .t mark unset a b
+    .t index b
+} -returnCodes error -result {bad text index "b"}
+test textMark-4.3 {TkTextMarkCmd - "unset" option} -body {
+    .t mark set a 1.2
+    .t mark set b 2.3
+    .t mark set 49ers 3.1
+    .t mark unset {*}[.t mark names]
+    lsort [.t mark names]
+} -result {current insert}
+
+test textMark-5.1 {TkTextMarkCmd - miscellaneous} -returnCodes error -body {
+    .t mark
+} -result {wrong # args: should be ".t mark option ?arg ...?"}
+test textMark-5.2 {TkTextMarkCmd - miscellaneous} -returnCodes error -body {
+    .t mark foo
+} -result {bad mark option "foo": must be gravity, names, next, previous, set, or unset}
+
+test textMark-6.1 {TkTextMarkSegToIndex} -body {
+    .t mark set a 1.2
+    .t mark set b 1.2
+    .t mark set c 1.2
+    .t mark set d 1.4
+    list [.t index a] [.t index b] [.t index c ] [.t index d]
+} -result {1.2 1.2 1.2 1.4}
+test textMark-6.2 {TkTextMarkNameToIndex, with mark outside -startline/-endline range - bug 1630271} -body {
+  .t mark set insert 1.0
+  .t configure -startline 2
+  set res [list [.t index insert] [.t index insert-1c] [.t get insert]]
+  .t mark set insert end
+  .t configure -endline 4
+  lappend res [.t index insert]
+} -cleanup {
+  .t configure -startline {} -endline {}
+} -result {1.0 1.0 a 2.5}
+test textMark-6.3 {TkTextMarkNameToIndex, with mark outside -startline/-endline range - bug 1630271} -body {
+  .t mark set mymark 1.0
+  .t configure -startline 2
+  list [catch {.t index mymark} msg] $msg
+} -cleanup {
+  .t configure -startline {} -endline {}
+  .t mark unset mymark
+} -result {1 {bad text index "mymark"}}
+test textMark-6.4 {TkTextMarkNameToIndex, with mark outside -startline/-endline range - bug 1630271} -body {
+  .t mark set mymark 1.0
+  .t configure -startline 2
+  set res [list [catch {.t index mymark} msg] $msg]
+  lappend res [.pt index mymark]
+  .t configure -startline {}
+  .pt configure -startline 4
+  lappend res [.t index mymark]
+  lappend res [catch {.pt index mymark} msg] $msg
+  lappend res [.t get mymark]
+  lappend res [catch {.pt get mymark} msg] $msg
+} -cleanup {
+  .t configure -startline {} -endline {}
+  .pt configure -startline {} -endline {}
+  .t mark unset mymark
+} -result {1 {bad text index "mymark"} 1.0 1.0 1 {bad text index "mymark"} L 1 {bad text index "mymark"}}
+test textMark-6.5 {insert and current marks in an empty peer - bug 3487407} -body {
+  .t mark set insert 1.0
+  .t configure -start 5 -end 5
+  set res [.t index insert]
+} -cleanup {
+  .t configure -startline {} -endline {}
+} -result {1.0}
+
+test textMark-7.1 {MarkFindNext - invalid mark name} -body {
+    .t mark next bogus
+} -returnCodes error -result {bad text index "bogus"}
+test textMark-7.2 {MarkFindNext - marks at same location} -body {
+    .t mark set insert 2.0
+    .t mark set current 2.0
+    .t mark next current
+} -result {insert}
+test textMark-7.3 {MarkFindNext - numerical starting mark} -body {
+    .t mark set current 1.0
+    .t mark set insert 1.0
+    .t mark next 1.0
+} -result {insert}
+test textMark-7.4 {MarkFindNext - mark on the same line} -setup {
+    .t mark unset {*}[.t mark names]
+} -body {
+    .t mark set current 1.0
+    .t mark set insert 1.1
+    .t mark next current
+} -result {insert}
+test textMark-7.5 {MarkFindNext - mark on the next line} -setup {
+    .t mark unset {*}[.t mark names]
+} -body {
+    .t mark set current 1.end
+    .t mark set insert 2.0
+    .t mark next current
+} -result {insert}
+test textMark-7.6 {MarkFindNext - mark far away} -setup {
+    .t mark unset {*}[.t mark names]
+} -body {
+    .t mark set current 1.2
+    .t mark set insert 7.0
+    .t mark next current
+} -result {insert}
+test textMark-7.7 {MarkFindNext - mark on top of end} -setup {
+    .t mark unset {*}[.t mark names]
+} -body {
+    .t mark set current end
+    .t mark next end
+} -result {current}
+test textMark-7.8 {MarkFindNext - no next mark} -setup {
+    .t mark unset {*}[.t mark names]
+} -body {
+    .t mark set current 1.0
+    .t mark set insert 3.0
+    .t mark next insert
+} -result {}
+test textMark-7.9 {MarkFindNext - mark set in a text widget and retrieved from a peer} -setup {
+    .t mark unset {*}[.t mark names]
+} -body {
+    .t mark set mymark 1.0
+    lsort [list [.pt mark next 1.0] [.pt mark next mymark] [.pt mark next insert]]
+} -result {current insert mymark}
+
+test textMark-8.1 {MarkFindPrev - invalid mark name} -body {
+    .t mark prev bogus
+} -returnCodes error -result {bad text index "bogus"}
+test textMark-8.2 {MarkFindPrev - marks at same location} -body {
+    .t mark set insert 2.0
+    .t mark set current 2.0
+    .t mark prev insert
+} -result {current}
+test textMark-8.3 {MarkFindPrev - numerical starting mark} -setup {
+    .t mark unset {*}[.t mark names]
+} -body {
+    .t mark set current 1.0
+    .t mark set insert 1.0
+    .t mark prev 1.1
+} -result {current}
+test textMark-8.4 {MarkFindPrev - mark on the same line} -setup {
+    .t mark unset {*}[.t mark names]
+} -body {
+    .t mark set current 1.0
+    .t mark set insert 1.1
+    .t mark prev insert
+} -result {current}
+test textMark-8.5 {MarkFindPrev - mark on the previous line} -setup {
+    .t mark unset {*}[.t mark names]
+} -body {
+    .t mark set current 1.end
+    .t mark set insert 2.0
+    .t mark prev insert
+} -result {current}
+test textMark-8.6 {MarkFindPrev - mark far away} -setup {
+    .t mark unset {*}[.t mark names]
+} -body {
+    .t mark set current 1.2
+    .t mark set insert 7.0
+    .t mark prev insert
+} -result {current}
+test textMark-8.7 {MarkFindPrev - mark on top of end} -setup {
+    .t mark unset {*}[.t mark names]
+} -body {
+    .t mark set insert 3.0
+    .t mark set current end
+    .t mark prev end
+} -result {insert}
+test textMark-8.8 {MarkFindPrev - no previous mark} -setup {
+    .t mark unset {*}[.t mark names]
+} -body {
+    .t mark set current 1.0
+    .t mark set insert 3.0
+    .t mark prev current
+} -result {}
+test textMark-8.9 {MarkFindPrev - mark set in a text widget and retrieved from a peer} -setup {
+    .t mark unset {*}[.t mark names]
+} -body {
+    .t mark set mymark 1.0
+    lsort [list [.pt mark prev end] [.pt mark prev current] [.pt mark prev insert]]
+} -result {current insert mymark}
+
+destroy .pt
+destroy .t
+
+# cleanup
+cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

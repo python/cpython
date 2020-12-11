@@ -1,0 +1,135 @@
+'\"
+'\" Copyright (c) 1992 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH tk n 8.4 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+tk \- Manipulate Tk internal state
+.SH SYNOPSIS
+\fBtk\fR \fIoption \fR?\fIarg arg ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+The \fBtk\fR command provides access to miscellaneous
+elements of Tk's internal state.
+Most of the information manipulated by this command pertains to the
+application as a whole, or to a screen or display, rather than to a
+particular window.
+The command can take any of a number of different forms
+depending on the \fIoption\fR argument.  The legal forms are:
+.TP
+\fBtk appname \fR?\fInewName\fR?
+.
+If \fInewName\fR is not specified, this command returns the name
+of the application (the name that may be used in \fBsend\fR
+commands to communicate with the application).
+If \fInewName\fR is specified, then the name of the application
+is changed to \fInewName\fR.
+If the given name is already in use, then a suffix of the form
+.QW "\fB #2\fR"
+or
+.QW "\fB #3\fR"
+is appended in order to make the name unique.
+The command's result is the name actually chosen.
+\fInewName\fR should not start with a capital letter.
+This will interfere with option processing, since names starting with
+capitals are assumed to be classes;  as a result, Tk may not
+be able to find some options for the application.
+If sends have been disabled by deleting the \fBsend\fR command,
+this command will reenable them and recreate the \fBsend\fR
+command.
+.TP
+\fBtk busy \fIsubcommand\fR ...
+.
+This command controls the marking of window hierarchies as
+.QW busy ,
+rendering them non-interactive while some other operation is proceeding. For
+more details see the \fBbusy\fR manual page.
+.TP
+\fBtk caret \fIwindow \fR?\fB\-x \fIx\fR? ?\fB\-y \fIy\fR? ?\fB\-height \fIheight\fR?
+.
+Sets and queries the caret location for the display of the specified
+Tk window \fIwindow\fR.  The caret is the per-display cursor location
+used for indicating global focus (e.g. to comply with Microsoft
+Accessibility guidelines), as well as for location of the over-the-spot
+XIM (X Input Methods) or Windows IME windows.  If no options are specified,
+the last values used for setting the caret are return in option-value pair
+format.  \fB\-x\fR and \fB\-y\fR represent window-relative coordinates, and
+\fB\-height\fR is the height of the current cursor location, or the height
+of the specified \fIwindow\fR if none is given.
+.TP
+\fBtk inactive \fR?\fB\-displayof \fIwindow\fR? ?\fBreset\fR?
+.
+Returns a positive integer, the number of milliseconds since the last
+time the user interacted with the system. If the \fB\-displayof\fR
+option is given then the return value refers to the display of
+\fIwindow\fR; otherwise it refers to the display of the application's
+main window.
+.RS
+.PP
+\fBtk inactive\fR will return \-1, if querying the user inactive time
+is not supported by the system, and in safe interpreters.
+.PP
+If the literal string \fBreset\fR is given as an additional argument,
+the timer is reset and an empty string is returned. Resetting the
+inactivity time is forbidden in safe interpreters and will throw an
+error if tried.
+.RE
+.TP
+\fBtk fontchooser \fIsubcommand\fR ...
+Controls the Tk font selection dialog. For more details see the
+\fBfontchooser\fR manual page.
+.TP
+\fBtk scaling \fR?\fB\-displayof \fIwindow\fR? ?\fInumber\fR?
+.
+Sets and queries the current scaling factor used by Tk to convert between
+physical units (for example, points, inches, or millimeters) and pixels.  The
+\fInumber\fR argument is a floating point number that specifies the number of
+pixels per point on \fIwindow\fR's display.  If the \fIwindow\fR argument is
+omitted, it defaults to the main window.  If the \fInumber\fR argument is
+omitted, the current value of the scaling factor is returned.
+.RS
+.PP
+A
+.QW point
+is a unit of measurement equal to 1/72 inch.  A scaling factor
+of 1.0 corresponds to 1 pixel per point, which is equivalent to a standard
+72 dpi monitor.  A scaling factor of 1.25 would mean 1.25 pixels per point,
+which is the setting for a 90 dpi monitor; setting the scaling factor to
+1.25 on a 72 dpi monitor would cause everything in the application to be
+displayed 1.25 times as large as normal.  The initial value for the scaling
+factor is set when the application starts, based on properties of the
+installed monitor, but it can be changed at any time.  Measurements made
+after the scaling factor is changed will use the new scaling factor, but it
+is undefined whether existing widgets will resize themselves dynamically to
+accommodate the new scaling factor.
+.RE
+.TP
+\fBtk useinputmethods \fR?\fB\-displayof \fIwindow\fR? ?\fIboolean\fR?
+.
+Sets and queries the state of whether Tk should use XIM (X Input Methods)
+for filtering events.  The resulting state is returned.  XIM is used in
+some locales (i.e., Japanese, Korean), to handle special input devices. This
+feature is only significant on X.  If XIM support is not available, this
+will always return 0.  If the \fIwindow\fR argument is omitted, it defaults
+to the main window.  If the \fIboolean\fR argument is omitted, the current
+state is returned.  This is turned on by default for the main display.
+.TP
+\fBtk windowingsystem\fR
+.
+Returns the current Tk windowing system, one of
+\fBx11\fR (X11-based), \fBwin32\fR (MS Windows),
+or \fBaqua\fR (Mac OS X Aqua).
+.SH "SEE ALSO"
+busy(n), fontchooser(n), send(n), winfo(n)
+.SH KEYWORDS
+application name, send
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

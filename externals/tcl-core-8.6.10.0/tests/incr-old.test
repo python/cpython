@@ -1,0 +1,92 @@
+# Commands covered:  incr
+#
+# This file contains the original set of tests for Tcl's incr command.
+# Since the incr command is now compiled, a new set of tests covering
+# the new implementation is in the file "incr.test". Sourcing this file
+# into Tcl runs the tests and generates output for errors.
+# No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+catch {unset x}
+
+test incr-old-1.1 {basic incr operation} {
+    set x 23
+    list [incr x] $x
+} {24 24}
+test incr-old-1.2 {basic incr operation} {
+    set x 106
+    list [incr x -5] $x
+} {101 101}
+test incr-old-1.3 {basic incr operation} {
+    set x "  -106"
+    list [incr x 1] $x
+} {-105 -105}
+test incr-old-1.4 {basic incr operation} {
+    set x "  +106"
+    list [incr x 1] $x
+} {107 107}
+
+test incr-old-2.1 {incr errors} {
+    list [catch incr msg] $msg
+} {1 {wrong # args: should be "incr varName ?increment?"}}
+test incr-old-2.2 {incr errors} {
+    list [catch {incr a b c} msg] $msg
+} {1 {wrong # args: should be "incr varName ?increment?"}}
+test incr-old-2.3 {incr errors} {
+    catch {unset x}
+    incr x
+} 1
+test incr-old-2.4 {incr errors} {
+    set x abc
+    list [catch {incr x} msg] $msg $::errorInfo
+} {1 {expected integer but got "abc"} {expected integer but got "abc"
+    while executing
+"incr x"}}
+test incr-old-2.5 {incr errors} {
+    set x 123
+    list [catch {incr x 1a} msg] $msg $::errorInfo
+} {1 {expected integer but got "1a"} {expected integer but got "1a"
+    (reading increment)
+    invoked from within
+"incr x 1a"}}
+test incr-old-2.6 {incr errors} -body {
+    proc readonly args {error "variable is read-only"}
+    set x 123
+    trace var x w readonly
+    list [catch {incr x 1} msg] $msg $::errorInfo
+} -match glob -result {1 {can't set "x": variable is read-only} {*variable is read-only
+    while executing
+*
+"incr x 1"}}
+catch {unset x}
+test incr-old-2.7 {incr errors} {
+    set x -
+    list [catch {incr x 1} msg] $msg
+} {1 {expected integer but got "-"}}
+test incr-old-2.8 {incr errors} {
+    set x {  -  }
+    list [catch {incr x 1} msg] $msg
+} {1 {expected integer but got "  -  "}}
+test incr-old-2.9 {incr errors} {
+    set x +
+    list [catch {incr x 1} msg] $msg
+} {1 {expected integer but got "+"}}
+test incr-old-2.10 {incr errors} {
+    set x {20 x}
+    list [catch {incr x 1} msg] $msg
+} {1 {expected integer but got "20 x"}}
+
+# cleanup
+::tcltest::cleanupTests
+return

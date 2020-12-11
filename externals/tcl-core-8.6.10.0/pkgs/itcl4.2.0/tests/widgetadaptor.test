@@ -1,0 +1,825 @@
+#---------------------------------------------------------------------
+# TITLE:
+#       typefunction.test
+#
+# AUTHOR:
+#       Arnulf Wiedemann with a lot of code form the snit tests by
+#       Will Duquette
+#
+# DESCRIPTION:
+#       Test cases for ::itcl::type proc, method, typemethod commands.
+#       Uses the ::tcltest:: harness.
+#
+#       There is at least Tcl 8.6a3 needed
+#
+#    The tests assume tcltest 2.2
+#-----------------------------------------------------------------------
+
+# ### ### ### ######### ######### #########
+## Declare the minimal version of Tcl required to run the package
+## tested by this testsuite, and its dependencies.
+
+proc testsNeedTcl {version} {
+    # This command ensures that a minimum version of Tcl is used to
+    # run the tests in the calling testsuite. If the minimum is not
+    # met by the active interpreter we forcibly bail out of the
+    # testsuite calling the command. The command has to be called
+    # immediately after loading the utilities.
+
+    if {[package vsatisfies [package provide Tcl] ${version}-]} return
+
+    puts "    Aborting the tests found in \"[file tail [info script]]\""
+    puts "    Requiring at least Tcl $version, have [package provide Tcl]."
+
+    # This causes a 'return' in the calling scope.
+    return -code return
+}
+
+# ### ### ### ######### ######### #########
+## Declare the minimum version of Tcltest required to run the
+## testsuite.
+
+proc testsNeedTcltest {version} {
+    # This command ensure that a minimum version of the Tcltest
+    # support package is used to run the tests in the calling
+    # testsuite. If the minimum is not met by the loaded package we
+    # forcibly bail out of the testsuite calling the command. The
+    # command has to be called after loading the utilities. The only
+    # command allowed to come before it is 'textNeedTcl' above.
+
+    # Note that this command will try to load a suitable version of
+    # Tcltest if the package has not been loaded yet.
+
+    if {[lsearch [namespace children] ::tcltest] == -1} {
+	if {![catch {
+	    package require tcltest $version
+	}]} {
+	    namespace import -force ::tcltest::*
+	    return
+	}
+    } elseif {[package vcompare [package present tcltest] $version] >= 0} {
+	namespace import -force ::tcltest::*
+	return
+    }
+
+    puts "    Aborting the tests found in [file tail [info script]]."
+    puts "    Requiring at least tcltest $version, have [package present tcltest]"
+
+    # This causes a 'return' in the calling scope.
+    return -code return
+}
+
+# Set up for Tk tests: enter the event loop long enough to catch
+# any bgerrors.
+proc tkbide {{msg "tkbide"} {msec 500}} {
+    set ::bideVar 0
+    set ::bideError ""
+    set ::bideErrorInfo ""
+    # It looks like update idletasks does the job.
+    if {0} {
+        after $msec {set ::bideVar 1}
+        tkwait variable ::bideVar
+    }
+    update idletasks
+    if {"" != $::bideError} {
+        error "$msg: $::bideError" $::bideErrorInfo
+    }
+}
+
+testsNeedTcl     8.6
+testsNeedTcltest 2.2
+
+interp alias {} type {} ::itcl::type
+interp alias {} widgetadaptor {} ::itcl::widgetadaptor
+
+# Marks tests which are only for Tk.
+tcltest::testConstraint tk [expr {![catch {package require Tk}]}]
+
+::tcltest::loadTestedCommands
+package require itcl
+
+#-----------------------------------------------------------------------
+# Widgetadaptors
+
+test widgetadaptor-1.1 {creating a widget: hull hijacking
+} -constraints {
+    tk
+} -body {
+    widgetadaptor mylabel {
+        constructor {args} {
+            installhull [label $self]
+            $self configure {*}$args
+        }
+
+        delegate method * to itcl_hull
+        delegate option * to itcl_hull
+    }
+
+    set xx [mylabel create .label -text "My Label"]
+
+    set a [.label cget -text]
+    set b [::itcl::internal::widgets::hull1.label cget -text]
+
+    destroy .label
+    tkbide
+    list $a $b
+} -cleanup {
+    mylabel destroy
+} -result {{My Label} {My Label}}
+
+test widgetadaptor-1.2 {destroying a widget with destroy
+} -constraints {
+    tk
+} -body {
+    widgetadaptor mylabel {
+        constructor {} {
+            installhull [label $self]
+        }
+    }
+
+    mylabel create .label
+    set a [lsort [namespace children ::itcl::internal::variables]]
+    destroy .label
+    set b [lsort [namespace children ::itcl::internal::variables]]
+    tkbide
+    list $a $b
+} -cleanup {
+    mylabel destroy
+} -result {{::itcl::internal::variables::mylabel ::itcl::internal::variables::oo} {::itcl::internal::variables::mylabel ::itcl::internal::variables::oo}}
+
+test widgetadaptor-1.3 {destroying two widgets of the same type with destroy
+} -constraints {
+    tk
+} -body {
+    widgetadaptor mylabel {
+        constructor {} {
+            installhull [label $self]
+        }
+    }
+
+    mylabel create .lab1
+    mylabel create .lab2
+    set a [lsort [namespace children ::itcl::internal::variables]]
+    destroy .lab1
+    destroy .lab2
+    set b [lsort [namespace children ::itcl::internal::variables]]
+    tkbide
+    list $a $b
+} -cleanup {
+    mylabel destroy
+} -result {{::itcl::internal::variables::mylabel ::itcl::internal::variables::oo} {::itcl::internal::variables::mylabel ::itcl::internal::variables::oo}}
+
+test widgetadaptor-1.4 {destroying a widget with rename, then destroy type
+} -constraints {
+    tk
+} -body {
+    widgetadaptor mylabel {
+        constructor {} {
+            installhull [label $self]
+        }
+    }
+
+    mylabel create .label
+    set a [lsort [namespace children ::itcl::internal::variables]]
+    rename .label ""
+    set b [lsort [namespace children ::itcl::internal::variables]]
+
+    mylabel destroy
+    tkbide
+    list $a $b
+} -result {{::itcl::internal::variables::mylabel ::itcl::internal::variables::oo} {::itcl::internal::variables::mylabel ::itcl::internal::variables::oo}}
+
+test widgetadaptor-1.5 {destroying two widgets of the same type with rename
+} -constraints {
+    tk
+} -body {
+    widgetadaptor mylabel {
+        constructor {} {
+            installhull [label $self]
+        }
+    }
+
+    mylabel create .lab1
+    mylabel create .lab2
+    set a [lsort [namespace children ::itcl::internal::variables]]
+    rename .lab1 ""
+    rename .lab2 ""
+    set b [lsort [namespace children ::itcl::internal::variables]]
+    mylabel destroy
+    tkbide
+    list $a $b
+} -result {{::itcl::internal::variables::mylabel ::itcl::internal::variables::oo} {::itcl::internal::variables::mylabel ::itcl::internal::variables::oo}}
+
+test widgetadaptor-1.6 {create/destroy twice, with destroy
+} -constraints {
+    tk
+} -body {
+    widgetadaptor mylabel {
+        constructor {} {
+            installhull [label $self]
+        }
+    }
+
+    mylabel create .lab1
+    set a [namespace children ::itcl::internal::variables]
+    destroy .lab1
+
+    mylabel create .lab1
+    set b [namespace children ::itcl::internal::variables]
+    destroy .lab1
+
+    set c [namespace children ::itcl::internal::variables]
+    mylabel destroy
+    tkbide
+    list $a $b $c
+} -result {{::itcl::internal::variables::mylabel ::itcl::internal::variables::oo} {::itcl::internal::variables::mylabel ::itcl::internal::variables::oo} {::itcl::internal::variables::mylabel ::itcl::internal::variables::oo}}
+
+test widgetadaptor-1.7 {create/destroy twice, with rename
+} -constraints {
+    tk
+} -body {
+    widgetadaptor mylabel {
+        constructor {} {
+            installhull [label $self]
+        }
+    }
+
+    mylabel create .lab1
+    set a [namespace children ::itcl::internal::variables]
+    rename .lab1 ""
+
+    mylabel create .lab1
+    set b [namespace children ::itcl::internal::variables]
+    rename .lab1 ""
+
+    set c [namespace children ::itcl::internal::variables]
+    mylabel destroy
+    tkbide
+    list $a $b $c
+} -result {{::itcl::internal::variables::mylabel ::itcl::internal::variables::oo} {::itcl::internal::variables::mylabel ::itcl::internal::variables::oo} {::itcl::internal::variables::mylabel ::itcl::internal::variables::oo}}
+
+test widgetadaptor-1.8 {"create" is optional
+} -constraints {
+    tk
+} -body {
+    widgetadaptor mylabel {
+        constructor {args} {
+            installhull [label $self]
+        }
+        method howdy {} {return "Howdy!"}
+    }
+
+    mylabel .label
+    set a [.label howdy]
+
+    destroy .label
+    tkbide
+    set a
+} -cleanup {
+    mylabel destroy
+} -result {Howdy!}
+
+test widgetadaptor-1.10 {"create" is optional, but must be a valid name
+} -constraints {
+    tk
+} -body {
+    widgetadaptor mylabel {
+        constructor {args} {
+            installhull [label $self]
+        }
+        method howdy {} {return "Howdy!"}
+    }
+
+    catch {mylabel foo} result
+    tkbide
+    set result
+} -cleanup {
+    mylabel destroy
+} -result {bad window path name "foo"}
+
+test widgetadaptor-1.11 {user-defined destructors are called
+} -constraints {
+    tk
+} -body {
+    widgetadaptor mylabel {
+        typevariable flag ""
+
+        constructor {args} {
+            installhull [label $self]
+            set flag "created $self"
+        }
+
+        destructor {
+            set flag "destroyed $self"
+        }
+
+        typemethod getflag {} {
+            return $flag
+        }
+    }
+
+    mylabel .label
+    set a [mylabel getflag]
+    destroy .label
+    tkbide
+    list $a [mylabel getflag]
+} -cleanup {
+    mylabel destroy
+} -result {{created ::itcl::internal::widgets::hull1.label} {destroyed ::itcl::internal::widgets::hull1.label}}
+
+test widgetadaptor-1.12 {Constructor errors tolerated
+} -constraints {
+    tk
+} -body {
+    widgetadaptor mylabel {
+        constructor {args} {error foo}
+        destructor {}
+    }
+
+    # Without bug fix this will crash
+    mylabel .label
+} -cleanup {
+    mylabel destroy
+} -returnCodes error -result foo
+
+test widgetadaptor-1.14 {hull can be repeatedly renamed
+} -constraints {
+    tk
+} -body {
+    widgetadaptor basetype {
+        constructor {args} {
+            installhull [label $self]
+        }
+
+        method basemethod {} { return "basemethod" }
+    }
+
+    widgetadaptor w1 {
+        constructor {args} {
+            installhull [basetype create $self]
+        }
+    }
+
+    widgetadaptor w2 {
+        constructor {args} {
+            installhull [w1 $self]
+        }
+    }
+
+    set a [w2 .foo]
+    destroy .foo
+    tkbide
+    set a
+} -cleanup {
+    w2 destroy
+    w1 destroy
+    basetype destroy
+} -result {.foo}
+
+test widgetadaptor-1.15 {widget names can be generated
+} -constraints {
+    tk
+} -body {
+    widgetadaptor unique {
+        constructor {args} {
+            installhull [label $self]
+        }
+    }
+
+    set w [unique .#auto]
+    destroy $w
+    tkbide
+    set w
+} -cleanup {
+    unique destroy
+} -result {.unique0}
+
+test widgetadaptor-1.16 {snit::widgetadaptor as hull
+} -constraints {
+    tk
+} -body {
+    widgetadaptor mylabel {
+        constructor {args} {
+            installhull [label $self]
+	    if {[llength $args]} {
+                $self configure {*}$args
+	    }
+        }
+        method method1 {} {
+            return "method1"
+        }
+        delegate option * to itcl_hull
+    }
+
+    widgetadaptor mylabel2 {
+        constructor {args} {
+            installhull [mylabel $self]
+                $self configure {*}$args
+        }
+        method method2 {} {
+            return "method2: [$itcl_hull method1]"
+        }
+        delegate option * to itcl_hull
+    }
+
+    mylabel2 .label -text "Some Text"
+    set a [.label method2]
+    set b [.label cget -text]
+    .label configure -text "More Text"
+    set c [.label cget -text]
+    set d [lsort [namespace children ::itcl::internal::variables]]
+
+    destroy .label
+
+    set e [lsort [namespace children ::itcl::internal::variables]]
+
+    mylabel2 destroy
+    mylabel destroy
+
+    tkbide
+    list $a $b $c $d $e
+} -result {{method2: method1} {Some Text} {More Text} {::itcl::internal::variables::mylabel ::itcl::internal::variables::mylabel2 ::itcl::internal::variables::oo} {::itcl::internal::variables::mylabel ::itcl::internal::variables::mylabel2 ::itcl::internal::variables::oo}}
+
+test widgetadaptor-1.17 {snit::widgetadaptor as hull; use rename
+} -constraints {
+    tk
+} -body {
+    widgetadaptor mylabel {
+        constructor {args} {
+            installhull [label $self]
+            $self configure {*}$args
+        }
+        method method1 {} {
+            return "method1"
+        }
+        delegate option * to itcl_hull
+    }
+
+    widgetadaptor mylabel2 {
+        constructor {args} {
+            installhull [mylabel $self]
+            $self configure {*}$args
+        }
+        method method2 {} {
+            return "method2: [$itcl_hull method1]"
+        }
+        delegate option * to itcl_hull
+    }
+
+    mylabel2 .label -text "Some Text"
+    set a [.label method2]
+    set b [.label cget -text]
+    .label configure -text "More Text"
+    set c [.label cget -text]
+    set d [lsort [namespace children ::itcl::internal::variables]]
+
+    rename .label ""
+
+    set e [lsort [namespace children ::itcl::internal::variables]]
+
+    mylabel2 destroy
+    mylabel destroy
+
+    tkbide
+    list $a $b $c $d $e
+} -result {{method2: method1} {Some Text} {More Text} {::itcl::internal::variables::mylabel ::itcl::internal::variables::mylabel2 ::itcl::internal::variables::oo} {::itcl::internal::variables::mylabel ::itcl::internal::variables::mylabel2 ::itcl::internal::variables::oo}}
+
+test widgetadaptor-1.19 {error in widgetadaptor constructor
+} -constraints {
+    tk
+} -body {
+    widgetadaptor mylabel {
+        constructor {args} {
+            error "Simulated Error"
+        }
+    }
+
+    mylabel .lab
+} -returnCodes {
+    error
+} -cleanup {
+    mylabel destroy
+} -result {Simulated Error}
+
+
+test install-1.3 {can't install until hull exists
+} -constraints {
+    tk
+} -body {
+    widgetadaptor myframe {
+        # Delegate an option just to make sure the component variable
+        # exists.
+        delegate option -font to text
+
+        constructor {args} {
+            installcomponent text using text $win.text -background green
+        }
+    }
+
+    myframe .frm
+} -returnCodes {
+    error
+} -cleanup {
+    myframe destroy
+} -result {cannot install "text" before "itcl_hull" exists}
+
+test installhull-1.3 {
+    options delegated to a widgetadaptor's itcl_hull frame
+    with the same name are
+    initialized from the option database.  Note that there's no
+    explicit code in Snit to do this; there's no way to change the
+    adapted hull widget's -class, so the widget is simply being
+    initialized normally.
+} -constraints {
+    tk
+} -body {
+    widgetadaptor myframe {
+        delegate option -background to itcl_hull
+
+        typeconstructor {
+            option add *Frame.background red
+            option add *Frame.width 123
+        }
+
+        constructor {args} {
+            installhull using frame
+        }
+
+        method getwid {} {
+            $itcl_hull cget -width
+        }
+    }
+
+    myframe .frm
+    set a [.frm cget -background]
+    set b [.frm getwid]
+    destroy .frm
+    tkbide
+    list $a $b
+} -cleanup {
+    myframe destroy
+} -result {red 123}
+
+test installhull-1.4 {
+    Options delegated to a widget's itcl_hull frame with a different name are
+    initialized from the option database.
+} -constraints {
+    tk
+} -body {
+    widgetadaptor myframe {
+        delegate option -mainbackground to itcl_hull as -background
+
+        typeconstructor {
+            option add *Frame.mainbackground red
+        }
+
+        constructor {args} {
+            installhull using frame
+        }
+    }
+
+    myframe .frm
+    set a [.frm cget -mainbackground]
+    destroy .frm
+    tkbide
+    set a
+} -cleanup {
+    myframe destroy
+} -result {red}
+
+test installhull-1.5 {
+    Option values read from the option database are overridden by options
+    explicitly passed, even if delegated under a different name.
+} -constraints {
+    tk
+} -body {
+    widgetadaptor myframe {
+        delegate option -mainbackground to itcl_hull as -background
+
+        typeconstructor {
+            option add *Frame.mainbackground red
+            option add *Frame.width 123
+        }
+
+        constructor {args} {
+            installhull using frame -background green -width 321
+        }
+
+        method getwid {} {
+            $itcl_hull cget -width
+        }
+    }
+
+    myframe .frm
+    set a [.frm cget -mainbackground]
+    set b [.frm getwid]
+    destroy .frm
+    tkbide
+    list $a $b
+} -cleanup {
+    myframe destroy
+} -result {green 321}
+
+test option-2.5 {configure returns info, unknown options
+} -constraints {
+    tk
+} -body {
+    widgetadaptor myframe {
+        option -foo a
+        delegate option -width to itcl_hull
+        delegate option * to itcl_hull
+        constructor {args} {
+	    # need to reset because of test installhull-1.5
+            option add *Frame.width 0
+            installhull [frame $self]
+        }
+    }
+
+    myframe .frm
+    set a [.frm configure -foo]
+    set b [.frm configure -width]
+    set c [.frm configure -height]
+    destroy .frm
+    tkbide
+
+    list $a $b $c
+
+} -cleanup {
+    myframe destroy
+} -result {{-foo foo Foo a a} {-width width Width 0 0} {-height height Height 0 0}}
+
+test option-2.6 {configure -opt unknown to implicit component
+} -constraints {
+    tk
+} -body {
+    widgetadaptor myframe {
+        delegate option * to itcl_hull
+        constructor {args} {
+            installhull [frame $self]
+        }
+    }
+    myframe .frm
+    catch {.frm configure -quux} result
+    destroy .frm
+    tkbide
+    set result
+} -cleanup {
+    myframe destroy
+} -result {unknown option "-quux"}
+
+test iinfo-6.5 {info options with unknown delegated options
+} -constraints {
+    tk
+} -body {
+    widgetadaptor myframe {
+        option -foo a
+        delegate option * to itcl_hull
+        constructor {args} {
+            installhull [frame $self]
+        }
+    }
+    myframe .frm
+
+    set a [lsort [.frm info options]]
+    destroy .frm
+    tkbide
+    set a
+} -cleanup {
+    myframe destroy
+} -result {-background -bd -bg -borderwidth -class -colormap -container -cursor -foo -height -highlightbackground -highlightcolor -highlightthickness -padx -pady -relief -takefocus -visual -width}
+
+test iinfo-6.7 {info options with exceptions
+} -constraints {
+    tk
+} -body {
+    widgetadaptor myframe {
+        option -foo a
+        delegate option * to itcl_hull except -background
+        constructor {args} {
+            installhull [frame $self]
+        }
+    }
+    myframe .frm
+
+    set a [lsort [.frm info options]]
+    destroy .frm
+    tkbide
+    set a
+} -cleanup {
+    myframe destroy
+} -result {-bd -bg -borderwidth -class -colormap -container -cursor -foo -height -highlightbackground -highlightcolor -highlightthickness -padx -pady -relief -takefocus -visual -width}
+
+test iinfo-6.8 {info options with pattern
+} -constraints {
+    tk
+} -body {
+    widgetadaptor myframe {
+        option -foo a
+        delegate option * to itcl_hull
+        constructor {args} {
+            installhull [frame $self]
+        }
+    }
+    myframe .frm
+
+    set a [lsort [.frm info options -c*]]
+    destroy .frm
+    tkbide
+    set a
+} -cleanup {
+    myframe destroy
+} -result {-class -colormap -container -cursor}
+
+test tinfo-3.2 {widget info instances
+} -constraints {
+    tk
+} -body {
+    widgetadaptor mylabel {
+        constructor {args} {
+            installhull [label $self]
+        }
+    }
+
+    mylabel .lab1
+    mylabel .lab2
+
+    set result [mylabel info instances]
+
+    destroy .lab1
+    destroy .lab2
+    tkbide
+
+    lsort $result
+} -cleanup {
+    mylabel destroy
+} -result {.lab1 .lab2}
+
+test widgetclass-1.2 {can't set widgetclass for itcl::widgetadaptors
+} -constraints {
+    tk
+} -body {
+    widgetadaptor dog {
+        widgetclass Dog
+    }
+} -returnCodes {
+    error
+} -result {can't set widgetclass for ::itcl::widgetadaptor}
+
+test hulltype-1.2 {can't set hulltype for itcl::widgetadaptors
+} -constraints {
+    tk
+} -body {
+    widgetadaptor dog {
+        hulltype Dog
+    }
+} -returnCodes {
+    error
+} -result {can't set hulltype for ::itcl::widgetadaptor}
+
+test wainfo-10.1 {widgetadaptor info widgetadaptors
+} -constraints {
+    tk
+} -body {
+    widgetadaptor dog {
+    }
+
+    widgetadaptor cat {
+    }
+
+    lsort [dog info widgetadaptors]
+} -cleanup {
+    dog destroy
+    cat destroy
+} -result {cat dog}
+
+test wainfo-10.2 {widgetadaptor info components
+} -constraints {
+    tk
+} -body {
+    widgetadaptor dog {
+        component comp1
+        component comp2
+    }
+
+    widgetadaptor cat {
+        component comp1
+        component comp1a
+    }
+
+    set a [lsort [dog info components]]
+    set b [lsort [cat info components]]
+    list $a $b
+} -cleanup {
+    dog destroy
+    cat destroy
+} -result {{comp1 comp2 itcl_hull} {comp1 comp1a itcl_hull}}
+
+
+
+
+
+#---------------------------------------------------------------------
+# Clean up
+
+::tcltest::cleanupTests
+return

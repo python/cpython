@@ -1,0 +1,275 @@
+# This file contains a collection of tests for the Tcl built-in 'chan'
+# command. Sourcing this file into Tcl runs the tests and generates
+# output for errors. No output means no errors were found.
+#
+# Copyright (c) 2005 Donal K. Fellows
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+#
+# Note: The tests for the chan methods "create" and "postevent"
+# currently reside in the file "ioCmd.test".
+#
+
+test chan-1.1 {chan command general syntax} -body {
+    chan
+} -returnCodes error -result "wrong # args: should be \"chan subcommand ?arg ...?\""
+test chan-1.2 {chan command general syntax} -body {
+    chan FOOBAR
+} -returnCodes error -match glob -result "unknown or ambiguous subcommand \"FOOBAR\": must be *"
+
+test chan-2.1 {chan command: blocked subcommand} -body {
+    chan blocked foo bar
+} -returnCodes error -result "wrong # args: should be \"chan blocked channelId\""
+test chan-3.1 {chan command: close subcommand} -body {
+    chan close foo bar zet
+} -returnCodes error -result "wrong # args: should be \"chan close channelId ?direction?\""
+test chan-3.2 {chan command: close subcommand} -setup {
+    set chan [open [info script] r]
+} -body {
+    chan close $chan bar
+} -cleanup {
+    close $chan
+} -returnCodes error -result "bad direction \"bar\": must be read or write"
+test chan-3.3 {chan command: close subcommand} -setup {
+    set chan [open [info script] r]
+} -body {
+    chan close $chan write
+} -cleanup {
+    close $chan
+} -returnCodes error -result "Half-close of write-side not possible, side not opened or already closed"
+test chan-4.1 {chan command: configure subcommand} -body {
+    chan configure
+} -returnCodes error -result "wrong # args: should be \"chan configure channelId ?-option value ...?\""
+test chan-4.2 {chan command: [Bug 800753]} -body {
+    chan configure stdout -eofchar \u0100
+} -returnCodes error -match glob -result {bad value*}
+test chan-4.3 {chan command: [Bug 800753]} -body {
+    chan configure stdout -eofchar \u0000
+} -returnCodes error -match glob -result {bad value*}
+test chan-4.4 {chan command: check valid inValue, no outValue} -body {
+    chan configure stdout -eofchar [list \x27 {}]
+} -returnCodes ok -result {}
+test chan-4.5 {chan command: check valid inValue, invalid outValue} -body {
+    chan configure stdout -eofchar [list \x27 \x80]
+} -returnCodes error -match glob -result {bad value for -eofchar:*}
+test chan-4.6 {chan command: check no inValue, valid outValue} -body {
+    chan configure stdout -eofchar [list {} \x27]
+} -returnCodes ok -result {} -cleanup {chan configure stdout -eofchar [list {} {}]}
+
+test chan-5.1 {chan command: copy subcommand} -body {
+    chan copy foo
+} -returnCodes error -result "wrong # args: should be \"chan copy input output ?-size size? ?-command callback?\""
+
+test chan-6.1 {chan command: eof subcommand} -body {
+    chan eof foo bar
+} -returnCodes error -result "wrong # args: should be \"chan eof channelId\""
+
+test chan-7.1 {chan command: event subcommand} -body {
+    chan event foo
+} -returnCodes error -result "wrong # args: should be \"chan event channelId event ?script?\""
+
+test chan-8.1 {chan command: flush subcommand} -body {
+    chan flush foo bar
+} -returnCodes error -result "wrong # args: should be \"chan flush channelId\""
+
+test chan-9.1 {chan command: gets subcommand} -body {
+    chan gets
+} -returnCodes error -result "wrong # args: should be \"chan gets channelId ?varName?\""
+
+test chan-10.1 {chan command: names subcommand} -body {
+    chan names foo bar
+} -returnCodes error -result "wrong # args: should be \"chan names ?pattern?\""
+
+test chan-11.1 {chan command: puts subcommand} -body {
+    chan puts foo bar foo bar
+} -returnCodes error -result "wrong # args: should be \"chan puts ?-nonewline? ?channelId? string\""
+
+test chan-12.1 {chan command: read subcommand} -body {
+    chan read
+} -returnCodes error -result "wrong # args: should be \"chan read channelId ?numChars?\" or \"chan read ?-nonewline? channelId\""
+
+test chan-13.1 {chan command: seek subcommand} -body {
+    chan seek foo bar foo bar
+} -returnCodes error -result "wrong # args: should be \"chan seek channelId offset ?origin?\""
+
+test chan-14.1 {chan command: tell subcommand} -body {
+    chan tell foo bar
+} -returnCodes error -result "wrong # args: should be \"chan tell channelId\""
+
+test chan-15.1 {chan command: truncate subcommand} -body {
+    chan truncate foo bar foo bar
+} -returnCodes error -result "wrong \# args: should be \"chan truncate channelId ?length?\""
+test chan-15.2 {chan command: truncate subcommand} -setup {
+    set file [makeFile {} testTruncate]
+    set f [open $file w+]
+    fconfigure $f -translation binary
+} -body {
+    seek $f 0
+    puts -nonewline $f 12345
+    seek $f 0
+    chan truncate $f 2
+    read $f
+} -result 12 -cleanup {
+    catch {close $f}
+    catch {removeFile $file}
+}
+
+# TIP 287: chan pending
+test chan-16.1 {chan command: pending subcommand} -body {
+    chan pending
+} -returnCodes error -result "wrong # args: should be \"chan pending mode channelId\""
+test chan-16.2 {chan command: pending subcommand} -body {
+    chan pending stdin
+} -returnCodes error -result "wrong # args: should be \"chan pending mode channelId\""
+test chan-16.3 {chan command: pending subcommand} -body {
+    chan pending stdin stdout stderr
+} -returnCodes error -result "wrong # args: should be \"chan pending mode channelId\""
+test chan-16.4 {chan command: pending subcommand} -body {
+    chan pending {input output} stdout
+} -returnCodes error -result "bad mode \"input output\": must be input or output"
+test chan-16.5 {chan command: pending input subcommand} -body {
+    chan pending input stdout 
+} -result -1
+test chan-16.6 {chan command: pending input subcommand} -body {
+    chan pending input stdin
+} -result 0
+test chan-16.7 {chan command: pending input subcommand} -body {
+    chan pending input FOOBAR
+} -returnCodes error -result "can not find channel named \"FOOBAR\""
+test chan-16.8 {chan command: pending input subcommand} -setup {
+    set file [makeFile {} testAvailable]
+    set f [open $file w+]
+    chan configure $f -translation lf -buffering line
+} -body {
+    chan puts $f foo
+    chan puts $f bar
+    chan puts $f baz
+    chan seek $f 0
+    chan gets $f
+    chan pending input $f
+} -result 8 -cleanup {
+    catch {chan close $f}
+    catch {removeFile $file}
+}
+test chan-16.9 {chan command: pending input subcommand} -setup {
+    proc chan-16.9-accept {sock addr port} {
+        chan configure $sock -blocking 0 -buffering line -buffersize 32
+        chan event $sock readable [list chan-16.9-readable $sock]
+    }
+
+    proc chan-16.9-readable {sock} {
+        set r [chan gets $sock line]
+        set l [string length $line]
+        set e [chan eof $sock]
+        set b [chan blocked $sock]
+        set i [chan pending input $sock]
+
+        lappend ::chan-16.9-data $r $l $e $b $i
+
+        if {$r != -1 || $e || $l || !$b || $i > 128} {
+            set data [read $sock $i]
+            lappend ::chan-16.9-data [string range $data 0 2]
+            lappend ::chan-16.9-data [string range $data end-2 end]
+            set ::chan-16.9-done 1
+            chan event $sock readable {}
+        } else {
+	    after idle chan-16.9-client
+	}
+    }
+
+    proc chan-16.9-client {} {
+        chan puts -nonewline $::client ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890
+        chan flush $::client
+    }
+
+    set ::server [socket -server chan-16.9-accept -myaddr 127.0.0.1 0]
+    set ::client [socket 127.0.0.1 [lindex [fconfigure $::server -sockname] 2]]
+    set ::chan-16.9-data [list]
+    set ::chan-16.9-done 0
+} -body {
+    after idle chan-16.9-client 
+    vwait ::chan-16.9-done
+    set ::chan-16.9-data
+} -result {-1 0 0 1 36 -1 0 0 1 72 -1 0 0 1 108 -1 0 0 1 144 ABC 890} -cleanup {
+    catch {chan close $client}
+    catch {chan close $server}
+    rename chan-16.9-accept {}
+    rename chan-16.9-readable {}
+    rename chan-16.9-client {}
+    unset -nocomplain ::chan-16.9-data
+    unset -nocomplain ::chan-16.9-done
+    unset -nocomplain ::server
+    unset -nocomplain ::client
+}
+test chan-16.10 {chan command: pending output subcommand} -body {
+    chan pending output stdin
+} -result -1
+test chan-16.11 {chan command: pending output subcommand} -body {
+    chan pending output stdout
+} -result 0
+test chan-16.12 {chan command: pending output subcommand} -body {
+    chan pending output FOOBAR
+} -returnCodes error -result "can not find channel named \"FOOBAR\""
+test chan-16.13 {chan command: pending output subcommand} -setup {
+    set file [makeFile {} testPendingOutput]
+    set f [open $file w+]
+    chan configure $f -translation lf -buffering full -buffersize 1024
+} -body {
+    set result [list]
+    chan puts $f [string repeat x 512]
+    lappend result [chan pending output $f]
+    chan flush $f
+    lappend result [chan pending output $f]
+} -result [list 513 0] -cleanup {
+    unset -nocomplain result
+    catch {chan close $f}
+    catch {removeFile $file}
+}
+
+# TIP 304: chan pipe
+
+test chan-17.1 {chan command: pipe subcommand} -body {
+    chan pipe foo
+} -returnCodes error -result "wrong # args: should be \"chan pipe \""
+
+test chan-17.2 {chan command: pipe subcommand} -body {
+    chan pipe foo bar
+} -returnCodes error -result "wrong # args: should be \"chan pipe \""
+
+test chan-17.3 {chan command: pipe subcommand} -body {
+	set l [chan pipe]
+    foreach {pr pw} $l break
+    list [llength $l] [fconfigure $pr -blocking] [fconfigure $pw -blocking]
+} -result [list 2 1 1] -cleanup {
+    close $pw
+    close $pr
+}
+
+test chan-17.4 {chan command: pipe subcommand} -body {
+    set ::done 0
+    foreach {::pr ::pw} [chan pipe] break
+    after 100 {puts $::pw foo;flush $::pw}
+    fileevent $::pr readable {set ::done 1}
+    after 500 {set ::done -1}
+    vwait ::done
+    set out nope
+    if {$::done==1} {gets $::pr out}
+    list $::done $out
+} -result [list 1 foo] -cleanup {
+    close $::pw
+    close $::pr
+}
+
+cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

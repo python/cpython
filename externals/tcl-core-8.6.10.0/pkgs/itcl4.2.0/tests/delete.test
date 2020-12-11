@@ -1,0 +1,214 @@
+#
+# Tests for deleting classes and objects
+# ----------------------------------------------------------------------
+#   AUTHOR:  Michael J. McLennan
+#            Bell Labs Innovations for Lucent Technologies
+#            mmclennan@lucent.com
+#            http://www.tcltk.com/itcl
+# ----------------------------------------------------------------------
+#            Copyright (c) 1993-1998  Lucent Technologies, Inc.
+# ======================================================================
+# See the file "license.terms" for information on usage and
+# redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2.2
+namespace import ::tcltest::test
+::tcltest::loadTestedCommands
+package require itcl
+
+# ----------------------------------------------------------------------
+#  Deleting classes and objects
+# ----------------------------------------------------------------------
+test delete-1.1 {define a simple classes with inheritance} {
+    itcl::class test_delete_base {
+        variable num 0
+        method show {} {
+            return $num
+        }
+    }
+} ""
+
+test delete-1.2 {create some base class objects} {
+    for {set i 0} {$i < 5} {incr i} {
+        test_delete_base #auto
+    }
+    lsort [itcl::find objects -class test_delete_base]
+} {test_delete_base0 test_delete_base1 test_delete_base2 test_delete_base3 test_delete_base4}
+
+test delete-1.3 {delete the base class--class and all objects go away} {
+    list [itcl::delete class test_delete_base] \
+         [itcl::find classes test_delete_base] \
+         [namespace children :: test_delete_base] \
+         [namespace which -command test_delete_base] \
+         [itcl::find objects test_delete_base*]
+} {{} {} {} {} {}}
+
+# ----------------------------------------------------------------------
+#  Deleting classes and objects with inheritance
+# ----------------------------------------------------------------------
+test delete-2.1 {define a simple classes with inheritance} {
+    variable ::test_delete_watch ""
+    itcl::class test_delete_base {
+        variable num 0
+        method show {} {
+            return $num
+        }
+        destructor {
+            global ::test_delete_watch
+            lappend test_delete_watch $this
+        }
+    }
+    itcl::class test_delete {
+        inherit test_delete_base
+        method show {} {
+            return ">$num<"
+        }
+    }
+} ""
+
+test delete-2.2 {create some base and derived class objects} {
+    for {set i 0} {$i < 3} {incr i} {
+        test_delete_base #auto
+    }
+    for {set i 0} {$i < 3} {incr i} {
+        test_delete #auto
+    }
+    lsort [itcl::find objects -isa test_delete_base]
+} {test_delete0 test_delete1 test_delete2 test_delete_base0 test_delete_base1 test_delete_base2}
+
+test delete-2.3 {delete the base class--class and all objects go away} {
+    list [itcl::delete class test_delete_base] \
+         [itcl::find classes test_delete*] \
+         [namespace children :: test_delete*] \
+         [namespace which -command test_delete_base] \
+         [namespace which -command test_delete] \
+         [itcl::find objects test_delete*]
+} {{} {} {} {} {} {}}
+
+test delete-2.4 {object destructors get invoked properly} {
+    lsort $test_delete_watch
+} {::test_delete0 ::test_delete1 ::test_delete2 ::test_delete_base0 ::test_delete_base1 ::test_delete_base2}
+
+# ----------------------------------------------------------------------
+#  Deleting class namespaces
+# ----------------------------------------------------------------------
+test delete-3.1 {redefine classes with inheritance} {
+    variable ::test_delete_watch ""
+    itcl::class test_delete_base {
+        variable num 0
+        method show {} {
+            return $num
+        }
+        destructor {
+            global test_delete_watch
+            lappend test_delete_watch $this
+        }
+    }
+    itcl::class test_delete {
+        inherit test_delete_base
+        method show {} {
+            return ">$num<"
+        }
+    }
+} ""
+
+test delete-3.2 {create some base and derived class objects} {
+    for {set i 0} {$i < 3} {incr i} {
+        test_delete_base #auto
+    }
+    for {set i 0} {$i < 3} {incr i} {
+        test_delete #auto
+    }
+    lsort [itcl::find objects -isa test_delete_base]
+} {test_delete0 test_delete1 test_delete2 test_delete_base0 test_delete_base1 test_delete_base2}
+
+test delete-3.3 {deleting a class namespace is like deleting a class} {
+    list [namespace delete test_delete_base] \
+         [itcl::find classes test_delete*] \
+         [namespace children :: test_delete*] \
+         [namespace which -command test_delete_base] \
+         [namespace which -command test_delete] \
+         [itcl::find objects test_delete*]
+} {{} {} {} {} {} {}}
+
+test delete-3.4 {object destructors get invoked, even during catastrophe} {
+    lsort $test_delete_watch
+} {::test_delete0 ::test_delete1 ::test_delete2 ::test_delete_base0 ::test_delete_base1 ::test_delete_base2}
+
+
+# ----------------------------------------------------------------------
+#  Self-destructing objects
+# ----------------------------------------------------------------------
+test delete-4.1 {define a class where objects destroy themselves} {
+    itcl::class test_delete {
+        public variable x ""
+        public variable deletecommand ""
+        constructor {args} {
+            eval configure $args
+        }
+        destructor {
+            eval $deletecommand
+        }
+        method killme {code} {
+            itcl::delete object $this
+            eval $code
+        }
+    }
+} {}
+
+test delete-4.2 {an object can delete itself
+} -body {
+    set obj [test_delete #auto -x "data stays"]
+    list [$obj killme {return $x}] [itcl::find objects -isa test_delete]
+} -constraints {
+    only_working_in_itcl3.4
+} -result {{data stays} {}}
+
+test delete-4.3 {the "this" variable becomes null after delete} {
+    set obj [test_delete #auto]
+    list [$obj killme {return $this}] [itcl::find objects -isa test_delete]
+} {{} {}}
+
+test delete-4.4 {an object being destructed can't be deleted} {
+    set obj [test_delete #auto -deletecommand {itcl::delete object $this}]
+    list [catch {itcl::delete object $obj} msg] $msg
+} {1 {can't delete an object while it is being destructed}}
+
+if {[namespace which [namespace current]::test_delete] ne {}} {
+    namespace delete test_delete
+}
+
+# ----------------------------------------------------------------------
+#  Delete objects using path names and scoped values
+# ----------------------------------------------------------------------
+test delete-5.1 {define a simple class} {
+    itcl::class test_delete_name {
+        private variable x 0
+        method test {x} {
+            return $x
+        }
+    }
+} {}
+
+test delete-5.2 {delete using a qualified name} {
+    namespace eval test_delete2 {test_delete_name #auto}
+    set cmd {itcl::delete object test_delete2::test_delete_name0}
+    list [catch $cmd msg] $msg [itcl::find objects -isa test_delete_name]
+} {0 {} {}}
+
+test delete-5.3 {delete using a scoped value} {
+    set obj [namespace eval test_delete2 {itcl::code [test_delete_name #auto]}]
+    set cmd [list itcl::delete object $obj]
+    list [catch $cmd msg] $msg [itcl::find objects -isa test_delete_name]
+} {0 {} {}}
+
+test delete-5.4 {scoped command names are decoded properly} {
+    list [catch {itcl::delete object {namespace inscope ::xyzzy xxx}} msg] $msg \
+         [catch {itcl::delete object {namespace inscope :: xxx yyy}} msg] $msg \
+         [catch {itcl::delete object {namespace inscope :: xyzzy}} msg] $msg
+} {1 {unknown namespace "::xyzzy"} 1 {malformed command "namespace inscope :: xxx yyy": should be "namespace inscope namesp command"} 1 {object "namespace inscope :: xyzzy" not found}}
+
+namespace delete test_delete_name test_delete2
+
+::tcltest::cleanupTests
+return

@@ -1,0 +1,111 @@
+#------------------------------------------------------------- -*- makefile -*-
+#
+# Makefile for TBDC MySQL interface
+#
+# Basic build, test and install
+#   nmake /s /nologo /f makefile.vc INSTALLDIR=c:\path\to\installdir
+#   nmake /s /nologo /f makefile.vc INSTALLDIR=c:\path\to\installdir install
+#   nmake /s /nologo /f makefile.vc INSTALLDIR=c:\path\to\installdir test
+#
+# For other build options (debug, static etc.)
+# See TIP 477 (https://core.tcl.tk/tips/doc/trunk/tip/477.md) for
+# detailed documentation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+#------------------------------------------------------------------------------
+
+PROJECT = tdbcmysql
+# Tcl 8.6 etc. compile with /DUNICODE. TDBC pre-nmake reform compiled
+# without -DUNICODE. Keep that behaviour for now. TBD
+USE_WIDECHAR_API  = 0
+
+!include "rules-ext.vc"
+
+# nmakehelp -V <file> <tag> will search the file for tag, skips until a
+#	number and returns all character until a character not in [0-9.ab]
+#	is read.
+!if [echo REM = This file is generated from Makefile.vc > versions.vc]
+!endif
+!if [echo TCL_VERSION_REQ = \>> versions.vc] \
+   && [nmakehlp -V ..\configure.ac TCL_VERSION_REQ >> versions.vc]
+!endif
+!include "versions.vc"
+
+PRJ_OBJS = \
+	$(TMP_DIR)\tdbcmysql.obj \
+	$(TMP_DIR)\mysqlStubInit.obj
+
+# Uncomment the following line if you want to build and install stubs
+# PRJ_STUBOBJS = $(TMP_DIR)\mysqlStubInit.obj
+
+PRJ_HEADERS = \
+	$(GENERICDIR)\fakemysql.h \
+	$(GENERICDIR)\mysqlStubs.h
+
+# Locate TDBC headers and libraries.
+# In principle, we don't need the TDBC source directory, and an installed
+# TDBC should suffice. But that needs additional machinery not implemented
+# yet.
+!if [echo TDBC_DIR = \> nmakehlp.out] \
+   || [nmakehlp -L generic\tdbcInt.h >> nmakehlp.out]
+!error Could not locate TDBC source directory.
+!endif
+!include nmakehlp.out
+
+# Get the TDBC version from its configure.ac
+!if [echo TDBC_DOTVERSION = \> versions.vc] \
+   && [nmakehlp -V "$(TDBC_DIR)\configure.ac" tdbc >> versions.vc]
+!error Could not retrieve TDBC version.
+!endif
+!include versions.vc
+
+TDBC_VERSION     = $(TDBC_DOTVERSION:.=)
+TDBC_GENERIC_DIR = $(TDBC_DIR)\generic
+TDBCSTUBLIBNAME	 = tdbcstub$(TDBC_VERSION).lib
+TDBCSTUBLIB 	 = $(TDBC_DIR)\win\$(BUILDDIRTOP)\$(TDBCSTUBLIBNAME)
+TDBC_LIB_FILE	 = tdbc$(TDBC_VERSION).dll
+TDBC_BIN_DIR     = $(TDBC_DIR)/win/$(BUILDDIRTOP)
+
+PRJ_INCLUDES	= -I"$(TDBC_GENERIC_DIR)"
+
+!if !$(STATIC_BUILD)
+PRJ_LIBS  = $(TDBCSTUBLIB)
+!endif
+
+# Disable standard test target because we have a custom one
+DISABLE_TARGET_test = 1
+!include "$(_RULESDIR)\targets.vc"
+
+# Our install has a few more steps than the default install
+install: default-install-docs-n
+
+# The TIP 477 generation of pkgIndex.tcl from pkgIndex.tcl.in does not include
+# all replacements below so define our own.
+pkgindex:   $(OUT_DIR)\pkgIndex.tcl
+$(OUT_DIR)\pkgIndex.tcl: $(ROOT)\pkgIndex.tcl.in
+	@nmakehlp -s << $** > $@
+@PACKAGE_NAME@        $(PROJECT)
+@PACKAGE_VERSION@     $(DOTVERSION)
+@TCL_VERSION_REQ@     $(TCL_VERSION_REQ)
+@PKG_LIB_FILE@        $(PRJLIBNAME)
+<<
+
+test: setup $(PROJECT)
+        @set TCL_LIBRARY=$(TCL_LIBRARY:\=/)
+        @set TCLLIBPATH=$(OUT_DIR_PATH:\=/)
+	@set TDBC_LIBRARY=$(LIBDIR:\=/)
+	@$(CPY) $(LIBDIR)\*.tcl $(OUT_DIR)
+!if $(TCLINSTALL)
+        @set PATH=$(_TCLDIR)\bin;$(PATH)
+	$(DEBUGGER) $(TCLSH) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS)
+!else
+        @set PATH=$(_TCLDIR)\win\$(BUILDDIRTOP);$(PATH)
+	$(DEBUGGER) $(TCLSH) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) \
+		-load "package ifneeded tdbc::mysql $(DOTVERSION) \
+			{source {$(LIBDIR:\=/)/tdbcmysql.tcl};load {$(PRJLIB:\=/)} $(PROJECT)};\
+		package ifneeded tdbc $(TDBC_DOTVERSION) \
+			{source {$(TDBC_BIN_DIR:\=/)/tdbc.tcl};load {$(TDBC_BIN_DIR:\=/)/$(TDBC_LIB_FILE)} tdbc}"
+!endif
+

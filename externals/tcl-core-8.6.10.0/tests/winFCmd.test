@@ -1,0 +1,1479 @@
+# This file tests the tclWinFCmd.c file.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1996-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+# Initialise the test constraints
+
+testConstraint winVista 0
+testConstraint win2000orXP 0
+testConstraint winOlderThan2000 0
+testConstraint testvolumetype [llength [info commands testvolumetype]]
+testConstraint testfile       [llength [info commands testfile]]
+testConstraint testchmod      [llength [info commands testchmod]]
+testConstraint cdrom 0
+testConstraint exdev 0
+testConstraint longFileNames 0
+testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
+
+proc createfile {file {string a}} {
+    set f [open $file w]
+    puts -nonewline $f $string
+    close $f
+    return $string
+}
+
+proc contents {file} {
+    set f [open $file r]
+    set r [read $f]
+    close $f
+    set r
+}
+
+proc cleanup {args} {
+    foreach p ". $args" {
+	set x ""
+	catch {
+	    set x [glob -directory $p tf* td*]
+	}
+	if {$x != ""} {
+	    catch {file delete -force -- {*}$x}
+	}
+    }
+}
+
+if {[testConstraint winOnly]} {
+    if {[testConstraint nt] && $::tcl_platform(osVersion) >= 5.0} {
+        if {$::tcl_platform(osVersion) >= 6.0} {
+            testConstraint winVista 1
+        } else {
+            testConstraint win2000orXP 1
+        }
+    } else {
+	testConstraint winOlderThan2000 1
+    }
+}
+
+# find a CD-ROM so we can test read-only filesystems.
+
+proc findfile {dir} {
+    foreach p [glob -nocomplain -type f -directory $dir *] {
+	return $p
+    }
+    foreach p [glob -nocomplain -type d -directory $dir *] {
+	set f [findfile $p]
+	if {$f ne ""} {
+	    return $f
+	}
+    }
+    return ""
+}
+
+if {[testConstraint testvolumetype]} {
+    foreach p {d e f g h i j k l m n o p q r s t u v w x y z} {
+        if {![catch {testvolumetype ${p}:} result] && $result in {CDFS UDF}} {
+            set cdrom ${p}:
+	    set cdfile [findfile $cdrom]
+	    testConstraint cdrom 1
+	    break
+        }
+    }
+}
+
+# NB: filename is chosen to be short but unlikely to clash with other apps
+if {[file exists c:/] && [file exists d:/]} {
+    catch {file delete d:/TclTmpF.1}
+    catch {file delete d:/TclTmpD.1}
+    catch {file delete c:/TclTmpC.1}
+    if {![catch {createfile d:/TclTmpF.1 {}}] && [file isfile d:/TclTmpF.1]
+	&& ![catch {file mkdir d:/TclTmpD.1}] && [file isdirectory d:/TclTmpD.1]
+	&& ![catch {file mkdir c:/TclTmpC.1}] && [file isdirectory c:/TclTmpC.1]
+    } {
+	file delete d:/TclTmpF.1 d:/TclTmpD.1 c:/TclTmpC.1
+	testConstraint exdev 1
+    }
+}
+
+file delete -force -- td1
+if {![catch {open td1 w} testfile]} {
+    close $testfile
+    testConstraint longFileNames 1
+    file delete -force -- td1
+}
+
+# A really long file name
+# length of longname is 1216 chars, which should be greater than any static
+# buffer or allowable filename.
+
+set longname "abcdefghihjllmnopqrstuvwxyz01234567890"
+append longname $longname
+append longname $longname
+append longname $longname
+append longname $longname
+append longname $longname
+
+# Uses the "testfile" command instead of the "file" command.  The "file"
+# command provides several layers of sanity checks on the arguments and
+# it can be difficult to actually forward "insane" arguments to the
+# low-level posix emulation layer.
+
+test winFCmd-1.1 {TclpRenameFile: errno: EACCES} -body {
+    testfile mv $cdfile $cdrom/dummy~~.fil
+} -constraints {win cdrom testfile} -returnCodes error -result EACCES
+test winFCmd-1.2 {TclpRenameFile: errno: EEXIST} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1/td2/td3
+    file mkdir td2
+    testfile mv td2 td1/td2
+} -returnCodes error -result EEXIST
+test winFCmd-1.3 {TclpRenameFile: errno: EINVAL} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    testfile mv / td1
+} -returnCodes error -result EINVAL
+test winFCmd-1.4 {TclpRenameFile: errno: EINVAL} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    testfile mv td1 td1/td2
+} -returnCodes error -result EINVAL
+test winFCmd-1.5 {TclpRenameFile: errno: EISDIR} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    createfile tf1
+    testfile mv tf1 td1
+} -returnCodes error -result EISDIR
+test winFCmd-1.6 {TclpRenameFile: errno: ENOENT} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    testfile mv tf1 tf2
+} -returnCodes error -result ENOENT
+test winFCmd-1.7 {TclpRenameFile: errno: ENOENT} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    testfile mv "" tf2
+} -returnCodes error -result ENOENT
+test winFCmd-1.8 {TclpRenameFile: errno: ENOENT} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    createfile tf1
+    testfile mv tf1 ""
+} -returnCodes error -result ENOENT
+test winFCmd-1.9 {TclpRenameFile: errno: ENOTDIR} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    createfile tf1
+    testfile mv td1 tf1
+} -returnCodes error -result ENOTDIR
+test winFCmd-1.10 {TclpRenameFile: errno: EXDEV} -setup {
+    file delete -force d:/TclTmpD.1
+} -constraints {win exdev testfile} -body {
+    file mkdir c:/TclTmpC.1
+    testfile mv c:/TclTmpC.1 d:/TclTmpD.1
+} -cleanup {
+    file delete -force c:/TclTmpC.1
+} -returnCodes error -result EXDEV
+test winFCmd-1.11 {TclpRenameFile: errno: EACCES} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    set fd [open tf1 w]
+    testfile mv tf1 tf2
+} -cleanup {
+    catch {close $fd}
+} -returnCodes error -result EACCES
+test winFCmd-1.12 {TclpRenameFile: errno: EACCES} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    createfile tf1
+    set fd [open tf2 w]
+    testfile mv tf1 tf2
+} -cleanup {
+    catch {close $fd}
+} -returnCodes error -result EACCES
+test winFCmd-1.13 {TclpRenameFile: errno: EACCES} -setup {
+    cleanup
+} -constraints {win win2000orXP testfile} -body {
+    testfile mv nul tf1
+} -returnCodes error -result EINVAL
+test winFCmd-1.14 {TclpRenameFile: errno: EACCES} -setup {
+    cleanup
+} -constraints {win nt winOlderThan2000 testfile} -body {
+    testfile mv nul tf1
+} -returnCodes error -result EACCES
+test winFCmd-1.15 {TclpRenameFile: errno: EEXIST} -setup {
+    cleanup
+} -constraints {win nt testfile} -body {
+    createfile tf1
+    testfile mv tf1 nul
+} -returnCodes error -result EEXIST
+test winFCmd-1.16 {TclpRenameFile: MoveFile() != FALSE} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    createfile tf1 tf1
+    testfile mv tf1 tf2
+    list [file exists tf1] [contents tf2]
+} -result {0 tf1}
+test winFCmd-1.17 {TclpRenameFile: MoveFile() == FALSE} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    testfile mv tf1 tf2
+} -returnCodes error -result ENOENT
+test winFCmd-1.18 {TclpRenameFile: srcAttr == -1} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    testfile mv tf1 tf2
+} -returnCodes error -result ENOENT
+test winFCmd-1.19 {TclpRenameFile: errno == EACCES} -setup {
+    cleanup
+} -constraints {win win2000orXP testfile} -body {
+    testfile mv nul tf1
+} -returnCodes error -result EINVAL
+test winFCmd-1.19.1 {TclpRenameFile: errno == EACCES} -setup {
+    cleanup
+} -constraints {win nt winOlderThan2000 testfile} -body {
+    testfile mv nul tf1
+} -returnCodes error -result EACCES
+test winFCmd-1.20 {TclpRenameFile: src is dir} -setup {
+    cleanup
+} -constraints {win nt testfile} -body {
+    # under 95, this would actually succeed and move the current dir out from
+    # under the current process!
+    file delete /tf1
+    testfile mv [pwd] /tf1
+} -returnCodes error -result EACCES
+test winFCmd-1.21 {TclpRenameFile: long src} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    testfile mv $longname tf1
+} -returnCodes error -result ENAMETOOLONG
+test winFCmd-1.22 {TclpRenameFile: long dst} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    createfile tf1
+    testfile mv tf1 $longname
+} -returnCodes error -result ENAMETOOLONG
+test winFCmd-1.23 {TclpRenameFile: move dir into self} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    testfile mv [pwd]/td1 td1/td2
+} -returnCodes error -result EINVAL
+test winFCmd-1.24 {TclpRenameFile: move a root dir} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    testfile mv / c:/
+} -returnCodes error -result EINVAL
+test winFCmd-1.25 {TclpRenameFile: cross file systems} -setup {
+    cleanup
+} -constraints {win cdrom testfile} -body {
+    file mkdir td1
+    testfile mv td1 $cdrom/td1
+} -returnCodes error -result EXDEV
+test winFCmd-1.26 {TclpRenameFile: readonly fs} -setup {
+    cleanup
+} -constraints {win cdrom testfile} -body {
+    testfile mv $cdfile $cdrom/dummy~~.fil
+} -returnCodes error -result EACCES
+test winFCmd-1.27 {TclpRenameFile: open file} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    set fd [open tf1 w]
+    testfile mv tf1 tf2
+} -cleanup {
+    catch {close $fd}
+} -returnCodes error -result EACCES
+test winFCmd-1.28 {TclpRenameFile: errno == EEXIST} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    createfile tf1
+    createfile tf2
+    testfile mv tf1 tf2
+    list [file exists tf1] [file exists tf2]
+} -result {0 1}
+test winFCmd-1.29 {TclpRenameFile: src is dir} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    createfile tf1
+    testfile mv td1 tf1
+} -returnCodes error -result ENOTDIR
+test winFCmd-1.30 {TclpRenameFile: dst is dir} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    file mkdir td2/td2
+    testfile mv td1 td2
+} -returnCodes error -result EEXIST
+test winFCmd-1.31 {TclpRenameFile: TclpRemoveDirectory fails} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    file mkdir td2/td2
+    testfile mv td1 td2
+} -returnCodes error -result EEXIST
+test winFCmd-1.32 {TclpRenameFile: TclpRemoveDirectory succeeds} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1/td2
+    file mkdir td2
+    testfile mv td1 td2
+    list [file exists td1] [file exists td2] [file exists td2/td2]
+} -result {0 1 1}
+test winFCmd-1.33 {TclpRenameFile: After removing dst dir, MoveFile fails} \
+	-constraints {win exdev testfile testchmod} -body {
+    file mkdir d:/TclTmpD.1
+    testchmod 0 d:/TclTmpD.1
+    file mkdir c:/TclTmpC.1
+    catch {testfile mv c:/TclTmpC.1 d:/TclTmpD.1} msg
+    list $msg [file writable d:/TclTmpD.1]
+} -cleanup {
+    catch {testchmod 0o666 d:/TclTmpD.1}
+    file delete d:/TclTmpD.1
+    file delete -force c:/TclTmpC.1
+} -result {EXDEV 0}
+test winFCmd-1.34 {TclpRenameFile: src is dir, dst is not} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    createfile tf1
+    testfile mv td1 tf1
+} -cleanup {
+    cleanup
+} -returnCodes error -result ENOTDIR
+test winFCmd-1.35 {TclpRenameFile: src is not dir, dst is} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    createfile tf1
+    testfile mv tf1 td1
+} -cleanup {
+    cleanup
+} -returnCodes error -result EISDIR
+test winFCmd-1.36 {TclpRenameFile: src and dst not dir} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    createfile tf1 tf1
+    createfile tf2 tf2
+    testfile mv tf1 tf2
+    contents tf2
+} -cleanup {
+    cleanup
+} -result {tf1}
+test winFCmd-1.37 {TclpRenameFile: need to restore temp file} {win emptyTest} {
+    # Can't figure out how to cause this.
+    # Need a file that can't be copied.
+} {}
+
+# If the native filesystem produces 0 for inodes numbers there is no point
+# doing the following test.
+testConstraint winNonZeroInodes [eval {
+    file stat [info nameofexecutable] statExe
+    expr {$statExe(ino) != 0}
+}]
+
+proc MakeFiles {dirname} {
+    set inodes {}
+    set ndx -1
+    while {1} {
+        # upped to 50K for 64bit Server 2008
+        if {$ndx > 50000} {
+            return -code error "limit reached without finding a collistion."
+        }
+        set filename [file join $dirname Test[incr ndx]]
+        set f [open $filename w]
+        close $f
+        file stat $filename stat
+        if {[set n [lsearch -exact -integer $inodes $stat(ino)]] != -1} {
+            return [list [file join $dirname Test$n] $filename]
+        }
+        lappend inodes $stat(ino)
+        unset stat
+    }
+}
+
+test winFCmd-1.38 {TclpRenameFile: check rename of conflicting inodes} -setup {
+    cleanup
+} -constraints {win winNonZeroInodes knownMsvcBug} -body {
+    file mkdir td1
+    foreach {a b} [MakeFiles td1] break
+    file rename -force $a $b
+    file exists $a
+} -cleanup {
+    cleanup
+} -result {0}
+
+
+test winFCmd-2.1 {TclpCopyFile: errno: EACCES} -setup {
+    cleanup
+} -constraints {win cdrom testfile} -body {
+    testfile cp $cdfile $cdrom/dummy~~.fil
+} -returnCodes error -result EACCES
+test winFCmd-2.2 {TclpCopyFile: errno: EISDIR} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    testfile cp td1 tf1
+} -cleanup {
+    cleanup
+} -returnCodes error -result EISDIR
+test winFCmd-2.3 {TclpCopyFile: errno: EISDIR} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    createfile tf1
+    file mkdir td1
+    testfile cp tf1 td1
+} -cleanup {
+    cleanup
+} -returnCodes error -result EISDIR
+test winFCmd-2.4 {TclpCopyFile: errno: ENOENT} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    testfile cp tf1 tf2
+} -returnCodes error -result ENOENT
+test winFCmd-2.5 {TclpCopyFile: errno: ENOENT} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    testfile cp "" tf2
+} -returnCodes error -result ENOENT
+test winFCmd-2.6 {TclpCopyFile: errno: ENOENT} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    createfile tf1
+    testfile cp tf1 ""
+} -cleanup {
+    cleanup
+} -returnCodes error -result ENOENT
+test winFCmd-2.7 {TclpCopyFile: errno: EACCES} -setup {
+    cleanup
+} -constraints {win win2000orXP testfile} -body {
+    testfile cp nul tf1
+} -returnCodes error -result EINVAL
+test winFCmd-2.8 {TclpCopyFile: errno: EACCES} -setup {
+    cleanup
+} -constraints {win nt winOlderThan2000 testfile} -body {
+    testfile cp nul tf1
+} -returnCodes error -result EACCES
+test winFCmd-2.10 {TclpCopyFile: CopyFile succeeds} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    createfile tf1 tf1
+    testfile cp tf1 tf2
+    list [contents tf1] [contents tf2]
+} -cleanup {
+    cleanup
+} -result {tf1 tf1}
+test winFCmd-2.11 {TclpCopyFile: CopyFile succeeds} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    createfile tf1 tf1
+    createfile tf2 tf2
+    testfile cp tf1 tf2
+    list [contents tf1] [contents tf2]
+} -cleanup {
+    cleanup
+} -result {tf1 tf1}
+test winFCmd-2.12 {TclpCopyFile: CopyFile succeeds} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    createfile tf1 tf1
+    testchmod 0 tf1
+    testfile cp tf1 tf2
+    list [contents tf2] [file writable tf2]
+} -cleanup {
+    catch {testchmod 0o666 tf1}
+    cleanup
+} -result {tf1 0}
+test winFCmd-2.13 {TclpCopyFile: CopyFile fails} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    createfile tf1
+    file mkdir td1
+    testfile cp tf1 td1
+} -cleanup {
+    cleanup
+} -returnCodes error -result EISDIR
+test winFCmd-2.14 {TclpCopyFile: errno == EACCES} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    testfile cp td1 tf1
+} -cleanup {
+    cleanup
+} -returnCodes error -result EISDIR
+test winFCmd-2.15 {TclpCopyFile: src is directory} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    testfile cp td1 tf1
+} -cleanup {
+    cleanup
+} -returnCodes error -result EISDIR
+test winFCmd-2.16 {TclpCopyFile: dst is directory} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    createfile tf1
+    file mkdir td1
+    testfile cp tf1 td1
+} -cleanup {
+    cleanup
+} -returnCodes error -result EISDIR
+test winFCmd-2.17 {TclpCopyFile: dst is readonly} -setup {
+    cleanup
+} -constraints {win testfile testchmod} -body {
+    createfile tf1 tf1
+    createfile tf2 tf2
+    testchmod 0 tf2
+    testfile cp tf1 tf2
+    list [file writable tf2] [contents tf2]
+} -cleanup {
+    catch {testchmod 0o666 tf2}
+    cleanup
+} -result {1 tf1}
+
+test winFCmd-3.1 {TclpDeleteFile: errno: EACCES} -body {
+    testfile rm $cdfile $cdrom/dummy~~.fil
+} -constraints {win cdrom testfile} -returnCodes error -result EACCES
+test winFCmd-3.2 {TclpDeleteFile: errno: EISDIR} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    testfile rm td1
+} -cleanup {
+    cleanup
+} -returnCodes error -result EISDIR
+test winFCmd-3.3 {TclpDeleteFile: errno: ENOENT} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    testfile rm tf1
+} -returnCodes error -result ENOENT
+test winFCmd-3.4 {TclpDeleteFile: errno: ENOENT} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    testfile rm ""
+} -returnCodes error -result ENOENT
+test winFCmd-3.5 {TclpDeleteFile: errno: EACCES} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    set fd [open tf1 w]
+    testfile rm tf1
+} -cleanup {
+    close $fd
+    cleanup
+} -returnCodes error -result EACCES
+test winFCmd-3.6 {TclpDeleteFile: errno: EACCES} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    testfile rm nul
+} -returnCodes error -result EACCES
+test winFCmd-3.7 {TclpDeleteFile: DeleteFile succeeds} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    createfile tf1
+    testfile rm tf1
+    file exists tf1
+} -result {0}
+test winFCmd-3.8 {TclpDeleteFile: DeleteFile fails} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    testfile rm td1
+} -cleanup {
+    cleanup
+} -returnCodes error -result EISDIR
+test winFCmd-3.9 {TclpDeleteFile: errno == EACCES} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    set fd [open tf1 w]
+    testfile rm tf1
+} -cleanup {
+    close $fd
+} -returnCodes error -result EACCES
+test winFCmd-3.10 {TclpDeleteFile: path is readonly} -setup {
+    cleanup
+} -constraints {win testfile testchmod} -body {
+    createfile tf1
+    testchmod 0 tf1
+    testfile rm tf1
+    file exists tf1
+} -result {0}
+test winFCmd-3.11 {TclpDeleteFile: still can't remove path} -setup {
+    cleanup
+} -constraints {win testfile testchmod} -body {
+    set fd [open tf1 w]
+    testchmod 0 tf1
+    testfile rm tf1
+} -cleanup {
+    close $fd
+    catch {testchmod 0o666 tf1}
+    cleanup
+} -returnCodes error -result EACCES
+
+test winFCmd-4.1 {TclpCreateDirectory: errno: EACCES} -body {
+    testfile mkdir $cdrom/dummy~~.dir
+} -constraints {win nt cdrom testfile} -returnCodes error -result EACCES
+test winFCmd-4.3 {TclpCreateDirectory: errno: EEXIST} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    testfile mkdir td1
+} -cleanup {
+    cleanup
+} -returnCodes error -result EEXIST
+test winFCmd-4.4 {TclpCreateDirectory: errno: ENOENT} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    testfile mkdir td1/td2
+} -returnCodes error -result ENOENT
+test winFCmd-4.5 {TclpCreateDirectory: CreateDirectory succeeds} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    testfile mkdir td1
+    file type td1
+} -cleanup cleanup -result directory
+
+test winFCmd-5.1 {TclpCopyDirectory: calls TraverseWinTree} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    testfile cpdir td1 td2
+    list [file type td1] [file type td2]
+} -cleanup {
+    cleanup
+} -result {directory directory}
+
+test winFCmd-6.1 {TclpRemoveDirectory: errno: EACCES} -setup {
+    cleanup
+} -constraints {winVista testfile testchmod knownMsvcBug} -body {
+    file mkdir td1
+    testchmod 0 td1
+    testfile rmdir td1
+    file exists td1
+} -returnCodes error -cleanup {
+    catch {testchmod 0o666 td1}
+    cleanup
+} -result {td1 EACCES}
+# This next test has a very hokey way of matching...
+test winFCmd-6.2 {TclpRemoveDirectory: errno: EEXIST} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1/td2
+    list [catch {testfile rmdir td1} msg] [file tail $msg]
+} -result {1 {td1 EEXIST}}
+test winFCmd-6.3 {TclpRemoveDirectory: errno: EACCES} {win emptyTest} {
+    # can't test this w/o removing everything on your hard disk first!
+    # testfile rmdir /
+} {}
+# This next test has a very hokey way of matching...
+test winFCmd-6.4 {TclpRemoveDirectory: errno: ENOENT} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    list [catch {testfile rmdir td1} msg] [file tail $msg]
+} -result {1 {td1 ENOENT}}
+test winFCmd-6.5 {TclpRemoveDirectory: errno: ENOENT} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    testfile rmdir ""
+} -returnCodes error -result ENOENT
+# This next test has a very hokey way of matching...
+test winFCmd-6.6 {TclpRemoveDirectory: errno: ENOTDIR} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    createfile tf1
+    list [catch {testfile rmdir tf1} msg] [file tail $msg]
+} -result {1 {tf1 ENOTDIR}}
+test winFCmd-6.7 {TclpRemoveDirectory: RemoveDirectory succeeds} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    testfile rmdir td1
+    file exists td1
+} -result {0}
+# This next test has a very hokey way of matching...
+test winFCmd-6.8 {TclpRemoveDirectory: RemoveDirectory fails} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    createfile tf1
+    list [catch {testfile rmdir tf1} msg] [file tail $msg]
+} -result {1 {tf1 ENOTDIR}}
+test winFCmd-6.9 {TclpRemoveDirectory: errno == EACCES} -setup {
+    cleanup
+} -constraints {winVista testfile testchmod knownMsvcBug} -body {
+    file mkdir td1
+    testchmod 0 td1
+    testfile rmdir td1
+    file exists td1
+} -returnCodes error -cleanup {
+    catch {testchmod 0o666 td1}
+    cleanup
+} -result {td1 EACCES}
+test winFCmd-6.11 {TclpRemoveDirectory: attr == -1} -setup {
+    cleanup
+} -constraints {win nt testfile} -body {
+    testfile rmdir /
+    # WinXP returns EEXIST, WinNT seems to return EACCES.  No policy
+    # decision has been made as to which is correct.
+} -returnCodes error -match regexp -result {^/ E(ACCES|EXIST)$}
+test winFCmd-6.13 {TclpRemoveDirectory: write-protected} -setup {
+    cleanup
+} -constraints {winVista testfile testchmod knownMsvcBug} -body {
+    file mkdir td1
+    testchmod 0 td1
+    testfile rmdir td1
+    file exists td1
+} -cleanup {
+    catch {testchmod 0o666 td1}
+    cleanup
+} -returnCodes error -result {td1 EACCES}
+# This next test has a very hokey way of matching...
+test winFCmd-6.15 {TclpRemoveDirectory: !recursive} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1/td2
+    list [catch {testfile rmdir td1} msg] [file tail $msg]
+} -result {1 {td1 EEXIST}}
+test winFCmd-6.16 {TclpRemoveDirectory: recursive, but errno != EEXIST} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    createfile tf1
+    testfile rmdir -force tf1
+} -returnCodes error -result {tf1 ENOTDIR}
+test winFCmd-6.17 {TclpRemoveDirectory: calls TraverseWinTree} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1/td2
+    testfile rmdir -force td1
+    file exists td1
+} -result {0}
+
+test winFCmd-7.1 {TraverseWinTree: targetPtr == NULL} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1/td2/td3
+    testfile rmdir -force td1
+    file exists td1
+} -result {0}
+test winFCmd-7.2 {TraverseWinTree: targetPtr != NULL} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1/td2/td3
+    testfile cpdir td1 td2
+    list [file exists td1] [file exists td2]
+} -cleanup {
+    cleanup
+} -result {1 1}
+test winFCmd-7.3 {TraverseWinTree: sourceAttr == -1} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    testfile cpdir td1 td2
+} -returnCodes error -result {td1 ENOENT}
+test winFCmd-7.4 {TraverseWinTree: source isn't directory} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    createfile td1/tf1 tf1
+    testfile cpdir td1 td2
+    contents td2/tf1
+} -cleanup {
+    cleanup
+} -result {tf1}
+test winFCmd-7.5 {TraverseWinTree: call TraversalCopy: DOTREE_F} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    createfile td1/tf1 tf1
+    testfile cpdir td1 td2
+    contents td2/tf1
+} -cleanup {
+    cleanup
+} -result {tf1}
+test winFCmd-7.6 {TraverseWinTree: call TraversalDelete: DOTREE_F} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    createfile td1/tf1 tf1
+    testfile rmdir -force td1
+    file exists td1
+} -result {0}
+test winFCmd-7.7 {TraverseWinTree: append \ to source if necessary} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    createfile td1/tf1 tf1
+    testfile cpdir td1 td2
+    contents td2/tf1
+} -cleanup {
+    cleanup
+} -result {tf1}
+test winFCmd-7.9 {TraverseWinTree: append \ to source if necessary} -body {
+    testfile rmdir $cdrom/
+} -constraints {win nt cdrom testfile} -returnCodes error -match glob \
+    -result {* EACCES}
+test winFCmd-7.10 {TraverseWinTree: can't read directory: handle == INVALID} \
+	{win emptyTest} {
+    # can't make it happen
+} {}
+test winFCmd-7.11 {TraverseWinTree: call TraversalCopy: DOTREE_PRED} -setup {
+    cleanup
+} -constraints {win testfile testchmod} -body {
+    file mkdir td1
+    createfile td1/tf1 tf1
+    testchmod 0 td1
+    testfile cpdir td1 td2
+    list [file exists td2] [file writable td2]
+} -cleanup {
+    catch {testchmod 0o666 td1}
+    cleanup
+} -result {1 1}
+test winFCmd-7.12 {TraverseWinTree: call TraversalDelete: DOTREE_PRED} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    createfile td1/tf1 tf1
+    testfile rmdir -force td1
+    file exists td1
+} -result {0}
+test winFCmd-7.13 {TraverseWinTree: append \ to target if necessary} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    createfile td1/tf1 tf1
+    testfile cpdir td1 td2
+    contents td2/tf1
+} -cleanup {
+    cleanup
+} -result {tf1}
+test winFCmd-7.15 {TraverseWinTree: append \ to target if necessary} -setup {
+    cleanup
+} -constraints {win nt testfile} -body {
+    file mkdir td1
+    testfile cpdir td1 /
+} -cleanup {
+    cleanup
+    # Windows7 returns EEXIST, XP returns EACCES
+} -returnCodes error -match regexp -result {^/ E(ACCES|EXIST)$}
+test winFCmd-7.16 {TraverseWinTree: recurse on files: no files} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    testfile cpdir td1 td2
+} -cleanup {
+    cleanup
+} -result {}
+test winFCmd-7.17 {TraverseWinTree: recurse on files: one file} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    createfile td1/td2
+    testfile cpdir td1 td2
+    glob td2/*
+} -cleanup {
+    cleanup
+} -result {td2/td2}
+test winFCmd-7.18 {TraverseWinTree: recurse on files: several files and dir} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    createfile td1/tf1
+    createfile td1/tf2
+    file mkdir td1/td2/td3
+    createfile td1/tf3
+    createfile td1/tf4
+    testfile cpdir td1 td2
+    lsort [glob td2/*]
+} -cleanup {
+    cleanup
+} -result {td2/td2 td2/tf1 td2/tf2 td2/tf3 td2/tf4}
+test winFCmd-7.19 {TraverseWinTree: call TraversalCopy: DOTREE_POSTD} -setup {
+    cleanup
+} -constraints {win testfile testchmod} -body {
+    file mkdir td1
+    createfile td1/tf1 tf1
+    testchmod 0 td1
+    testfile cpdir td1 td2
+    list [file exists td2] [file writable td2]
+} -cleanup {
+    catch {testchmod 0o666 td1}
+    cleanup
+} -result {1 1}
+test winFCmd-7.20 {TraverseWinTree: call TraversalDelete: DOTREE_POSTD} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    createfile td1/tf1 tf1
+    testfile rmdir -force td1
+    file exists td1
+} -result {0}
+test winFCmd-7.21 {TraverseWinTree: fill errorPtr} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    testfile cpdir td1 td2
+} -returnCodes error -result {td1 ENOENT}
+
+test winFCmd-8.1 {TraversalCopy: DOTREE_F} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    testfile cpdir td1 td1
+} -returnCodes error -result {td1 EEXIST}
+test winFCmd-8.2 {TraversalCopy: DOTREE_PRED} -setup {
+    cleanup
+} -constraints {win testfile testchmod} -body {
+    file mkdir td1/td2
+    testchmod 0 td1
+    testfile cpdir td1 td2
+    list [file writable td1] [file writable td1/td2]
+} -cleanup {
+    catch {testchmod 0o666 td1}
+    cleanup
+} -result {0 1}
+test winFCmd-8.3 {TraversalCopy: DOTREE_POSTD} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    testfile cpdir td1 td2
+} -cleanup {
+    cleanup
+} -result {}
+
+test winFCmd-9.1 {TraversalDelete: DOTREE_F} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1
+    createfile td1/tf1
+    testfile rmdir -force td1
+} -result {}
+test winFCmd-9.3 {TraversalDelete: DOTREE_PRED} -setup {
+    cleanup
+} -constraints {winVista testfile testchmod knownMsvcBug} -body {
+    file mkdir td1/td2
+    testchmod 0 td1
+    testfile rmdir -force td1
+    file exists td1
+} -cleanup {
+    catch {testchmod 0o666 td1}
+    cleanup
+} -returnCodes error -result {td1 EACCES}
+test winFCmd-9.4 {TraversalDelete: DOTREE_POSTD} -setup {
+    cleanup
+} -constraints {win testfile} -body {
+    file mkdir td1/td1/td3/td4/td5
+    testfile rmdir -force td1
+} -result {}
+
+test winFCmd-10.1 {AttributesPosixError - get} -constraints {win} -setup {
+    cleanup
+} -body {
+    file attributes td1 -archive
+} -returnCodes error -result {could not read "td1": no such file or directory}
+test winFCmd-10.2 {AttributesPosixError - set} -constraints {win} -setup {
+    cleanup
+} -body {
+    file attributes td1 -archive 0
+} -returnCodes error -result {could not read "td1": no such file or directory}
+
+test winFCmd-11.1 {GetWinFileAttributes} -constraints {win} -setup {
+    cleanup
+} -body {
+    createfile td1 {}
+    file attributes td1 -archive
+} -cleanup {
+    cleanup
+} -result 1
+test winFCmd-11.2 {GetWinFileAttributes} -constraints {win} -setup {
+    cleanup
+} -body {
+    createfile td1 {}
+    file attributes td1 -readonly
+} -cleanup {
+    cleanup
+} -result 0
+test winFCmd-11.3 {GetWinFileAttributes} -constraints {win} -setup {
+    cleanup
+} -body {
+    createfile td1 {}
+    file attributes td1 -hidden
+} -cleanup {
+    cleanup
+} -result 0
+test winFCmd-11.4 {GetWinFileAttributes} -constraints {win} -setup {
+    cleanup
+} -body {
+    createfile td1 {}
+    file attributes td1 -system
+} -cleanup {
+    cleanup
+} -result 0
+test winFCmd-11.5 {GetWinFileAttributes} -constraints {win} -setup {
+    set old [pwd]
+} -body {
+    # Attr of relative paths that resolve to root was failing don't care about
+    # answer, just that test runs.
+    cd c:/
+    file attr c:
+    file attr c:.
+    file attr .
+} -cleanup {
+    cd $old
+} -match glob -result *
+test winFCmd-11.6 {GetWinFileAttributes} -constraints {win} -body {
+    file attr c:/ -hidden
+} -result {0}
+
+test winFCmd-12.1 {ConvertFileNameFormat} -constraints {win} -setup {
+    cleanup
+} -body {
+    createfile td1 {}
+    string tolower [file attributes td1 -longname]
+} -cleanup {
+    cleanup
+} -result {td1}
+test winFCmd-12.2 {ConvertFileNameFormat} -constraints {win} -setup {
+    cleanup
+} -body {
+    file mkdir td1
+    createfile td1/td1 {}
+    string tolower [file attributes td1/td1 -longname]
+} -cleanup {
+    cleanup
+} -result {td1/td1}
+test winFCmd-12.3 {ConvertFileNameFormat} -constraints {win} -setup {
+    cleanup
+} -body {
+    file mkdir td1
+    file mkdir td1/td2
+    createfile td1/td3 {}
+    string tolower [file attributes td1/td2/../td3 -longname]
+} -cleanup {
+    cleanup
+} -result {td1/td2/../td3}
+test winFCmd-12.4 {ConvertFileNameFormat} -constraints {win} -setup {
+    cleanup
+} -body {
+    createfile td1 {}
+    string tolower [file attributes ./td1 -longname]
+} -cleanup {
+    cleanup
+} -result {./td1}
+test winFCmd-12.5 {ConvertFileNameFormat: absolute path} -body {
+    list [file attributes / -longname] [file attributes \\ -longname]
+} -constraints {win} -result {/ /}
+test winFCmd-12.6 {ConvertFileNameFormat: absolute path with drive} -setup {
+    catch {file delete -force -- c:/TclTmpC.1}
+} -constraints {win win2000orXP} -body {
+    createfile c:/TclTmpC.1 {}
+    string tolower [file attributes c:/TclTmpC.1 -longname]
+} -cleanup {
+    file delete -force -- c:/TclTmpC.1
+} -result [string tolower {c:/TclTmpC.1}]
+test winFCmd-12.6.2 {ConvertFileNameFormat: absolute path with drive (in temp folder)} -setup {
+    catch {file delete -force -- $::env(TEMP)/td1}
+} -constraints {win} -body {
+    createfile $::env(TEMP)/td1 {}
+    string equal [string tolower [file attributes $::env(TEMP)/td1 -longname]] \
+	    [string tolower [file normalize $::env(TEMP)]/td1]
+} -cleanup {
+    file delete -force -- $::env(TEMP)/td1
+} -result 1
+test winFCmd-12.7 {ConvertFileNameFormat} -body {
+    string tolower [file attributes //bisque/tcl/ws -longname]
+} -constraints {nonPortable win} -result {//bisque/tcl/ws}
+test winFCmd-12.8 {ConvertFileNameFormat} -setup {
+    cleanup
+} -constraints {win longFileNames} -body {
+    createfile td1 {}
+    string tolower [file attributes td1 -longname]
+} -cleanup {
+    cleanup
+} -result {td1}
+test winFCmd-12.10 {ConvertFileNameFormat} -setup {
+    cleanup
+} -constraints {longFileNames win} -body {
+    createfile td1td1td1 {}
+    file attributes td1td1td1 -shortname
+} -cleanup {
+    cleanup
+} -match glob -result *
+test winFCmd-12.11 {ConvertFileNameFormat} -setup {
+    cleanup
+} -constraints {longFileNames win} -body {
+    createfile td1 {}
+    string tolower [file attributes td1 -shortname]
+} -cleanup {
+    cleanup
+} -result {td1}
+
+test winFCmd-13.1 {GetWinFileLongName} -constraints {win} -setup {
+    cleanup
+} -body {
+    createfile td1 {}
+    string tolower [file attributes td1 -longname]
+} -cleanup {
+    cleanup
+} -result td1
+
+test winFCmd-14.1 {GetWinFileShortName} -constraints {win} -setup {
+    cleanup
+} -body {
+    createfile td1 {}
+    string tolower [file attributes td1 -shortname]
+} -cleanup {
+    cleanup
+} -result td1
+
+test winFCmd-15.1 {SetWinFileAttributes} -constraints {win} -setup {
+    cleanup
+} -body {
+    file attributes td1 -archive 0
+} -returnCodes error -result {could not read "td1": no such file or directory}
+test winFCmd-15.2 {SetWinFileAttributes - archive} -constraints {win} -setup {
+    cleanup
+} -body {
+    createfile td1 {}
+    list [file attributes td1 -archive 1] [file attributes td1 -archive]
+} -cleanup {
+    cleanup
+} -result {{} 1}
+test winFCmd-15.3 {SetWinFileAttributes - archive} -constraints {win} -setup {
+    cleanup
+} -body {
+    createfile td1 {}
+    list [file attributes td1 -archive 0] [file attributes td1 -archive]
+} -cleanup {
+    cleanup
+} -result {{} 0}
+test winFCmd-15.4 {SetWinFileAttributes - hidden} -constraints {win} -setup {
+    cleanup
+} -body {
+    createfile td1 {}
+    list [file attributes td1 -hidden 1] [file attributes td1 -hidden] \
+	[file attributes td1 -hidden 0]
+} -cleanup {
+    cleanup
+} -result {{} 1 {}}
+test winFCmd-15.5 {SetWinFileAttributes - hidden} -constraints {win} -setup {
+    cleanup
+} -body {
+    createfile td1 {}
+    list [file attributes td1 -hidden 0] [file attributes td1 -hidden]
+} -cleanup {
+    cleanup
+} -result {{} 0}
+test winFCmd-15.6 {SetWinFileAttributes - readonly} -setup {
+    cleanup
+} -constraints {win} -body {
+    createfile td1 {}
+    list [file attributes td1 -readonly 1] [file attributes td1 -readonly]
+} -cleanup {
+    cleanup
+} -result {{} 1}
+test winFCmd-15.7 {SetWinFileAttributes - readonly} -setup {
+    cleanup
+} -constraints {win} -body {
+    createfile td1 {}
+    list [file attributes td1 -readonly 0] [file attributes td1 -readonly]
+} -cleanup {
+    cleanup
+} -result {{} 0}
+test winFCmd-15.8 {SetWinFileAttributes - system} -constraints {win} -setup {
+    cleanup
+} -body {
+    createfile td1 {}
+    list [file attributes td1 -system 1] [file attributes td1 -system]
+} -cleanup {
+    cleanup
+} -result {{} 1}
+test winFCmd-15.9 {SetWinFileAttributes - system} -constraints {win} -setup {
+    cleanup
+} -body {
+    createfile td1 {}
+    list [file attributes td1 -system 0] [file attributes td1 -system]
+} -cleanup {
+    cleanup
+} -result {{} 0}
+test winFCmd-15.10 {SetWinFileAttributes - failing} -setup {
+    cleanup
+} -constraints {win cdrom} -body {
+    file attributes $cdfile -archive 1
+} -returnCodes error -match glob -result *
+
+test winFCmd-16.1 {Windows file normalization} -constraints {win} -body {
+    list [file normalize c:/] [file normalize C:/]
+} -result {C:/ C:/}
+test winFCmd-16.2 {Windows file normalization} -constraints {win} -body {
+    createfile td1... {}
+    file tail [file normalize td1]
+} -cleanup {
+    file delete td1...
+} -result {td1}
+set pwd [pwd]
+set d [string index $pwd 0]
+test winFCmd-16.3 {Windows file normalization} -constraints {win} -body {
+    file norm ${d}:foo
+} -result [file join $pwd foo]
+test winFCmd-16.4 {Windows file normalization} -constraints {win} -body {
+    file norm [string tolower ${d}]:foo
+} -result [file join $pwd foo]
+test winFCmd-16.5 {Windows file normalization} -constraints {win} -body {
+    file norm ${d}:foo/bar
+} -result [file join $pwd foo/bar]
+test winFCmd-16.6 {Windows file normalization} -constraints {win} -body {
+    file norm ${d}:foo\\bar
+} -result [file join $pwd foo/bar]
+test winFCmd-16.7 {Windows file normalization} -constraints {win} -body {
+    file norm /bar
+} -result "${d}:/bar"
+test winFCmd-16.8 {Windows file normalization} -constraints {win} -body {
+    file norm ///bar
+} -result "${d}:/bar"
+test winFCmd-16.9 {Windows file normalization} -constraints {win} -body {
+    file norm /bar/foo
+} -result "${d}:/bar/foo"
+if {$d eq "C"} { set dd "D" } else { set dd "C" }
+test winFCmd-16.10 {Windows file normalization} -constraints {win} -body {
+    file norm ${dd}:foo
+} -result "${dd}:/foo"
+test winFCmd-16.11 {Windows file normalization} -body {
+    cd ${d}:
+    cd $cdrom
+    cd ${d}:
+    cd $cdrom
+    # Must not crash
+    set result "no crash"
+} -constraints {win cdrom} -cleanup {
+    cd $pwd
+} -result {no crash}
+test winFCmd-16.12 {Windows file normalization - no crash} \
+  -constraints win -setup {
+    set oldhome ""
+    catch {set oldhome $::env(HOME)}
+} -body {
+    set expectedResult [file normalize ${d}:]
+    set ::env(HOME) ${d}:
+    cd
+    # At one point this led to an infinite recursion in Tcl
+    set result [pwd]; # <- Must not crash
+    set result "no crash"
+} -cleanup {
+    set ::env(HOME) $oldhome
+    cd $pwd
+} -result {no crash}
+test winFCmd-16.13 {Windows file normalization - absolute HOME} -setup {
+    set oldhome ""
+    catch {set oldhome $::env(HOME)}
+} -constraints win -body {
+    # Test 'cd' normalization when HOME is absolute
+    set ::env(HOME) ${d}:/
+    cd
+    pwd
+} -cleanup {
+    set ::env(HOME) $oldhome
+    cd $pwd
+} -result [file normalize ${d}:/]
+test winFCmd-16.14 {Windows file normalization - relative HOME} -setup {
+    set oldhome ""
+    catch {set oldhome $::env(HOME)}
+} -constraints win -body {
+    # Test 'cd' normalization when HOME is relative
+    set ::env(HOME) ${d}:
+    cd
+    pwd
+} -cleanup {
+    set ::env(HOME) $oldhome
+    cd $pwd
+} -result $pwd
+
+test winFCmd-17.1 {Windows bad permissions cd} -constraints win -body {
+    set d {}
+    foreach dd {c:/ d:/ e:/} {
+	eval lappend d [glob -nocomplain \
+	  -types hidden -dir $dd "System Volume Information"]
+    }
+    # Old versions of Tcl gave a misleading error that the
+    # directory in question didn't exist.
+    if {[llength $d] && [catch {cd [lindex $d 0]} err]} {
+	regsub ".*: " $err "" err
+	set err
+    } else {
+        set err "permission denied"
+    }
+} -cleanup {
+    cd $pwd
+} -result "permission denied"
+
+cd $pwd
+unset d dd pwd
+
+test winFCmd-18.1 {Windows reserved path names} -constraints win -body {
+    file pathtype com1
+} -result "absolute"
+test winFCmd-18.1.2 {Windows reserved path names} -constraints win -body {
+    file pathtype com4
+} -result "absolute"
+test winFCmd-18.1.3 {Windows reserved path names} -constraints win -body {
+    file pathtype com9
+} -result "absolute"
+test winFCmd-18.1.4 {Windows reserved path names} -constraints win -body {
+    file pathtype lpt3
+} -result "absolute"
+test winFCmd-18.1.5 {Windows reserved path names} -constraints win -body {
+    file pathtype lpt9
+} -result "absolute"
+test winFCmd-18.1.6 {Windows reserved path names} -constraints win -body {
+    file pathtype nul
+} -result "absolute"
+test winFCmd-18.1.7 {Windows reserved path names} -constraints win -body {
+    file pathtype null
+} -result "relative"
+test winFCmd-18.2 {Windows reserved path names} -constraints win -body {
+    file pathtype com1:
+} -result "absolute"
+test winFCmd-18.3 {Windows reserved path names} -constraints win -body {
+    file pathtype COM1
+} -result "absolute"
+test winFCmd-18.4 {Windows reserved path names} -constraints win -body {
+    file pathtype CoM1:
+} -result "absolute"
+test winFCmd-18.5 {Windows reserved path names} -constraints win -body {
+    file normalize com1:
+} -result COM1
+test winFCmd-18.6 {Windows reserved path names} -constraints win -body {
+    file normalize COM1:
+} -result COM1
+test winFCmd-18.7 {Windows reserved path names} -constraints win -body {
+    file normalize cOm1
+} -result COM1
+test winFCmd-18.8 {Windows reserved path names} -constraints win -body {
+    file normalize cOm1:
+} -result COM1
+
+test winFCmd-19.1 {Windows extended path names} -constraints nt -body {
+    file normalize //?/c:/windows/win.ini
+} -result //?/c:/windows/win.ini
+test winFCmd-19.2 {Windows extended path names} -constraints nt -body {
+    file normalize //?/c:/windows/../windows/win.ini
+} -result //?/c:/windows/win.ini
+test winFCmd-19.3 {Windows extended path names} -constraints nt -setup {
+    set tmpfile [file join $::env(TEMP) tcl[string repeat x 20].tmp]
+    set tmpfile [file normalize $tmpfile]
+} -body {
+    list [catch {
+        set f [open $tmpfile [list WRONLY CREAT]]
+        close $f
+    } res] $res
+} -cleanup {
+    catch {file delete $tmpfile}
+} -result [list 0 {}]
+test winFCmd-19.4 {Windows extended path names} -constraints nt -setup {
+    set tmpfile [file join $::env(TEMP) tcl[string repeat x 20].tmp]
+    set tmpfile //?/[file normalize $tmpfile]
+} -body {
+    list [catch {
+        set f [open $tmpfile [list WRONLY CREAT]]
+        close $f
+    } res] $res
+} -cleanup {
+    catch {file delete $tmpfile}
+} -result [list 0 {}]
+test winFCmd-19.5 {Windows extended path names} -constraints nt -setup {
+    set tmpfile [file join $::env(TEMP) tcl[string repeat x 248].tmp]
+    set tmpfile [file normalize $tmpfile]
+} -body {
+    list [catch {
+        set f [open $tmpfile [list WRONLY CREAT]]
+        close $f
+    } res] $res
+} -cleanup {
+    catch {file delete $tmpfile}
+} -result [list 0 {}]
+test winFCmd-19.6 {Windows extended path names} -constraints nt -setup {
+    set tmpfile [file join $::env(TEMP) tcl[string repeat x 248].tmp]
+    set tmpfile //?/[file normalize $tmpfile]
+} -body {
+    list [catch {
+        set f [open $tmpfile [list WRONLY CREAT]]
+        close $f
+    } res] $res
+} -cleanup {
+    catch {file delete $tmpfile}
+} -result [list 0 {}]
+test winFCmd-19.7 {Windows extended path names} -constraints nt -setup {
+    set tmpfile [file join $::env(TEMP) "tcl[pid].tmp "]
+    set tmpfile [file normalize $tmpfile]
+} -body {
+    list [catch {
+        set f [open $tmpfile [list WRONLY CREAT]]
+        close $f
+    } res] $res [glob -directory $::env(TEMP) -tails tcl[pid].*]
+} -cleanup {
+    catch {file delete $tmpfile}
+} -result [list 0 {} [list tcl[pid].tmp]]
+test winFCmd-19.8 {Windows extended path names} -constraints nt -setup {
+    set tmpfile [file join $::env(TEMP) "tcl[pid].tmp "]
+    set tmpfile //?/[file normalize $tmpfile]
+} -body {
+    list [catch {
+        set f [open $tmpfile [list WRONLY CREAT]]
+        close $f
+    } res] $res [glob -directory $::env(TEMP) -tails tcl[pid].*]
+} -cleanup {
+    catch {file delete $tmpfile}
+} -result [list 0 {} [list "tcl[pid].tmp "]]
+
+test winFCmd-19.9 {Windows devices path names} -constraints nt -body {
+    file normalize //./com1
+} -result //./com1
+
+
+# This block of code used to occur after the "return" call, so I'm
+# commenting it out and assuming that this code is still under construction.
+#foreach source {tef ted tnf tnd "" nul com1} {
+#    foreach chmodsrc {000 755} {
+#        foreach dest "tfn tfe tdn tdempty tdfull td1/td2 $p $p/td1 {} nul" {
+#	    foreach chmoddst {000 755} {
+#		puts hi
+#		cleanup
+#		file delete -force ted tef
+#		file mkdir ted
+#		createfile tef
+#		createfile tfe
+#		file mkdir tdempty
+#		file mkdir tdfull/td1/td2
+#
+#		catch {testchmod $chmodsrc $source}
+#		catch {testchmod $chmoddst $dest}
+#
+#		if [catch {file rename $source $dest} msg] {
+#		    puts "file rename $source ($chmodsrc) $dest ($chmoddst)"
+#		    puts $msg
+#		}
+#	    }
+#	}
+#    }
+#}
+
+# cleanup
+cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

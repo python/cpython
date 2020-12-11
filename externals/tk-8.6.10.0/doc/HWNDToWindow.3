@@ -1,0 +1,26 @@
+'\"
+'\" Copyright (c) 1998-2000 by Scriptics Corporation.
+'\" All rights reserved.
+'\" 
+.TH Tk_HWNDToWindow 3 "" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_HWNDToWindow \- Find Tk's window information for a Windows window
+.SH SYNOPSIS
+.nf
+\fB#include <tkPlatDecls.h>\fR
+.sp
+Tk_Window
+\fBTk_HWNDToWindow\fR(\fIhwnd\fR)
+.SH ARGUMENTS
+.AP HWND hwnd in
+Windows handle for the window.
+.BE
+.SH DESCRIPTION
+.PP
+Given a Windows HWND window identifier, this procedure returns the
+corresponding Tk_Window handle. If there is no Tk_Window corresponding
+to \fIhwnd\fR then NULL is returned.
+.SH KEYWORDS
+Windows window id

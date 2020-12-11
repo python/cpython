@@ -1,0 +1,243 @@
+<!-- $Id: hlist.tex.html,v 1.2 2000/11/11 23:34:25 idiscovery Exp $ -->
+<H1><A NAME=4>4 Hierarchical Listbox</H1>
+
+<p><H2><A NAME=4.1>4.1 TixHList -- The Tix Hierarchical Listbox Widget</H2>
+
+<p>  <i> TixHList</i> is the Tix Hierarchical Listbox Widget. You can use it
+  to display any data that have a hierarchical structure. For example,
+  the HList widget in figure <a href=hlist.tex.html#4-1>4-1 </a> displays a Unix file
+  system directory tree; the HList widget in figure <a href=hlist.tex.html#4-1>4-1 </a>
+  displays the corporate hierarchy of a hypothetical company. As shown
+  in these two figures, the entries inside the TixHList widget are
+  indented can be optionally connected by branch lines according to
+  their positions in the hierarchy.
+
+<p><blockquote><a name=4-1>
+
+<center><TABLE BORDER=0><TR> 
+<p> <td valign=bottom>
+     <img src=fig/hlist/dirtree.gif>
+    <p><h4><center>Directory Tree Display</center></h4></td>
+<p> <td valign=bottom>
+     <img src=fig/hlist/hlist1.gif>
+    <p><h4><center>A Corporate Hierarchy</center></h4></td>
+ </TR></TABLE></center>
+<hr><center><h3>(Figure 4-1) Examples of the TixHList Widget</center></h3>
+</blockquote>
+
+<p><H3><A NAME=4.1.1>4.1.1 Creating a Hierarchical List</H3>
+
+<p>  A TixHList widget can be created by the command <code>
+  tixHList</code>. However, most likely, you would want to create a TixHList
+  with scrollbars attached. Therefore, usually you will use the <code>
+  tixScrolledHList</code> command to create a scrolled hierarchical listbox
+  (line 1 in program <a href=hlist.tex.html#4-2>4-2 </a>). The <code> tixScrolledHList</code>
+  command is very similar to the <code> TixScrolledListBox</code> command we
+  saw in section <a href=container.tex.html#2.3.1>2.3.1 </a>. It creates a TixHList subwidget
+  of the name <code> hlist</code> and attaches two scrollbars to it.
+
+<p>  As shown in the first five lines in program <a href=hlist.tex.html#4-2>4-2 </a>, we
+  create a scrolled TixHList widget, using the <code> -options</code> switch
+  (see section <a href=intro.tex.html#1.3.5>1.3.5 </a>) to set several options for the <code>
+  hlist</code> subwidget (we'll talk about these options shortly). Then, we
+  can access the HList subwidget widget using the <code> subwidget
+  hlist</code> method (line 7 in program <a href=hlist.tex.html#4-2>4-2 </a>).
+
+<p><blockquote><a name=4-2>
+<blockquote><pre>
+tixScrolledHList .sh -options {
+    hlist.itemType text
+    hlist.drawBranch false
+    hlist.indent     8
+}
+pack .sh -expand yes -fill both
+set hlist [.sh subwidget hlist]
+
+<p>$hlist add foo         -text "foo"
+$hlist add foo.bar     -text "foo's 1st son"
+$hlist add foo.bor     -text "foo's 2nd son"
+$hlist add foo.bar.bao -text "foo's 1st son's 1st son"
+$hlist add foo.bar.kao -text "foo's 1st son's 2nd son"
+$hlist add dor         -text "dor, who has no son"
+</pre></blockquote>
+<hr><center><h3>(Figure 4-2) Creating Entries in a HList Widget</center></h3>
+</blockquote>
+
+<p>
+<blockquote><a name=4-3>
+<center><img src=fig/hlist/hlist_ex1.gif></center>
+<hr><center><h3>(Figure 4-3) Output of Program <a href=hlist.tex.html#4-2>4-2 </a></center></h3>
+</blockquote>
+
+<p>
+<H3><A NAME=4.1.2>4.1.2 Creating Entries in a HList Widget</H3>
+
+<p>  Each entry in an HList widget has a unique name, called its <i>
+  entry-path</i>, which determines each entry's position in the HList
+  widget. The entry-paths of the HList entries are very similar to the
+  pathnames of Unix files. Each entry-path is a list of string names
+  separated by a <i> separator character</i>. By default, the separator
+  character is the period character (<code> .</code>), but it can be
+  configured using the <code> -separator</code> option of the HList widget.
+
+<p>  In program <a href=hlist.tex.html#4-3>4-3 </a>, we add several new entries <code> foo</code>,
+  <code> foo.bar</code>, <code> foo.bor</code>, <code> foo.bar.bao</code>, .. etc, into the
+  HList widget using the <code> add</code> method. The relationship between
+  the entries is signified by their names, in a way similar to how
+  Unix denotes directories and subdirectories. For example, <code> foo</code>
+  is the <i> parent</i> of <code> foo.bar</code> and <code> foo.bor</code>; <code>
+  foo.bar</code> is the parent of <code> foo.bar.bao</code>, and so on. As far as
+  the terminology goes, we also say that <code> foo.bar</code> a <i> child</i>
+  of <code> foo</code>; <code> foo</code> is an <i> ancestor</i> of <code> foo.bar.bao</code>
+  and <code> foo.bar.bao</code> is a <i> descendant</i> of <code> foo</code>.
+
+<p>  The output of program <a href=hlist.tex.html#4-2>4-2 </a> is shown in figure
+  <a href=hlist.tex.html#4-3>4-3 </a>. As we can see, the entries are displayed under
+  their parents with the amount of indentation control by the <code>
+  -indent</code> option of the HList widget: <code> foo.bar.bao</code> and <code>
+  foo.bar.kao</code> are display under <code> foo.bar</code>, which is in turn
+  displayed under <code> foo</code>.
+
+<p>  Entries with no parents, for example, <code> foo</code> and <code> dor</code> in
+  program <a href=hlist.tex.html#4-2>4-2 </a>, are called <i> top-level
+  entries</i>. Top-level entries are usually entries with no immediate
+  superiors in a hierarchical. For example, the owner of a company, the
+  principle of a school or the root directory of a Unix file
+  system. Toplevel entries are displayed with no indentation.
+
+<p>  As evident from program <a href=hlist.tex.html#4-2>4-2 </a>, all entries who
+  entry-path does not contain a separator character are top-level
+  entries. The only exception is the separator character itself is
+  also a toplevel entry. This makes it easy to display Unix file and
+  directory names inside the HList widget, as shown in program
+  <a href=hlist.tex.html#4-4>4-4 </a>.
+
+<p><blockquote><a name=4-4>
+<blockquote><pre>
+set folder [tix getimage folder]
+tixScrolledHList .sh -options {
+    hlist.separator     /
+    hlist.itemType      imagetext
+    hlist.drawBranch    true
+    hlist.indent        14
+    hlist.wideSelection false
+}
+pack .sh -expand yes -fill both
+set hlist [.sh subwidget hlist]
+
+<p>foreach directory {/ /usr /usr/bin /usr/local /etc /etc/rc.d} {
+    $hlist add $directory -image $folder -text $directory
+}
+</pre></blockquote>
+<hr><center><h3>(Figure 4-4) Displaying Directories in a HList Widget</center></h3>
+</blockquote>
+
+<p><blockquote><a name=4-5>
+<center><img src=fig/hlist/hlist_ex2.gif></center>
+<hr><center><h3>(Figure 4-5) Output of Program <a href=hlist.tex.html#4-4>4-4 </a></center></h3>
+</blockquote>
+
+<p> <!ignored:nind> Each entry is associated with a display item (see section
+ <a href=tlist.tex.html#3.2>3.2 </a> about display items). We can use the <code> -itemtype</code>
+ option of the HList widget to specify the default type of display
+ item to be created by the the <code> add</code> method, as shown in program
+ <a href=hlist.tex.html#4-2>4-2 </a> and <a href=hlist.tex.html#4-4>4-4 </a>. Alternatively, we can
+ also specify the type of display item using the <code> -itemtype</code>
+ option for the <code> add</code> method.
+
+<p><H3><A NAME=4.1.3>4.1.3 Controlling the Layout of the Entries</H3>
+
+<p>  There are two options to control the layout of the entries: the <code>
+  -showbranch</code> option specifies whether branch lines should be drawn
+  between parent entries and their children. The <code> -indent</code> option
+  controls the amount of relative indentation between parent and child
+  entries. Notice the <code> -drawbranch</code> option is turned on in figure
+  <a href=hlist.tex.html#4-5>4-5 </a> but turned off in figure
+  <a href=hlist.tex.html#4-3>4-3 </a>. Usually, you need to set a bigger indentation
+  when the branches are shown --- we used an indentation of 14 pixels
+  in <a href=hlist.tex.html#4-5>4-5 </a> compared to 8 pixels in <a href=hlist.tex.html#4-3>4-3 </a>.
+
+<p><H3><A NAME=4.1.4>4.1.4 Handling the Selection and User Event</H3>
+
+<p>  The handling of the selection and user events for the HList widget
+  is very similar to the TList widget (see section
+  <a href=tlist.tex.html#3.3.5>3.3.5 </a>), except that for the HList widget all the
+  operations are based on entry-paths, not list indices. The methods
+  <code> info selection</code>, <code> selection set</code> and <code> selection clear</code>
+  can be used to query, set or clear the selection; the option <code>
+  -selectmode</code> controls how many entries can be selected at a time;
+  the options <code> -browsecmd</code> and <code> -command</code> can be used to
+  specify a command to be called to handle user events.
+
+<p>  There is one more option worth mentioning: the <code> -wideselection</code>
+  option. When set to <code> true</code>, the selection highlight will be
+  drawn across the whole HList widget (see figure
+  <a href=hlist.tex.html#4-3>4-3 </a>). When set to false, selection highlight will be
+  drawn as wide as the selected entry (see figure
+  <a href=hlist.tex.html#4-5>4-5 </a>). Normally, you would set <code> -wideselection</code>
+  to <code> false</code> when you use <code> imagetext</code> items inside (as we did
+  in program <a href=hlist.tex.html#4-4>4-4 </a>).
+  
+
+<p><H2><A NAME=4.2>4.2 Creating Collapsible Tree Structures with TixTree</H2>
+
+<p>  The TixTree widget is based on the TixScrolledHList widget; you can
+  use it to create a collapsible hierarchical structure so that the
+  user can conveniently navigate through a large number of list
+  entries. As shown in figure <a href=hlist.tex.html#4-7>4-7 </a>, the TixTree puts
+  the little ``<code> +</code>'' and ``<code> -</code>'' icons next to the branches of
+  an HList entry that has descendants. These two icons are knows as
+  the open and close icons, respectively. When the user presses the
+  open icon next to an entry, its immediate children of an entry will
+  be displayed. Conversely, when the user presses the close icon, the
+  entry's children will become hidden.
+
+<p>  Program <a href=hlist.tex.html#4-6>4-6 </a> shows how to create a collapsible
+  tree. We first create a TixTree widget. Then we add the entries in
+  your hierarchical structure into its <code> hlist</code> subwidget using the
+  add method of this subwidget. When we are finished with adding the
+  entries, we just call the <code> autosetmode</code> method of the TixTree
+  widget, which will automatically adds the open and close icons next
+  to the entries who have children.
+
+<p><blockquote><a name=4-6>
+<blockquote><pre>
+set folder [tix getimage folder]
+tixTree .tree -command Command -options {
+    hlist.separator  /
+    hlist.itemType   imagetext
+    hlist.drawBranch true
+    hlist.indent     18
+}
+pack .tree -expand yes -fill both
+set hlist [.tree subwidget hlist]
+
+<p>foreach directory {/ /usr /usr/bin /usr/local /etc /etc/rc.d} {
+    $hlist add $directory -image $folder -text $directory
+}
+.tree autosetmode
+
+<p>proc Command {entry} {
+    puts "you have selected $entry"
+}
+</pre></blockquote>
+<hr><center><h3>(Figure 4-6) Creating a Collapsible Hierarchy</center></h3>
+</blockquote>
+
+<p>
+<blockquote><a name=4-7>
+<center><img src=fig/hlist/hlist_ex3.gif></center>
+<hr><center><h3>(Figure 4-7) Output of Program <a href=hlist.tex.html#4-6>4-6 </a></center></h3>
+</blockquote>
+
+<p>  Note that in program <a href=hlist.tex.html#4-6>4-6 </a> we use the <code> -command</code>
+  option of the TixTree widget, not the <code> -command</code> option of its <code>
+  hlist</code> subwidget. This is because the TixTree actually used the <code>
+  -command</code> option of its <code> hlist</code> subwidget to process some
+  low-level events. In general, if both a mega-widget and its
+  subwidget have the options of the same name, you would always use
+  the option that belongs to the mega-widget.
+
+<p>
+
+<p>

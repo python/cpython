@@ -1,0 +1,249 @@
+'\"
+'\" Copyright (c) 1989-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_SetVar 3 8.1 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_SetVar2Ex, Tcl_SetVar, Tcl_SetVar2, Tcl_ObjSetVar2, Tcl_GetVar2Ex, Tcl_GetVar, Tcl_GetVar2, Tcl_ObjGetVar2, Tcl_UnsetVar, Tcl_UnsetVar2 \- manipulate Tcl variables
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+Tcl_Obj *
+\fBTcl_SetVar2Ex\fR(\fIinterp, name1, name2, newValuePtr, flags\fR)
+.sp
+const char *
+\fBTcl_SetVar\fR(\fIinterp, varName, newValue, flags\fR)
+.sp
+const char *
+\fBTcl_SetVar2\fR(\fIinterp, name1, name2, newValue, flags\fR)
+.sp
+Tcl_Obj *
+\fBTcl_ObjSetVar2\fR(\fIinterp, part1Ptr, part2Ptr, newValuePtr, flags\fR)
+.sp
+Tcl_Obj *
+\fBTcl_GetVar2Ex\fR(\fIinterp, name1, name2, flags\fR)
+.sp
+const char *
+\fBTcl_GetVar\fR(\fIinterp, varName, flags\fR)
+.sp
+const char *
+\fBTcl_GetVar2\fR(\fIinterp, name1, name2, flags\fR)
+.sp
+Tcl_Obj *
+\fBTcl_ObjGetVar2\fR(\fIinterp, part1Ptr, part2Ptr, flags\fR)
+.sp
+int
+\fBTcl_UnsetVar\fR(\fIinterp, varName, flags\fR)
+.sp
+int
+\fBTcl_UnsetVar2\fR(\fIinterp, name1, name2, flags\fR)
+.SH ARGUMENTS
+.AS Tcl_Interp *newValuePtr
+.AP Tcl_Interp *interp in
+Interpreter containing variable.
+.AP "const char" *name1 in
+Contains the name of an array variable (if \fIname2\fR is non-NULL)
+or (if \fIname2\fR is NULL) either the name of a scalar variable
+or a complete name including both variable name and index.
+May include \fB::\fR namespace qualifiers
+to specify a variable in a particular namespace.
+.AP "const char" *name2 in
+If non-NULL, gives name of element within array; in this
+case \fIname1\fR must refer to an array variable.
+.AP Tcl_Obj *newValuePtr in
+Points to a Tcl value containing the new value for the variable.
+.AP int flags in
+OR-ed combination of bits providing additional information. See below
+for valid values.
+.AP "const char" *varName in
+Name of variable.
+May include \fB::\fR namespace qualifiers
+to specify a variable in a particular namespace.
+May refer to a scalar variable or an element of
+an array.
+.AP "const char" *newValue in
+New value for variable, specified as a null-terminated string.
+A copy of this value is stored in the variable.
+.AP Tcl_Obj *part1Ptr in
+Points to a Tcl value containing the variable's name.
+The name may include a series of \fB::\fR namespace qualifiers
+to specify a variable in a particular namespace.
+May refer to a scalar variable or an element of an array variable.
+.AP Tcl_Obj *part2Ptr in
+If non-NULL, points to a value containing the name of an element
+within an array and \fIpart1Ptr\fR must refer to an array variable.
+.BE
+
+.SH DESCRIPTION
+.PP
+These procedures are used to create, modify, read, and delete
+Tcl variables from C code.
+.PP
+\fBTcl_SetVar2Ex\fR, \fBTcl_SetVar\fR, \fBTcl_SetVar2\fR, and
+\fBTcl_ObjSetVar2\fR
+will create a new variable or modify an existing one.
+These procedures set the given variable to the value
+given by \fInewValuePtr\fR or \fInewValue\fR and return a
+pointer to the variable's new value, which is stored in Tcl's
+variable structure.
+\fBTcl_SetVar2Ex\fR and \fBTcl_ObjSetVar2\fR take the new value as a
+Tcl_Obj and return
+a pointer to a Tcl_Obj.  \fBTcl_SetVar\fR and \fBTcl_SetVar2\fR
+take the new value as a string and return a string; they are
+usually less efficient than \fBTcl_ObjSetVar2\fR.  Note that the
+return value may be different than the \fInewValuePtr\fR or
+\fInewValue\fR argument, due to modifications made by write traces.
+If an error occurs in setting the variable (e.g. an array
+variable is referenced without giving an index into the array)
+NULL is returned and an error message is left in \fIinterp\fR's
+result if the \fBTCL_LEAVE_ERR_MSG\fR \fIflag\fR bit is set.
+.PP
+\fBTcl_GetVar2Ex\fR, \fBTcl_GetVar\fR, \fBTcl_GetVar2\fR, and
+\fBTcl_ObjGetVar2\fR
+return the current value of a variable.
+The arguments to these procedures are treated in the same way
+as the arguments to the procedures described above.
+Under normal circumstances, the return value is a pointer
+to the variable's value.  For \fBTcl_GetVar2Ex\fR and
+\fBTcl_ObjGetVar2\fR the value is
+returned as a pointer to a Tcl_Obj.  For \fBTcl_GetVar\fR and
+\fBTcl_GetVar2\fR the value is returned as a string; this is
+usually less efficient, so \fBTcl_GetVar2Ex\fR or \fBTcl_ObjGetVar2\fR
+are preferred.
+If an error occurs while reading the variable (e.g. the variable
+does not exist or an array element is specified for a scalar
+variable), then NULL is returned and an error message is left
+in \fIinterp\fR's result if the \fBTCL_LEAVE_ERR_MSG\fR \fIflag\fR
+bit is set.
+.PP
+\fBTcl_UnsetVar\fR and \fBTcl_UnsetVar2\fR may be used to remove
+a variable, so that future attempts to read the variable will return
+an error.
+The arguments to these procedures are treated in the same way
+as the arguments to the procedures above.
+If the variable is successfully removed then \fBTCL_OK\fR is returned.
+If the variable cannot be removed because it does not exist then
+\fBTCL_ERROR\fR is returned and an error message is left
+in \fIinterp\fR's result if the \fBTCL_LEAVE_ERR_MSG\fR \fIflag\fR
+bit is set.
+If an array element is specified, the given element is removed
+but the array remains.
+If an array name is specified without an index, then the entire
+array is removed.
+.PP
+The name of a variable may be specified to these procedures in
+four ways:
+.IP [1]
+If \fBTcl_SetVar\fR, \fBTcl_GetVar\fR, or \fBTcl_UnsetVar\fR
+is invoked, the variable name is given as
+a single string, \fIvarName\fR.
+If \fIvarName\fR contains an open parenthesis and ends with a
+close parenthesis, then the value between the parentheses is
+treated as an index (which can have any string value) and
+the characters before the first open
+parenthesis are treated as the name of an array variable.
+If \fIvarName\fR does not have parentheses as described above, then
+the entire string is treated as the name of a scalar variable.
+.IP [2]
+If the \fIname1\fR and \fIname2\fR arguments are provided and
+\fIname2\fR is non-NULL, then an array element is specified and
+the array name and index have
+already been separated by the caller: \fIname1\fR contains the
+name and \fIname2\fR contains the index.  An error is generated
+if \fIname1\fR  contains an open parenthesis and ends with a
+close parenthesis (array element) and \fIname2\fR is non-NULL.
+.IP [3]
+If \fIname2\fR is NULL, \fIname1\fR is treated just like
+\fIvarName\fR in case [1] above (it can be either a scalar or an array
+element variable name).
+.PP
+The \fIflags\fR argument may be used to specify any of several
+options to the procedures.
+It consists of an OR-ed combination of the following bits.
+.TP
+\fBTCL_GLOBAL_ONLY\fR
+Under normal circumstances the procedures look up variables as follows.
+If a procedure call is active in \fIinterp\fR,
+the variable is looked up at the current level of procedure call.
+Otherwise, the variable is looked up first in the current namespace,
+then in the global namespace.
+However, if this bit is set in \fIflags\fR then the variable
+is looked up only in the global namespace
+even if there is a procedure call active.
+If both \fBTCL_GLOBAL_ONLY\fR and \fBTCL_NAMESPACE_ONLY\fR are given,
+\fBTCL_GLOBAL_ONLY\fR is ignored.
+.TP
+\fBTCL_NAMESPACE_ONLY\fR
+If this bit is set in \fIflags\fR then the variable
+is looked up only in the current namespace; if a procedure is active
+its variables are ignored, and the global namespace is also ignored unless
+it is the current namespace.
+.TP
+\fBTCL_LEAVE_ERR_MSG\fR
+If an error is returned and this bit is set in \fIflags\fR, then
+an error message will be left in the interpreter's result,
+where it can be retrieved with \fBTcl_GetObjResult\fR
+or \fBTcl_GetStringResult\fR.
+If this flag bit is not set then no error message is left
+and the interpreter's result will not be modified.
+.TP
+\fBTCL_APPEND_VALUE\fR
+If this bit is set then \fInewValuePtr\fR or \fInewValue\fR is
+appended to the current value instead of replacing it.
+If the variable is currently undefined, then the bit is ignored.
+This bit is only used by the \fBTcl_Set*\fR procedures.
+.TP
+\fBTCL_LIST_ELEMENT\fR
+If this bit is set, then \fInewValue\fR is converted to a valid
+Tcl list element before setting (or appending to) the variable.
+A separator space is appended before the new list element unless
+the list element is going to be the first element in a list or
+sublist (i.e. the variable's current value is empty, or contains
+the single character
+.QW { ,
+or ends in
+.QW " }" ).
+When appending, the original value of the variable must also be
+a valid list, so that the operation is the appending of a new
+list element onto a list.
+.PP
+\fBTcl_GetVar\fR and \fBTcl_GetVar2\fR
+return the current value of a variable.
+The arguments to these procedures are treated in the same way
+as the arguments to \fBTcl_SetVar\fR and \fBTcl_SetVar2\fR.
+Under normal circumstances, the return value is a pointer
+to the variable's value (which is stored in Tcl's variable
+structure and will not change before the next call to \fBTcl_SetVar\fR
+or \fBTcl_SetVar2\fR).
+\fBTcl_GetVar\fR and \fBTcl_GetVar2\fR use the flag bits \fBTCL_GLOBAL_ONLY\fR
+and \fBTCL_LEAVE_ERR_MSG\fR, both of
+which have
+the same meaning as for \fBTcl_SetVar\fR.
+If an error occurs in reading the variable (e.g. the variable
+does not exist or an array element is specified for a scalar
+variable), then NULL is returned.
+.PP
+\fBTcl_UnsetVar\fR and \fBTcl_UnsetVar2\fR may be used to remove
+a variable, so that future calls to \fBTcl_GetVar\fR or \fBTcl_GetVar2\fR
+for the variable will return an error.
+The arguments to these procedures are treated in the same way
+as the arguments to \fBTcl_GetVar\fR and \fBTcl_GetVar2\fR.
+If the variable is successfully removed then \fBTCL_OK\fR is returned.
+If the variable cannot be removed because it does not exist then
+\fBTCL_ERROR\fR is returned.
+If an array element is specified, the given element is removed
+but the array remains.
+If an array name is specified without an index, then the entire
+array is removed.
+
+.SH "SEE ALSO"
+Tcl_GetObjResult, Tcl_GetStringResult, Tcl_TraceVar
+
+.SH KEYWORDS
+array, get variable, interpreter, scalar, set, unset, value, variable

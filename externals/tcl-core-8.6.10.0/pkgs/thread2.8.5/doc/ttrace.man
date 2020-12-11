@@ -1,0 +1,230 @@
+[comment {-*- tcl -*- doctools manpage}]
+[manpage_begin ttrace n 2.8]
+[moddesc {Tcl Threading}]
+[titledesc {Trace-based interpreter initialization}]
+[require Tcl 8.4]
+[require Thread [opt 2.8]]
+
+[description]
+This package creates a framework for on-demand replication of the
+interpreter state across threads in an multithreading application.
+It relies on the mechanics of Tcl command tracing and the Tcl
+[cmd unknown] command and mechanism.
+[para]
+The package requires Tcl threading extension but can be alternatively
+used stand-alone within the AOLserver, a scalable webserver from
+America Online.
+[para]
+In a nutshell, a short sample illustrating the usage of the ttrace
+with the Tcl threading extension:
+
+[example {
+
+    % package require Ttrace
+    2.8.2
+
+    % set t1 [thread::create {package require Ttrace; thread::wait}]
+    tid0x1802800
+
+    % ttrace::eval {proc test args {return test-[thread::id]}}
+    % thread::send $t1 test
+    test-tid0x1802800
+
+    % set t2 [thread::create {package require Ttrace; thread::wait}]
+    tid0x1804000
+
+    % thread::send $t2 test
+    test-tid0x1804000
+
+}]
+[para]
+As seen from above, the [cmd ttrace::eval] and [cmd ttrace::update]
+commands are used to create a thread-wide definition of a simple
+Tcl procedure and replicate that definition to all, already existing
+or later created, threads.
+
+[section {USER COMMANDS}]
+This section describes user-level commands. Those commands can be
+used by script writers to control the execution of the tracing
+framework.
+
+[list_begin definitions]
+
+[call [cmd ttrace::eval] [arg arg] [opt {arg ...}]]
+
+This command concatenates given arguments and evaluates the resulting
+Tcl command with trace framework enabled. If the command execution
+was ok, it takes necessary steps to automatically propagate the
+trace epoch change to all threads in the application.
+For AOLserver, only newly created threads actually receive the
+epoch change. For the Tcl threading extension, all threads created by
+the extension are automatically updated. If the command execution
+resulted in Tcl error, no state propagation takes place.
+[para]
+This is the most important user-level command of the package as
+it wraps most of the commands described below. This greatly
+simplifies things, because user need to learn just this (one)
+command in order to effectively use the package. Other commands,
+as described below, are included mostly for the sake of completeness.
+
+[call [cmd ttrace::enable]]
+
+Activates all registered callbacks in the framework
+and starts a new trace epoch. The trace epoch encapsulates all
+changes done to the interpreter during the time traces are activated.
+
+[call [cmd ttrace::disable]]
+
+Deactivates all registered callbacks in the framework
+and closes the current trace epoch.
+
+[call [cmd ttrace::cleanup]]
+
+Used to clean-up all on-demand loaded resources in the interpreter.
+It effectively brings Tcl interpreter to its pristine state.
+
+[call [cmd ttrace::update] [opt epoch]]
+
+Used to refresh the state of the interpreter to match the optional
+trace [opt epoch]. If the optional [opt epoch] is not given, it takes
+the most recent trace epoch.
+
+[call [cmd ttrace::getscript]]
+
+Returns a synthesized Tcl script which may be sourced in any interpreter.
+This script sets the stage for the Tcl [cmd unknown] command so it can
+load traced resources from the in-memory database. Normally, this command
+is automatically invoked by other higher-level commands like
+[cmd ttrace::eval] and [cmd ttrace::update].
+
+[list_end]
+
+[section {CALLBACK COMMANDS}]
+A word upfront: the package already includes callbacks for tracing
+following Tcl commands: [cmd proc], [cmd namespace], [cmd variable],
+[cmd load], and [cmd rename]. Additionally, a set of callbacks for
+tracing resources (object, classes) for the XOTcl v1.3.8+, an
+OO-extension to Tcl, is also provided.
+This gives a solid base for solving most of the real-life needs and
+serves as an example for people wanting to customize the package
+to cover their specific needs.
+[para]
+Below, you can find commands for registering callbacks in the
+framework and for writing callback scripts. These callbacks are
+invoked by the framework in order to gather interpreter state
+changes, build in-memory database, perform custom-cleanups and
+various other tasks.
+
+
+[list_begin definitions]
+
+[call [cmd ttrace::atenable] [arg cmd] [arg arglist] [arg body]]
+
+Registers Tcl callback to be activated at [cmd ttrace::enable].
+Registered callbacks are activated on FIFO basis. The callback
+definition includes the name of the callback, [arg cmd], a list
+of callback arguments, [arg arglist] and the [arg body] of the
+callback. Effectively, this actually resembles the call interface
+of the standard Tcl [cmd proc] command.
+
+
+[call [cmd ttrace::atdisable] [arg cmd] [arg arglist] [arg body]]
+
+Registers Tcl callback to be activated at [cmd ttrace::disable].
+Registered callbacks are activated on FIFO basis. The callback
+definition includes the name of the callback, [arg cmd], a list
+of callback arguments, [arg arglist] and the [arg body] of the
+callback. Effectively, this actually resembles the call interface
+of the standard Tcl [cmd proc] command.
+
+
+[call [cmd ttrace::addtrace] [arg cmd] [arg arglist] [arg body]]
+
+Registers Tcl callback to be activated for tracing the Tcl
+[cmd cmd] command. The callback definition includes the name of
+the Tcl command to trace, [arg cmd], a list of callback arguments,
+[arg arglist] and the [arg body] of the callback. Effectively,
+this actually resembles the call interface of the standard Tcl
+[cmd proc] command.
+
+
+[call [cmd ttrace::addscript] [arg name] [arg body]]
+
+Registers Tcl callback to be activated for building a Tcl
+script to be passed to other interpreters. This script is
+used to set the stage for the Tcl [cmd unknown] command.
+Registered callbacks are activated on FIFO basis.
+The callback definition includes the name of the callback,
+[arg name] and the [arg body] of the callback.
+
+[call [cmd ttrace::addresolver] [arg cmd] [arg arglist] [arg body]]
+
+Registers Tcl callback to be activated by the overloaded Tcl
+[cmd unknown] command.
+Registered callbacks are activated on FIFO basis.
+This callback is used to resolve the resource and load the
+resource in the current interpreter.
+
+[call [cmd ttrace::addcleanup] [arg body]]
+
+Registers Tcl callback to be activated by the [cmd trace::cleanup].
+Registered callbacks are activated on FIFO basis.
+
+[call [cmd ttrace::addentry] [arg cmd] [arg var] [arg val]]
+
+Adds one entry to the named in-memory database.
+
+[call [cmd ttrace::getentry] [arg cmd] [arg var]]
+
+Returns the value of the entry from the named in-memory database.
+
+[call [cmd ttrace::getentries] [arg cmd] [opt pattern]]
+
+Returns names of all entries from the named in-memory database.
+
+[call [cmd ttrace::delentry] [arg cmd]]
+
+Deletes an entry from the named in-memory database.
+
+[call [cmd ttrace::preload] [arg cmd]]
+
+Registers the Tcl command to be loaded in the interpreter.
+Commands registered this way will always be the part of
+the interpreter and not be on-demand loaded by the Tcl
+[cmd unknown] command.
+
+[list_end]
+
+[section DISCUSSION]
+Common introspective state-replication approaches use a custom Tcl
+script to introspect the running interpreter and synthesize another
+Tcl script to replicate this state in some other interpreter.
+This package, on the contrary, uses Tcl command traces. Command
+traces are registered on selected Tcl commands, like [cmd proc],
+[cmd namespace], [cmd load] and other standard (and/or user-defined)
+Tcl commands. When activated, those traces build an in-memory
+database of created resources. This database is used as a resource
+repository for the (overloaded) Tcl [cmd unknown] command which
+creates the requested resource in the interpreter on demand.
+This way, users can update just one interpreter (master) in one
+thread and replicate that interpreter state (or part of it) to other
+threads/interpreters in the process.
+[para]
+Immediate benefit of such approach is the much smaller memory footprint
+of the application and much faster thread creation. By not actually
+loading all necessary procedures (and other resources) in every thread
+at the thread initialization time, but by deferring this to the time the
+resource is actually referenced, significant improvements in both
+memory consumption and thread initialization time can be achieved. Some
+tests have shown that memory footprint of an multithreading Tcl application
+went down more than three times and thread startup time was reduced for
+about 50 times. Note that your mileage may vary.
+
+Other benefits include much finer control about what (and when) gets
+replicated from the master to other Tcl thread/interpreters.
+
+[see_also tsv tpool thread]
+
+[keywords {command tracing} introspection]
+
+[manpage_end]

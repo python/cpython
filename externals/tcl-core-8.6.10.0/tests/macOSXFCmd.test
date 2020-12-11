@@ -1,0 +1,181 @@
+# This file tests the tclMacOSXFCmd.c file.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 2003 Tcl Core Team.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+# These tests really need to be run from a writable directory, which
+# it is assumed [temporaryDirectory] is.
+set oldcwd [pwd]
+cd [temporaryDirectory]
+
+# check whether macosx file attributes are supported
+testConstraint macosxFileAttr 0
+if {[testConstraint unix] && $tcl_platform(os) eq "Darwin"} {
+    catch {file delete -force -- foo.test}
+    close [open foo.test w]
+    catch {
+	file attributes foo.test -creator
+	testConstraint macosxFileAttr 1
+    }
+    file delete -force -- foo.test
+}
+
+test macOSXFCmd-1.1 {MacOSXGetFileAttribute - file not found} {macosxFileAttr notRoot} {
+    catch {file delete -force -- foo.test}
+    list [catch {file attributes foo.test -creator} msg] $msg
+} {1 {could not read "foo.test": no such file or directory}}
+test macOSXFCmd-1.2 {MacOSXGetFileAttribute - creator} {macosxFileAttr notRoot} {
+    catch {file delete -force -- foo.test}
+    close [open foo.test w]
+    list [catch {file attributes foo.test -creator} msg] $msg \
+	    [file delete -force -- foo.test]
+} {0 {} {}}
+test macOSXFCmd-1.3 {MacOSXGetFileAttribute - type} {macosxFileAttr notRoot} {
+    catch {file delete -force -- foo.test}
+    close [open foo.test w]
+    list [catch {file attributes foo.test -type} msg] $msg \
+	    [file delete -force -- foo.test]
+} {0 {} {}}
+test macOSXFCmd-1.4 {MacOSXGetFileAttribute - hidden} {macosxFileAttr notRoot} {
+    catch {file delete -force -- foo.test}
+    close [open foo.test w]
+    list [catch {file attributes foo.test -hidden} msg] $msg \
+	    [file delete -force -- foo.test]
+} {0 0 {}}
+test macOSXFCmd-1.5 {MacOSXGetFileAttribute - rsrclength} {macosxFileAttr notRoot} {
+    catch {file delete -force -- foo.test}
+    close [open foo.test w]
+    list [catch {file attributes foo.test -rsrclength} msg] $msg \
+	    [file delete -force -- foo.test]
+} {0 0 {}}
+
+test macOSXFCmd-2.1 {MacOSXSetFileAttribute - file not found} {macosxFileAttr notRoot} {
+    catch {file delete -force -- foo.test}
+    list [catch {file attributes foo.test -creator FOOC} msg] $msg
+} {1 {could not read "foo.test": no such file or directory}}
+test macOSXFCmd-2.2 {MacOSXSetFileAttribute - creator} {macosxFileAttr notRoot} {
+    catch {file delete -force -- foo.test}
+    close [open foo.test w]
+    list [catch {file attributes foo.test -creator FOOC} msg] $msg \
+	    [catch {file attributes foo.test -creator} msg] $msg \
+	    [file delete -force -- foo.test]
+} {0 {} 0 FOOC {}}
+test macOSXFCmd-2.3 {MacOSXSetFileAttribute - empty creator} {macosxFileAttr notRoot} {
+    catch {file delete -force -- foo.test}
+    close [open foo.test w]
+    list [catch {file attributes foo.test -creator {}} msg] $msg \
+	    [catch {file attributes foo.test -creator} msg] $msg \
+	    [file delete -force -- foo.test]
+} {0 {} 0 {} {}}
+test macOSXFCmd-2.4 {MacOSXSetFileAttribute - type} {macosxFileAttr notRoot} {
+    catch {file delete -force -- foo.test}
+    close [open foo.test w]
+    list [catch {file attributes foo.test -type FOOT} msg] $msg \
+	    [catch {file attributes foo.test -type} msg] $msg \
+	    [file delete -force -- foo.test]
+} {0 {} 0 FOOT {}}
+test macOSXFCmd-2.5 {MacOSXSetFileAttribute - empty type} {macosxFileAttr notRoot} {
+    catch {file delete -force -- foo.test}
+    close [open foo.test w]
+    list [catch {file attributes foo.test -type {}} msg] $msg \
+	    [catch {file attributes foo.test -type} msg] $msg \
+	    [file delete -force -- foo.test]
+} {0 {} 0 {} {}}
+test macOSXFCmd-2.6 {MacOSXSetFileAttribute - hidden} {macosxFileAttr notRoot} {
+    catch {file delete -force -- foo.test}
+    close [open foo.test w]
+    list [catch {file attributes foo.test -hidden 1} msg] $msg \
+	    [catch {file attributes foo.test -hidden} msg] $msg \
+	    [file delete -force -- foo.test]
+} {0 {} 0 1 {}}
+test macOSXFCmd-2.7 {MacOSXSetFileAttribute - rsrclength} {macosxFileAttr notRoot nonPortable} {
+    catch {file delete -force -- foo.test}
+    close [open foo.test w]
+    catch {
+	set f [open foo.test/..namedfork/rsrc w]
+	fconfigure $f -translation lf -eofchar {}
+	puts -nonewline $f "foo"
+	close $f
+    }
+    list [catch {file attributes foo.test -rsrclength} msg] $msg \
+	    [catch {file attributes foo.test -rsrclength 0} msg] $msg \
+	    [catch {file attributes foo.test -rsrclength} msg] $msg \
+	    [file delete -force -- foo.test]
+} {0 3 0 {} 0 0 {}}
+
+test macOSXFCmd-3.1 {MacOSXCopyFileAttributes} {macosxFileAttr notRoot} {
+    catch {file delete -force -- foo.test}
+    catch {file delete -force -- bar.test}
+    close [open foo.test w]
+    catch {
+	file attributes foo.test -creator FOOC -type FOOT -hidden 1
+	set f [open foo.test/..namedfork/rsrc w]
+	fconfigure $f -translation lf -eofchar {}
+	puts -nonewline $f "foo"
+	close $f
+	file copy foo.test bar.test
+    }
+    list [catch {file attributes bar.test -creator} msg] $msg \
+	    [catch {file attributes bar.test -type} msg] $msg \
+	    [catch {file attributes bar.test -hidden} msg] $msg \
+	    [catch {file attributes bar.test -rsrclength} msg] $msg \
+	    [file delete -force -- foo.test bar.test]
+} {0 FOOC 0 FOOT 0 1 0 3 {}}
+
+test macOSXFCmd-4.1 {TclMacOSXMatchType} {macosxFileAttr notRoot} {
+    file mkdir globtest
+    cd globtest
+    foreach f {bar baz foo inv inw .nv reg} {
+	catch {file delete -force -- $f.test}
+	close [open $f.test w]
+    }
+    catch {file delete -force -- dir.test}
+    file mkdir dir.test
+    catch {
+	file attributes bar.test -type FOOT
+	file attributes baz.test -creator FOOC -type FOOT
+	file attributes foo.test -creator FOOC
+	file attributes inv.test -hidden 1
+	file attributes inw.test -hidden 1 -type FOOT
+	file attributes dir.test -hidden 1
+    }
+    set res [list \
+	    [catch {lsort [glob *.test]} msg] $msg \
+	    [catch {lsort [glob -types FOOT *.test]} msg] $msg \
+	    [catch {lsort [glob -types {{macintosh type FOOT}} *.test]} msg] $msg \
+	    [catch {lsort [glob -types FOOTT *.test]} msg] $msg \
+	    [catch {lsort [glob -types {{macintosh type FOOTT}} *.test]} msg] $msg \
+	    [catch {lsort [glob -types {{macintosh type {}}} *.test]} msg] $msg \
+	    [catch {lsort [glob -types {{macintosh creator FOOC}} *.test]} msg] $msg \
+	    [catch {lsort [glob -types {{macintosh creator FOOC} {macintosh type FOOT}} *.test]} msg] $msg \
+	    [catch {lsort [glob -types hidden *.test]} msg] $msg \
+	    [catch {lsort [glob -types {hidden FOOT} *.test]} msg] $msg \
+	]
+    cd ..
+    file delete -force globtest
+    set res
+} [list \
+	0 {bar.test baz.test dir.test foo.test inv.test inw.test reg.test} \
+	0 {bar.test baz.test inw.test} 0 {bar.test baz.test inw.test} \
+	1 {bad argument to "-types": FOOTT} \
+	1 {expected Macintosh OS type but got "FOOTT": } \
+	0 {foo.test inv.test reg.test} 0 {baz.test foo.test} \
+	0 baz.test 0 {.nv.test dir.test inv.test inw.test} \
+	0 inw.test
+]
+
+# cleanup
+cd $oldcwd
+::tcltest::cleanupTests
+return

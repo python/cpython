@@ -1,0 +1,42 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_GetOption 3 "" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_GetOption \- retrieve an option from the option database
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Tk_Uid
+\fBTk_GetOption\fR(\fItkwin, name, class\fR)
+.SH ARGUMENTS
+.AS Tk_Window *class
+.AP Tk_Window tkwin in
+Token for window.
+.AP "const char" *name in
+Name of desired option.
+.AP "const char" *class in
+Class of desired option.  Null means there is no class for
+this option;  do lookup based on name only.
+.BE
+.SH DESCRIPTION
+.PP
+This procedure is invoked to retrieve an option from the database
+associated with \fItkwin\fR's main window.  If there is an option
+for \fItkwin\fR that matches the given \fIname\fR or \fIclass\fR,
+then it is returned in the form of a Tk_Uid.  If multiple options
+match \fIname\fR and \fIclass\fR, then the highest-priority one
+is returned.  If no option matches, then NULL is returned.
+.PP
+\fBTk_GetOption\fR caches options related to \fItkwin\fR so that
+successive calls for the same \fItkwin\fR will execute much more
+quickly than successive calls for different windows.
+.SH KEYWORDS
+class, name, option, retrieve

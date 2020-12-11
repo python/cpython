@@ -1,0 +1,55 @@
+
+WHAT IS THIS ?
+==============
+
+This is the source distribution of the Tcl Thread extension.
+You can use this extension to gain script-level access to Tcl
+threading capabilities.
+The extension can be used with Tcl cores starting from Tcl8.4 and later.
+Also, this extension supports, i.e. can be used as a loadable module of,
+AOLserver 4.x series of the highly-scalable web server from America Online.
+
+You need to have your Tcl core compiled with "--enable-threads" in order
+to turn on internal directives supporting thread-specific details of the
+Tcl API. The extension will not load in an Tcl shell built w/o thread
+support.
+
+This extension is a freely available open source package. You can do
+virtually anything you like with it, such as modifying it, redistributing
+it, and selling it either in whole or in part.  See the "license.terms"
+file in the top-level distribution directory for complete information.
+
+
+HOW TO COMPILE ?
+================
+
+Only Unix-like and Windows platforms are supported at the moment. Depending
+on your platform (Unix-like or Windows) go to the appropriate directory
+(unix or win) and start with the README file. Macintosh platform is supported
+with the Mac OS X only. The Mac OS 9 (and previous) are not supported.
+
+
+WHERE IS THE DOCUMENTATION ?
+============================
+
+Documentation in Unix man and standard HTML format is available in the
+doc/man and doc/html directories respectively.
+Currently, documentation is in reference-style only. The tutorial-style
+documentation will be provided with future releases of the extension.
+That is, if I ever get time to do that. Everybody is more than welcome
+to jump in and help with the docs.
+
+
+HOW TO GET SUPPORT ?
+====================
+
+The extension is maintained, enhanced, and distributed freely by the Tcl
+community. The home for sources and bug/patch database is on SourceForge:
+
+        http://tcl.sourceforge.net/
+
+Alternatively, you are always welcome to post your questions, problems
+and/or suggestions relating the extension (or any other Tcl issue)
+to news:comp.lang.tcl newsgroup.
+
+-EOF-

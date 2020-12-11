@@ -1,0 +1,101 @@
+'\"
+'\" tdbc_tokenize.n --
+'\"
+'\" Copyright (c) 2008 by Kevin B. Kenny.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution of
+'\" this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH "tdbc::tokenize" n 8.6 Tcl "Tcl Database Connectivity"
+'\" .so man.macros
+'\" IGNORE
+.if t .wh -1.3i ^B
+.nr ^l \n(.l
+.ad b
+'\"	# BS - start boxed text
+'\"	# ^y = starting y location
+'\"	# ^b = 1
+.de BS
+.br
+.mk ^y
+.nr ^b 1u
+.if n .nf
+.if n .ti 0
+.if n \l'\\n(.lu\(ul'
+.if n .fi
+..
+'\"	# BE - end boxed text (draw box now)
+.de BE
+.nf
+.ti 0
+.mk ^t
+.ie n \l'\\n(^lu\(ul'
+.el \{\
+'\"	Draw four-sided box normally, but don't draw top of
+'\"	box if the box started on an earlier page.
+.ie !\\n(^b-1 \{\
+\h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.el \}\
+\h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.\}
+.fi
+.br
+.nr ^b 0
+..
+'\"	# CS - begin code excerpt
+.de CS
+.RS
+.nf
+.ta .25i .5i .75i 1i
+..
+'\"	# CE - end code excerpt
+.de CE
+.fi
+.RE
+..
+'\" END IGNORE
+.BS
+.SH "NAME"
+tdbc::tokenize \- TDBC SQL tokenizer
+.SH "SYNOPSIS"
+.nf
+package require \fBtdbc 1.0\fR
+
+\fBtdbc::tokenize\fR \fIstring\fR
+.fi
+.BE
+.SH "DESCRIPTION"
+.PP
+As a convenience to database drivers, Tcl Database Connectivity (TDBC)
+provides a command to break SQL code apart into tokens so that bound
+variables can readily be identified and substituted.
+.PP
+The \fBtdbc::tokenize\fR command accepts as its parameter a string
+that is expected to contain one or more SQL statements. It returns a
+list of substrings; concatenating these substrings together will yield
+the original string. Each substring is one of the following:
+.IP [1]
+A bound variable, which begins with one of the 
+characters '\fB:\fR', '\fB@\fR', or '\fB$\fR'. The 
+remainder of the string is the variable
+name and will consist of alphanumeric characters and underscores. (The
+leading character will be be non-numeric.)
+.IP [2]
+A semicolon that separates two SQL statements.
+.IP [3]
+Something else in a SQL statement. The tokenizer does not attempt to
+parse SQL; it merely identifies bound variables (distinguishing them
+from similar strings appearing inside quotes or comments) and
+statement delimiters.
+.SH "SEE ALSO"
+tdbc(n), tdbc::connection(n), tdbc::statement(n), tdbc::resultset(n)
+.SH "KEYWORDS"
+TDBC, SQL, database, tokenize
+.SH "COPYRIGHT"
+Copyright (c) 2008 by Kevin B. Kenny.
+'\" Local Variables:
+'\" mode: nroff
+'\" End:
+'\"

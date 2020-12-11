@@ -1,0 +1,28 @@
+package require Tk 8.5
+package require tcltest ; namespace import -force tcltest::*
+loadTestedCommands
+
+test layout-1.1 "Size computations for mixed-orientation layouts" -body {
+    ttk::style theme use default
+
+    set block [image create photo -width 10 -height 10]
+    ttk::style element create block image $block
+    ttk::style layout Blocks {
+	border -children { block } -side left
+	border -children { block } -side top
+	border -children { block } -side bottom
+    }
+    ttk::style configure Blocks -borderwidth 1 -relief raised
+    ttk::button .b -style Blocks
+
+    pack .b -expand true -fill both
+
+    list [winfo reqwidth .b] [winfo reqheight .b]
+
+} -cleanup { destroy .b } -result [list 24 24]
+
+test layout-2 "Empty -children not allowed" -body {
+    ttk::style layout Test.Tentry {Entry.field -children {}}
+} -returnCodes error -result {Invalid -children value}
+
+tcltest::cleanupTests

@@ -1,0 +1,1385 @@
+# This file is a Tcl script to test menus in Tk.  It is
+# organized in the standard fashion for Tcl tests. This
+# file tests the Macintosh-specific features of the menu
+# system.
+#
+# Copyright (c) 1995-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+tcltest::configure {*}$argv
+tcltest::loadTestedCommands
+
+test winMenu-1.1 {GetNewID} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+} -cleanup {
+    destroy .m1
+} -returnCodes ok -result {.m1}
+test winMenu-1.2 {GetNewID} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    destroy .m1
+} -result {}
+
+
+# Basically impossible to test menu IDs wrapping.
+
+test winMenu-2.1 {FreeID} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    destroy .m1
+} -returnCodes ok
+
+
+test winMenu-3.1 {TkpNewMenu} -constraints win -setup {
+    destroy .m1
+} -body {
+    list [catch {menu .m1} msg] $msg [catch {destroy .m1} msg2] $msg2
+} -result {0 .m1 0 {}}
+test winMenu-3.2 {TkpNewMenu} -constraints win -setup {
+    destroy .m1
+} -body {
+    . configure -menu ""
+    menu .m1
+    .m1 add command -label "foo"
+    list [catch {. configure -menu .m1} msg] $msg [. configure -menu ""] [catch {destroy .m1} msg2] $msg2
+} -result {0 {} {} 0 {}}
+
+
+test winMenu-4.1 {TkpDestroyMenu} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    destroy .m1
+} -returnCodes ok
+test winMenu-4.2 {TkpDestroyMenu - help menu} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add cascade -menu .m1.system
+    . configure -menu .m1
+    list [catch {destroy .m1.system} msg] $msg [. configure -menu ""] [destroy .m1]
+} -result {0 {} {} {}}
+
+
+test winMenu-5.1 {TkpDestroyMenuEntry} -constraints win -setup {
+    destroy .m1
+} -body {
+    . configure -menu ""
+    menu .m1
+    .m1 add command -label "test"
+    update idletasks
+    list [catch {.m1 delete 1} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+
+
+test winMenu-6.1 {GetEntryText} -constraints win -setup {
+    destroy .m1
+} -body {
+    list [catch {menu .m1} msg] $msg [destroy .m1]
+} -result {0 .m1 {}}
+test winMenu-6.2 {GetEntryText} -constraints {
+    testImageType win
+} -setup {
+    destroy .m1
+} -body {
+    catch {image delete image1}
+    menu .m1
+    image create test image1
+    list [catch {.m1 add command -image image1} msg] $msg [destroy .m1] [image delete image1]
+} -result {0 {} {} {}}
+test winMenu-6.3 {GetEntryText} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    list [catch {.m1 add command -bitmap questhead} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-6.4 {GetEntryText} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    list [catch {.m1 add command} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-6.5 {GetEntryText} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    list [catch {.m1 add command -label "foo"} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-6.6 {GetEntryText} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    list [catch {.m1 add command -label "This string has one & in it"} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-6.7 {GetEntryText} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    list [catch {.m1 add command -label "The & should be underlined." -underline 4} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-6.8 {GetEntryText} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    list [catch {.m1 add command -label "The * should be underlined." -underline 4} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-6.9 {GetEntryText} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    list [catch {.m1 add command -label "foo" -accel "bar"} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-6.10 {GetEntryText} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    list [catch {.m1 add command -label "This string has one & in it" -accel "bar"} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-6.11 {GetEntryText} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    list [catch {.m1 add command -label "The & should be underlined." -underline 4 -accel "bar"} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-6.12 {GetEntryText} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    list [catch {.m1 add command -label "The * should be underlined." -underline 4 -accel "bar"} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-6.13 {GetEntryText} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    list [catch {.m1 add command -label "foo" -accel "&bar"} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-6.14 {GetEntryText} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    list [catch {.m1 add command -label "This string has one & in it" -accel "&bar"} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-6.15 {GetEntryText} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    list [catch {.m1 add command -label "The & should be underlined." -underline 4 -accel "&bar"} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-6.16 {GetEntryText} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    list [catch {.m1 add command -label "The * should be underlined." -underline 4 -accel "&bar"} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+
+test winMenu-7.1 {ReconfigureWindowsMenu - system menu item removal} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add cascade -menu .m1.system
+    menu .m1.system
+    .m1.system add command -label foo
+    update idletasks
+    .m1.system add command -label bar
+    list [catch {update idletasks} msg] $msg [. configure -menu ""] [destroy .m1]
+} -result {0 {} {} {}}
+test winMenu-7.2 {ReconfigureWindowsMenu - menu item removal} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label Hello
+    update idletasks
+    .m1 add command -label foo
+    list [catch {update idletasks} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-7.3 {ReconfigureWindowsMenu - zero items} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add command -label Hello
+    .m1 delete Hello
+    list [catch {update idletasks} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-7.4 {ReconfigureWindowsMenu - one item} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add command -label Hello
+    list [catch {update idletasks} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-7.5 {ReconfigureWindowsMenu - two items} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add command -label One
+    .m1 add command -label Two
+    list [catch {update idletasks} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-7.6 {ReconfigureWindowsMenu - separator item} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add separator
+    list [catch {update idletasks} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-7.7 {ReconfigureWindowsMenu - non-text item} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add command -label Hello
+    list [catch {update idletasks} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-7.8 {ReconfigureWindowsMenu - disabled item} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add command -label Hello -state disabled
+    list [catch {update idletasks} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-7.9 {ReconfigureWindowsMenu - non-selected checkbutton} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add checkbutton -label Hello
+    list [catch {update idletasks} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-7.10 {ReconfigureWindowsMenu - non-selected radiobutton} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add radiobutton -label Hello
+    list [catch {update idletasks} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-7.11 {ReconfigureWindowsMenu - selected checkbutton} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add checkbutton -label Hello
+    .m1 invoke Hello
+    list [catch {update idletasks} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-7.12 {ReconfigureWindowsMenu - selected radiobutton} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add radiobutton -label Hello
+    .m1 invoke Hello
+    list [catch {update idletasks} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-7.13 {ReconfigureWindowsMenu - cascade missing} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add cascade -label Hello
+    list [catch {update idletasks} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-7.14 {ReconfigureWindowsMenu - cascade} -constraints win -setup {
+    destroy .m1
+} -body {
+    catch {destroy .m2}
+    menu .m1 -tearoff 0
+    menu .m2
+    .m1 add cascade -menu .m2 -label Hello
+    list [catch {update idletasks} msg] $msg [destroy .m1] [destroy .m2]
+} -result {0 {} {} {}}
+test winMenu-7.15 {ReconfigureWindowsMenu - menubar without system menu} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add cascade -menu .m1.file
+    menu .m1.file -tearoff 0
+    . configure -menu .m1
+    list [catch {update idletasks} msg] $msg [. configure -menu ""] [destroy .m1]
+} -result {0 {} {} {}}
+test winMenu-7.16 {ReconfigureWindowsMenu - system menu already created} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add cascade -menu .m1.system
+    menu .m1.system -tearoff 0
+    . configure -menu .m1
+    update idletasks
+    .m1.system add command -label Hello
+    list [catch {update idletasks} msg] $msg [. configure -menu ""] [destroy .m1]
+} -result {0 {} {} {}}
+test winMenu-7.17 {ReconfigureWindowsMenu - system menu update pending} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add cascade -menu .m1.system
+    menu .m1.system -tearoff 0
+    . configure -menu .m1
+    list [catch {update idletasks} msg] $msg [. configure -menu ""] [destroy .m1]
+} -result {0 {} {} {}}
+test winMenu-7.18 {ReconfigureWindowsMenu - system menu update not pending} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add cascade -menu .m1.system
+    menu .m1.system -tearoff 0
+    .m1.system add command -label Hello
+    update idletasks
+    . configure -menu .m1
+    list [catch {update idletasks} msg] $msg [. configure -menu ""] [destroy .m1]
+} -result {0 {} {} {}}
+test winMenu-7.19 {ReconfigureWindowsMenu - column break} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add command -label one
+    .m1 add command -label two -columnbreak 1
+    list [catch {update idletasks} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+
+
+#Don't know how to generate nested post menus
+
+test winMenu-8.1 {TkpPostMenu} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1 -postcommand "blork"
+    .m1 post 40 40
+} -returnCodes error -result {invalid command name "blork"}
+test winMenu-8.2 {TkpPostMenu} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1 -postcommand "blork"
+    .m1 post 40 40
+    destroy .m1
+} -returnCodes error -result {invalid command name "blork"}
+test winMenu-8.3 {TkpPostMenu} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1 -postcommand "destroy .m1"
+    list [.m1 post 40 40] [winfo exists .m1]
+} -result {{} 0}
+test winMenu-8.4 {TkpPostMenu - popup menu} -constraints {
+    win userInteraction
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "winMenu-8.3: Hit ESCAPE."
+    list [.m1 post 40 40] [destroy .m1]
+} -result {{} {}}
+test winMenu-8.5 {TkpPostMenu - menu button} -constraints {
+    win userInteraction
+} -setup {
+    destroy .mb
+} -body {
+    menubutton .mb -text test -menu .mb.menu
+    menu .mb.menu
+    .mb.menu add command -label "winMenu-8.4 - Hit ESCAPE."
+    pack .mb
+    list [tk::MbPost .mb] [destroy .mb]
+} -result {{} {}}
+test winMenu-8.6 {TkpPostMenu - update not pending} -constraints {
+    win userInteraction
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "winMenu-8.5 - Hit ESCAPE."
+    update idletasks
+    list [catch {.m1 post 40 40} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+
+
+test winMenu-9.1 {TkpMenuNewEntry} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    list [catch {.m1 add command} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+
+
+test winMenu-10.1 {TkwinMenuProc} -constraints {
+    win userInteraction
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "winMenu-10.1: Hit ESCAPE."
+    list [.m1 post 40 40] [destroy .m1]
+} -result {{} {}}
+
+
+# Can't generate a WM_INITMENU without a Tk menu yet.
+
+test winMenu-11.1 {TkWinHandleMenuEvent - WM_INITMENU} -constraints {
+    win userInteraction
+} -setup {
+    destroy .m1
+} -body {
+    catch {unset foo}
+    menu .m1 -postcommand "set foo test"
+    .m1 add command -label "winMenu-11.1: Hit ESCAPE."
+    list [.m1 post 40 40] [set foo] [unset foo] [destroy .m1]
+} -result {test test {} {}}
+test winMenu-11.2 {TkWinHandleMenuEvent - WM_COMMAND} -constraints {
+    win userInteraction
+} -setup {
+    destroy .m1
+} -body {
+    catch {unset foo}
+    menu .m1
+    .m1 add checkbutton -variable foo -label "winMenu-11.2: Please select this menu item."
+    list [.m1 post 40 40] [update] [set foo] [unset foo] [destroy .m1]
+} -result {{} {} 1 {} {}}
+test winMenu-11.3 {TkWinHandleMenuEvent - WM_COMMAND} -constraints {
+    win userInteraction
+} -setup {
+    destroy .m1
+} -body {
+    catch {unset foo}
+    proc bgerror {args} {
+        global foo errorInfo
+        set foo [list $args $errorInfo]
+    }
+    menu .m1
+    .m1 add command -command {error 1} -label "winMenu-11.2: Please select this menu item."
+    list [.m1 post 40 40] [update] [set foo] [unset foo] [destroy .m1]
+} -result {{} {} {1 {1
+    while executing
+"error 1"
+    (menu invoke)}} {} {}}
+
+   
+# Can't test WM_MENUCHAR
+
+test winMenu-11.4 {TkWinHandleMenuEvent - WM_MEASUREITEM} -constraints {
+    win userInteraction
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "winMenu-11.3: Hit ESCAPE."
+    list [.m1 post 40 40] [destroy .m1]
+} -result {{} {}}
+test winMenu-11.5 {TkWinHandleMenuEvent - WM_MEASUREITEM} -constraints {
+    win userInteraction
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add checkbutton -label "winMenu-11.4: Hit ESCAPE" -hidemargin 1
+    list [.m1 post 40 40] [destroy .m1]
+} -result {{} {}}
+test winMenu-11.6 {TkWinHandleMenuEvent - WM_DRAWITEM} -constraints {
+    win userInteraction
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "winMenu-11.5: Hit ESCAPE."
+    list [.m1 post 40 40] [destroy .m1]
+} -result {{} {}}
+test winMenu-11.7 {TkWinHandleMenuEvent - WM_DRAWITEM - item disabled} -constraints {
+    win userInteraction
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "winMenu-11.6: Hit ESCAPE." -state disabled
+    list [.m1 post 40 40] [destroy .m1]
+} -result {{} {}}
+test winMenu-11.8 {TkWinHandleMenuEvent - WM_INITMENU - not pending} -constraints {
+    win userInteraction
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add command -label "winMenu-11.7: Hit ESCAPE"
+    update idletasks
+    list [catch {.m1 post 40 40} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+
+
+test winMenu-12.1 {TkpSetWindowMenuBar} -constraints win -setup {
+    destroy .m1
+} -body {
+    . configure -menu ""
+    menu .m1
+    .m1 add command -label foo
+    list [catch {. configure -menu .m1} msg] $msg [. configure -menu ""] [catch {destroy .m1} msg2] $msg2
+} -result {0 {} {} 0 {}}
+test winMenu-12.2 {TkpSetWindowMenuBar} -constraints win -setup {
+    destroy .m1
+} -body {
+    . configure -menu ""
+    menu .m1
+    .m1 add command -label foo
+    . configure -menu .m1
+    list [catch {. configure -menu ""} msg] $msg [catch {destroy .m1} msg2] $msg2
+} -result {0 {} 0 {}}
+test winMenu-12.3 {TkpSetWindowMenuBar - no update pending} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    . configure -menu ""
+    menu .m1 -tearoff 0
+    .m1 add command -label foo
+    update idletasks
+    list [catch {. configure -menu .m1} msg] $msg [. configure -menu ""] [destroy .m1]
+} -result {0 {} {} {}}
+
+
+test winMenu-13.1 {TkpSetMainMenubar - nothing to do} -constraints {
+    emptyTest win
+} -body {}
+
+
+test winMenu-14.1 {GetMenuIndicatorGeometry} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add checkbutton -label foo
+    tk::TearOffMenu .m1 40 40
+    destroy .m1
+} -returnCodes ok
+test winMenu-14.2 {GetMenuIndicatorGeometry} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add checkbutton -label foo -hidemargin 1
+    tk::TearOffMenu .m1 40 40
+    destroy .m1
+} -returnCodes ok
+
+
+test winMenu-15.1 {GetMenuAccelGeometry} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add cascade -label foo -accel Ctrl+U
+    tk::TearOffMenu .m1 40 40
+    destroy .m1
+} -returnCodes ok
+test winMenu-15.2 {GetMenuAccelGeometry} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label foo
+    tk::TearOffMenu .m1 40 40
+    destroy .m1
+} -returnCodes ok
+test winMenu-15.3 {GetMenuAccelGeometry} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label foo -accel "Ctrl+U"
+    tk::TearOffMenu .m1 40 40
+    destroy .m1
+} -returnCodes ok
+
+
+test winMenu-16.1 {GetTearoffEntryGeometry} -constraints {
+    win userInteraction
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "winMenu-19.1: Hit ESCAPE."
+    list [.m1 post 40 40] [destroy .m1]
+} -result {{} {}}
+
+
+test winMenu-17.1 {GetMenuSeparatorGeometry} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add separator
+    tk::TearOffMenu .m1 40 40
+    destroy .m1
+} -returnCodes ok
+
+
+# Currently, the only callers to DrawWindowsSystemBitmap want things
+# centered vertically, and either centered or right aligned horizontally.
+test winMenu-18.1 {DrawWindowsSystemBitmap - center aligned} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add checkbutton -label foo
+    .m1 invoke foo
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-18.2 {DrawWindowsSystemBitmap - right aligned} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add cascade -label foo
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+
+
+test winMenu-19.1 {DrawMenuEntryIndicator - not checkbutton or radiobutton} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label foo
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-19.2 {DrawMenuEntryIndicator - not selected} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add checkbutton -label foo
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-19.3 {DrawMenuEntryIndicator - checkbutton} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add checkbutton -label foo
+    .m1 invoke foo
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-19.4 {DrawMenuEntryIndicator - radiobutton} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add radiobutton -label foo
+    .m1 invoke foo
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-19.5 {DrawMenuEntryIndicator - disabled} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add checkbutton -label foo
+    .m1 invoke foo
+    .m1 entryconfigure foo -state disabled
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-19.6 {DrawMenuEntryIndicator - indicator not on} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add checkbutton -label foo -indicatoron 0
+    .m1 invoke foo
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+
+
+test winMenu-20.1 {DrawMenuEntryAccelerator - disabled} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1 -disabledforeground red
+    .m1 add command -label foo -accel "Ctrl+U" -state disabled
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-20.2 {DrawMenuEntryAccelerator - normal text} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label foo -accel "Ctrl+U"
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-20.3 {DrawMenuEntryAccelerator - disabled, no disabledforeground} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -disabledforeground ""
+    .m1 add command -label foo -accel "Ctrl+U" -state disabled
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-20.4 {DrawMenuEntryAccelerator - cascade, drawArrow true} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add cascade -label foo
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-20.5 {DrawMenuEntryAccelerator - cascade, drawArrow false} -constraints {
+    win userInteraction
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add cascade -label "winMenu-23.5: Hit ESCAPE."
+    list [.m1 post 40 40] [destroy .m1]
+} -result {{} {}}
+
+
+test winMenu-21.1 {DrawMenuSeparator} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add separator
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+
+
+test winMenu-22.1 {DrawMenuUnderline} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label foo -underline 0
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}  
+
+
+test winMenu-23.1 {Don't know how to test MenuKeyBindProc} -constraints {
+    win emptyTest
+} -body {}
+
+
+test winMenu-24.1 {TkpInitializeMenuBindings called at boot time} -constraints {
+    win emptyTest
+} -body {}
+
+
+test winMenu-25.1 {DrawMenuEntryLabel - normal} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label foo
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-25.2 {DrawMenuEntryLabel - disabled with fg} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -disabledforeground red
+    .m1 add command -label foo -state disabled
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-25.3 {DrawMenuEntryLabel - disabled with no fg} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -disabledforeground ""
+    .m1 add command -label foo -state disabled
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+
+
+test winMenu-26.1 {TkpComputeMenubarGeometry} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add cascade -label File
+    list [. configure -menu .m1] [. configure -menu ""] [destroy .m1]
+} -result {{} {} {}}
+
+
+test winMenu-27.1 {DrawTearoffEntry} -constraints {
+    win userInteraction
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "winMenu-24.4: Hit ESCAPE."
+    list [.m1 post 40 40] [destroy .m1]
+} -result {{} {}}
+
+
+test winMenu-28.1 {TkpConfigureMenuEntry - update pending} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add command -label Hello
+    list [catch {.m1 add command -label Two} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+test winMenu-28.2 {TkpConfigureMenuEntry - update not pending} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add command -label One
+    update idletasks
+    list [catch {.m1 add command -label Two} msg] $msg [destroy .m1]
+} -result {0 {} {}}
+
+
+test winMenu-29.1 {TkpDrawMenuEntry - gc for active and not strict motif} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label foo
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    .m1 entryconfigure 1 -state active
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-29.2 {TkpDrawMenuEntry - gc for active menu item with its own gc} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label foo -activeforeground red
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    .m1 entryconfigure 1 -state active
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-29.3 {TkpDrawMenuEntry - gc for active and strict motif} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    set tk_strictMotif 1
+    .m1 add command -label foo
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    .m1 entryconfigure 1 -state active
+    list [update] [destroy .m1] [set tk_strictMotif 0]
+} -result {{} {} 0}
+test winMenu-29.4 {TkpDrawMenuEntry - gc for disabled with disabledfg and custom entry} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -disabledforeground blue
+    .m1 add command -label foo -state disabled -background red
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-29.5 {TkpDrawMenuEntry - gc for disabled with disabledFg} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -disabledforeground blue
+    .m1 add command -label foo -state disabled
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-29.6 {TkpDrawMenuEntry - gc for disabled - no disabledFg} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -disabledforeground ""
+    .m1 add command -label foo -state disabled
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-29.7 {TkpDrawMenuEntry - gc for normal - custom entry} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label foo -foreground red
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-29.8 {TkpDrawMenuEntry - gc for normal} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label foo
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-29.9 {TkpDrawMenuEntry - gc for indicator - custom entry} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add checkbutton -label foo -selectcolor orange
+    .m1 invoke 1
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-29.10 {TkpDrawMenuEntry - gc for indicator} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add checkbutton -label foo
+    .m1 invoke 1
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-29.11 {TkpDrawMenuEntry - border - custom entry} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label foo -activebackground green
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    .m1 entryconfigure 1 -state active
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-29.12 {TkpDrawMenuEntry - border} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label foo
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    .m1 entryconfigure 1 -state active
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-29.13 {TkpDrawMenuEntry - active border - strict motif} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    set tk_strictMotif 1
+    menu .m1
+    .m1 add command -label foo
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    .m1 entryconfigure 1 -state active
+    list [update] [destroy .m1] [set tk_strictMotif 0]
+} -result {{} {} 0}
+test winMenu-29.14 {TkpDrawMenuEntry - active border - custom entry} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label foo -activeforeground yellow
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    .m1 entryconfigure 1 -state active
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-29.15 {TkpDrawMenuEntry - active border} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label foo
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    .m1 entryconfigure 1 -state active
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-29.16 {TkpDrawMenuEntry - font - custom entry} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label foo -font "Helvectica 72"
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-29.17 {TkpDrawMenuEntry - font} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1 -font "Courier 72"
+    .m1 add command -label foo
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-29.18 {TkpDrawMenuEntry - separator} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add separator
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-29.19 {TkpDrawMenuEntry - standard} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label foo
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-29.20 {TkpDrawMenuEntry - disabled cascade item} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add cascade -label File -menu .m1.file
+    menu .m1.file
+    .m1.file add command -label foo
+    .m1 entryconfigure File -state disabled
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-29.21 {TkpDrawMenuEntry - indicator} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add checkbutton -label winMenu-31.20
+    .m1 invoke winMenu-31.20
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-29.22 {TkpDrawMenuEntry - indicator} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add checkbutton -label winMenu-31.21 -hidemargin 1
+    .m1 invoke winMenu-31.21
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+
+
+test winMenu-30.1 {GetMenuLabelGeometry - image} -constraints {
+    testImageType win
+} -setup {
+    destroy .m1
+    catch {image delete image1}
+} -body {
+    menu .m1
+    image create test image1
+    .m1 add command -image image1
+    list [update idletasks] [destroy .m1] [image delete image1]
+} -result {{} {} {}}
+test winMenu-30.2 {GetMenuLabelGeometry - bitmap} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -bitmap questhead
+    list [update idletasks] [destroy .m1]
+} -result {{} {}}
+test winMenu-30.3 {GetMenuLabelGeometry - no text} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command
+    list [update idletasks] [destroy .m1]
+} -result {{} {}}
+test winMenu-30.4 {GetMenuLabelGeometry - text} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "This is a test."
+    list [update idletasks] [destroy .m1]
+} -result {{} {}}
+
+
+test winMenu-31.1 {DrawMenuEntryBackground} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label foo
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [update] [destroy .m1]
+} -result {{} {}}
+test winMenu-31.2 {DrawMenuEntryBackground} -constraints win -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label foo
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    $tearoff activate 0
+    list [update] [destroy .m1]
+} -result {{} {}}
+
+
+test winMenu-32.1 {TkpComputeStandardMenuGeometry - no entries} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    list [update idletasks] [destroy .m1]
+} -result {{} {}}
+test winMenu-32.2 {TkpComputeStandardMenuGeometry - one entry} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "one"
+    list [update idletasks] [destroy .m1]
+} -result {{} {}}
+test winMenu-32.3 {TkpComputeStandardMenuGeometry - more than one entry} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "one"
+    .m1 add command -label "two"
+    list [update idletasks] [destroy .m1]
+} -result {{} {}}
+test winMenu-32.4 {TkpComputeStandardMenuGeometry - separator} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add separator
+    list [update idletasks] [destroy .m1]
+} -result {{} {}}
+test winMenu-32.5 {TkpComputeStandardMenuGeometry - tearoff entry} -constraints {
+    unix nonUnixUserInteraction
+} -setup {
+    destroy .mb
+} -body {
+    menubutton .mb -text "test" -menu .mb.m
+    menu .mb.m
+    .mb.m add command -label test
+    pack .mb
+    catch {tk::MbPost .mb}
+    list [update] [destroy .mb]
+} -result {{} {}}
+test winMenu-32.6 {TkpComputeStandardMenuGeometry - standard label geometry} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    list [update idletasks] [destroy .m1]
+} -result {{} {}}
+test winMenu-32.7 {TkpComputeStandardMenuGeometry - different font for entry} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -font "Helvetica 12"
+    .m1 add command -label "test" -font "Courier 12"
+    list [update idletasks] [destroy .m1]
+} -result {{} {}}
+test winMenu-32.8 {TkpComputeStandardMenuGeometry - second entry larger} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 add command -label "test test"
+    list [update idletasks] [destroy .m1]
+} -result {{} {}}
+test winMenu-32.9 {TkpComputeStandardMenuGeometry - first entry larger} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "test test"
+    .m1 add command -label "test"
+    list [update idletasks] [destroy .m1]
+} -result {{} {}}
+test winMenu-32.10 {TkpComputeStandardMenuGeometry - accelerator} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "test" -accel "Ctrl+S"
+    list [update idletasks] [destroy .m1]
+} -result {{} {}}
+test winMenu-32.11 {TkpComputeStandardMenuGeometry - second accel larger} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "test" -accel "1"
+    .m1 add command -label "test" -accel "1 1"
+    list [update idletasks] [destroy .m1]
+} -result {{} {}}
+test winMenu-32.12 {TkpComputeStandardMenuGeometry - second accel smaller} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "test" -accel "1 1"
+    .m1 add command -label "test" -accel "1"
+    list [update idletasks] [destroy .m1]
+} -result {{} {}}
+test winMenu-32.13 {TkpComputeStandardMenuGeometry - indicator} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add checkbutton -label test
+    .m1 invoke 1
+    list [update idletasks] [destroy .m1]
+} -result {{} {}}
+test winMenu-32.14 {TkpComputeStandardMenuGeometry - second indicator less or equal} -constraints {
+    testImageType win
+} -setup {
+    destroy .m1
+    catch {image delete image1}
+} -body {
+    image create test image1
+    menu .m1
+    .m1 add checkbutton -image image1
+    .m1 invoke 1
+    .m1 add checkbutton -label test
+    .m1 invoke 2
+    list [update idletasks] [destroy .m1] [image delete image1]
+} -result {{} {} {}}
+test winMenu-32.15 {TkpComputeStandardMenuGeometry - second indicator larger} -constraints {
+    testImageType unix
+} -setup {
+    destroy .m1
+    catch {image delete image1}
+} -body {
+    image create test image1
+    menu .m1
+    .m1 add checkbutton -image image1
+    .m1 invoke 1
+    .m1 add checkbutton -label test
+    .m1 invoke 2
+    list [update idletasks] [destroy .m1] [image delete image1]
+} -result {{} {} {}}
+test winMenu-32.16 {TkpComputeStandardMenuGeometry - zero sized menus} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    list [update idletasks] [destroy .m1]
+} -result {{} {}}
+test winMenu-32.17 {TkpComputeStandardMenuGeometry - first column bigger} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label one
+    .m1 add command -label two
+    .m1 add command -label three -columnbreak 1
+    list [update idletasks] [destroy .m1]
+} -result {{} {}}
+test winMenu-32.18 {TkpComputeStandardMenuGeometry - second column bigger} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add command -label one
+    .m1 add command -label two -columnbreak 1
+    .m1 add command -label three
+    list [update idletasks] [destroy .m1]
+} -result {{} {}}
+test winMenu-32.19 {TkpComputeStandardMenuGeometry - three columns} -constraints {
+    win
+} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add command -label one
+    .m1 add command -label two -columnbreak 1
+    .m1 add command -label three
+    .m1 add command -label four
+    .m1 add command -label five -columnbreak 1
+    .m1 add command -label six
+    list [update idletasks] [destroy .m1]   
+} -result {{} {}}
+
+
+test winMenu-33.1 {TkpNotifyTopLevelCreate - no menu yet} -constraints {
+    win
+} -setup {
+    destroy .m1 .t2
+} -body {
+    toplevel .t2 -menu .m1
+    wm geometry .t2 +0+0
+    list [update idletasks] [destroy .t2]
+} -result {{} {}}
+test winMenu-33.2 {TkpNotifyTopLevelCreate - menu} -constraints win -setup {
+    destroy .m1 .t2
+} -body {
+    menu .m1
+    menu .m1.system
+    .m1 add cascade -menu .m1.system
+    .m1.system add separator
+    .m1.system add command -label foo
+    toplevel .t2 -menu .m1
+    wm geometry .t2 +0+0
+    list [update idletasks] [destroy .m1] [destroy .t2]
+} -result {{} {} {}}
+
+
+test winMenu-34.1 {TkpMenuInit called at boot time} -constraints {
+    emptyTest win
+} -body {}
+
+# cleanup
+deleteWindows
+cleanupTests
+return
+
+# Local variables:
+# mode: tcl
+# End:
+

@@ -1,0 +1,140 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH option n "" Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+option \- Add/retrieve window options to/from the option database
+.SH SYNOPSIS
+.nf
+\fBoption add \fIpattern value \fR?\fIpriority\fR?
+\fBoption clear\fR
+\fBoption get \fIwindow name class\fR
+\fBoption readfile \fIfileName \fR?\fIpriority\fR?
+.fi
+.BE
+.SH DESCRIPTION
+.PP
+The \fBoption\fR command allows you to add entries to the Tk option
+database or to retrieve options from the database.  The \fBadd\fR
+form of the command adds a new option to the database.
+\fIPattern\fR contains
+the option being specified, and consists of names and/or classes
+separated by asterisks or dots, in the usual X format (see
+\fBPATTERN FORMAT\fR).  \fIValue\fR
+contains a text string to associate with \fIpattern\fR;  this is the
+value that will be returned in calls to \fBTk_GetOption\fR or by
+invocations of the \fBoption get\fR command.  If \fIpriority\fR
+is specified, it indicates the priority level for this option (see
+below for legal values);  it defaults to \fBinteractive\fR.
+This command always returns an empty string.
+.PP
+The \fBoption clear\fR command clears the option database.  Default
+options (from the
+\fBRESOURCE_MANAGER\fR property or the \fB.Xdefaults\fR
+file) will be reloaded automatically the next time an
+option is added to the database or removed from it.  This command
+always returns an empty string.
+.PP
+The \fBoption get\fR command returns the value of the option
+specified for \fIwindow\fR
+under \fIname\fR and \fIclass\fR.  If several entries in the option
+database match \fIwindow\fR, \fIname\fR, and \fIclass\fR, then
+the command returns whichever was created with highest
+\fIpriority\fR level.  If there are several matching
+entries at the same priority level, then it returns whichever entry
+was most recently entered into the option database.  If there are
+no matching entries, then the empty string is returned.
+.PP
+The \fBreadfile\fR form of the command reads \fIfileName\fR,
+which should have the standard format for an
+X resource database such as \fB.Xdefaults\fR, and adds all the
+options specified in that file to the option database.  If \fIpriority\fR
+is specified, it indicates the priority level at which to enter the
+options;  \fIpriority\fR defaults to \fBinteractive\fR.
+.PP
+The file is read through a channel which is in "utf-8" encoding,
+invalid byte sequences are automatically converted to valid ones.
+This means that encodings like ISO 8859-1 or cp1252 with high
+probability will work as well, but this cannot be guaranteed.
+This cannot be changed, setting the [encoding system] has no effect.
+.PP
+The \fIpriority\fR arguments to the \fBoption\fR command are
+normally specified symbolically using one of the following values:
+.TP
+\fBwidgetDefault\fR
+Level 20.  Used for default values hard-coded into widgets.
+.TP
+\fBstartupFile\fR
+Level 40.  Used for options specified in application-specific
+startup files.
+.TP
+\fBuserDefault\fR
+Level 60.  Used for options specified in user-specific defaults
+files, such as \fB.Xdefaults\fR, resource databases loaded into
+the X server, or user-specific startup files.
+.TP
+\fBinteractive\fR
+Level 80.  Used for options specified interactively after the application
+starts running.  If \fIpriority\fR is not specified, it defaults to
+this level.
+.PP
+Any of the above keywords may be abbreviated.  In addition, priorities
+may be specified numerically using integers between 0 and 100,
+inclusive.  The numeric form is probably a bad idea except for new priority
+levels other than the ones given above.
+.SH "PATTERN FORMAT"
+.PP
+Patterns consist of a sequence of words separated by either periods,
+.QW . ,
+or asterisks
+.QW * .
+The overall pattern may also be optionally preceded by an asterisk.
+.PP
+Each word in the pattern conventionally starts with either an upper-case
+letter (in which case it denotes the class of either a widget or an option) or
+any other character, when it denotes the name of a widget or option. The last
+word in the pattern always indicates the option; the preceding ones constrain
+which widgets that option will be looked for in.
+.PP
+When two words are separated by a period, the latter widget must be a direct
+child of the former (or the option must apply to only the indicated widgets).
+When two words are separated by an asterisk, any depth of widgets may lie
+between the former and latter widgets (and the option applies to all widgets
+that are children of the former widget).
+.PP
+If the overall pattern is preceded by an asterisk, then the overall pattern
+applies anywhere it can throughout the whole widget hierarchy. Otherwise the
+first word of the pattern is matched against the name and class of the
+.QW \fB.\fR
+\fBtoplevel\fR, which are usually set by options to \fBwish\fR.
+.SH EXAMPLES
+.PP
+Instruct every button in the application to have red text on it unless
+explicitly overridden, by setting the \fBforeground\fR for the \fBButton\fR
+class (note that on some platforms the option is ignored):
+.CS
+\fBoption add\fR *Button.foreground red startupFile
+.CE
+.PP
+Allow users to control what happens in an entry widget when the Return
+key is pressed by specifying a script in the option database and add a
+default option for that which rings the bell:
+.CS
+entry .e
+bind .e <Return> [\fBoption get\fR .e returnCommand Command]
+\fBoption add\fR *.e.returnCommand bell widgetDefault
+.CE
+.SH "SEE ALSO"
+options(n), wish(1)
+.SH KEYWORDS
+database, option, priority, retrieve
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

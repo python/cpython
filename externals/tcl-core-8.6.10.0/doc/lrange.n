@@ -1,0 +1,78 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2001 Kevin B. Kenny <kennykb@acm.org>.  All rights reserved.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH lrange n 7.4 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+lrange \- Return one or more adjacent elements from a list
+.SH SYNOPSIS
+\fBlrange \fIlist first last\fR
+.BE
+.SH DESCRIPTION
+.PP
+\fIList\fR must be a valid Tcl list.  This command will
+return a new list consisting of elements
+\fIfirst\fR through \fIlast\fR, inclusive.
+The index values \fIfirst\fR and \fIlast\fR are interpreted
+the same as index values for the command \fBstring index\fR,
+supporting simple index arithmetic and indices relative to the
+end of the list.
+If \fIfirst\fR is less than zero, it is treated as if it were zero.
+If \fIlast\fR is greater than or equal to the number of elements
+in the list, then it is treated as if it were \fBend\fR.
+If \fIfirst\fR is greater than \fIlast\fR then an empty string
+is returned.
+Note:
+.QW "\fBlrange \fIlist first first\fR"
+does not always produce the same result as
+.QW "\fBlindex \fIlist first\fR"
+(although it often does for simple fields that are not enclosed in
+braces); it does, however, produce exactly the same results as
+.QW "\fBlist [lindex \fIlist first\fB]\fR"
+.SH EXAMPLES
+.PP
+Selecting the first two elements:
+.PP
+.CS
+% \fBlrange\fR {a b c d e} 0 1
+a b
+.CE
+.PP
+Selecting the last three elements:
+.PP
+.CS
+% \fBlrange\fR {a b c d e} end-2 end
+c d e
+.CE
+.PP
+Selecting everything except the first and last element:
+.PP
+.CS
+% \fBlrange\fR {a b c d e} 1 end-1
+b c d
+.CE
+.PP
+Selecting a single element with \fBlrange\fR is not the same as doing
+so with \fBlindex\fR:
+.PP
+.CS
+% set var {some {elements to} select}
+some {elements to} select
+% lindex $var 1
+elements to
+% \fBlrange\fR $var 1 1
+{elements to}
+.CE
+.SH "SEE ALSO"
+list(n), lappend(n), lindex(n), linsert(n), llength(n), lsearch(n),
+lset(n), lreplace(n), lsort(n),
+string(n)
+.SH KEYWORDS
+element, list, range, sublist

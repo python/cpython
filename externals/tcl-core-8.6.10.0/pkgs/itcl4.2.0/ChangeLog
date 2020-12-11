@@ -1,0 +1,608 @@
+NOTICE: This ChangeLog is no longer being maintained. To examine
+the series of changes checked into Itcl sources, follow the Timeline
+
+https://core.tcl-lang.org/itcl/timeline
+
+2014-11-06  Don Porter  <dgp@Users.sourceforge.net>
+	* generic/itclMigrate2TclCore.c: Fix for SF Bug 259.
+	* tests/sfbugs.test: Test for Bug 250 fix.
+2014-11-02  Don Porter  <dgp@Users.sourceforge.net>
+	* generic/itclMethod.c:	Completely different fix for SF bug #243
+	* geneirc/itclObject.c: that has the benefit of not completely
+	breaking Itk and Iwidgets. :)
+2014-09-20  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclParse.c:
+	* generic/itclObject.c: Fixes for SF bug #257
+	* tests/sfbugs.test: added test for SF bug #257 and fixed test 254 to
+	use an own interpreter for avoiding problems with following tests.
+2014-09-13  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclMethod.c: Fixes for SF bug #256
+	* tests/sfbugs.test: added test for fossil bug #8 and for SF bug #254
+	and #256
+	* generic/itclObject.c: fix for fossil bug
+	2cd667f270b68ef66d668338e09d144e20405e23 (fossil bug # 8).
+	* generic/itcl.decls:
+	* generic/itclBase.c:
+	* generic/itclClass.c:
+	* generic/itclInt.h:
+	* generic/itclIntDecls.h:
+	* generic/itclObject.c:
+	* generic/itclTestRegisterC.c: Implementation of Itcl_CreateObject
+	stubs Interface (now complete) SF bug #252.
+2014-09-07  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclMethod.c: small fixes to save code.
+2014-09-07  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclParse.c: fix for making Itcl_CallCCommand working again.
+2014-09-07  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itcl.decls:
+	* generic/itclClass.c:
+	* generic/itclDecls.h:
+	* generic/itclInt.h:
+	* generic/itclIntDecls.h:
+	* generic/itclObject.c:
+	* generic/itclStubInit.c: Start of implementation of Itcl_CreateObject
+	stubs interface.
+2014-09-07  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itcl2TclOO.h:
+	* generic/itcl2TclOO.c:
+	* generic/itclBase.c: Work around for SF bug #254 using call
+	Itcl_IncrObjectRefCount until fix in TclOO is done.
+2014-09-07  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclMethod.c: fix for SF bug #255 in CallItclObjectCmd.
+	Check for built in commands and do not set oPtr in that case.
+2014-02-19  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclCmd.c: fix for SF bug #238 in Itcl_ScopeCmd. Use
+	Tcl_AppendResult instead of TclAppendElement.
+2014-02-18  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclMethod.c: again a fix for SF bug #244 to make it work
+	correctly.
+2014-02-18  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* tests/sfbugs.test: added a test file for bugs reported on SF incrtcl
+	tracker.
+2014-02-18  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclResolve.c:
+	* generic/itclObject.c: fix for upvar problem (SF bug #187) in
+	splitting up the trace handlers for this, win, type, self and selfns.
+	Also doing traces for linked variables to one of these.
+2014-02-16  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclMethod.c:
+	* generic/itclMigrate2TclCore.h:
+	* generic/itclMigrate2TclCore.c: 2nd fix for uplevel problem (SF bug #250).
+2014-02-13  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclMigrate2TclCore.c: fix for uplevel 2nd problem (SF bug #250).
+2014-01-24  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclMethod.c: added some code for special handling of
+	relative method name with namespace parts (SF bug #243)
+	When calling Itcl_EvalMemberCode strip off the namespace parts
+	if no constructor.
+2014-01-24  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclMethod.c:
+	* generic/itclObject.c:
+	* generic/itclMigrate2TclCore.c:
+	* generic/itclMigrate2TclCore.h: added some code for special handling
+	of an uplevel call to get the appropriate oPtr (SF bug #244).
+	The uplevel environment is checked by looking if the framePtr
+	and the varFramePtr are different (maybe not enough ?).
+2014-01-24  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclMigrate2TclCore.h: use same type for Tcl_Var as in tcl.h
+	SF bug #248.
+2013-11-09  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* library/itcl.tcl: rename variable cmd to __cmd to avoid conflicts
+	with user variable of the same name SF bug #246
+2013-06-16  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclInfo.c: Added new command: info context
+	* generic/itclBuiltin.c:
+	* library/itclHullCmds.tcl: new code for extendedclass component
+	handling
+	* generic/itclObject.c: removed not necessary code
+	* generic/itclCmd.c: code for extendedclass
+2013-06-09  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclParse.c:
+	* generic/itclObject.c:
+	* generic/itclMethod.c:
+	* generic/itclBuiltin.c: renaming of removecomponentoption to
+	ignorekomponentoption, removing of addcomponentoption
+	move code for keepcomponentoption from itclBuiltin.c as Tcl code to
+	itclHullCmds.tcl
+	* library/itclHullCmds.tcl: moved keepcomponentoption from
+	itclBuiltin.c to here as Tcl code. renaming of removecomponentoption
+	to ignorekomponentoption
+2013-06-02  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclResolve.c:
+	* generic/itclClass.c:
+	* generic/itclObject.c: Changed code to avoid some compiler warnings.
+	Added code for extendedclass variable itcl_option_components.
+	* generic/itclInfo.c: Fix for info classoptions to only use current
+	class options
+	* generic/itclBuiltin.c: Fixed typo which used hPtr instead of hPtr2
+	Fixes for compiler warnings. Added 3 internal builtin commands
+	addoptioncomponent, removeoptioncomponent, renameoptioncomponent for
+	extendedclass.
+	* generic/itclInt.h: Added define ITCL_OPTION_COMP_VAR
+	* generic/itclHelpers.c: Fixes for compiler warnings
+	* generic/itclMethod.c:
+	* generic/itclParse.c: Fixes for compiler warnings. Added 3 internal
+	builtin commands addoptioncomponent,
+	removeoptioncomponent, renameoptioncomponent for extendedclass.
+	* library/itclHullCmds.c: New code for seeting component options
+	depending on itcl_option_components arra
+2013-05-26  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclBuiltin.c: Removed unused code, added some code for
+	BiInitOptionsCmd also that code seems to be no
+	longer used instead a Tcl implementation of that code is used at least
+	on some places
+	* generic/itclCmd.c: Removed unused code
+	* generic/itclInfo.c: Added new command "info classoptions"
+	  (Itcl_BiInfoClassOptionsCmd), removed some unused code.
+	* generic/itclInt.h: Added define ITCL_OPTION_INITTED
+	* library/itclHullCmds.tcl: Added proc itcl_initoptions. A lot of
+	changes and fixes in initoptions.
+2013-03-11  Don Porter  <dgp@Users.sourceforge.net>
+	* Makefile.n: SF Bug #239 - support -singleproc 1 testing.
+2013-03-02  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclMethod.c: fixes for constructor problems with
+				itclwidgets
+	* generic/itclObject.c:
+	* library/itclHullCmds.tcl:
+2013-03-02  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* configure: bumped version number already to 4.0.1 no real version yet!
+	* configure.in:
+	* generic/itcl.h:
+2013-02-17  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclBuiltin.c: fix for SF Bug #237
+2013-02-03  Arnulf P. Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclBase.c: fix for SF Bug #3591018 new #232
+	* generic/itclObject.c: fix for SF Bug #3600923 new #???
+	* generic/itcl2TclOO.h:
+	* generic/itcl2TclOO.c:
+	* library/itclHullCmds.tcl: fix for Problem with itclWidgets
+
+2012-12-11  Don Porter  <dgp@Users.sourceforge.net>
+	* first stable release 4.0.0
+
+	* generic/itcl.h:
+	* configure, configure.in, Makefile.in: Bump version to 4.0.0
+
+2012-09-11  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* Makefile.in: Make tests runnable from withing Tcl's pkgs,
+	directory, without Itcl being installed.
+
+2012-08-29  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/*.c: Remove all (deprecated) usage of _ANSI_ARGS_
+
+2012-07-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/makefile.vc: [Bug 3544932]: Visual studio compiler check fails
+
+2012-07-12  Arnulf P.Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclBase.c:   make the info command call in clazzUnknownBody a
+	                        list to avoid problems with class names
+	                        containing spaces. i
+				Fix for [incr Tcl] bug  ID: 3536018
+2012-05-17  Arnulf P.Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclResolve.c: fixed problem with access to protected class
+	                        variables when not from top level context
+	                        reported from Rene Zaumseil for his itk
+				emulation
+2012-03-25  Arnulf P.Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclInfo.c: fixed problem with info exists command.
+	                        fossil ticket id: d4ee728817f951d0b2aa8e8f9b030ea854e92c9f
+2012-02-25  Arnulf P.Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itclObject.c: special case: we found the class for the class command,
+				for a relative or absolute class path name
+				but we have no method in that class that fits.
+	        		Problem of Rene Zaumseil when having the object
+				for a class in a child namespace of the class
+				fossil ticket id: 36577626c340ad59615f0a0238d67872c009a8c9
+	* generic/itclCmd.c:	typo fix
+2011-11-07  Jan Nijtmans  <nijtmans@users.sourceforge.net>
+
+	* tools/genStubs.tcl:  Make stub table symbols and pointers const
+	* generic/itcl.decls:  Remove Itcl_(Safe)Init from Stub table
+	* generic/itcl.h:
+	* generic/itcl2TclOO.c: Remove unnecessary includes, and consistent
+	* generic/itclBase.c:   use of include <file> resp include "file"
+	* generic/itclInt.h:
+	* generic/itclMigrate2TclCore.c:
+	* generic/itclParse.c:
+	* generic/itclResolve2.c:
+	* generic/itclStubLib.c:
+	* generic/itclStubs.c:
+	* generic/itclTclIntStubsFcn.c:
+	* generic/itclTestRegisterC.c:
+	* generic/itclVarsAndCmds.c:
+	* generic/itclDecls.h:    (regenerated)
+	* generic/itclIntDecls.h:
+	* generic/itclStubInit.c:
+
+2011-10-28  Don Porter  <dgp@Users.sourceforge.net>
+
+	* generic/itcl.h:
+	* configure, configure.in, Makefile.in: Bump version to 4.0b8
+
+2011-10-20  Jan Nijtmans  <nijtmans@users.sourceforge.net>
+
+	* generic/itclMigrate2TclCore.h: [Bug 3424948]: trunk does not link
+	* generic/itclTclIntStubsFcn.h
+	* generic/itcl2TclOO.h
+	* generic/itcl2TclOO.c
+
+	* generic/itcl.decls: [Frq 3423707]: TIP #27 related signature changes
+	* generic/itclIntDecls.h: (regenerated)
+	* generic/itcl2TclOO.h
+	* generic/itclBase.c
+	* generic/itclBuiltin.c
+	* generic/itclClass.c
+	* generic/itclCmd.c
+	* generic/itclEnsemble.c
+	* generic/itclHelpers.c
+	* generic/itclInfo.c
+	* generic/itclMethod.c
+	* generic/itclObject.c
+	* generic/itclParse.c
+	* generic/itclUtil.c
+
+2011-10-14  Jan Nijtmans  <nijtmans@users.sourceforge.net>
+
+	* generic/itcl2TclOO.h: [Bug 3369931]: unneeded exported functions
+	* generic/itclBase.c
+	* generic/itclBuiltin.c
+	* generic/itclClass.c
+	* generic/itclCmd.c
+	* generic/itclInt.h
+	* generic/itclMigrate2TclCore.h
+	* generic/itclTclIntStubsFcn.h
+	* generic/itclNeededFromTclOO.h (removed)
+	* generic/itclNeededFromTclOO.c (removed)
+	* configure
+	* configure.in
+	* win/makefile.vc
+	* generic/itclEnsemble.c:  Fix various gcc warnings, discovered
+	* generic/itclHelpers.c    with -Wwrite-strings
+	* generic/itclInfo.c
+	* generic/itclParse.c
+	* generic/itclResolve.c
+
+2011-08-03  Don Porter  <dgp@Users.sourceforge.net>
+	* generic/itclInt.h: fix for SF bug #3385041
+
+2011-08-01  Don Porter  <dgp@Users.sourceforge.net>
+	* win/makefile.vc: MSVC support updates.  Thanks to Twylite.
+	* win/rules.vc:
+
+2011-07-15  Don Porter  <dgp@Users.sourceforge.net>
+
+	* generic/itcl.h:
+	* configure, configure.in, Makefile.in: Bump version to 4.0b7
+
+2011-06-30  Don Porter  <dgp@Users.sourceforge.net>
+
+	* configure.in:		Build system changes to accomodate TEA updates
+	* Makefile.in:
+	* generic/itcl.h:
+
+2011-04-29  Arnulf P.Wiedemann  <wiede@users.sourceforge.net>
+	* generic/itcl.h:
+	* configure, configure.in, Makefile.in: Bump version to 4.0b6
+
+2010-09-26  Miguel Sofer  <msofer@users.sf.net>
+
+	* itcl/generic/itcl2TclOO.c (Itcl_NRRunCallbacks):
+	Tcl's [Patch 3072080] (a saner NRE): TclNRRunCallbacks lost one
+	argument.
+
+2010-08-22  Arnulf P.Wiedemann  <wiede@users.sourceforge.net>
+        * itclInt.h, itclObject.c, itclInfo.c: fix for BiInfoHeritageCmd
+	and BiInfoInheritCmd function, if we have no object context
+
+2010-08-17  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* itclConfig.sh.in, releasenotes.txt, generic/itcl.h:
+	* itclWidget/tclconfig/tcl.m4, itclWidget/Makefile.in:
+	* itclWidget/configure, itclWidget/configure.in:
+	* itclWidget/itclWidgetConfig.sh.in (removed):
+	* configure, configure.in, Makefile.in: Bump version to 4.0b5
+	Update to TEA 3.9
+	Remove unnecessary itcl_INCLUDE_DIR (dup of itcl_INCLUDE_SPEC)
+
+2010-05-17  Arnulf P.Wiedemann  <wiede@users.sourceforge.net>
+        * itclClass.c:          undo change from 2010-05-16
+2010-05-16  Arnulf P.Wiedemann  <wiede@users.sourceforge.net>
+        * itclClass.c:          allow variable namespace to exist
+2010-05-02  Arnulf P.Wiedemann  <wiede@users.sourceforge.net>
+        * itclClass.c:		fix for SF bug #2993540
+	* itcl2Tcloo.c:         fix for SF bug #2993648
+	* itcl2Tcloo.h:         fix for SF bug #2993648
+	* itclBuiltin.c:        added an empty line for beautifying
+	* itclCmd.c:            in Itcl_IsObjectCmd if in constructor use the correct ioPtr
+	* itclObject.c:         in Itcl_ObjectIsa check for contextIoPtr == NULL
+	                        to avoid segmentation violation
+2010-04-21  Arnulf P.Wiedemann  <wiede@users.sourceforge.net>
+	* itclCmd.c:		Add missing Tcl_DStringFree for [itcl Bug 2983809]
+	* itclEnsemble.c:
+	* itclObject.c:
+	* itclParse.c:
+	* itclResolve.c:
+
+	* itclParse.c:          better error message when using: public mthod ...
+	                        instead of public method ...
+2010-04-08  Don Porter  <dgp@Users.sourceforge.net>
+	* itclInt.h:		Add #ifdef guards to attempt inclusion of
+				a unistd.h header file only where one exists.
+2010-04-05  Don Porter  <dgp@Users.sourceforge.net>
+	* itclTclIntStubsFcn.c:	Remove attempt to return value from
+				Itcl_ResetRewriteEnsemle() which is declared
+				as returning (void).  Thanks to Andreas
+				Kupried for reporting the compiler errors.
+2010-03-28  Arnulf P. Wiedemann <wiede@users.sourceforge.net>
+	* typeinfo.test:        integrated fix for [Tcl Bug 2821935] and
+	* typeoption.test:	other fixes from Donal Fellows.  This helps
+	* itclParse.c:		work around a limitation in the MSVC 6.0
+	* itclBuiltin.c:	compiler.
+	* itclBase.c:
+	* itcl2TclOO.c:
+2010-03-19  Arnulf P. Wiedemann <wiede@users.sourceforge.net>
+	* configure.in:    	add missing include files for install,thanks to Reinhard Max for
+	                        the patch
+	* itclInfo.c:		removed "uplevel 1" in Itcl_BiInfoUnknownCmd.c, which made problems
+	                        with "info complete", reported by Reinhard Max
+	* itclMethod.c:		fixed bug, which caused core dump in CallItclObjectCmd, thanks to
+	                        Reinhard Max for the patch
+2010-03-06  Arnulf P. Wiedemann <wiede@users.sourceforge.net>
+	* itcl.decls:    	changed CONST in declarations to const
+	* itclDecls.h:
+	* itclIntDecls.h
+	* itcl2TclOO.c:		adaption to typedef change in TclOO for TclOO_PreCallProc and
+				TclOO_PostCallProc
+	* itclNeededFromTclOO.h:
+	* itclBuiltin.c:	allow installcomponent for ::itcl::type too typeclass.test install-1.7
+	* itclClass.c:		use "new" style params in Itcl_FindClass
+
+2009-10-25 Arnulf P. Wiedemann <wiede@users.sf.net>
+	* itclCmd.c:            fix for Itcl_AddOptionCmd
+
+2009-10-24 Arnulf P. Wiedemann <wiede@users.sf.net>
+	* itclMethod.c:          if during call of constructor, when building
+	                         an object there were multiple recursive calls
+				 on CallItclObjectCmd and errors have not been
+				 propagated. Now hadConstructorError
+				 field in ItclObject struct is used for that
+				 purpose.
+	* itclInt.h:
+	* itclObject.c:
+
+	* itclObject.c:          allow %:var_name substitution in delegate
+	                         method using part for extendedclass
+
+	* itclObject.c:          allow call of delegated methods in constructor
+	                         of ::itcl::extendedclass
+	* itclBuiltin.c:
+	* itclMethod.c:
+
+
+2009-10-23 Arnulf P. Wiedemann <wiede@users.sf.net>
+        * generic/itcl.h:        bumped version to 4.0b4
+	* configure.in:
+	* configure:
+
+	* itclClass.c:           fixed bug which prevented correct error
+	                         reporting when there was a problem when
+				 creating an object, also fixed to use correct
+				 NRE calling
+
+2009-10-23  Arnulf P. Wiedemann <wiede@users.sourceforge.net>
+	* itclMigrate2TclCore.c: added Itcl_GetUplevelCallFrame and
+	                         Itcl_ActivateCallFrame functions
+	                         same as in Itcl3.4. They are needed to call
+				 the itk_component command with the suitable
+				 call frame as this is needed for access to the
+	                         proc local vars. This was the fix for SF
+				 bug #2840994
+	* itclStubInit.c:
+	* itcl.decls:
+	* itclDecls.h:
+	* itclIntDecls.h:
+
+	* itclResolve.c:         added special_resolve_vars. Also needed
+	                         for SF bug #2840994
+
+
+2009-10-22  Arnulf P. Wiedemann <wiede@users.sourceforge.net>
+	* itclLinkage.c:    changed CONST in declarations to const
+	* itclMethod.c:
+	* itclBase.c:
+	* itclBuiltin.c:
+	* itclStubs.c:
+
+	* itclObject.c:     added an empty line (beautifying)
+
+	* itclInfo.c:       no extra method for info exists, use the
+	                    ItclBiInfoUnknownCmd instead
+			    fix for bug # 2738459
+	* itclObject.c:     fix for bug # 2789473
+	* itclResolve.c:    fix for bug # 2495261
+
+	* itclCmd.c:             use of new Tcl functions as suggested from dkf
+	* itclHelpers.c:
+	* itclMigrate2TclCore.c:
+	* itclMigrate2TclCore.h:
+	* itclTclIntStubsFcn.c:
+	* itclTclIntStubsFcn.h:
+
+2009-10-20  Arnulf P. Wiedemann <wiede@users.sourceforge.net>
+	* generic/itclParse.c:	fix for bug  #2871541.
+	       added a lot of checks if within a class
+	       environment (iclsPtr != NULL), as there
+	       were a lot of similar cases
+
+2009-10-18  Arnulf P. Wiedemann <wiede@users.sourceforge.net>
+
+	* generic/itclInfo.c:	fix for bug  #2830946.
+	* pkgIndex.tcl.in:	fix for bug  #2856166.
+	* itclInt.h:    for linux we need inclusion of unistd.h otherwise
+	                intprt_t type is not defined
+
+	* itclResolve2.c:       changed CONST in declarations to const
+	* itclTclIntStubsFcn.c:
+	* itclObject.c:
+	* itclParse.c:
+	* itclClass.c:
+	* ItclEnsemble.c:
+	* itclHelpers.c:
+	* itclCmd.c:
+	* itclUtil.c:
+
+2009-07-18  Daniel A. Steffen <das@users.sourceforge.net>
+
+	* generic/itclClass.c:	fix warnings.
+	* generic/itclParse.c:
+	* generic/itclResolve.c:
+
+	* configure.in:		check for intptr_t type and include sys/types.h
+	* generic/itclInt.h:	to make INT2PTR & PTR2INT macros actually work.
+	* itclng/generic/itclngInt.h:
+
+	* configure:		autoconf-2.59
+
+2009-05-09  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/itcl.h:
+	* generic/itclDecls.h:   Better C++ support.
+	* generic/itclStubLib.c: #define USE_TCL_STUBS is required
+
+2009-03-19  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/itclBase.c: reduce size of initScript to satisfy MSVC6.
+
+2008-02-21 Arnulf P. Wiedemann <wiede@users.sf.net>
+        * fix for SF bug 2595708 itclParse.c and itclBuiltin.c
+	* fix for problem with scope command path reported by
+	* Harald Krummeck on c.l.t ItclCmd.c
+2008-02-02 Arnulf P. Wiedemann <wiede@users.sf.net>
+        * generic/itcl.h configure.in:
+	             bumped version to 4.0b3
+2008-02-01 Arnulf P. Wiedemann <wiede@users.sf.net>
+        * tests/widgetadaptor.test and tests/widgetclass.test:
+	             removed package require Tk to avoid running the tests
+		     always
+2008-01-24 Arnulf P. Wiedemann <wiede@users.sf.net>
+	* generic/itclBase.c:	added *Dict*Info functions to allow fully
+	* generic/itclBuiltin.c:integration of itclWidget package.
+	* generic/itclClass.c:  itclWidget package is no longer needed.
+	* generic/itclCmd.c:	The *Dict*Info* function also allow in the
+	* generic/itclObject.c: future to replace itclInfo.c by a scripted
+	* generic/itclParse.c:  version written in tcl.
+	* generic/itclInfo.c:   For replacing itclWidget package itclWidget.tcl
+	* generic/itclMethod.c: has been filled with new procs, which are
+	* library/itclWidget.tcl:called from the C parts, when needed.
+
+	* generic/itclHelpers.c:here one can find all the *Dict*Info functions
+
+	* library/ictlHullCmds.tcl:
+				here are similar funtions to itclWidget.tcl for
+				use by ::itcl::extendedclass
+
+	* generic/itclUtil.c:	malloc.h include now bracketed with
+				#ifdef ITCL_PRESERVE_DEBUG as it is only used
+				for debugging. I have to look for a solution
+				using memory.h as a portable version, but
+				for that I have to understand that first.
+				With #ifdef ITCL_PRESERVE_DEBUG, the malloc
+				and free calls can be used again, these are
+				necessary, as im am checking stuff done by
+				ckalloc and ckfree, so these cannot be used.
+2009-01-15 David Gravereaux <davygrvy@pobox.com>
+	* generic/itcl2TclOO.h:  More cleanups changing the last of the
+	* generic/itclClass.c:   'EXTERN' macros to just be 'extern' as we
+	* win/.cvsignore:        aren't importing the declaration, just
+	* win/itcl.rc:           sharing it internally.  This caused warnings
+	* win/makefile.vc:       on windows during the link stage as it was
+	* win/nmakehlp.c:        getting confused about 'why are you
+	* win/rules.vc:          importing an internal function?'
+2009-01-15 David Gravereaux <davygrvy@pobox.com>
+	* generic/itclMigrate2TclCore.h:    All build errors squashed
+	* generic/itclStubLib.c:
+	* generic/itclTclIntStubFcn.h:
+	* win/makefile.vc:
+2009-01-14 David Gravereaux <davygrvy@pobox.com>
+	* generic/itclBase.c:
+	* generic/itclBuiltin.c:
+	* generic/itclClass.c:
+	* generic/itclCmd.c:
+	* generic/itclEnsemble.c:
+	* generic/itclHelpers.c:
+	* generic/itclInfo.c:
+	* generic/itclMethod.c:
+	* generic/itclMigrate2TclCore.c:
+	* generic/itclObject.c:
+	* generic/itclParse.c:
+	* generic/itclResolve.c
+	* generic/itclStubs.c
+	* generic/itclTclIntStubsFcn.c:
+	* win/makefile.vc:
+		Changes to allow compiling on windows with
+		MSVC++.  Double declaration of internal
+		functions not yet repaired.  DOESN'T
+		BUILD YET with makefile.vc.
+2009-01-14 Daniel A. Steffen <das@users.sourceforge.net>
+    * Makefile.in: fix itclConfig.sh install location to match TEA convention
+    * aclocal.m4: match minimum autoconf requirement with TEA
+    * configure: autoconf-2.59
+    * generic/itclUtil.c: fix Mac OS X build failure (dkf) [Bug 2505545]
+2008-12-11 Arnulf P. Wiedemann <wiede@users.sf.net>
+    * itcl-ng first beta release 4.0b1
+2008-12-06 Arnulf P. Wiedemann <wiede@users.sf.net>
+    * built enhanced functions for chasing memory leaks in adding
+    * functionality to the functions available in Tcl core
+    * and fixed a lot of leaks of that class
+2008-11-30 Arnulf P. Wiedemann <wiede@users.sf.net>
+    * built functions for chasing memory leaks and fixed a lot of those
+2008-11-16 Arnulf P. Wiedemann <wiede@users.sf.net>
+    * second alpha release 4.0a1
+2008-11-14 Arnulf P. Wiedemann <wiede@users.sf.net>
+    * 207 tests for snit like functionality running
+2008-10-19 Arnulf P. Wiedemann <wiede@users.sf.net>
+    * the snit like commands are mostly implemented
+    * starting with tests for snit like functionality
+2008-10-18 Arnulf P. Wiedemann <wiede@users.sf.net>
+    * first alpha release 4.0a0
+2007-10-15 Arnulf P. Wiedemann <wiede@users.sf.net>
+    * added the following commands:
+    * ::itcl::extendedclass
+    * ::itcl::adddelegatedoption
+    * ::itcl::adddelegatedmethod
+    * ::itcl::setComponent
+2007-10-12 Arnulf P. Wiedemann <wiede@users.sf.net>
+    * started to add commands in snit like class types:
+    * option
+    * typemethod
+    * delegate option
+    * delegate typemethod
+    * delegate method
+    * component
+    * widgetclass
+2007-09-29 Arnulf P. Wiedemann <wiede@users.sf.net>
+    * started to add snit like commands and classtypes
+    * these are ::itcl::type, ::itcl::widget, ::itcl::widgetadaptor
+2007-09-29 Arnulf P. Wiedemann <wiede@users.sf.net>
+    * new commands ::itcl::struct, ::itcl::nwidget ::itcl::addoption and
+    * ::itcl::addcomponent
+    * some rearraging of functions for options and delegation, so that
+    * these can be used in the above commands without the need to load
+    * the ItclWidget package
+    * The above commands will be used for a prototype implementation
+    * of NexTk (from George Peter Staplin) with Itcl using the megapkg
+    * package of George Peter Staplin as a base
+2007-09-29 Arnulf P. Wiedemann <wiede@users.sf.net>
+    * fixed configuration files
+    * new/modified code for ItclWidget package (missing code for specification)
+    * added
+2007-09-09 Arnulf P. Wiedemann <wiede@users.sf.net>
+    * beautifying and fixes for stack backtrace handling
+    * too many files to list here (nearly all)
+2007-09-08 Arnulf P. Wiedemann <wiede@users.sf.net>
+    * all new modules installed and added
+This is the ChangeLog file for itcl-ng/itcl
+it is here as Itcl and itcl-ng/itcl will be different modules in the future

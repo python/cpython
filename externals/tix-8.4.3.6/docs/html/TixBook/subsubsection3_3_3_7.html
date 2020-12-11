@@ -1,0 +1,31 @@
+<HEAD>
+<TITLE> Caution: Restricted Access<A NAME=137>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html412 HREF=subsection3_3_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html410 HREF=subsection3_3_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html406 HREF=subsubsection3_3_3_6.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html414 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html413 HREF=subsection3_3_4.html> Another Tix Widget: </A>
+<B>Up:</B> <A NAME=tex2html411 HREF=subsection3_3_3.html> Accessing The Components </A>
+<B> Previous:</B> <A NAME=tex2html407 HREF=subsubsection3_3_3_6.html> Configuring Subwidget Options </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00033700000000000000> Caution: Restricted Access<A NAME=137>&nbsp;</A></A></H3>
+<P>
+In the current implementation of Tix, there is no limits on how you
+  can access the options of the subwidgets. However, many options of
+  the subwidgets may be already used by the mega-widget in special
+  ways. For example, the <tt>-textvariable</tt> option of the <tt>entry</tt>
+  subwidget of TixControl may be used to store some private
+  information for the mega widget. Therefore, you should access the
+  options of the subwidgets with great care. In general you should
+  only access those options that affect the appearance of the
+  subwidgets (such as <tt>-font</tt> or <tt>-foreground</tt>) and leave
+  everything else intact. (<em></em>) {In future versions of Tix, there
+  will be explicit restrictions on which subwidget options you can
+  access. Errors will be generated if you try to access restricted
+  subwidget options}<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

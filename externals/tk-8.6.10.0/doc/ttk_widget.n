@@ -1,0 +1,369 @@
+'\"
+'\" Copyright (c) 2004 Joe English
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH ttk::widget n 8.5 Tk "Tk Themed Widget"
+.so man.macros
+.BS
+.SH NAME
+ttk::widget \- Standard options and commands supported by Tk themed widgets
+.BE
+.SH DESCRIPTION
+This manual describes common widget options and commands.
+.SH "STANDARD OPTIONS"
+The following options are supported by all Tk themed widgets:
+.OP \-class undefined undefined
+Specifies the window class.
+The class is used when querying the option database
+for the window's other options, to determine the default
+bindtags for the window, and to select the widget's default
+layout and style.
+This is a read-only option:
+it may only be specified when the window is created,
+and may not be changed with the \fBconfigure\fR widget command.
+.OP \-cursor cursor Cursor
+Specifies the mouse cursor to be used for the widget.
+See \fBTk_GetCursor\fR and \fIcursors(n)\fR in the Tk reference manual
+for the legal values.
+If set to the empty string (the default),
+the cursor is inherited from the parent widget.
+.OP \-takefocus takeFocus TakeFocus
+Determines whether the window accepts the focus during keyboard traversal.
+Either \fB0\fR, \fB1\fR, a command prefix (to which the widget path
+is appended, and which should return \fB0\fR or \fB1\fR),
+or the empty string.
+See \fIoptions(n)\fR in the Tk reference manual for the full description.
+.OP \-style style Style
+May be used to specify a custom widget style.
+.SH "SCROLLABLE WIDGET OPTIONS"
+The following options are supported by widgets that
+are controllable by a scrollbar.
+See \fIscrollbar(n)\fR for more information
+.OP \-xscrollcommand xScrollCommand ScrollCommand
+A command prefix, used to communicate with horizontal scrollbars.
+.RS
+When the view in the widget's window changes, the widget will
+generate a Tcl command by concatenating the scroll command and
+two numbers.
+Each of the numbers is a fraction between 0 and 1 indicating
+a position in the document; 0 indicates the beginning,
+and 1 indicates the end.
+The first fraction indicates the first information in the widget
+that is visible in the window, and the second fraction indicates
+the information just after the last portion that is visible.
+.PP
+Typically the \fB\-xscrollcommand\fR option consists of the path name
+of a \fBscrollbar\fR widget followed by
+.QW set ,
+e.g.
+.QW ".x.scrollbar set" .
+This will cause the scrollbar to be updated whenever the view in the
+window changes.
+.PP
+If this option is set to the empty string (the default),
+then no command will be executed.
+.RE
+.OP \-yscrollcommand yScrollCommand ScrollCommand
+A command prefix, used to communicate with vertical scrollbars.
+See the description of \fB\-xscrollcommand\fR above for details.
+.SH "LABEL OPTIONS"
+The following options are supported by labels, buttons,
+and other button-like widgets:
+.OP \-compound compound Compound
+Specifies how to display the image relative to the text,
+in the case both \fB\-text\fR and \fB\-image\fR are present.
+Valid values are:
+.RS
+.IP text
+Display text only.
+.IP image
+Display image only.
+.IP center
+Display text centered on top of image.
+.IP top
+.IP bottom
+.IP left
+.IP right
+Display image above, below, left of, or right of the text, respectively.
+.IP none
+The default; display the image if present, otherwise the text.
+.RE
+.OP \-image image Image
+Specifies an image to display.
+This is a list of 1 or more elements.
+The first element is the default image name.
+The rest of the list is a sequence of \fIstatespec / value\fR pairs
+as per \fBstyle map\fR, specifying different images to use when
+the widget is in a particular state or combination of states.
+All images in the list should have the same size.
+.OP \-padding padding Padding
+Specifies the internal padding for the widget.
+The padding is a list of up to four length specifications
+\fIleft top right bottom\fR.
+If fewer than four elements are specified,
+\fIbottom\fR defaults to \fItop\fR,
+\fIright\fR defaults to \fIleft\fR, and
+\fItop\fR defaults to \fIleft\fR.
+In other words, a list of three numbers specify the left, vertical, and right padding;
+a list of two numbers specify the horizontal and the vertical padding;
+a single number specifies the same padding all the way around the widget.
+.OP \-text text Text
+Specifies a text string to be displayed inside the widget
+(unless overridden by \fB\-textvariable\fR).
+.OP \-textvariable textVariable Variable
+Specifies the name of a global variable whose value will be used
+in place of the \fB\-text\fR resource.
+.OP \-underline underline Underline
+If set, specifies the integer index (0-based) of a character to underline
+in the text string.
+The underlined character is used for mnemonic activation.
+.OP \-width width Width
+If greater than zero, specifies how much space, in character widths,
+to allocate for the text label.
+If less than zero, specifies a minimum width.
+If zero or unspecified, the natural width of the text label is used.
+.SH "COMPATIBILITY OPTIONS"
+This option is only available for themed widgets that have
+.QW corresponding
+traditional Tk widgets.
+.OP \-state state State
+May be set to \fBnormal\fR or \fBdisabled\fR
+to control the \fBdisabled\fR state bit.
+This is a write-only option:
+setting it changes the widget state,
+but the \fBstate\fR widget command
+does not affect the \fB\-state\fR option.
+.SH COMMANDS
+.TP
+\fIpathName \fBcget \fIoption\fR
+.
+Returns the current value of the configuration option given
+by \fIoption\fR.
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? ?\fIvalue option value ...\fR?
+.
+Query or modify the configuration options of the widget.
+If one or more \fIoption\-value\fR pairs are specified,
+then the command modifies the given widget option(s)
+to have the given value(s);
+in this case the command returns an empty string.
+If \fIoption\fR is specified with no \fIvalue\fR,
+then the command returns a list describing the named option:
+the elements of the list are the
+option name, database name, database class, default value,
+and current value.
+.\" Note: Ttk widgets don't use TK_OPTION_SYNONYM.
+If no \fIoption\fR is specified, returns a list describing all of
+the available options for \fIpathName\fR.
+.TP
+\fIpathName \fBidentify element \fIx y\fR
+.
+Returns the name of the element under the point given
+by \fIx\fR and \fIy\fR, or an empty string if the point does
+not lie within any element.
+\fIx\fR and \fIy\fR are pixel coordinates relative to the widget.
+Some widgets accept other \fBidentify\fR subcommands.
+.TP
+\fIpathName \fBinstate \fIstatespec\fR ?\fIscript\fR?
+.
+Test the widget's state.
+If \fIscript\fR is not specified, returns 1 if
+the widget state matches \fIstatespec\fR and 0 otherwise.
+If \fIscript\fR is specified, equivalent to
+.CS
+if {[\fIpathName\fR instate \fIstateSpec\fR]} \fIscript\fR
+.CE
+.TP
+\fIpathName \fBstate\fR ?\fIstateSpec\fR?
+.
+Modify or inquire widget state.
+If \fIstateSpec\fR is present, sets the widget state:
+for each flag in \fIstateSpec\fR, sets the corresponding flag
+or clears it if prefixed by an exclamation point.
+.RS
+Returns a new state spec indicating which flags were changed:
+.CS
+set changes [\fIpathName \fRstate \fIspec\fR]
+\fIpathName \fRstate $changes
+.CE
+will restore \fIpathName\fR to the original state.
+If \fIstateSpec\fR is not specified,
+returns a list of the currently-enabled state flags.
+.RE
+.TP
+\fIpathName \fBxview \fIargs\fR
+This command is used to query and change the horizontal position of the
+content in the widget's window.  It can take any of the following
+forms:
+.RS
+.TP
+\fIpathName \fBxview\fR
+Returns a list containing two elements.
+Each element is a real fraction between 0 and 1; together they describe
+the horizontal span that is visible in the window.
+For example, if the first element is .2 and the second element is .6,
+20% of the widget's content is off-screen to the left, the middle 40% is visible
+in the window, and 40% of the content is off-screen to the right.
+These are the same values passed to scrollbars via the \fB\-xscrollcommand\fR
+option.
+.TP
+\fIpathName \fBxview\fR \fIindex\fR
+Adjusts the view in the window so that the content given by \fIindex\fR
+is displayed at the left edge of the window.
+.TP
+\fIpathName \fBxview moveto\fI fraction\fR
+Adjusts the view in the window so that the character \fIfraction\fR of the
+way through the content appears at the left edge of the window.
+\fIFraction\fR must be a fraction between 0 and 1.
+.TP
+\fIpathName \fBxview scroll \fInumber what\fR
+This command shifts the view in the window left or right according to
+\fInumber\fR and \fIwhat\fR.
+\fINumber\fR must be an integer.
+\fIWhat\fR must be either \fBunits\fR or \fBpages\fR.
+'\" or an abbreviation of one of these, but we don't document that.
+If \fIwhat\fR is \fBunits\fR, the view adjusts left or right by
+\fInumber\fR average-width characters on the display;  if it is
+\fBpages\fR then the view adjusts by \fInumber\fR screenfuls.
+If \fInumber\fR is negative then characters farther to the left
+become visible;  if it is positive then characters farther to the right
+become visible.
+.RE
+.TP
+\fIpathName \fByview \fIargs\fR
+This command is used to query and change the vertical position of the
+content in the widget's window.  It can take any of the following
+forms:
+.RS
+.TP
+\fIpathName \fByview\fR
+Returns a list containing two elements.
+Each element is a real fraction between 0 and 1; together they describe
+the vertical span that is visible in the window.
+For example, if the first element is .2 and the second element is .6,
+20% of the widget's content is off-screen to the top, the middle 40% is visible
+in the window, and 40% of the content is off-screen to the bottom.
+These are the same values passed to scrollbars via the \fB\-yscrollcommand\fR
+option.
+.TP
+\fIpathName \fByview\fR \fIindex\fR
+Adjusts the view in the window so that the content given by \fIindex\fR
+is displayed at the top edge of the window.
+.TP
+\fIpathName \fByview moveto\fI fraction\fR
+Adjusts the view in the window so that the item \fIfraction\fR of the
+way through the content appears at the top edge of the window.
+\fIFraction\fR must be a fraction between 0 and 1.
+.TP
+\fIpathName \fByview scroll \fInumber what\fR
+This command shifts the view in the window up or down according to
+\fInumber\fR and \fIwhat\fR.
+\fINumber\fR must be an integer.
+\fIWhat\fR must be either \fBunits\fR or \fBpages\fR.
+'\" or an abbreviation of one of these, but we don't document that.
+If \fIwhat\fR is \fBunits\fR, the view adjusts up or down by
+\fInumber\fR average-width characters on the display;  if it is
+\fBpages\fR then the view adjusts by \fInumber\fR screenfuls.
+If \fInumber\fR is negative then items farther to the top
+become visible;  if it is positive then items farther to the bottom
+become visible.
+.RE
+.SH "WIDGET STATES"
+The widget state is a bitmap of independent state flags.
+Widget state flags include:
+.TP
+\fBactive\fR
+.
+The mouse cursor is over the widget
+and pressing a mouse button will cause some action to occur. (aka
+.QW prelight
+(Gnome),
+.QW hot
+(Windows),
+.QW hover ).
+.TP
+\fBdisabled\fR
+.
+Widget is disabled under program control (aka
+.QW unavailable ,
+.QW inactive ).
+.TP
+\fBfocus\fR
+.
+Widget has keyboard focus.
+.TP
+\fBpressed\fR
+.
+Widget is being pressed (aka
+.QW armed
+in Motif).
+.TP
+\fBselected\fR
+.
+.QW On ,
+.QW true ,
+or
+.QW current
+for things like checkbuttons and radiobuttons.
+.TP
+\fBbackground\fR
+.
+Windows and the Mac have a notion of an
+.QW active
+or foreground window.
+The \fBbackground\fR state is set for widgets in a background window,
+and cleared for those in the foreground window.
+.TP
+\fBreadonly\fR
+.
+Widget should not allow user modification.
+.TP
+\fBalternate\fR
+.
+A widget-specific alternate display format.
+For example, used for checkbuttons and radiobuttons in the
+.QW tristate
+or
+.QW mixed
+state, and for buttons with \fB\-default active\fR.
+.TP
+\fBinvalid\fR
+.
+The widget's value is invalid.
+(Potential uses: scale widget value out of bounds,
+entry widget value failed validation.)
+.TP
+\fBhover\fR
+.
+The mouse cursor is within the widget.
+This is similar to the \fBactive\fP state;
+it is used in some themes for widgets that
+provide distinct visual feedback for
+the active widget in addition to the active element
+within the widget.
+.PP
+A \fIstate specification\fR or \fIstateSpec\fR is a list
+of state names, optionally prefixed with an exclamation point (!)
+indicating that the bit is off.
+.SH EXAMPLES
+.CS
+set b [ttk::button .b]
+
+# Disable the widget:
+$b \fBstate\fR disabled
+
+# Invoke the widget only if it is currently pressed and enabled:
+$b \fBinstate\fR {pressed !disabled} { .b invoke }
+
+# Reenable widget:
+$b \fBstate\fR !disabled
+.CE
+.SH "SEE ALSO"
+ttk::intro(n), ttk::style(n)
+.SH KEYWORDS
+state, configure, option
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

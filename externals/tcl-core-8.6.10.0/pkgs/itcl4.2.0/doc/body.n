@@ -1,0 +1,122 @@
+'\"
+'\" Copyright (c) 1993-1998  Lucent Technologies, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH body n 3.0 itcl "[incr\ Tcl]"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+itcl::body \- change the body for a class method/proc
+.SH SYNOPSIS
+\fBitcl::body \fIclassName\fB::\fIfunction args body\fR
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBbody\fR command is used outside of an \fB[incr\ Tcl]\fR
+class definition to define or redefine the body of a class
+method or proc.  This facility allows a class definition
+to have separate "interface" and "implementation" parts.
+The "interface" part is a \fBclass\fR command with declarations
+for methods, procs, instance variables and common variables.
+The "implementation" part is a series of \fBbody\fR and
+\fBconfigbody\fR commands.  If the "implementation" part
+is kept in a separate file, it can be sourced again and
+again as bugs are fixed, to support interactive development.
+When using the "tcl" mode in the \fBemacs\fR editor, the
+"interface" and "implementation" parts can be kept in the
+same file; as bugs are fixed, individual bodies can be
+highlighted and sent to the test application.
+.PP
+The name "\fIclassName\fB::\fIfunction\fR"
+identifies the method/proc being changed.
+.PP
+If an \fIargs\fR list was specified when the \fIfunction\fR was
+defined in the class definition, the \fIargs\fR list for the
+\fBbody\fR command must match in meaning.  Variable names
+can change, but the argument lists must have the same required
+arguments and the same default values for optional arguments.
+The special \fBargs\fR argument acts as a wildcard when included
+in the \fIargs\fR list in the class definition; it will match
+zero or more arguments of any type when the body is redefined.
+.PP
+If the \fIbody\fR string starts with "\fB@\fR", it is treated
+as the symbolic name for a C procedure.  The \fIargs\fR list
+has little meaning for the C procedure, except to document
+the expected usage.  (The C procedure is not guaranteed to
+use arguments in this manner.)  If \fIbody\fR does not start
+with "\fB@\fR", it is treated as a Tcl command script.  When
+the function is invoked, command line arguments are matched
+against the \fIargs\fR list, and local variables are created
+to represent each argument.  This is the usual behavior for
+a Tcl-style proc.
+.PP
+Symbolic names for C procedures are established by registering
+procedures via \fBItcl_RegisterC()\fR.  This is usually done
+in the \fBTcl_AppInit()\fR procedure, which is automatically called
+when the interpreter starts up.  In the following example,
+the procedure \fCMy_FooCmd()\fR is registered with the
+symbolic name "foo".  This procedure can be referenced in
+the \fBbody\fR command as "\fC@foo\fR".
+.CS
+int
+Tcl_AppInit(interp)
+    Tcl_Interp *interp;     /* Interpreter for application. */
+{
+    if (Itcl_Init(interp) == TCL_ERROR) {
+        return TCL_ERROR;
+    }
+
+    if (Itcl_RegisterC(interp, "foo", My_FooCmd) != TCL_OK) {
+        return TCL_ERROR;
+    }
+}
+.CE
+
+.SH EXAMPLE
+In the following example, a "File" class is defined to represent
+open files.  The method bodies are included below the class
+definition via the \fBbody\fR command.  Note that the bodies
+of the constructor/destructor must be included in the class
+definition, but they can be redefined via the \fBbody\fR command
+as well.
+.CS
+itcl::class File {
+    private variable fid ""
+    constructor {name access} {
+        set fid [open $name $access]
+    }
+    destructor {
+        close $fid
+    }
+
+    method get {}
+    method put {line}
+    method eof {}
+}
+
+itcl::body File::get {} {
+    return [gets $fid]
+}
+itcl::body File::put {line} {
+    puts $fid $line
+}
+itcl::body File::eof {} {
+    return [::eof $fid]
+}
+
+#
+# See the File class in action:
+#
+File x /etc/passwd "r"
+while {![x eof]} {
+    puts "=> [x get]"
+}
+itcl::delete object x
+.CE
+
+.SH KEYWORDS
+class, object, procedure

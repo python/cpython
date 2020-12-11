@@ -1,0 +1,318 @@
+# This test collection covers some unwanted interactions between command
+# literal sharing and the use of command resolvers (per-interp) which cause
+# command literals to be re-used with their command references being invalid
+# in the reusing context.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 2011 Gustaf Neumann <gustaf.neumann@wu.ac.at>
+# Copyright (c) 2011 Stefan Sobernig <stefan.sobernig@wu.ac.at>
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2
+if {"::tcltest" in [namespace children]} {
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testinterpresolver [llength [info commands testinterpresolver]]
+
+test resolver-1.1 {cmdNameObj sharing vs. cmd resolver: namespace import} -setup {
+    testinterpresolver up
+    namespace eval ::ns1 {
+	proc z {} { return Z }
+	namespace export z
+    }
+    proc ::y {} { return Y }
+    proc ::x {} {
+	z
+    }
+} -constraints testinterpresolver -body {
+    # 1) Have the proc body compiled: During compilation or, alternatively,
+    # the first evaluation of the compiled body, the InterpCmdResolver (see
+    # tclTest.c) maps the cmd token "z" to "::y"; this mapping is saved in the
+    # resulting CmdName Tcl_Obj with the print string "z". The CmdName Tcl_Obj
+    # is turned into a command literal shared for a given (here: the global)
+    # namespace.
+    set r0 [x];			# --> The result of [x] is "Y"
+    # 2) After having requested cmd resolution above, we can now use the
+    # globally shared CmdName Tcl_Obj "z", now bound to cmd ::y. This is
+    # certainly questionable, but defensible
+    set r1 [z];			# --> The result of [z] is "Y"
+    # 3) We import from the namespace ns1 another z. [namespace import] takes
+    # care "shadowed" cmd references, however, till now cmd literals have not
+    # been touched. This is, however, necessary since the BC compiler (used in
+    # the [namespace eval]) seems to be eager to reuse CmdName Tcl_Objs as cmd
+    # literals for a given NS scope. We expect, that r2 is "Z", the result of
+    # the namespace imported cmd.
+    namespace eval :: {
+	namespace import ::ns1::z
+	set r2 [z]
+    }
+    list $r0 $r1 $::r2
+} -cleanup {
+    testinterpresolver down
+    rename ::x ""
+    rename ::y ""
+    namespace delete ::ns1
+} -result {Y Y Z}
+test resolver-1.2 {cmdNameObj sharing vs. cmd resolver: proc creation} -setup {
+    testinterpresolver up
+    proc ::y {} { return Y }
+    proc ::x {} {
+	z
+    }
+} -constraints testinterpresolver -body {
+    set r0 [x]
+    set r1 [z]
+    proc ::foo {} {
+	proc ::z {} { return Z }
+	return [z]
+    }
+    list $r0 $r1 [::foo]
+} -cleanup {
+    testinterpresolver down
+    rename ::x ""
+    rename ::y ""
+    rename ::foo ""
+    rename ::z ""
+} -result {Y Y Z}
+test resolver-1.3 {cmdNameObj sharing vs. cmd resolver: rename} -setup {
+    testinterpresolver up
+    proc ::Z {} { return Z }
+    proc ::y {} { return Y }
+    proc ::x {} {
+	z
+    }
+} -constraints testinterpresolver -body {
+    set r0 [x]
+    set r1 [z]
+    namespace eval :: {
+	rename ::Z ::z
+	set r2 [z]
+    }
+    list $r0 $r1 $r2
+} -cleanup {
+    testinterpresolver down
+    rename ::x ""
+    rename ::y ""
+    rename ::z ""
+} -result {Y Y Z}
+test resolver-1.4 {cmdNameObj sharing vs. cmd resolver: interp expose} -setup {
+    testinterpresolver up
+    proc ::Z {} { return Z }
+    interp hide {} Z
+    proc ::y {} { return Y }
+    proc ::x {} {
+	z
+    }
+} -constraints testinterpresolver -body {
+    set r0 [x]
+    set r1 [z]
+    interp expose {} Z z
+    namespace eval :: {
+	set r2 [z]
+    }
+    list $r0 $r1 $r2
+} -cleanup {
+    testinterpresolver down
+    rename ::x ""
+    rename ::y ""
+    rename ::z ""
+} -result {Y Y Z}
+test resolver-1.5 {cmdNameObj sharing vs. cmd resolver: other than global NS} -setup {
+    testinterpresolver up
+    namespace eval ::ns1 {
+	proc z {} { return Z }
+	namespace export z
+    }
+    proc ::y {} { return Y }
+    namespace eval ::ns2 {
+	proc x {} {
+	    z
+	}
+    }
+    namespace eval :: {
+	variable r2 ""
+    }
+} -constraints testinterpresolver -body {
+    list [namespace eval ::ns2 {x}] [namespace eval ::ns2 {z}] [namespace eval ::ns2 {
+	namespace import ::ns1::z
+	z
+    }]
+} -cleanup {
+    testinterpresolver down
+    namespace delete ::ns2
+    namespace delete ::ns1
+} -result {Y Y Z}
+test resolver-1.6 {cmdNameObj sharing vs. cmd resolver: interp alias} -setup {
+    testinterpresolver up
+    proc ::Z {} { return Z }
+    proc ::y {} { return Y }
+    proc ::x {} {
+	z
+    }
+} -constraints testinterpresolver -body {
+    set r0 [x]
+    set r1 [z]
+    namespace eval :: {
+	interp alias {} ::z {} ::Z
+	set r2 [z]
+    }
+    list $r0 $r1 $r2
+} -cleanup {
+    testinterpresolver down
+    rename ::x ""
+    rename ::y ""
+    rename ::Z ""
+} -result {Y Y Z}
+
+test resolver-2.1 {compiled var resolver: Bug #3383616} -setup {
+    testinterpresolver up
+    # The compiled var resolver fetches just variables starting with a capital
+    # "T" and stores some test information in the resolver-specific resolver
+    # var info.
+    proc ::x {} {
+	set T1 100
+	return $T1
+    }
+} -constraints testinterpresolver -body {
+    # Call "x" the first time, causing a byte code compilation of the body.
+    # During the compilation the compiled var resolver, the resolve-specific
+    # var info is allocated, during the execution of the body, the variable is
+    # fetched and cached.
+    x
+    # During later calls, the cached variable is reused.
+    x
+    # When the proc is freed, the resolver-specific resolver var info is
+    # freed. This did not happen before fix #3383616.
+    rename ::x ""
+} -cleanup {
+    testinterpresolver down
+} -result {}
+
+
+#
+# The test resolver-3.1* test bad interactions of resolvers on the "global"
+# (per interp) literal pools. A resolver might resolve a cmd literal depending
+# on a context differently, whereas the cmd literal sharing assumed that the
+# namespace containing the literal solely determines the resolved cmd (and is
+# resolver-agnostic).
+#
+# In order to make the test cases for the per-interpreter cmd literal pool
+# reproducable and to minimize interactions between test cases, we use a slave
+# interpreter per test-case.
+#
+#
+# Testing resolver in namespace-based context "ctx1"
+#
+test resolver-3.1a {
+    interp command resolver,
+    resolve literal "z" in proc "x1" in context "ctx1"
+} -setup {
+
+    interp create i0
+    testinterpresolver up i0
+    i0 eval {
+	proc y {} { return yy }
+	namespace eval ::ns {
+	    proc x1 {} { z }
+	}
+    }
+} -constraints testinterpresolver -body {
+
+    set r [i0 eval {namespace eval ::ctx1 {
+	::ns::x1
+    }}]
+
+    return $r
+} -cleanup {
+    testinterpresolver down i0
+    interp delete i0
+} -result {yy}
+
+#
+# Testing resolver in namespace-based context "ctx2"
+#
+test resolver-3.1b {
+    interp command resolver,
+    resolve literal "z" in proc "x2" in context "ctx2"
+} -setup {
+
+    interp create i0
+    testinterpresolver up i0
+    i0 eval {
+	proc Y {} { return YY }
+	namespace eval ::ns {
+	    proc x2 {} { z }
+	}
+    }
+} -constraints testinterpresolver -body {
+
+    set r [i0 eval {namespace eval ::ctx2 {
+	::ns::x2
+    }}]
+
+    return $r
+} -cleanup {
+    testinterpresolver down i0
+    interp delete i0
+} -result {YY}
+
+#
+# Testing resolver in namespace-based context "ctx1" and "ctx2" in the same
+# interpreter.
+#
+
+test resolver-3.1c {
+    interp command resolver,
+    resolve literal "z" in proc "x1" in context "ctx1",
+    resolve literal "z" in proc "x2" in context "ctx2"
+
+    Test, whether the shared cmd literal created by the first byte-code
+    compilation interacts with the second one.
+} -setup {
+
+    interp create i0
+    testinterpresolver up i0
+
+    i0 eval {
+	proc y {} { return yy }
+	proc Y {} { return YY }
+	namespace eval ::ns {
+	    proc x1 {} { z }
+	    proc x2 {} { z }
+	}
+    }
+
+} -constraints testinterpresolver -body {
+
+    set r1 [i0 eval {namespace eval ::ctx1 {
+	::ns::x1
+    }}]
+
+    set r2 [i0 eval {namespace eval ::ctx2 {
+	::ns::x2
+    }}]
+
+    set r3 [i0 eval {namespace eval ::ctx1 {
+	::ns::x1
+    }}]
+
+    return [list $r1 $r2 $r3]
+} -cleanup {
+    testinterpresolver down i0
+    interp delete i0
+} -result {yy YY yy}
+
+
+cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:

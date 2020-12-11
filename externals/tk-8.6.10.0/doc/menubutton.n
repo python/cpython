@@ -1,0 +1,202 @@
+'\"
+'\" Copyright (c) 1990-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH menubutton n 4.0 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+menubutton \- Create and manipulate 'menubutton' pop-up menu indicator widgets
+.SH SYNOPSIS
+\fBmenubutton\fR \fIpathName \fR?\fIoptions\fR?
+.SO
+\-activebackground	\-disabledforeground	\-padx
+\-activeforeground	\-font	\-pady
+\-anchor	\-foreground	\-relief
+\-background	\-highlightbackground	\-takefocus
+\-bitmap	\-highlightcolor	\-text
+\-borderwidth	\-highlightthickness	\-textvariable
+\-cursor	\-image	\-underline
+\-compound	\-justify	\-wraplength
+.SE
+.SH "WIDGET-SPECIFIC OPTIONS"
+.OP \-direction direction Height
+Specifies where the menu is going to be popup up. \fBabove\fR tries to
+pop the menu above the menubutton. \fBbelow\fR tries to pop the menu
+below the menubutton. \fBleft\fR tries to pop the menu to the left of
+the menubutton. \fBright\fR tries to pop the menu to the right of the
+menu button. \fBflush\fR pops the menu directly over the menubutton.
+In the case of \fBabove\fR or \fBbelow\fR, the direction will be
+reversed if the menu would show offscreen.
+.OP \-height height Height
+Specifies a desired height for the menubutton.
+If an image or bitmap is being displayed in the menubutton then the value is in
+screen units (i.e. any of the forms acceptable to \fBTk_GetPixels\fR);
+for text it is in lines of text.
+If this option is not specified, the menubutton's desired height is computed
+from the size of the image or bitmap or text being displayed in it.
+.OP \-indicatoron indicatorOn IndicatorOn
+The value must be a proper boolean value.  If it is true then
+a small indicator rectangle will be displayed on the right side
+of the menubutton and the default menu bindings will treat this
+as an option menubutton.  If false then no indicator will be
+displayed.
+.OP \-menu menu MenuName
+Specifies the path name of the menu associated with this menubutton.
+The menu must be a child of the menubutton.
+.OP \-state state State
+Specifies one of three states for the menubutton:  \fBnormal\fR, \fBactive\fR,
+or \fBdisabled\fR.  In normal state the menubutton is displayed using the
+\fBforeground\fR and \fBbackground\fR options.  The active state is
+typically used when the pointer is over the menubutton.  In active state
+the menubutton is displayed using the \fB\-activeforeground\fR and
+\fB\-activebackground\fR options.  Disabled state means that the menubutton
+should be insensitive:  the default bindings will refuse to activate
+the widget and will ignore mouse button presses.
+In this state the \fB\-disabledforeground\fR and
+\fB\-background\fR options determine how the button is displayed.
+.OP \-width width Width
+Specifies a desired width for the menubutton.
+If an image or bitmap is being displayed in the menubutton then the value is in
+screen units (i.e. any of the forms acceptable to \fBTk_GetPixels\fR);
+for text it is in characters.
+If this option is not specified, the menubutton's desired width is computed
+from the size of the image or bitmap or text being displayed in it.
+.BE
+.SH INTRODUCTION
+.PP
+The \fBmenubutton\fR command creates a new window (given by the
+\fIpathName\fR argument) and makes it into a menubutton widget.
+Additional
+options, described above, may be specified on the command line
+or in the option database
+to configure aspects of the menubutton such as its colors, font,
+text, and initial relief.  The \fBmenubutton\fR command returns its
+\fIpathName\fR argument.  At the time this command is invoked,
+there must not exist a window named \fIpathName\fR, but
+\fIpathName\fR's parent must exist.
+.PP
+A menubutton is a widget that displays a textual string, bitmap, or image
+and is associated with a menu widget.
+If text is displayed, it must all be in a single font, but it
+can occupy multiple lines on the screen (if it contains newlines
+or if wrapping occurs because of the \fB\-wraplength\fR option) and
+one of the characters may optionally be underlined using the
+\fB\-underline\fR option.  In normal usage, pressing
+mouse button 1 over the menubutton causes the associated menu to
+be posted just underneath the menubutton.  If the mouse is moved over
+the menu before releasing the mouse button, the button release
+causes the underlying menu entry to be invoked.  When the button
+is released, the menu is unposted.
+.PP
+Menubuttons are used to construct a \fBtk_optionMenu\fR, which is the
+preferred mechanism for allowing a user to select one item from a list
+on Mac OS X.
+.PP
+Menubuttons were also typically organized into groups called menu bars
+that allow scanning:
+if the mouse button is pressed over one menubutton (causing it
+to post its menu) and the mouse is moved over another menubutton
+in the same menu bar without releasing the mouse button, then the
+menu of the first menubutton is unposted and the menu of the
+new menubutton is posted instead.
+\fIThis use is deprecated\fR in favor of setting a \fBmenu\fR directly as a
+menubar; see the \fBtoplevel\fR's \fB\-menu\fR option for how to do that.
+.PP
+There are several interactions between menubuttons and menus;  see
+the \fBmenu\fR manual entry for information on various menu configurations,
+such as pulldown menus and option menus.
+.SH "WIDGET COMMAND"
+.PP
+The \fBmenubutton\fR command creates a new Tcl command whose
+name is \fIpathName\fR.  This
+command may be used to invoke various
+operations on the widget.  It has the following general form:
+.CS
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+\fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command.  The following
+commands are possible for menubutton widgets:
+.TP
+\fIpathName \fBcget \fIoption\fR
+.
+Returns the current value of the configuration option given
+by \fIoption\fR.
+\fIOption\fR may have any of the values accepted by the \fBmenubutton\fR
+command.
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? ?\fIvalue option value ...\fR?
+.
+Query or modify the configuration options of the widget.
+If no \fIoption\fR is specified, returns a list describing all of
+the available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list).  If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s);  in
+this case the command returns an empty string.
+\fIOption\fR may have any of the values accepted by the \fBmenubutton\fR
+command.
+.SH "DEFAULT BINDINGS"
+.PP
+Tk automatically creates class bindings for menubuttons that give them
+the following default behavior:
+.IP [1]
+A menubutton activates whenever the mouse passes over it and deactivates
+whenever the mouse leaves it.
+.IP [2]
+Pressing mouse button 1 over a menubutton posts the menubutton:
+its relief changes to raised and its associated menu is posted
+under the menubutton.  If the mouse is dragged down into the menu
+with the button still down, and if the mouse button is then
+released over an entry in the menu, the menubutton is unposted
+and the menu entry is invoked.
+.IP [3]
+If button 1 is pressed over a menubutton and then released over that
+menubutton, the menubutton stays posted: you can still move the mouse
+over the menu and click button 1 on an entry to invoke it.
+Once a menu entry has been invoked, the menubutton unposts itself.
+.IP [4]
+If button 1 is pressed over a menubutton and then dragged over some
+other menubutton, the original menubutton unposts itself and the
+new menubutton posts.
+.IP [5]
+If button 1 is pressed over a menubutton and released outside
+any menubutton or menu, the menubutton unposts without invoking
+any menu entry.
+.IP [6]
+When a menubutton is posted, its associated menu claims the input
+focus to allow keyboard traversal of the menu and its submenus.
+See the \fBmenu\fR manual entry for details on these bindings.
+.IP [7]
+If the \fB\-underline\fR option has been specified for a menubutton
+then keyboard traversal may be used to post the menubutton:
+Alt+\fIx\fR, where \fIx\fR is the underlined character (or its
+lower-case or upper-case equivalent), may be typed in any window
+under the menubutton's toplevel to post the menubutton.
+.IP [8]
+The F10 key may be typed in any window to post the first menubutton
+under its toplevel window that is not disabled.
+.IP [9]
+If a menubutton has the input focus, the space and return keys
+post the menubutton.
+.PP
+If the menubutton's state is \fBdisabled\fR then none of the above
+actions occur:  the menubutton is completely non-responsive.
+.PP
+The behavior of menubuttons can be changed by defining new bindings for
+individual widgets or by redefining the class bindings.
+.SH "SEE ALSO"
+ttk::menubutton(n), menu(n)
+.SH KEYWORDS
+menubutton, widget
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

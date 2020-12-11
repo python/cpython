@@ -1,0 +1,119 @@
+# Commands covered:  while
+#
+# This file contains the original set of tests for Tcl's while command.
+# Since the while command is now compiled, a new set of tests covering
+# the new implementation is in the file "while.test". Sourcing this file
+# into Tcl runs the tests and generates output for errors.
+# No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+test while-old-1.1 {basic while loops} {
+    set count 0
+    while {$count < 10} {set count [expr $count+1]}
+    set count
+} 10
+test while-old-1.2 {basic while loops} {
+    set value xxx
+    while {2 > 3} {set value yyy}
+    set value
+} xxx
+test while-old-1.3 {basic while loops} {
+    set value 1
+    while {"true"} {
+	incr value;
+	if {$value > 5} {
+	    break;
+	}
+    }
+    set value
+} 6
+test while-old-1.4 {basic while loops, multiline test expr} {
+    set value 1
+    while {($tcl_platform(platform) != "foobar1") && \
+	    ($tcl_platform(platform) != "foobar2")} {
+        incr value
+        break
+    }
+    set value
+} {2}
+test while-old-1.5 {basic while loops, test expr in quotes} {
+    set value 1
+    while "0 < 3" {set value 2; break}
+    set value
+} {2}
+
+test while-old-2.1 {continue in while loop} {
+    set list {1 2 3 4 5}
+    set index 0
+    set result {}
+    while {$index < 5} {
+	if {$index == 2} {set index [expr $index+1]; continue}
+	set result [concat $result [lindex $list $index]]
+	set index [expr $index+1]
+    }
+    set result
+} {1 2 4 5}
+
+test while-old-3.1 {break in while loop} {
+    set list {1 2 3 4 5}
+    set index 0
+    set result {}
+    while {$index < 5} {
+	if {$index == 3} break
+	set result [concat $result [lindex $list $index]]
+	set index [expr $index+1]
+    }
+    set result
+} {1 2 3}
+
+test while-old-4.1 {errors in while loops} {
+    set err [catch {while} msg]
+    list $err $msg
+} {1 {wrong # args: should be "while test command"}}
+test while-old-4.2 {errors in while loops} {
+    set err [catch {while 1} msg]
+    list $err $msg
+} {1 {wrong # args: should be "while test command"}}
+test while-old-4.3 {errors in while loops} {
+    set err [catch {while 1 2 3} msg]
+    list $err $msg
+} {1 {wrong # args: should be "while test command"}}
+test while-old-4.4 {errors in while loops} {
+    set err [catch {while {"a"+"b"} {error "loop aborted"}} msg]
+    list $err $msg
+} {1 {can't use non-numeric string as operand of "+"}}
+test while-old-4.5 {errors in while loops} {
+    catch {unset x}
+    set x 1
+    set err [catch {while {$x} {set x foo}} msg]
+    list $err $msg
+} {1 {expected boolean value but got "foo"}}
+test while-old-4.6 {errors in while loops} {
+    set err [catch {while {1} {error "loop aborted"}} msg]
+    list $err $msg $::errorInfo
+} {1 {loop aborted} {loop aborted
+    while executing
+"error "loop aborted""}}
+
+test while-old-5.1 {while return result} {
+    while {0} {set a 400}
+} {}
+test while-old-5.2 {while return result} {
+    set x 1
+    while {$x} {set x 0}
+} {}
+
+# cleanup
+::tcltest::cleanupTests
+return

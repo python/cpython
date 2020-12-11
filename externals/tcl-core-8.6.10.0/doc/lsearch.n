@@ -1,0 +1,220 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2001 Kevin B. Kenny <kennykb@acm.org>.  All rights reserved.
+'\" Copyright (c) 2003-2004 Donal K. Fellows.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH lsearch n 8.6 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+lsearch \- See if a list contains a particular element
+.SH SYNOPSIS
+\fBlsearch \fR?\fIoptions\fR? \fIlist pattern\fR
+.BE
+.SH DESCRIPTION
+.PP
+This command searches the elements of \fIlist\fR to see if one
+of them matches \fIpattern\fR.  If so, the command returns the index
+of the first matching element
+(unless the options \fB\-all\fR or \fB\-inline\fR are specified.)
+If not, the command returns \fB\-1\fR.  The \fIoption\fR arguments
+indicates how the elements of the list are to be matched against
+\fIpattern\fR and must have one of the values below:
+.SS "MATCHING STYLE OPTIONS"
+.PP
+If all matching style options are omitted, the default matching style
+is \fB\-glob\fR.  If more than one matching style is specified, the
+last matching style given takes precedence.
+.TP
+\fB\-exact\fR
+.
+\fIPattern\fR is a literal string that is compared for exact equality
+against each list element.
+.TP
+\fB\-glob\fR
+.
+\fIPattern\fR is a glob-style pattern which is matched against each list
+element using the same rules as the \fBstring match\fR command.
+.TP
+\fB\-regexp\fR
+.
+\fIPattern\fR is treated as a regular expression and matched against
+each list element using the rules described in the \fBre_syntax\fR
+reference page.
+.TP
+\fB\-sorted\fR
+.
+The list elements are in sorted order.  If this option is specified,
+\fBlsearch\fR will use a more efficient searching algorithm to search
+\fIlist\fR.  If no other options are specified, \fIlist\fR is assumed
+to be sorted in increasing order, and to contain ASCII strings.  This
+option is mutually exclusive with \fB\-glob\fR and \fB\-regexp\fR, and
+is treated exactly like \fB\-exact\fR when either \fB\-all\fR or
+\fB\-not\fR are specified.
+.SS "GENERAL MODIFIER OPTIONS"
+.PP
+These options may be given with all matching styles.
+.TP
+\fB\-all\fR
+.
+Changes the result to be the list of all matching indices (or all matching
+values if \fB\-inline\fR is specified as well.) If indices are returned, the
+indices will be in numeric order. If values are returned, the order of the
+values will be the order of those values within the input \fIlist\fR.
+.TP
+\fB\-inline\fR
+.
+The matching value is returned instead of its index (or an empty
+string if no value matches.)  If \fB\-all\fR is also specified, then
+the result of the command is the list of all values that matched.
+.TP
+\fB\-not\fR
+.
+This negates the sense of the match, returning the index of the first
+non-matching value in the list.
+.TP
+\fB\-start\fR\0\fIindex\fR
+.
+The list is searched starting at position \fIindex\fR.
+The interpretation of the \fIindex\fR value is the same as
+for the command \fBstring index\fR, supporting simple index
+arithmetic and indices relative to the end of the list.
+.SS "CONTENTS DESCRIPTION OPTIONS"
+.PP
+These options describe how to interpret the items in the list being
+searched.  They are only meaningful when used with the \fB\-exact\fR
+and \fB\-sorted\fR options.  If more than one is specified, the last
+one takes precedence.  The default is \fB\-ascii\fR.
+.TP
+\fB\-ascii\fR
+.
+The list elements are to be examined as Unicode strings (the name is
+for backward-compatibility reasons.)
+.TP
+\fB\-dictionary\fR
+.
+The list elements are to be compared using dictionary-style
+comparisons (see \fBlsort\fR for a fuller description). Note that this
+only makes a meaningful difference from the \fB\-ascii\fR option when
+the \fB\-sorted\fR option is given, because values are only
+dictionary-equal when exactly equal.
+.TP
+\fB\-integer\fR
+.
+The list elements are to be compared as integers.
+.TP
+\fB\-nocase\fR
+.
+Causes comparisons to be handled in a case-insensitive manner.  Has no
+effect if combined with the \fB\-dictionary\fR, \fB\-integer\fR, or
+\fB\-real\fR options.
+.TP
+\fB\-real\fR
+.
+The list elements are to be compared as floating-point values.
+.SS "SORTED LIST OPTIONS"
+.PP
+These options (only meaningful with the \fB\-sorted\fR option) specify
+how the list is sorted.  If more than one is given, the last one takes
+precedence.  The default option is \fB\-increasing\fR.
+.TP
+\fB\-decreasing\fR
+.
+The list elements are sorted in decreasing order.  This option is only
+meaningful when used with \fB\-sorted\fR.
+.TP
+\fB\-increasing\fR
+.
+The list elements are sorted in increasing order.  This option is only
+meaningful when used with \fB\-sorted\fR.
+.TP
+\fB\-bisect\fR
+.VS 8.6
+Inexact search when the list elements are in sorted order. For an increasing
+list the last index where the element is less than or equal to the pattern
+is returned. For a decreasing list the last index where the element is greater
+than or equal to the pattern is returned. If the pattern is before the first
+element or the list is empty, -1 is returned.
+This option implies \fB\-sorted\fR and cannot be used with either \fB\-all\fR
+or \fB\-not\fR.
+.VE 8.6
+.SS "NESTED LIST OPTIONS"
+.PP
+These options are used to search lists of lists.  They may be used
+with any other options.
+.TP
+\fB\-index\fR\0\fIindexList\fR
+.
+This option is designed for use when searching within nested lists.
+The \fIindexList\fR argument gives a path of indices (much as might be
+used with the \fBlindex\fR or \fBlset\fR commands) within each element
+to allow the location of the term being matched against.
+.TP
+\fB\-subindices\fR
+.
+If this option is given, the index result from this command (or every
+index result when \fB\-all\fR is also specified) will be a complete
+path (suitable for use with \fBlindex\fR or \fBlset\fR) within the
+overall list to the term found.  This option has no effect unless the
+\fB\-index\fR is also specified, and is just a convenience short-cut.
+.SH EXAMPLES
+.PP
+Basic searching:
+.PP
+.CS
+\fBlsearch\fR {a b c d e} c
+      \fI\(-> 2\fR
+\fBlsearch\fR -all {a b c a b c} c
+      \fI\(-> 2 5\fR
+.CE
+.PP
+Using \fBlsearch\fR to filter lists:
+.PP
+.CS
+\fBlsearch\fR -inline {a20 b35 c47} b*
+      \fI\(-> b35\fR
+\fBlsearch\fR -inline -not {a20 b35 c47} b*
+      \fI\(-> a20\fR
+\fBlsearch\fR -all -inline -not {a20 b35 c47} b*
+      \fI\(-> a20 c47\fR
+\fBlsearch\fR -all -not {a20 b35 c47} b*
+      \fI\(-> 0 2\fR
+.CE
+.PP
+This can even do a
+.QW set-like
+removal operation:
+.PP
+.CS
+\fBlsearch\fR -all -inline -not -exact {a b c a d e a f g a} a
+      \fI\(-> b c d e f g\fR
+.CE
+.PP
+Searching may start part-way through the list:
+.PP
+.CS
+\fBlsearch\fR -start 3 {a b c a b c} c
+      \fI\(-> 5\fR
+.CE
+.PP
+It is also possible to search inside elements:
+.PP
+.CS
+\fBlsearch\fR -index 1 -all -inline {{a abc} {b bcd} {c cde}} *bc*
+      \fI\(-> {a abc} {b bcd}\fR
+.CE
+.SH "SEE ALSO"
+foreach(n), list(n), lappend(n), lindex(n), linsert(n), llength(n),
+lset(n), lsort(n), lrange(n), lreplace(n),
+string(n)
+.SH KEYWORDS
+binary search, linear search,
+list, match, pattern, regular expression, search, string
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

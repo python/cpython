@@ -1,0 +1,79 @@
+'\"
+'\" Copyright (c) 1994-1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_WrongNumArgs 3 8.0 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_WrongNumArgs \- generate standard error message for wrong number of arguments
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+\fBTcl_WrongNumArgs\fR(\fIinterp, objc, objv, message\fR)
+.SH ARGUMENTS
+.AS "Tcl_Obj *const" *message
+.AP Tcl_Interp interp in
+Interpreter in which error will be reported: error message gets stored
+in its result value.
+.AP int objc in
+Number of leading arguments from \fIobjv\fR to include in error
+message.
+.AP "Tcl_Obj *const" objv[] in
+Arguments to command that had the wrong number of arguments.
+.AP "const char" *message in
+Additional error information to print after leading arguments
+from \fIobjv\fR.  This typically gives the acceptable syntax
+of the command.  This argument may be NULL.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTcl_WrongNumArgs\fR is a utility procedure that is invoked by
+command procedures when they discover that they have received the
+wrong number of arguments.  \fBTcl_WrongNumArgs\fR generates a
+standard error message and stores it in the result value of
+\fIinterp\fR.  The message includes the \fIobjc\fR initial
+elements of \fIobjv\fR plus \fImessage\fR.  For example, if
+\fIobjv\fR consists of the values \fBfoo\fR and \fBbar\fR,
+\fIobjc\fR is 1, and \fImessage\fR is
+.QW "\fBfileName count\fR"
+then \fIinterp\fR's result value will be set to the following
+string:
+.PP
+.CS
+wrong # args: should be "foo fileName count"
+.CE
+.PP
+If \fIobjc\fR is 2, the result will be set to the following string:
+.PP
+.CS
+wrong # args: should be "foo bar fileName count"
+.CE
+.PP
+\fIObjc\fR is usually 1, but may be 2 or more for commands like
+\fBstring\fR and the Tk widget commands, which use the first argument
+as a subcommand.
+.PP
+Some of the values in the \fIobjv\fR array may be abbreviations for
+a subcommand.  The command
+\fBTcl_GetIndexFromObj\fR will convert the abbreviated string value
+into an \fIindexObject\fR.  If an error occurs in the parsing of the
+subcommand we would like to use the full subcommand name rather than
+the abbreviation.  If the \fBTcl_WrongNumArgs\fR command finds any
+\fIindexObjects\fR in the \fIobjv\fR array it will use the full subcommand
+name in the error message instead of the abbreviated name that was
+originally passed in.  Using the above example, let us assume that
+\fIbar\fR is actually an abbreviation for \fIbarfly\fR and the value
+is now an \fIindexObject\fR because it was passed to
+\fBTcl_GetIndexFromObj\fR.  In this case the error message would be:
+.PP
+.CS
+wrong # args: should be "foo barfly fileName count"
+.CE
+.SH "SEE ALSO"
+Tcl_GetIndexFromObj(3)
+.SH KEYWORDS
+command, error message, wrong number of arguments

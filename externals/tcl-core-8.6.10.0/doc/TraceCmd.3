@@ -1,0 +1,150 @@
+'\"
+'\" Copyright (c) 2002 Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_TraceCommand 3 7.4 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_CommandTraceInfo, Tcl_TraceCommand, Tcl_UntraceCommand \- monitor renames and deletes of a command
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+ClientData
+\fBTcl_CommandTraceInfo(\fIinterp, cmdName, flags, proc, prevClientData\fB)\fR
+.sp
+int
+\fBTcl_TraceCommand(\fIinterp, cmdName, flags, proc, clientData\fB)\fR
+.sp
+void
+\fBTcl_UntraceCommand(\fIinterp, cmdName, flags, proc, clientData\fB)\fR
+.SH ARGUMENTS
+.AS Tcl_CommandTraceProc prevClientData
+.AP Tcl_Interp *interp in
+Interpreter containing the command.
+.AP "const char" *cmdName in
+Name of command.
+.AP int flags in
+OR'ed collection of the values \fBTCL_TRACE_RENAME\fR and
+\fBTCL_TRACE_DELETE\fR.
+.AP Tcl_CommandTraceProc *proc in
+Procedure to call when specified operations occur to \fIcmdName\fR.
+.AP ClientData clientData in
+Arbitrary argument to pass to \fIproc\fR.
+.AP ClientData prevClientData in
+If non-NULL, gives last value returned by \fBTcl_CommandTraceInfo\fR,
+so this call will return information about next trace.  If NULL, this
+call will return information about first trace.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTcl_TraceCommand\fR allows a C procedure to monitor operations
+performed on a Tcl command, so that the C procedure is invoked
+whenever the command is renamed or deleted.  If the trace is created
+successfully then \fBTcl_TraceCommand\fR returns \fBTCL_OK\fR. If an error
+occurred (e.g. \fIcmdName\fR specifies a non-existent command) then
+\fBTCL_ERROR\fR is returned and an error message is left in the
+interpreter's result.
+.PP
+The \fIflags\fR argument to \fBTcl_TraceCommand\fR indicates when the
+trace procedure is to be invoked.  It consists of an OR'ed combination
+of any of the following values:
+.TP
+\fBTCL_TRACE_RENAME\fR
+Invoke \fIproc\fR whenever the command is renamed.
+.TP
+\fBTCL_TRACE_DELETE\fR
+Invoke \fIproc\fR when the command is deleted.
+.PP
+Whenever one of the specified operations occurs to the command,
+\fIproc\fR will be invoked.  It should have arguments and result that
+match the type \fBTcl_CommandTraceProc\fR:
+.PP
+.CS
+typedef void \fBTcl_CommandTraceProc\fR(
+        ClientData \fIclientData\fR,
+        Tcl_Interp *\fIinterp\fR,
+        const char *\fIoldName\fR,
+        const char *\fInewName\fR,
+        int \fIflags\fR);
+.CE
+.PP
+The \fIclientData\fR and \fIinterp\fR parameters will have the same
+values as those passed to \fBTcl_TraceCommand\fR when the trace was
+created.  \fIClientData\fR typically points to an application-specific
+data structure that describes what to do when \fIproc\fR is invoked.
+\fIOldName\fR gives the name of the command being renamed, and
+\fInewName\fR gives the name that the command is being renamed to (or
+NULL when the command is being deleted.)
+\fIFlags\fR is an OR'ed combination of bits potentially providing
+several pieces of information.  One of the bits \fBTCL_TRACE_RENAME\fR and
+\fBTCL_TRACE_DELETE\fR will be set in \fIflags\fR to indicate which
+operation is being performed on the command.  The bit
+\fBTCL_TRACE_DESTROYED\fR will be set in \fIflags\fR if the trace is about
+to be destroyed; this information may be useful to \fIproc\fR so that
+it can clean up its own internal data structures (see the section
+\fBTCL_TRACE_DESTROYED\fR below for more details).  Because the
+deletion of commands can take place as part of the deletion of the interp
+that contains them, \fIproc\fR must be careful about checking what
+the passed in \fIinterp\fR value can be called upon to do.
+The routine \fBTcl_InterpDeleted\fR is an important tool for this.
+When \fBTcl_InterpDeleted\fR returns 1, \fIproc\fR will not be able
+to invoke any scripts in \fIinterp\fR.  The function of \fIproc\fR
+in that circumstance is limited to the cleanup of its own data structures.
+.PP
+\fBTcl_UntraceCommand\fR may be used to remove a trace.  If the
+command specified by \fIinterp\fR, \fIcmdName\fR, and \fIflags\fR has
+a trace set with \fIflags\fR, \fIproc\fR, and \fIclientData\fR, then
+the corresponding trace is removed.  If no such trace exists, then the
+call to \fBTcl_UntraceCommand\fR has no effect.  The same bits are
+valid for \fIflags\fR as for calls to \fBTcl_TraceCommand\fR.
+.PP
+\fBTcl_CommandTraceInfo\fR may be used to retrieve information about
+traces set on a given command.
+The return value from \fBTcl_CommandTraceInfo\fR is the \fIclientData\fR
+associated with a particular trace.
+The trace must be on the command specified by the \fIinterp\fR,
+\fIcmdName\fR, and \fIflags\fR arguments (note that currently the
+flags are ignored; \fIflags\fR should be set to 0 for future
+compatibility) and its trace procedure must the same as the \fIproc\fR
+argument.
+If the \fIprevClientData\fR argument is NULL then the return
+value corresponds to the first (most recently created) matching
+trace, or NULL if there are no matching traces.
+If the \fIprevClientData\fR argument is not NULL, then it should
+be the return value from a previous call to \fBTcl_CommandTraceInfo\fR.
+In this case, the new return value will correspond to the next
+matching trace after the one whose \fIclientData\fR matches
+\fIprevClientData\fR, or NULL if no trace matches \fIprevClientData\fR
+or if there are no more matching traces after it.
+This mechanism makes it possible to step through all of the
+traces for a given command that have the same \fIproc\fR.
+.SH "CALLING COMMANDS DURING TRACES"
+.PP
+During rename traces, the command being renamed is visible with both
+names simultaneously, and the command still exists during delete
+traces, unless the interp that contains it is being deleted.
+However, there is no
+mechanism for signaling that an error occurred in a trace procedure,
+so great care should be taken that errors do not get silently lost.
+.SH "MULTIPLE TRACES"
+.PP
+It is possible for multiple traces to exist on the same command.
+When this happens, all of the trace procedures will be invoked on each
+access, in order from most-recently-created to least-recently-created.
+Attempts to delete the command during a delete trace will fail
+silently, since the command is already scheduled for deletion anyway.
+If the command being renamed is renamed by one of its rename traces,
+that renaming takes precedence over the one that triggered the trace
+and the collection of traces will not be reexecuted; if several traces
+rename the command, the last renaming takes precedence.
+.SH "TCL_TRACE_DESTROYED FLAG"
+.PP
+In a delete callback to \fIproc\fR, the \fBTCL_TRACE_DESTROYED\fR bit
+is set in \fIflags\fR.
+.\" Perhaps need some more comments here? - DKF
+.SH KEYWORDS
+clientData, trace, command

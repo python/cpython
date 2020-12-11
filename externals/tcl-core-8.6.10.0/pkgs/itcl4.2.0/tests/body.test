@@ -1,0 +1,259 @@
+#
+# Tests for "body" and "configbody" commands
+# ----------------------------------------------------------------------
+#   AUTHOR:  Michael J. McLennan
+#            Bell Labs Innovations for Lucent Technologies
+#            mmclennan@lucent.com
+#            http://www.tcltk.com/itcl
+# ----------------------------------------------------------------------
+#            Copyright (c) 1993-1998  Lucent Technologies, Inc.
+# ======================================================================
+# See the file "license.terms" for information on usage and
+# redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2.1
+namespace import ::tcltest::test
+::tcltest::loadTestedCommands
+package require itcl
+
+# ----------------------------------------------------------------------
+#  Test "body" command
+# ----------------------------------------------------------------------
+test body-1.1 {define a class with missing bodies and arg lists} {
+    itcl::class test_body {
+        constructor {args} {}
+        destructor {}
+
+        method any
+        method zero {}
+        method one {x}
+        method two {x y}
+        method defvals {x {y 0} {z 1}}
+        method varargs {x args}
+
+        method override {mesg} {
+            return "override: $mesg"
+        }
+    }
+} ""
+
+test body-1.2 {cannot use methods without a body} {
+    test_body #auto
+    list [catch "test_body0 any" msg] $msg
+} {1 {member function "::test_body::any" is not defined and cannot be autoloaded}}
+
+test body-1.3 {check syntax of "body" command} {
+    list [catch "itcl::body test_body::any" msg] $msg
+} {1 {wrong # args: should be "itcl::body class::func arglist body"}}
+
+test body-1.4 {make sure members are found correctly} {
+    list [catch "itcl::body test_body::xyzzyxyzzyxyzzy {} {}" msg] $msg
+} {1 {function "xyzzyxyzzyxyzzy" is not defined in class "::test_body"}}
+
+test body-1.5a {members without an argument list can have any args} {
+    itcl::body test_body::any {} {return "any"}
+    list [catch "test_body0 any" msg] $msg
+} {0 any}
+
+test body-1.5b {members without an argument list can have any args} {
+    itcl::body test_body::any {x} {return "any: $x"}
+    list [catch "test_body0 any 1" msg] $msg
+} {0 {any: 1}}
+
+test body-1.5c {members without an argument list can have any args} {
+    itcl::body test_body::any {x {y 2}} {return "any: $x $y"}
+    list [catch "test_body0 any 1" msg] $msg
+} {0 {any: 1 2}}
+
+test body-1.6a {an empty argument list must stay empty} {
+    list [catch {itcl::body test_body::zero {x y} {return "zero: $x $y"}} msg] $msg
+} {1 {argument list changed for function "::test_body::zero": should be ""}}
+
+test body-1.6b {an empty argument list must stay empty} {
+    list [catch {itcl::body test_body::zero {} {return "zero"}} msg] $msg
+} {0 {}}
+
+test body-1.7a {preserve argument list:  fixed arguments} {
+    list [catch {itcl::body test_body::one {x y} {return "one: $x $y"}} msg] $msg
+} {1 {argument list changed for function "::test_body::one": should be "x"}}
+
+test body-1.7b {preserve argument list:  fixed arguments} {
+    list [catch {itcl::body test_body::one {a} {return "one: $a"}} msg] $msg
+} {0 {}}
+
+test body-1.7c {preserve argument list:  fixed arguments} {
+    list [catch "test_body0 one 1.0" msg] $msg
+} {0 {one: 1.0}}
+
+test body-1.8a {preserve argument list:  fixed arguments} {
+    list [catch {itcl::body test_body::two {x} {return "two: $x"}} msg] $msg
+} {1 {argument list changed for function "::test_body::two": should be "x y"}}
+
+test body-1.8b {preserve argument list:  fixed arguments} {
+    list [catch {itcl::body test_body::two {a b} {return "two: $a $b"}} msg] $msg
+} {0 {}}
+
+test body-1.8c {preserve argument list:  fixed arguments} {
+    list [catch "test_body0 two 2.0 3.0" msg] $msg
+} {0 {two: 2.0 3.0}}
+
+test body-1.9a {preserve argument list:  default arguments} {
+    list [catch {itcl::body test_body::defvals {x} {}} msg] $msg
+} {1 {argument list changed for function "::test_body::defvals": should be "x {y 0} {z 1}"}}
+
+test body-1.9b {preserve argument list:  default arguments} {
+    list [catch {itcl::body test_body::defvals {a {b 0} {c 2}} {}} msg] $msg
+} {1 {argument list changed for function "::test_body::defvals": should be "x {y 0} {z 1}"}}
+
+test body-1.9c {preserve argument list:  default arguments} {
+    list [catch {itcl::body test_body::defvals {a {b 0} {c 1}} {}} msg] $msg
+} {0 {}}
+
+test body-1.10a {preserve argument list:  variable arguments} {
+    list [catch {itcl::body test_body::varargs {} {}} msg] $msg
+} {1 {argument list changed for function "::test_body::varargs": should be "x args"}}
+
+test body-1.10b {preserve argument list:  variable arguments} {
+    list [catch {itcl::body test_body::varargs {a} {}} msg] $msg
+} {0 {}}
+
+test body-1.10c {preserve argument list:  variable arguments} {
+    list [catch {itcl::body test_body::varargs {a b c} {}} msg] $msg
+} {0 {}}
+
+test body-1.11 {redefined body really does change} {
+    list [test_body0 override "test #1"] \
+         [itcl::body test_body::override {text} {return "new: $text"}] \
+         [test_body0 override "test #2"]
+} {{override: test #1} {} {new: test #2}}
+
+
+# ----------------------------------------------------------------------
+#  Test "body" command with inheritance
+# ----------------------------------------------------------------------
+test body-2.1 {inherit from a class with missing bodies} {
+    itcl::class test_ibody {
+        inherit test_body
+        method zero {}
+    }
+    test_ibody #auto
+} {test_ibody0}
+
+test body-2.2 {redefine a method in a derived class} {
+    itcl::body test_ibody::zero {} {return "ibody zero"}
+    list [test_ibody0 info function zero] \
+         [test_ibody0 info function test_body::zero]
+} {{public method ::test_ibody::zero {} {return "ibody zero"}} {public method ::test_body::zero {} {return "zero"}}}
+
+test body-2.3 {try to redefine a method that was not declared} {
+    list [catch {itcl::body test_ibody::one {x} {return "new"}} msg] $msg
+} {1 {function "one" is not defined in class "::test_ibody"}}
+
+::itcl::delete class test_body
+
+# ----------------------------------------------------------------------
+#  Test "configbody" command
+# ----------------------------------------------------------------------
+test body-3.1 {define a class with public variables} {
+    itcl::class test_cbody {
+        private variable priv
+        protected variable prot
+
+        public variable option {} {
+            lappend messages "option: $option"
+        }
+        public variable nocode {}
+        public common messages
+    }
+} ""
+
+test body-3.2 {check syntax of "configbody" command} {
+    list [catch "itcl::configbody test_cbody::option" msg] $msg
+} {1 {wrong # args: should be "itcl::configbody class::option body"}}
+
+test body-3.3 {make sure that members are found correctly} {
+    list [catch "itcl::configbody test_cbody::xyzzy {}" msg] $msg
+} {1 {option "xyzzy" is not defined in class "::test_cbody"}}
+
+test body-3.4 {private variables have no config code} {
+    list [catch "itcl::configbody test_cbody::priv {bogus}" msg] $msg
+} {1 {option "::test_cbody::priv" is not a public configuration option}}
+
+test body-3.5 {protected variables have no config code} {
+    list [catch "itcl::configbody test_cbody::prot {bogus}" msg] $msg
+} {1 {option "::test_cbody::prot" is not a public configuration option}}
+
+test body-3.6 {can use public variables without a body} {
+    test_cbody #auto
+    list [catch "test_cbody0 configure -nocode 1" msg] $msg
+} {0 {}}
+
+test body-3.7 {redefined body really does change} {
+    list [test_cbody0 configure -option "hello"] \
+         [itcl::configbody test_cbody::option {lappend messages "new: $option"}] \
+         [test_cbody0 configure -option "goodbye"] \
+         [set test_cbody::messages] \
+} {{} {} {} {{option: hello} {new: goodbye}}}
+
+# ----------------------------------------------------------------------
+#  Test "configbody" command with inheritance
+# ----------------------------------------------------------------------
+test body-4.1 {inherit from a class with missing config bodies} {
+    itcl::class test_icbody {
+        inherit test_cbody
+        public variable option "icbody"
+    }
+    test_icbody #auto
+} {test_icbody0}
+
+test body-4.2 {redefine a body in a derived class} {
+    itcl::configbody test_icbody::option {lappend messages "test_icbody: $option"}
+    list [test_icbody0 info variable option] \
+         [test_icbody0 info variable test_cbody::option]
+} {{public variable ::test_icbody::option icbody {lappend messages "test_icbody: $option"} icbody} {public variable ::test_cbody::option {} {lappend messages "new: $option"} {}}}
+
+test body-4.3 {try to redefine a body for a variable that was not declared} {
+    list [catch {itcl::configbody test_icbody::nocode {return "new"}} msg] $msg
+} {1 {option "nocode" is not defined in class "::test_icbody"}}
+
+test body-5.1 {redefine constructors} -setup {
+    unset -nocomplain answer
+    itcl::class B {constructor {} {lappend ::answer B}}
+    itcl::class D {inherit B; constructor {} {lappend ::answer A}}
+} -body {
+    D d1
+    itcl::body D::constructor {} {lappend ::answer D}
+    D d2
+    set ::answer
+} -cleanup {
+    itcl::delete class B
+    unset -nocomplain answer
+} -result {B A B D}
+
+test body-6.1 {redefine class proc body} -setup {
+    unset -nocomplain ::answer
+    itcl::class C {
+	proc cheshire {} {
+	    lappend ::answer x
+	    itcl::body ::C::cheshire {} {}
+	}
+	constructor {args} {cheshire}
+    }
+} -body {
+    itcl::delete object [C #auto]
+    itcl::delete object [C #auto]
+    itcl::delete object [C #auto]
+    set ::answer
+} -cleanup {
+    itcl::delete class C
+    unset -nocomplain ::answer
+} -result x
+
+# ----------------------------------------------------------------------
+#  Clean up
+# ----------------------------------------------------------------------
+
+itcl::delete class test_cbody
+
+::tcltest::cleanupTests
+return

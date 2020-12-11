@@ -1,0 +1,36 @@
+'\"
+'\" Copyright (c) 1995-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_DrawFocusHighlight 3 4.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_DrawFocusHighlight \- draw the traversal highlight ring for a widget
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+\fBTk_DrawFocusHighlight(\fItkwin, gc, width, drawable\fB)\fR
+.SH ARGUMENTS
+.AS "Tcl_Interp" *joinPtr
+.AP Tk_Window tkwin in
+Window for which the highlight is being drawn.  Used to retrieve
+the window's dimensions, among other things.
+.AP GC gc in
+Graphics context to use for drawing the highlight.
+.AP int width in
+Width of the highlight ring, in pixels.
+.AP Drawable drawable in
+Drawable in which to draw the highlight;  usually an offscreen
+pixmap for double buffering.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_DrawFocusHighlight\fR is a utility procedure that draws the
+traversal highlight ring for a widget.
+It is typically invoked by widgets during redisplay.
+.SH KEYWORDS
+focus, traversal highlight

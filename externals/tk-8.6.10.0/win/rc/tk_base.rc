@@ -1,0 +1,140 @@
+//
+//  Base resources needed by Tk whether it's a DLL or a static library.
+//
+
+#include <windows.h>
+
+//
+//  Tk Icon
+//
+//  The BASE_NO_TK_ICON symbol can be defined to avoid
+//  creating an icon named "tk" in this resource file.
+//  The user can then create another icon named tk in
+//  another resource file and link both resource files.
+//  Tk will then use the custom icon instead of tk.ico.
+
+#ifndef BASE_NO_TK_ICON
+tk                      ICON    DISCARDABLE     "tk.ico"
+#endif
+
+#include <dlgs.h>
+
+FILEOPENORD DIALOG DISCARDABLE  36, 24, 218, 138
+STYLE DS_MODALFRAME | DS_3DLOOK | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Choose Directory"
+FONT 8, "Helv"
+BEGIN
+    LTEXT           "Directory &name:",-1,8,6,118,9
+    EDITTEXT        edt10,8,26,144,12, WS_TABSTOP | ES_AUTOHSCROLL
+    LISTBOX         lst2,8,40,144,64,LBS_SORT | LBS_OWNERDRAWFIXED |
+                    LBS_HASSTRINGS | LBS_NOINTEGRALHEIGHT |
+                    LBS_DISABLENOSCROLL | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Dri&ves:",stc4,8,106,92,9
+    COMBOBOX        cmb2,8,115,144,68,CBS_DROPDOWNLIST | CBS_OWNERDRAWFIXED |
+                    CBS_AUTOHSCROLL | CBS_SORT | CBS_HASSTRINGS | WS_BORDER |
+                    WS_VSCROLL | WS_TABSTOP
+    DEFPUSHBUTTON   "OK",1,160,6,50,14,WS_GROUP
+    PUSHBUTTON      "Cancel",2,160,24,50,14,WS_GROUP
+    PUSHBUTTON      "&Help",psh15,160,42,50,14,WS_GROUP
+    CHECKBOX        "&Read only",chx1,160,66,50,12,WS_GROUP
+    PUSHBUTTON      "Net&work...",psh14,160,115,50,14,WS_GROUP
+
+    LTEXT           "a",stc3,9,143,114,15
+    EDITTEXT        edt1,7,158,135,20,NOT WS_TABSTOP
+    LISTBOX         lst1,8,205,134,42,LBS_NOINTEGRALHEIGHT
+    COMBOBOX        cmb1,8,253,135,21,CBS_DROPDOWNLIST | CBS_OWNERDRAWFIXED |
+                    CBS_AUTOHSCROLL | CBS_SORT | CBS_HASSTRINGS | WS_BORDER |
+                    WS_VSCROLL
+
+END
+
+
+//
+// Bitmaps
+//
+
+buttons			BITMAP  DISCARDABLE	"buttons.bmp"
+
+//
+// Cursors
+//
+
+X_cursor                CURSOR  DISCARDABLE     "cursor00.cur"
+arrow                   CURSOR  DISCARDABLE     "cursor02.cur"
+based_arrow_down        CURSOR  DISCARDABLE     "cursor04.cur"
+based_arrow_up          CURSOR  DISCARDABLE     "cursor06.cur"
+boat                    CURSOR  DISCARDABLE     "cursor08.cur"
+bogosity                CURSOR  DISCARDABLE     "cursor0a.cur"
+bottom_left_corner      CURSOR  DISCARDABLE     "cursor0c.cur"
+bottom_right_corner     CURSOR  DISCARDABLE     "cursor0e.cur"
+bottom_side             CURSOR  DISCARDABLE     "cursor10.cur"
+bottom_tee              CURSOR  DISCARDABLE     "cursor12.cur"
+box_spiral              CURSOR  DISCARDABLE     "cursor14.cur"
+center_ptr              CURSOR  DISCARDABLE     "cursor16.cur"
+circle                  CURSOR  DISCARDABLE     "cursor18.cur"
+clock                   CURSOR  DISCARDABLE     "cursor1a.cur"
+coffee_mug              CURSOR  DISCARDABLE     "cursor1c.cur"
+cross                   CURSOR  DISCARDABLE     "cursor1e.cur"
+cross_reverse           CURSOR  DISCARDABLE     "cursor20.cur"
+crosshair               CURSOR  DISCARDABLE     "cursor22.cur"
+diamond_cross           CURSOR  DISCARDABLE     "cursor24.cur"
+dot                     CURSOR  DISCARDABLE     "cursor26.cur"
+dotbox                  CURSOR  DISCARDABLE     "cursor28.cur"
+double_arrow            CURSOR  DISCARDABLE     "cursor2a.cur"
+draft_large             CURSOR  DISCARDABLE     "cursor2c.cur"
+draft_small             CURSOR  DISCARDABLE     "cursor2e.cur"
+draped_box              CURSOR  DISCARDABLE     "cursor30.cur"
+exchange                CURSOR  DISCARDABLE     "cursor32.cur"
+fleur                   CURSOR  DISCARDABLE     "cursor34.cur"
+gobbler                 CURSOR  DISCARDABLE     "cursor36.cur"
+gumby                   CURSOR  DISCARDABLE     "cursor38.cur"
+hand1                   CURSOR  DISCARDABLE     "cursor3a.cur"
+hand2                   CURSOR  DISCARDABLE     "cursor3c.cur"
+heart                   CURSOR  DISCARDABLE     "cursor3e.cur"
+icon                    CURSOR  DISCARDABLE     "cursor40.cur"
+iron_cross              CURSOR  DISCARDABLE     "cursor42.cur"
+left_ptr                CURSOR  DISCARDABLE     "cursor44.cur"
+left_side               CURSOR  DISCARDABLE     "cursor46.cur"
+left_tee                CURSOR  DISCARDABLE     "cursor48.cur"
+leftbutton              CURSOR  DISCARDABLE     "cursor4a.cur"
+ll_angle                CURSOR  DISCARDABLE     "cursor4c.cur"
+lr_angle                CURSOR  DISCARDABLE     "cursor4e.cur"
+man                     CURSOR  DISCARDABLE     "cursor50.cur"
+middlebutton            CURSOR  DISCARDABLE     "cursor52.cur"
+mouse                   CURSOR  DISCARDABLE     "cursor54.cur"
+pencil                  CURSOR  DISCARDABLE     "cursor56.cur"
+pirate                  CURSOR  DISCARDABLE     "cursor58.cur"
+plus                    CURSOR  DISCARDABLE     "cursor5a.cur"
+question_arrow          CURSOR  DISCARDABLE     "cursor5c.cur"
+right_ptr               CURSOR  DISCARDABLE     "cursor5e.cur"
+right_side              CURSOR  DISCARDABLE     "cursor60.cur"
+right_tee               CURSOR  DISCARDABLE     "cursor62.cur"
+rightbutton             CURSOR  DISCARDABLE     "cursor64.cur"
+rtl_logo                CURSOR  DISCARDABLE     "cursor66.cur"
+sailboat                CURSOR  DISCARDABLE     "cursor68.cur"
+sb_down_arrow           CURSOR  DISCARDABLE     "cursor6a.cur"
+sb_h_double_arrow       CURSOR  DISCARDABLE     "cursor6c.cur"
+sb_left_arrow           CURSOR  DISCARDABLE     "cursor6e.cur"
+sb_right_arrow          CURSOR  DISCARDABLE     "cursor70.cur"
+sb_up_arrow             CURSOR  DISCARDABLE     "cursor72.cur"
+sb_v_double_arrow       CURSOR  DISCARDABLE     "cursor74.cur"
+shuttle                 CURSOR  DISCARDABLE     "cursor76.cur"
+sizing                  CURSOR  DISCARDABLE     "cursor78.cur"
+spider                  CURSOR  DISCARDABLE     "cursor7a.cur"
+spraycan                CURSOR  DISCARDABLE     "cursor7c.cur"
+star                    CURSOR  DISCARDABLE     "cursor7e.cur"
+target                  CURSOR  DISCARDABLE     "cursor80.cur"
+tcross                  CURSOR  DISCARDABLE     "cursor82.cur"
+top_left_arrow          CURSOR  DISCARDABLE     "cursor84.cur"
+top_left_corner         CURSOR  DISCARDABLE     "cursor86.cur"
+top_right_corner        CURSOR  DISCARDABLE     "cursor88.cur"
+top_side                CURSOR  DISCARDABLE     "cursor8a.cur"
+top_tee                 CURSOR  DISCARDABLE     "cursor8c.cur"
+trek                    CURSOR  DISCARDABLE     "cursor8e.cur"
+ul_angle                CURSOR  DISCARDABLE     "cursor90.cur"
+umbrella                CURSOR  DISCARDABLE     "cursor92.cur"
+ur_angle                CURSOR  DISCARDABLE     "cursor94.cur"
+watch                   CURSOR  DISCARDABLE     "cursor96.cur"
+xterm                   CURSOR  DISCARDABLE     "cursor98.cur"
+none                    CURSOR  DISCARDABLE     "cursor9a.cur"
+

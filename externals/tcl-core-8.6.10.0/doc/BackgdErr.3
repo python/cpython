@@ -1,0 +1,78 @@
+'\"
+'\" Copyright (c) 1992-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_BackgroundError 3 7.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_BackgroundException, Tcl_BackgroundError \- report Tcl exception that occurred in background processing
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+\fBTcl_BackgroundException\fR(\fIinterp, code\fR)
+.sp
+\fBTcl_BackgroundError\fR(\fIinterp\fR)
+.SH ARGUMENTS
+.AS Tcl_Interp *interp
+.AP Tcl_Interp *interp in
+Interpreter in which the exception occurred.
+.AP int code in
+The exceptional return code to be reported.
+.BE
+
+.SH DESCRIPTION
+.PP
+This procedure is typically invoked when a Tcl exception (any
+return code other than TCL_OK) occurs during
+.QW "background processing"
+such as executing an event handler.
+When such an exception occurs, the condition is reported to Tcl
+or to a widget or some other C code, and there is not usually any
+obvious way for that code to report the exception to the user.
+In these cases the code calls \fBTcl_BackgroundException\fR with an
+\fIinterp\fR argument identifying the interpreter in which the
+exception occurred, and a \fIcode\fR argument holding the return
+code value of the exception.  The state of the interpreter, including
+any error message in the interpreter result, and the values of
+any entries in the return options dictionary, is captured and
+saved.  \fBTcl_BackgroundException\fR then arranges for the event
+loop to invoke at some later time the command registered
+in that interpreter to handle background errors by the
+\fBinterp bgerror\fR command, passing the captured values as
+arguments.
+The registered handler command is meant to report the exception
+in an application-specific fashion.  The handler command
+receives two arguments, the result of the interp, and the
+return options of the interp at the time the error occurred.
+If the application registers no handler command, the default
+handler command will attempt to call \fBbgerror\fR to report
+the error.  If an error condition arises while invoking the
+handler command, then \fBTcl_BackgroundException\fR reports the
+error itself by printing a message on the standard error file.
+.PP
+\fBTcl_BackgroundException\fR does not invoke the handler command immediately
+because this could potentially interfere with scripts that are in process
+at the time the error occurred.
+Instead, it invokes the handler command later as an idle callback.
+.PP
+It is possible for many background exceptions to accumulate before
+the handler command is invoked.  When this happens, each of the exceptions
+is processed in order.  However, if the handler command returns a
+break exception, then all remaining error reports for the
+interpreter are skipped.
+.PP
+The \fBTcl_BackgroundError\fR routine is an older and simpler interface
+useful when the exception code reported is \fBTCL_ERROR\fR.  It is
+equivalent to:
+.PP
+.CS
+Tcl_BackgroundException(interp, TCL_ERROR);
+.CE
+
+.SH KEYWORDS
+background, bgerror, error, interp

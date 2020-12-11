@@ -1,0 +1,552 @@
+# This file is a Tcl script to test out the old syntax of Tk's
+# "pack" command (before release 3.3).  It is organized in the
+# standard fashion for Tcl tests.
+#
+# Copyright (c) 1991-1994 The Regents of the University of California.
+# Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+namespace import -force tcltest::test
+
+# First, test a single window packed in various ways in a parent
+
+destroy .pack
+frame .pack
+place .pack -width 100 -height 100
+frame .pack.red -width 10 -height 20
+label .pack.red.l -text R -bd 2 -relief raised
+place .pack.red.l -relwidth 1.0 -relheight 1.0
+frame .pack.green -width 30 -height 40
+label .pack.green.l -text G -bd 2 -relief raised
+place .pack.green.l -relwidth 1.0 -relheight 1.0
+frame .pack.blue -width 40 -height 40
+label .pack.blue.l -text B -bd 2 -relief raised
+place .pack.blue.l -relwidth 1.0 -relheight 1.0
+frame .pack.violet -width 80 -height 20
+label .pack.violet.l -text P -bd 2 -relief raised
+place .pack.violet.l -relwidth 1.0 -relheight 1.0
+
+test oldpack-1.1 {basic positioning} -body {
+    pack ap .pack .pack.red top
+    update
+    winfo geometry .pack.red
+} -result 10x20+45+0
+test oldpack-1.2 {basic positioning} -body {
+    pack append .pack .pack.red bottom
+    update
+    winfo geometry .pack.red
+} -result 10x20+45+80
+test oldpack-1.3 {basic positioning} -body {
+    pack append .pack .pack.red left
+    update
+    winfo geometry .pack.red
+} -result 10x20+0+40
+test oldpack-1.4 {basic positioning} -body {
+    pack append .pack .pack.red right
+    update
+    winfo geometry .pack.red
+} -result 10x20+90+40
+
+# Try adding padding around the window and make sure that the
+# window gets a larger frame.
+
+test oldpack-2.1 {padding} -body {
+    pack append .pack .pack.red {t padx 20}
+    update
+    winfo geometry .pack.red
+} -result 10x20+45+0
+test oldpack-2.2 {padding} -body {
+    pack append .pack .pack.red {top pady 20}
+    update
+    winfo geometry .pack.red
+} -result 10x20+45+10
+test oldpack-2.3 {padding} -body {
+    pack append .pack .pack.red {l padx 20}
+    update
+    winfo geometry .pack.red
+} -result 10x20+10+40
+test oldpack-2.4 {padding} -body {
+    pack append .pack .pack.red {left pady 20}
+    update
+    winfo geometry .pack.red
+} -result 10x20+0+40
+
+# Position the window at different positions in its frame to
+# make sure they all work.  Try two differenet frame locations,
+# to make sure that frame offsets are being added in correctly.
+
+test oldpack-3.1 {framing} -body {
+    pack append .pack .pack.red {b padx 20 pady 30}
+    update
+    winfo geometry .pack.red
+} -result 10x20+45+65
+test oldpack-3.2 {framing} -body {
+    pack append .pack .pack.red {bottom padx 20 pady 30 fr n}
+    update
+    winfo geometry .pack.red
+} -result 10x20+45+50
+test oldpack-3.3 {framing} -body {
+    pack append .pack .pack.red {bottom padx 20 pady 30 frame ne}
+    update
+    winfo geometry .pack.red
+} -result 10x20+90+50
+test oldpack-3.4 {framing} -body {
+    pack append .pack .pack.red {bottom padx 20 pady 30 frame e}
+    update
+    winfo geometry .pack.red
+} -result 10x20+90+65
+test oldpack-3.5 {framing} -body {
+    pack append .pack .pack.red {bottom padx 20 pady 30 frame se}
+    update
+    winfo geometry .pack.red
+} -result 10x20+90+80
+test oldpack-3.6 {framing} -body {
+    pack append .pack .pack.red {bottom padx 20 pady 30 frame s}
+    update
+    winfo geometry .pack.red
+} -result 10x20+45+80
+test oldpack-3.7 {framing} -body {
+    pack append .pack .pack.red {bottom padx 20 pady 30 frame sw}
+    update
+    winfo geometry .pack.red
+} -result 10x20+0+80
+test oldpack-3.8 {framing} -body {
+    pack append .pack .pack.red {bottom padx 20 pady 30 frame w}
+    update
+    winfo geometry .pack.red
+} -result 10x20+0+65
+test oldpack-3.9 {framing} -body {
+    pack append .pack .pack.red {bottom padx 20 pady 30 frame nw}
+    update
+    winfo geometry .pack.red
+} -result 10x20+0+50
+test oldpack-3.10 {framing} -body {
+    pack append .pack .pack.red {bottom padx 20 pady 30 frame c}
+    update
+    winfo geometry .pack.red
+} -result 10x20+45+65
+test oldpack-3.11 {framing} -body {
+    pack append .pack .pack.red {r padx 20 pady 30}
+    update
+    winfo geometry .pack.red
+} -result 10x20+80+40
+test oldpack-3.12 {framing} -body {
+    pack append .pack .pack.red {right padx 20 pady 30 frame n}
+    update
+    winfo geometry .pack.red
+} -result 10x20+80+0
+test oldpack-3.13 {framing} -body {
+    pack append .pack .pack.red {right padx 20 pady 30 frame ne}
+    update
+    winfo geometry .pack.red
+} -result 10x20+90+0
+test oldpack-3.14 {framing} -body {
+    pack append .pack .pack.red {right padx 20 pady 30 frame e}
+    update
+    winfo geometry .pack.red
+} -result 10x20+90+40
+test oldpack-3.15 {framing} -body {
+    pack append .pack .pack.red {right padx 20 pady 30 frame se}
+    update
+    winfo geometry .pack.red
+} -result 10x20+90+80
+test oldpack-3.16 {framing} -body {
+    pack append .pack .pack.red {right padx 20 pady 30 frame s}
+    update
+    winfo geometry .pack.red
+} -result 10x20+80+80
+test oldpack-3.17 {framing} -body {
+    pack append .pack .pack.red {right padx 20 pady 30 frame sw}
+    update
+    winfo geometry .pack.red
+} -result 10x20+70+80
+test oldpack-3.18 {framing} -body {
+    pack append .pack .pack.red {right padx 20 pady 30 frame w}
+    update
+    winfo geometry .pack.red
+} -result 10x20+70+40
+test oldpack-3.19 {framing} -body {
+    pack append .pack .pack.red {right padx 20 pady 30 frame nw}
+    update
+    winfo geometry .pack.red
+} -result 10x20+70+0
+test oldpack-3.20 {framing} -body {
+    pack append .pack .pack.red {right padx 20 pady 30 frame center}
+    update
+    winfo geometry .pack.red
+} -result 10x20+80+40
+
+# Try out various filling combinations in a couple of different
+# frame locations.
+
+test oldpack-4.1 {filling} -body {
+    pack append .pack .pack.red {bottom padx 20 pady 30 fillx}
+    update
+    winfo geometry .pack.red
+} -result 100x20+0+65
+test oldpack-4.2 {filling} -body {
+    pack append .pack .pack.red {bottom padx 20 pady 30 filly}
+    update
+    winfo geometry .pack.red
+} -result 10x50+45+50
+test oldpack-4.3 {filling} -body {
+    pack append .pack .pack.red {bottom padx 20 pady 30 fill}
+    update
+    winfo geometry .pack.red
+} -result 100x50+0+50
+test oldpack-4.4 {filling} -body {
+    pack append .pack .pack.red {right padx 20 pady 30 fillx}
+    update
+    winfo geometry .pack.red
+} -result 30x20+70+40
+test oldpack-4.5 {filling} -body {
+    pack append .pack .pack.red {right padx 20 pady 30 filly}
+    update
+    winfo geometry .pack.red
+} -result 10x100+80+0
+test oldpack-4.6 {filling} -body {
+    pack append .pack .pack.red {right padx 20 pady 30 fill}
+    update
+    winfo geometry .pack.red
+} -result 30x100+70+0
+
+# Multiple windows:  make sure that space is properly subtracted
+# from the cavity as windows are positioned inwards from all
+# different sides.  Also make sure that windows get unmapped if
+# there isn't enough space for them.
+
+pack append .pack .pack.red top .pack.green top .pack.blue top \
+    .pack.violet top
+update
+test oldpack-5.1 {multiple windows} -body {
+    winfo geometry .pack.red
+} -result 10x20+45+0
+test oldpack-5.2 {multiple windows} -body {
+    winfo geometry .pack.green
+} -result 30x40+35+20
+test oldpack-5.3 {multiple windows} -body {
+    winfo geometry .pack.blue
+} -result 40x40+30+60
+test oldpack-5.4 {multiple windows} -body {
+    winfo ismapped .pack.violet
+} -result 0
+
+pack b .pack.blue .pack.violet top
+update
+test oldpack-5.5 {multiple windows} -body {
+    winfo ismapped .pack.violet
+} -result 1
+test oldpack-5.6 {multiple windows} -body {
+    winfo geometry .pack.violet
+} -result 80x20+10+60
+test oldpack-5.7 {multiple windows} -body {
+    winfo geometry .pack.blue
+} -result 40x20+30+80
+
+pack after .pack.blue .pack.red top
+update
+test oldpack-5.8 {multiple windows} -body {
+    winfo geometry .pack.green
+} -result 30x40+35+0
+test oldpack-5.9 {multiple windows} -body {
+    winfo geometry .pack.violet
+} -result 80x20+10+40
+test oldpack-5.10 {multiple windows} -body {
+    winfo geometry .pack.blue
+} -result 40x40+30+60
+test oldpack-5.11 {multiple windows} -body {
+    winfo ismapped .pack.red
+} -result 0
+
+pack before .pack.green .pack.red right .pack.blue left
+update
+test oldpack-5.12 {multiple windows} -body {
+    winfo ismapped .pack.red
+} -result 1
+test oldpack-5.13 {multiple windows} -body {
+    winfo geometry .pack.red
+} -result 10x20+90+40
+test oldpack-5.14 {multiple windows} -body {
+    winfo geometry .pack.blue
+} -result 40x40+0+30
+test oldpack-5.15 {multiple windows} -body {
+    winfo geometry .pack.green
+} -result 30x40+50+0
+test oldpack-5.16 {multiple windows} -body {
+    winfo geometry .pack.violet
+} -result 50x20+40+40
+
+pack append .pack .pack.violet left .pack.green bottom .pack.red bottom \
+    .pack.blue bottom
+update
+test oldpack-5.17 {multiple windows} -body {
+    winfo geometry .pack.violet
+} -result 80x20+0+40
+test oldpack-5.18 {multiple windows} -body {
+    winfo geometry .pack.green
+} -result 20x40+80+60
+test oldpack-5.19 {multiple windows} -body {
+    winfo geometry .pack.red
+} -result 10x20+85+40
+test oldpack-5.20 {multiple windows} -body {
+    winfo geometry .pack.blue
+} -result 20x40+80+0
+
+pack after .pack.blue .pack.blue top .pack.red right .pack.green right \
+    .pack.violet right
+update
+test oldpack-5.21 {multiple windows} -body {
+    winfo geometry .pack.blue
+} -result 40x40+30+0
+test oldpack-5.22 {multiple windows} -body {
+    winfo geometry .pack.red
+} -result 10x20+90+60
+test oldpack-5.23 {multiple windows} -body {
+    winfo geometry .pack.green
+} -result 30x40+60+50
+test oldpack-5.24 {multiple windows} -body {
+    winfo geometry .pack.violet
+} -result 60x20+0+60
+
+pack after .pack.blue .pack.red left .pack.green left .pack.violet left
+update
+test oldpack-5.25 {multiple windows} -body {
+    winfo geometry .pack.blue
+} -result 40x40+30+0
+test oldpack-5.26 {multiple windows} -body {
+    winfo geometry .pack.red
+} -result 10x20+0+60
+test oldpack-5.27 {multiple windows} -body {
+    winfo geometry .pack.green
+} -result 30x40+10+50
+test oldpack-5.28 {multiple windows} -body {
+    winfo geometry .pack.violet
+} -result 60x20+40+60
+
+pack append .pack .pack.violet left .pack.green left .pack.blue left \
+    .pack.red left
+update
+test oldpack-5.29 {multiple windows} -body {
+    winfo geometry .pack.violet
+} -result 80x20+0+40
+test oldpack-5.30 {multiple windows} -body {
+    winfo geometry .pack.green
+} -result 20x40+80+30
+test oldpack-5.31 {multiple windows} -body {
+    winfo ismapped .pack.blue
+} -result 0
+test oldpack-5.32 {multiple windows} -body {
+    winfo ismapped .pack.red
+} -result 0
+
+
+# Test the ability of the packer to propagate geometry information
+# to its parent.  Make sure it computes the parent's needs both in
+# the direction of packing (width for "left" and "right" windows,
+# for example), and perpendicular to the pack direction (height for
+# "left" and "right" windows).
+
+pack append .pack .pack.red top .pack.green top .pack.blue top \
+    .pack.violet top
+update
+test oldpack-6.1 {geometry propagation} -body {
+    winfo reqwidth .pack} -result 80
+test oldpack-6.2 {geometry propagation} -body {
+    winfo reqheight .pack} -result 120
+destroy .pack.violet
+update
+test oldpack-6.3 {geometry propagation} -body {
+    winfo reqwidth .pack} -result 40
+test oldpack-6.4 {geometry propagation} -body {
+    winfo reqheight .pack} -result 100
+frame .pack.violet -width 80 -height 20 -bg violet
+label .pack.violet.l -text P -bd 2 -relief raised
+place .pack.violet.l -relwidth 1.0 -relheight 1.0
+pack append .pack .pack.red left .pack.green right .pack.blue bottom \
+    .pack.violet top
+update
+test oldpack-6.5 {geometry propagation} -body {
+    winfo reqwidth .pack} -result 120
+test oldpack-6.6 {geometry propagation} -body {
+    winfo reqheight .pack} -result 60
+pack append .pack .pack.violet top .pack.green top .pack.blue left \
+    .pack.red left
+update
+test oldpack-6.7 {geometry propagation} -body {
+    winfo reqwidth .pack} -result 80
+test oldpack-6.8 {geometry propagation} -body {
+    winfo reqheight .pack} -result 100
+
+# Test the "expand" option, and make sure space is evenly divided
+# when several windows request expansion.
+
+pack append .pack .pack.violet top .pack.green {left e} \
+    .pack.blue {left expand} .pack.red {left expand}
+update
+test oldpack-7.1 {multiple expanded windows} -body {
+    pack append .pack .pack.violet top .pack.green {left e} \
+        .pack.blue {left expand} .pack.red {left expand}
+    update
+    list [winfo geometry .pack.green] [winfo geometry .pack.blue] \
+        [winfo geometry .pack.red]
+} -result {30x40+3+40 40x40+39+40 10x20+86+50}
+test oldpack-7.2 {multiple expanded windows} -body {
+    pack append .pack .pack.green left .pack.violet {bottom expand} \
+        .pack.blue {bottom expand} .pack.red {bottom expand}
+    update
+    list [winfo geometry .pack.violet] [winfo geometry .pack.blue] \
+        [winfo geometry .pack.red]
+} -result {70x20+30+77 40x40+45+30 10x20+60+3}
+test oldpack-7.3 {multiple expanded windows} -body {
+    foreach i [winfo child .pack] {
+    pack unpack $i
+    }
+    pack append .pack .pack.green {left e fill} .pack.red {left expand fill} \
+        .pack.blue {top fill}
+    update
+    list [winfo geometry .pack.green] [winfo geometry .pack.red] \
+        [winfo geometry .pack.blue]
+} -result {40x100+0+0 20x100+40+0 40x40+60+0}
+test oldpack-7.4 {multiple expanded windows} -body {
+    foreach i [winfo child .pack] {
+    pack unpack $i
+    }
+    pack append .pack .pack.red {top expand} .pack.violet {top expand} \
+        .pack.blue {right fill}
+    update
+    list [winfo geometry .pack.red] [winfo geometry .pack.violet] \
+        [winfo geometry .pack.blue]
+} -result {10x20+45+5 80x20+10+35 40x40+60+60}
+test oldpack-7.5 {multiple expanded windows} -body {
+    foreach i [winfo child .pack] {
+    pack unpack $i
+    }
+    pack append .pack .pack.green {right frame s} .pack.red {top expand}
+    update
+    list [winfo geometry .pack.green] [winfo geometry .pack.red]
+} -result {30x40+70+60 10x20+30+40}
+test oldpack-7.6 {multiple expanded windows} -body {
+    foreach i [winfo child .pack] {
+    pack unpack $i
+    }
+    pack append .pack .pack.violet {bottom frame e} .pack.red {right expand}
+    update
+    list [winfo geometry .pack.violet] [winfo geometry .pack.red]
+} -result {80x20+20+80 10x20+45+30}
+
+# Need more bizarre tests with combinations of expanded windows and
+# windows in opposing directions!  Also, include padding in expanded
+# (and unexpanded) windows.
+
+# Syntax errors on pack commands
+
+test oldpack-8.1 {syntax errors} -body {
+    pack
+} -returnCodes error -result {wrong # args: should be "pack option arg ?arg ...?"}
+test oldpack-8.2 {syntax errors} -body {
+    pack append
+} -returnCodes error -result {wrong # args: should be "pack option arg ?arg ...?"}
+test oldpack-8.3 {syntax errors} -body {
+    pack gorp foo
+} -returnCodes error -result {bad option "gorp": must be configure, forget, info, propagate, or slaves}
+test oldpack-8.4 {syntax errors} -body {
+    pack a .pack
+} -returnCodes error -result {bad option "a": must be configure, forget, info, propagate, or slaves}
+test oldpack-8.5 {syntax errors} -body {
+    pack after foobar
+} -returnCodes error -result {bad window path name "foobar"}
+test oldpack-8.6 {syntax errors} -setup {
+    destroy .pack.yellow
+} -body {
+    frame .pack.yellow -bg yellow
+    pack after .pack.yellow
+} -cleanup {
+    destroy .pack.yellow
+} -returnCodes error -result {window ".pack.yellow" isn't packed}
+test oldpack-8.7 {syntax errors} -body {
+    pack append foobar
+} -returnCodes error -result {bad window path name "foobar"}
+test oldpack-8.8 {syntax errors} -body {
+    pack before foobar
+} -returnCodes error -result {bad window path name "foobar"}
+test oldpack-8.9 {syntax errors} -setup {
+    destroy .pack.yellow
+} -body {
+    frame .pack.yellow -bg yellow
+    pack before .pack.yellow
+} -cleanup {
+    destroy .pack.yellow
+} -returnCodes error -result {window ".pack.yellow" isn't packed}
+test oldpack-8.10 {syntax errors} -body {
+    pack info .pack help
+} -returnCodes error -result {wrong # args: should be "pack info window"}
+test oldpack-8.11 {syntax errors} -body {
+    pack info foobar
+} -returnCodes error -result {bad window path name "foobar"}
+test oldpack-8.12 {syntax errors} -body {
+    pack append .pack .pack.blue
+} -returnCodes error -result {wrong # args: window ".pack.blue" should be followed by options}
+test oldpack-8.13 {syntax errors} -body {
+    pack append . .pack.blue top
+} -returnCodes error -result {can't pack .pack.blue inside .}
+test oldpack-8.14 {syntax errors} -body {
+    pack append .pack .pack.blue f
+} -returnCodes error -result {bad option "f": should be top, bottom, left, right, expand, fill, fillx, filly, padx, pady, or frame}
+test oldpack-8.15 {syntax errors} -body {
+    pack append .pack .pack.blue pad
+} -returnCodes error -result {bad option "pad": should be top, bottom, left, right, expand, fill, fillx, filly, padx, pady, or frame}
+test oldpack-8.16 {syntax errors} -body {
+    pack append .pack .pack.blue {frame south}
+} -returnCodes error -result {bad anchor "south": must be n, ne, e, se, s, sw, w, nw, or center}
+test oldpack-8.17 {syntax errors} -body {
+    pack append .pack .pack.blue {padx -2}
+} -returnCodes error -result {bad pad value "-2": must be positive screen distance}
+test oldpack-8.18 {syntax errors} -body {
+    pack append .pack .pack.blue {padx}
+} -returnCodes error -result {wrong # args: "padx" option must be followed by screen distance}
+test oldpack-8.19 {syntax errors} -body {
+    pack append .pack .pack.blue {pady -2}
+} -returnCodes error -result {bad pad value "-2": must be positive screen distance}
+test oldpack-8.20 {syntax errors} -body {
+    pack append .pack .pack.blue {pady}
+} -returnCodes error -result {wrong # args: "pady" option must be followed by screen distance}
+test oldpack-8.21 {syntax errors} -body {
+    pack append .pack .pack.blue "\{abc"
+} -returnCodes error -result {unmatched open brace in list}
+test oldpack-8.22 {syntax errors} -body {
+    pack append .pack .pack.blue frame
+} -returnCodes error -result {wrong # args: "frame" option must be followed by anchor point}
+
+# Test "pack info" command output.
+
+test oldpack-9.1 {information output} -body {
+    pack append .pack .pack.blue {top fillx frame n} \
+    .pack.red {bottom filly frame s} .pack.green {left fill frame w} \
+    .pack.violet {right expand frame e}
+    list [pack slaves .pack] [pack info .pack.blue] [pack info .pack.red] \
+        [pack info .pack.green] [pack info .pack.violet]
+} -result {{.pack.blue .pack.red .pack.green .pack.violet} {-in .pack -anchor n -expand 0 -fill x -ipadx 0 -ipady 0 -padx 0 -pady 0 -side top} {-in .pack -anchor s -expand 0 -fill y -ipadx 0 -ipady 0 -padx 0 -pady 0 -side bottom} {-in .pack -anchor w -expand 0 -fill both -ipadx 0 -ipady 0 -padx 0 -pady 0 -side left} {-in .pack -anchor e -expand 1 -fill none -ipadx 0 -ipady 0 -padx 0 -pady 0 -side right}}
+test oldpack-9.2 {information output} -body {
+    pack append .pack .pack.blue {padx 10 frame nw} \
+    .pack.red {pady 20 frame ne} .pack.green {frame se} \
+    .pack.violet {frame sw}
+    list [pack slaves .pack] [pack info .pack.blue] [pack info .pack.red] \
+        [pack info .pack.green] [pack info .pack.violet]
+} -result {{.pack.blue .pack.red .pack.green .pack.violet} {-in .pack -anchor nw -expand 0 -fill none -ipadx 0 -ipady 0 -padx 5 -pady 0 -side top} {-in .pack -anchor ne -expand 0 -fill none -ipadx 0 -ipady 0 -padx 0 -pady 10 -side top} {-in .pack -anchor se -expand 0 -fill none -ipadx 0 -ipady 0 -padx 0 -pady 0 -side top} {-in .pack -anchor sw -expand 0 -fill none -ipadx 0 -ipady 0 -padx 0 -pady 0 -side top}}
+test oldpack-9.3 {information output} -body {
+    pack append .pack .pack.blue {frame center} .pack.red {frame center} \
+    .pack.green {frame c} .pack.violet {frame c}
+    list [pack slaves .pack] [pack info .pack.blue] [pack info .pack.red] \
+        [pack info .pack.green] [pack info .pack.violet]
+} -result {{.pack.blue .pack.red .pack.green .pack.violet} {-in .pack -anchor center -expand 0 -fill none -ipadx 0 -ipady 0 -padx 0 -pady 0 -side top} {-in .pack -anchor center -expand 0 -fill none -ipadx 0 -ipady 0 -padx 0 -pady 0 -side top} {-in .pack -anchor center -expand 0 -fill none -ipadx 0 -ipady 0 -padx 0 -pady 0 -side top} {-in .pack -anchor center -expand 0 -fill none -ipadx 0 -ipady 0 -padx 0 -pady 0 -side top}}
+
+destroy .pack
+
+# cleanup
+cleanupTests
+return
+

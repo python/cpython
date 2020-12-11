@@ -1,0 +1,24 @@
+$Id: Release-8.1.3.txt,v 1.2 2001/12/09 04:49:12 idiscovery Exp $
+
+Release notes for 8.1.3
+
+	See also Release-8.1.2.txt
+
+Changes for 8.1.3
+
+	1) Added a starting User Manual in html and pdf.
+	   Changed the programming guide from ps to pdf.
+	2) Minor bug fixes to the windows install files.
+	3) Minor bug fixes to lib/pref/WmDefault.* files,
+	   a Package for making Tix apps use the CDE/GNOME/KDE/Windows scheme.
+	   GNOME is still barely supported because of the difficulty
+	   of finding and parsing sawfish definition files.
+	4) Added index.html files to help users find the documentation.
+	5) Updated old /README and /docs/FAQ file, and added Roadmap.html.
+	6) Fixed bug with -debug in library/Init.tcl
+	7) Chamged demos/widget to demos/tixwidgets.tcl
+	8) Made sure default target for windows make is all not install.
+	9) Begin removing subwidget optiondb for things like *entries,
+	*scrollbars, *text, .background, etc - remove them next from schemes.
+
+

@@ -1,0 +1,95 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1998 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_GetPixelsFromObj 3 8.1 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_GetPixelsFromObj, Tk_GetPixels, Tk_GetMMFromObj, Tk_GetScreenMM \- translate between strings and screen units
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+int
+\fBTk_GetPixelsFromObj(\fIinterp, tkwin, objPtr, intPtr\fB)\fR
+.sp
+int
+\fBTk_GetPixels(\fIinterp, tkwin, string, intPtr\fB)\fR
+.sp
+int
+\fBTk_GetMMFromObj(\fIinterp, tkwin, objPtr, doublePtr\fB)\fR
+.sp
+int
+\fBTk_GetScreenMM(\fIinterp, tkwin, string, doublePtr\fB)\fR
+.SH ARGUMENTS
+.AS "Tcl_Interp" *joinPtr
+.AP Tcl_Interp *interp in
+Interpreter to use for error reporting.
+.AP Tk_Window tkwin in
+Window whose screen geometry determines the conversion between absolute
+units and pixels.
+.AP Tcl_Obj *objPtr in/out
+String value specifies a distance on the screen;
+internal rep will be modified to cache converted distance.
+.AP "const char" *string in
+Same as \fIobjPtr\fR except specification of distance is passed as
+a string.
+.AP int *intPtr out
+Pointer to location in which to store converted distance in pixels.
+.AP double *doublePtr out
+Pointer to location in which to store converted distance in millimeters.
+.BE
+.SH DESCRIPTION
+.PP
+These procedures take as argument a specification of distance on
+the screen (\fIobjPtr\fR or \fIstring\fR) and compute the
+corresponding distance either in integer pixels or floating-point millimeters.
+In either case,
+\fIobjPtr\fR or \fIstring\fR
+specifies a screen distance as a
+floating-point number followed by one of the following characters
+that indicates units:
+.TP
+<none>
+The number specifies a distance in pixels.
+.TP
+\fBc\fR
+The number specifies a distance in centimeters on the screen.
+.TP
+\fBi\fR
+The number specifies a distance in inches on the screen.
+.TP
+\fBm\fR
+The number specifies a distance in millimeters on the screen.
+.TP
+\fBp\fR
+The number specifies a distance in printer's points (1/72 inch)
+on the screen.
+.PP
+\fBTk_GetPixelsFromObj\fR converts the value of \fIobjPtr\fR to the
+nearest even number of pixels and stores that value at \fI*intPtr\fR.
+It returns \fBTCL_OK\fR under normal circumstances.
+If an error occurs (e.g. \fIobjPtr\fR contains a number followed
+by a character that is not one of the ones above) then
+\fBTCL_ERROR\fR is returned and an error message is left
+in \fIinterp\fR's result if \fIinterp\fR is not NULL.
+\fBTk_GetPixelsFromObj\fR caches information about the return
+value in \fIobjPtr\fR, which speeds up future calls to
+\fBTk_GetPixelsFromObj\fR with the same \fIobjPtr\fR.
+.PP
+\fBTk_GetPixels\fR is identical to \fBTk_GetPixelsFromObj\fR except
+that the screen distance is specified with a string instead
+of an object.  This prevents \fBTk_GetPixels\fR from caching the
+return value, so \fBTk_GetPixels\fR is less efficient than
+\fBTk_GetPixelsFromObj\fR.
+.PP
+\fBTk_GetMMFromObj\fR and \fBTk_GetScreenMM\fR are similar to
+\fBTk_GetPixelsFromObj\fR and \fBTk_GetPixels\fR (respectively) except
+that they convert the screen distance to millimeters and
+store a double-precision floating-point result at \fI*doublePtr\fR.
+.SH KEYWORDS
+centimeters, convert, inches, millimeters, pixels, points, screen units

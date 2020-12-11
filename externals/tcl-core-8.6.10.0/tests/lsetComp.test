@@ -1,0 +1,431 @@
+# This file is a -*- tcl -*- test script
+
+# Commands covered: lset
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+# Procedure to evaluate a script within a proc, to test compilation
+# functionality
+
+proc evalInProc { script } {
+    proc testProc {} $script
+    set status [catch {
+	testProc 
+    } result]
+    rename testProc {}
+    return [list $status $result]
+}
+
+# Tests for the bytecode compilation of the 'lset' command
+
+test lsetComp-1.1 {lset, compiled, wrong \# args} {
+    evalInProc {
+	lset
+    }
+} "1 {wrong \# args: should be \"lset listVar ?index? ?index ...? value\"}"
+
+test lsetComp-2.1 {lset, compiled, list of args, not a simple var name} {
+    evalInProc {
+	set y x
+	set x {{1 2} {3 4}}
+	lset $y {1 1} 5
+    }
+} "0 {{1 2} {3 5}}"
+
+test lsetComp-2.2 {lset, compiled, list of args, scalar on stack} {
+    evalInProc {
+	set ::x {{1 2} {3 4}}
+	lset ::x {1 1} 5
+    }
+} "0 {{1 2} {3 5}}"
+
+test lsetComp-2.3 {lset, compiled, list of args, scalar, one-byte offset} {
+    evalInProc {
+	set x {{1 2} {3 4}}
+	lset x {1 1} 5
+    }
+} "0 {{1 2} {3 5}}"
+
+test lsetComp-2.4 {lset, compiled, list of args, scalar, four-byte offset} {
+    evalInProc {
+	set x0 0; set x1 0; set x2 0; set x3 0; 
+	set x4 0; set x5 0; set x6 0; set x7 0; 
+	set x8 0; set x9 0; set x10 0; set x11 0; 
+	set x12 0; set x13 0; set x14 0; set x15 0; 
+	set x16 0; set x17 0; set x18 0; set x19 0; 
+	set x20 0; set x21 0; set x22 0; set x23 0; 
+	set x24 0; set x25 0; set x26 0; set x27 0; 
+	set x28 0; set x29 0; set x30 0; set x31 0; 
+	set x32 0; set x33 0; set x34 0; set x35 0; 
+	set x36 0; set x37 0; set x38 0; set x39 0; 
+	set x40 0; set x41 0; set x42 0; set x43 0; 
+	set x44 0; set x45 0; set x46 0; set x47 0; 
+	set x48 0; set x49 0; set x50 0; set x51 0; 
+	set x52 0; set x53 0; set x54 0; set x55 0; 
+	set x56 0; set x57 0; set x58 0; set x59 0; 
+	set x60 0; set x61 0; set x62 0; set x63 0; 
+	set x64 0; set x65 0; set x66 0; set x67 0; 
+	set x68 0; set x69 0; set x70 0; set x71 0; 
+	set x72 0; set x73 0; set x74 0; set x75 0; 
+	set x76 0; set x77 0; set x78 0; set x79 0; 
+	set x80 0; set x81 0; set x82 0; set x83 0; 
+	set x84 0; set x85 0; set x86 0; set x87 0; 
+	set x88 0; set x89 0; set x90 0; set x91 0; 
+	set x92 0; set x93 0; set x94 0; set x95 0; 
+	set x96 0; set x97 0; set x98 0; set x99 0; 
+	set x100 0; set x101 0; set x102 0; set x103 0; 
+	set x104 0; set x105 0; set x106 0; set x107 0; 
+	set x108 0; set x109 0; set x110 0; set x111 0; 
+	set x112 0; set x113 0; set x114 0; set x115 0; 
+	set x116 0; set x117 0; set x118 0; set x119 0; 
+	set x120 0; set x121 0; set x122 0; set x123 0; 
+	set x124 0; set x125 0; set x126 0; set x127 0; 
+	set x128 0; set x129 0; set x130 0; set x131 0; 
+	set x132 0; set x133 0; set x134 0; set x135 0; 
+	set x136 0; set x137 0; set x138 0; set x139 0; 
+	set x140 0; set x141 0; set x142 0; set x143 0; 
+	set x144 0; set x145 0; set x146 0; set x147 0; 
+	set x148 0; set x149 0; set x150 0; set x151 0; 
+	set x152 0; set x153 0; set x154 0; set x155 0; 
+	set x156 0; set x157 0; set x158 0; set x159 0; 
+	set x160 0; set x161 0; set x162 0; set x163 0; 
+	set x164 0; set x165 0; set x166 0; set x167 0; 
+	set x168 0; set x169 0; set x170 0; set x171 0; 
+	set x172 0; set x173 0; set x174 0; set x175 0; 
+	set x176 0; set x177 0; set x178 0; set x179 0; 
+	set x180 0; set x181 0; set x182 0; set x183 0; 
+	set x184 0; set x185 0; set x186 0; set x187 0; 
+	set x188 0; set x189 0; set x190 0; set x191 0; 
+	set x192 0; set x193 0; set x194 0; set x195 0; 
+	set x196 0; set x197 0; set x198 0; set x199 0; 
+	set x200 0; set x201 0; set x202 0; set x203 0; 
+	set x204 0; set x205 0; set x206 0; set x207 0; 
+	set x208 0; set x209 0; set x210 0; set x211 0; 
+	set x212 0; set x213 0; set x214 0; set x215 0; 
+	set x216 0; set x217 0; set x218 0; set x219 0; 
+	set x220 0; set x221 0; set x222 0; set x223 0; 
+	set x224 0; set x225 0; set x226 0; set x227 0; 
+	set x228 0; set x229 0; set x230 0; set x231 0; 
+	set x232 0; set x233 0; set x234 0; set x235 0; 
+	set x236 0; set x237 0; set x238 0; set x239 0; 
+	set x240 0; set x241 0; set x242 0; set x243 0; 
+	set x244 0; set x245 0; set x246 0; set x247 0; 
+	set x248 0; set x249 0; set x250 0; set x251 0; 
+	set x252 0; set x253 0; set x254 0; set x255 0;
+	set x {{1 2} {3 4}}
+	lset x {1 1} 5
+    }
+} "0 {{1 2} {3 5}}"
+
+test lsetComp-2.5 {lset, compiled, list of args, array on stack} {
+    evalInProc {
+	set ::y(0) {{1 2} {3 4}}
+	lset ::y(0) {1 1} 5
+    }
+} "0 {{1 2} {3 5}}"
+
+test lsetComp-2.6 {lset, compiled, list of args, array, one-byte offset} {
+    evalInProc {
+	set y(0) {{1 2} {3 4}}
+	lset y(0) {1 1} 5
+    }
+} "0 {{1 2} {3 5}}"
+
+test lsetComp-2.7 {lset, compiled, list of args, array, four-byte offset} {
+    evalInProc {
+	set x0 0; set x1 0; set x2 0; set x3 0; 
+	set x4 0; set x5 0; set x6 0; set x7 0; 
+	set x8 0; set x9 0; set x10 0; set x11 0; 
+	set x12 0; set x13 0; set x14 0; set x15 0; 
+	set x16 0; set x17 0; set x18 0; set x19 0; 
+	set x20 0; set x21 0; set x22 0; set x23 0; 
+	set x24 0; set x25 0; set x26 0; set x27 0; 
+	set x28 0; set x29 0; set x30 0; set x31 0; 
+	set x32 0; set x33 0; set x34 0; set x35 0; 
+	set x36 0; set x37 0; set x38 0; set x39 0; 
+	set x40 0; set x41 0; set x42 0; set x43 0; 
+	set x44 0; set x45 0; set x46 0; set x47 0; 
+	set x48 0; set x49 0; set x50 0; set x51 0; 
+	set x52 0; set x53 0; set x54 0; set x55 0; 
+	set x56 0; set x57 0; set x58 0; set x59 0; 
+	set x60 0; set x61 0; set x62 0; set x63 0; 
+	set x64 0; set x65 0; set x66 0; set x67 0; 
+	set x68 0; set x69 0; set x70 0; set x71 0; 
+	set x72 0; set x73 0; set x74 0; set x75 0; 
+	set x76 0; set x77 0; set x78 0; set x79 0; 
+	set x80 0; set x81 0; set x82 0; set x83 0; 
+	set x84 0; set x85 0; set x86 0; set x87 0; 
+	set x88 0; set x89 0; set x90 0; set x91 0; 
+	set x92 0; set x93 0; set x94 0; set x95 0; 
+	set x96 0; set x97 0; set x98 0; set x99 0; 
+	set x100 0; set x101 0; set x102 0; set x103 0; 
+	set x104 0; set x105 0; set x106 0; set x107 0; 
+	set x108 0; set x109 0; set x110 0; set x111 0; 
+	set x112 0; set x113 0; set x114 0; set x115 0; 
+	set x116 0; set x117 0; set x118 0; set x119 0; 
+	set x120 0; set x121 0; set x122 0; set x123 0; 
+	set x124 0; set x125 0; set x126 0; set x127 0; 
+	set x128 0; set x129 0; set x130 0; set x131 0; 
+	set x132 0; set x133 0; set x134 0; set x135 0; 
+	set x136 0; set x137 0; set x138 0; set x139 0; 
+	set x140 0; set x141 0; set x142 0; set x143 0; 
+	set x144 0; set x145 0; set x146 0; set x147 0; 
+	set x148 0; set x149 0; set x150 0; set x151 0; 
+	set x152 0; set x153 0; set x154 0; set x155 0; 
+	set x156 0; set x157 0; set x158 0; set x159 0; 
+	set x160 0; set x161 0; set x162 0; set x163 0; 
+	set x164 0; set x165 0; set x166 0; set x167 0; 
+	set x168 0; set x169 0; set x170 0; set x171 0; 
+	set x172 0; set x173 0; set x174 0; set x175 0; 
+	set x176 0; set x177 0; set x178 0; set x179 0; 
+	set x180 0; set x181 0; set x182 0; set x183 0; 
+	set x184 0; set x185 0; set x186 0; set x187 0; 
+	set x188 0; set x189 0; set x190 0; set x191 0; 
+	set x192 0; set x193 0; set x194 0; set x195 0; 
+	set x196 0; set x197 0; set x198 0; set x199 0; 
+	set x200 0; set x201 0; set x202 0; set x203 0; 
+	set x204 0; set x205 0; set x206 0; set x207 0; 
+	set x208 0; set x209 0; set x210 0; set x211 0; 
+	set x212 0; set x213 0; set x214 0; set x215 0; 
+	set x216 0; set x217 0; set x218 0; set x219 0; 
+	set x220 0; set x221 0; set x222 0; set x223 0; 
+	set x224 0; set x225 0; set x226 0; set x227 0; 
+	set x228 0; set x229 0; set x230 0; set x231 0; 
+	set x232 0; set x233 0; set x234 0; set x235 0; 
+	set x236 0; set x237 0; set x238 0; set x239 0; 
+	set x240 0; set x241 0; set x242 0; set x243 0; 
+	set x244 0; set x245 0; set x246 0; set x247 0; 
+	set x248 0; set x249 0; set x250 0; set x251 0; 
+	set x252 0; set x253 0; set x254 0; set x255 0;
+	set y(0) {{1 2} {3 4}}
+	lset y(0) {1 1} 5
+    }
+} "0 {{1 2} {3 5}}"
+
+test lsetComp-2.8 {lset, compiled, list of args, error } {
+    evalInProc {
+	set x { {1 2} {3 4} }
+	lset x {1 5} 5
+    }
+} "1 {list index out of range}"
+
+test lsetComp-2.9 {lset, compiled, list of args, error - is string preserved} {
+    set ::x { { 1 2 } { 3 4 } }
+    evalInProc {
+	lset ::x { 1 5 } 5
+    }
+    list $::x [lindex $::x 1]
+} "{ { 1 2 } { 3 4 } } { 3 4 }"
+
+test lsetComp-3.1 {lset, compiled, flat args, not a simple var name} {
+    evalInProc {
+	set y x
+	set x {{1 2} {3 4}}
+	lset $y 1 1 5
+    }
+} "0 {{1 2} {3 5}}"
+
+test lsetComp-3.2 {lset, compiled, flat args, scalar on stack} {
+    evalInProc {
+	set ::x {{1 2} {3 4}}
+	lset ::x 1 1 5
+    }
+} "0 {{1 2} {3 5}}"
+
+test lsetComp-3.3 {lset, compiled, flat args, scalar, one-byte offset} {
+    evalInProc {
+	set x {{1 2} {3 4}}
+	lset x 1 1 5
+    }
+} "0 {{1 2} {3 5}}"
+
+test lsetComp-3.4 {lset, compiled, scalar, four-byte offset} {
+    evalInProc {
+	set x0 0; set x1 0; set x2 0; set x3 0; 
+	set x4 0; set x5 0; set x6 0; set x7 0; 
+	set x8 0; set x9 0; set x10 0; set x11 0; 
+	set x12 0; set x13 0; set x14 0; set x15 0; 
+	set x16 0; set x17 0; set x18 0; set x19 0; 
+	set x20 0; set x21 0; set x22 0; set x23 0; 
+	set x24 0; set x25 0; set x26 0; set x27 0; 
+	set x28 0; set x29 0; set x30 0; set x31 0; 
+	set x32 0; set x33 0; set x34 0; set x35 0; 
+	set x36 0; set x37 0; set x38 0; set x39 0; 
+	set x40 0; set x41 0; set x42 0; set x43 0; 
+	set x44 0; set x45 0; set x46 0; set x47 0; 
+	set x48 0; set x49 0; set x50 0; set x51 0; 
+	set x52 0; set x53 0; set x54 0; set x55 0; 
+	set x56 0; set x57 0; set x58 0; set x59 0; 
+	set x60 0; set x61 0; set x62 0; set x63 0; 
+	set x64 0; set x65 0; set x66 0; set x67 0; 
+	set x68 0; set x69 0; set x70 0; set x71 0; 
+	set x72 0; set x73 0; set x74 0; set x75 0; 
+	set x76 0; set x77 0; set x78 0; set x79 0; 
+	set x80 0; set x81 0; set x82 0; set x83 0; 
+	set x84 0; set x85 0; set x86 0; set x87 0; 
+	set x88 0; set x89 0; set x90 0; set x91 0; 
+	set x92 0; set x93 0; set x94 0; set x95 0; 
+	set x96 0; set x97 0; set x98 0; set x99 0; 
+	set x100 0; set x101 0; set x102 0; set x103 0; 
+	set x104 0; set x105 0; set x106 0; set x107 0; 
+	set x108 0; set x109 0; set x110 0; set x111 0; 
+	set x112 0; set x113 0; set x114 0; set x115 0; 
+	set x116 0; set x117 0; set x118 0; set x119 0; 
+	set x120 0; set x121 0; set x122 0; set x123 0; 
+	set x124 0; set x125 0; set x126 0; set x127 0; 
+	set x128 0; set x129 0; set x130 0; set x131 0; 
+	set x132 0; set x133 0; set x134 0; set x135 0; 
+	set x136 0; set x137 0; set x138 0; set x139 0; 
+	set x140 0; set x141 0; set x142 0; set x143 0; 
+	set x144 0; set x145 0; set x146 0; set x147 0; 
+	set x148 0; set x149 0; set x150 0; set x151 0; 
+	set x152 0; set x153 0; set x154 0; set x155 0; 
+	set x156 0; set x157 0; set x158 0; set x159 0; 
+	set x160 0; set x161 0; set x162 0; set x163 0; 
+	set x164 0; set x165 0; set x166 0; set x167 0; 
+	set x168 0; set x169 0; set x170 0; set x171 0; 
+	set x172 0; set x173 0; set x174 0; set x175 0; 
+	set x176 0; set x177 0; set x178 0; set x179 0; 
+	set x180 0; set x181 0; set x182 0; set x183 0; 
+	set x184 0; set x185 0; set x186 0; set x187 0; 
+	set x188 0; set x189 0; set x190 0; set x191 0; 
+	set x192 0; set x193 0; set x194 0; set x195 0; 
+	set x196 0; set x197 0; set x198 0; set x199 0; 
+	set x200 0; set x201 0; set x202 0; set x203 0; 
+	set x204 0; set x205 0; set x206 0; set x207 0; 
+	set x208 0; set x209 0; set x210 0; set x211 0; 
+	set x212 0; set x213 0; set x214 0; set x215 0; 
+	set x216 0; set x217 0; set x218 0; set x219 0; 
+	set x220 0; set x221 0; set x222 0; set x223 0; 
+	set x224 0; set x225 0; set x226 0; set x227 0; 
+	set x228 0; set x229 0; set x230 0; set x231 0; 
+	set x232 0; set x233 0; set x234 0; set x235 0; 
+	set x236 0; set x237 0; set x238 0; set x239 0; 
+	set x240 0; set x241 0; set x242 0; set x243 0; 
+	set x244 0; set x245 0; set x246 0; set x247 0; 
+	set x248 0; set x249 0; set x250 0; set x251 0; 
+	set x252 0; set x253 0; set x254 0; set x255 0;
+	set x {{1 2} {3 4}}
+	lset x 1 1 5
+    }
+} "0 {{1 2} {3 5}}"
+
+test lsetComp-3.5 {lset, compiled, flat args, array on stack} {
+    evalInProc {
+	set ::y(0) {{1 2} {3 4}}
+	lset ::y(0) 1 1 5
+    }
+} "0 {{1 2} {3 5}}"
+
+test lsetComp-3.6 {lset, compiled, flat args, array, one-byte offset} {
+    evalInProc {
+	set y(0) {{1 2} {3 4}}
+	lset y(0) 1 1 5
+    }
+} "0 {{1 2} {3 5}}"
+
+test lsetComp-3.7 {lset, compiled, flat args, array, four-byte offset} {
+    evalInProc {
+	set x0 0; set x1 0; set x2 0; set x3 0; 
+	set x4 0; set x5 0; set x6 0; set x7 0; 
+	set x8 0; set x9 0; set x10 0; set x11 0; 
+	set x12 0; set x13 0; set x14 0; set x15 0; 
+	set x16 0; set x17 0; set x18 0; set x19 0; 
+	set x20 0; set x21 0; set x22 0; set x23 0; 
+	set x24 0; set x25 0; set x26 0; set x27 0; 
+	set x28 0; set x29 0; set x30 0; set x31 0; 
+	set x32 0; set x33 0; set x34 0; set x35 0; 
+	set x36 0; set x37 0; set x38 0; set x39 0; 
+	set x40 0; set x41 0; set x42 0; set x43 0; 
+	set x44 0; set x45 0; set x46 0; set x47 0; 
+	set x48 0; set x49 0; set x50 0; set x51 0; 
+	set x52 0; set x53 0; set x54 0; set x55 0; 
+	set x56 0; set x57 0; set x58 0; set x59 0; 
+	set x60 0; set x61 0; set x62 0; set x63 0; 
+	set x64 0; set x65 0; set x66 0; set x67 0; 
+	set x68 0; set x69 0; set x70 0; set x71 0; 
+	set x72 0; set x73 0; set x74 0; set x75 0; 
+	set x76 0; set x77 0; set x78 0; set x79 0; 
+	set x80 0; set x81 0; set x82 0; set x83 0; 
+	set x84 0; set x85 0; set x86 0; set x87 0; 
+	set x88 0; set x89 0; set x90 0; set x91 0; 
+	set x92 0; set x93 0; set x94 0; set x95 0; 
+	set x96 0; set x97 0; set x98 0; set x99 0; 
+	set x100 0; set x101 0; set x102 0; set x103 0; 
+	set x104 0; set x105 0; set x106 0; set x107 0; 
+	set x108 0; set x109 0; set x110 0; set x111 0; 
+	set x112 0; set x113 0; set x114 0; set x115 0; 
+	set x116 0; set x117 0; set x118 0; set x119 0; 
+	set x120 0; set x121 0; set x122 0; set x123 0; 
+	set x124 0; set x125 0; set x126 0; set x127 0; 
+	set x128 0; set x129 0; set x130 0; set x131 0; 
+	set x132 0; set x133 0; set x134 0; set x135 0; 
+	set x136 0; set x137 0; set x138 0; set x139 0; 
+	set x140 0; set x141 0; set x142 0; set x143 0; 
+	set x144 0; set x145 0; set x146 0; set x147 0; 
+	set x148 0; set x149 0; set x150 0; set x151 0; 
+	set x152 0; set x153 0; set x154 0; set x155 0; 
+	set x156 0; set x157 0; set x158 0; set x159 0; 
+	set x160 0; set x161 0; set x162 0; set x163 0; 
+	set x164 0; set x165 0; set x166 0; set x167 0; 
+	set x168 0; set x169 0; set x170 0; set x171 0; 
+	set x172 0; set x173 0; set x174 0; set x175 0; 
+	set x176 0; set x177 0; set x178 0; set x179 0; 
+	set x180 0; set x181 0; set x182 0; set x183 0; 
+	set x184 0; set x185 0; set x186 0; set x187 0; 
+	set x188 0; set x189 0; set x190 0; set x191 0; 
+	set x192 0; set x193 0; set x194 0; set x195 0; 
+	set x196 0; set x197 0; set x198 0; set x199 0; 
+	set x200 0; set x201 0; set x202 0; set x203 0; 
+	set x204 0; set x205 0; set x206 0; set x207 0; 
+	set x208 0; set x209 0; set x210 0; set x211 0; 
+	set x212 0; set x213 0; set x214 0; set x215 0; 
+	set x216 0; set x217 0; set x218 0; set x219 0; 
+	set x220 0; set x221 0; set x222 0; set x223 0; 
+	set x224 0; set x225 0; set x226 0; set x227 0; 
+	set x228 0; set x229 0; set x230 0; set x231 0; 
+	set x232 0; set x233 0; set x234 0; set x235 0; 
+	set x236 0; set x237 0; set x238 0; set x239 0; 
+	set x240 0; set x241 0; set x242 0; set x243 0; 
+	set x244 0; set x245 0; set x246 0; set x247 0; 
+	set x248 0; set x249 0; set x250 0; set x251 0; 
+	set x252 0; set x253 0; set x254 0; set x255 0;
+	set y(0) {{1 2} {3 4}}
+	lset y(0) 1 1 5
+    }
+} "0 {{1 2} {3 5}}"
+
+test lsetComp-3.8 {lset, compiled, flat args, error } {
+    evalInProc {
+	set x { {1 2} {3 4} }
+	lset x 1 5 5
+    }
+} "1 {list index out of range}"
+
+test lsetComp-3.9 {lset, compiled, flat args, error - is string preserved} {
+    set ::x { { 1 2 } { 3 4 } }
+    evalInProc {
+	lset ::x 1 5 5
+    }
+    list $::x [lindex $::x 1]
+} "{ { 1 2 } { 3 4 } } { 3 4 }"
+
+catch { rename evalInProc {} }
+catch { unset ::x }
+catch { unset ::y }
+
+# cleanup
+::tcltest::cleanupTests
+return

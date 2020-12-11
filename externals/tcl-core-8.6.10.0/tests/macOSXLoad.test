@@ -1,0 +1,33 @@
+# Commands covered:  load unload
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1995 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+set oldTSF $::tcltest::testSingleFile
+set ::tcltest::testSingleFile false
+
+if {[testConstraint unix] && $tcl_platform(os) eq "Darwin" &&
+	![string match *pkga* [info loaded]]} {
+    # On Darwin, test .bundle (un)loading in addition to .dylib
+    set ext .bundle
+    source [file join [file dirname [info script]] load.test]
+    set ext .bundle
+    source [file join [file dirname [info script]] unload.test]
+    unset -nocomplain ext
+}
+
+set ::tcltest::testSingleFile $oldTSF
+unset oldTSF
+::tcltest::cleanupTests
+return

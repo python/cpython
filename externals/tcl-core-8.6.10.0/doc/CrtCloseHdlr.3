@@ -1,0 +1,55 @@
+'\"
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_CreateCloseHandler 3 7.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Tcl_CreateCloseHandler, Tcl_DeleteCloseHandler \- arrange for callbacks when channels are closed
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+void
+\fBTcl_CreateCloseHandler\fR(\fIchannel, proc, clientData\fR)
+.sp
+void
+\fBTcl_DeleteCloseHandler\fR(\fIchannel, proc, clientData\fR)
+.sp
+.SH ARGUMENTS
+.AS Tcl_CloseProc clientData
+.AP Tcl_Channel channel in
+The channel for which to create or delete a close callback.
+.AP Tcl_CloseProc *proc in
+The procedure to call as the callback.
+.AP ClientData clientData in
+Arbitrary one-word value to pass to \fIproc\fR.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTcl_CreateCloseHandler\fR arranges for \fIproc\fR to be called when
+\fIchannel\fR is closed with \fBTcl_Close\fR or
+\fBTcl_UnregisterChannel\fR, or using the Tcl \fBclose\fR command.
+\fIProc\fR should match the following prototype:
+.PP
+.CS
+typedef void \fBTcl_CloseProc\fR(
+        ClientData \fIclientData\fR);
+.CE
+.PP
+The \fIclientData\fR is the same as the value provided in the call to
+\fBTcl_CreateCloseHandler\fR.
+.PP
+\fBTcl_DeleteCloseHandler\fR removes a close callback for \fIchannel\fR.
+The \fIproc\fR and \fIclientData\fR identify which close callback to
+remove; \fBTcl_DeleteCloseHandler\fR does nothing if its \fIproc\fR and
+\fIclientData\fR arguments do not match the \fIproc\fR and \fIclientData\fR
+for a  close handler for \fIchannel\fR.
+.SH "SEE ALSO"
+close(n), Tcl_Close(3), Tcl_UnregisterChannel(3)
+.SH KEYWORDS
+callback, channel closing

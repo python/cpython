@@ -1,0 +1,188 @@
+'\"
+'\" Copyright (c) 1989-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_SplitList 3 8.0 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_SplitList, Tcl_Merge, Tcl_ScanElement, Tcl_ConvertElement, Tcl_ScanCountedElement, Tcl_ConvertCountedElement \- manipulate Tcl lists
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_SplitList\fR(\fIinterp, list, argcPtr, argvPtr\fR)
+.sp
+char *
+\fBTcl_Merge\fR(\fIargc, argv\fR)
+.sp
+int
+\fBTcl_ScanElement\fR(\fIsrc, flagsPtr\fR)
+.sp
+int
+\fBTcl_ScanCountedElement\fR(\fIsrc, length, flagsPtr\fR)
+.sp
+int
+\fBTcl_ConvertElement\fR(\fIsrc, dst, flags\fR)
+.sp
+int
+\fBTcl_ConvertCountedElement\fR(\fIsrc, length, dst, flags\fR)
+.SH ARGUMENTS
+.AS "const char *const" ***argvPtr out
+.AP Tcl_Interp *interp out
+Interpreter to use for error reporting.  If NULL, then no error message
+is left.
+.AP char *list in
+Pointer to a string with proper list structure.
+.AP int *argcPtr out
+Filled in with number of elements in \fIlist\fR.
+.AP "const char" ***argvPtr out
+\fI*argvPtr\fR will be filled in with the address of an array of
+pointers to the strings that are the extracted elements of \fIlist\fR.
+There will be \fI*argcPtr\fR valid entries in the array, followed by
+a NULL entry.
+.AP int argc in
+Number of elements in \fIargv\fR.
+.AP "const char *const" *argv in
+Array of strings to merge together into a single list.
+Each string will become a separate element of the list.
+.AP "const char" *src in
+String that is to become an element of a list.
+.AP int *flagsPtr in
+Pointer to word to fill in with information about \fIsrc\fR.
+The value of *\fIflagsPtr\fR must be passed to \fBTcl_ConvertElement\fR.
+.AP int length in
+Number of bytes in string \fIsrc\fR.
+.AP char *dst in
+Place to copy converted list element.  Must contain enough characters
+to hold converted string.
+.AP int flags in
+Information about \fIsrc\fR. Must be value returned by previous
+call to \fBTcl_ScanElement\fR, possibly OR-ed
+with \fBTCL_DONT_USE_BRACES\fR.
+.BE
+.SH DESCRIPTION
+.PP
+These procedures may be used to disassemble and reassemble Tcl lists.
+\fBTcl_SplitList\fR breaks a list up into its constituent elements,
+returning an array of pointers to the elements using
+\fIargcPtr\fR and \fIargvPtr\fR.
+While extracting the arguments, \fBTcl_SplitList\fR obeys the usual
+rules for backslash substitutions and braces.  The area of
+memory pointed to by \fI*argvPtr\fR is dynamically allocated;  in
+addition to the array of pointers, it
+also holds copies of all the list elements.  It is the caller's
+responsibility to free up all of this storage.
+For example, suppose that you have called \fBTcl_SplitList\fR with
+the following code:
+.PP
+.CS
+int argc, code;
+char *string;
+char **argv;
+\&...
+code = \fBTcl_SplitList\fR(interp, string, &argc, &argv);
+.CE
+.PP
+Then you should eventually free the storage with a call like the
+following:
+.PP
+.CS
+Tcl_Free((char *) argv);
+.CE
+.PP
+\fBTcl_SplitList\fR normally returns \fBTCL_OK\fR, which means the list was
+successfully parsed.
+If there was a syntax error in \fIlist\fR, then \fBTCL_ERROR\fR is returned
+and the interpreter's result will point to an error message describing the
+problem (if \fIinterp\fR was not NULL).
+If \fBTCL_ERROR\fR is returned then no memory is allocated and \fI*argvPtr\fR
+is not modified.
+.PP
+\fBTcl_Merge\fR is the inverse of \fBTcl_SplitList\fR:  it
+takes a collection of strings given by \fIargc\fR
+and \fIargv\fR and generates a result string
+that has proper list structure.
+This means that commands like \fBindex\fR may be used to
+extract the original elements again.
+In addition, if the result of \fBTcl_Merge\fR is passed to \fBTcl_Eval\fR,
+it will be parsed into \fIargc\fR words whose values will
+be the same as the \fIargv\fR strings passed to \fBTcl_Merge\fR.
+\fBTcl_Merge\fR will modify the list elements with braces and/or
+backslashes in order to produce proper Tcl list structure.
+The result string is dynamically allocated
+using \fBTcl_Alloc\fR;  the caller must eventually release the space
+using \fBTcl_Free\fR.
+.PP
+If the result of \fBTcl_Merge\fR is passed to \fBTcl_SplitList\fR,
+the elements returned by \fBTcl_SplitList\fR will be identical to
+those passed into \fBTcl_Merge\fR.
+However, the converse is not true:  if \fBTcl_SplitList\fR
+is passed a given string, and the resulting \fIargc\fR and
+\fIargv\fR are passed to \fBTcl_Merge\fR, the resulting string
+may not be the same as the original string passed to \fBTcl_SplitList\fR.
+This is because \fBTcl_Merge\fR may use backslashes and braces
+differently than the original string.
+.PP
+\fBTcl_ScanElement\fR and \fBTcl_ConvertElement\fR are the
+procedures that do all of the real work of \fBTcl_Merge\fR.
+\fBTcl_ScanElement\fR scans its \fIsrc\fR argument
+and determines how to use backslashes and braces
+when converting it to a list element.
+It returns an overestimate of the number of characters
+required to represent \fIsrc\fR as a list element, and
+it stores information in \fI*flagsPtr\fR that is needed
+by \fBTcl_ConvertElement\fR.
+.PP
+\fBTcl_ConvertElement\fR is a companion procedure to \fBTcl_ScanElement\fR.
+It does the actual work of converting a string to a list element.
+Its \fIflags\fR argument must be the same as the value returned
+by \fBTcl_ScanElement\fR.
+\fBTcl_ConvertElement\fR writes a proper list element to memory
+starting at *\fIdst\fR and returns a count of the total number
+of characters written, which will be no more than the result
+returned by \fBTcl_ScanElement\fR.
+\fBTcl_ConvertElement\fR writes out only the actual list element
+without any leading or trailing spaces: it is up to the caller to
+include spaces between adjacent list elements.
+.PP
+\fBTcl_ConvertElement\fR uses one of two different approaches to
+handle the special characters in \fIsrc\fR.  Wherever possible, it
+handles special characters by surrounding the string with braces.
+This produces clean-looking output, but cannot be used in some situations,
+such as when \fIsrc\fR contains unmatched braces.
+In these situations, \fBTcl_ConvertElement\fR handles special
+characters by generating backslash sequences for them.
+The caller may insist on the second approach by OR-ing the
+flag value returned by \fBTcl_ScanElement\fR with
+\fBTCL_DONT_USE_BRACES\fR.
+Although this will produce an uglier result, it is useful in some
+special situations, such as when \fBTcl_ConvertElement\fR is being
+used to generate a portion of an argument for a Tcl command.
+In this case, surrounding \fIsrc\fR with curly braces would cause
+the command not to be parsed correctly.
+.PP
+By default, \fBTcl_ConvertElement\fR will use quoting in its output
+to be sure the first character of an element is not the hash
+character
+.PQ # .
+This is to be sure the first element of any list
+passed to \fBeval\fR is not mis-parsed as the beginning of a comment.
+When a list element is not the first element of a list, this quoting
+is not necessary.  When the caller can be sure that the element is
+not the first element of a list, it can disable quoting of the leading
+hash character by OR-ing the flag value returned by \fBTcl_ScanElement\fR
+with \fBTCL_DONT_QUOTE_HASH\fR.
+.PP
+\fBTcl_ScanCountedElement\fR and \fBTcl_ConvertCountedElement\fR are
+the same as \fBTcl_ScanElement\fR and \fBTcl_ConvertElement\fR, except
+the length of string \fIsrc\fR is specified by the \fIlength\fR
+argument, and the string may contain embedded nulls.
+.SH "SEE ALSO"
+Tcl_ListObjGetElements(3)
+.SH KEYWORDS
+backslash, convert, element, list, merge, split, strings

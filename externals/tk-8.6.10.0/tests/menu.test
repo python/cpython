@@ -1,0 +1,3971 @@
+# This file is a Tcl script to test menus in Tk.  It is
+# organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1995-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+imageInit
+
+# find the earth.gif file for use in these tests (tests 2.*)
+set earthPhotoFile [file join [file dirname [info script]] earth.gif]
+testConstraint hasEarthPhoto [file exists $earthPhotoFile]
+
+test menu-1.1 {Tk_MenuCmd procedure} -body {
+    menu
+} -returnCodes error -result {wrong # args: should be "menu pathName ?-option value ...?"}
+test menu-1.2 {Tk_MenuCmd procedure} -body {
+    menu bogus
+} -returnCodes error -result {bad window path name "bogus"}
+test menu-1.3 {Tk_MenuCmd procedure} -body {
+    destroy .m1
+    menu .m1 foo
+} -returnCodes error -result {unknown option "foo"}
+test menu-1.4 {Tk_MenuCmd procedure} -body {
+    destroy .m1
+    menu .m1
+} -cleanup {
+	deleteWindows
+} -result {.m1}
+test menu-1.5 {Tk_MenuCmd - creating menubar} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add cascade -label Test -menu ""
+    list [. configure -menu .m1] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-1.6 {Tk_MenuCmd procedure menu ref no cascade} -setup {
+	deleteWindows
+} -body {
+    toplevel .t2 -menu .m1
+    wm geometry .t2 +0+0
+    menu .m1
+} -cleanup {
+	deleteWindows
+} -result {.m1}
+test menu-1.7 {Tk_MenuCmd procedure one clone cascade} -setup {
+	deleteWindows
+} -body {
+    toplevel .t2 -menu .m1
+    wm geometry .t2 +0+0
+    menu .m1
+    .m1 add cascade -menu .m2
+    menu .m2
+} -cleanup {
+	deleteWindows
+} -result {.m2}
+test menu-1.8 {Tk_MenuCmd procedure two clone cascades} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add cascade -menu .m2
+    toplevel .t2 -menu .m1
+    wm geometry .t2 +0+0
+    toplevel .t3 -menu .m1
+    wm geometry .t3 +0+0
+    menu .m2
+} -cleanup {
+	deleteWindows
+} -result {.m2}
+test menu-1.9 {Tk_MenuCmd procedure two clone cascades different order} -setup {
+	deleteWindows
+} -body {
+    toplevel .t2 -menu .m1
+    wm geometry .t2 +0+0
+    menu .m1
+    .m1 add cascade -menu .m2
+    toplevel .t3 -menu .m1
+    wm geometry .t3 +0+0
+    list [menu .m2]
+} -cleanup {
+	deleteWindows
+} -result {.m2}
+test menu-1.10 {Tk_MenuCmd procedure two clone cascades menus last} -setup {
+	deleteWindows
+} -body {
+    toplevel .t2 -menu .m1
+    wm geometry .t2 +0+0
+    toplevel .t3 -menu .m1
+    wm geometry .t3 +0+0
+    menu .m1
+    .m1 add cascade -menu .m2
+    list [menu .m2]
+} -cleanup {
+	deleteWindows
+} -result {.m2}
+test menu-1.11 {Tk_MenuCmd procedure three clones cascades} -setup {
+	deleteWindows
+} -body {
+    toplevel .t2 -menu .m1
+    wm geometry .t2 +0+0
+    toplevel .t3 -menu .m1
+    wm geometry .t3 +0+0
+    toplevel .t4 -menu .m1
+    wm geometry .t4 +0+0
+    menu .m1
+    .m1 add cascade -menu .m2
+    list [menu .m2]
+} -cleanup {
+	deleteWindows
+} -result {.m2}
+test menu-1.12 {Tk_MenuCmd procedure} -setup {
+	deleteWindows
+} -body {
+    toplevel .t2 -menu .m1
+    wm geometry .t2 +0+0
+    list [menu .m1]
+} -cleanup {
+	deleteWindows
+} -result {.m1}
+test menu-1.13 {Tk_MenuCmd procedure} -setup {
+	deleteWindows
+} -body {
+    toplevel .t2 -menu .m1
+    wm geometry .t2 +0+0
+    toplevel .t3 -menu .m1
+    wm geometry .t3 +0+0
+    list [menu .m1]
+} -cleanup {
+	deleteWindows
+} -result {.m1}
+test menu-1.14 {Tk_MenuCmd procedure} -setup {
+	deleteWindows
+} -body {
+    toplevel .t2 -menu .m1
+    wm geometry .t2 +0+0
+    toplevel .t3 -menu .m1
+    wm geometry .t3 +0+0
+    toplevel .t4 -menu .m1
+    wm geometry .t4 +0+0
+    list [menu .m1]
+} -cleanup {
+	deleteWindows
+} -result {.m1}
+
+# Used for 2.1 - 2.30 tests
+destroy .m1
+menu .m1
+test menu-2.1 {configuration options -activebackground #012345} -body {
+    .m1 configure -activebackground #012345
+    .m1 cget -activebackground
+} -result {#012345}
+test menu-2.2 {configuration options -activebackground non-existent} -body {
+    .m1 configure -activebackground non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.3 {configuration options -activeborderwidth 1.3} -body {
+    .m1 configure -activeborderwidth 1.3
+    .m1 cget -activeborderwidth
+} -result {1.3}
+test menu-2.4 {configuration options -activeborderwidth badValue} -body {
+    .m1 configure -activeborderwidth badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+
+test menu-2.5 {configuration options -activeforeground #ff0000} -body {
+    .m1 configure -activeforeground #ff0000
+    .m1 cget -activeforeground
+} -result {#ff0000}
+test menu-2.6 {configuration options -activeforeground non-existent} -body {
+    .m1 configure -activeforeground non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.7 {configuration options -background #ff0000} -body {
+    .m1 configure -background #ff0000
+    .m1 cget -background
+} -result {#ff0000}
+test menu-2.8 {configuration options -background non-existent} -body {
+    .m1 configure -background non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.9 {configuration options -bg #110022} -body {
+    .m1 configure -bg #110022
+    .m1 cget -bg
+} -result {#110022}
+test menu-2.10 {configuration options -bg bogus} -body {
+    .m1 configure -bg bogus
+} -returnCodes error -result {unknown color name "bogus"}
+
+test menu-2.11 {configuration options -borderwidth 1.3} -body {
+    .m1 configure -borderwidth 1.3
+    .m1 cget -borderwidth
+} -result {1.3}
+test menu-2.12 {configuration options -borderwidth badValue} -body {
+    .m1 configure -borderwidth badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+
+test menu-2.13 {configuration options -cursor arrow} -body {
+    .m1 configure -cursor arrow
+    .m1 cget -cursor
+} -result {arrow}
+test menu-2.14 {configuration options -cursor badValue} -body {
+    .m1 configure -cursor badValue
+} -returnCodes error -result {bad cursor spec "badValue"}
+
+test menu-2.15 {configuration options -disabledforeground #00ff00} -body {
+    .m1 configure -disabledforeground #00ff00
+    .m1 cget -disabledforeground
+} -result {#00ff00}
+test menu-2.16 {configuration options -disabledforeground xyzzy} -body {
+    .m1 configure -disabledforeground xyzzy
+} -returnCodes error -result {unknown color name "xyzzy"}
+
+test menu-2.17 {configuration options -fg #110022} -body {
+    .m1 configure -fg #110022
+    .m1 cget -fg
+} -result {#110022}
+test menu-2.18 {configuration options -fg bogus} -body {
+    .m1 configure -fg bogus
+} -returnCodes error -result {unknown color name "bogus"}
+
+test menu-2.19 {configuration options -font -Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*} -body {
+    .m1 configure -font -Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*
+    .m1 cget -font
+} -result {-Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*}
+test menu-2.20 {configuration options -foreground #110022} -body {
+    .m1 configure -foreground #110022
+    .m1 cget -foreground
+} -result {#110022}
+test menu-2.21 {configuration options -foreground bogus} -body {
+    .m1 configure -foreground bogus
+} -returnCodes error -result {unknown color name "bogus"}
+
+test menu-2.22 {configuration options -postcommand {any old string}} -body {
+    .m1 configure -postcommand {any old string}
+    .m1 cget -postcommand
+} -result {any old string}
+test menu-2.23 {configuration options -relief groove} -body {
+    .m1 configure -relief groove
+    .m1 cget -relief
+} -result {groove}
+test menu-2.24 {configuration options -relief 1.5} -body {
+    .m1 configure -relief 1.5
+} -returnCodes error -result {bad relief "1.5": must be flat, groove, raised, ridge, solid, or sunken}
+
+test menu-2.25 {configuration options -selectcolor #110022} -body {
+    .m1 configure -selectcolor #110022
+    .m1 cget -selectcolor
+} -result {#110022}
+test menu-2.26 {configuration options -selectcolor bogus} -body {
+    .m1 configure -selectcolor bogus
+} -returnCodes error -result {unknown color name "bogus"}
+
+test menu-2.27 {configuration options -takefocus {any string}} -body {
+    .m1 configure -takefocus {any string}
+    .m1 cget -takefocus
+} -result {any string}
+test menu-2.28 {configuration options -tearoff 0} -body {
+    .m1 configure -tearoff 0
+    .m1 cget -tearoff
+} -result {0}
+test menu-2.29 {configuration options -tearoff 1} -body {
+    .m1 configure -tearoff 1
+    .m1 cget -tearoff
+} -result {1}
+test menu-2.30 {configuration options -tearoffcommand {any old string}} -body {
+    .m1 configure -tearoffcommand {any old string}
+    .m1 cget -tearoffcommand
+} -result {any old string}
+destroy .m1
+
+# We need to test all of the options with all of the different types of
+# menu entries. The following code sets up .m1 with 6 items. It then
+# runs through the 2.31 - 2.228 tests below
+# index 0 is tearoff, 1 command, 2 cascade, 3 separator, 4 checkbutton, 
+# 5 radiobutton
+deleteWindows
+menu .m1 -tearoff 1
+.m1 add command -label "command"
+menu .m2 -tearoff 1
+.m2 add command -label "test"
+.m1 add cascade -label "cascade" -menu .m2
+.m1 add separator
+.m1 add checkbutton -label "checkbutton" -variable check -onvalue on -offvalue off
+.m1 add radiobutton -label "radiobutton" -variable radio
+
+if {[testConstraint hasEarthPhoto]} {
+    image create photo image1 -file $earthPhotoFile
+}
+
+test menu-2.31 {entry configuration options 0 -activebackground #012345 tearoff} -body {
+    .m1 entryconfigure 0 -activebackground #012345
+} -returnCodes error -result {unknown option "-activebackground"}
+
+test menu-2.32 {entry configuration options 1 -activebackground #012345 command} -body {
+    .m1 entryconfigure 1 -activebackground #012345
+    lindex [.m1 entryconfigure 1 -activebackground] 4
+} -result {#012345}
+
+test menu-2.33 {entry configuration options 2 -activebackground #012345 cascade} -body {
+    .m1 entryconfigure 2 -activebackground #012345
+    lindex [.m1 entryconfigure 2 -activebackground] 4
+} -result {#012345}
+
+test menu-2.34 {entry configuration options 3 -activebackground #012345 separator} -body {
+    .m1 entryconfigure 3 -activebackground #012345
+} -returnCodes error -result {unknown option "-activebackground"}
+
+test menu-2.35 {entry configuration options 4 -activebackground #012345 checkbutton} -body {
+    .m1 entryconfigure 4 -activebackground #012345
+    lindex [.m1 entryconfigure 4 -activebackground] 4
+} -result {#012345}
+
+test menu-2.36 {entry configuration options 5 -activebackground #012345 radiobutton} -body {
+    .m1 entryconfigure 5 -activebackground #012345
+    lindex [.m1 entryconfigure 5 -activebackground] 4
+} -result {#012345}
+
+test menu-2.37 {entry configuration options 0 -activebackground non-existent tearoff} -body {
+    .m1 entryconfigure 0 -activebackground non-existent
+} -returnCodes error -result {unknown option "-activebackground"}
+
+test menu-2.38 {entry configuration options 1 -activebackground non-existent command} -body {
+    .m1 entryconfigure 1 -activebackground non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.39 {entry configuration options 2 -activebackground non-existent cascade} -body {
+    .m1 entryconfigure 2 -activebackground non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.40 {entry configuration options 3 -activebackground non-existent separator} -body {
+    .m1 entryconfigure 3 -activebackground non-existent
+} -returnCodes error -result {unknown option "-activebackground"}
+
+test menu-2.41 {entry configuration options 4 -activebackground non-existent checkbutton} -body {
+    .m1 entryconfigure 4 -activebackground non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.42 {entry configuration options 5 -activebackground non-existent radiobutton} -body {
+    .m1 entryconfigure 5 -activebackground non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.43 {entry configuration options 0 -activeforeground #ff0000 tearoff} -body {
+    .m1 entryconfigure 0 -activeforeground #ff0000
+} -returnCodes error -result {unknown option "-activeforeground"}
+
+test menu-2.44 {entry configuration options 1 -activeforeground #ff0000 command} -body {
+    .m1 entryconfigure 1 -activeforeground #ff0000
+    lindex [.m1 entryconfigure 1 -activeforeground] 4
+} -result {#ff0000}
+
+test menu-2.45 {entry configuration options 2 -activeforeground #ff0000 cascade} -body {
+    .m1 entryconfigure 2 -activeforeground #ff0000
+    lindex [.m1 entryconfigure 2 -activeforeground] 4
+} -result {#ff0000}
+
+test menu-2.46 {entry configuration options 3 -activeforeground #ff0000 separator} -body {
+    .m1 entryconfigure 3 -activeforeground #ff0000
+} -returnCodes error -result {unknown option "-activeforeground"}
+
+test menu-2.47 {entry configuration options 4 -activeforeground #ff0000 checkbutton} -body {
+    .m1 entryconfigure 4 -activeforeground #ff0000
+    lindex [.m1 entryconfigure 4 -activeforeground] 4
+} -result {#ff0000}
+
+test menu-2.48 {entry configuration options 5 -activeforeground #ff0000 radiobutton} -body {
+    .m1 entryconfigure 5 -activeforeground #ff0000
+    lindex [.m1 entryconfigure 5 -activeforeground] 4
+} -result {#ff0000}
+
+test menu-2.49 {entry configuration options 0 -activeforeground non-existent tearoff} -body {
+    .m1 entryconfigure 0 -activeforeground non-existent
+} -returnCodes error -result {unknown option "-activeforeground"}
+
+test menu-2.50 {entry configuration options 1 -activeforeground non-existent command} -body {
+    .m1 entryconfigure 1 -activeforeground non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.51 {entry configuration options 2 -activeforeground non-existent cascade} -body {
+    .m1 entryconfigure 2 -activeforeground non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.52 {entry configuration options 3 -activeforeground non-existent separator} -body {
+    .m1 entryconfigure 3 -activeforeground non-existent
+} -returnCodes error -result {unknown option "-activeforeground"}
+
+test menu-2.53 {entry configuration options 4 -activeforeground non-existent checkbutton} -body {
+    .m1 entryconfigure 4 -activeforeground non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.54 {entry configuration options 5 -activeforeground non-existent radiobutton} -body {
+    .m1 entryconfigure 5 -activeforeground non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.55 {entry configuration options 0 -accelerator Ctrl+S tearoff} -body {
+    .m1 entryconfigure 0 -accelerator Ctrl+S
+} -returnCodes error -result {unknown option "-accelerator"}
+
+test menu-2.56 {entry configuration options 1 -accelerator Ctrl+S command} -body {
+    .m1 entryconfigure 1 -accelerator Ctrl+S
+    lindex [.m1 entryconfigure 1 -accelerator] 4
+} -result {Ctrl+S}
+
+test menu-2.57 {entry configuration options 2 -accelerator Ctrl+S cascade} -body {
+    .m1 entryconfigure 2 -accelerator Ctrl+S
+    lindex [.m1 entryconfigure 2 -accelerator] 4
+} -result {Ctrl+S}
+
+test menu-2.58 {entry configuration options 3 -accelerator Ctrl+S separator} -body {
+    .m1 entryconfigure 3 -accelerator Ctrl+S
+} -returnCodes error -result {unknown option "-accelerator"}
+
+test menu-2.59 {entry configuration options 4 -accelerator Ctrl+S checkbutton} -body {
+    .m1 entryconfigure 4 -accelerator Ctrl+S
+    lindex [.m1 entryconfigure 4 -accelerator] 4
+} -result {Ctrl+S}
+
+test menu-2.60 {entry configuration options 5 -accelerator Ctrl+S radiobutton} -body {
+    .m1 entryconfigure 5 -accelerator Ctrl+S
+    lindex [.m1 entryconfigure 5 -accelerator] 4
+} -result {Ctrl+S}
+
+test menu-2.61 {entry configuration options 0 -background #ff0000 tearoff} -body {
+    .m1 entryconfigure 0 -background #ff0000
+    lindex [.m1 entryconfigure 0 -background] 4
+} -result {#ff0000}
+
+test menu-2.62 {entry configuration options 1 -background #ff0000 command} -body {
+    .m1 entryconfigure 1 -background #ff0000
+    lindex [.m1 entryconfigure 1 -background] 4
+} -result {#ff0000}
+
+test menu-2.63 {entry configuration options 2 -background #ff0000 cascade} -body {
+    .m1 entryconfigure 2 -background #ff0000
+    lindex [.m1 entryconfigure 2 -background] 4
+} -result {#ff0000}
+
+test menu-2.64 {entry configuration options 3 -background #ff0000 separator} -body {
+    .m1 entryconfigure 3 -background #ff0000
+    lindex [.m1 entryconfigure 3 -background] 4
+} -result {#ff0000}
+
+test menu-2.65 {entry configuration options 4 -background #ff0000 checkbutton} -body {
+    .m1 entryconfigure 4 -background #ff0000
+    lindex [.m1 entryconfigure 4 -background] 4
+} -result {#ff0000}
+
+test menu-2.66 {entry configuration options 5 -background #ff0000 radiobutton} -body {
+    .m1 entryconfigure 5 -background #ff0000
+    lindex [.m1 entryconfigure 5 -background] 4
+} -result {#ff0000}
+
+test menu-2.67 {entry configuration options 0 -background non-existent tearoff} -body {
+    .m1 entryconfigure 0 -background non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.68 {entry configuration options 1 -background non-existent command} -body {
+    .m1 entryconfigure 1 -background non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.69 {entry configuration options 2 -background non-existent cascade} -body {
+    .m1 entryconfigure 2 -background non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.70 {entry configuration options 3 -background non-existent separator} -body {
+    .m1 entryconfigure 3 -background non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.71 {entry configuration options 4 -background non-existent checkbutton} -body {
+    .m1 entryconfigure 4 -background non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.72 {entry configuration options 5 -background non-existent radiobutton} -body {
+    .m1 entryconfigure 5 -background non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.73 {entry configuration options 0 -bitmap questhead tearoff} -body {
+    .m1 entryconfigure 0 -bitmap questhead
+} -returnCodes error -result {unknown option "-bitmap"}
+
+test menu-2.74 {entry configuration options 1 -bitmap questhead command} -body {
+    .m1 entryconfigure 1 -bitmap questhead
+    lindex [.m1 entryconfigure 1 -bitmap] 4
+} -result {questhead}
+
+test menu-2.75 {entry configuration options 2 -bitmap questhead cascade} -body {
+    .m1 entryconfigure 2 -bitmap questhead
+    lindex [.m1 entryconfigure 2 -bitmap] 4
+} -result {questhead}
+
+test menu-2.76 {entry configuration options 3 -bitmap questhead separator} -body {
+    .m1 entryconfigure 3 -bitmap questhead
+} -returnCodes error -result {unknown option "-bitmap"}
+
+test menu-2.77 {entry configuration options 4 -bitmap questhead checkbutton} -body {
+    .m1 entryconfigure 4 -bitmap questhead
+    lindex [.m1 entryconfigure 4 -bitmap] 4
+} -result {questhead}
+
+test menu-2.78 {entry configuration options 5 -bitmap questhead radiobutton} -body {
+    .m1 entryconfigure 5 -bitmap questhead
+    lindex [.m1 entryconfigure 5 -bitmap] 4
+} -result {questhead}
+
+test menu-2.79 {entry configuration options 0 -bitmap badValue tearoff} -body {
+    .m1 entryconfigure 0 -bitmap badValue
+} -returnCodes error -result {unknown option "-bitmap"}
+
+test menu-2.80 {entry configuration options 1 -bitmap badValue command} -body {
+    .m1 entryconfigure 1 -bitmap badValue
+} -returnCodes error -result {bitmap "badValue" not defined}
+
+test menu-2.81 {entry configuration options 2 -bitmap badValue cascade} -body {
+    .m1 entryconfigure 2 -bitmap badValue
+} -returnCodes error -result {bitmap "badValue" not defined}
+
+test menu-2.82 {entry configuration options 3 -bitmap badValue separator} -body {
+    .m1 entryconfigure 3 -bitmap badValue
+} -returnCodes error -result {unknown option "-bitmap"}
+
+test menu-2.83 {entry configuration options 4 -bitmap badValue checkbutton} -body {
+    .m1 entryconfigure 4 -bitmap badValue
+} -returnCodes error -result {bitmap "badValue" not defined}
+
+test menu-2.84 {entry configuration options 5 -bitmap badValue radiobutton} -body {
+    .m1 entryconfigure 5 -bitmap badValue
+} -returnCodes error -result {bitmap "badValue" not defined}
+
+test menu-2.85 {entry configuration options 0 -columnbreak 1 tearoff} -body {
+    .m1 entryconfigure 0 -columnbreak 1
+} -returnCodes error -result {unknown option "-columnbreak"}
+
+test menu-2.86 {entry configuration options 1 -columnbreak 1 command} -body {
+    .m1 entryconfigure 1 -columnbreak 1
+    lindex [.m1 entryconfigure 1 -columnbreak] 4
+} -result {1}
+
+test menu-2.87 {entry configuration options 2 -columnbreak 1 cascade} -body {
+    .m1 entryconfigure 2 -columnbreak 1
+    lindex [.m1 entryconfigure 2 -columnbreak] 4
+} -result {1}
+
+test menu-2.88 {entry configuration options 3 -columnbreak 1 separator} -body {
+    .m1 entryconfigure 3 -columnbreak 1
+} -returnCodes error -result {unknown option "-columnbreak"}
+
+test menu-2.89 {entry configuration options 4 -columnbreak 1 checkbutton} -body {
+    .m1 entryconfigure 4 -columnbreak 1
+    lindex [.m1 entryconfigure 4 -columnbreak] 4
+} -result {1}
+
+test menu-2.90 {entry configuration options 5 -columnbreak 1 radiobutton} -body {
+    .m1 entryconfigure 5 -columnbreak 1
+    lindex [.m1 entryconfigure 5 -columnbreak] 4
+} -result {1}
+
+test menu-2.91 {entry configuration options 0 -command beep tearoff} -body {
+    .m1 entryconfigure 0 -command beep
+} -returnCodes error -result {unknown option "-command"}
+
+test menu-2.92 {entry configuration options 1 -command beep command} -body {
+    .m1 entryconfigure 1 -command beep
+    lindex [.m1 entryconfigure 1 -command] 4
+} -result {beep}
+
+test menu-2.93 {entry configuration options 2 -command beep cascade} -body {
+    .m1 entryconfigure 2 -command beep
+    lindex [.m1 entryconfigure 2 -command] 4
+} -result {beep}
+
+test menu-2.94 {entry configuration options 3 -command beep separator} -body {
+    .m1 entryconfigure 3 -command beep
+} -returnCodes error -result {unknown option "-command"}
+
+test menu-2.95 {entry configuration options 4 -command beep checkbutton} -body {
+    .m1 entryconfigure 4 -command beep
+    lindex [.m1 entryconfigure 4 -command] 4
+} -result {beep}
+
+test menu-2.96 {entry configuration options 5 -command beep radiobutton} -body {
+    .m1 entryconfigure 5 -command beep
+    lindex [.m1 entryconfigure 5 -command] 4
+} -result {beep}
+
+test menu-2.97 {entry configuration options 0 -font -Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-* tearoff} -body {
+    .m1 entryconfigure 0 -font -Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*
+} -returnCodes error -result {unknown option "-font"}
+
+test menu-2.98 {entry configuration options 1 -font -Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-* command} -body {
+    .m1 entryconfigure 1 -font -Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*
+    lindex [.m1 entryconfigure 1 -font] 4
+} -result {-Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*}
+
+test menu-2.99 {entry configuration options 2 -font -Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-* cascade} -body {
+    .m1 entryconfigure 2 -font -Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*
+    lindex [.m1 entryconfigure 2 -font] 4
+} -result {-Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*}
+
+test menu-2.100 {entry configuration options 3 -font -Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-* separator} -body {
+    .m1 entryconfigure 3 -font -Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*
+} -returnCodes error -result {unknown option "-font"}
+
+test menu-2.101 {entry configuration options 4 -font -Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-* checkbutton} -body {
+    .m1 entryconfigure 4 -font -Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*
+    lindex [.m1 entryconfigure 4 -font] 4
+} -result {-Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*}
+
+test menu-2.102 {entry configuration options 5 -font -Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-* radiobutton} -body {
+    .m1 entryconfigure 5 -font -Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*
+    lindex [.m1 entryconfigure 5 -font] 4
+} -result {-Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*}
+
+test menu-2.103 {entry configuration options 0 -font {kill rock stars} tearoff} -body {
+    .m1 entryconfigure 0 -font {kill rock stars}
+} -returnCodes error -result {unknown option "-font"}
+
+test menu-2.104 {entry configuration options 1 -font {kill rock stars} command} -body {
+    .m1 entryconfigure 1 -font {kill rock stars}
+} -returnCodes error -result {expected integer but got "rock"}
+
+test menu-2.105 {entry configuration options 2 -font {kill rock stars} cascade} -body {
+    .m1 entryconfigure 2 -font {kill rock stars}
+} -returnCodes error -result {expected integer but got "rock"}
+
+test menu-2.106 {entry configuration options 3 -font {kill rock stars} separator} -body {
+    .m1 entryconfigure 3 -font {kill rock stars}
+} -returnCodes error -result {unknown option "-font"}
+
+test menu-2.107 {entry configuration options 4 -font {kill rock stars} checkbutton} -body {
+    .m1 entryconfigure 4 -font {kill rock stars}
+} -returnCodes error -result {expected integer but got "rock"}
+
+test menu-2.108 {entry configuration options 5 -font {kill rock stars} radiobutton} -body {
+    .m1 entryconfigure 5 -font {kill rock stars}
+} -returnCodes error -result {expected integer but got "rock"}
+
+test menu-2.109 {entry configuration options 0 -foreground #110022 tearoff} -body {
+    .m1 entryconfigure 0 -foreground #110022
+} -returnCodes error -result {unknown option "-foreground"}
+
+test menu-2.110 {entry configuration options 1 -foreground #110022 command} -body {
+    .m1 entryconfigure 1 -foreground #110022
+    lindex [.m1 entryconfigure 1 -foreground] 4
+} -result {#110022}
+
+test menu-2.111 {entry configuration options 2 -foreground #110022 cascade} -body {
+    .m1 entryconfigure 2 -foreground #110022
+    lindex [.m1 entryconfigure 2 -foreground] 4
+} -result {#110022}
+
+test menu-2.112 {entry configuration options 3 -foreground #110022 separator} -body {
+    .m1 entryconfigure 3 -foreground #110022
+} -returnCodes error -result {unknown option "-foreground"}
+
+test menu-2.113 {entry configuration options 4 -foreground #110022 checkbutton} -body {
+    .m1 entryconfigure 4 -foreground #110022
+    lindex [.m1 entryconfigure 4 -foreground] 4
+} -result {#110022}
+
+test menu-2.114 {entry configuration options 5 -foreground #110022 radiobutton} -body {
+    .m1 entryconfigure 5 -foreground #110022
+    lindex [.m1 entryconfigure 5 -foreground] 4
+} -result {#110022}
+
+test menu-2.115 {entry configuration options 0 -foreground non-existent tearoff} -body {
+    .m1 entryconfigure 0 -foreground non-existent
+} -returnCodes error -result {unknown option "-foreground"}
+
+test menu-2.116 {entry configuration options 1 -foreground non-existent command} -body {
+    .m1 entryconfigure 1 -foreground non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.117 {entry configuration options 2 -foreground non-existent cascade} -body {
+    .m1 entryconfigure 2 -foreground non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.118 {entry configuration options 3 -foreground non-existent separator} -body {
+    .m1 entryconfigure 3 -foreground non-existent
+} -returnCodes error -result {unknown option "-foreground"}
+
+test menu-2.119 {entry configuration options 4 -foreground non-existent checkbutton} -body {
+    .m1 entryconfigure 4 -foreground non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.120 {entry configuration options 5 -foreground non-existent radiobutton} -body {
+    .m1 entryconfigure 5 -foreground non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.121 {entry configuration options 0 -image image1 tearoff} -constraints {
+    hasEarthPhoto
+} -body {
+    .m1 entryconfigure 0 -image image1
+} -returnCodes error -result {unknown option "-image"}
+
+test menu-2.122 {entry configuration options 1 -image image1 command} -constraints {
+    hasEarthPhoto
+} -setup {
+    .m1 entryconfigure 1 -image {}
+} -body {
+    .m1 entryconfigure 1 -image image1
+    lindex [.m1 entryconfigure 1 -image] 4
+} -cleanup {
+    .m1 entryconfigure 1 -image {}
+} -result {image1}
+
+test menu-2.123 {entry configuration options 2 -image image1 cascade} -constraints {
+    hasEarthPhoto
+} -setup {
+    .m1 entryconfigure 2 -image {}
+} -body {
+    .m1 entryconfigure 2 -image image1
+    lindex [.m1 entryconfigure 2 -image] 4
+} -cleanup {
+    .m1 entryconfigure 2 -image {}
+} -result {image1}
+
+test menu-2.124 {entry configuration options 3 -image image1 separator} -constraints {
+    hasEarthPhoto
+} -body {
+    .m1 entryconfigure 3 -image image1
+} -returnCodes error -result {unknown option "-image"}
+
+test menu-2.125 {entry configuration options 4 -image image1 checkbutton} -constraints {
+    hasEarthPhoto
+} -setup {
+    .m1 entryconfigure 4 -image {}
+} -body {
+    .m1 entryconfigure 4 -image image1
+    lindex [.m1 entryconfigure 4 -image] 4
+} -cleanup {
+    .m1 entryconfigure 4 -image {}
+} -result {image1}
+
+test menu-2.126 {entry configuration options 5 -image image1 radiobutton} -constraints {
+    hasEarthPhoto
+} -setup {
+    .m1 entryconfigure 5 -image {}
+} -body {
+    .m1 entryconfigure 5 -image image1
+    lindex [.m1 entryconfigure 5 -image] 4
+} -cleanup {
+    .m1 entryconfigure 5 -image {}
+} -result {image1}
+
+test menu-2.127 {entry configuration options 0 -image bogus tearoff} -body {
+    .m1 entryconfigure 0 -image bogus
+} -returnCodes error -result {unknown option "-image"}
+
+test menu-2.128 {entry configuration options 1 -image bogus command} -body {
+    .m1 entryconfigure 1 -image bogus
+} -returnCodes error -result {image "bogus" doesn't exist}
+
+test menu-2.129 {entry configuration options 2 -image bogus cascade} -body {
+    .m1 entryconfigure 2 -image bogus
+} -returnCodes error -result {image "bogus" doesn't exist}
+
+test menu-2.130 {entry configuration options 3 -image bogus separator} -body {
+    .m1 entryconfigure 3 -image bogus
+} -returnCodes error -result {unknown option "-image"}
+
+test menu-2.131 {entry configuration options 4 -image bogus checkbutton} -body {
+    .m1 entryconfigure 4 -image bogus
+} -returnCodes error -result {image "bogus" doesn't exist}
+
+test menu-2.132 {entry configuration options 5 -image bogus radiobutton} -body {
+    .m1 entryconfigure 5 -image bogus
+} -returnCodes error -result {image "bogus" doesn't exist}
+
+test menu-2.133 {entry configuration options 0 -image {} tearoff} -body {
+    .m1 entryconfigure 0 -image 
+} -returnCodes error -result {unknown option "-image"}
+
+test menu-2.134 {entry configuration options 1 -image {} command} -setup {
+    .m1 entryconfigure 1 -image {}
+} -body {
+    .m1 entryconfigure 1 -image 
+    lindex [.m1 entryconfigure 1 -image] 4
+} -result {}
+
+test menu-2.135 {entry configuration options 2 -image {} cascade} -setup {
+    .m1 entryconfigure 2 -image {}
+} -body {
+    .m1 entryconfigure 2 -image 
+    lindex [.m1 entryconfigure 2 -image] 4
+} -result {}
+
+test menu-2.136 {entry configuration options 3 -image {} separator} -body {
+    .m1 entryconfigure 3 -image 
+} -returnCodes error -result {unknown option "-image"}
+
+test menu-2.137 {entry configuration options 4 -image {} checkbutton} -body {
+    .m1 entryconfigure 4 -image 
+    lindex [.m1 entryconfigure 4 -image] 4
+} -result {}
+
+test menu-2.138 {entry configuration options 5 -image {} radiobutton} -body {
+    .m1 entryconfigure 5 -image 
+    lindex [.m1 entryconfigure 5 -image] 4
+} -result {}
+
+test menu-2.139 {entry configuration options 0 -indicatoron 1 tearoff} -body {
+    .m1 entryconfigure 0 -indicatoron 1
+} -returnCodes error -result {unknown option "-indicatoron"}
+
+test menu-2.140 {entry configuration options 1 -indicatoron 1 command} -body {
+    .m1 entryconfigure 1 -indicatoron 1
+} -returnCodes error -result {unknown option "-indicatoron"}
+
+test menu-2.141 {entry configuration options 2 -indicatoron 1 cascade} -body {
+    .m1 entryconfigure 2 -indicatoron 1
+} -returnCodes error -result {unknown option "-indicatoron"}
+
+test menu-2.142 {entry configuration options 3 -indicatoron 1 separator} -body {
+    .m1 entryconfigure 3 -indicatoron 1
+} -returnCodes error -result {unknown option "-indicatoron"}
+
+test menu-2.143 {entry configuration options 4 -indicatoron 1 checkbutton} -body {
+    .m1 entryconfigure 4 -indicatoron 1
+    lindex [.m1 entryconfigure 4 -indicatoron] 4
+} -result {1}
+
+test menu-2.144 {entry configuration options 5 -indicatoron 1 radiobutton} -body {
+    .m1 entryconfigure 5 -indicatoron 1
+    lindex [.m1 entryconfigure 5 -indicatoron] 4
+} -result {1}
+
+test menu-2.145 {entry configuration options 0 -label test tearoff} -body {
+    .m1 entryconfigure 0 -label test
+} -returnCodes error -result {unknown option "-label"}
+
+test menu-2.146 {entry configuration options 1 -label test command} -body {
+    .m1 entryconfigure 1 -label test
+    lindex [.m1 entryconfigure 1 -label] 4
+} -result {test}
+
+test menu-2.147 {entry configuration options 2 -label test cascade} -body {
+    .m1 entryconfigure 2 -label test
+    lindex [.m1 entryconfigure 2 -label] 4
+} -result {test}
+
+test menu-2.148 {entry configuration options 3 -label test separator} -body {
+    .m1 entryconfigure 3 -label test
+} -returnCodes error -result {unknown option "-label"}
+
+test menu-2.149 {entry configuration options 4 -label test checkbutton} -body {
+    .m1 entryconfigure 4 -label test
+    lindex [.m1 entryconfigure 4 -label] 4
+} -result {test}
+
+test menu-2.150 {entry configuration options 5 -label test radiobutton} -body {
+    .m1 entryconfigure 5 -label test
+    lindex [.m1 entryconfigure 5 -label] 4
+} -result {test}
+
+test menu-2.151 {entry configuration options 0 -menu .m2 tearoff} -body {
+    .m1 entryconfigure 0 -menu .m2
+} -returnCodes error -result {unknown option "-menu"}
+
+test menu-2.152 {entry configuration options 1 -menu .m2 command} -body {
+    .m1 entryconfigure 1 -menu .m2
+} -returnCodes error -result {unknown option "-menu"}
+
+test menu-2.153 {entry configuration options 2 -menu .m2 cascade} -body {
+    .m1 entryconfigure 2 -menu .m2
+    lindex [.m1 entryconfigure 2 -menu] 4
+} -result {.m2}
+
+test menu-2.154 {entry configuration options 3 -menu .m2 separator} -body {
+    .m1 entryconfigure 3 -menu .m2
+} -returnCodes error -result {unknown option "-menu"}
+
+test menu-2.155 {entry configuration options 4 -menu .m2 checkbutton} -body {
+    .m1 entryconfigure 4 -menu .m2
+} -returnCodes error -result {unknown option "-menu"}
+
+test menu-2.156 {entry configuration options 5 -menu .m2 radiobutton} -body {
+    .m1 entryconfigure 5 -menu .m2
+} -returnCodes error -result {unknown option "-menu"}
+
+test menu-2.157 {entry configuration options 0 -offvalue off tearoff} -body {
+    .m1 entryconfigure 0 -offvalue off
+} -returnCodes error -result {unknown option "-offvalue"}
+
+test menu-2.158 {entry configuration options 1 -offvalue off command} -body {
+    .m1 entryconfigure 1 -offvalue off
+} -returnCodes error -result {unknown option "-offvalue"}
+
+test menu-2.159 {entry configuration options 2 -offvalue off cascade} -body {
+    .m1 entryconfigure 2 -offvalue off
+} -returnCodes error -result {unknown option "-offvalue"}
+
+test menu-2.160 {entry configuration options 3 -offvalue off separator} -body {
+    .m1 entryconfigure 3 -offvalue off
+} -returnCodes error -result {unknown option "-offvalue"}
+
+test menu-2.161 {entry configuration options 4 -offvalue off checkbutton} -body {
+    .m1 entryconfigure 4 -offvalue off
+    lindex [.m1 entryconfigure 4 -offvalue] 4
+} -result {off}
+
+test menu-2.162 {entry configuration options 5 -offvalue off radiobutton} -body {
+    .m1 entryconfigure 5 -offvalue off
+} -returnCodes error -result {unknown option "-offvalue"}
+
+test menu-2.163 {entry configuration options 0 -onvalue on tearoff} -body {
+    .m1 entryconfigure 0 -onvalue on
+} -returnCodes error -result {unknown option "-onvalue"}
+
+test menu-2.164 {entry configuration options 1 -onvalue on command} -body {
+    .m1 entryconfigure 1 -onvalue on
+} -returnCodes error -result {unknown option "-onvalue"}
+
+test menu-2.165 {entry configuration options 2 -onvalue on cascade} -body {
+    .m1 entryconfigure 2 -onvalue on
+} -returnCodes error -result {unknown option "-onvalue"}
+
+test menu-2.166 {entry configuration options 3 -onvalue on separator} -body {
+    .m1 entryconfigure 3 -onvalue on
+} -returnCodes error -result {unknown option "-onvalue"}
+
+test menu-2.167 {entry configuration options 4 -onvalue on checkbutton} -body {
+    .m1 entryconfigure 4 -onvalue on
+    lindex [.m1 entryconfigure 4 -onvalue] 4
+} -result {on}
+
+test menu-2.168 {entry configuration options 5 -onvalue on radiobutton} -body {
+    .m1 entryconfigure 5 -onvalue on
+} -returnCodes error -result {unknown option "-onvalue"}
+
+test menu-2.169 {entry configuration options 0 -selectcolor #110022 tearoff} -body {
+    .m1 entryconfigure 0 -selectcolor #110022
+} -returnCodes error -result {unknown option "-selectcolor"}
+
+test menu-2.170 {entry configuration options 1 -selectcolor #110022 command} -body {
+    .m1 entryconfigure 1 -selectcolor #110022
+} -returnCodes error -result {unknown option "-selectcolor"}
+
+test menu-2.171 {entry configuration options 2 -selectcolor #110022 cascade} -body {
+    .m1 entryconfigure 2 -selectcolor #110022
+} -returnCodes error -result {unknown option "-selectcolor"}
+
+test menu-2.172 {entry configuration options 3 -selectcolor #110022 separator} -body {
+    .m1 entryconfigure 3 -selectcolor #110022
+} -returnCodes error -result {unknown option "-selectcolor"}
+
+test menu-2.173 {entry configuration options 4 -selectcolor #110022 checkbutton} -body {
+    .m1 entryconfigure 4 -selectcolor #110022
+    lindex [.m1 entryconfigure 4 -selectcolor] 4
+} -result {#110022}
+
+test menu-2.174 {entry configuration options 5 -selectcolor #110022 radiobutton} -body {
+    .m1 entryconfigure 5 -selectcolor #110022
+    lindex [.m1 entryconfigure 5 -selectcolor] 4
+} -result {#110022}
+
+test menu-2.175 {entry configuration options 0 -selectcolor non-existent tearoff} -body {
+    .m1 entryconfigure 0 -selectcolor non-existent
+} -returnCodes error -result {unknown option "-selectcolor"}
+
+test menu-2.176 {entry configuration options 1 -selectcolor non-existent command} -body {
+    .m1 entryconfigure 1 -selectcolor non-existent
+} -returnCodes error -result {unknown option "-selectcolor"}
+
+test menu-2.177 {entry configuration options 2 -selectcolor non-existent cascade} -body {
+    .m1 entryconfigure 2 -selectcolor non-existent
+} -returnCodes error -result {unknown option "-selectcolor"}
+
+test menu-2.178 {entry configuration options 3 -selectcolor non-existent separator} -body {
+    .m1 entryconfigure 3 -selectcolor non-existent
+} -returnCodes error -result {unknown option "-selectcolor"}
+
+test menu-2.179 {entry configuration options 4 -selectcolor non-existent checkbutton} -body {
+    .m1 entryconfigure 4 -selectcolor non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.180 {entry configuration options 5 -selectcolor non-existent radiobutton} -body {
+    .m1 entryconfigure 5 -selectcolor non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+
+test menu-2.181 {entry configuration options 0 -selectimage image1 tearoff} -constraints {
+    hasEarthPhoto
+} -body {
+    .m1 entryconfigure 0 -selectimage image1
+} -returnCodes error -result {unknown option "-selectimage"}
+
+test menu-2.182 {entry configuration options 1 -selectimage image1 command} -constraints {
+    hasEarthPhoto
+} -body {
+    .m1 entryconfigure 1 -selectimage image1
+} -returnCodes error -result {unknown option "-selectimage"}
+
+test menu-2.183 {entry configuration options 2 -selectimage image1 cascade} -constraints {
+    hasEarthPhoto
+} -body {
+    .m1 entryconfigure 2 -selectimage image1
+} -returnCodes error -result {unknown option "-selectimage"}
+
+test menu-2.184 {entry configuration options 3 -selectimage image1 separator} -constraints {
+    hasEarthPhoto
+} -body {
+    .m1 entryconfigure 3 -selectimage image1
+} -returnCodes error -result {unknown option "-selectimage"}
+
+test menu-2.185 {entry configuration options 4 -selectimage image1 checkbutton} -constraints {
+    hasEarthPhoto
+} -setup {
+    .m1 entryconfigure 4 -selectimage {}
+} -body {
+    .m1 entryconfigure 4 -selectimage image1
+    lindex [.m1 entryconfigure 4 -selectimage] 4
+} -cleanup {
+    .m1 entryconfigure 4 -selectimage {}
+} -result {image1}
+
+test menu-2.186 {entry configuration options 5 -selectimage image1 radiobutton} -constraints {
+    hasEarthPhoto
+} -setup {
+    .m1 entryconfigure 5 -selectimage {}
+} -body {
+    .m1 entryconfigure 5 -selectimage image1
+    lindex [.m1 entryconfigure 5 -selectimage] 4
+} -cleanup {
+    .m1 entryconfigure 5 -selectimage {}
+} -result {image1}
+
+test menu-2.187 {entry configuration options 0 -selectimage bogus tearoff} -body {
+    .m1 entryconfigure 0 -selectimage bogus
+} -returnCodes error -result {unknown option "-selectimage"}
+
+test menu-2.188 {entry configuration options 1 -selectimage bogus command} -body {
+    .m1 entryconfigure 1 -selectimage bogus
+} -returnCodes error -result {unknown option "-selectimage"}
+
+test menu-2.189 {entry configuration options 2 -selectimage bogus cascade} -body {
+    .m1 entryconfigure 2 -selectimage bogus
+} -returnCodes error -result {unknown option "-selectimage"}
+
+test menu-2.190 {entry configuration options 3 -selectimage bogus separator} -body {
+    .m1 entryconfigure 3 -selectimage bogus
+} -returnCodes error -result {unknown option "-selectimage"}
+
+test menu-2.191 {entry configuration options 4 -selectimage bogus checkbutton} -body {
+    .m1 entryconfigure 4 -selectimage bogus
+} -returnCodes error -result {image "bogus" doesn't exist}
+
+test menu-2.192 {entry configuration options 5 -selectimage bogus radiobutton} -body {
+    .m1 entryconfigure 5 -selectimage bogus
+} -returnCodes error -result {image "bogus" doesn't exist}
+
+test menu-2.193 {entry configuration options 0 -selectimage {} tearoff} -body {
+    .m1 entryconfigure 0 -selectimage 
+} -returnCodes error -result {unknown option "-selectimage"}
+
+test menu-2.194 {entry configuration options 1 -selectimage {} command} -body {
+    .m1 entryconfigure 1 -selectimage 
+} -returnCodes error -result {unknown option "-selectimage"}
+
+test menu-2.195 {entry configuration options 2 -selectimage {} cascade} -body {
+    .m1 entryconfigure 2 -selectimage 
+} -returnCodes error -result {unknown option "-selectimage"}
+
+test menu-2.196 {entry configuration options 3 -selectimage {} separator} -body {
+    .m1 entryconfigure 3 -selectimage 
+} -returnCodes error -result {unknown option "-selectimage"}
+
+test menu-2.197 {entry configuration options 4 -selectimage {} checkbutton} -body {
+    .m1 entryconfigure 4 -selectimage 
+    lindex [.m1 entryconfigure 4 -selectimage] 4
+} -result {}
+
+test menu-2.198 {entry configuration options 5 -selectimage {} radiobutton} -body {
+    .m1 entryconfigure 5 -selectimage 
+    lindex [.m1 entryconfigure 5 -selectimage] 4
+} -result {}
+
+test menu-2.199 {entry configuration options 0 -state normal tearoff} -body {
+    .m1 entryconfigure 0 -state normal
+    lindex [.m1 entryconfigure 0 -state] 4
+} -result {normal}
+
+test menu-2.200 {entry configuration options 1 -state normal command} -body {
+    .m1 entryconfigure 1 -state normal
+    lindex [.m1 entryconfigure 1 -state] 4
+} -result {normal}
+
+test menu-2.201 {entry configuration options 2 -state normal cascade} -body {
+    .m1 entryconfigure 2 -state normal
+    lindex [.m1 entryconfigure 2 -state] 4
+} -result {normal}
+
+test menu-2.202 {entry configuration options 3 -state normal separator} -body {
+    .m1 entryconfigure 3 -state normal
+} -returnCodes error -result {unknown option "-state"}
+
+test menu-2.203 {entry configuration options 4 -state normal checkbutton} -body {
+    .m1 entryconfigure 4 -state normal
+    lindex [.m1 entryconfigure 4 -state] 4
+} -result {normal}
+
+test menu-2.204 {entry configuration options 5 -state normal radiobutton} -body {
+    .m1 entryconfigure 5 -state normal
+    lindex [.m1 entryconfigure 5 -state] 4
+} -result {normal}
+
+test menu-2.205 {entry configuration options 0 -value {any string} tearoff} -body {
+    .m1 entryconfigure 0 -value {any string}
+} -returnCodes error -result {unknown option "-value"}
+
+test menu-2.206 {entry configuration options 1 -value {any string} command} -body {
+    .m1 entryconfigure 1 -value {any string}
+} -returnCodes error -result {unknown option "-value"}
+
+test menu-2.207 {entry configuration options 2 -value {any string} cascade} -body {
+    .m1 entryconfigure 2 -value {any string}
+} -returnCodes error -result {unknown option "-value"}
+
+test menu-2.208 {entry configuration options 3 -value {any string} separator} -body {
+    .m1 entryconfigure 3 -value {any string}
+} -returnCodes error -result {unknown option "-value"}
+
+test menu-2.209 {entry configuration options 4 -value {any string} checkbutton} -body {
+    .m1 entryconfigure 4 -value {any string}
+} -returnCodes error -result {unknown option "-value"}
+
+test menu-2.210 {entry configuration options 5 -value {any string} radiobutton} -body {
+    .m1 entryconfigure 5 -value {any string}
+    lindex [.m1 entryconfigure 5 -value] 4
+} -result {any string}
+
+test menu-2.211 {entry configuration options 0 -variable {any string} tearoff} -body {
+    .m1 entryconfigure 0 -variable {any string}
+} -returnCodes error -result {unknown option "-variable"}
+
+test menu-2.212 {entry configuration options 1 -variable {any string} command} -body {
+    .m1 entryconfigure 1 -variable {any string}
+} -returnCodes error -result {unknown option "-variable"}
+
+test menu-2.213 {entry configuration options 2 -variable {any string} cascade} -body {
+    .m1 entryconfigure 2 -variable {any string}
+} -returnCodes error -result {unknown option "-variable"}
+
+test menu-2.214 {entry configuration options 3 -variable {any string} separator} -body {
+    .m1 entryconfigure 3 -variable {any string}
+} -returnCodes error -result {unknown option "-variable"}
+
+test menu-2.215 {entry configuration options 4 -variable {any string} checkbutton} -body {
+    .m1 entryconfigure 4 -variable {any string}
+    lindex [.m1 entryconfigure 4 -variable] 4
+} -result {any string}
+
+test menu-2.216 {entry configuration options 5 -variable {any string} radiobutton} -body {
+    .m1 entryconfigure 5 -variable {any string}
+    lindex [.m1 entryconfigure 5 -variable] 4
+} -result {any string}
+
+test menu-2.217 {entry configuration options 0 -underline 0 tearoff} -body {
+    .m1 entryconfigure 0 -underline 0
+} -returnCodes error -result {unknown option "-underline"}
+
+test menu-2.218 {entry configuration options 1 -underline 0 command} -body {
+    .m1 entryconfigure 1 -underline 0
+    lindex [.m1 entryconfigure 1 -underline] 4
+} -result {0}
+
+test menu-2.219 {entry configuration options 2 -underline 0 cascade} -body {
+    .m1 entryconfigure 2 -underline 0
+    lindex [.m1 entryconfigure 2 -underline] 4
+} -result {0}
+
+test menu-2.220 {entry configuration options 3 -underline 0 separator} -body {
+    .m1 entryconfigure 3 -underline 0
+} -returnCodes error -result {unknown option "-underline"}
+
+test menu-2.221 {entry configuration options 4 -underline 0 checkbutton} -body {
+    .m1 entryconfigure 4 -underline 0
+    lindex [.m1 entryconfigure 4 -underline] 4
+} -result {0}
+
+test menu-2.222 {entry configuration options 5 -underline 0 radiobutton} -body {
+    .m1 entryconfigure 5 -underline 0
+    lindex [.m1 entryconfigure 5 -underline] 4
+} -result {0}
+
+test menu-2.223 {entry configuration options 0 -underline 3p tearoff} -body {
+    .m1 entryconfigure 0 -underline 3p
+} -returnCodes error -result {unknown option "-underline"}
+
+test menu-2.224 {entry configuration options 1 -underline 3p command} -body {
+    .m1 entryconfigure 1 -underline 3p
+} -returnCodes error -result {expected integer but got "3p"}
+
+test menu-2.225 {entry configuration options 2 -underline 3p cascade} -body {
+    .m1 entryconfigure 2 -underline 3p
+} -returnCodes error -result {expected integer but got "3p"}
+
+test menu-2.226 {entry configuration options 3 -underline 3p separator} -body {
+    .m1 entryconfigure 3 -underline 3p
+} -returnCodes error -result {unknown option "-underline"}
+
+test menu-2.227 {entry configuration options 4 -underline 3p checkbutton} -body {
+    .m1 entryconfigure 4 -underline 3p
+} -returnCodes error -result {expected integer but got "3p"}
+
+test menu-2.228 {entry configuration options 5 -underline 3p radiobutton} -body {
+    .m1 entryconfigure 5 -underline 3p
+} -returnCodes error -result {expected integer but got "3p"}
+
+deleteWindows
+if {[testConstraint hasEarthPhoto]} {
+    image delete image1
+}
+
+
+
+test menu-3.1 {MenuWidgetCmd procedure} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1
+} -cleanup {
+	destroy .m1
+} -returnCodes error -result {wrong # args: should be ".m1 option ?arg ...?"}
+test menu-3.2 {MenuWidgetCmd, Tcl_Preserve and Tcl_Release} -constraints {
+	nonUnixUserInteraction 
+} -setup {
+    destroy .m1
+} -body  {
+    menu .m1 -postcommand "destroy .m1"
+    .m1 add command -label "menu-3.2: Hit Escape"
+    .m1 post 40 40
+} -cleanup {
+    destroy .m1
+} -returnCodes ok -result {}
+test menu-3.3 {MenuWidgetCmd procedure, "activate" option} -setup {
+	destroy .m1
+} -body {    
+    menu .m1
+    .m1 add command -label "test"
+    .m1 activate
+} -cleanup {
+	destroy .m1
+} -returnCodes error -result {wrong # args: should be ".m1 activate index"}
+test menu-3.4 {MenuWidgetCmd procedure, "activate" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 activate "foo"
+} -returnCodes error -result {bad menu entry index "foo"}
+test menu-3.5 {MenuWidgetCmd procedure, "activate" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 add separator
+    .m1 activate 2
+} -cleanup {
+	destroy .m1
+} -result {}
+test menu-3.6 {MenuWidgetCmd procedure, "activate" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 entryconfigure 1 -state disabled
+    .m1 activate 1
+} -cleanup {
+	destroy .m1
+} -result {}
+test menu-3.7 {MenuWidgetCmd procedure, "activate" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 activate 1
+} -cleanup {
+	destroy .m1
+} -result {}
+test menu-3.8 {MenuWidgetCmd procedure, "add" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 add
+} -cleanup {
+	destroy .m1
+} -returnCodes error -result {wrong # args: should be ".m1 add type ?-option value ...?"}
+test menu-3.9 {MenuWidgetCmd procedure, "add" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 add foo
+} -cleanup {
+	destroy .m1
+} -returnCodes error -result {bad menu entry type "foo": must be cascade, checkbutton, command, radiobutton, or separator}
+test menu-3.10 {MenuWidgetCmd procedure, "add" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 add separator
+} -cleanup {
+	destroy .m1
+} -result {}
+test menu-3.11 {MenuWidgetCmd procedure, "cget" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 cget
+} -returnCodes error -result {wrong # args: should be ".m1 cget option"}
+test menu-3.12 {MenuWidgetCmd procedure, "cget" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 cget -gorp
+} -returnCodes error -result {unknown option "-gorp"}
+test menu-3.13 {MenuWidgetCmd procedure, "cget" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 configure -postcommand "Some string"
+    .m1 cget -postcommand
+} -cleanup {
+	destroy .m1
+} -result {Some string}
+test menu-3.14 {MenuWidgetCmd procedure, "clone" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 clone
+} -returnCodes error -result {wrong # args: should be ".m1 clone newMenuName ?menuType?"}
+test menu-3.15 {MenuWidgetCmd procedure, "clone" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 clone a b c d
+} -returnCodes error -result {wrong # args: should be ".m1 clone newMenuName ?menuType?"}
+test menu-3.16 {MenuWidgetCmd procedure, "clone" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 clone .m1.clone1
+} -cleanup {
+	destroy .m1
+} -result {}
+test menu-3.17 {MenuWidgetCmd procedure, "clone" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 clone .m1.clone1 tearoff
+} -cleanup {
+	destroy .m1
+} -result {}
+test menu-3.18 {MenuWidgetCmd procedure, "configure" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    llength [.m1 configure]
+} -cleanup {
+	destroy .m1
+} -result {20}
+test menu-3.19 {MenuWidgetCmd procedure, "configure" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 configure -gorp
+} -returnCodes error -result {unknown option "-gorp"}
+test menu-3.20 {MenuWidgetCmd procedure, "configure" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 configure -postcommand "A random String"
+} -cleanup {
+	destroy .m1
+} -result {}
+test menu-3.21 {MenuWidgetCmd procedure, "configure" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 configure -postcommand "Another string"
+    lindex [.m1 configure -postcommand] 4
+} -cleanup {
+	destroy .m1
+} -result {Another string}
+test menu-3.22 {MenuWidgetCmd procedure, "delete" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 delete
+} -returnCodes error -result {wrong # args: should be ".m1 delete first ?last?"}
+test menu-3.23 {MenuWidgetCmd procedure, "delete" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 delete foo
+} -returnCodes error -result {bad menu entry index "foo"}
+test menu-3.24 {MenuWidgetCmd procedure, "delete" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1 -tearoff 1
+    .m1 delete 0 "foo"
+} -returnCodes error -result {bad menu entry index "foo"}
+test menu-3.25 {MenuWidgetCmd procedure, "delete" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 delete 0
+} -cleanup {
+	destroy .m1
+} -result {}
+test menu-3.26 {MenuWidgetCmd procedure, "delete" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "foo"
+    .m1 delete 1 0 
+} -cleanup {
+	destroy .m1
+} -result {}
+test menu-3.27 {MenuWidgetCmd procedure, "delete" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "1"
+    .m1 add command -label "2"
+    .m1 add command -label "3"
+    .m1 delete 1 3
+} -cleanup {
+	destroy .m1
+} -result {}
+test menu-3.28 {MenuWidgetCmd procedure, "delete" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "1"
+    .m1 add command -label "2"
+    .m1 add command -label "3"
+    .m1 activate 2
+    .m1 delete 1 3
+} -cleanup {
+	destroy .m1
+} -result {}
+test menu-3.29 {MenuWidgetCmd procedure, "delete" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "1"
+    .m1 add command -label "2"
+    .m1 add command -label "3"
+    .m1 activate 3
+    .m1 delete 1
+} -cleanup {
+	destroy .m1
+} -result {}
+test menu-3.29+1 {MenuWidgetCmd, "delete", Bug 220950} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "bogus"
+    .m1 add command -label "ok"
+    .m1 delete 10 20
+    .m1 entrycget last -label
+} -cleanup {
+    destroy .m1
+} -result ok
+test menu-3.30 {MenuWidgetCmd procedure, "entrycget" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 entrycget
+} -returnCodes error -result {wrong # args: should be ".m1 entrycget index option"}
+test menu-3.31 {MenuWidgetCmd procedure, "entrycget" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 entrycget index option foo
+} -returnCodes error -result {wrong # args: should be ".m1 entrycget index option"}
+test menu-3.32 {MenuWidgetCmd procedure, "entrycget" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 entrycget foo -label
+} -returnCodes error -result {bad menu entry index "foo"}
+test menu-3.33 {MenuWidgetCmd procedure, "entrycget" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 entrycget 1 -label
+} -cleanup {
+	destroy .m1
+} -result {test}
+test menu-3.34 {MenuWidgetCmd procedure, "entryconfigure" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 entryconfigure
+} -returnCodes error -result {wrong # args: should be ".m1 entryconfigure index ?-option value ...?"}
+test menu-3.35 {MenuWidgetCmd procedure, "entryconfigure" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 entryconfigure foo
+} -returnCodes error -result {bad menu entry index "foo"}
+test menu-3.36 {MenuWidgetCmd procedure, "entryconfigure" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    llength [.m1 entryconfigure 1]
+} -cleanup {
+	destroy .m1
+} -result {15}
+test menu-3.37 {MenuWidgetCmd procedure, "entryconfigure" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    lindex [.m1 entryconfigure 1 -label] 4
+} -cleanup {
+	destroy .m1
+} -result {test}
+test menu-3.38 {MenuWidgetCmd procedure, "entryconfigure" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 entryconfigure 1 -label "changed"
+    lindex [.m1 entryconfigure 1 -label] 4
+} -cleanup {
+	destroy .m1
+} -result {changed}
+test menu-3.39 {MenuWidgetCmd procedure, "index" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 index
+} -returnCodes error -result {wrong # args: should be ".m1 index string"}
+test menu-3.40 {MenuWidgetCmd procedure, "index" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 index foo
+} -returnCodes error -result {bad menu entry index "foo"}
+test menu-3.41 {MenuWidgetCmd procedure, "index" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1 -tearoff 1
+    .m1 add command -label "test"
+    .m1 add command -label "3"
+    .m1 add command -label "another label"
+    .m1 add command -label "end"
+    .m1 add command -label "3a"
+    .m1 add command -label "final entry"
+    list [.m1 index "test"] [.m1 index "3"] [.m1 index "3a"] [.m1 index "end"]
+} -cleanup {
+	destroy .m1
+} -result {1 3 5 6}
+test menu-3.42 {MenuWidgetCmd procedure, "insert" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 insert
+} -returnCodes error -result {wrong # args: should be ".m1 insert index type ?-option value ...?"}
+test menu-3.43 {MenuWidgetCmd procedure, "insert" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 insert 1 command -label "test"
+    .m1 entrycget 1 -label
+} -cleanup {
+	destroy .m1
+} -result {test}
+test menu-3.44 {MenuWidgetCmd procedure, "invoke" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 invoke
+} -cleanup {
+	destroy .m1
+} -returnCodes error -result {wrong # args: should be ".m1 invoke index"}
+test menu-3.45 {MenuWidgetCmd procedure, "invoke" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 invoke foo
+} -cleanup {
+	destroy .m1
+} -returnCodes error -result {bad menu entry index "foo"}
+test menu-3.46 {MenuWidgetCmd procedure, "invoke" option} -setup {
+	destroy .m1
+} -body {
+    catch {unset foo}
+    menu .m1
+    .m1 add command -label "set foo" -command "set foo hello"
+    list [.m1 invoke 1] [set foo] [unset foo]
+} -cleanup {
+	destroy .m1
+} -returnCodes ok -result {hello hello {}}
+test menu-3.47 {MenuWidgetCmd procedure, "post" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "On Windows, hit Escape to get this menu to go away"
+    .m1 post
+} -cleanup {
+	destroy .m1
+} -returnCodes error -result {wrong # args: should be ".m1 post x y ?index?"}
+test menu-3.48 {MenuWidgetCmd procedure, "post" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 post foo 40
+} -cleanup {
+	destroy .m1
+} -returnCodes error -result {expected integer but got "foo"}
+test menu-3.49 {MenuWidgetCmd procedure, "post" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 post 40 bar
+} -cleanup {
+	destroy .m1
+} -returnCodes error -result {expected integer but got "bar"}
+test menu-3.50 {MenuWidgetCmd procedure, "post" option} -constraints {
+	nonUnixUserInteraction
+} -setup {
+	destroy .m1
+} -body { 
+    menu .m1
+    .m1 add command -label "menu-3.53: hit Escape" -command "puts hello"
+    .m1 post 40 40
+} -cleanup {
+	destroy .m1
+} -result {}
+test menu-3.51 {MenuWidgetCmd procedure, "postcascade" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 postcascade
+} -cleanup {
+	destroy .m1
+} -returnCodes error -result {wrong # args: should be ".m1 postcascade index"}
+test menu-3.52 {MenuWidgetCmd procedure, "postcascade" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 postcascade foo
+} -cleanup {
+	destroy .m1
+} -returnCodes error -result {bad menu entry index "foo"}
+test menu-3.53 {MenuWidgetCmd procedure, "postcascade" option} -constraints {
+	nonUnixUserInteraction
+} -setup {
+	destroy .m1 .m2
+} -body { 
+    menu .m1
+    .m1 add command -label "menu-3.56 - hit Escape"
+    menu .m2
+    .m1 post 40 40
+    .m1 add cascade -menu .m2
+    .m1 postcascade 1
+} -cleanup {
+	destroy .m1 .m2
+} -result {}
+test menu-3.54 {MenuWidgetCmd procedure, "postcascade" option} -setup {
+	destroy .m1 .m2
+} -body {
+    menu .m1
+    menu .m2
+    .m1 add cascade -menu .m2 -label "menu-3.57 - hit Escape"
+    .m1 postcascade 1
+    .m1 postcascade none
+} -cleanup {
+	destroy .m1 .m2
+} -result {}
+test menu-3.55 {MenuWidgetCmd procedure, "type" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 type
+} -cleanup {
+	destroy .m1
+} -returnCodes error -result {wrong # args: should be ".m1 type index"}
+test menu-3.56 {MenuWidgetCmd procedure, "type" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 type foo
+} -cleanup {
+	destroy .m1
+} -returnCodes error -result {bad menu entry index "foo"}
+test menu-3.57 {MenuWidgetCmd procedure, "type" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 type 1
+} -cleanup {
+	destroy .m1
+} -result {command}
+test menu-3.58 {MenuWidgetCmd procedure, "type" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 add separator
+    .m1 type 1
+} -cleanup {
+	destroy .m1
+} -result {separator}
+test menu-3.59 {MenuWidgetCmd procedure, "type" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 add checkbutton -label "test"
+    .m1 type 1
+} -cleanup {
+	destroy .m1
+} -result {checkbutton}
+test menu-3.60 {MenuWidgetCmd procedure, "type" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 add radiobutton -label "test"
+    .m1 type 1
+} -cleanup {
+	destroy .m1
+} -result {radiobutton}
+test menu-3.61 {MenuWidgetCmd procedure, "type" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 add cascade -label "test"
+    .m1 type 1
+} -cleanup {
+	destroy .m1
+} -result {cascade}
+test menu-3.62 {MenuWidgetCmd procedure, "type" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1 -tearoff 1
+    .m1 type 0
+} -cleanup {
+	destroy .m1
+} -result {tearoff}
+test menu-3.63 {MenuWidgetCmd procedure, "unpost" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 unpost foo
+} -cleanup {
+	destroy .m1
+} -returnCodes error -result {wrong # args: should be ".m1 unpost"}
+test menu-3.64 {MenuWidgetCmd procedure, "unpost" option} -constraints {
+	nonUnixUserInteraction
+} -setup {
+	destroy .m1
+} -body { 
+    menu .m1
+    .m1 add command -label "menu-3.68 - hit Escape"
+    .m1 post 40 40 
+    .m1 unpost
+} -cleanup {
+	destroy .m1
+} -result {}
+test menu-3.65 {MenuWidgetCmd procedure, "yposition" option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 yposition
+} -cleanup {
+	destroy .m1
+} -returnCodes error -result {wrong # args: should be ".m1 yposition index"}
+test menu-3.66a {MenuWidgetCmd procedure, "yposition" option, no tearoff} -setup {
+	destroy .m1
+} -body {
+    menu .m1 -tearoff 0
+    .m1 yposition 1
+} -cleanup {
+	destroy .m1
+} -result {0}
+test menu-3.66b {MenuWidgetCmd procedure, "yposition" option, with tearoff} -constraints {
+    notAqua
+} -setup {
+	destroy .m1
+} -body {
+    # on Win or Linux, tearoff menus are supported
+    # see menu-3.66c for aqua
+    menu .m1 -tearoff 1
+    .m1 yposition 1
+} -cleanup {
+	destroy .m1
+} -result {1}
+test menu-3.66c {MenuWidgetCmd procedure, "yposition" option, with tearoff} -constraints {
+    aqua
+} -setup {
+	destroy .m1
+} -body {
+    # on OS X, tearoff menus are not supported
+    # see menu-3.66b for win or linux
+    menu .m1 -tearoff 1
+    .m1 yposition 1
+} -cleanup {
+	destroy .m1
+} -result {0}
+test menu-3.67 {MenuWidgetCmd procedure, bad option} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    .m1 foo
+} -cleanup {
+	destroy .m1
+} -returnCodes error -result {bad option "foo": must be activate, add, cget, clone, configure, delete, entrycget, entryconfigure, index, insert, invoke, post, postcascade, type, unpost, xposition, or yposition}
+test menu-3.68 {MenuWidgetCmd procedure, fix for bug#508988} -setup {
+	deleteWindows
+} -body {
+    set t .t
+    set m1 .t.m1
+    set c1 .t.c1
+    set c2 .t.c2
+    toplevel .t
+    menu $m1 -tearoff 1
+    menu $c1 -tearoff 1
+    $c1 add command -label c1
+    menu $c2 -tearoff 1
+    $c2 add command -label c2
+    $m1 add cascade -label c1 -menu $c1
+    $t configure -menu $m1
+    $m1 entryconfigure 1 -menu $c2 -label c2
+    $t configure -menu ""
+    list [winfo exists $c1] [winfo exists $c2]
+} -cleanup {
+	deleteWindows
+} -result {1 1}
+test menu-3.69 {MenuWidgetCmd procedure, "xposition" option} -setup {
+    destroy .m1
+    menu .m1
+} -body {
+    .m1 xposition
+} -cleanup {
+    destroy .m1
+} -returnCodes error -result {wrong # args: should be ".m1 xposition index"}
+test menu-3.70 {MenuWidgetCmd procedure, "xposition" option} -setup {
+    destroy .m1
+    menu .m1
+} -body {
+    .m1 xposition 1
+    subst {} ;# just checking that the xposition does not produce an error...
+} -cleanup {
+    destroy .m1
+} -result {}
+
+
+test menu-4.1 {TkInvokeMenu: disabled} -setup {
+    destroy .m1
+} -body {
+    catch {unset foo}
+    menu .m1
+    .m1 add checkbutton -label "test" -variable foo -onvalue on -offvalue off \
+	-state disabled
+    list [catch {.m1 invoke 1} msg] $foo
+} -cleanup {
+    destroy .m1
+} -result {0 off}
+test menu-4.2 {TkInvokeMenu: tearoff} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+	catch {.m1 invoke 0}
+} -cleanup {
+	deleteWindows
+} -result {0}
+test menu-4.3 {TkInvokeMenu: checkbutton -on} -setup {
+    destroy .m1
+} -body {
+    catch {unset foo}
+    menu .m1
+    .m1 add checkbutton -label "test" -variable foo -onvalue on -offvalue off
+    list [catch {.m1 invoke 1} msg] $msg [catch {set foo} msg2] $msg2 \
+		[catch {unset foo} msg3] $msg3
+} -cleanup {
+    destroy .m1
+} -result {0 {} 0 on 0 {}}
+test menu-4.4 {TkInvokeMenu: checkbutton -off} -setup {
+    destroy .m1
+} -body {
+    catch {unset foo}
+    menu .m1
+    .m1 add checkbutton -label "test" -variable foo -onvalue on -offvalue off
+    .m1 invoke 1
+    list [catch {.m1 invoke 1} msg] $msg [catch {set foo} msg2] $msg2 [catch {unset foo} msg3] $msg3
+} -cleanup {
+    destroy .m1
+} -result {0 {} 0 off 0 {}}
+test menu-4.5 {TkInvokeMenu: checkbutton array element} -setup {
+    destroy .m1
+} -body {
+    catch {unset foo}
+    menu .m1
+    .m1 add checkbutton -label "test" -variable foo(1) -onvalue on 
+    list [catch {.m1 invoke 1} msg] $msg [catch {set foo(1)} msg2] $msg2 [catch {unset foo} msg3] $msg3
+} -cleanup {
+	destroy .m1
+} -result {0 {} 0 on 0 {}}
+test menu-4.6 {TkInvokeMenu: radiobutton} -setup {
+    destroy .m1
+} -body {
+    catch {unset foo}
+    menu .m1 -tearoff 1
+    .m1 add radiobutton -label "1" -variable foo -value one
+    .m1 add radiobutton -label "2" -variable foo -value two
+    .m1 add radiobutton -label "3" -variable foo -value three
+    list [catch {.m1 invoke 1} msg] $msg [catch {set foo} msg2] $msg2 [catch {unset foo} msg3] $msg3
+} -cleanup {
+	destroy .m1
+} -result {0 {} 0 one 0 {}}
+test menu-4.7 {TkInvokeMenu: radiobutton} -setup {
+    destroy .m1
+} -body {
+    catch {unset foo}
+    menu .m1 -tearoff 1
+    .m1 add radiobutton -label "1" -variable foo -value one
+    .m1 add radiobutton -label "2" -variable foo -value two
+    .m1 add radiobutton -label "3" -variable foo -value three
+    list [catch {.m1 invoke 2} msg] $msg [catch {set foo} msg2] $msg2 [catch {unset foo} msg3] $msg3
+} -cleanup {
+	destroy .m1
+} -result {0 {} 0 two 0 {}}
+test menu-4.8 {TkInvokeMenu: radiobutton} -setup {
+    destroy .m1
+} -body {
+    catch {unset foo}
+    menu .m1
+    .m1 add radiobutton -label "1" -variable foo -value one
+    .m1 add radiobutton -label "2" -variable foo -value two
+    .m1 add radiobutton -label "3" -variable foo -value three
+    list [catch {.m1 invoke 3} msg] $msg [catch {set foo} msg2] $msg2 [catch {unset foo} msg3] $msg3
+} -cleanup {
+	destroy .m1
+} -result {0 {} 0 three 0 {}}
+test menu-4.9 {TkInvokeMenu: radiobutton array element} -setup {
+    destroy .m1
+} -body {
+    catch {unset foo}
+    menu .m1
+    .m1 add radiobutton -label "1" -variable foo(2) -value one
+    .m1 add radiobutton -label "2" -variable foo(2) -value two
+    .m1 add radiobutton -label "3" -variable foo(2) -value three
+    list [catch {.m1 invoke 3} msg] $msg [catch {set foo(2)} msg2] $msg2 [catch {unset foo} msg3] $msg3
+} -cleanup {
+	destroy .m1
+} -result {0 {} 0 three 0 {}}
+test menu-4.10 {TkInvokeMenu} -setup {
+    destroy .m1
+} -body {
+    catch {unset foo}
+    menu .m1
+    .m1 add command -label "test" -command "set menu_test menu-4.8"
+    list [catch {.m1 invoke 1} msg] $msg [catch {set menu_test} msg2] $msg2 [catch {unset menu_test} msg3] $msg3
+} -cleanup {
+	destroy .m1
+} -result {0 menu-4.8 0 menu-4.8 0 {}}
+test menu-4.11 {TkInvokeMenu} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add cascade -label "test" -menu .m1.m2
+    list [catch {.m1 invoke 1} msg] $msg 
+} -cleanup {
+	destroy .m1
+} -result {0 {}}
+test menu-4.12 {TkInvokeMenu} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 1
+    .m1 add command -label "test" -command ".m1 delete 1"
+    list [catch {.m1 invoke 1} msg] $msg [catch {.m1 type "test"} msg2] $msg2
+} -cleanup {
+	destroy .m1
+} -result {0 {} 1 {bad menu entry index "test"}}
+
+test menu-5.1 {DestroyMenuInstance} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    destroy .m1
+} -returnCodes ok
+test menu-5.2 {DestroyMenuInstance - cascade menu} -setup {
+    destroy .m1 .m2
+} -body {
+    menu .m1
+    .m1 add cascade -menu .m2
+    menu .m2
+    destroy .m1 .m2
+} -returnCodes ok
+test menu-5.3 {DestroyMenuInstance - multiple cascade parents} -setup {
+    destroy .m1 .m2 .m3
+} -body {
+    menu .m1
+    .m1 add cascade -menu .m3
+    menu .m2
+    .m2 add cascade -menu .m3
+    menu .m3
+    list [destroy .m3] [destroy .m1 .m2]
+} -returnCodes ok -result {{} {}}
+test menu-5.4 {DestroyMenuInstance - multiple cascade parents} -setup {
+    destroy .m1 .m2 .m3 .m4
+} -body {
+    menu .m1
+    .m1 add cascade -menu .m4
+    menu .m2
+    .m2 add cascade -menu .m4
+    menu .m3
+    .m3 add cascade -menu .m4
+    menu .m4
+    list [destroy .m4] [destroy .m1 .m2 .m3]
+} -returnCodes ok -result {{} {}}
+test menu-5.5 {DestroyMenuInstance - cascades of cloned menus} -setup {
+    destroy .m1 .m2
+} -body {
+    menu .m1
+    menu .m2
+    .m1 add cascade -menu .m2
+    . configure -menu .m1
+    list [destroy .m2] [.m1 entrycget 1 -menu] [. configure -menu ""] [destroy .m1]
+} -returnCodes ok -result {{} .m2 {} {}}
+test menu-5.6 {DestroyMenuInstance - cascades of cloned menus} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add cascade -menu .m2
+    menu .m2
+    . configure -menu .m1
+    toplevel .t2
+    wm geometry .t2 +0+0
+    .t2 configure -menu .m1
+    list [destroy .m2] [. configure -menu ""] [destroy .t2 .m1]
+} -returnCodes ok -result {{} {} {}}
+test menu-5.7 {DestroyMenuInstance - basic clones} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    set tearoff [tk::TearOffMenu .m1]
+    list [destroy $tearoff] [destroy .m1]
+} -result {{} {}}
+test menu-5.8 {DestroyMenuInstance - multiple clones} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    set tearoff1 [tk::TearOffMenu .m1]
+    set tearoff2 [tk::TearOffMenu .m1]
+    list [destroy $tearoff1] [destroy .m1]
+} -returnCodes ok -result {{} {}}
+test menu-5.9 {DestroyMenuInstace - master menu} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    tk::TearOffMenu .m1
+    destroy .m1
+} -returnCodes ok
+test menu-5.10 {DestroyMenuInstance - freeing entries} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "foo"
+    destroy .m1
+} -returnCodes ok
+test menu-5.11 {DestroyMenuInstace - no entries} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 configure -tearoff 0
+    destroy .m1
+} -returnCodes ok
+test menu-5.12 {DestroyMenuInstance - platform data} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    destroy .m1
+} -returnCodes ok
+test menu-5.13 {DestroyMenuInstance - clones when mismatched tearoffs} -setup {
+    destroy .m1 .m2
+} -body {
+    menu .m1
+    menu .m2
+    .m1 add cascade -menu .m2
+    set tearoff [tk::TearOffMenu .m1 40 40]
+    list [destroy .m2] [destroy .m1]
+} -result {{} {}}
+
+
+test menu-6.1 {TkDestroyMenu} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    destroy .m1
+} -returnCodes ok
+test menu-6.2 {TkDestroyMenu - reentrancy} -setup {
+    destroy .m1 .m2
+} -body {
+    menu .m1
+    bind .m1 <Destroy> {destroy .m1}
+    menu .m2
+    bind .m2 <Destroy> {destroy .m2}
+    list [destroy .m1] [destroy .m2]
+} -returnCodes ok -result {{} {}}
+test menu-6.3 {TkDestroyMenu - reentrancy} -setup {
+    destroy .m1 .m2 .m3
+} -body {
+    menu .m1
+    bind .m1 <Destroy> {destroy .m2}
+    .m1 clone .m2
+    .m1 clone .m3
+    list [destroy .m1] [winfo exists .m2]
+} -returnCodes ok -result {{} 0}
+test menu-6.4 {TkDestroyMenu - reentrancy - clones} -setup {
+    destroy .m1 .m2
+} -body {
+    menu .m1
+    .m1 clone .m2
+    .m1 clone .m1.m3
+    destroy .m1
+} -cleanup {
+	deleteWindows
+} -returnCodes ok 
+test menu-6.5 {TkDestroyMenu} -setup {
+    destroy .m1 .m2
+} -body {
+    menu .m1
+    .m1 clone .m2
+    destroy .m1
+    winfo exists .m2
+} -result {0}
+test menu-6.6 {TkDestroyMenu} -setup {
+    destroy .m1 .m2
+} -body {
+    menu .m1
+    .m1 clone .m2 tearoff
+    destroy .m1
+} -result {}
+test menu-6.7 {TkDestroyMenu} -setup {
+    destroy .m1 .m2
+} -body {
+    menu .m1
+    .m1 clone .m2
+    destroy .m2
+    destroy .m1
+} -returnCodes ok -result {}
+test menu-6.8 {TkDestroyMenu} -setup {
+    destroy .m1 .m2 .m3
+} -body {
+    menu .m1
+    .m1 clone .m2
+    .m1 clone .m3
+    destroy .m1
+    list [winfo exists .m2] [winfo exists .m3]
+} -result {0 0}
+test menu-6.9 {TkDestroyMenu} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 clone .m2
+    .m1 clone .m3
+	list [destroy .m2] [destroy .m3] [destroy .m1]
+} -returnCodes ok -result {{} {} {}}
+test menu-6.10 {TkDestroyMenu} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 clone .m2
+    .m1 clone .m3
+	list [destroy .m3] [destroy .m1]
+} -returnCodes ok -result {{} {}}
+test menu-6.11 {TkDestroyMenu} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 clone .m2
+    .m1 clone .m3
+    .m1 clone .m4
+	list [destroy .m2] [destroy .m1]
+} -returnCodes ok -result {{} {}}
+test menu-6.12 {TkDestroyMenu} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 clone .m2
+    .m1 clone .m3
+    .m1 clone .m4
+	list [destroy .m3] [destroy .m1]
+} -returnCodes ok -result {{} {}}
+test menu-6.13 {TkDestroyMenu} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 clone .m2
+    .m1 clone .m3
+    .m1 clone .m4
+	list [destroy .m4] [destroy .m1]
+} -returnCodes ok -result {{} {}}
+test menu-6.14 {TkDestroyMenu} -setup {
+	destroy .m1
+} -body {
+    menu .m1
+    . configure -menu .m1
+    list [destroy .m1] [. configure -menu ""]
+} -returnCodes ok -result {{} {}}
+test menu-6.15 {TkDestroyMenu} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    toplevel .t2
+    wm geometry .t2 +0+0
+    . configure -menu .m1
+    .t2 configure -menu .m1
+    list [destroy .m1] [destroy .t2] [. configure -menu ""]
+} -result {{} {} {}}
+test menu-6.16 {TkDestroyMenu} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    toplevel .t2
+    wm geometry .t2 +0+0
+    toplevel .t3
+    wm geometry .t3 +0+0
+    . configure -menu .m1
+    .t2 configure -menu .m1
+    .t3 configure -menu .m1
+    list [destroy .m1] [destroy .t2] [destroy .t3] [. configure -menu ""]
+} -result {{} {} {} {}}
+
+test menu-7.1 {UnhookCascadeEntry} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    destroy .m1
+} -returnCodes ok
+test menu-7.2 {UnhookCascadeEntry} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add cascade -menu .m2
+    destroy .m1
+} -returnCodes ok
+test menu-7.3 {UnhookCascadeEntry} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    menu .m2
+    .m2 add cascade -menu .cascade
+    .m1 add cascade -menu .cascade
+    list [destroy .m1] [destroy .m2]
+} -returnCodes ok -result {{} {}}
+test menu-7.4 {UnhookCascadeEntry} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    menu .m2
+    .m1 add cascade -menu .cascade
+    .m2 add cascade -menu .cascade
+    list [destroy .m1] [destroy .m2]
+} -returnCodes ok -result {{} {}}
+test menu-7.5 {UnhookCascadeEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    menu .m2
+    menu .m3
+    .m1 add cascade -menu .cascade
+    .m2 add cascade -menu .cascade
+    .m3 add cascade -menu .cascade
+    list [destroy .m1] [destroy .m2 .m3]
+} -returnCodes ok -result {{} {}}
+test menu-7.6 {UnhookCascadeEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    menu .m2
+    menu .m3
+    .m1 add cascade -menu .cascade
+    .m2 add cascade -menu .cascade
+    .m3 add cascade -menu .cascade
+    list [destroy .m2] [destroy .m1 .m3]
+} -returnCodes ok -result {{} {}}
+test menu-7.7 {UnhookCascadeEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    menu .m2
+    menu .m3
+    .m1 add cascade -menu .cascade
+    .m2 add cascade -menu .cascade
+    .m3 add cascade -menu .cascade
+    list [destroy .m3] [destroy .m1 .m2]
+} -returnCodes ok -result {{} {}}
+test menu-7.8 {UnhookCascadeEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    menu .m2
+    .m1 add cascade -menu .m2
+    list [destroy .m1] [destroy .m2]
+} -returnCodes ok -result {{} {}}
+test menu-7.9 {UnhookCascadeEntry} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    menu .m2
+    .m1 add cascade -menu .m2
+    destroy .m1
+    destroy .m2
+} -returnCodes ok
+
+test menu-8.1 {DestroyMenuEntry} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    menu .m2
+    .m1 add cascade -menu .m2
+    list [.m1 delete 1] [destroy .m1 .m2]
+} -result {{} {}}
+test menu-8.2 {DestroyMenuEntry} -constraints hasEarthPhoto -setup {
+    deleteWindows
+    catch {image delete image1a}
+} -body {
+    image create photo image1a -file $earthPhotoFile
+    menu .m1
+    .m1 add command -image image1a
+    list [.m1 delete 1] [destroy .m1] [image delete image1a]
+} -result {{} {} {}}
+test menu-8.3 {DestroyMenuEntry} -constraints testImageType -setup {
+    deleteWindows
+    imageCleanup
+} -body {
+    image create test image1
+    image create test image2
+    menu .m1
+    .m1 add checkbutton -image image1 -selectimage image2
+    .m1 invoke 1
+    list [.m1 delete 1] [destroy .m1]
+} -cleanup {
+    imageCleanup
+    deleteWindows
+} -result {{} {}}
+test menu-8.4 {DestroyMenuEntry} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add checkbutton -variable foo
+    list [.m1 delete 1] [destroy .m1]
+} -result {{} {}} 
+test menu-8.5 {DestroyMenuEntry} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    list [.m1 delete 1] [destroy .m1]
+} -result {{} {}}
+test menu-8.6 {DestroyMenuEntry} -setup {
+    destroy .m1
+} -body {
+    menu .m1 -tearoff 1
+    .m1 add command -label "one"
+    .m1 add command -label "two"
+    list [.m1 delete 1] [.m1 entrycget 1 -label] [destroy .m1]
+} -result {{} two {}}
+test menu-8.7 {DestroyMenuEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "one"
+    .m1 clone .m2 tearoff
+    list [.m2 delete 1] [destroy .m1]
+} -result {{} {}}
+
+
+# test menu-9 - Can only change when fonts change on system, which cannot
+# be done from tcl.
+test menu-9.1 {ConfigureMenu} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    list [.m1 configure -postcommand "beep"] [.m1 cget -postcommand] 
+} -cleanup {
+	deleteWindows
+} -result {{} beep}
+test menu-9.2 {ConfigureMenu}  -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    list [.m1 configure -tearoff 0] [.m1 entrycget 1 -label]
+} -cleanup {
+	deleteWindows
+} -result {{} test}
+test menu-9.3 {ConfigureMenu}  -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    list [.m1 configure -postcommand "beep"] [.m1 cget -postcommand]
+} -cleanup {
+	deleteWindows
+} -result {{} beep}
+test menu-9.4 {ConfigureMenu}  -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 configure -fg red
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-9.5 {ConfigureMenu}  -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 add command -label "two"
+    .m1 configure -fg red
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-9.6 {ConfigureMenu}  -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 add command -label "two"
+    .m1 add command -label "three"
+    .m1 configure -fg red
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-9.7 {ConfigureMenu} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 clone .m2 tearoff
+    list [.m1 configure -fg red] [.m2 cget -fg]
+} -cleanup {
+	deleteWindows
+} -result {{} red}
+test menu-9.8 {ConfigureMenu} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 clone .m2 tearoff
+    list [.m2 configure -fg red] [.m1 cget -fg]
+} -cleanup {
+	deleteWindows
+} -result {{} red}
+test menu-9.9 {ConfigureMenu}  -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    list [. configure -menu .m1] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+
+
+test menu-10.1 {PostProcessEntry: array variable} -setup {
+    destroy .m1
+} -body {
+    catch {unset foo}
+    menu .m1
+    set foo(1) on
+    .m1 add checkbutton -variable foo(1) -onvalue on -offvalue off -label "Nonsense"
+    set foo(1)
+} -cleanup {
+	deleteWindows
+} -result {on}
+test menu-10.2 {PostProcessEntry: array variable} -setup {
+    destroy .m1
+} -body {
+    catch {unset foo}
+    menu .m1
+    .m1 add checkbutton -variable foo(1) -onvalue on -offvalue off -label "Nonsense"
+    set foo(1)
+} -cleanup {
+	deleteWindows
+} -result {off}
+
+
+test menu-11.1 {ConfigureMenuEntry} -setup {
+    destroy .m1
+} -body {
+    catch {unset foo}
+    menu .m1
+    .m1 add checkbutton -variable foo -onvalue on -offvalue off -label "Nonsense"
+    list [.m1 entryconfigure 1 -variable bar] [.m1 entrycget 1 -variable]
+} -cleanup {
+	deleteWindows
+} -result {{} bar}
+test menu-11.2 {ConfigureMenuEntry} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    list [.m1 entryconfigure 1 -label ""] [.m1 entrycget 1 -label]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-11.3 {ConfigureMenuEntry} -setup {
+    destroy .m1
+} -body {
+    menu .m1
+    .m1 add command
+    list [.m1 entryconfigure 1 -label "test"] [.m1 entrycget 1 -label]
+} -cleanup {
+	deleteWindows
+} -result {{} test}
+test menu-11.4 {ConfigureMenuEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1 
+    .m1 add command
+    list [.m1 entryconfigure 1 -accel "S"] [.m1 entrycget 1 -accel]
+} -cleanup {
+	deleteWindows
+} -result {{} S}
+test menu-11.5 {ConfigureMenuEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command
+    list [.m1 entryconfigure 1 -label "test"] [.m1 entrycget 1 -label]
+} -cleanup {
+	deleteWindows
+} -result {{} test}
+test menu-11.6 {ConfigureMenuEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command
+    .m1 entryconfigure 1 -label "test"
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-11.7 {ConfigureMenuEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m2
+    menu .m1
+    .m1 add cascade
+    .m1 entryconfigure 1 -label "test" -menu .m2
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-11.8 {ConfigureMenuEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add cascade
+    .m1 entryconfigure 1 -label "test" -menu .m2
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-11.9 {ConfigureMenuEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add cascade -menu .m3
+    .m1 entryconfigure 1 -label "test" -menu .m2
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-11.10 {ConfigureMenuEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add cascade
+    .m1 entryconfigure 1 -label "test" -menu .m2
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-11.11 {ConfigureMenuEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add cascade -menu .m2
+    .m1 entryconfigure 1 -label "test" -menu .m2
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-11.12 {ConfigureMenuEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    menu .m2 
+    .m2 add cascade -menu .m1
+    menu .m3 
+    .m3 add cascade -menu .m1
+    menu .m4 
+    .m4 add cascade -menu .m1
+    menu .m5 
+    .m5 add cascade
+    .m5 entryconfigure 1 -label "test" -menu .m1
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-11.13 {ConfigureMenuEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    menu .m2 
+    .m2 add cascade -menu .m1
+    menu .m3 
+    .m3 add cascade -menu .m1
+    menu .m4 
+    .m4 add cascade -menu .m1
+    .m3 entryconfigure 1 -label "test" -menu .m1
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-11.14 {ConfigureMenuEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add checkbutton
+    list [.m1 entryconfigure 1 -variable "test"] [.m1 entrycget 1 -variable]
+} -cleanup {
+	deleteWindows
+} -result {{} test}
+test menu-11.15 {ConfigureMenuEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    list [.m1 add checkbutton -label "test"] [.m1 entrycget 1 -variable]
+} -cleanup {
+	deleteWindows
+} -result {{} test}
+test menu-11.16 {ConfigureMenuEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add radiobutton -label "test"
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-11.17 {ConfigureMenuEntry} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add checkbutton
+    list [.m1 entryconfigure 1 -onvalue "test"] [.m1 entrycget 1 -onvalue]
+} -cleanup {
+    deleteWindows
+} -result {{} test}
+test menu-11.18 {ConfigureMenuEntry} -constraints testImageType -setup {
+    deleteWindows
+    imageCleanup
+} -body {
+    menu .m1
+    .m1 add command
+    image create test image1
+    .m1 entryconfigure 1 -image image1
+} -cleanup {
+    deleteWindows
+    imageCleanup
+} -result {}
+test menu-11.19 {ConfigureMenuEntry} -constraints {
+    testImageType hasEarthPhoto
+} -setup {
+    deleteWindows
+    imageCleanup
+} -body {
+    image create test image1
+    image create photo image2 -file $earthPhotoFile
+    menu .m1
+    .m1 add command -image image1
+    .m1 entryconfigure 1 -image image2
+} -cleanup {
+    deleteWindows
+    imageCleanup
+} -result {}
+test menu-11.20 {ConfigureMenuEntry} -constraints {
+    testImageType hasEarthPhoto
+} -setup {
+    deleteWindows
+    imageCleanup
+} -body {
+    image create photo image1 -file $earthPhotoFile
+    image create test image2
+    menu .m1
+    .m1 add checkbutton -image image1
+    .m1 entryconfigure 1 -selectimage image2
+} -cleanup {
+    deleteWindows
+    imageCleanup
+} -result {}
+test menu-11.21 {ConfigureMenuEntry} -constraints {
+    testImageType hasEarthPhoto
+} -setup {
+    deleteWindows
+    imageCleanup
+} -body {
+    image create photo image1 -file $earthPhotoFile
+    image create test image2
+    image create test image3
+    menu .m1
+    .m1 add checkbutton -image image1 -selectimage image2
+    .m1 entryconfigure 1 -selectimage image3
+} -cleanup {
+    deleteWindows
+    imageCleanup
+} -result {}
+
+
+test menu-12.1 {ConfigureMenuCloneEntries} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 clone .m2
+    .m2 configure -tearoff 0
+    .m1 clone .m3
+    .m1 add command -label "test"
+    .m1 add command -label "test2"
+    .m1 entryconfigure 1 -gork "foo"
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {unknown option "-gork"}
+test menu-12.2 {ConfigureMenuCloneEntries} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 clone .m2
+    menu .m3
+    .m1 add cascade -menu .m3
+    menu .m4
+    .m1 entryconfigure 1 -menu .m4
+} -cleanup {
+    deleteWindows
+} -result {}
+test menu-12.3 {ConfigureMenuCloneEntries} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 clone .m2
+    .m1 add cascade -label dummy
+    .m1 entryconfigure dummy -menu .m3
+} -cleanup {
+    deleteWindows
+} -result {}
+test menu-12.4 {ConfigureMenuCloneEntries} -setup {
+    deleteWindows
+} -body {
+     menu .m1
+     .m1 add cascade -label File -menu .m1.foo
+     menu .m1.foo
+     .m1.foo add command -label bar
+     .m1 clone .m2
+     .m1 entryconfigure File -state disabled
+} -cleanup {
+    deleteWindows
+} -result {}
+
+
+test menu-13.1 {TkGetMenuIndex} -setup {
+    deleteWindows
+} -body {
+    menu .m1 -tearoff 1
+    .m1 add command -label "active"
+    .m1 add command -label "test2"
+    .m1 add command -label "test3"
+    .m1 activate 2
+    .m1 entrycget active -label
+} -cleanup {
+    deleteWindows
+} -result {test2}
+test menu-13.2 {TkGetMenuIndex} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "last"
+    .m1 add command -label "test2"
+    .m1 add command -label "test3"
+    .m1 activate 2
+    .m1 entrycget last -label
+} -cleanup {
+    deleteWindows
+} -result {test3}
+test menu-13.3 {TkGetMenuIndex} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "last"
+    .m1 add command -label "test2"
+    .m1 add command -label "test3"
+    .m1 activate 2
+    .m1 entrycget end -label
+} -cleanup {
+    deleteWindows
+} -result {test3}
+test menu-13.4 {TkGetMenuIndex} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    list [.m1 insert last command -label "test2"] [.m1 entrycget last -label]
+} -cleanup {
+    deleteWindows
+} -result {{} test2}
+test menu-13.5 {TkGetMenuIndex} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    list [.m1 insert end command -label "test2"] [.m1 entrycget end -label]
+} -cleanup {
+    deleteWindows
+} -result {{} test2}
+test menu-13.6 {TkGetMenuIndex} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "active"
+    .m1 add command -label "test2"
+    .m1 add command -label "test3"
+    .m1 activate 2
+    .m1 entrycget none -label
+} -cleanup {
+    deleteWindows
+} -result {}
+#test menu-13.7 - Need to add @test here.
+test menu-13.7 {TkGetMenuIndex} -setup {
+    deleteWindows
+} -body {
+    menu .m1 -tearoff 1
+    .m1 add command -label "active"
+    .m1 add command -label "test2"
+    .m1 add command -label "test3"
+    .m1 entrycget 1 -label
+} -cleanup {
+    deleteWindows
+} -result {active}
+test menu-13.8 {TkGetMenuIndex} -setup {
+    deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "active"
+    .m1 entrycget -1 -label
+} -returnCodes error -result {bad menu entry index "-1"}
+test menu-13.9 {TkGetMenuIndex} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 add command -label "test2"
+    .m1 entrycget 999 -label
+} -cleanup {
+	deleteWindows
+} -result {test2}
+test menu-13.10 {TkGetMenuIndex} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 insert 999 command -label "test"
+    .m1 entrycget 1 -label
+} -cleanup {
+	deleteWindows
+} -result {test}
+test menu-13.11 {TkGetMenuIndex} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "1test"
+    .m1 entrycget 1test -label
+} -cleanup {
+	deleteWindows
+} -result {1test}
+test menu-13.12 {TkGetMenuIndex} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 add command -label "test2" -command "beep"
+    .m1 add command -label "test3"
+    .m1 entrycget test2 -command
+} -cleanup {
+	deleteWindows
+} -result {beep}
+
+test menu-14.1 {MenuCmdDeletedProc} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    destroy .m1
+} -cleanup {
+	deleteWindows
+} -returnCodes ok
+test menu-14.2 {MenuCmdDeletedProc} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 clone .m2
+    destroy .m1
+} -cleanup {
+	deleteWindows
+} -returnCodes ok
+
+test menu-15.1 {MenuNewEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-15.2 {MenuNewEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 add command -label "test3"
+    .m1 insert 2 command -label "test2"
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-15.3 {MenuNewEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 add command -label "test2"
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-15.4 {MenuNewEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+} -cleanup {
+	deleteWindows
+} -result {}
+
+test menu-16.1 {MenuAddOrInsert} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 insert foo command -label "test"
+} -returnCodes error -result {bad menu entry index "foo"}
+test menu-16.2 {MenuAddOrInsert} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 insert test command -label "foo"
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-16.3 {MenuAddOrInsert} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 insert -1 command -label "test"
+} -returnCodes error -result {bad menu entry index "-1"}
+test menu-16.4 {MenuAddOrInsert} -setup {
+	deleteWindows
+} -body {
+    menu .m1 -tearoff 1
+    .m1 add command -label "test"
+    .m1 insert 0 command -label "test2"
+    .m1 entrycget 1 -label
+} -cleanup {
+	deleteWindows
+} -result {test2}
+test menu-16.5 {MenuAddOrInsert} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add cascade
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-16.6 {MenuAddOrInsert} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add checkbutton
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-16.7 {MenuAddOrInsert} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-16.8 {MenuAddOrInsert} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add radiobutton
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-16.9 {MenuAddOrInsert} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add separator
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-16.10 {MenuAddOrInsert} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add blork
+} -returnCodes error -result {bad menu entry type "blork": must be cascade, checkbutton, command, radiobutton, or separator}
+test menu-16.11 {MenuAddOrInsert} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-16.12 {MenuAddOrInsert} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 clone .m2
+    .m2 clone .m3
+    list [.m2 add command -label "test"] [.m1 entrycget 1 -label] [.m3 entrycget 1 -label]
+} -cleanup {
+	deleteWindows
+} -result {{} test test}
+test menu-16.13 {MenuAddOrInsert} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 clone .m2
+    .m2 clone .m3
+    list [.m3 add command -label "test"] [.m1 entrycget 1 -label] [.m2 entrycget 1 -label]
+} -cleanup {
+	deleteWindows
+} -result {{} test test}
+test menu-16.14 {MenuAddOrInsert} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -blork
+} -returnCodes error -result {unknown option "-blork"}
+test menu-16.15 {MenuAddOrInsert} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "File"
+    menu .container
+    . configure -menu .container
+    list [.container add cascade -label "File" -menu .m1] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-16.16 {MenuAddOrInsert} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    menu .m2
+    set tearoff [tk::TearOffMenu .m2]
+    list [.m2 add cascade -menu .m1] [$tearoff unpost]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-16.17 {MenuAddOrInsert} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    menu .container
+    . configure -menu .container
+    set tearoff [tk::TearOffMenu .container]
+    list [.container add cascade -label "File" -menu .m1] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-16.18 {MenuAddOrInsert} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    menu .container
+    .container add cascade -menu .m1
+    . configure -menu .container
+    list [.container add cascade -label "File" -menu .m1] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-16.19 {MenuAddOrInsert - Insert a cascade deep into the tree} -setup {
+	deleteWindows
+} -body {
+    menu .menubar
+    menu .menubar.test -tearoff 0
+    .menubar add cascade -label Test -underline 0 -menu .menubar.test
+    menu .menubar.test.cascade -tearoff 0
+    .menubar.test.cascade add command -label SubItem -command "puts SubItemSelected"
+    . configure -menu .menubar
+    list [catch {.menubar.test add cascade -label SubMenu \
+		-menu .menubar.test.cascade}] \
+		[info commands .\#menubar.\#menubar\#test.\#menubar\#test\#cascade] \
+		[. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {0 .#menubar.#menubar#test.#menubar#test#cascade {}}
+
+
+test menu-17.1 {MenuVarProc} -setup {
+	deleteWindows
+} -body {
+    catch {unset foo}
+    menu .m1
+    set foo "hello"
+    list [.m1 add checkbutton -variable foo -onvalue hello -offvalue goodbye] \
+		[unset foo]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+# menu-17.2 - Don't know how to generate the flags in the if
+test menu-17.2 {MenuVarProc} -setup {
+	deleteWindows
+} -body {
+    catch {unset foo}
+    menu .m1
+    list [.m1 add checkbutton -variable foo -onvalue hello -offvalue goodbye] \
+		[set foo ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-17.3 {MenuVarProc} -setup {
+	deleteWindows
+} -body {
+    catch {unset foo}
+    menu .m1
+    set foo "hello"
+    list [.m1 add checkbutton -variable foo -onvalue hello -offvalue goodbye] \
+		[set foo "hello"] [unset foo]
+} -cleanup {
+	deleteWindows
+} -result {{} hello {}}
+test menu-17.4 {MenuVarProc} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    set foo "goodbye"
+    list [.m1 add checkbutton -variable foo -onvalue hello -offvalue goodbye] \
+		[set foo "hello"] [unset foo]
+} -cleanup {
+	deleteWindows
+} -result {{} hello {}}
+test menu-17.5 {MenuVarProc} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    set foo "hello"
+    list [.m1 add checkbutton -variable foo -onvalue hello -offvalue goodbye] \
+		[set foo "goodbye"] [unset foo]
+} -cleanup {
+	deleteWindows
+} -result {{} goodbye {}}
+test menu-17.6 {MenuVarProc [5d991b822e]} -setup {
+	deleteWindows
+} -body {
+    # Want this not to crash
+    menu .b
+    set var INIT
+    .b add checkbutton -variable var
+    trace add variable var unset {apply {args {
+        .b entryconfigure 1 -variable {}
+    }}}
+    unset var
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-17.7 {MenuVarProc [5d991b822e]} -setup {
+	deleteWindows
+} -body {
+    # Want this not to duplicate traces
+    menu .b
+    set var INIT
+    .b add checkbutton -variable var
+    trace add variable var unset {apply {args {
+        .b entryconfigure 1 -variable new
+    }}}
+    unset var
+} -cleanup {
+	deleteWindows
+} -result {}
+
+
+test menu-18.1 {TkActivateMenuEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 activate 1
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-18.2 {TkActivateMenuEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 activate 0
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-18.3 {TkActivateMenuEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 add command -label "test2"
+    .m1 activate 1
+    .m1 activate 2
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-18.4 {TkActivateMenuEntry} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 add command -label "test2"
+    .m1 activate 1
+    .m1 activate 1
+} -cleanup {
+	deleteWindows
+} -result {}
+
+
+test menu-19.1 {TkPostCommand} -constraints nonUnixUserInteraction -setup {
+	deleteWindows
+} -body { 
+    menu .m1 -postcommand "set menu_test menu-19.1"
+    .m1 add command -label "menu-19.1 - hit Escape"
+    list [.m1 post 40 40] [.m1 unpost] [set menu_test]
+} -cleanup {
+	deleteWindows
+} -result {menu-19.1 {} menu-19.1}
+test menu-19.2 {TkPostCommand} -constraints nonUnixUserInteraction -setup {
+	deleteWindows
+} -body { 
+    menu .m1
+    .m1 add command -label "menu-19.2 - hit Escape"
+    list [.m1 post 40 40] [.m1 unpost]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+
+test menu-20.1 {CloneMenu} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 clone .m2]
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-20.2 {CloneMenu} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 clone .m2 normal
+	deleteWindows
+} -result {}
+test menu-20.3 {CloneMenu} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 clone .m2 tearoff
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-20.4 {CloneMenu} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 clone .m2 menubar
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-20.5 {CloneMenu} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 clone .m2 foo
+} -returnCodes error -result {bad menu type "foo": must be normal, tearoff, or menubar}
+test menu-20.6 {CloneMenu - hooking up bookeeping ptrs} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 clone .m2
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-20.7 {CloneMenu - hooking up bookeeping ptrs - multiple children} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 clone .m2
+    .m1 clone .m3
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-20.8 {CloneMenu - cascade entries} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add cascade -menu .m2
+    .m1 clone .foo
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-20.9 {CloneMenu - cascades entries} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add cascade -menu .m2
+    menu .m2
+    .m1 clone .foo
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-20.10 {CloneMenu - tearoff fields} -setup {
+	deleteWindows
+} -body {
+    menu .m1 -tearoff 1
+    list [.m1 clone .m2 normal] [.m2 cget -tearoff]
+} -cleanup {
+	deleteWindows
+} -result {{} 1}
+test menu-20.11 {CloneMenu} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    menu .m2
+    .m1 clone .m2
+} -returnCodes error -result {window name "m2" already exists in parent}
+
+test menu-21.1 {MenuDoYPosition} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 yposition glorp
+} -returnCodes error -result {bad menu entry index "glorp"}
+test menu-21.2 {MenuDoYPosition} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "Test"
+    .m1 yposition 1
+} -cleanup {
+	deleteWindows
+} -returnCodes ok -match glob -result {*}
+
+test menu-22.1 {GetIndexFromCoords} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 configure -tearoff 0
+    .m1 index @5
+} -cleanup {
+	deleteWindows
+} -result {0}
+test menu-22.2 {GetIndexFromCoords} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 configure -tearoff 0
+    .m1 index @5,5
+} -cleanup {
+	deleteWindows
+} -result {0}
+test menu-22.3 {GetIndexFromCoords: mapped window, y only} -setup {
+	deleteWindows
+} -constraints {x11} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 configure -tearoff 0
+    tk_popup .m1 0 0
+    tkwait visibility .m1
+    .m1 index @5
+} -cleanup {
+	deleteWindows
+} -result {0}
+test menu-22.4 {GetIndexFromCoords: mapped window x,y} -setup {
+	deleteWindows
+} -constraints {x11} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 configure -tearoff 0
+    tk_popup .m1 0 0
+    tkwait visibility .m1
+    update
+    set x [expr {[winfo width .m1] - [.m1 cget -borderwidth] - 1}]
+    .m1 index @$x,5
+} -cleanup {
+	deleteWindows
+} -result {0}
+test menu-22.5 {GetIndexFromCoords: mapped wide window} -setup {
+	deleteWindows
+} -constraints {x11} -body {
+    menu .m1
+    .m1 add command -label "test"
+    .m1 configure -tearoff 0
+    tk_popup .m1 0 0
+    tkwait visibility .m1
+    wm geometry .m1 200x100
+    update
+    set x [expr {[winfo width .m1] - [.m1 cget -borderwidth] - 1}]
+    .m1 index @$x,5
+} -cleanup {
+	deleteWindows
+} -result {0}
+
+test menu-23.1 {RecursivelyDeleteMenu} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    . configure -menu .m1
+    . configure -menu ""
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-23.2 {RecursivelyDeleteMenu} -setup {
+	deleteWindows
+} -body {
+    menu .m2
+    .m2 add command -label "test2"
+    menu .m1
+    .m1 add cascade -label "test1" -menu .m2
+    . configure -menu .m1
+    . configure -menu ""
+} -cleanup {
+	deleteWindows
+} -result {}
+
+test menu-24.1 {TkNewMenuName} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    list [. configure -menu .m1] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-24.2 {TkNewMenuName} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    menu .m1\#0
+    list [. configure -menu .m1] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-24.3 {TkNewMenuName} -setup {
+	deleteWindows
+} -body {
+    menu .#m
+    rename .#m hideme
+    list [catch {. configure -menu [menu .m]}] [. configure -menu ""] [destroy .#m] \
+		[destroy .m] [destroy hideme]
+} -result {0 {} {} {} {}}
+
+
+test menu-25.1 {TkSetWindowMenuBar} -setup {
+	deleteWindows
+} -body {
+    . configure -menu ""
+    list [. configure -menu .m1] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-25.2 {TkSetWindowMenuBar} -setup {
+	deleteWindows
+} -body {
+    . configure -menu ""
+    list [. configure -menu .m1] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-25.3 {TkSetWindowMenuBar} -setup {
+	deleteWindows
+} -body {
+    . configure -menu ""
+    destroy .m1
+    menu .m1
+    list [. configure -menu .m1] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-25.4 {TkSetWindowMenuBar} -setup {
+	deleteWindows
+} -body {
+    . configure -menu ""
+    menu .m1
+    . configure -menu .m1
+    menu .m2
+    list [. configure -menu .m2] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-25.5 {TkSetWindowMenuBar} -setup {
+	deleteWindows
+} -body {
+    . configure -menu ""
+    menu .m1
+    . configure -menu .m1
+    .m1 clone .m2
+    menu .m3
+    list [. configure -menu .m3] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-25.6 {TkSetWindowMenuBar} -setup {
+	deleteWindows
+} -body {
+    . configure -menu ""
+    menu .m1
+    .m1 clone .m2
+    . configure -menu .m2
+    menu .m3
+    list [. configure -menu .m3] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-25.7 {TkSetWindowMenuBar} -setup {
+	deleteWindows
+} -body {
+    . configure -menu ""
+    menu .m1
+    menu .m2
+    . configure -menu .m1
+    toplevel .t2
+    .t2 configure -menu .m1
+    list [.t2 configure -menu .m2] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-25.8 {TkSetWindowMenuBar} -setup {
+	deleteWindows
+} -body {
+    . configure -menu ""
+    menu .m1
+    menu .m2
+    . configure -menu .m1
+    toplevel .t2
+    wm geometry .t2 +0+0
+    .t2 configure -menu .m1
+    list [. configure -menu .m2] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-25.9 {TkSetWindowMenuBar} -setup {
+	deleteWindows
+} -body {
+    . configure -menu ""
+    menu .m1
+    menu .m2
+    . configure -menu .m1
+    toplevel .t2 -menu .m1
+    wm geometry .t2 +0+0
+    toplevel .t3 -menu .m1
+    wm geometry .t3 +0+0
+    list [.t3 configure -menu .m2] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-25.10 {TkSetWindowMenuBar} -setup {
+	deleteWindows
+} -body {
+    . configure -menu ""
+    menu .m1
+    menu .m2
+    . configure -menu .m1
+    toplevel .t2 -menu .m1
+    wm geometry .t2 +0+0
+    toplevel .t3 -menu .m1
+    wm geometry .t3 +0+0
+    list [.t2 configure -menu .m2] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-25.11 {TkSetWindowMenuBar} -setup {
+	deleteWindows
+} -body {
+    . configure -menu ""
+    menu .m1
+    menu .m2
+    . configure -menu .m1
+    toplevel .t2 -menu .m1
+    wm geometry .t2 +0+0
+    toplevel .t3 -menu .m1
+    wm geometry .t3 +0+0
+    list [. configure -menu .m2] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-25.12 {TkSetWindowMenuBar} -setup {
+	deleteWindows
+} -body {
+    . configure -menu ""
+    menu .m1
+    list [. configure -menu .m1] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-25.13 {TkSetWindowMenuBar} -setup {
+	deleteWindows
+} -body {
+    . configure -menu ""
+    list [. configure -menu .m1] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-25.14 {TkSetWindowMenuBar} -setup {
+	deleteWindows
+} -body {
+    . configure -menu ""
+    menu .m1
+    list [. configure -menu .m1] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-25.15 {TkSetWindowMenuBar} -setup {
+	deleteWindows
+} -body {
+    . configure -menu ""
+    list [. configure -menu .m1] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+test menu-25.16 {TkSetWindowMenuBar} -setup {
+	deleteWindows
+} -body {
+    . configure -menu ""
+    menu .m1
+    . configure -menu .m1
+    list [toplevel .t2 -menu m1] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {.t2 {}}
+
+
+test menu-26.1 {DestroyMenuHashTable} -setup {
+    catch {interp delete testinterp}
+	deleteWindows
+} -body {
+    interp create testinterp
+    load {} Tk testinterp
+    interp eval testinterp {menu .m1}
+    interp delete testinterp
+} -returnCodes ok -result {}
+
+
+test menu-27.1 {GetMenuHashTable} -setup {
+    catch {interp delete testinterp}
+	deleteWindows
+} -body {
+    interp create testinterp
+    load {} Tk testinterp
+    list [catch {interp eval testinterp {menu .m1}} msg] $msg [interp delete testinterp]
+} -cleanup {
+	deleteWindows
+} -result {0 .m1 {}}
+
+
+test menu-28.1 {TkCreateMenuReferences - not there before} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+} -cleanup {
+	deleteWindows
+} -result {.m1}
+test menu-28.2 {TkCreateMenuReferences - there already} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add cascade -menu .m2
+    menu .m2
+} -cleanup {
+	deleteWindows
+} -result {.m2}
+
+
+test menu-29.1 {TkFindMenuReferences - not there} -setup {
+	deleteWindows
+} -body {
+    . configure -menu ""
+    menu .m1
+    .m1 add cascade -menu .m2
+    list [. configure -menu .m1] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+
+
+test menu-30.1 {TkFindMenuReferences - there already} -setup {
+	deleteWindows
+} -body {
+    . configure -menu ""
+    menu .m1
+    menu .m2
+    .m1 add cascade -menu .m2
+    list [. configure -menu .m1] [. configure -menu ""]
+} -cleanup {
+	deleteWindows
+} -result {{} {}}
+
+
+test menu-31.1 {TkFreeMenuReferences - menuPtr} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    destroy .m1
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-31.2 {TkFreeMenuReferences - cascadePtr} -setup {
+	deleteWindows
+} -body {
+    . configure -menu ""
+    menu .m1
+    .m1 add cascade -menu .m2
+    .m1 entryconfigure 1 -menu .m3
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-31.3 {TkFreeMenuReferences - topLevelListPtr} -setup {
+	deleteWindows
+} -body {
+    . configure -menu .m1
+    . configure -menu ""
+} -cleanup {
+	deleteWindows
+} -returnCodes ok -result {}
+test menu-31.4 {TkFreeMenuReferences - not empty} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add cascade -menu .m3
+    menu .m2
+    .m2 add cascade -menu .m3
+    .m2 entryconfigure 1 -menu ".foo"
+} -cleanup {
+	deleteWindows
+} -result {}
+
+
+test menu-32.1 {DeleteMenuCloneEntries} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label foo
+    .m1 clone .m2
+    .m1 delete 1
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-32.2 {DeleteMenuCloneEntries} -setup {
+	deleteWindows
+} -body {
+    
+    menu .m1
+    .m1 add command -label one
+    .m1 add command -label two
+    .m1 add command -label three
+    .m1 add command -label four
+    .m1 clone .m2
+    .m1 delete 2 3
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-32.3 {DeleteMenuCloneEntries} -setup {
+	deleteWindows
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add command -label one
+    .m1 add command -label two
+    .m1 add command -label three
+    .m1 add command -label four
+    .m1 clone .m2
+    .m2 configure -tearoff 1
+    .m1 delete 1 2
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-32.4 {DeleteMenuCloneEntries} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label one
+    .m1 add command -label two
+    .m1 add command -label three
+    .m1 add command -label four
+    .m1 clone .m2
+    .m2 configure -tearoff 0
+    .m1 delete 2 3
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-32.5 {DeleteMenuCloneEntries} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label one
+    .m1 add command -label two
+    .m1 clone .m2
+    .m1 activate one
+    .m1 delete one
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-32.6 {DeleteMenuCloneEntries - reentrancy - crashes tk8.0} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add command -label test \
+		-command ".m1 delete test ; .m1 add command -label test -command \".m1 delete test\"; .m1 delete test"
+    .m1 invoke test
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-32.7 {DeleteMenuCloneEntries - one entry} -setup {
+	deleteWindows
+} -body {
+    menu .m1 -tearoff 0
+    .m1 add command -label Hello
+    .m1 delete Hello
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-32.8 {Ensure all menu clone commands are deleted} -setup {
+	deleteWindows
+} -body {
+    # SF bug #465324
+    menu .menubar
+    . configure -menu .menubar
+    menu .menubar.test
+    .menubar.test add command -label "hi"
+    for {set i 0} {$i < 10} {incr i} {
+		.menubar add cascade -menu .menubar.test -label "Test"
+		.menubar delete Test
+    }
+
+    info commands .#menubar*test*
+} -cleanup {
+	deleteWindows
+} -result {}
+test menu-32.9 {Ensure deleting of clones doesn't corrupt menu refs} -setup {
+    set res {}
+	deleteWindows
+} -body {
+    menu .menubar
+    . configure -menu .menubar
+    menu .menubar.test
+    .menubar add cascade -menu .menubar.test -label "Test"
+    menu .menubar.cascade
+
+    .menubar.test add cascade -menu .menubar.cascade -label "Cascade"
+    lappend res [.menubar.test entrycget 1 -menu]
+    lappend res [.#menubar.#menubar#test entrycget 1 -menu]
+    destroy .menubar.test
+    menu .menubar.test
+    .menubar.test add cascade -menu .menubar.cascade -label "Cascade"
+    lappend res [.menubar.test entrycget 1 -menu]
+    lappend res [.#menubar.#menubar#test entrycget 1 -menu]
+    return $res
+} -cleanup {
+	deleteWindows
+} -result {.menubar.cascade .#menubar.#menubar#test.#menubar#cascade .menubar.cascade .#menubar.#menubar#test.#menubar#cascade}
+
+
+test menu-33.1 {menu vs command hiding} -setup {
+	deleteWindows
+} -body {
+	set l [interp hidden]
+    menu .m
+    interp hide {} .m
+    destroy .m
+    set result [list [winfo children .] [interp hidden]]
+	expr {$result eq [list {} $l]}
+} -result 1
+
+# menu-34 MenuInit only called at boot time
+
+# creating menus on two different screens then deleting the
+# menu from the first screen crashes Tk8.3.1
+#
+test menu-34.1 {menus on multiple screens - crashes tk8.3.1, Bug 5454} -constraints {
+	altDisplay
+} -setup {
+	deleteWindows
+} -body {
+    toplevel .one
+    menu .one.m
+    toplevel .two -screen $::env(TK_ALT_DISPLAY)
+    menu .two.m
+    destroy .one
+    destroy .two
+} -result {}
+
+test menu-35.1 {menu -underline string overruns Bug 1599877} -setup {
+   destroy .m
+} -body {
+    # ensure that -underline does not do string overruns [Bug 1599877]
+    menu .m
+    .m add command -label "File" -underline [expr {1<<30}]
+    . configure -menu .m
+    update
+    tk::TraverseToMenu . "e"
+} -cleanup {
+	deleteWindows
+} -result {}
+
+test menu-37.1 {menubar menues cannot be posted - bug 2160206} -setup {
+    catch {destroy .m}
+} -body {
+    # On Linux the following used to panic
+    # It now returns an error (on all platforms)
+    menu .m -type menubar
+    list [catch ".m post 1 1" msg] $msg
+} -cleanup {
+    destroy .m
+} -result {1 {a menubar menu cannot be posted}}
+
+test menu-38.1 {Can't dismiss ttk::menubutton menu until mouse has hovered over it - bug fa32290898} -setup {
+} -constraints {userInteraction} -body {
+    toplevel .top
+    ttk::menubutton .top.mb -text "Some menu";
+    menu .top.mb.m;
+    .top.mb.m add command -label "Item 1";
+    .top.mb.m add command -label "Item 2";
+    .top.mb configure -menu .top.mb.m;
+    pack .top.mb
+    update
+    # simulate mouse click on the menubutton, which posts its menu
+    event generate .top.mb <ButtonPress-1> -warp 1
+    update
+    after 50
+    event generate .top.mb <ButtonRelease-1>
+    update
+    # simulate mouse click on the menu again, i.e. without
+    # entering/leaving the posted menu
+    event generate .top.mb <ButtonPress-1>
+    update
+    after 50
+    event generate .top.mb <ButtonRelease-1>
+    update
+    # the menu shall have been unposted by the second click
+    winfo ismapped .top.mb.m
+} -cleanup {
+    destroy .top.mb.m .top.m .top
+} -result {0}
+
+
+# cleanup
+imageFinish
+deleteWindows
+cleanupTests
+return
+
+# Local variables:
+# mode: tcl
+# End:

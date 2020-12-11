@@ -1,0 +1,415 @@
+# This file contains tests for the tclProc.c source file. Tests appear in the
+# same order as the C code that they test. The set of tests is currently
+# incomplete since it includes only new tests, in particular tests for code
+# changed for the addition of Tcl namespaces. Other procedure-related tests
+# appear in other test files such as proc-old.test.
+#
+# Sourcing this file into Tcl runs the tests and generates output for errors.
+# No output means no errors were found.
+#
+# Copyright (c) 1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+testConstraint procbodytest [expr {![catch {package require procbodytest}]}]
+testConstraint memory	    [llength [info commands memory]]
+
+catch {namespace delete {*}[namespace children :: test_ns_*]}
+catch {rename p ""}
+catch {rename {} ""}
+catch {unset msg}
+
+test proc-1.1 {Tcl_ProcObjCmd, put proc in namespace specified in name, if any} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+} -body {
+    namespace eval test_ns_1 {
+        namespace eval baz {}
+    }
+    proc test_ns_1::baz::p {} {
+        return "p in [namespace current]"
+    }
+    list [test_ns_1::baz::p] \
+         [namespace eval test_ns_1 {baz::p}] \
+         [info commands test_ns_1::baz::*]
+} -result {{p in ::test_ns_1::baz} {p in ::test_ns_1::baz} ::test_ns_1::baz::p}
+test proc-1.2 {Tcl_ProcObjCmd, namespace specified in proc name must exist} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+} -returnCodes error -body {
+    proc test_ns_1::baz::p {} {}
+} -result {can't create procedure "test_ns_1::baz::p": unknown namespace}
+test proc-1.3 {Tcl_ProcObjCmd, empty proc name} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+} -body {
+    proc :: {} {
+        return "empty called"
+    }
+    list [::] \
+         [info body {}]
+} -result {{empty called} {
+        return "empty called"
+    }}
+test proc-1.4 {Tcl_ProcObjCmd, simple proc name and proc defined in namespace} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+} -body {
+    namespace eval test_ns_1 {
+        namespace eval baz {
+            proc p {} {
+                return "p in [namespace current]"
+            }
+        }
+    }
+    list [test_ns_1::baz::p] \
+         [info commands test_ns_1::baz::*]
+} -result {{p in ::test_ns_1::baz} ::test_ns_1::baz::p}
+test proc-1.5 {Tcl_ProcObjCmd, qualified proc name and proc defined in namespace} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+} -body {
+    namespace eval test_ns_1::baz {}
+    namespace eval test_ns_1 {
+        proc baz::p {} {
+            return "p in [namespace current]"
+        }
+    }
+    list [test_ns_1::baz::p] \
+         [info commands test_ns_1::baz::*] \
+         [namespace eval test_ns_1::baz {namespace which p}]
+} -result {{p in ::test_ns_1::baz} ::test_ns_1::baz::p ::test_ns_1::baz::p}
+test proc-1.6 {Tcl_ProcObjCmd, namespace code ignores single ":"s in middle or end of command names} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+} -body {
+    namespace eval test_ns_1 {
+        proc q: {} {return "q:"}
+        proc value:at: {} {return "value:at:"}
+    }
+    list [namespace eval test_ns_1 {q:}] \
+         [namespace eval test_ns_1 {value:at:}] \
+         [test_ns_1::q:] \
+         [test_ns_1::value:at:] \
+         [lsort [info commands test_ns_1::*]] \
+         [namespace eval test_ns_1 {namespace which q:}] \
+         [namespace eval test_ns_1 {namespace which value:at:}]
+} -result {q: value:at: q: value:at: {::test_ns_1::q: ::test_ns_1::value:at:} ::test_ns_1::q: ::test_ns_1::value:at:}
+test proc-1.7 {Tcl_ProcObjCmd, check that formal parameter names are not array elements} -setup {
+    catch {rename p ""}
+} -returnCodes error -body {
+    proc p {a(1) a(2)} { 
+	set z [expr $a(1)+$a(2)]
+	puts "$z=z, $a(1)=$a(1)"
+    }
+} -result {formal parameter "a(1)" is an array element}
+test proc-1.8 {Tcl_ProcObjCmd, check that formal parameter names are simple names} -setup {
+    catch {rename p ""}
+} -body {
+    proc p {b:a b::a} { 
+    }
+} -returnCodes error -result {formal parameter "b::a" is not a simple name}
+test proc-1.9 {Tcl_ProcObjCmd, arguments via canonical list (string-representation bug [631b4c45df])} -body {
+    set v 2
+    binary scan AB cc a b
+    proc p [list [list a $a] [list b $b] [list v [expr {$v + 2}]]] {expr {$a + $b + $v}}
+    p
+} -result [expr {65+66+4}] -cleanup {
+   rename p {}
+}
+
+test proc-2.1 {TclFindProc, simple proc name and proc not in namespace} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+    catch {rename p ""}
+} -body {
+    proc p {} {return "p in [namespace current]"}
+    info body p
+} -result {return "p in [namespace current]"}
+test proc-2.2 {TclFindProc, simple proc name and proc defined in namespace} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+} -body {
+    namespace eval test_ns_1 {
+        namespace eval baz {
+            proc p {} {return "p in [namespace current]"}
+        }
+    }
+    namespace eval test_ns_1::baz {info body p}
+} -result {return "p in [namespace current]"}
+test proc-2.3 {TclFindProc, qualified proc name and proc defined in namespace} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+} -body {
+    namespace eval test_ns_1::baz {}
+    namespace eval test_ns_1 {
+        proc baz::p {} {return "p in [namespace current]"}
+    }
+    namespace eval test_ns_1 {info body baz::p}
+} -result {return "p in [namespace current]"}
+test proc-2.4 {TclFindProc, global proc and executing in namespace} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+    catch {rename p ""}
+} -body {
+    proc p {} {return "global p"}
+    namespace eval test_ns_1::baz {info body p}
+} -result {return "global p"}
+
+test proc-3.1 {TclObjInterpProc, proc defined and executing in same namespace} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+} -body {
+    proc p {} {return "p in [namespace current]"}
+    p
+} -result {p in ::}
+test proc-3.2 {TclObjInterpProc, proc defined and executing in same namespace} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+} -body {
+    namespace eval test_ns_1::baz {
+        proc p {} {return "p in [namespace current]"}
+        p
+    }
+} -result {p in ::test_ns_1::baz}
+test proc-3.3 {TclObjInterpProc, proc defined and executing in different namespaces} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+    catch {rename p ""}
+} -body {
+    proc p {} {return "p in [namespace current]"}
+    namespace eval test_ns_1::baz {
+        p
+    }
+} -result {p in ::}
+test proc-3.4 {TclObjInterpProc, procs execute in the namespace in which they were defined unless renamed into new namespace} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+    catch {rename p ""}
+} -body {
+    namespace eval test_ns_1::baz {
+        proc p {} {return "p in [namespace current]"}
+        rename ::test_ns_1::baz::p ::p
+        list [p] [namespace which p]
+    }
+} -result {{p in ::} ::p}
+test proc-3.5 {TclObjInterpProc, any old result is reset before appending error msg about missing arguments} -body {
+    proc p {x} {info commands 3m}
+    p
+} -returnCodes error -result {wrong # args: should be "p x"}
+test proc-3.6 {TclObjInterpProc, proper quoting of proc name, Bug 942757} -body {
+    proc {a b  c} {x} {info commands 3m}
+    {a b  c}
+} -returnCodes error -result {wrong # args: should be "{a b  c} x"}
+
+test proc-3.7 {TclObjInterpProc, wrong num args, Bug 3366265} {
+    proc {} {x} {}
+    list [catch {{}} msg] $msg
+} {1 {wrong # args: should be "{} x"}}
+
+catch {namespace delete {*}[namespace children :: test_ns_*]}
+catch {rename p ""}
+catch {rename {} ""}
+catch {rename {a b  c} {}}
+catch {unset msg}
+
+catch {rename p ""}
+catch {rename t ""}
+
+# Note that the test require that procedures whose body is used to create
+# procbody objects must be executed before the procbodytest::proc command is
+# executed, so that the Proc struct is populated correctly (CompiledLocals are
+# added at compile time).
+
+test proc-4.1 {TclCreateProc, procbody obj} -constraints procbodytest -body {
+    proc p x {return "$x:$x"}
+    set rv [p P]
+    procbodytest::proc t x p
+    lappend rv [t T]
+} -cleanup {
+    catch {rename p ""}
+    catch {rename t ""}
+} -result {P:P T:T}
+test proc-4.2 {TclCreateProc, procbody obj, use compiled locals} -body {
+    proc p x {
+	set y [string tolower $x]
+	return "$x:$y"
+    }
+    set rv [p P]
+    procbodytest::proc t x p
+    lappend rv [t T]
+} -constraints procbodytest -cleanup {
+    catch {rename p ""}
+    catch {rename t ""}
+} -result {P:p T:t}
+test proc-4.3 {TclCreateProc, procbody obj, too many args} -body {
+    proc p x {
+	set y [string tolower $x]
+	return "$x:$y"
+    }
+    set rv [p P]
+    procbodytest::proc t {x x1 x2} p
+    lappend rv [t T]
+} -constraints procbodytest -returnCodes error -cleanup {
+    catch {rename p ""}
+    catch {rename t ""}
+} -result {procedure "t": arg list contains 3 entries, precompiled header expects 1}
+test proc-4.4 {TclCreateProc, procbody obj, inconsistent arg name} -body {
+    proc p {x y z} {
+	set v [join [list $x $y $z]]
+	set w [string tolower $v]
+	return "$v:$w"
+    }
+    set rv [p P Q R]
+    procbodytest::proc t {x x1 z} p
+    lappend rv [t S T U]
+} -constraints procbodytest -returnCodes error -cleanup {
+    catch {rename p ""}
+    catch {rename t ""}
+} -result {procedure "t": formal parameter 1 is inconsistent with precompiled body}
+test proc-4.5 {TclCreateProc, procbody obj, inconsistent arg default type} -body {
+    proc p {x y {z Z}} {
+	set v [join [list $x $y $z]]
+	set w [string tolower $v]
+	return "$v:$w"
+    }
+    set rv [p P Q R]
+    procbodytest::proc t {x y z} p
+    lappend rv [t S T U]
+} -constraints procbodytest -returnCodes error -cleanup {
+    catch {rename p ""}
+    catch {rename t ""}
+} -result {procedure "t": formal parameter 2 is inconsistent with precompiled body}
+test proc-4.6 {TclCreateProc, procbody obj, inconsistent arg default type} -body {
+    proc p {x y z} {
+	set v [join [list $x $y $z]]
+	set w [string tolower $v]
+	return "$v:$w"
+    }
+    set rv [p P Q R]
+    procbodytest::proc t {x y {z Z}} p
+    lappend rv [t S T U]
+} -returnCodes error -constraints procbodytest -cleanup {
+    catch {rename p ""}
+    catch {rename t ""}
+} -result {procedure "t": formal parameter 2 is inconsistent with precompiled body}
+test proc-4.7 {TclCreateProc, procbody obj, inconsistent arg default value} -body {
+    proc p {x y {z Z}} {
+	set v [join [list $x $y $z]]
+	set w [string tolower $v]
+	return "$v:$w"
+    }
+    set rv [p P Q R]
+    procbodytest::proc t {x y {z ZZ}} p
+    lappend rv [t S T U]
+} -constraints procbodytest -returnCodes error -cleanup {
+    catch {rename p ""}
+    catch {rename t ""}
+} -result {procedure "t": formal parameter "z" has default value inconsistent with precompiled body}
+test proc-4.8 {TclCreateProc, procbody obj, no leak on multiple iterations} -setup {
+    proc getbytes {} {
+	set lines [split [memory info] "\n"]
+	lindex $lines 3 3
+    }
+    proc px x {
+	set y [string tolower $x]
+	return "$x:$y"
+    }
+    px x
+} -constraints {procbodytest memory} -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	procbodytest::proc tx x px
+	set tmp $end
+	set end [getbytes]
+    }
+    set leakedBytes [expr {$end - $tmp}]
+} -cleanup {
+    rename getbytes {}
+    unset -nocomplain end i tmp leakedBytes
+} -result 0
+test proc-4.9 {[39fed4dae5] Valid Tcl_PkgPresent return} procbodytest {
+    procbodytest::check
+} 1
+
+test proc-5.1 {Bytecompiling noop; test for correct argument substitution} -body {
+    proc p args {} ; # this will be bytecompiled into t
+    proc t {} {
+	set res {}
+	set a 0
+	set b 0
+	trace add variable a read {append res a ;#}
+	trace add variable b write {append res b ;#}
+	p $a ccccccw {bfe} {$a} [incr b] [incr a] {[incr b]} {$a} hello
+	set res
+    }
+    t
+} -cleanup {
+    catch {rename p ""}
+    catch {rename t ""}
+} -result {aba}    
+
+test proc-6.1 {ProcessProcResultCode: Bug 647307 (negative return code)} -body {
+    proc a {} {return -code -5}
+    proc b {} a
+    catch b
+} -cleanup {
+    rename a {}
+    rename b {}
+} -result -5
+
+test proc-7.1 {Redefining a compiled cmd: Bug 729692} {
+    proc bar args {}
+    proc foo {} {
+	proc bar args {return bar}
+	bar
+    }
+    foo
+} bar
+test proc-7.2 {Shadowing a compiled cmd: Bug 729692} -body {
+    namespace eval ugly {}
+    proc ugly::foo {} {
+	proc set args {return bar}
+	set x 1
+    }
+    ugly::foo
+} -cleanup {
+    namespace delete ugly
+} -result bar
+test proc-7.3 {Returning loop exception from redefined cmd: Bug 729692} -body {
+    namespace eval ugly {}
+    proc ugly::foo {} {
+	set i 0
+	while { 1 } {
+	    if { [incr i] > 3 } {
+		proc continue {} {return -code break}
+	    }
+	    continue
+	}
+	return $i
+    }
+    ugly::foo
+} -cleanup {
+    namespace delete ugly
+} -result 4
+
+test proc-7.4 {Proc struct outlives its interp: Bug 3532959} {
+    set lambda x
+    lappend lambda {set a 1}
+    interp create slave
+    slave eval [list apply $lambda foo]
+    interp delete slave
+    unset lambda
+} {}
+
+test proc-7.5 {[631b4c45df] Crash in argument processing} {
+    binary scan A c val
+    proc foo [list  [list from $val]] {}
+    rename foo {}
+    unset -nocomplain val
+} {}
+
+
+# cleanup
+catch {rename p ""}
+catch {rename t ""}
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:

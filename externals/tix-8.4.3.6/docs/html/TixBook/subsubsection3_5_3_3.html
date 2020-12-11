@@ -1,0 +1,31 @@
+<HEAD>
+<TITLE> Configuring and Deleting the Items<A NAME=333>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html843 HREF=subsubsection3_5_3_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html841 HREF=subsection3_5_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html835 HREF=subsubsection3_5_3_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html845 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html844 HREF=subsubsection3_5_3_4.html> Choosing the Orientation </A>
+<B>Up:</B> <A NAME=tex2html842 HREF=subsection3_5_3.html> Creating Display Items </A>
+<B> Previous:</B> <A NAME=tex2html836 HREF=subsubsection3_5_3_2.html> Setting the Styles </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00053300000000000000> Configuring and Deleting the Items<A NAME=333>&nbsp;</A></A></H3>
+<P>
+You can configure the individual attributes of the items using the <tt>entryconfigure</tt> method. There is also the entrycget method for querying
+  the attributes of the items. To <tt>delete</tt> the items, you can use the
+  delete method. In the following example, we use these two methods to
+  change the first and third items to display the text strings <tt>One</tt>
+  and <tt>Two</tt> and change the third item to use the style <tt>$style2</tt>. Then we delete the second item using the <tt>delete</tt> command.
+<P>
+<blockquote> <P><tt> .t entryconfigure 0 -text One<BR>
+.t entryconfigure 2 -text Two<BR>
+.t delete 1
+</tt>
+<P></blockquote>
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

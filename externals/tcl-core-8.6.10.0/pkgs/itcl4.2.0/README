@@ -1,0 +1,52 @@
+README: Itcl
+
+This is the 4.2.0 source distribution of Itcl, an object oriented
+extension for Tcl. Itcl releases are available from Sourceforge at:
+
+https://sourceforge.net/projects/incrtcl/files/%5Bincr%20Tcl_Tk%5D-4-source/
+
+1. Introduction
+
+This directory contains the source code, documentation, and test scripts
+for the itcl extension. This version is the next major release to follow
+Itcl 3.4.  This version claims to be script level compatible with Itcl 3.4.
+
+Itcl is a freely-available open source package as in the past.
+You can do virtually anything you like with it, such as modifying it,
+redistributing it, and selling it either in whole or in part.  See the file
+"license.terms" for complete information.
+
+2. Compiling and Installing.
+
+Itcl is built in much the same way that Tcl itself is. Once you have
+a Tcl build environment set up, you should be able to simply
+enter the commands:
+
+    cd itcl
+    ./configure
+    make all
+    make test
+    make install
+
+3. Mailing lists
+
+SourceForge hosts a mailing list, incrtcl-users to discuss issues with using
+and developing Itcl. For more information and to subscribe, visit
+
+    http://sourceforge.net/projects/incrtcl
+
+and go to the 'Mailing Lists' page.
+
+4. Support
+
+We are very interested in receiving bug reports, patches, and suggestions
+for improvements.  We prefer that you send this information to us via the
+bug database, rather than emailing us directly.  The bug database is at:
+
+	https://core.tcl.tk/itcl/ticket
+
+We will log and follow-up on each bug, although we cannot promise a
+specific turn-around time.  Enhancements, reported via the Feature
+Requests form at the same web site, may take longer and may not happen
+at all unless there is widespread support for them.
+

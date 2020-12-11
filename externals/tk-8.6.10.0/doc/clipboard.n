@@ -1,0 +1,157 @@
+'\"
+'\" Copyright (c) 1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH clipboard n 8.4 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+clipboard \- Manipulate Tk clipboard
+.SH SYNOPSIS
+\fBclipboard \fIoption\fR ?\fIarg arg ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+This command provides a Tcl interface to the Tk clipboard,
+which stores data for later retrieval using the selection mechanism
+(via the \fB\-selection CLIPBOARD\fR option).
+In order to copy data into the clipboard, \fBclipboard clear\fR must
+be called, followed by a sequence of one or more calls to \fBclipboard
+append\fR.  To ensure that the clipboard is updated atomically, all
+appends should be completed before returning to the event loop.
+.PP
+The first argument to \fBclipboard\fR determines the format of the
+rest of the arguments and the behavior of the command.  The following
+forms are currently supported:
+.TP
+\fBclipboard append\fR ?\fB\-displayof\fR \fIwindow\fR? ?\fB\-format\fR \fIformat\fR? ?\fB\-type\fR \fItype\fR? ?\fB\-\|\-\fR? \fIdata\fR
+.
+Appends \fIdata\fR to the clipboard on \fIwindow\fR's
+display in the form given by \fItype\fR with the representation given
+by \fIformat\fR and claims ownership of the clipboard on \fIwindow\fR's
+display.
+.RS
+.PP
+\fIType\fR specifies the form in which the selection is to be returned
+(the desired
+.QW target
+for conversion, in ICCCM terminology), and
+should be an atom name such as \fBSTRING\fR or \fBFILE_NAME\fR; see the
+Inter-Client Communication Conventions Manual for complete details.
+\fIType\fR defaults to \fBSTRING\fR.
+.PP
+The \fIformat\fR argument specifies the representation that should be
+used to transmit the selection to the requester (the second column of
+Table 2 of the ICCCM), and defaults to \fBSTRING\fR.  If \fIformat\fR is
+\fBSTRING\fR, the selection is transmitted as 8-bit ASCII characters.  If
+\fIformat\fR is \fBATOM\fR, then the \fIdata\fR is
+divided into fields separated by white space; each field is converted
+to its atom value, and the 32-bit atom value is transmitted instead of
+the atom name.  For any other \fIformat\fR,  \fIdata\fR is divided
+into fields separated by white space and each
+field is converted to a 32-bit integer; an array of integers is
+transmitted to the selection requester.  Note that strings passed to
+\fBclipboard append\fR are concatenated before conversion, so the
+caller must take care to ensure appropriate spacing across string
+boundaries.  All items appended to the clipboard with the same
+\fItype\fR must have the same \fIformat\fR.
+.PP
+The \fIformat\fR argument is needed only for compatibility with
+clipboard requesters that do not use Tk.  If the Tk toolkit is being
+used to retrieve the \fBCLIPBOARD\fR selection then the value is
+converted back to a string at the requesting end, so \fIformat\fR is
+irrelevant.
+.PP
+A \fB\-\|\-\fR argument may be specified to mark the end of options:  the
+next argument will always be used as \fIdata\fR.
+This feature may be convenient if, for example, \fIdata\fR starts
+with a \fB\-\fR.
+.RE
+.TP
+\fBclipboard clear\fR ?\fB\-displayof\fR \fIwindow\fR?
+.
+Claims ownership of the clipboard on \fIwindow\fR's display and removes
+any previous contents.  \fIWindow\fR defaults to
+.QW . .
+Returns an empty string.
+.TP
+\fBclipboard get\fR ?\fB\-displayof\fR \fIwindow\fR? ?\fB\-type\fR \fItype\fR?
+.
+Retrieve data from the clipboard on \fIwindow\fR's display.
+\fIWindow\fR defaults to
+.QW . .
+\fIType\fR specifies the form in which
+the data is to be returned and should be an atom name such as \fBSTRING\fR
+or \fBFILE_NAME\fR.  \fIType\fR defaults to \fBSTRING\fR.  This command is
+equivalent to
+.QW "\fBselection get\fR \fB\-selection CLIPBOARD\fR" .
+.RS
+.PP
+Note that on modern X11 systems, the most useful type to retrieve for
+transferred strings is not \fBSTRING\fR, but rather \fBUTF8_STRING\fR.
+.RE
+.SH EXAMPLES
+.PP
+Get the current contents of the clipboard.
+.CS
+if {[catch {\fBclipboard get\fR} contents]} {
+    # There were no clipboard contents at all
+}
+.CE
+.PP
+Set the clipboard to contain a fixed string.
+.CS
+\fBclipboard clear\fR
+\fBclipboard append\fR "some fixed string"
+.CE
+.PP
+You can put custom data into the clipboard by using a custom \fB\-type\fR
+option. This is not necessarily portable, but can be very useful. The
+method of passing Tcl scripts this way is effective, but should be mixed
+with safe interpreters in production code.
+.CS
+# This is a very simple canvas serializer;
+# it produces a script that recreates the item(s) when executed
+proc getItemConfig {canvas tag} {
+   set script {}
+   foreach item [$canvas find withtag $tag] {
+      append script {$canvas create } [$canvas type $item]
+      append script { } [$canvas coords $item] { }
+      foreach config [$canvas itemconf $item] {
+         lassign $config name \- \- \- value
+         append script [list $name $value] { }
+      }
+      append script \en
+   }
+   return [string trim $script]
+}
+
+# Set up a binding on a canvas to cut and paste an item
+set c [canvas .c]
+pack $c
+$c create text 150 30 \-text "cut and paste me"
+bind $c <<Cut>> {
+   \fBclipboard clear\fR
+   \fBclipboard append \-type\fR TkCanvasItem \e
+         [getItemConfig %W current]
+   # Delete because this is cut, not copy.
+   %W delete current
+}
+bind $c <<Paste>> {
+   catch {
+      set canvas %W
+      eval [\fBclipboard get \-type\fR TkCanvasItem]
+   }
+}
+.CE
+.SH "SEE ALSO"
+interp(n), selection(n)
+.SH KEYWORDS
+clear, format, clipboard, append, selection, type
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

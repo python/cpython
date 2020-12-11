@@ -1,0 +1,88 @@
+#
+# ttk::combobox widget tests
+#
+
+package require Tk 8.5
+package require tcltest ; namespace import -force tcltest::*
+loadTestedCommands
+
+test combobox-1.0 "Combobox tests -- setup" -body {
+    ttk::combobox .cb
+} -result .cb
+
+test combobox-1.1 "Bad -values list" -body {
+    .cb configure -values "bad \{list"
+} -result "unmatched open brace in list" -returnCodes 1
+
+test combobox-1.end "Combobox tests -- cleanup" -body {
+    destroy .cb
+}
+
+test combobox-2.0 "current command" -body {
+    ttk::combobox .cb -values [list a b c d e a]
+    .cb current
+} -result -1
+
+test combobox-2.1 "current -- set index" -body {
+    .cb current 5
+    .cb get
+} -result a
+
+test combobox-2.2 "current -- change -values" -body {
+    .cb configure -values [list c b a d e]
+    .cb current
+} -result 2
+
+test combobox-2.3 "current -- change value" -body {
+    .cb set "b"
+    .cb current
+} -result 1
+
+test combobox-2.4 "current -- value not in list" -body { 
+    .cb set "z"
+    .cb current
+} -result -1
+
+test combobox-2.5 "current -- set to end index" -body { 
+    .cb configure -values [list a b c d e thelastone]
+    .cb current end
+    .cb get
+} -result thelastone
+
+test combobox-2.6 "current -- set to unknown index" -body { 
+    .cb configure -values [list a b c d e]
+    .cb current notanindex
+} -returnCodes error -result {Incorrect index notanindex}
+
+test combobox-2.end "Cleanup" -body { destroy .cb }
+
+test combobox-3 "Read postoffset value dynamically from current style" -body {
+    ttk::combobox .cb -values [list a b c] -style "DerivedStyle.TCombobox"
+    pack .cb -expand true -fill both 
+    ttk::style configure DerivedStyle.TCombobox -postoffset [list 25 0 0 0]
+    ttk::combobox::Post .cb
+    expr {[winfo rootx .cb.popdown] - [winfo rootx .cb]}
+} -result 25 -cleanup {
+    destroy .cb
+}
+
+test combobox-1890211 "ComboboxSelected event after listbox unposted" -body {
+    # whitebox test...
+    pack [ttk::combobox .cb -values [list a b c]]
+    set result [list]
+    bind .cb <<ComboboxSelected>> {
+    	lappend result Event [winfo ismapped .cb.popdown] [.cb get]
+    }
+    lappend result Start 0 [.cb get]
+    ttk::combobox::Post .cb
+    lappend result Post [winfo ismapped .cb.popdown] [.cb get]
+    .cb.popdown.f.l selection clear 0 end; .cb.popdown.f.l selection set 1
+    ttk::combobox::LBSelected .cb.popdown.f.l
+    lappend result Select [winfo ismapped .cb.popdown] [.cb get]
+    update
+    set result
+} -result [list Start 0 {} Post 1 {} Select 0 b Event 0 b] -cleanup {
+    destroy .cb
+}
+
+tcltest::cleanupTests

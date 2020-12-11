@@ -1,0 +1,282 @@
+'\"
+'\" $Id: tixTree.n,v 1.2 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH tixTree n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH NAME
+tixTree \- Create and manipulate tixTree widgets
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SYNOPSIS
+\fBtixTree \fIpathName \fR?\fIoptions\fR?
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SUPER-CLASS
+The \fBTixTree\fR class is derived from the \fBTixScrolledHList\fR
+class and inherits all the commands, options and subwidgets of its
+super-class.
+'\"
+'\"----------------------------------------------------------------------
+.SH "STANDARD OPTIONS"
+'\"
+\fBTixTree\fR supports all the standard options of a frame widget.
+See the \fBoptions(n)\fR manual entry for details on the standard options.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH "WIDGET-SPECIFIC OPTIONS"
+'\"
+'\"----------BEGIN
+.OP \-browsecmd browseCmd BrowseCmd
+Specifies a command to call whenever the user browses on an entry
+(usually by single-clicking on the entry). The command is called with
+one argument, the pathname of the entry.
+'\"----------END
+'\"
+'\"
+'\"----------BEGIN
+.OP \-closecmd closeCmd CloseCmd
+Specifies a command to call whenever an entry needs to be closed (See
+the BINDINGS section below). This command is called with one argument,
+the pathname of the entry. This command should perform appropriate
+actions to close the specified entry. If the \fB\-closecmd\fR option
+is not specified, the default closing action is to hide all child
+entries of the specified entry.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-command command Command
+Specifies a command to call whenever the user activates an entry
+(usually by double-clicking on the entry). The command
+is called with one argument, the pathname of the entry.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-ignoreinvoke ignoreInvoke IgnoreInvoke
+A Boolean value that specifies when a branch should be opened or
+closed. A branch will always be opened or closed when the user presses
+the (+) and (-) indicators. However, when the user invokes a branch
+(by doublc-clicking or pressing <Return>), the branch will be opened
+or closed only if \fB\-ignoreinvoke\fR is set to false (the default
+setting).
+'\"----------END
+'\"
+
+'\"----------BEGIN
+.OP \-opencmd openCmd OpenCmd
+Specifies a command to call whenever an entry needs to be opened (See
+the BINDINGS section below). This command is called with one argument,
+the pathname of the entry. This command should perform appropriate
+actions to open the specified entry. If the \fB\-opencmd\fR option
+is not specified, the default opening action is to show all the child
+entries of the specified entry.
+'\"----------END
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SUBWIDGETS
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBhlist\fR
+Class:		\fBTixHList\fR
+.fi
+.IP
+The hierarchical listbox that displays the tree.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBhsb\fR
+Class:		\fBScrollbar\fR
+.fi
+.IP
+The horizontal scrollbar subwidget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBvsb\fR
+Class:		\fBScrollbar\fR
+.fi
+.IP
+The vertical scrollbar subwidget.
+'\"----------END
+'\"
+.BE
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH DESCRIPTION
+'\"
+.PP
+'\"
+The \fBtixTree\fR command creates a new window (given by the
+\fIpathName\fR argument) and makes it into a Tree widget.  Additional
+options, described above, may be specified on the command line or in
+the option database to configure aspects of the Tree widget such as its
+cursor and relief.
+.PP
+The Tree widget can be used to display hierachical data in a tree
+form. The user can adjust the view of the tree by opening or closing
+parts of the tree.
+.PP
+To display a static tree structure, you can add the entries into the
+\fBhlist\fR subwidget and hide any entries as desired. Then you can
+call the \fBautosetmode\fR method. This will set up the Tree widget so
+that it handles all the \fIopen\fR and \fIclose\fR events
+automatically.
+'\"(TODO add an example).
+.PP
+The above method is not applicable if you want to maintain a dynamic
+tree structure, i.e, you do not know all the entries in the tree and
+you need to add or delete entries subsequently. To do this, you should
+first create the entries in the \fBhlist\fR subwidget. Then, use the
+setmode method to indicate the entries that can be opened or closed,
+and use the \fB\-opencmd\fR and \fB \-closecmd\fR options to handle
+the opening and closing events.
+'\"(TODO add an example).
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH WIDGET COMMANDS
+.PP
+'\"
+The \fBtixTree\fR command creates a new Tcl command whose name is the
+same as the path name of the Tree's window.  This command may be used
+to invoke various operations on the widget. It has the following
+general form:
+'\"
+.RS
+.CS
+'\"
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+.RE
+'\"
+\fIPathName\fR is the name of the command, which is the same as the
+Tree widget's path name. \fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command. The following commands
+are possible for Tree widgets:
+'\"
+.TP
+\fIpathName \fBautosetmode\fR
+'\"
+This command calls the \fBsetmode\fR method for all the entries in
+this Tree widget: if an entry has no child entries, its mode is set to
+\fBnone\fR. Otherwise, if the entry has any hidden child entries, its
+mode is set to \fBopen\fR; otherwise its mode is set to \fBclose\fR.
+'\"
+.TP
+\fIpathName \fBcget\fR \fIoption\fR
+'\"
+Returns the current value of the configuration option given by
+\fIoption\fR. \fIOption\fR may have any of the values accepted by the
+\fBtixTree\fR command.
+'\"
+'\"
+.TP
+\fIpathName \fBclose \fIentryPath\fR
+'\"
+Close the entry given by \fIentryPath\fR if its \fImode\fR is \fBclose\fR.
+'\"
+'\"
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? \fI?value option value ...\fR?
+'\"
+Query or modify the configuration options of the widget.  If no
+\fIoption\fR is specified, returns a list describing all of the
+available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list). If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s); in
+this case the command returns an empty string.  \fIOption\fR may have
+any of the values accepted by the \fBtixTree\fR command.
+'\"
+'\"
+.TP
+\fIpathName \fBgetmode \fIentryPath\fR
+'\"
+Returns the current \fImode\fR of the entry given by \fIentryPath\fR.
+'\"
+.TP
+\fIpathName \fBopen \fIentryPath\fR
+'\"
+Open the entry givaen by \fIentryPath\fR if its \fImode\fR is \fBopen\fR.
+'\"
+.TP
+\fIpathName \fBsetmode \fI entryPath mode\fR
+'\"
+This command is used to indicate whether the entry given by
+\fIentryPath\fR has children entries and whether the children are
+visible. \fImode\fR must be one of \fBopen\fR,
+\fBclose\fR or \fBnone\fR. If \fImode\fR is set to \fBopen\fR, a (+)
+indicator is drawn next the the entry. If \fImode\fR is set to
+\fBclose\fR, a (-) indicator is drawn next the the entry. If
+\fImode\fR is set to \fBnone\fR, no indicators will be drawn for this
+entry. The default \fImode\fR is none. The \fBopen\fR mode indicates
+the entry has hidden children and this entry can be opened by the
+user. The \fBclose\fR mode indicates that all the children of the entry
+are now visible and the entry can be closed by the user.
+'\"
+.TP
+\fIpathName \fBsubwidget \fI name ?args?\fR 
+'\"
+When no options are given, this command returns the pathname of the
+subwidget of the specified name.
+
+When options are given, the widget command of the specified subwidget
+will be called with these options.
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH BINDINGS
+.PP
+'\"
+The basic mouse and keyboard bindings of the Tree widget are the same
+as the bindings of the HList widget.
+
+In addition, the entries can be opened or closed under the following
+conditions:
+'\"
+.IP [1]
+If the \fImode\fR of the entry is \fBopen\fR, it can be opened by clicking
+on its (+) indicator or double-clicking on the entry.
+'\"
+.IP [2]
+If the \fImode\fR of the entry is \fBclose\fR, it can be closed by clicking
+on its (-) indicator or double-clicking on the entry.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH KEYWORDS
+Tix(n),tixHList(n)
+
+
+

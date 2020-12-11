@@ -1,0 +1,168 @@
+'\"
+'\" Copyright (c) 2009 by Kevin B. Kenny.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+.TH Tdbc_Init 3 8.6 Tcl "Tcl Database Connectivity"
+'\" .so man.macros
+'\" IGNORE
+.if t .wh -1.3i ^B
+.nr ^l \n(.l
+.ad b
+.de AP
+.ie !"\\$4"" .TP \\$4
+.el \{\
+.   ie !"\\$2"" .TP \\n()Cu
+.   el          .TP 15
+.\}
+.ta \\n()Au \\n()Bu
+.ie !"\\$3"" \{\
+\&\\$1 \\fI\\$2\\fP (\\$3)
+.\".b
+.\}
+.el \{\
+.br
+.ie !"\\$2"" \{\
+\&\\$1	\\fI\\$2\\fP
+.\}
+.el \{\
+\&\\fI\\$1\\fP
+.\}
+.\}
+..
+.\"	# define tabbing values for .AP
+.de AS
+.nr )A 10n
+.if !"\\$1"" .nr )A \\w'\\$1'u+3n
+.nr )B \\n()Au+15n
+.\"
+.if !"\\$2"" .nr )B \\w'\\$2'u+\\n()Au+3n
+.nr )C \\n()Bu+\\w'(in/out)'u+2n
+..
+.AS Tcl_Interp Tcl_CreateInterp in/out
+.\"	# BS - start boxed text
+.\"	# ^y = starting y location
+.\"	# ^b = 1
+.de BS
+.br
+.mk ^y
+.nr ^b 1u
+.if n .nf
+.if n .ti 0
+.if n \l'\\n(.lu\(ul'
+.if n .fi
+..
+.\"	# BE - end boxed text (draw box now)
+.de BE
+.nf
+.ti 0
+.mk ^t
+.ie n \l'\\n(^lu\(ul'
+.el \{\
+.\"	Draw four-sided box normally, but don't draw top of
+.\"	box if the box started on an earlier page.
+.ie !\\n(^b-1 \{\
+\h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.el \}\
+\h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.\}
+.fi
+.br
+.nr ^b 0
+..
+.\"	# CS - begin code excerpt
+.de CS
+.RS
+.nf
+.ta .25i .5i .75i 1i
+..
+.\"	# CE - end code excerpt
+.de CE
+.fi
+.RE
+..
+'\" END IGNORE
+.BS
+.SH "NAME"
+Tdbc_Init, Tdbc_MapSqlState, Tdbc_TokenizeSql \- C procedures to facilitate writing TDBC drivers
+.SH SYNOPSIS
+.nf
+\fB#include <tdbc.h>\fR
+
+int
+\fBTdbc_Init\fR(\fIinterp\fR)
+
+Tcl_Obj *
+\fBTdbc_TokenizeSql\fR(\fIinterp, sqlcode\fR)
+
+const char *
+\fBTdbc_MapSqlState\fR(\fIstate\fR)
+.fi
+.SH ARGUMENTS
+.AS "Tcl_Interp" statement in/out
+.AP Tcl_Interp *interp in/out
+Pointer to a Tcl interpreter.
+.AP "const char" *state in
+Pointer to a character string containing a 'SQL state' from a database error.
+.AP "const char" *sqlcode in
+Pointer to a character string containing a SQL statement.
+.BE
+
+.SH DESCRIPTION
+.PP
+The TDBC library provides several C procedures that simplify writing a TDBC
+driver. They include a procedure that tokenizes a SQL statement, locating
+variables to be substituted, and a procedure that accepts a SQL state and
+returns an error class for the interpreter error information.
+.PP
+\fBTdbc_Init\fR must be invoked prior to any other TDBC call.  It accepts
+a pointer to a Tcl interpreter, and arranges to load the TDBC library. It
+returns \fBTCL_OK\fR if the Tcl library was loaded successfully, and
+\fBTCL_ERROR\fR otherwise. If \fBTCL_ERROR\fR is returned, the
+interpreter's result contains the error message.
+.PP
+\fBTdbc_TokenizeSql\fR accepts a pointer to a Tcl interpreter, and a
+pointer to a character string containing one or more SQL
+statements. It tokenizes the SQL statements, and returns a pointer to
+a Tcl_Obj that contains a list of the tokens that make up the
+statement. Concatenating the tokens together will yield the original
+SQL code. The returned Tcl_Obj has a reference count of zero. The
+caller is responsible for managing the reference count as needed.
+See \fBTOKENS\fR below for a description of what may be in the
+returned list of tokens.
+.PP
+\fBTdbc_MapSqlState\fR accepts a pointer to a string, usually five
+characters long, that is the 'SQL state' that resulted from a database
+error. It returns a character string that is suitable for inclusion as
+the error class when constructing the error code for an error in a
+TDBC driver. (By convention, the error code is a list having at least
+four elements: "\fBTDBC\fR \fIerrorClass\fR \fIsqlstate\fR
+\fIdriverName\fR \fIdetails...\fR".)
+.SH TOKENS
+Each token returned from \fBTdbc_TokenizeSql\fR may be one of the
+following:
+.IP [1]
+A bound variable, which begins with one of the 
+characters '\fB:\fR', '\fB@\fR', or '\fB$\fR'. The 
+remainder of the string is the variable
+name and will consist of alphanumeric characters and underscores. (The
+leading character will be be non-numeric.)
+.IP [2]
+A semicolon that separates two SQL statements.
+.IP [3]
+Something else in a SQL statement. The tokenizer does not attempt to
+parse SQL; it merely identifies bound variables (distinguishing them
+from similar strings appearing inside quotes or comments) and
+statement delimiters.
+.SH "SEE ALSO"
+tdbc(n), tdbc::mapSqlState(n), tdbc::tokenize(n)
+.SH "KEYWORDS"
+TDBC, SQL, database, tokenize
+.SH "COPYRIGHT"
+Copyright (c) 2009 by Kevin B. Kenny.
+.\" Local Variables:
+.\" mode: nroff
+.\" End:
+.\"

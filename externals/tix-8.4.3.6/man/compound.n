@@ -1,0 +1,334 @@
+'\"
+'\" $Id: compound.n,v 1.3 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+.TH compound n 4.0 Tix "Tix Built-In Commands"
+.BS
+.SH NAME
+compound \- multi-line compound image type.
+.SH SYNOPSIS
+\fBimage create compound \fR?\fIname\fR? ?\fIoptions\fR?
+.BE
+'\"
+.SH DESCRIPTION
+.PP
+'\"
+Compound image types can be used to create images that consists of
+multiple horizontal lines; each line is composed of a series of items
+(texts, bitmaps, images or spaces) arranged from left to
+right. Compound images are mainly used to embed complex drawings into
+widgets that support the \fB\-image\fR option. As shown in the EXAMPLE
+section below, a compound image can be used to display a bitmap and a
+text string simutaneously in a TK \fBbutton(n)\fR widget.
+'\"
+.SH "CREATING COMPOUND IMAGES"
+.PP
+Like all images, compound images are created using the \fBimage create\fR
+command. Compound images support the following \fIoptions\fR:
+.TP
+\fB\-background \fIcolor\fR
+'\"
+Specifies the background color of the compound image. This color is
+also used as the default background color for the bitmap items in the
+compound image.
+'\"
+.TP
+\fB\-borderwidth \fIpixels\fR
+'\"
+Specifies a non-negative value indicating the width of the 3-D border
+drawn around the compound image.
+'\"
+.TP
+\fB\-font \fIfont\fR
+'\"
+Specifies the default font for the text items in the compound image.
+'\"
+.TP
+\fB\-foreground \fIcolor\fR
+'\"
+Specifies the default foreground color for the bitmap and text items
+in the compound image.
+'\"
+.TP
+\fB\-padx \fIvalue\fR
+'\"
+Specifies a non-negative value indicating how much extra space to
+request for the compound image in the X-direction. The \fIvalue\fR may
+have any of the forms acceptable to \fBTk_GetPixels(3)\fR.
+'\"
+.TP
+\fB\-pady \fIvalue\fR
+'\"
+Specifies a non-negative value indicating how much extra space to
+request for the compound image in the Y-direction.
+.TP
+\fB\-relief \fIvalue\fR
+'\"
+Specifies the 3-D effect desired for the background of the compound
+image. Acceptable values are \fBraised\fR, \fBsunken\fR, \fBflat\fR,
+\fBridge\fR, and \fBgroove\fR.
+'\"
+.TP
+\fB\-showbackground \fIvalue\fR
+'\"
+Specifies whether the background and the 3D borders should be drawn.
+Must be a valid boolean value. By default the background is not drawn
+and the compound image appears to have a transparent background.
+'\"
+.TP
+\fB\-window \fIpathName\fR
+'\"
+Specifies the window in which the compound image is displayed. One
+compound image can be displayed in only one window. When that window
+is destroyed, the compound image is automatically destroyed as well.
+This option must be specified when calling the \fBimage create
+compound\fR command and cannot be changed by the \fBconfigure\fR image
+command.
+'\"
+.SH "IMAGE COMMAND"
+.PP
+When a compound image is created, Tk also creates a new command whose
+name is the same as the image. This command may be used to invoke
+various operations on the image. It has the following general form:
+.RS
+.CS
+\fIimageName option \fR?\fIarg arg ...\fR?
+.CE
+.RE
+\fIOption\fR and the \fIarg\fRs
+'\"
+determine the exact behavior of the command. The following
+commands are possible for compound images:
+'\"
+'\"
+.TP
+\fIimageName \fBadd line\fR ?\fIoption value ...\fR?
+'\"
+Creates a new line at the bottom of the compound image. Lines support
+the following \fIoptions\fR:
+.RS
+.TP
+\fB\-anchor\fR value
+'\"
+Specifies how the line should be aligned along the horizontal axis.
+When the values are \fBw\fR, \fBsw\fR or \fBnw\fR, the line is aligned
+to the left. When the values are \fBc\fR, \fBs\fR or \fBn\fR, the line
+is aligned to the middle.  When the values are \fBe\fR, \fBse\fR or
+\fBne\fR, the line is aligned to the right.
+'\"
+.TP
+\fB\-padx \fIvalue\fR
+'\"
+Specifies a non-negative value indicating how much extra space to
+request for this line in the X-direction.
+.RE
+'\"
+.TP
+\fIimageName \fBadd \fIitem-type\fR ?\fIoption value ...\fR?
+'\"
+Creates a new item of the type \fIitem-type\fR at the end of the last
+line of the compound image. All types of items support
+these following common \fIoptions\fR:
+.RS
+.TP
+\fB-anchor\fR value
+'\"
+Specifies how the item should be aligned along the vertical axis. When
+the values are \fBn\fR, \fBnw\fR or \fBne\fR, the item is aligned to
+the top of the line. When the values are \fBc\fR, \fBw\fR or \fBe\fR,
+the item is aligned to the middle of the line.  When the values are
+\fBs\fR, \fBse\fR or \fBsw\fR, the item is aligned to the bottom of
+the line.
+'\"
+.TP
+\fB\-padx \fIvalue\fR
+'\"
+Specifies a non-negative value indicating how much extra space to
+request for this item in the X-direction.
+'\"
+.TP
+\fB\-pady \fIvalue\fR
+'\"
+Specifies a non-negative value indicating how much extra space to
+request for this item in the Y-direction.
+'\"
+.TP
+\fIitem-type\fR can be any of the following:
+.RE
+'\"
+'\"----------------------------------------
+.TP
+\fIimageName \fBadd bitmap\fR ?\fIoption value ...\fR?
+'\"
+Creates a new bitmap item of at the end of the last
+line of the compound image. Additional \fIoptions\fR accepted by the
+bitmap type are:
+'\"
+.RS
+.TP
+\fB\-background \fIcolor\fR
+'\"
+Specifies the background color of the bitmap item.
+'\"
+'\"
+.TP
+\fB\-bitmap \fIname\fR
+'\"
+Specifies a bitmap to display in this item, in any of the forms
+acceptable to \fBTk_GetBitmap(3)\fR.
+'\"
+.TP
+\fB\-foreground \fIcolor\fR
+'\"
+Specifies the foreground color of the bitmap item.
+'\"
+.RE
+'\"----------------------------------------
+.TP
+\fIimageName \fBadd image\fR ?\fIoption value ...\fR?
+'\"
+Creates a new image item of at the end of the last
+line of the compound image. Additional \fIoptions\fR accepted by the
+image type are:
+'\"
+.RS
+.TP
+\fB\-image \fIname\fR
+Specifies an image to display in this item. \fIname\fR 
+must have been created with the \fBimage create\fR command. 
+'\"
+.RE
+'\"----------------------------------------
+.TP
+\fIimageName \fBadd space\fR ?\fIoption value ...\fR?
+Creates a new space item of at the end of the last line of the
+compound image. Space items do not display anything. They just acts as
+space holders that add additional spaces between items inside a
+compound image. Additional \fIoptions\fR accepted by the image type
+are:
+'\"
+.RS
+.TP
+\fB\-width \fIvalue\fR
+Specifies the width of this space. The \fIvalue\fR may have any of the
+forms acceptable to \fBTk_GetPixels(3)\fR.
+'\"
+.TP
+\fB\-height \fIvalue\fR
+Specifies the height of this space. The \fIvalue\fR may have any of
+the forms acceptable to \fBTk_GetPixels(3)\fR.
+'\"
+.RE
+'\"----------------------------------------
+.TP
+\fIimageName \fBadd text\fR ?\fIoption value ...\fR?
+Creates a new text item of at the end of the last line of the compound
+image. Additional \fIoptions\fR accepted by the text type are:
+'\"
+.RS
+.TP
+\fB\-background \fIcolor\fR
+Specifies the background color of the text item.
+.TP
+\fB\-font \fIname\fR
+Specifies the font to be used for this text item.
+.TP
+\fB\-foreground \fIcolor\fR
+'\"
+Specifies the foreground color of the text item.
+'\"
+.TP
+\fB\-justify\fR \fIvalue\fR
+'\"
+When there are multiple lines of text displayed in a text item, this
+option determines how the lines line up with each other. \fIvalue\fR
+must be one of \fBleft\fR, \fBcenter\fR, or \fBright\fR.  \fBLeft\fR
+means that the lines' left edges all line up, \fBcenter\fR means that
+the lines' centers are aligned, and \fBright\fR means that the lines'
+right edges line up.
+'\"
+.TP
+\fB\-text \fIstring\fR
+'\"
+Specifies a text string to display in this text item.
+'\"
+.TP
+\fB\-underline\fR \fIvalue\fR
+'\"
+Specifies the integer index of a character to underline in the text
+item. 0 corresponds to the first character of the text displayed in
+the text item, 1 to the next character, and so on.
+'\"
+.TP
+\fB\-wraplength\fR \fIvalue\fR
+'\"
+This option specifies the maximum line length of the label string on
+this text item. If the line length of the label string exceeds this
+length, it is wrapped onto the next line, so that no line is longer
+than the specified length. The value may be specified in any of the
+standard forms for screen distances. If this value is less than or
+equal to 0 then no wrapping is done: lines will break only at newline
+characters in the text.
+'\"
+.RE
+'\"----------------------------------------
+'\"
+.TP
+\fIimageName \fBcget\fR \fIoption\fR
+'\"
+Returns the current value of the configuration option given by
+\fIoption\fR. \fIOption\fR may have any of the values accepted by the
+\fBimage create compound\fR command.
+'\"
+.TP
+\fIimageName \fBconfigure\fR ?\fIoption\fR? ?\fIvalue option value ...\fR? 
+'\"
+Query or modify the configuration options for the image. If no
+\fIoption\fR is specified, returns a list describing all of the
+available options for \fIimageName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list).  If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given option(s) to have the given value(s); in this case
+the command returns an empty string. \fIOption\fR may have any of the
+values accepted by the \fBimage create compound\fR command, except the
+\fB\-window\fR option
+'\".
+'\"----------------------------------------
+'\"
+.SH EXAMPLE
+'\"
+The following example creates a compound image with a bitmap and a
+text string and places this image into a Tk \fBbitton(n)\fR
+widget. Notice that the image must be created after the creation of
+the window that it resides in.
+.PP
+.CS
+set btn [button .b]
+set img [image create compound -window $btn]
+$img add line
+$img add bitmap -bitmap warning
+$img add space -width 8
+$img add text -text "Warning" -underline 0
+$btn config -image $img
+pack $btn
+.CE
+'\"
+.SH KEYWORDS
+image(n), Tix(n)
+
+

@@ -1,0 +1,92 @@
+'\"
+'\" Copyright (c) 1995-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_Alloc 3 7.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_Alloc, Tcl_Free, Tcl_Realloc, Tcl_AttemptAlloc, Tcl_AttemptRealloc, ckalloc, ckfree, ckrealloc, attemptckalloc, attemptckrealloc \- allocate or free heap memory
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+char *
+\fBTcl_Alloc\fR(\fIsize\fR)
+.sp
+void
+\fBTcl_Free\fR(\fIptr\fR)
+.sp
+char *
+\fBTcl_Realloc\fR(\fIptr, size\fR)
+.sp
+char *
+\fBTcl_AttemptAlloc\fR(\fIsize\fR)
+.sp
+char *
+\fBTcl_AttemptRealloc\fR(\fIptr, size\fR)
+.sp
+char *
+\fBckalloc\fR(\fIsize\fR)
+.sp
+void
+\fBckfree\fR(\fIptr\fR)
+.sp
+char *
+\fBckrealloc\fR(\fIptr, size\fR)
+.sp
+char *
+\fBattemptckalloc\fR(\fIsize\fR)
+.sp
+char *
+\fBattemptckrealloc\fR(\fIptr, size\fR)
+.SH ARGUMENTS
+.AS char *size
+.AP "unsigned int" size in
+Size in bytes of the memory block to allocate.
+.AP char *ptr in
+Pointer to memory block to free or realloc.
+.BE
+
+.SH DESCRIPTION
+.PP
+These procedures provide a platform and compiler independent interface
+for memory allocation.  Programs that need to transfer ownership of
+memory blocks between Tcl and other modules should use these routines
+rather than the native \fBmalloc()\fR and \fBfree()\fR routines
+provided by the C run-time library.
+.PP
+\fBTcl_Alloc\fR returns a pointer to a block of at least \fIsize\fR
+bytes suitably aligned for any use.
+.PP
+\fBTcl_Free\fR makes the space referred to by \fIptr\fR available for
+further allocation.
+.PP
+\fBTcl_Realloc\fR changes the size of the block pointed to by
+\fIptr\fR to \fIsize\fR bytes and returns a pointer to the new block.
+The contents will be unchanged up to the lesser of the new and old
+sizes.  The returned location may be different from \fIptr\fR.  If
+\fIptr\fR is NULL, this is equivalent to calling \fBTcl_Alloc\fR with
+just the \fIsize\fR argument.
+.PP
+\fBTcl_AttemptAlloc\fR and \fBTcl_AttemptRealloc\fR are identical in
+function to \fBTcl_Alloc\fR and \fBTcl_Realloc\fR, except that
+\fBTcl_AttemptAlloc\fR and \fBTcl_AttemptRealloc\fR will not cause the Tcl
+interpreter to \fBpanic\fR if the memory allocation fails.  If the
+allocation fails, these functions will return NULL.  Note that on some
+platforms, but not all, attempting to allocate a zero-sized block of
+memory will also cause these functions to return NULL.
+.PP
+The procedures \fBckalloc\fR, \fBckfree\fR, \fBckrealloc\fR,
+\fBattemptckalloc\fR, and \fBattemptckrealloc\fR are implemented
+as macros.  Normally, they are synonyms for the corresponding
+procedures documented on this page.  When Tcl and all modules
+calling Tcl are compiled with \fBTCL_MEM_DEBUG\fR defined, however,
+these macros are redefined to be special debugging versions
+of these procedures.  To support Tcl's memory debugging within a
+module, use the macros rather than direct calls to \fBTcl_Alloc\fR, etc.
+
+.SH KEYWORDS
+alloc, allocation, free, malloc, memory, realloc, TCL_MEM_DEBUG

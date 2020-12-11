@@ -1,0 +1,57 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_SetClass 3 "" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_SetClass, Tk_Class \- set or retrieve a window's class
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+\fBTk_SetClass\fR(\fItkwin, class\fR)
+.sp
+Tk_Uid
+\fBTk_Class\fR(\fItkwin\fR)
+.SH ARGUMENTS
+.AS Tk_Window parent
+.AP Tk_Window tkwin in
+Token for window.
+.AP char *class in
+New class name for window.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_SetClass\fR is called to associate a class with a particular
+window.  The \fIclass\fR string identifies the type of the
+window;  all windows with the same general class of behavior
+(button, menu, etc.) should have the same class.  By
+convention all class names start with a capital letter, and
+there exists a Tcl command with the same name as
+each class (except all in lower-case) which can be used to
+create and manipulate windows of that class.
+A window's class string is initialized to NULL
+when the window is created.
+.PP
+For main windows, Tk automatically propagates the name and class
+to the WM_CLASS property used by window managers.  This happens
+either when a main window is actually created (e.g. in
+\fBTk_MakeWindowExist\fR), or when \fBTk_SetClass\fR
+is called, whichever occurs later.  If a main window has not been
+assigned a class then Tk will not set the WM_CLASS property for
+the window.
+.PP
+\fBTk_Class\fR is a macro that returns the
+current value of \fItkwin\fR's class.  The value is returned
+as a Tk_Uid, which may be used just like a string pointer but also has
+the properties of a unique identifier (see the manual entry for
+\fBTk_GetUid\fR for details).
+If \fItkwin\fR has not yet been given a class, then
+\fBTk_Class\fR will return NULL.
+.SH KEYWORDS
+class, unique identifier, window, window manager

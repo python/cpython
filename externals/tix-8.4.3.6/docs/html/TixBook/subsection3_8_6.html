@@ -1,0 +1,42 @@
+<HEAD>
+<TITLE> Summary of Widget Instance Initialization<A NAME=66>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html1333 HREF=subsection3_8_7.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html1331 HREF=section3_8.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html1325 HREF=subsubsectionstar3_8_5_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html1335 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html1334 HREF=subsection3_8_7.html> Loading the New </A>
+<B>Up:</B> <A NAME=tex2html1332 HREF=section3_8.html> Tix Object Oriented </A>
+<B> Previous:</B> <A NAME=tex2html1326 HREF=subsubsectionstar3_8_5_4.html>  Configuration Methods and </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H2><A NAME=SECTION00086000000000000000> Summary of Widget Instance Initialization<A NAME=66>&nbsp;</A></A></H2>
+<P>
+The creation of a widget instance is a complex process. You must
+  understand how it works in order to write your widget classes. The
+  following is the steps taken by the Tix Intrinsics when a widget
+  instance is created:
+<P>
+<blockquote> <UL><P><LI><P>When the user creates an instance, the public variables are
+  intilized as discussed in section 6.5.1. Type checkers
+  are always called if they are specified. Configuration methods are
+  called only if they are specified in the <tt>-forcecall</tt> section.
+<P><LI><P>The <tt>InitWidgetRec</tt> method is called. It should initialize 
+  private variable, possibly according to the values the public
+  variables.
+<P><LI><P>The <tt>ConstructWidget</tt> method is called. It should create the
+  component widgets. It should also store the names of public
+  subwidgets into the subwidget variables.
+<P><LI><P>The <tt>SetBinding</tt> method is called. It should create bindings for
+  the component widgets.
+<P></UL>
+</blockquote>
+<P>
+   After the above steps, the creation of the instance is complete and the
+  user can iterate with it using its widget command.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

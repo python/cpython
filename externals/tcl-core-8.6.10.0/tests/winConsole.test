@@ -1,0 +1,48 @@
+# This file tests the tclWinConsole.c file.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+
+test winConsole-1.1 {Console file channel: non-blocking gets} {win interactive} {
+    set oldmode [fconfigure stdin]
+
+    puts stdout "Enter abcdef<return> now: " nonewline
+    flush stdout
+    fileevent stdin readable {
+	if {[gets stdin line] >= 0} {
+	    set result $line
+	} else {
+	    set result "gets failed"
+	}
+    }
+
+    fconfigure stdin -blocking 0 -buffering line
+
+    set result {}
+    vwait result
+
+    #cleanup the fileevent
+    fileevent stdin readable {}
+    fconfigure stdin {*}$oldmode
+
+    set result
+
+}  "abcdef"
+
+#cleanup
+
+::tcltest::cleanupTests
+return
+

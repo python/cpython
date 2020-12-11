@@ -1,0 +1,356 @@
+#---------------------------------------------------------------------
+# TITLE:
+#       typefunction.test
+#
+# AUTHOR:
+#       Arnulf Wiedemann with a lot of code form the snit tests by
+#       Will Duquette
+#
+# DESCRIPTION:
+#       Test cases for ::itcl::type proc, method, typemethod commands.
+#       Uses the ::tcltest:: harness.
+#
+#    The tests assume tcltest 2.2
+#-----------------------------------------------------------------------
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+::tcltest::loadTestedCommands
+package require itcl
+
+interp alias {} type {} ::itcl::type
+
+#-----------------------------------------------------------------------
+# procs
+
+test proc-1.1 {proc args can span multiple lines} -body {
+    # This case caused an error at definition time in 0.9 because the
+    # arguments were included in a comment in the compile script, and
+    # the subsequent lines weren't commented.
+    type dog {
+        proc foo {
+            a
+            b
+        } { }
+    }
+} -cleanup {
+    dog destroy
+} -result {::dog}
+
+#-----------------------------------------------------------------------
+# methods
+
+test method-1.1 {methods get called} -body {
+    type dog {
+        method bark {} {
+            return "$self barks"
+        }
+    }
+
+    dog create spot
+    spot bark
+} -cleanup {
+    dog destroy
+} -result {::spot barks}
+
+test method-1.2 {methods can call other methods} -body {
+    type dog {
+        method bark {} {
+            return "$self barks."
+        }
+
+        method chase {quarry} {
+            return "$self chases $quarry; [$self bark]"
+        }
+    }
+
+    dog create spot
+    spot chase cat
+} -cleanup {
+    dog destroy
+} -result {::spot chases cat; ::spot barks.}
+
+test method-1.3 {instances can call one another} -body {
+    type dog {
+        method bark {} {
+            return "$self barks."
+        }
+
+        method chase {quarry} {
+            return "$self chases $quarry; [$quarry bark] [$self bark]"
+        }
+    }
+
+    dog create spot
+    dog create fido
+    spot chase ::fido
+} -cleanup {
+    dog destroy
+} -result {::spot chases ::fido; ::fido barks. ::spot barks.}
+
+test method-1.4 {upvar works in methods} -body {
+    type dog {
+        method goodname {varname} {
+            upvar $varname myvar
+            set myvar spot
+        }
+    }
+
+    dog create fido
+    set thename fido
+    fido goodname thename
+    set thename
+} -cleanup {
+    dog destroy
+} -result {spot}
+
+test method-1.6 {unknown methods get an error } -body {
+    type dog { }
+
+    dog create spot
+    set result ""
+    spot chase
+} -cleanup {
+    dog destroy
+} -returnCodes {
+    error
+} -result {bad option "chase": should be one of...
+  spot callinstance <instancename>
+  spot cget -option
+  spot configure ?-option? ?value -option value...?
+  spot destroy
+  spot getinstancevar <instancename>
+  spot isa className
+  spot mymethod
+  spot myvar
+  spot unknown}
+
+test method-1.7 {info type method returns the object's type} -body {
+    type dog { }
+
+    dog create spot
+    spot info type
+} -cleanup {
+    dog destroy
+} -result {::dog}
+
+test method-1.8 {instance method can call type method} -body {
+    type dog {
+        typemethod hello {} {
+            return "Hello"
+        }
+        method helloworld {} {
+            return "[$type hello], World!"
+        }
+    }
+
+    dog create spot
+    spot helloworld
+} -cleanup {
+    dog destroy
+} -result {Hello, World!}
+
+test method-1.9 {type methods must be qualified} -body {
+    type dog {
+        typemethod hello {} {
+            return "Hello"
+        }
+        method helloworld {} {
+            return "[hello], World!"
+        }
+    }
+
+    dog create spot
+    spot helloworld
+} -cleanup {
+    dog destroy
+} -returnCodes {
+    error
+} -result {invalid command name "hello"}
+
+test method-1.11 {too few arguments} -body {
+    type dog {
+        method bark {volume} { }
+    }
+
+    dog create spot
+    spot bark
+} -cleanup {
+    dog destroy
+} -returnCodes {
+    error
+} -result {wrong # args: should be "spot bark volume"}
+
+test method-1.13 {too many arguments} -body {
+    type dog {
+        method bark {volume} { }
+    }
+
+    dog create spot
+
+    spot bark really loud
+} -cleanup {
+    dog destroy
+} -returnCodes {
+    error
+} -result {wrong # args: should be "spot bark volume"}
+
+test method-1.14 {method args can't include type} -body {
+    type dog {
+        method foo {a type b} { }
+    }
+} -returnCodes {
+    error
+} -result {method foo's arglist may not contain "type" explicitly}
+
+test method-1.15 {method args can't include self} -body {
+    type dog {
+        method foo {a self b} { }
+    }
+} -returnCodes {
+    error
+} -result {method foo's arglist may not contain "self" explicitly}
+
+test method-1.16 {method args can span multiple lines} -body {
+    # This case caused an error at definition time in 0.9 because the
+    # arguments were included in a comment in the compile script, and
+    # the subsequent lines weren't commented.
+    type dog {
+        method foo {
+                    a
+                    b
+                } { }
+    }
+} -cleanup {
+    dog destroy
+} -result {::dog}
+
+#-----------------------------------------------------------------------
+# mymethod actually works
+
+test mymethod-1.1 {run mymethod handler} -body {
+    type foo {
+        option -command {}
+        method runcmd {} {
+            eval [linsert $itcl_options(-command) end $self snarf]
+            return
+        }
+    }
+    type bar {
+        variable sub
+        constructor {args} {
+            set sub [foo fubar -command [mymethod Handler]]
+            return
+        }
+
+        method Handler {args} {
+            set ::RES $args
+        }
+
+        method test {} {
+            $sub runcmd
+            return
+        }
+    }
+
+    set ::RES {}
+    bar boogle
+    boogle test
+    set ::RES
+} -cleanup {
+    bar destroy
+    foo destroy
+} -result {::bar::fubar snarf}
+
+#-----------------------------------------------------------------------
+# myproc
+
+test myproc-1.1 {myproc qualifies proc names} -body {
+    type dog {
+        proc foo {} {}
+
+        typemethod getit {} {
+            return [myproc foo]
+        }
+    }
+
+    dog getit
+} -cleanup {
+    dog destroy
+} -result {::dog::foo}
+
+test myproc-1.2 {myproc adds arguments} -body {
+    type dog {
+        proc foo {} {}
+
+        typemethod getit {} {
+            return [myproc foo "a b"]
+        }
+    }
+
+    dog getit
+} -cleanup {
+    dog destroy
+} -result {::dog::foo {a b}}
+
+test myproc-1.3 {myproc adds arguments} -body {
+    type dog {
+        proc foo {} {}
+
+        typemethod getit {} {
+            return [myproc foo "a b" c d]
+        }
+    }
+
+    dog getit
+} -cleanup {
+    dog destroy
+} -result {::dog::foo {a b} c d}
+
+test myproc-1.4 {procs with selfns work} -body {
+    type dog {
+        variable datum foo
+
+        method qualify {} {
+            return [myproc getdatum $selfns]
+        }
+        proc getdatum {selfns} {
+            return [set ${selfns}::datum]
+        }
+    }
+    dog create spot
+    eval [spot qualify]
+} -cleanup {
+    dog destroy
+} -result {foo}
+
+#-----------------------------------------------------------------------
+# mytypemethod
+
+test mytypemethod-1.1 {mytypemethod qualifies typemethods} -body {
+    type dog {
+        typemethod this {} {}
+
+        typemethod a {} {
+            return [mytypemethod this]
+        }
+        typemethod b {} {
+            return [mytypemethod this x]
+        }
+        typemethod c {} {
+            return [mytypemethod this "x y"]
+        }
+        typemethod d {} {
+            return [mytypemethod this x y]
+        }
+    }
+    list [dog a] [dog b] [dog c] [dog d]
+} -cleanup {
+    dog destroy
+} -result {{::dog this} {::dog this x} {::dog this {x y}} {::dog this x y}}
+
+#---------------------------------------------------------------------
+# Clean up
+
+cleanupTests
+return

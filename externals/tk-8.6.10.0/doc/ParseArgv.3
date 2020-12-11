@@ -1,0 +1,360 @@
+'\"
+'\" Copyright (c) 1990-1992 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_ParseArgv 3 "" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_ParseArgv \- process command-line options
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+int
+\fBTk_ParseArgv\fR(\fIinterp, tkwin, argcPtr, argv, argTable, flags\fR)
+.SH ARGUMENTS
+.AS Tk_ArgvInfo *argTable
+.AP Tcl_Interp *interp in
+Interpreter to use for returning error messages.
+.AP Tk_Window tkwin in
+Window to use when arguments specify Tk options.  If NULL, then
+no Tk options will be processed.
+.AP int argcPtr in/out
+Pointer to number of arguments in argv;  gets modified to hold
+number of unprocessed arguments that remain after the call.
+.AP "const char" **argv in/out
+Command line arguments passed to main program.  Modified to
+hold unprocessed arguments that remain after the call.
+.AP Tk_ArgvInfo *argTable in
+Array of argument descriptors, terminated by element with
+type \fBTK_ARGV_END\fR.
+.AP int flags in
+If non-zero, then it specifies one or more flags that control the
+parsing of arguments.  Different flags may be OR'ed together.
+The flags currently defined are \fBTK_ARGV_DONT_SKIP_FIRST_ARG\fR,
+\fBTK_ARGV_NO_ABBREV\fR, \fBTK_ARGV_NO_LEFTOVERS\fR, and
+\fBTK_ARGV_NO_DEFAULTS\fR.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_ParseArgv\fR processes an array of command-line arguments according
+to a table describing the kinds of arguments that are expected.
+Each of the arguments in \fIargv\fR is processed in turn:  if it matches
+one of the entries in \fIargTable\fR, the argument is processed
+according to that entry and discarded.  The arguments that do not
+match anything in \fIargTable\fR are copied down to the beginning
+of \fIargv\fR (retaining their original order) and returned to
+the caller.  At the end of the call
+\fBTk_ParseArgv\fR sets \fI*argcPtr\fR to hold the number of
+arguments that are left in \fIargv\fR, and \fIargv[*argcPtr]\fR
+will hold the value NULL.  Normally, \fBTk_ParseArgv\fR
+assumes that \fIargv[0]\fR is a command name, so it is treated like
+an argument that does not match \fIargTable\fR and returned to the
+caller;  however, if the \fBTK_ARGV_DONT_SKIP_FIRST_ARG\fR bit is set in
+\fIflags\fR then \fIargv[0]\fR will be processed just like the other
+elements of \fIargv\fR.
+.PP
+\fBTk_ParseArgv\fR normally returns the value \fBTCL_OK\fR.  If an error
+occurs while parsing the arguments, then \fBTCL_ERROR\fR is returned and
+\fBTk_ParseArgv\fR will leave an error message in the result of
+interpreter \fIinterp\fR in the standard Tcl fashion.  In
+the event of an error return, \fI*argvPtr\fR will not have been
+modified, but \fIargv\fR could have been partially modified.  The
+possible causes of errors are explained below.
+.PP
+The \fIargTable\fR array specifies the kinds of arguments that are
+expected;  each of its entries has the following structure:
+.CS
+typedef struct {
+    const char *\fIkey\fR;
+    int \fItype\fR;
+    char *\fIsrc\fR;
+    char *\fIdst\fR;
+    const char *\fIhelp\fR;
+} \fBTk_ArgvInfo\fR;
+.CE
+The \fIkey\fR field is a string such as
+.QW \-display
+or
+.QW \-bg
+that is compared with the values in \fIargv\fR.  \fIType\fR
+indicates how to process an argument that matches \fIkey\fR
+(more on this below).  \fISrc\fR and \fIdst\fR are additional
+values used in processing the argument.  Their exact usage
+depends on \fItype\fR, but typically \fIsrc\fR indicates
+a value and \fIdst\fR indicates where to store the
+value.  The \fBchar *\fR declarations for \fIsrc\fR and \fIdst\fR
+are placeholders:  the actual types may be different.  Lastly,
+\fIhelp\fR is a string giving a brief description
+of this option;  this string is printed when users ask for help
+about command-line options.
+.PP
+When processing an argument in \fIargv\fR, \fBTk_ParseArgv\fR
+compares the argument to each of the \fIkey\fR's in \fIargTable\fR.
+\fBTk_ParseArgv\fR selects the first specifier whose \fIkey\fR matches
+the argument exactly, if such a specifier exists.  Otherwise
+\fBTk_ParseArgv\fR selects a specifier for which the argument
+is a unique abbreviation.  If the argument is a unique abbreviation
+for more than one specifier, then an error is returned.  If there
+is no matching entry in \fIargTable\fR, then the argument is
+skipped and returned to the caller.
+.PP
+Once a matching argument specifier is found, \fBTk_ParseArgv\fR
+processes the argument according to the \fItype\fR field of the
+specifier.  The argument that matched \fIkey\fR is called
+.QW "the matching argument"
+in the descriptions below.  As part of the processing,
+\fBTk_ParseArgv\fR may also use the next argument in \fIargv\fR
+after the matching argument, which is called
+.QW "the following argument" .
+The legal values for \fItype\fR, and the processing
+that they cause, are as follows:
+.TP
+\fBTK_ARGV_END\fR
+Marks the end of the table.  The last entry in \fIargTable\fR
+must have this type;  all of its other fields are ignored and it
+will never match any arguments.
+.TP
+\fBTK_ARGV_CONSTANT\fR
+\fISrc\fR is treated as an integer and \fIdst\fR is treated
+as a pointer to an integer.  \fISrc\fR is stored at \fI*dst\fR.
+The matching argument is discarded.
+.TP
+\fBTK_ARGV_INT\fR
+The following argument must contain an
+integer string in the format accepted by \fBstrtol\fR (e.g.
+.QW 0
+and
+.QW 0x
+prefixes may be used to specify octal or hexadecimal
+numbers, respectively).  \fIDst\fR is treated as a pointer to an
+integer;  the following argument is converted to an integer value
+and stored at \fI*dst\fR.  \fISrc\fR is ignored.  The matching
+and following arguments are discarded from \fIargv\fR.
+.TP
+\fBTK_ARGV_FLOAT\fR
+The following argument must contain a floating-point number in
+the format accepted by \fBstrtol\fR.
+\fIDst\fR is treated as the address of a double-precision
+floating point value;  the following argument is converted to a
+double-precision value and stored at \fI*dst\fR.  The matching
+and following arguments are discarded from \fIargv\fR.
+.TP
+\fBTK_ARGV_STRING\fR
+In this form, \fIdst\fR is treated as a pointer to a (char *);
+\fBTk_ParseArgv\fR stores at \fI*dst\fR a pointer to the following
+argument, and discards the matching and following arguments from
+\fIargv\fR.  \fISrc\fR is ignored.
+.TP
+\fBTK_ARGV_UID\fR
+This form is similar to \fBTK_ARGV_STRING\fR, except that the argument
+is turned into a Tk_Uid by calling \fBTk_GetUid\fR.
+\fIDst\fR is treated as a pointer to a
+Tk_Uid; \fBTk_ParseArgv\fR stores at \fI*dst\fR the Tk_Uid
+corresponding to the following
+argument, and discards the matching and following arguments from
+\fIargv\fR.  \fISrc\fR is ignored.
+.TP
+\fBTK_ARGV_CONST_OPTION\fR
+This form causes a Tk option to be set (as if the \fBoption\fR
+command had been invoked).  The \fIsrc\fR field is treated as a
+pointer to a string giving the value of an option, and \fIdst\fR
+is treated as a pointer to the name of the option.  The matching
+argument is discarded.  If \fItkwin\fR is NULL, then argument
+specifiers of this type are ignored (as if they did not exist).
+.TP
+\fBTK_ARGV_OPTION_VALUE\fR
+This form is similar to \fBTK_ARGV_CONST_OPTION\fR, except that the
+value of the option is taken from the following argument instead
+of from \fIsrc\fR.  \fIDst\fR is used as the name of the option.
+\fISrc\fR is ignored.  The matching and following arguments
+are discarded.  If \fItkwin\fR is NULL, then argument
+specifiers of this type are ignored (as if they did not exist).
+.TP
+\fBTK_ARGV_OPTION_NAME_VALUE\fR
+In this case the following argument is taken as the name of a Tk
+option and the argument after that is taken as the value for that
+option.  Both \fIsrc\fR and \fIdst\fR are ignored.  All three
+arguments are discarded from \fIargv\fR.  If \fItkwin\fR is NULL,
+then argument
+specifiers of this type are ignored (as if they did not exist).
+.TP
+\fBTK_ARGV_HELP\fR
+When this kind of option is encountered, \fBTk_ParseArgv\fR uses the
+\fIhelp\fR fields of \fIargTable\fR to format a message describing
+all the valid arguments.  The message is placed in interpreter
+\fIinterp\fR's result
+and \fBTk_ParseArgv\fR returns \fBTCL_ERROR\fR.  When this happens, the
+caller normally prints the help message and aborts.  If the \fIkey\fR
+field of a \fBTK_ARGV_HELP\fR specifier is NULL, then the specifier will
+never match any arguments;  in this case the specifier simply provides
+extra documentation, which will be included when some other
+\fBTK_ARGV_HELP\fR entry causes help information to be returned.
+.TP
+\fBTK_ARGV_REST\fR
+This option is used by programs or commands that allow the last
+several of their options to be the name and/or options for some
+other program.  If a \fBTK_ARGV_REST\fR argument is found, then
+\fBTk_ParseArgv\fR does not process any
+of the remaining arguments;  it returns them all at
+the beginning of \fIargv\fR (along with any other unprocessed arguments).
+In addition, \fBTk_ParseArgv\fR treats \fIdst\fR as the address of an
+integer value, and stores at \fI*dst\fR the index of the first of the
+\fBTK_ARGV_REST\fR options in the returned \fIargv\fR.  This allows the
+program to distinguish the \fBTK_ARGV_REST\fR options from other
+unprocessed options that preceded the \fBTK_ARGV_REST\fR.
+.TP
+\fBTK_ARGV_FUNC\fR
+For this kind of argument, \fIsrc\fR is treated as the address of
+a procedure, which is invoked to process the following argument.
+The procedure should have the following structure:
+.RS
+.CS
+int
+\fIfunc\fR(\fIdst\fR, \fIkey\fR, \fInextArg\fR)
+    char *\fIdst\fR;
+    char *\fIkey\fR;
+    char *\fInextArg\fR;
+{
+}
+.CE
+The \fIdst\fR and \fIkey\fR parameters will contain the
+corresponding fields from the \fIargTable\fR entry, and
+\fInextArg\fR will point to the following argument from \fIargv\fR
+(or NULL if there are not any more arguments left in \fIargv\fR).
+If \fIfunc\fR uses \fInextArg\fR (so that
+\fBTk_ParseArgv\fR should discard it), then it should return 1.  Otherwise it
+should return 0 and \fBTkParseArgv\fR will process the following
+argument in the normal fashion.  In either event the matching argument
+is discarded.
+.RE
+.TP
+\fBTK_ARGV_GENFUNC\fR
+This form provides a more general procedural escape.  It treats
+\fIsrc\fR as the address of a procedure, and passes that procedure
+all of the remaining arguments.  The procedure should have the following
+form:
+.RS
+.CS
+int
+\fIgenfunc\fR(dst, interp, key, argc, argv)
+    char *\fIdst\fR;
+    Tcl_Interp *\fIinterp\fR;
+    char *\fIkey\fR;
+    int \fIargc\fR;
+    char **\fIargv\fR;
+{
+}
+.CE
+The \fIdst\fR and \fIkey\fR parameters will contain the
+corresponding fields from the \fIargTable\fR entry.  \fIInterp\fR
+will be the same as the \fIinterp\fR argument to \fBTcl_ParseArgv\fR.
+\fIArgc\fR and \fIargv\fR refer to all of the options after the
+matching one.  \fIGenfunc\fR should behave in a fashion similar
+to \fBTk_ParseArgv\fR:  parse as many of the remaining arguments as it can,
+then return any that are left by compacting them to the beginning of
+\fIargv\fR (starting at \fIargv\fR[0]).  \fIGenfunc\fR
+should return a count of how many arguments are left in \fIargv\fR;
+\fBTk_ParseArgv\fR will process them.  If \fIgenfunc\fR encounters
+an error then it should leave an error message in interpreter
+\fIinterp\fR's result,
+in the usual Tcl fashion, and return \-1;  when this happens
+\fBTk_ParseArgv\fR will abort its processing and return \fBTCL_ERROR\fR.
+.RE
+.SS "FLAGS"
+.TP
+\fBTK_ARGV_DONT_SKIP_FIRST_ARG\fR
+\fBTk_ParseArgv\fR normally treats \fIargv[0]\fR as a program
+or command name, and returns it to the caller just as if it
+had not matched \fIargTable\fR.  If this flag is given, then
+\fIargv[0]\fR is not given special treatment.
+.TP
+\fBTK_ARGV_NO_ABBREV\fR
+Normally, \fBTk_ParseArgv\fR accepts unique abbreviations for
+\fIkey\fR values in \fIargTable\fR.  If this flag is given then
+only exact matches will be acceptable.
+.TP
+\fBTK_ARGV_NO_LEFTOVERS\fR
+Normally, \fBTk_ParseArgv\fR returns unrecognized arguments to the
+caller.  If this bit is set in \fIflags\fR then \fBTk_ParseArgv\fR
+will return an error if it encounters any argument that does not
+match \fIargTable\fR.  The only exception to this rule is \fIargv[0]\fR,
+which will be returned to the caller with no errors as
+long as \fBTK_ARGV_DONT_SKIP_FIRST_ARG\fR is not specified.
+.TP
+\fBTK_ARGV_NO_DEFAULTS\fR
+Normally, \fBTk_ParseArgv\fR searches an internal table of
+standard argument specifiers in addition to \fIargTable\fR.  If
+this bit is set in \fIflags\fR, then \fBTk_ParseArgv\fR will
+use only \fIargTable\fR and not its default table.
+.SH EXAMPLE
+.PP
+Here is an example definition of an \fIargTable\fR and
+some sample command lines that use the options.  Note the effect
+on \fIargc\fR and \fIargv\fR;  arguments processed by \fBTk_ParseArgv\fR
+are eliminated from \fIargv\fR, and \fIargc\fR
+is updated to reflect reduced number of arguments.
+.CS
+/*
+ * Define and set default values for globals.
+ */
+int debugFlag = 0;
+int numReps = 100;
+char defaultFileName[] = "out";
+char *fileName = defaultFileName;
+Boolean exec = FALSE;
+
+/*
+ * Define option descriptions.
+ */
+Tk_ArgvInfo argTable[] = {
+    {"\-X", TK_ARGV_CONSTANT, (char *) 1, (char *) &debugFlag,
+        "Turn on debugging printfs"},
+    {"\-N", TK_ARGV_INT, NULL, (char *) &numReps,
+        "Number of repetitions"},
+    {"\-of", TK_ARGV_STRING, NULL, (char *) &fileName,
+        "Name of file for output"},
+    {"x", TK_ARGV_REST, NULL, (char *) &exec,
+        "File to exec, followed by any arguments (must be last argument)."},
+    {NULL, TK_ARGV_END, NULL, NULL,
+        NULL}
+};
+
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    \&...
+
+    if (Tk_ParseArgv(interp, tkwin, &argc, argv, argTable, 0) != TCL_OK) {
+        fprintf(stderr, "%s\en", Tcl_GetString(Tcl_GetObjResult(interp)));
+        exit(1);
+    }
+
+    /*
+     * Remainder of the program.
+     */
+}
+.CE
+.PP
+Note that default values can be assigned to variables named in
+\fIargTable\fR:  the variables will only be overwritten if the
+particular arguments are present in \fIargv\fR.
+Here are some example command lines and their effects.
+.CS
+prog \-N 200 infile        # just sets the numReps variable to 200
+prog \-of out200 infile    # sets fileName to reference "out200"
+prog \-XN 10 infile        # sets the debug flag, also sets numReps
+.CE
+In all of the above examples, \fIargc\fR will be set by \fBTk_ParseArgv\fR to 2,
+\fIargv\fR[0] will be
+.QW prog ,
+\fIargv\fR[1] will be
+.QW infile ,
+and \fIargv\fR[2] will be NULL.
+.SH KEYWORDS
+arguments, command line, options

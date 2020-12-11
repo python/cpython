@@ -1,0 +1,107 @@
+README -- Tcl test suite design document.
+
+Contents:
+---------
+
+    1. Introduction
+    2. Running tests
+    3. Adding tests
+    4. Incompatibilities with prior Tcl versions
+
+1. Introduction:
+----------------
+
+This directory contains a set of validation tests for the Tcl commands
+and C Library procedures for Tcl.  Each of the files whose name ends
+in ".test" is intended to fully exercise the functions in the C source
+file that corresponds to the file prefix.  The C functions and/or Tcl
+commands tested by a given file are listed in the first line of the
+file.
+
+2. Running tests:
+-----------------
+
+We recommend that you use the "test" target of Tcl's Makefile to run
+the test suite.  From the directory in which you build Tcl, simply
+type "make test".  This will create a special executable named
+tcltest in which the testing scripts will be evaluated.  To create
+the tcltest executable without running the test suite, simple type
+"make tcltest".
+
+All the configuration options of the tcltest package are available
+during a "make test" by defining the TESTFLAGS environment variable.
+For example,if you wish to run only those tests in the file append.test,
+you can type:
+
+	make test TESTFLAGS="-file append.test"
+
+For interactive testing, the Tcl Makefile provides the "runtest" target.
+Type "make runtest" in your build directory, and the tcltest executable
+will be created, if necessary, then it will run interactively.  At the
+command prompt, you may type any Tcl commands.  If you type
+"source ../tests/all.tcl", the test suite will run.  You may use the
+tcltest::configure command to configure the test suite run as an
+alternative to command line options via TESTFLAGS.  You might also
+wish to use the tcltest::testConstraint command to select the constraints
+that govern which tests are run.  See the documentation for the tcltest
+package for details.
+
+3. Adding tests:
+----------------
+
+Please see the tcltest man page for more information regarding how to
+write and run tests.
+
+Please note that the all.tcl file will source your new test file if
+the filename matches the tests/*.test pattern (as it should).  The
+names of test files that contain regression (or glass-box) tests
+should correspond to the Tcl or C code file that they are testing.
+For example, the test file for the C file "tclCmdAH.c" is
+"cmdAH.test".  Test files that contain black-box tests may not
+correspond to any Tcl or C code file so they should match the pattern
+"*_bb.test". 
+
+Be sure your new test file can be run from any working directory.
+
+Be sure no temporary files are left behind by your test file.
+Use [tcltest::makeFile], [tcltest::removeFile], and [tcltest::cleanupTests]
+properly to be sure of this.
+
+Be sure your tests can run cross-platform in both a build environment
+as well as an installation environment.  If your test file contains
+tests that should not be run in one or more of those cases, please use
+the constraints mechanism to skip those tests.
+
+4. Incompatibilities of package tcltest 2.1 with 
+   testing machinery of very old versions of Tcl:
+------------------------------------------------
+
+1) Global variables such as VERBOSE, TESTS, and testConfig of the
+   old machinery correspond to the [configure -verbose], 
+   [configure -match], and [testConstraint] commands of tcltest 2.1,
+   respectively.
+
+2) VERBOSE values were longer numeric.  [configure -verbose] values
+   are lists of keywords.
+
+3) When you run "make test", the working dir for the test suite is now
+   the one from which you called "make test", rather than the "tests"
+   directory.  This change allows for both unix and windows test
+   suites to be run simultaneously without interference with each
+   other or with existing files.  All tests must now run independently
+   of their working directory.
+
+4) The "all" file is now called "all.tcl"
+
+5) The "defs" and "defs.tcl" files no longer exist.
+
+6) Instead of creating a doAllTests file in the tests directory, to
+   run all nonPortable tests, just use the "-constraints nonPortable"
+   command line flag.  If you are running interactively, you can run
+   [tcltest::testConstraint nonPortable 1] (after loading the tcltest
+   package).
+
+7) Direct evaluation of the *.test files by the "source" command is no
+   longer recommended.  Instead, "source all.tcl" and use the "-file" and
+   "-notfile" options of tcltest::configure to control which *.test files
+   are evaluated.

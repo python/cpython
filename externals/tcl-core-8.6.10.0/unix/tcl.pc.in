@@ -1,0 +1,15 @@
+# tcl pkg-config source file
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: Tool Command Language
+Description: Tcl is a powerful, easy-to-learn dynamic programming language, suitable for a wide range of uses.
+URL: http://www.tcl.tk/
+Version: @TCL_VERSION@@TCL_PATCH_LEVEL@
+Requires.private: zlib >= 1.2.3
+Libs: -L${libdir} @TCL_LIB_FLAG@ @TCL_STUB_LIB_FLAG@
+Libs.private: @TCL_LIBS@
+Cflags: -I${includedir}

@@ -1,0 +1,1301 @@
+# This file contains tests for the package and ::pkg::* commands.
+# Note that the tests are limited to Tcl scripts only, there are no shared
+# libraries against which to test.
+#
+# Sourcing this file into Tcl runs the tests and generates output for errors.
+# No output means no errors were found.
+#
+# Copyright (c) 1995-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 2011 Donal K. Fellows
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.3.3
+    namespace import -force ::tcltest::*
+}
+
+# Do all this in a slave interp to avoid garbaging the package list
+set i [interp create]
+tcltest::loadIntoSlaveInterpreter $i {*}$argv
+interp eval $i {
+namespace import -force ::tcltest::*
+package forget {*}[package names]
+set oldPkgUnknown [package unknown]
+package unknown {}
+set oldPath $auto_path
+set auto_path ""
+
+test package-1.1 {pkg::create gives error on insufficient args} -body {
+    ::pkg::create
+} -returnCodes error -match glob -result {wrong # args: should be "*"}
+test package-1.2 {pkg::create gives error on bad args} -body {
+    ::pkg::create -foo bar -bar baz -baz boo
+} -returnCodes error -match glob -result {unknown option "bar": *}
+test package-1.3 {pkg::create gives error on no value given} -body {
+    ::pkg::create -name foo -version 1.0 -source test.tcl -load
+} -returnCodes error -match glob -result {value for "-load" missing: *}
+test package-1.4 {pkg::create gives error on no name given} -body {
+    ::pkg::create -version 1.0 -source test.tcl -load foo.so
+} -returnCodes error -match glob -result {value for "-name" missing: *}
+test package-1.5 {pkg::create gives error on no version given} -body {
+    ::pkg::create -name foo -source test.tcl -load foo.so
+} -returnCodes error -match glob -result {value for "-version" missing: *}
+test package-1.6 {pkg::create gives error on no source or load options} -body {
+    ::pkg::create -name foo -version 1.0 -version 2.0
+} -returnCodes error -result {at least one of -load and -source must be given}
+test package-1.7 {pkg::create gives correct output for 1 direct source} {
+    ::pkg::create -name foo -version 1.0 -source test.tcl
+} {package ifneeded foo 1.0 [list source [file join $dir test.tcl]]}
+test package-1.8 {pkg::create gives correct output for 2 direct sources} {
+    ::pkg::create -name foo -version 1.0 -source test.tcl -source test2.tcl
+} {package ifneeded foo 1.0 [list source [file join $dir test.tcl]]\n[list source [file join $dir test2.tcl]]}
+test package-1.9 {pkg::create gives correct output for 1 direct load} {
+    ::pkg::create -name foo -version 1.0 -load test.so
+} {package ifneeded foo 1.0 [list load [file join $dir test.so]]}
+test package-1.10 {pkg::create gives correct output for 2 direct loads} {
+    ::pkg::create -name foo -version 1.0 -load test.so -load test2.so
+} {package ifneeded foo 1.0 [list load [file join $dir test.so]]\n[list load [file join $dir test2.so]]}
+test package-1.11 {pkg::create gives correct output for 1 lazy source} {
+    ::pkg::create -name foo -version 1.0 -source {test.tcl {foo bar}}
+} {package ifneeded foo 1.0 [list tclPkgSetup $dir foo 1.0 {{test.tcl source {foo bar}}}]}
+test package-1.12 {pkg::create gives correct output for 2 lazy sources} {
+    ::pkg::create -name foo -version 1.0 -source {test.tcl {foo bar}} \
+	    -source {test2.tcl {baz boo}}
+} {package ifneeded foo 1.0 [list tclPkgSetup $dir foo 1.0 {{test.tcl source {foo bar}} {test2.tcl source {baz boo}}}]}
+test package-1.13 {pkg::create gives correct output for 1 lazy load} {
+    ::pkg::create -name foo -version 1.0 -load {test.so {foo bar}}
+} {package ifneeded foo 1.0 [list tclPkgSetup $dir foo 1.0 {{test.so load {foo bar}}}]}
+test package-1.14 {pkg::create gives correct output for 2 lazy loads} {
+    ::pkg::create -name foo -version 1.0 -load {test.so {foo bar}} \
+	    -load {test2.so {baz boo}}
+} {package ifneeded foo 1.0 [list tclPkgSetup $dir foo 1.0 {{test.so load {foo bar}} {test2.so load {baz boo}}}]}
+test package-1.15 {pkg::create gives correct output for 1 each, direct} {
+    ::pkg::create -name foo -version 1.0 -source test.tcl -load test2.so
+} {package ifneeded foo 1.0 [list load [file join $dir test2.so]]\n[list source [file join $dir test.tcl]]}
+test package-1.16 {pkg::create gives correct output for 1 direct, 1 lazy} {
+    ::pkg::create -name foo -version 1.0 -source test.tcl \
+	    -source {test2.tcl {foo bar}}
+} {package ifneeded foo 1.0 [list source [file join $dir test.tcl]]\n[list tclPkgSetup $dir foo 1.0 {{test2.tcl source {foo bar}}}]}
+
+test package-2.1 {Tcl_PkgProvide procedure} {
+    package forget t
+    package provide t 2.3
+} {}
+test package-2.2 {Tcl_PkgProvide procedure} -returnCodes error -setup {
+    package forget t
+} -body {
+    package provide t 2.3
+    package provide t 2.2
+} -result {conflicting versions provided for package "t": 2.3, then 2.2}
+test package-2.3 {Tcl_PkgProvide procedure} -returnCodes error -setup {
+    package forget t
+} -body {
+    package provide t 2.3
+    package provide t 2.4
+} -result {conflicting versions provided for package "t": 2.3, then 2.4}
+test package-2.4 {Tcl_PkgProvide procedure} -returnCodes error -setup {
+    package forget t
+} -body {
+    package provide t 2.3
+    package provide t 3.3
+} -result {conflicting versions provided for package "t": 2.3, then 3.3}
+test package-2.5 {Tcl_PkgProvide procedure} -setup {
+    package forget t
+} -body {
+    package provide t 2.3
+    package provide t 2.3
+} -result {}
+test package-2.6 {Tcl_PkgProvide procedure} {
+    package forget t
+    package provide t 2.3a1
+} {}
+
+set n 0
+foreach v {
+    2.3k1 2a3a2 2ab3 2.a4 2.b4 2b.4 2a.4 2ba4 2a4b1
+    2b4a1 2b3b2
+} {
+    test package-2.7.$n {Tcl_PkgProvide procedure} -setup {
+	package forget t
+    } -returnCodes error -body "
+	package provide t $v
+    " -result "expected version number but got \"$v\""
+    incr n
+}
+
+test package-3.1 {Tcl_PkgRequire procedure, picking best version} -setup {
+    package forget t
+    set x xxx
+} -body {
+    foreach i {1.4 3.4 2.3 2.4 2.2} {
+	package ifneeded t $i "set x $i; package provide t $i"
+    }
+    package require t
+    return $x
+} -result {3.4}
+test package-3.2 {Tcl_PkgRequire procedure, picking best version} -setup {
+    package forget t
+    set x xxx
+} -body {
+    foreach i {1.4 3.4 2.3 2.4 2.2 3.5 3.2} {
+	package ifneeded t $i "set x $i; package provide t $i"
+    }
+    package require t
+    return $x
+} -result {3.5}
+test package-3.3 {Tcl_PkgRequire procedure, picking best version} -setup {
+    package forget t
+    set x xxx
+} -body {
+    foreach i {3.5 2.1 2.3} {
+	package ifneeded t $i "set x $i; package provide t $i"
+    }
+    package require t 2.2
+    return $x
+} -result {2.3}
+test package-3.4 {Tcl_PkgRequire procedure, picking best version} -setup {
+    package forget t
+    set x xxx
+} -body {
+    foreach i {1.4 3.4 2.3 2.4 2.2} {
+	package ifneeded t $i "set x $i; package provide t $i"
+    }
+    package require -exact t 2.3
+    return $x
+} -result {2.3}
+test package-3.5 {Tcl_PkgRequire procedure, picking best version} -setup {
+    package forget t
+    set x xxx
+} -body {
+    foreach i {1.4 3.4 2.3 2.4 2.2} {
+	package ifneeded t $i "set x $i; package provide t $i"
+    }
+    package require t 2.1
+    return $x
+} -result {2.4}
+test package-3.6 {Tcl_PkgRequire procedure, can't find suitable version} -setup {
+    package forget t
+} -returnCodes error -body {
+    package unknown {}
+    foreach i {1.4 3.4 2.3 2.4 2.2} {
+	package ifneeded t $i "set x $i"
+    }
+    package require t 2.5
+} -result {can't find package t 2.5}
+test package-3.7 {Tcl_PkgRequire procedure, can't find suitable version} -setup {
+    package forget t
+} -returnCodes error -body {
+    package unknown {}
+    foreach i {1.4 3.4 2.3 2.4 2.2} {
+	package ifneeded t $i "set x $i"
+    }
+    package require t 4.1
+} -result {can't find package t 4.1}
+test package-3.8 {Tcl_PkgRequire procedure, can't find suitable version} -setup {
+    package forget t
+} -returnCodes error -body {
+    package unknown {}
+    foreach i {1.4 3.4 2.3 2.4 2.2} {
+	package ifneeded t $i "set x $i"
+    }
+    package require -exact t 1.3
+} -result {can't find package t exactly 1.3}
+test package-3.9 {Tcl_PkgRequire procedure, can't find suitable version} -setup {
+    package forget t
+} -returnCodes error -body {
+    package unknown {}
+    package require t
+} -result {can't find package t}
+test package-3.10 {Tcl_PkgRequire procedure, error in ifneeded script} -setup {
+    package forget t
+} -body {
+    package ifneeded t 2.1 {package provide t 2.1; error "ifneeded test"}
+    list [catch {package require t 2.1} msg] $msg $::errorInfo
+} -match glob -result {1 {ifneeded test} {ifneeded test
+    while executing
+"error "ifneeded test""
+    ("package ifneeded*" script)
+    invoked from within
+"package require t 2.1"}}
+test package-3.11 {Tcl_PkgRequire procedure, ifneeded script doesn't provide package} -setup {
+    package forget t
+    set x xxx
+} -body {
+    package ifneeded t 2.1 "set x invoked"
+    list [catch {package require t 2.1} msg] $msg $x
+} -match glob -result {1 * invoked}
+test package-3.12 {Tcl_PkgRequire procedure, self-deleting script} -setup {
+    package forget t
+    set x xxx
+} -body {
+    package ifneeded t 1.2 "package forget t; set x 1.2; package provide t 1.2"
+    package require t 1.2
+    return $x
+} -result {1.2}
+test package-3.13 {Tcl_PkgRequire procedure, "package unknown" support} -setup {
+    package forget t
+    set x xxx
+} -body {
+    proc pkgUnknown args {
+	# args = name requirement
+	# requirement = v-v (for exact version)
+	global x
+	set x $args
+	package provide [lindex $args 0] [lindex [split [lindex $args 1] -] 0]
+    }
+    foreach i {1.4 3.4 2.3 2.4 2.2} {
+	package ifneeded t $i "set x $i"
+    }
+    package unknown pkgUnknown
+    package require -exact t 1.5
+    return $x
+} -cleanup {
+    package unknown {}
+} -result {t 1.5-1.5}
+test package-3.14 {Tcl_PkgRequire procedure, "package unknown" support} -setup {
+    package forget t
+    set x xxx
+} -body {
+    proc pkgUnknown args {
+	package ifneeded t 1.2 "set x loaded; package provide t 1.2"
+    }
+    package unknown pkgUnknown
+    list [package require t] $x
+} -cleanup {
+    package unknown {}
+} -result {1.2 loaded}
+test package-3.15 {Tcl_PkgRequire procedure, "package unknown" support} -setup {
+    package forget {a b}
+    package unknown pkgUnknown
+    set x xxx
+} -body {
+    proc pkgUnknown args {
+	global x
+	set x $args
+	package provide [lindex $args 0] 2.0
+    }
+    package require {a b}
+    return $x
+} -cleanup {
+    package unknown {}
+} -result {{a b} 0-}
+test package-3.16 {Tcl_PkgRequire procedure, "package unknown" error} -setup {
+    package forget t
+} -body {
+    proc pkgUnknown args {
+	error "testing package unknown"
+    }
+    package unknown pkgUnknown
+    list [catch {package require t} msg] $msg $::errorInfo
+} -cleanup {
+    package unknown {}
+} -result {1 {testing package unknown} {testing package unknown
+    while executing
+"error "testing package unknown""
+    (procedure "pkgUnknown" line 2)
+    invoked from within
+"pkgUnknown t 0-"
+    ("package unknown" script)
+    invoked from within
+"package require t"}}
+test package-3.17 {Tcl_PkgRequire procedure, "package unknown" doesn't load package} -setup {
+    package forget t
+    set x xxx
+} -body {
+    proc pkgUnknown args {
+	global x
+	set x $args
+    }
+    foreach i {1.4 3.4 2.3 2.4 2.2} {
+	package ifneeded t $i "set x $i"
+    }
+    package unknown pkgUnknown
+    list [catch {package require -exact t 1.5} msg] $msg $x
+} -cleanup {
+    package unknown {}
+} -result {1 {can't find package t exactly 1.5} {t 1.5-1.5}}
+test package-3.18 {Tcl_PkgRequire procedure, version checks} -setup {
+    package forget t
+} -body {
+    package provide t 2.3
+    package require t
+} -result {2.3}
+test package-3.19 {Tcl_PkgRequire procedure, version checks} -setup {
+    package forget t
+} -body {
+    package provide t 2.3
+    package require t 2.1
+} -result {2.3}
+test package-3.20 {Tcl_PkgRequire procedure, version checks} -setup {
+    package forget t
+} -body {
+    package provide t 2.3
+    package require t 2.3
+} -result {2.3}
+test package-3.21 {Tcl_PkgRequire procedure, version checks} -setup {
+    package forget t
+} -returnCodes error -body {
+    package provide t 2.3
+    package require t 2.4
+} -result {version conflict for package "t": have 2.3, need 2.4}
+test package-3.22 {Tcl_PkgRequire procedure, version checks} -setup {
+    package forget t
+} -returnCodes error -body {
+    package provide t 2.3
+    package require t 1.2
+} -result {version conflict for package "t": have 2.3, need 1.2}
+test package-3.23 {Tcl_PkgRequire procedure, version checks} -setup {
+    package forget t
+} -body {
+    package provide t 2.3
+    package require -exact t 2.3
+} -result {2.3}
+test package-3.24 {Tcl_PkgRequire procedure, version checks} -setup {
+    package forget t
+} -returnCodes error -body {
+    package provide t 2.3
+    package require -exact t 2.2
+} -result {version conflict for package "t": have 2.3, need exactly 2.2}
+test package-3.25 {Tcl_PkgRequire procedure, error in ifneeded script} -setup {
+    package forget t
+} -body {
+    package ifneeded t 2.1 {package provide t 2.1; error "ifneeded test" EI}
+    list [catch {package require t 2.1} msg] $msg $::errorInfo
+} -match glob -result {1 {ifneeded test} {EI
+    ("package ifneeded*" script)
+    invoked from within
+"package require t 2.1"}}
+test package-3.26 {Tcl_PkgRequire procedure, error in ifneeded script} -setup {
+    package forget t
+} -body {
+    package ifneeded t 2.1 {package provide t 2.1; foreach x 1 {error "ifneeded test" EI}}
+    list [catch {package require t 2.1} msg] $msg $::errorInfo
+} -match glob -result {1 {ifneeded test} {EI
+    ("foreach" body line 1)
+    invoked from within
+"foreach x 1 {error "ifneeded test" EI}"
+    ("package ifneeded*" script)
+    invoked from within
+"package require t 2.1"}}
+test package-3.27 {Tcl_PkgRequire: circular dependency} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1 {package require foo 1}
+    package require foo 1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob -result {circular package dependency:*}
+test package-3.28 {Tcl_PkgRequire: circular dependency} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1 {package require foo 2}
+    package require foo 1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob -result {circular package dependency:*}
+test package-3.29 {Tcl_PkgRequire: circular dependency} -setup {
+    package forget foo
+    package forget bar
+} -body {
+    package ifneeded foo 1 {package require bar 1; package provide foo 1}
+    package ifneeded bar 1 {package require foo 1; package provide bar 1}
+    package require foo 1
+} -cleanup {
+    package forget foo
+    package forget bar
+} -returnCodes error -match glob -result {circular package dependency:*}
+test package-3.30 {Tcl_PkgRequire: circular dependency} -setup {
+    package forget foo
+    package forget bar
+} -body {
+    package ifneeded foo 1 {package require bar 1; package provide foo 1}
+    package ifneeded foo 2 {package provide foo 2}
+    package ifneeded bar 1 {package require foo 2; package provide bar 1}
+    package require foo 1
+} -cleanup {
+    package forget foo
+    package forget bar
+} -returnCodes error -match glob -result {circular package dependency:*}
+test package-3.31 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1 {package provide foo 1; error foo}
+    package require foo 1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob -result foo
+test package-3.32 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1 {package provide foo 1; error foo}
+    catch {package require foo 1}
+    package provide foo
+} -cleanup {
+    package forget foo
+} -result {}
+test package-3.33 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1 {package provide foo 2}
+    package require foo 1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob -result {attempt to provide package * failed:*}
+test package-3.34 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1 {package provide foo 1.1}
+    package require foo 1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob -result {attempt to provide package * failed:*}
+test package-3.34.1 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1.1 {package provide foo 1}
+    package require foo 1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob -result {attempt to provide package * failed:*}
+test package-3.34.2 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1.1 {package provide foo 1}
+    package require foo 1.1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob -result {attempt to provide package * failed:*}
+test package-3.35 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1 {}
+    package require foo 1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob -result {attempt to provide package * failed:*}
+test package-3.35.1 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1 {break}
+    package require foo 1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob \
+-result {attempt to provide package * failed: bad return code:*}
+test package-3.36 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1 {continue}
+    package require foo 1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob \
+-result {attempt to provide package * failed: bad return code:*}
+test package-3.37 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1 {return}
+    package require foo 1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob \
+-result {attempt to provide package * failed: bad return code:*}
+test package-3.38 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1 {return -level 0 -code 10}
+    package require foo 1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob \
+-result {attempt to provide package * failed: bad return code:*}
+test package-3.39 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+    set saveUnknown [package unknown]
+    package unknown {package provide foo 2 ;#}
+} -body {
+    package require foo 1
+} -cleanup {
+    package forget foo
+    package unknown $saveUnknown
+} -returnCodes error -match glob -result *
+test package-3.40 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+    set saveUnknown [package unknown]
+    package unknown {break ;#}
+} -body {
+    package require foo 1
+} -cleanup {
+    package forget foo
+    package unknown $saveUnknown
+} -returnCodes error -match glob -result {bad return code:*}
+test package-3.41 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+    set saveUnknown [package unknown]
+    package unknown {continue ;#}
+} -body {
+    package require foo 1
+} -cleanup {
+    package forget foo
+    package unknown $saveUnknown
+} -returnCodes error -match glob -result {bad return code:*}
+test package-3.42 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+    set saveUnknown [package unknown]
+    package unknown {return ;#}
+} -body {
+    package require foo 1
+} -cleanup {
+    package forget foo
+    package unknown $saveUnknown
+} -returnCodes error -match glob -result {bad return code:*}
+test package-3.43 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+    set saveUnknown [package unknown]
+    package unknown {return -level 0 -code 10 ;#}
+} -body {
+    package require foo 1
+} -cleanup {
+    package forget foo
+    package unknown $saveUnknown
+} -returnCodes error -match glob -result {bad return code:*}
+test package-3.44 {Tcl_PkgRequire: exact version matching (1578344)} -setup {
+    package provide demo 1.2.3
+} -body {
+    package require -exact demo 1.2
+} -returnCodes error -cleanup {
+    package forget demo
+} -result {version conflict for package "demo": have 1.2.3, need exactly 1.2}
+test package-3.50 {Tcl_PkgRequire procedure, picking best stable version} -setup {
+    package forget t
+    set x xxx
+} -body {
+    foreach i {1.4 3.4 4.0a1 2.3 2.4 2.2} {
+	package ifneeded t $i "set x $i; package provide t $i"
+    }
+    package require t
+    return $x
+} -result {3.4}
+test package-3.51 {Tcl_PkgRequire procedure, picking best stable version} -setup {
+    package forget t
+    set x xxx
+} -body {
+    foreach i {1.2b1 1.2 1.3a2 1.3} {
+	package ifneeded t $i "set x $i; package provide t $i"
+    }
+    package require t
+    return $x
+} -result {1.3}
+test package-3.52 {Tcl_PkgRequire procedure, picking best stable version} -setup {
+    package forget t
+    set x xxx
+} -body {
+    foreach i {1.2b1 1.2 1.3 1.3a2} {
+	package ifneeded t $i "set x $i; package provide t $i"
+    }
+    package require t
+    return $x
+} -result {1.3}
+test pkg-3.53 {Tcl_PkgRequire procedure, picking best stable version} {
+    package forget t
+    foreach i {1.2b1 1.1} {
+        package ifneeded t $i "set x $i; package provide t $i"
+    }
+    set x xxx
+    package require t
+    set x
+} {1.1}
+test package-3.54 {Tcl_PkgRequire procedure, coroutine support} -setup {
+    package forget t
+} -body {
+    coroutine coro1 apply {{} {
+	package ifneeded t 2.1 {
+	    yield 
+	    package provide t 2.1
+	}
+	package require t 2.1
+    }}
+    list [catch {coro1} msg] $msg
+} -match glob -result {0 2.1} 
+
+
+test package-4.1 {Tcl_PackageCmd procedure} -returnCodes error -body {
+    package
+} -result {wrong # args: should be "package option ?arg ...?"}
+test package-4.2 {Tcl_PackageCmd procedure, "forget" option} {
+    package forget {*}[package names]
+    package names
+} {}
+test package-4.3 {Tcl_PackageCmd procedure, "forget" option} {
+    package forget {*}[package names]
+    package forget foo
+} {}
+test package-4.4 {Tcl_PackageCmd procedure, "forget" option} -setup {
+    package forget {*}[package names]
+    set result {}
+} -body {
+    package ifneeded t 1.1 {first script}
+    package ifneeded t 2.3 {second script}
+    package ifneeded x 1.4 {x's script}
+    lappend result [lsort [package names]] [package versions t]
+    package forget t
+    lappend result [lsort [package names]] [package versions t]
+} -result {{t x} {1.1 2.3} x {}}
+test package-4.5 {Tcl_PackageCmd procedure, "forget" option} -setup {
+    package forget {*}[package names]
+} -body {
+    package ifneeded a 1.1 {first script}
+    package ifneeded b 2.3 {second script}
+    package ifneeded c 1.4 {third script}
+    package forget
+    set result [list [lsort [package names]]]
+    package forget a c
+    lappend result [lsort [package names]]
+} -result {{a b c} b}
+test package-4.5.1 {Tcl_PackageCmd procedure, "forget" option} -body {
+    # Test for Bug 415273
+    package ifneeded a 1 "I should have been forgotten"
+    package forget no-such-package a
+    package ifneeded a 1
+} -cleanup {
+    package forget a
+} -result {}
+test package-4.6 {Tcl_PackageCmd procedure, "ifneeded" option} -body {
+    package ifneeded a
+} -returnCodes error -result {wrong # args: should be "package ifneeded package version ?script?"}
+test package-4.7 {Tcl_PackageCmd procedure, "ifneeded" option} -body {
+    package ifneeded a b c d
+} -returnCodes error -result {wrong # args: should be "package ifneeded package version ?script?"}
+test package-4.8 {Tcl_PackageCmd procedure, "ifneeded" option} -body {
+    package ifneeded t xyz
+} -returnCodes error -result {expected version number but got "xyz"}
+test package-4.9 {Tcl_PackageCmd procedure, "ifneeded" option} {
+    package forget {*}[package names]
+    list [package ifneeded foo 1.1] [package names]
+} {{} {}}
+test package-4.10 {Tcl_PackageCmd procedure, "ifneeded" option} -setup {
+    package forget t
+} -body {
+    package ifneeded t 1.4 "script for t 1.4"
+    list [package names] [package ifneeded t 1.4] [package versions t]
+} -result {t {script for t 1.4} 1.4}
+test package-4.11 {Tcl_PackageCmd procedure, "ifneeded" option} -setup {
+    package forget t
+} -body {
+    package ifneeded t 1.4 "script for t 1.4"
+    list [package ifneeded t 1.5] [package names] [package versions t]
+} -result {{} t 1.4}
+test package-4.12 {Tcl_PackageCmd procedure, "ifneeded" option} -setup {
+    package forget t
+} -body {
+    package ifneeded t 1.4 "script for t 1.4"
+    package ifneeded t 1.4 "second script for t 1.4"
+    list [package ifneeded t 1.4] [package names] [package versions t]
+} -result {{second script for t 1.4} t 1.4}
+test package-4.13 {Tcl_PackageCmd procedure, "ifneeded" option} -setup {
+    package forget t
+} -body {
+    package ifneeded t 1.4 "script for t 1.4"
+    package ifneeded t 1.2 "second script"
+    package ifneeded t 3.1 "last script"
+    list [package ifneeded t 1.2] [package versions t]
+} -result {{second script} {1.4 1.2 3.1}}
+test package-4.14 {Tcl_PackageCmd procedure, "names" option} -body {
+    package names a
+} -returnCodes error -result {wrong # args: should be "package names"}
+test package-4.15 {Tcl_PackageCmd procedure, "names" option} {
+    package forget {*}[package names]
+    package names
+} {}
+test package-4.16 {Tcl_PackageCmd procedure, "names" option} -setup {
+    package forget {*}[package names]
+} -body {
+    package ifneeded x 1.2 {dummy}
+    package provide x 1.3
+    package provide y 2.4
+    catch {package require z 47.16}
+    lsort [package names]
+} -result {x y}
+test package-4.17 {Tcl_PackageCmd procedure, "provide" option} -body {
+    package provide
+} -returnCodes error -result {wrong # args: should be "package provide package ?version?"}
+test package-4.18 {Tcl_PackageCmd procedure, "provide" option} -body {
+    package provide a b c
+} -returnCodes error -result {wrong # args: should be "package provide package ?version?"}
+test package-4.19 {Tcl_PackageCmd procedure, "provide" option} -setup {
+    package forget t
+} -body {
+    package provide t
+} -result {}
+test package-4.20 {Tcl_PackageCmd procedure, "provide" option} -setup {
+    package forget t
+} -body {
+    package provide t 2.3
+    package provide t
+} -result {2.3}
+test package-4.21 {Tcl_PackageCmd procedure, "provide" option} -setup {
+    package forget t
+} -returnCodes error -body {
+    package provide t a.b
+} -result {expected version number but got "a.b"}
+test package-4.22 {Tcl_PackageCmd procedure, "require" option} -returnCodes error -body {
+    package require
+} -result {wrong # args: should be "package require ?-exact? package ?requirement ...?"}
+test package-4.24 {Tcl_PackageCmd procedure, "require" option} -body {
+    package require -exact a b c
+    # Exact syntax: -exact name version
+    #              name ?requirement ...?
+} -returnCodes error -result {wrong # args: should be "package require ?-exact? package ?requirement ...?"}
+test package-4.26 {Tcl_PackageCmd procedure, "require" option} -body {
+    package require x a.b
+} -returnCodes error -result {expected version number but got "a.b"}
+test package-4.27 {Tcl_PackageCmd procedure, "require" option} -body {
+    package require -exact x a.b
+} -returnCodes error -result {expected version number but got "a.b"}
+test package-4.28 {Tcl_PackageCmd procedure, "require" option} -body {
+    package require -exact x
+} -returnCodes error -result {wrong # args: should be "package require ?-exact? package ?requirement ...?"}
+test package-4.29 {Tcl_PackageCmd procedure, "require" option} -body {
+    package require -exact
+} -returnCodes error -result {wrong # args: should be "package require ?-exact? package ?requirement ...?"}
+test package-4.30 {Tcl_PackageCmd procedure, "require" option} -setup {
+    package forget t
+} -body {
+    package provide t 2.3
+    package require t 2.1
+} -result {2.3}
+test package-4.31 {Tcl_PackageCmd procedure, "require" option} -setup {
+    package forget t
+} -body {
+    package require t
+} -returnCodes error -result {can't find package t}
+test package-4.32 {Tcl_PackageCmd procedure, "require" option} -setup {
+    package forget t
+} -body {
+    package ifneeded t 2.3 "error {synthetic error}"
+    package require t 2.3
+} -returnCodes error -result {synthetic error}
+test package-4.33 {Tcl_PackageCmd procedure, "unknown" option} -body {
+    package unknown a b
+} -returnCodes error -result {wrong # args: should be "package unknown ?command?"}
+test package-4.34 {Tcl_PackageCmd procedure, "unknown" option} {
+    package unknown "test script"
+    package unknown
+} {test script}
+test package-4.35 {Tcl_PackageCmd procedure, "unknown" option} {
+    package unknown "test script"
+    package unknown {}
+    package unknown
+} {}
+test package-4.36 {Tcl_PackageCmd procedure, "vcompare" option} -body {
+    package vcompare a
+} -returnCodes error -result {wrong # args: should be "package vcompare version1 version2"}
+test package-4.37 {Tcl_PackageCmd procedure, "vcompare" option} -body {
+    package vcompare a b c
+} -returnCodes error -result {wrong # args: should be "package vcompare version1 version2"}
+test package-4.38 {Tcl_PackageCmd procedure, "vcompare" option} -body {
+    package vcompare x.y 3.4
+} -returnCodes error -result {expected version number but got "x.y"}
+test package-4.39 {Tcl_PackageCmd procedure, "vcompare" option} -body {
+    package vcompare 2.1 a.b
+} -returnCodes error -result {expected version number but got "a.b"}
+test package-4.40 {Tcl_PackageCmd procedure, "vcompare" option} {
+    package vc 2.1 2.3
+} {-1}
+test package-4.41 {Tcl_PackageCmd procedure, "vcompare" option} {
+    package vc 2.2.4 2.2.4
+} {0}
+test package-4.42 {Tcl_PackageCmd procedure, "versions" option} -body {
+    package versions
+} -returnCodes error -result {wrong # args: should be "package versions package"}
+test package-4.43 {Tcl_PackageCmd procedure, "versions" option} -body {
+    package versions a b
+} -returnCodes error -result {wrong # args: should be "package versions package"}
+test package-4.44 {Tcl_PackageCmd procedure, "versions" option} -body {
+    package forget t
+    package versions t
+} -result {}
+test package-4.45 {Tcl_PackageCmd procedure, "versions" option} -setup {
+    package forget t
+} -body {
+    package provide t 2.3
+    package versions t
+} -result {}
+test package-4.46 {Tcl_PackageCmd procedure, "versions" option} -setup {
+    package forget t
+} -body {
+    package ifneeded t 2.3 x
+    package ifneeded t 2.4 y
+    package versions t
+} -result {2.3 2.4}
+test package-4.47 {Tcl_PackageCmd procedure, "vsatisfies" option} -body {
+    package vsatisfies a
+} -returnCodes error -result {wrong # args: should be "package vsatisfies version ?requirement ...?"}
+test package-4.49 {Tcl_PackageCmd procedure, "vsatisfies" option} -body {
+    package vsatisfies x.y 3.4
+} -returnCodes error -result {expected version number but got "x.y"}
+test package-4.50 {Tcl_PackageCmd procedure, "vsatisfies" option} -body {
+    package vcompare 2.1 a.b
+} -returnCodes error -result {expected version number but got "a.b"}
+test package-4.51 {Tcl_PackageCmd procedure, "vsatisfies" option} {
+    package vs 2.3 2.1
+} {1}
+test package-4.52 {Tcl_PackageCmd procedure, "vsatisfies" option} {
+    package vs 2.3 1.2
+} {0}
+test package-4.53 {Tcl_PackageCmd procedure, "versions" option} -body {
+    package foo
+} -returnCodes error -result {bad option "foo": must be forget, ifneeded, names, prefer, present, provide, require, unknown, vcompare, versions, or vsatisfies}
+test package-4.54 {Tcl_PackageCmd procedure, "vsatisfies" option} -body {
+    package vsatisfies 2.1 2.1-3.2-4.5
+} -returnCodes error -result {expected versionMin-versionMax but got "2.1-3.2-4.5"}
+test package-4.55 {Tcl_PackageCmd procedure, "vsatisfies" option} -body {
+    package vsatisfies 2.1 3.2-x.y
+} -returnCodes error -result {expected version number but got "x.y"}
+test package-4.56 {Tcl_PackageCmd procedure, "vsatisfies" option} -body {
+    package vsatisfies 2.1 x.y-3.2
+} -returnCodes error -result {expected version number but got "x.y"}
+
+# No tests for FindPackage; can't think up anything detectable errors.
+
+test package-5.1 {TclFreePackageInfo procedure} {
+    interp create slave
+    slave eval {
+	package ifneeded t 2.3 x
+	package ifneeded t 2.4 y
+	package ifneeded x 3.1 z
+	package provide q 4.3
+	package unknown "will this get freed?"
+    }
+    interp delete slave
+} {}
+test package-5.2 {TclFreePackageInfo procedure} -body {
+    interp create foo
+    foo eval {
+	package ifneeded t 2.3 x
+	package ifneeded t 2.4 y
+	package ifneeded x 3.1 z
+	package provide q 4.3
+    }
+    foo alias z kill
+    proc kill {} {
+	interp delete foo
+    }
+    foo eval package require x 3.1
+} -returnCodes error -match glob -result *
+
+test package-6.1 {CheckVersion procedure} {
+    package vcompare 1 2.1
+} -1
+test package-6.2 {CheckVersion procedure} -body {
+    package vcompare .1 2.1
+} -returnCodes error -result {expected version number but got ".1"}
+test package-6.3 {CheckVersion procedure} -body {
+    package vcompare 111.2a.3 2.1
+} -returnCodes error -result {expected version number but got "111.2a.3"}
+test package-6.4 {CheckVersion procedure} -body {
+    package vcompare 1.2.3. 2.1
+} -returnCodes error -result {expected version number but got "1.2.3."}
+test package-6.5 {CheckVersion procedure} -body {
+    package vcompare 1.2..3 2.1
+} -returnCodes error -result {expected version number but got "1.2..3"}
+
+test package-7.1 {ComparePkgVersions procedure} {
+    package vcompare 1.23 1.22
+} {1}
+test package-7.2 {ComparePkgVersions procedure} {
+    package vcompare 1.22.1.2.3 1.22.1.2.3
+} {0}
+test package-7.3 {ComparePkgVersions procedure} {
+    package vcompare 1.21 1.22
+} {-1}
+test package-7.4 {ComparePkgVersions procedure} {
+    package vcompare 1.21 1.21.2
+} {-1}
+test package-7.5 {ComparePkgVersions procedure} {
+    package vcompare 1.21.1 1.21
+} {1}
+test package-7.6 {ComparePkgVersions procedure} {
+    package vsatisfies 1.21.1 1.21
+} {1}
+test package-7.7 {ComparePkgVersions procedure} {
+    package vsatisfies 2.22.3 1.21
+} {0}
+test package-7.8 {ComparePkgVersions procedure} {
+    package vsatisfies 1 1
+} {1}
+test package-7.9 {ComparePkgVersions procedure} {
+    package vsatisfies 2 1
+} {0}
+
+test package-8.1 {Tcl_PkgPresent procedure, any version} -setup {
+    package forget t
+} -body {
+    package provide t 2.4
+    package present t
+} -result {2.4}
+test package-8.2 {Tcl_PkgPresent procedure, correct version} -setup {
+    package forget t
+} -body {
+    package provide t 2.4
+    package present t 2.4
+} -result {2.4}
+test package-8.3 {Tcl_PkgPresent procedure, satisfying version} -setup {
+    package forget t
+} -body {
+    package provide t 2.4
+    package present t 2.0
+} -result {2.4}
+test package-8.4 {Tcl_PkgPresent procedure, not satisfying version} -setup {
+    package forget t
+} -returnCodes error -body {
+    package provide t 2.4
+    package present t 2.6
+} -result {version conflict for package "t": have 2.4, need 2.6}
+test package-8.5 {Tcl_PkgPresent procedure, not satisfying version} -setup {
+    package forget t
+} -returnCodes error -body {
+    package provide t 2.4
+    package present t 1.0
+} -result {version conflict for package "t": have 2.4, need 1.0}
+test package-8.6 {Tcl_PkgPresent procedure, exact version} -setup {
+    package forget t
+} -body {
+    package provide t 2.4
+    package present -exact t 2.4
+} -result {2.4}
+test package-8.7 {Tcl_PkgPresent procedure, not exact version} -setup {
+    package forget t
+} -returnCodes error -body {
+    package provide t 2.4
+    package present -exact t 2.3
+} -result {version conflict for package "t": have 2.4, need exactly 2.3}
+test package-8.8 {Tcl_PkgPresent procedure, unknown package} -body {
+    package forget t
+    package present t
+} -returnCodes error -result {package t is not present}
+test package-8.9 {Tcl_PkgPresent procedure, unknown package} -body {
+    package forget t
+    package present t 2.4
+} -returnCodes error -result {package t 2.4 is not present}
+test package-8.10 {Tcl_PkgPresent procedure, unknown package} -body {
+    package forget t
+    package present -exact t 2.4
+} -returnCodes error -result {package t 2.4 is not present}
+test package-8.11 {Tcl_PackageCmd procedure, "present" option} -body {
+    package present
+} -returnCodes error -result {wrong # args: should be "package present ?-exact? package ?requirement ...?"}
+test package-8.12 {Tcl_PackageCmd procedure, "present" option} -body {
+    package present a b c
+} -returnCodes error -result {expected version number but got "b"}
+test package-8.13 {Tcl_PackageCmd procedure, "present" option} -body {
+    package present -exact a b c
+} -returnCodes error -result {wrong # args: should be "package present ?-exact? package ?requirement ...?"}
+test package-8.14 {Tcl_PackageCmd procedure, "present" option} -body {
+    package present -bs a b
+} -returnCodes error -result {expected version number but got "a"}
+test package-8.15 {Tcl_PackageCmd procedure, "present" option} -body {
+    package present x a.b
+} -returnCodes error -result {expected version number but got "a.b"}
+test package-8.16 {Tcl_PackageCmd procedure, "present" option} -body {
+    package present -exact x a.b
+} -returnCodes error -result {expected version number but got "a.b"}
+test package-8.17 {Tcl_PackageCmd procedure, "present" option} -body {
+    package present -exact x
+} -returnCodes error -result {wrong # args: should be "package present ?-exact? package ?requirement ...?"}
+test package-8.18 {Tcl_PackageCmd procedure, "present" option} -body {
+    package present -exact
+} -returnCodes error -result {wrong # args: should be "package present ?-exact? package ?requirement ...?"}
+
+set n 0
+foreach {r p vs vc} {
+    8.5a0    8.5a5    1          -1
+    8.5a0    8.5b1    1          -1
+    8.5a0    8.5.1    1          -1
+    8.5a0    8.6a0    1          -1
+    8.5a0    8.6b0    1          -1
+    8.5a0    8.6.0    1          -1
+    8.5a6    8.5a5    0          1
+    8.5a6    8.5b1    1          -1
+    8.5a6    8.5.1    1          -1
+    8.5a6    8.6a0    1          -1
+    8.5a6    8.6b0    1          -1
+    8.5a6    8.6.0    1          -1
+    8.5b0    8.5a5    0          1
+    8.5b0    8.5b1    1          -1
+    8.5b0    8.5.1    1          -1
+    8.5b0    8.6a0    1          -1
+    8.5b0    8.6b0    1          -1
+    8.5b0    8.6.0    1          -1
+    8.5b2    8.5a5    0          1
+    8.5b2    8.5b1    0          1
+    8.5b2    8.5.1    1          -1
+    8.5b2    8.6a0    1          -1
+    8.5b2    8.6b0    1          -1
+    8.5b2    8.6.0    1          -1
+    8.5      8.5a5    1          1
+    8.5      8.5b1    1          1
+    8.5      8.5.1    1          -1
+    8.5      8.6a0    1          -1
+    8.5      8.6b0    1          -1
+    8.5      8.6.0    1          -1
+    8.5.0    8.5a5    0          1
+    8.5.0    8.5b1    0          1
+    8.5.0    8.5.1    1          -1
+    8.5.0    8.6a0    1          -1
+    8.5.0    8.6b0    1          -1
+    8.5.0    8.6.0    1          -1
+    10       8        0          1
+    8        10       0          -1
+    0.0.1.2  0.1.2    1          -1
+} {
+    test package-9.$n {package vsatisfies} {
+	package vsatisfies $p $r
+    } $vs
+    test package-10.$n {package vcompare} {
+	package vcompare $r $p
+    } $vc
+    incr n
+}
+
+test package-11.0.0 {package vcompare at 32bit boundary} {
+    package vcompare [expr {1<<31}] [expr {(1<<31)-1}]
+} 1
+
+# Note: It is correct that the result of the very first test, i.e. "5.0 5.0a0"
+# is 1, i.e. that version 5.0a0 satisfies a 5.0 requirement.
+
+# The requirement "5.0" internally translates first to "5.0-6", and then to
+# its final form of "5.0a0-6a0". These translations are explicitly specified
+# by the TIP (Search for "padded/extended internally with 'a0'"). This was
+# done intentionally for exactly the tested case, that an alpha package can
+# satisfy a requirement for the regular package. An example would be a package
+# FOO requiring Tcl 8.X for its operation. It can be used with Tcl 8.Xa0.
+# Without our translation that would not be possible.
+
+set n 0
+foreach {required provided satisfied} {
+    5.0 5.0a0 1
+    5.0a0 5.0 1
+
+    8.5a0-   8.5a5    1
+    8.5a0-   8.5b1    1
+    8.5a0-   8.5.1    1
+    8.5a0-   8.6a0    1
+    8.5a0-   8.6b0    1
+    8.5a0-   8.6.0    1
+    8.5a6-   8.5a5    0
+    8.5a6-   8.5b1    1
+    8.5a6-   8.5.1    1
+    8.5a6-   8.6a0    1
+    8.5a6-   8.6b0    1
+    8.5a6-   8.6.0    1
+    8.5b0-   8.5a5    0
+    8.5b0-   8.5b1    1
+    8.5b0-   8.5.1    1
+    8.5b0-   8.6a0    1
+    8.5b0-   8.6b0    1
+    8.5b0-   8.6.0    1
+    8.5b2-   8.5a5    0
+    8.5b2-   8.5b1    0
+    8.5b2-   8.5.1    1
+    8.5b2-   8.6a0    1
+    8.5b2-   8.6b0    1
+    8.5b2-   8.6.0    1
+    8.5-     8.5a5    1
+    8.5-     8.5b1    1
+    8.5-     8.5.1    1
+    8.5-     8.6a0    1
+    8.5-     8.6b0    1
+    8.5-     8.6.0    1
+    8.5.0-   8.5a5    0
+    8.5.0-   8.5b1    0
+    8.5.0-   8.5.1    1
+    8.5.0-   8.6a0    1
+    8.5.0-   8.6b0    1
+    8.5.0-   8.6.0    1
+    8.5a0-7  8.5a5    0
+    8.5a0-7  8.5b1    0
+    8.5a0-7  8.5.1    0
+    8.5a0-7  8.6a0    0
+    8.5a0-7  8.6b0    0
+    8.5a0-7  8.6.0    0
+    8.5a6-7  8.5a5    0
+    8.5a6-7  8.5b1    0
+    8.5a6-7  8.5.1    0
+    8.5a6-7  8.6a0    0
+    8.5a6-7  8.6b0    0
+    8.5a6-7  8.6.0    0
+    8.5b0-7  8.5a5    0
+    8.5b0-7  8.5b1    0
+    8.5b0-7  8.5.1    0
+    8.5b0-7  8.6a0    0
+    8.5b0-7  8.6b0    0
+    8.5b0-7  8.6.0    0
+    8.5b2-7  8.5a5    0
+    8.5b2-7  8.5b1    0
+    8.5b2-7  8.5.1    0
+    8.5b2-7  8.6a0    0
+    8.5b2-7  8.6b0    0
+    8.5b2-7  8.6.0    0
+    8.5-7    8.5a5    0
+    8.5-7    8.5b1    0
+    8.5-7    8.5.1    0
+    8.5-7    8.6a0    0
+    8.5-7    8.6b0    0
+    8.5-7    8.6.0    0
+    8.5.0-7  8.5a5    0
+    8.5.0-7  8.5b1    0
+    8.5.0-7  8.5.1    0
+    8.5.0-7  8.6a0    0
+    8.5.0-7  8.6b0    0
+    8.5.0-7  8.6.0    0
+    8.5a0-8.6.1 8.5a5    1
+    8.5a0-8.6.1 8.5b1    1
+    8.5a0-8.6.1 8.5.1    1
+    8.5a0-8.6.1 8.6a0    1
+    8.5a0-8.6.1 8.6b0    1
+    8.5a0-8.6.1 8.6.0    1
+    8.5a6-8.6.1 8.5a5    0
+    8.5a6-8.6.1 8.5b1    1
+    8.5a6-8.6.1 8.5.1    1
+    8.5a6-8.6.1 8.6a0    1
+    8.5a6-8.6.1 8.6b0    1
+    8.5a6-8.6.1 8.6.0    1
+    8.5b0-8.6.1 8.5a5    0
+    8.5b0-8.6.1 8.5b1    1
+    8.5b0-8.6.1 8.5.1    1
+    8.5b0-8.6.1 8.6a0    1
+    8.5b0-8.6.1 8.6b0    1
+    8.5b0-8.6.1 8.6.0    1
+    8.5b2-8.6.1 8.5a5    0
+    8.5b2-8.6.1 8.5b1    0
+    8.5b2-8.6.1 8.5.1    1
+    8.5b2-8.6.1 8.6a0    1
+    8.5b2-8.6.1 8.6b0    1
+    8.5b2-8.6.1 8.6.0    1
+    8.5-8.6.1 8.5a5    1
+    8.5-8.6.1 8.5b1    1
+    8.5-8.6.1 8.5.1    1
+    8.5-8.6.1 8.6a0    1
+    8.5-8.6.1 8.6b0    1
+    8.5-8.6.1 8.6.0    1
+    8.5.0-8.6.1 8.5a5    0
+    8.5.0-8.6.1 8.5b1    0
+    8.5.0-8.6.1 8.5.1    1
+    8.5.0-8.6.1 8.6a0    1
+    8.5.0-8.6.1 8.6b0    1
+    8.5.0-8.6.1 8.6.0    1
+    8.5a0-8.5a0 8.5a0    1
+    8.5a0-8.5a0 8.5b1    0
+    8.5a0-8.5a0 8.4      0
+    8.5b0-8.5b0 8.5a5    0
+    8.5b0-8.5b0 8.5b0    1
+    8.5b0-8.5b0 8.5.1    0
+    8.5-8.5  8.5a5    0
+    8.5-8.5  8.5b1    0
+    8.5-8.5  8.5      1
+    8.5-8.5  8.5.1    0
+    8.5.0-8.5.0 8.5a5    0
+    8.5.0-8.5.0 8.5b1    0
+    8.5.0-8.5.0 8.5.0    1
+    8.5.0-8.5.0 8.5.1    0
+    8.5.0-8.5.0 8.6a0    0
+    8.5.0-8.5.0 8.6b0    0
+    8.5.0-8.5.0 8.6.0    0
+    8.2      9        0
+    8.2-     9        1
+    8.2-8.5  9        0
+    8.2-9.1  9        1
+
+    8.5-8.5     8.5b1 0
+    8.5a0-8.5   8.5b1 0
+    8.5a0-8.5.1 8.5b1 1
+
+    8.5-8.5     8.5 1
+    8.5.0-8.5.0 8.5 1
+    8.5a0-8.5.0 8.5 0
+} {
+    test package-11.$n "package vsatisfies $provided $required" {
+	package vsatisfies $provided $required
+    } $satisfied
+    incr n
+}
+
+test package-12.0 "package vsatisfies multiple" {
+    #                      yes no
+    package vsatisfies 8.4 8.4 7.3
+} 1
+test package-12.1 "package vsatisfies multiple" {
+    #                      no  yes
+    package vsatisfies 8.4 7.3 8.4
+} 1
+test package-12.2 "package vsatisfies multiple" {
+    #                        yes  yes
+    package vsatisfies 8.4.2 8.4  8.4.1
+} 1
+test package-12.3 "package vsatisfies multiple" {
+    #                      no  no
+    package vsatisfies 8.4 7.3 6.1
+} 0
+
+proc prefer {args} {
+    set ip [interp create]
+    try {
+	lappend res [$ip eval {package prefer}]
+	foreach mode $args {
+	    lappend res [$ip eval [list package prefer $mode]]
+	}
+	return $res
+    } finally {
+	interp delete $ip
+    }
+}
+
+test package-13.0 {package prefer defaults} {
+    prefer
+} stable
+test package-13.1 {package prefer defaults} -body {
+    set ::env(TCL_PKG_PREFER_LATEST) stable	;# value not relevant!
+    prefer
+} -cleanup {
+    unset -nocomplain ::env(TCL_PKG_PREFER_LATEST)
+} -result latest
+
+test package-14.0 {wrong\#args} -returnCodes error -body {
+    package prefer foo bar
+} -result {wrong # args: should be "package prefer ?latest|stable?"}
+test package-14.1 {bogus argument} -returnCodes error -body {
+    package prefer foo
+} -result {bad preference "foo": must be latest or stable}
+
+test package-15.0 {set, keep} {package prefer stable} stable
+test package-15.1 {set stable, keep} {prefer stable} {stable stable}
+test package-15.2 {set latest, change} {prefer latest} {stable latest}
+test package-15.3 {set latest, keep} {
+    prefer latest latest
+} {stable latest latest}
+test package-15.4 {set stable, rejected} {
+    prefer latest stable
+} {stable latest latest}
+
+rename prefer {}
+
+set auto_path $oldPath
+package unknown $oldPkgUnknown
+
+cleanupTests
+}
+
+# cleanup
+interp delete $i
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:

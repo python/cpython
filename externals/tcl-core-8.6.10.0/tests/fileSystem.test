@@ -1,0 +1,989 @@
+# This file tests the filesystem and vfs internals.
+#
+# This file contains a collection of tests for one or more of the Tcl built-in
+# commands. Sourcing this file into Tcl runs the tests and generates output
+# for errors. No output means no errors were found.
+#
+# Copyright (c) 2002 Vincent Darley.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2
+namespace eval ::tcl::test::fileSystem {
+    namespace import ::tcltest::*
+
+    catch {
+	file delete -force link.file
+	file delete -force dir.link
+	file delete -force [file join dir.dir linkinside.file]
+    }
+
+testConstraint loaddll 0
+catch {
+    ::tcltest::loadTestedCommands
+    package require -exact Tcltest [info patchlevel]
+    set ::ddever [package require dde]
+    set ::ddelib [lindex [package ifneeded dde $::ddever] 1]
+    set ::regver  [package require registry]
+    set ::reglib [lindex [package ifneeded registry $::regver] 1]
+    testConstraint loaddll 1
+}
+
+# Test for commands defined in Tcltest executable
+testConstraint testfilesystem  	    [llength [info commands ::testfilesystem]]
+testConstraint testsetplatform 	    [llength [info commands ::testsetplatform]]
+testConstraint testsimplefilesystem [llength [info commands ::testsimplefilesystem]]
+testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
+
+cd [tcltest::temporaryDirectory]
+makeFile "test file" gorp.file
+makeDirectory dir.dir
+makeDirectory [file join dir.dir dirinside.dir]
+makeFile "test file in directory" [file join dir.dir inside.file]
+
+testConstraint unusedDrive 0
+testConstraint moreThanOneDrive 0
+apply {{} {
+    # The variables 'drive' and 'drives' will be used below.
+    variable drive {} drives {}
+    if {[testConstraint win]} {
+	set vols [string map [list :/ {}] [file volumes]]
+	for {set i 0} {$i < 26} {incr i} {
+	    set drive [format %c [expr {$i + 65}]]
+	    if {$drive ni $vols} {
+		testConstraint unusedDrive 1
+		break
+	    }
+	}
+
+	set dir [pwd]
+	try {
+	    foreach vol [file volumes] {
+		if {![catch {cd $vol}]} {
+		    lappend drives $vol
+		}
+	    }
+	    testConstraint moreThanOneDrive [llength $drives]
+	} finally {
+	    cd $dir
+	}
+    }
+} ::tcl::test::fileSystem}
+
+proc testPathEqual {one two} {
+    if {$one eq $two} {
+	return "ok"
+    }
+    return "not equal: $one $two"
+}
+
+testConstraint hasLinks [expr {![catch {
+    file link link.file gorp.file
+    cd dir.dir
+    file link \
+	[file join linkinside.file] \
+	[file join inside.file]
+    cd ..
+    file link dir.link dir.dir
+    cd dir.dir
+    file link [file join dirinside.link] \
+	[file join dirinside.dir]
+    cd ..
+}]}]
+
+if {[testConstraint testsetplatform]} {
+    set platform [testgetplatform]
+}
+
+# ----------------------------------------------------------------------
+
+test filesystem-1.0 {link normalisation} {hasLinks} {
+   string equal [file normalize gorp.file] [file normalize link.file]
+} {0}
+test filesystem-1.1 {link normalisation} {hasLinks} {
+   string equal [file normalize dir.dir] [file normalize dir.link]
+} {0}
+test filesystem-1.2 {link normalisation} {hasLinks unix} {
+    testPathEqual [file normalize [file join gorp.file foo]] \
+	[file normalize [file join link.file foo]]
+} ok
+test filesystem-1.3 {link normalisation} {hasLinks} {
+    testPathEqual [file normalize [file join dir.dir foo]] \
+	[file normalize [file join dir.link foo]]
+} ok
+test filesystem-1.4 {link normalisation} {hasLinks} {
+    testPathEqual [file normalize [file join dir.dir inside.file]] \
+	[file normalize [file join dir.link inside.file]]
+} ok
+test filesystem-1.5 {link normalisation} {hasLinks} {
+    testPathEqual [file normalize [file join dir.dir linkinside.file]] \
+	[file normalize [file join dir.dir linkinside.file]]
+} ok
+test filesystem-1.6 {link normalisation} {hasLinks} {
+    string equal [file normalize [file join dir.dir linkinside.file]] \
+	[file normalize [file join dir.link inside.file]]
+} {0}
+test filesystem-1.7 {link normalisation} {hasLinks unix} {
+    testPathEqual [file normalize [file join dir.link linkinside.file foo]] \
+	[file normalize [file join dir.dir inside.file foo]]
+} ok
+test filesystem-1.8 {link normalisation} {hasLinks} {
+    string equal [file normalize [file join dir.dir linkinside.filefoo]] \
+	[file normalize [file join dir.link inside.filefoo]]
+} {0}
+test filesystem-1.9 {link normalisation} -setup {
+    file delete -force dir.link
+} -constraints {unix hasLinks} -body {
+    file link dir.link [file nativename dir.dir]
+    testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
+	[file normalize [file join dir.link inside.file foo]]
+} -result ok
+test filesystem-1.10 {link normalisation: double link} -constraints {
+    unix hasLinks
+} -body {
+    file link dir2.link dir.link
+    testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
+	[file normalize [file join dir2.link inside.file foo]]
+} -cleanup {
+    file delete dir2.link
+} -result ok 
+makeDirectory dir2.file
+test filesystem-1.11 {link normalisation: double link, back in tree} {unix hasLinks} {
+    file link dir2.link dir.link
+    file link [file join dir2.file dir2.link] [file join .. dir2.link]
+    testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
+	[file normalize [file join dir2.file dir2.link inside.file foo]]
+} ok
+test filesystem-1.12 {file new native path} {} {
+    for {set i 0} {$i < 10} {incr i} {
+	foreach f [lsort [glob -nocomplain -type l *]] {
+	    catch {file readlink $f}
+	}
+    }
+    # If we reach here we've succeeded. We used to crash above.
+    expr 1
+} {1}
+test filesystem-1.13 {file normalisation} {win} {
+    # This used to be broken
+    file normalize C:/thislongnamedoesntexist
+} {C:/thislongnamedoesntexist}
+test filesystem-1.14 {file normalisation} {win} {
+    # This used to be broken
+    file normalize c:/
+} {C:/}
+test filesystem-1.15 {file normalisation} {win} {
+    file normalize c:/../
+} {C:/}
+test filesystem-1.16 {file normalisation} {win} {
+    file normalize c:/.
+} {C:/}
+test filesystem-1.17 {file normalisation} {win} {
+    file normalize c:/..
+} {C:/}
+test filesystem-1.17.1 {file normalisation} {win} {
+    file normalize c:\\..
+} {C:/}
+test filesystem-1.18 {file normalisation} {win} {
+    file normalize c:/./
+} {C:/}
+test filesystem-1.19 {file normalisation} {win unusedDrive} {
+    file normalize ${drive}:/./../../..
+} "${drive}:/"
+test filesystem-1.20 {file normalisation} {win} {
+    file normalize //name/foo/../
+} {//name/foo}
+test filesystem-1.21 {file normalisation} {win} {
+    file normalize C:///foo/./
+} {C:/foo}
+test filesystem-1.22 {file normalisation} {win} {
+    file normalize //name/foo/.
+} {//name/foo}
+test filesystem-1.23 {file normalisation} {win} {
+    file normalize c:/./foo
+} {C:/foo}
+test filesystem-1.24 {file normalisation} {win unusedDrive} {
+    file normalize ${drive}:/./../../../a
+} "${drive}:/a"
+test filesystem-1.25 {file normalisation} {win unusedDrive} {
+    file normalize ${drive}:/./.././../../a
+} "${drive}:/a"
+test filesystem-1.25.1 {file normalisation} {win unusedDrive} {
+    file normalize ${drive}:/./.././..\\..\\a\\bb
+} "${drive}:/a/bb"
+test filesystem-1.26 {link normalisation: link and ..} -setup {
+    file delete -force dir2.link
+} -constraints {hasLinks} -body {
+    set dir [file join dir2 foo bar]
+    file mkdir $dir
+    file link dir2.link [file join dir2 foo bar]
+    testPathEqual [file normalize [file join dir2 foo x]] \
+	    [file normalize [file join dir2.link .. x]]
+} -result ok
+test filesystem-1.27 {file normalisation: up and down with ..} {
+    set dir [file join dir2 foo bar]
+    file mkdir $dir
+    set dir2 [file join dir2 .. dir2 foo .. foo bar]
+    list [testPathEqual [file normalize $dir] [file normalize $dir2]] \
+	[file exists $dir] [file exists $dir2]
+} {ok 1 1}
+test filesystem-1.28 {link normalisation: link with .. and ..} -setup {
+    file delete -force dir2.link
+} -constraints {hasLinks} -body {
+    set dir [file join dir2 foo bar]
+    file mkdir $dir
+    set to [file join dir2 .. dir2 foo .. foo bar]
+    file link dir2.link $to
+    testPathEqual [file normalize [file join dir2 foo x]] \
+	    [file normalize [file join dir2.link .. x]]
+} -result ok
+test filesystem-1.29 {link normalisation: link with ..} -setup {
+    file delete -force dir2.link
+} -constraints {hasLinks} -body {
+    set dir [file join dir2 foo bar]
+    file mkdir $dir
+    set to [file join dir2 .. dir2 foo .. foo bar]
+    file link dir2.link $to
+    set res [file normalize [file join dir2.link x yyy z]]
+    if {[string match *..* $res]} {
+	return "$res must not contain '..'"
+    }
+    return "ok"
+} -result {ok}
+test filesystem-1.29.1 {link normalisation with two consecutive links} {hasLinks} {
+    testPathEqual [file normalize [file join dir.link dirinside.link abc]] \
+	[file normalize [file join dir.dir dirinside.dir abc]]
+} ok
+file delete -force dir2.file
+file delete -force dir2.link
+file delete -force link.file dir.link
+file delete -force dir2
+file delete -force [file join dir.dir dirinside.link]
+removeFile [file join dir.dir inside.file]
+removeDirectory [file join dir.dir dirinside.dir]
+removeDirectory dir.dir
+test filesystem-1.30 {normalisation of nonexistent user} -body {
+    file normalize ~noonewiththisname
+} -returnCodes error -result {user "noonewiththisname" doesn't exist}
+test filesystem-1.30.1 {normalisation of existing user} -body {
+    catch {file normalize ~$::tcl_platform(user)}
+} -result {0}
+test filesystem-1.30.2 {normalisation of nonexistent user specified as user@domain} -body {
+    file normalize ~nonexistentuser@nonexistentdomain
+} -returnCodes error -result {user "nonexistentuser@nonexistentdomain" doesn't exist}
+test filesystem-1.31 {link normalisation: link near filesystem root} {testsetplatform} {
+    testsetplatform unix
+    file normalize /foo/../bar
+} {/bar}
+test filesystem-1.32 {link normalisation: link near filesystem root} {testsetplatform} {
+    testsetplatform unix
+    file normalize /../bar
+} {/bar}
+test filesystem-1.33 {link normalisation: link near filesystem root} {testsetplatform} {
+    testsetplatform windows
+    set res [file normalize C:/../bar]
+    if {[testConstraint unix]} {
+	# Some unices go further in normalizing this -- not really a problem
+	# since this is a Windows test.
+	regexp {C:/bar$} $res res
+    }
+    set res
+} {C:/bar}
+if {[testConstraint testsetplatform]} {
+    testsetplatform $platform
+}
+test filesystem-1.34 {file normalisation with '/./'} -body {
+    file normalize /foo/bar/anc/./.tml
+} -match regexp -result {^(?:(?!/\./).)*$}
+test filesystem-1.35a {file normalisation with '/./'} -body {
+    file normalize /ffo/bar/anc/./foo/.tml
+} -match regexp -result {^(?:(?!/\./).)*$}
+test filesystem-1.35b {file normalisation with '/./'} {
+    llength [regexp -all foo [file normalize /ffo/bar/anc/./foo/.tml]]
+} 1
+test filesystem-1.36a {file normalisation with '/./'} -body {
+    file normalize /foo/bar/anc/././asdasd/.tml
+} -match regexp -result {^(?:(?!/\./).)*$}
+test filesystem-1.36b {file normalisation with '/./'} {
+    llength [regexp -all asdasd [file normalize /foo/bar/anc/././asdasd/.tml]]
+} 1
+test filesystem-1.37 {file normalisation with '/./'} -body {
+    set fname "/abc/./def/./ghi/./asda/.././.././asd/x/../../../../....."
+    file norm $fname
+} -match regexp -result {^(?:[^/]|/(?:[^/]|$))+$}
+test filesystem-1.38 {file normalisation with volume relative} -setup {
+    set dir [pwd]
+} -constraints {win moreThanOneDrive knownMsvcBug} -body {
+    set path "[string range [lindex $drives 0] 0 1]foo"
+    cd [lindex $drives 1]
+    file norm $path
+} -cleanup {
+    cd $dir
+} -result "[lindex $drives 0]foo"
+test filesystem-1.39 {file normalisation with volume relative} -setup {
+    set old [pwd]
+} -constraints {win} -body {
+    set drv C:/
+    cd [lindex [glob -type d -dir $drv *] 0]
+    file norm [string range $drv 0 1]
+} -cleanup {
+    cd $old
+} -match regexp -result {.*[^/]}
+test filesystem-1.40 {file normalisation with repeated separators} {
+    testPathEqual [file norm foo////bar] [file norm foo/bar]
+} ok
+test filesystem-1.41 {file normalisation with repeated separators} {win} {
+    testPathEqual [file norm foo\\\\\\bar] [file norm foo/bar]
+} ok
+test filesystem-1.42 {file normalisation .. beyond root (Bug 1379287)} {
+    testPathEqual [file norm /xxx/..] [file norm /]
+} ok
+test filesystem-1.42.1 {file normalisation .. beyond root (Bug 1379287)} {
+    testPathEqual [file norm /xxx/../] [file norm /]
+} ok
+test filesystem-1.43 {file normalisation .. beyond root (Bug 1379287)} {
+    testPathEqual [file norm /xxx/foo/../..] [file norm /]
+} ok
+test filesystem-1.43.1 {file normalisation .. beyond root (Bug 1379287)} {
+    testPathEqual [file norm /xxx/foo/../../] [file norm /]
+} ok
+test filesystem-1.44 {file normalisation .. beyond root (Bug 1379287)} {
+    testPathEqual [file norm /xxx/foo/../../bar] [file norm /bar]
+} ok
+test filesystem-1.45 {file normalisation .. beyond root (Bug 1379287)} {
+    testPathEqual [file norm /xxx/../../bar] [file norm /bar]
+} ok
+test filesystem-1.46 {file normalisation .. beyond root (Bug 1379287)} {
+    testPathEqual [file norm /xxx/../bar] [file norm /bar]
+} ok
+test filesystem-1.47 {file normalisation .. beyond root (Bug 1379287)} {
+    testPathEqual [file norm /..] [file norm /]
+} ok
+test filesystem-1.48 {file normalisation .. beyond root (Bug 1379287)} {
+    testPathEqual [file norm /../] [file norm /]
+} ok
+test filesystem-1.49 {file normalisation .. beyond root (Bug 1379287)} {
+    testPathEqual [file norm /.] [file norm /]
+} ok
+test filesystem-1.50 {file normalisation .. beyond root (Bug 1379287)} {
+    testPathEqual [file norm /./] [file norm /]
+} ok
+test filesystem-1.51 {file normalisation .. beyond root (Bug 1379287)} {
+    testPathEqual [file norm /../..] [file norm /]
+} ok
+test filesystem-1.51.1 {file normalisation .. beyond root (Bug 1379287)} {
+    testPathEqual [file norm /../../] [file norm /]
+} ok
+test filesystem-1.52 {bug f9f390d0fa: file join where strep is not canonical} -constraints unix -body {
+    set x //foo
+    file normalize $x
+    file join $x bar
+} -result /foo/bar
+test filesystem-1.52.1 {bug f9f390d0fa: file join where strep is not canonical} -body {
+    set x //foo
+    file normalize $x
+    file join $x
+} -result /foo
+test filesystem-1.53 {[Bug 3559678] - normalize when tail is empty} {
+  string match */ [file normalize [lindex [glob -dir [pwd] {{}}] 0]]
+} 0
+test filesystem-1.54 {[Bug ce3a211dcb] - normalize when tail is empty} -setup {
+    set save [pwd]
+    cd [set home [makeDirectory ce3a211dcb]]
+    makeDirectory A $home
+    cd [lindex [glob */] 0]
+} -body {
+    string match */A [pwd]
+} -cleanup {
+    cd $home
+    removeDirectory A $home
+    cd $save
+    removeDirectory ce3a211dcb
+} -result 1
+
+test filesystem-2.0 {new native path} {unix} {
+   foreach f [lsort [glob -nocomplain /usr/bin/c*]] {
+       catch {file readlink $f}
+   }
+   # If we reach here we've succeeded. We used to crash above.
+   return ok
+} ok
+
+# Make sure the testfilesystem hasn't been registered.
+if {[testConstraint testfilesystem]} {
+  proc resetfs {} {
+    while {![catch {testfilesystem 0}]} {}
+  }
+}
+
+test filesystem-3.1 {Tcl_FSRegister & Tcl_FSUnregister} testfilesystem {
+    set result {}
+    lappend result [testfilesystem 1]
+    lappend result [testfilesystem 0]
+    lappend result [catch {testfilesystem 0} msg] $msg
+} {registered unregistered 1 failed}
+test filesystem-3.3 {Tcl_FSRegister} testfilesystem {
+    testfilesystem 1
+    testfilesystem 1
+    testfilesystem 0
+    testfilesystem 0
+} {unregistered}
+test filesystem-3.4 {Tcl_FSRegister} -constraints testfilesystem -body {
+    testfilesystem 1
+    file system bar
+} -cleanup {
+    testfilesystem 0
+} -result {reporting}
+test filesystem-3.5 {Tcl_FSUnregister} testfilesystem {
+    resetfs
+    lindex [file system bar] 0
+} {native}
+
+test filesystem-4.0 {testfilesystem} -constraints testfilesystem -body {
+    testfilesystem 1
+    set filesystemReport {}
+    file exists foo
+    testfilesystem 0
+    return $filesystemReport
+} -match glob -result {*{access foo}}
+test filesystem-4.1 {testfilesystem} -constraints testfilesystem -body {
+    testfilesystem 1
+    set filesystemReport {}
+    catch {file stat foo bar}
+    testfilesystem 0
+    return $filesystemReport
+} -match glob -result {*{stat foo}}
+test filesystem-4.2 {testfilesystem} -constraints testfilesystem -body {
+    testfilesystem 1
+    set filesystemReport {}
+    catch {file lstat foo bar}
+    testfilesystem 0
+    return $filesystemReport
+} -match glob -result {*{lstat foo}}
+test filesystem-4.3 {testfilesystem} -constraints testfilesystem -body {
+    testfilesystem 1
+    set filesystemReport {}
+    catch {glob *}
+    testfilesystem 0
+    return $filesystemReport
+} -match glob -result {*{matchindirectory *}*}
+
+test filesystem-5.1 {cache and ~} -constraints testfilesystem -setup {
+    set orig $::env(HOME)
+} -body {
+    set ::env(HOME) /foo/bar/blah
+    set testdir ~
+    set res1 "Parent of ~ (/foo/bar/blah) is [file dirname $testdir]"
+    set ::env(HOME) /a/b/c
+    set res2 "Parent of ~ (/a/b/c) is [file dirname $testdir]"
+    list $res1 $res2
+} -cleanup {
+    set ::env(HOME) $orig
+} -match regexp -result {{Parent of ~ \(/foo/bar/blah\) is ([a-zA-Z]:)?(/cygwin)?(/foo/bar|foo:bar)} {Parent of ~ \(/a/b/c\) is ([a-zA-Z]:)?(/cygwin)?(/a/b|a:b)}}
+
+test filesystem-6.1 {empty file name} -returnCodes error -body {
+    open ""
+} -result {couldn't open "": no such file or directory}
+test filesystem-6.2 {empty file name} -returnCodes error -body {
+    file stat "" arr
+} -result {could not read "": no such file or directory}
+test filesystem-6.3 {empty file name} -returnCodes error -body {
+    file atime ""
+} -result {could not read "": no such file or directory}
+test filesystem-6.4 {empty file name} -returnCodes error -body {
+    file attributes ""
+} -result {could not read "": no such file or directory}
+test filesystem-6.5 {empty file name} -returnCodes error -body {
+    file copy "" ""
+} -result {error copying "": no such file or directory}
+test filesystem-6.6 {empty file name} {file delete ""} {}
+test filesystem-6.7 {empty file name} {file dirname ""} .
+test filesystem-6.8 {empty file name} {file executable ""} 0
+test filesystem-6.9 {empty file name} {file exists ""} 0
+test filesystem-6.10 {empty file name} {file extension ""} {}
+test filesystem-6.11 {empty file name} {file isdirectory ""} 0
+test filesystem-6.12 {empty file name} {file isfile ""} 0
+test filesystem-6.13 {empty file name} {file join ""} {}
+test filesystem-6.14 {empty file name} -returnCodes error -body {
+    file link ""
+} -result {could not read link "": no such file or directory}
+test filesystem-6.15 {empty file name} -returnCodes error -body {
+    file lstat "" arr
+} -result {could not read "": no such file or directory}
+test filesystem-6.16 {empty file name} -returnCodes error -body {
+    file mtime ""
+} -result {could not read "": no such file or directory}
+test filesystem-6.17 {empty file name} -returnCodes error -body {
+    file mtime "" 0
+} -result {could not read "": no such file or directory}
+test filesystem-6.18 {empty file name} -returnCodes error -body {
+    file mkdir ""
+} -result {can't create directory "": no such file or directory}
+test filesystem-6.19 {empty file name} {file nativename ""} {}
+test filesystem-6.20 {empty file name} {file normalize ""} {}
+test filesystem-6.21 {empty file name} {file owned ""} 0
+test filesystem-6.22 {empty file name} {file pathtype ""} relative
+test filesystem-6.23 {empty file name} {file readable ""} 0
+test filesystem-6.24 {empty file name} -returnCodes error -body {
+    file readlink ""
+} -result {could not read link "": no such file or directory}
+test filesystem-6.25 {empty file name} -returnCodes error -body {
+    file rename "" ""
+} -result {error renaming "": no such file or directory}
+test filesystem-6.26 {empty file name} {file rootname ""} {}
+test filesystem-6.27 {empty file name} -returnCodes error -body {
+    file separator ""
+} -result {unrecognised path}
+test filesystem-6.28 {empty file name} -returnCodes error -body {
+    file size ""
+} -result {could not read "": no such file or directory}
+test filesystem-6.29 {empty file name} {file split ""} {}
+test filesystem-6.30 {empty file name} -returnCodes error -body {
+    file system ""
+} -result {unrecognised path}
+test filesystem-6.31 {empty file name} {file tail ""} {}
+test filesystem-6.32 {empty file name} -returnCodes error -body {
+    file type ""
+} -result {could not read "": no such file or directory}
+test filesystem-6.33 {empty file name} {file writable ""} 0
+test filesystem-6.34 {file name with (invalid) nul character} {
+    list [catch "open foo\x00" msg] $msg
+} [list 1 "couldn't open \"foo\x00\": filename is invalid on this platform"]
+
+# Make sure the testfilesystem hasn't been registered.
+if {[testConstraint testfilesystem]} {
+    while {![catch {testfilesystem 0}]} {}
+}
+
+test filesystem-7.1.1 {load from vfs} -setup {
+    set dir [pwd]
+} -constraints {win testsimplefilesystem loaddll} -body {
+    # This may cause a crash on exit
+    cd [file dirname $::ddelib]
+    testsimplefilesystem 1
+    # This loads dde via a complex copy-to-temp operation
+    load simplefs:/[file tail $::ddelib] dde
+    testsimplefilesystem 0
+    return ok
+    # The real result of this test is what happens when Tcl exits.
+} -cleanup {
+    cd $dir
+} -result ok
+test filesystem-7.1.2 {load from vfs, and then unload again} -setup {
+    set dir [pwd]
+} -constraints {win testsimplefilesystem loaddll} -body {
+    # This may cause a crash on exit
+    cd [file dirname $::reglib]
+    testsimplefilesystem 1
+    # This loads reg via a complex copy-to-temp operation
+    load simplefs:/[file tail $::reglib] Registry
+    unload simplefs:/[file tail $::reglib]
+    testsimplefilesystem 0
+    return ok
+    # The real result of this test is what happens when Tcl exits.
+} -cleanup {
+    cd $dir
+} -result ok
+test filesystem-7.2 {cross-filesystem copy from vfs maintains mtime} -setup {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+} -constraints testsimplefilesystem -body {
+    # We created this file several tests ago.
+    set origtime [file mtime gorp.file]
+    set res [file exists gorp.file]
+    testsimplefilesystem 1
+    file delete -force theCopy
+    file copy simplefs:/gorp.file theCopy
+    testsimplefilesystem 0
+    set newtime [file mtime theCopy]
+    lappend res [expr {$origtime == $newtime ? 1 : "$origtime != $newtime"}]
+} -cleanup {
+    catch {file delete theCopy}
+    cd $dir
+} -result {1 1}
+test filesystem-7.3 {glob in simplefs} -setup {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+} -constraints testsimplefilesystem -body {
+    file mkdir simpledir
+    close [open [file join simpledir simplefile] w]
+    testsimplefilesystem 1
+    glob -nocomplain -dir simplefs:/simpledir *
+} -cleanup {
+    catch {testsimplefilesystem 0}
+    file delete -force simpledir
+    cd $dir
+} -result {simplefs:/simpledir/simplefile}
+test filesystem-7.3.1 {glob in simplefs: no path/dir} -setup {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+} -constraints testsimplefilesystem -body {
+    file mkdir simpledir
+    close [open [file join simpledir simplefile] w]
+    testsimplefilesystem 1
+    set res [glob -nocomplain simplefs:/simpledir/*]
+    lappend res {*}[glob -nocomplain simplefs:/simpledir]
+} -cleanup {
+    catch {testsimplefilesystem 0}
+    file delete -force simpledir
+    cd $dir
+} -result {simplefs:/simpledir/simplefile simplefs:/simpledir}
+test filesystem-7.3.2 {glob in simplefs: no path/dir, no subdirectory} -setup {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+} -constraints testsimplefilesystem -body {
+    file mkdir simpledir
+    close [open [file join simpledir simplefile] w]
+    testsimplefilesystem 1
+    glob -nocomplain simplefs:/s*
+} -cleanup {
+    catch {testsimplefilesystem 0}
+    file delete -force simpledir
+    cd $dir
+} -match glob -result ?*
+test filesystem-7.3.3 {glob in simplefs: pattern is a volume} -setup {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+} -constraints testsimplefilesystem -body {
+    file mkdir simpledir
+    close [open [file join simpledir simplefile] w]
+    testsimplefilesystem 1
+    glob -nocomplain simplefs:/*
+} -cleanup {
+    testsimplefilesystem 0
+    file delete -force simpledir
+    cd $dir
+} -match glob -result ?*
+test filesystem-7.4 {cross-filesystem file copy with -force} -setup {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+    set fout [open [file join simplefile] w]
+    puts -nonewline $fout "1234567890"
+    close $fout
+    testsimplefilesystem 1
+} -constraints testsimplefilesystem -body {
+    # First copy should succeed
+    set res [catch {file copy simplefs:/simplefile file2} err]
+    lappend res $err
+    # Second copy should fail (no -force)
+    lappend res [catch {file copy simplefs:/simplefile file2} err]
+    lappend res $err
+    # Third copy should succeed (-force)
+    lappend res [catch {file copy -force simplefs:/simplefile file2} err]
+    lappend res $err
+    lappend res [file exists file2]
+} -cleanup {
+    catch {testsimplefilesystem 0}
+    file delete -force simplefile
+    file delete -force file2
+    cd $dir
+} -result {0 {} 1 {error copying "simplefs:/simplefile" to "file2": file already exists} 0 {} 1}
+test filesystem-7.5 {cross-filesystem file copy with -force} -setup {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+    set fout [open [file join simplefile] w]
+    puts -nonewline $fout "1234567890"
+    close $fout
+    testsimplefilesystem 1
+} -constraints {testsimplefilesystem unix} -body {
+    # First copy should succeed
+    set res [catch {file copy simplefs:/simplefile file2} err]
+    lappend res $err
+    file attributes file2 -permissions 0000
+    # Second copy should fail (no -force)
+    lappend res [catch {file copy simplefs:/simplefile file2} err]
+    lappend res $err
+    # Third copy should succeed (-force)
+    lappend res [catch {file copy -force simplefs:/simplefile file2} err]
+    lappend res $err
+    lappend res [file exists file2]
+} -cleanup {
+    testsimplefilesystem 0
+    file delete -force simplefile
+    file delete -force file2
+    cd $dir
+} -result {0 {} 1 {error copying "simplefs:/simplefile" to "file2": file already exists} 0 {} 1}
+test filesystem-7.6 {cross-filesystem dir copy with -force} -setup {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+    file delete -force simpledir
+    file mkdir simpledir
+    file mkdir dir2
+    set fout [open [file join simpledir simplefile] w]
+    puts -nonewline $fout "1234567890"
+    close $fout
+    testsimplefilesystem 1
+} -constraints testsimplefilesystem -body {
+    # First copy should succeed
+    set res [catch {file copy simplefs:/simpledir dir2} err]
+    lappend res $err
+    # Second copy should fail (no -force)
+    lappend res [catch {file copy simplefs:/simpledir dir2} err]
+    lappend res $err
+    # Third copy should succeed (-force)
+    lappend res [catch {file copy -force simplefs:/simpledir dir2} err]
+    lappend res $err
+    lappend res [file exists [file join dir2 simpledir]] \
+	    [file exists [file join dir2 simpledir simplefile]]
+} -cleanup {
+    testsimplefilesystem 0
+    file delete -force simpledir
+    file delete -force dir2
+    cd $dir
+} -result {0 {} 1 {error copying "simplefs:/simpledir" to "dir2/simpledir": file already exists} 0 {} 1 1}
+test filesystem-7.7 {cross-filesystem dir copy with -force} -setup {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+    file delete -force simpledir
+    file mkdir simpledir
+    file mkdir dir2
+    set fout [open [file join simpledir simplefile] w]
+    puts -nonewline $fout "1234567890"
+    close $fout
+    testsimplefilesystem 1
+} -constraints {testsimplefilesystem unix} -body {
+    # First copy should succeed
+    set res [catch {file copy simplefs:/simpledir dir2} err]
+    lappend res $err
+    # Second copy should fail (no -force)
+    lappend res [catch {file copy simplefs:/simpledir dir2} err]
+    lappend res $err
+    # Third copy should succeed (-force)
+    # I've noticed on some Unices that this only succeeds intermittently (some
+    # runs work, some fail). This needs examining further.
+    lappend res [catch {file copy -force simplefs:/simpledir dir2} err]
+    lappend res $err
+    lappend res [file exists [file join dir2 simpledir]] \
+	    [file exists [file join dir2 simpledir simplefile]]
+} -cleanup {
+    testsimplefilesystem 0
+    file delete -force simpledir
+    file delete -force dir2
+    cd $dir
+} -result {0 {} 1 {error copying "simplefs:/simpledir" to "dir2/simpledir": file already exists} 0 {} 1 1}
+removeFile gorp.file
+test filesystem-7.8 {vfs cd} -setup {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+    file delete -force simpledir
+    file mkdir simpledir
+    testsimplefilesystem 1
+} -constraints testsimplefilesystem -body {
+    # This can variously cause an infinite loop or simply have no effect at
+    # all (before certain bugs were fixed, of course).
+    cd simplefs:/simpledir
+    pwd
+} -cleanup {
+    cd [tcltest::temporaryDirectory]
+    testsimplefilesystem 0
+    file delete -force simpledir
+    cd $dir
+} -result {simplefs:/simpledir}
+
+test filesystem-8.1 {relative path objects and caching of pwd} -setup {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+} -body {
+    makeDirectory abc
+    makeDirectory def
+    makeFile "contents" [file join abc foo]
+    cd abc
+    set f "foo"
+    set res {}
+    lappend res [file exists $f]
+    lappend res [file exists $f]
+    cd ..
+    cd def
+    # If we haven't cleared the object's cwd cache, Tcl will think it still
+    # exists.
+    lappend res [file exists $f]
+    lappend res [file exists $f]
+} -cleanup {
+    removeFile [file join abc foo]
+    removeDirectory abc
+    removeDirectory def
+    cd $dir
+} -result {1 1 0 0}
+test filesystem-8.2 {relative path objects and use of pwd} -setup {
+    set origdir [pwd]
+    cd [tcltest::temporaryDirectory]
+} -body {
+    set dir "abc"
+    makeDirectory $dir
+    makeFile "contents" [file join abc foo]
+    cd $dir
+    file exists [lindex [glob *] 0]
+} -cleanup {
+    cd [tcltest::temporaryDirectory]
+    removeFile [file join abc foo]
+    removeDirectory abc
+    cd $origdir
+} -result 1
+test filesystem-8.3 {path objects and empty string} {
+    set anchor ""
+    set dst foo
+    set res $dst
+    set yyy [file split $anchor]
+    set dst [file join  $anchor $dst]
+    lappend res $dst $yyy
+} {foo foo {}}
+
+proc TestFind1 {d f} {
+    set r1 [file exists [file join $d $f]]
+    lappend res "[file join $d $f] found: $r1"
+    lappend res "is dir a dir? [file isdirectory $d]"
+    set r2 [file exists [file join $d $f]]
+    lappend res "[file join $d $f] found: $r2"
+    return $res
+}
+proc TestFind2 {d f} {
+    set r1 [file exists [file join $d $f]]
+    lappend res "[file join $d $f] found: $r1"
+    lappend res "is dir a dir? [file isdirectory [file join $d]]"
+    set r2 [file exists [file join $d $f]]
+    lappend res "[file join $d $f] found: $r2"
+    return $res
+}
+
+test filesystem-9.1 {path objects and join and object rep} -setup {
+    set origdir [pwd]
+    cd [tcltest::temporaryDirectory]
+} -body {
+    file mkdir [file join a b c]
+    TestFind1 a [file join b . c]
+} -cleanup {
+    file delete -force a
+    cd $origdir
+} -result {{a/b/./c found: 1} {is dir a dir? 1} {a/b/./c found: 1}}
+test filesystem-9.2 {path objects and join and object rep} -setup {
+    set origdir [pwd]
+    cd [tcltest::temporaryDirectory]
+} -body {
+    file mkdir [file join a b c]
+    TestFind2 a [file join b . c]
+} -cleanup {
+    file delete -force a
+    cd $origdir
+} -result {{a/b/./c found: 1} {is dir a dir? 1} {a/b/./c found: 1}}
+test filesystem-9.2.1 {path objects and join and object rep} -setup {
+    set origdir [pwd]
+    cd [tcltest::temporaryDirectory]
+} -body {
+    file mkdir [file join a b c]
+    TestFind2 a [file join b .]
+} -cleanup {
+    file delete -force a
+    cd $origdir
+} -result {{a/b/. found: 1} {is dir a dir? 1} {a/b/. found: 1}}
+test filesystem-9.3 {path objects and join and object rep} -setup {
+    set origdir [pwd]
+    cd [tcltest::temporaryDirectory]
+} -body {
+    file mkdir [file join a b c]
+    TestFind1 a [file join b .. b c]
+} -cleanup {
+    file delete -force a
+    cd $origdir
+} -result {{a/b/../b/c found: 1} {is dir a dir? 1} {a/b/../b/c found: 1}}
+test filesystem-9.4 {path objects and join and object rep} -setup {
+    set origdir [pwd]
+    cd [tcltest::temporaryDirectory]
+} -body {
+    file mkdir [file join a b c]
+    TestFind2 a [file join b .. b c]
+} -cleanup {
+    file delete -force a
+    cd $origdir
+} -result {{a/b/../b/c found: 1} {is dir a dir? 1} {a/b/../b/c found: 1}}
+test filesystem-9.5 {path objects and file tail and object rep} -setup {
+    set origdir [pwd]
+    cd [tcltest::temporaryDirectory]
+} -body {
+    file mkdir dgp
+    close [open dgp/test w]
+    foreach relative [glob -nocomplain [file join * test]] {
+	set absolute [file join [pwd] $relative]
+	set res [list [file tail $absolute] "test"]
+    }
+    return $res
+} -cleanup {
+    file delete -force dgp 
+    cd $origdir
+} -result {test test}
+test filesystem-9.6 {path objects and file tail and object rep} win {
+    set res {}
+    set p "C:\\toto"
+    lappend res [file join $p toto]
+    file isdirectory $p
+    lappend res [file join $p toto]
+} {C:/toto/toto C:/toto/toto}
+test filesystem-9.7 {path objects and glob and file tail and tilde} -setup {
+    set res {}
+    set origdir [pwd]
+    cd [tcltest::temporaryDirectory]
+} -body {
+    file mkdir tilde
+    close [open tilde/~testNotExist w]
+    cd tilde
+    set file [lindex [glob *test*] 0]
+    lappend res [file exists $file] [catch {file tail $file} r] $r
+    lappend res $file
+    lappend res [file exists $file] [catch {file tail $file} r] $r
+    lappend res [catch {file tail $file} r] $r
+} -cleanup {
+    cd [tcltest::temporaryDirectory]
+    file delete -force tilde
+    cd $origdir
+} -result {0 1 {user "testNotExist" doesn't exist} ~testNotExist 0 1 {user "testNotExist" doesn't exist} 1 {user "testNotExist" doesn't exist}}
+test filesystem-9.8 {path objects and glob and file tail and tilde} -setup {
+    set res {}
+    set origdir [pwd]
+    cd [tcltest::temporaryDirectory]
+} -body {
+    file mkdir tilde
+    close [open tilde/~testNotExist w]
+    cd tilde
+    set file1 [lindex [glob *test*] 0]
+    set file2 "~testNotExist"
+    lappend res $file1 $file2
+    lappend res [catch {file tail $file1} r] $r
+    lappend res [catch {file tail $file2} r] $r
+} -cleanup {
+    cd [tcltest::temporaryDirectory]
+    file delete -force tilde
+    cd $origdir
+} -result {~testNotExist ~testNotExist 1 {user "testNotExist" doesn't exist} 1 {user "testNotExist" doesn't exist}}
+test filesystem-9.9 {path objects and glob and file tail and tilde} -setup {
+    set res {}
+    set origdir [pwd]
+    cd [tcltest::temporaryDirectory]
+} -body {
+    file mkdir tilde
+    close [open tilde/~testNotExist w]
+    cd tilde
+    set file1 [lindex [glob *test*] 0]
+    set file2 "~testNotExist"
+    lappend res [catch {file exists $file1} r] $r
+    lappend res [catch {file exists $file2} r] $r
+    lappend res [string equal $file1 $file2]
+} -cleanup {
+    cd [tcltest::temporaryDirectory]
+    file delete -force tilde
+    cd $origdir
+} -result {0 0 0 0 1}
+
+# ----------------------------------------------------------------------
+
+test filesystem-10.1 {Bug 3414754} {
+    string match */ [file join [pwd] foo/]
+} 0
+
+cleanupTests
+unset -nocomplain drive drives
+}
+namespace delete ::tcl::test::fileSystem
+return
+
+# Local Variables:
+# mode: tcl
+# End:

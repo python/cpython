@@ -1,0 +1,404 @@
+# Commands covered:  none
+#
+# This file contains a collection of tests for Tcl_LinkVar and related library
+# procedures. Sourcing this file into Tcl runs the tests and generates output
+# for errors. No output means no errors were found.
+#
+# Copyright (c) 1993 The Regents of the University of California.
+# Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testlink [llength [info commands testlink]]
+
+foreach i {int real bool string} {
+    unset -nocomplain $i
+}
+
+test link-0.1 {leak test} {testlink} {
+    interp create i
+    load {} Tcltest i
+    i eval {
+	testlink create 1 0 0 0 0 0 0 0 0 0 0 0 0 0
+	namespace delete ::
+    }
+    interp delete i
+} {}
+
+test link-1.1 {reading C variables from Tcl} -constraints {testlink} -setup {
+    testlink delete
+} -body {
+    testlink set 43 1.23 4 - 12341234 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
+    testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+    list $int $real $bool $string $wide
+} -result {43 1.23 1 NULL 12341234}
+test link-1.2 {reading C variables from Tcl} -constraints {testlink} -setup {
+    testlink delete
+} -body {
+    testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+    testlink set -3 2 0 "A long string with spaces"  43214321 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
+    list $int $real $bool $string $wide $int $real $bool $string $wide
+} -result {-3 2.0 0 {A long string with spaces} 43214321 -3 2.0 0 {A long string with spaces} 43214321}
+
+test link-2.1 {writing C variables from Tcl} -constraints {testlink} -setup {
+    testlink delete
+} -body {
+    testlink set 43 1.21 4 - 56785678 64 250 30000 60000 0xbaadbeef 12321 32123 3.25 1231231234
+    testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+    set int "0o0721"
+    set real -10.5
+    set bool true
+    set string abcdef
+    set wide 135135
+    set char 79
+    set uchar 161
+    set short 8000
+    set ushort 40000
+    set uint 0xc001babe
+    set long 34543
+    set ulong 567890
+    set float 1.0987654321
+    set uwide 357357357357
+    concat [testlink get] | $int $real $bool $string $wide $char $uchar $short $ushort $uint $long $ulong $float $uwide
+} -result {465 -10.5 1 abcdef 135135 79 161 8000 40000 -1073628482 34543 567890 1.0987653732299805 357357357357 | 0o0721 -10.5 true abcdef 135135 79 161 8000 40000 0xc001babe 34543 567890 1.0987654321 357357357357}
+test link-2.2 {writing bad values into variables} -setup {
+    testlink delete
+} -constraints {testlink} -body {
+    testlink set 43 1.23 4 - 56785678 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
+    testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+    list [catch {set int 09a} msg] $msg $int
+} -result {1 {can't set "int": variable must have integer value} 43}
+test link-2.3 {writing bad values into variables} -setup {
+    testlink delete
+} -constraints {testlink} -body {
+    testlink set 43 1.23 4 - 56785678 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
+    testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+    list [catch {set real 1.x3} msg] $msg $real
+} -result {1 {can't set "real": variable must have real value} 1.23}
+test link-2.4 {writing bad values into variables} -setup {
+    testlink delete
+} -constraints {testlink} -body {
+    testlink set 43 1.23 4 - 56785678 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
+    testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+    list [catch {set bool gorp} msg] $msg $bool
+} -result {1 {can't set "bool": variable must have boolean value} 1}
+test link-2.5 {writing bad values into variables} -setup {
+    testlink delete
+} -constraints {testlink} -body {
+    testlink set 43 1.23 4 - 56785678 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
+    testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+    list [catch {set wide gorp} msg] $msg $bool
+} -result {1 {can't set "wide": variable must have integer value} 1}
+test link-2.6 {writing C variables from Tcl} -constraints {testlink} -setup {
+    testlink delete
+} -body {
+    testlink set 43 1.21 4 - 56785678 64 250 30000 60000 0xbaadbeef 12321 32123 3.25 1231231234
+    testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+    set int "+"
+    set real "+"
+    set bool 1
+    set string "+"
+    set wide "+"
+    set char "+"
+    set uchar "+"
+    set short "+"
+    set ushort "+"
+    set uint "+"
+    set long "+"
+    set ulong "+"
+    set float "+"
+    set uwide "+"
+    concat [testlink get] | $int $real $bool $string $wide $char $uchar $short $ushort $uint $long $ulong $float $uwide
+} -result {1 1.0 1 + 1 1 1 1 1 1 1 1 1.0 1 | + + 1 + + + + + + + + + + +}
+test link-2.7 {writing C variables from Tcl} -constraints {testlink} -setup {
+    testlink delete
+} -body {
+    testlink set 43 1.21 4 - 56785678 64 250 30000 60000 0xbaadbeef 12321 32123 3.25 1231231234
+    testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+    set int "-"
+    set real "-"
+    set bool 0
+    set string "-"
+    set wide "-"
+    set char "-"
+    set uchar "-"
+    set short "-"
+    set ushort "-"
+    set uint "-"
+    set long "-"
+    set ulong "-"
+    set float "-"
+    set uwide "-"
+    concat [testlink get] | $int $real $bool $string $wide $char $uchar $short $ushort $uint $long $ulong $float $uwide
+} -result {0 0.0 0 - 0 0 0 0 0 0 0 0 0.0 0 | - - 0 - - - - - - - - - - -}
+test link-2.8 {writing C variables from Tcl} -constraints {testlink} -setup {
+    testlink delete
+} -body {
+    testlink set 43 1.21 4 - 56785678 64 250 30000 60000 0xbaadbeef 12321 32123 3.25 1231231234
+    testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+    set int "0x"
+    set real "0b"
+    set bool 0
+    set string "0"
+    set wide "0O"
+    set char "0X"
+    set uchar "0B"
+    set short "0O"
+    set ushort "0x"
+    set uint "0b"
+    set long "0o"
+    set ulong "0X"
+    set float "0B"
+    set uwide "0O"
+    concat [testlink get] | $int $real $bool $string $wide $char $uchar $short $ushort $uint $long $ulong $float $uwide
+} -result {0 0.0 0 0 0 0 0 0 0 0 0 0 0.0 0 | 0x 0b 0 0 0O 0X 0B 0O 0x 0b 0o 0X 0B 0O}
+test link-2.9 {writing C variables from Tcl} -constraints {testlink} -setup {
+    testlink delete
+} -body {
+    testlink set 43 1.21 4 - 56785678 64 250 30000 60000 0xbaadbeef 12321 32123 3.25 1231231234
+    testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+    set int 0
+    set real 5000e
+    set bool 0
+    set string 0
+    set wide 0
+    set char 0
+    set uchar 0
+    set short 0
+    set ushort 0
+    set uint 0
+    set long 0
+    set ulong 0
+    set float -60.00e+
+    set uwide 0
+    concat [testlink get] | $int $real $bool $string $wide $char $uchar $short $ushort $uint $long $ulong $float $uwide
+} -result {0 5000.0 0 0 0 0 0 0 0 0 0 0 -60.0 0 | 0 5000e 0 0 0 0 0 0 0 0 0 0 -60.00e+ 0}
+
+test link-3.1 {read-only variables} -constraints {testlink} -setup {
+    testlink delete
+} -body {
+    testlink set 43 1.23 4 - 56785678 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
+    testlink create 0 1 1 0 0 0 0 0 0 0 0 0 0 0
+    list [catch {set int 4} msg] $msg $int \
+	[catch {set real 10.6} msg] $msg $real \
+	[catch {set bool no} msg] $msg $bool \
+	[catch {set string "new value"} msg] $msg $string \
+	[catch {set wide 12341234} msg] $msg $wide
+} -result {1 {can't set "int": linked variable is read-only} 43 0 10.6 10.6 0 no no 1 {can't set "string": linked variable is read-only} NULL 1 {can't set "wide": linked variable is read-only} 56785678}
+test link-3.2 {read-only variables} -constraints {testlink} -setup {
+    testlink delete
+} -body {
+    testlink set 43 1.23 4 - 56785678 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
+    testlink create 1 0 0 1 1 0 0 0 0 0 0 0 0 0
+    list [catch {set int 4} msg] $msg $int \
+	[catch {set real 10.6} msg] $msg $real \
+	[catch {set bool no} msg] $msg $bool \
+	[catch {set string "new value"} msg] $msg $string\
+	[catch {set wide 12341234} msg] $msg $wide
+} -result {0 4 4 1 {can't set "real": linked variable is read-only} 1.23 1 {can't set "bool": linked variable is read-only} 1 0 {new value} {new value} 0 12341234 12341234}
+
+test link-4.1 {unsetting linked variables} -constraints {testlink} -setup {
+    testlink delete
+} -body {
+    testlink set -6 -2.5 0 stringValue 13579 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
+    testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+    unset int real bool string wide
+    list [catch {set int} msg] $msg [catch {set real} msg] $msg \
+	    [catch {set bool} msg] $msg [catch {set string} msg] $msg \
+	    [catch {set wide} msg] $msg
+} -result {0 -6 0 -2.5 0 0 0 stringValue 0 13579}
+test link-4.2 {unsetting linked variables} -constraints {testlink} -setup {
+    testlink delete
+} -body {
+    testlink set -6 -2.1 0 stringValue 97531 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
+    testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+    unset int real bool string wide
+    set int 102
+    set real 16
+    set bool true
+    set string newValue
+    set wide 333555
+    lrange [testlink get] 0 4
+} -result {102 16.0 1 newValue 333555}
+
+test link-5.1 {unlinking variables} -constraints {testlink} -setup {
+    testlink delete
+} -body {
+    testlink set -6 -2.25 0 stringValue 13579 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
+    testlink delete
+    set int xx1
+    set real qrst
+    set bool bogus
+    set string 12345
+    set wide 875421
+    set char skjdf
+    set uchar dslfjk
+    set short slkf
+    set ushort skrh
+    set uint sfdkfkh
+    set long srkjh
+    set ulong sjkg
+    set float dskjfbjfd
+    set uwide isdfsngs
+    testlink get
+} -result {-6 -2.25 0 stringValue 13579 64 250 30000 60000 -1091585346 12321 32123 3.25 1231231234}
+test link-5.2 {unlinking variables} -constraints {testlink} -setup {
+    testlink delete
+} -body {
+    testlink set -6 -2.25 0 stringValue 97531 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
+    testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+    testlink delete
+    testlink set 25 14.7 7 - 999999 65 251 30001 60001 0xbabebeef 12322 32124 3.125 12312312340
+    list $int $real $bool $string $wide $char $uchar $short $ushort $uint $long $ulong $float $uwide
+} -result {-6 -2.25 0 stringValue 97531 64 250 30000 60000 3203381950 12321 32123 3.25 1231231234}
+
+test link-6.1 {errors in setting up link} -setup {
+    testlink delete
+    unset -nocomplain int
+} -constraints {testlink} -body {
+    set int(44) 1
+    testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+} -cleanup {
+    unset -nocomplain int
+} -returnCodes error -result {can't set "int": variable is array}
+
+test link-7.1 {access to linked variables via upvar} -setup {
+    testlink delete
+} -constraints {testlink} -body {
+    proc x {} {
+	upvar int y
+	unset y
+    }
+    testlink create 1 0 0 0 0 0 0 0 0 0 0 0 0 0
+    testlink set 14 {} {} {} {} {} {} {} {} {} {} {} {} {}
+    x
+    list [catch {set int} msg] $msg
+} -result {0 14}
+test link-7.2 {access to linked variables via upvar} -setup {
+    testlink delete
+} -constraints {testlink} -body {
+    proc x {} {
+	upvar int y
+	return [set y]
+    }
+    testlink create 1 0 0 0 0 0 0 0 0 0 0 0 0 0
+    testlink set 0 {} {} {} {} {} {} {} {} {} {} {} {} {}
+    set int
+    testlink set 23 {} {} {} {} {} {} {} {} {} {} {} {} {}
+    x
+    list [x] $int
+} -result {23 23}
+test link-7.3 {access to linked variables via upvar} -setup {
+    testlink delete
+} -constraints {testlink} -body {
+    proc x {} {
+	upvar int y
+	set y 44
+    }
+    testlink create 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+    testlink set 11 {} {} {} {} {} {} {} {} {} {} {} {} {}
+    list [catch x msg] $msg $int
+} -result {1 {can't set "y": linked variable is read-only} 11}
+test link-7.4 {access to linked variables via upvar} -setup {
+    testlink delete
+} -constraints {testlink} -body {
+    proc x {} {
+	upvar int y
+	set y abc
+    }
+    testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+    testlink set -4 {} {} {} {} {} {} {} {} {} {} {} {} {}
+    list [catch x msg] $msg $int
+} -result {1 {can't set "y": variable must have integer value} -4}
+test link-7.5 {access to linked variables via upvar} -setup {
+    testlink delete
+} -constraints {testlink} -body {
+    proc x {} {
+	upvar real y
+	set y abc
+    }
+    testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+    testlink set -4 16.75 {} {} {} {} {} {} {} {} {} {} {} {}
+    list [catch x msg] $msg $real
+} -result {1 {can't set "y": variable must have real value} 16.75}
+test link-7.6 {access to linked variables via upvar} -setup {
+    testlink delete
+} -constraints {testlink} -body {
+    proc x {} {
+	upvar bool y
+	set y abc
+    }
+    testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+    testlink set -4 16.3 1 {} {} {} {} {} {} {} {} {} {} {}
+    list [catch x msg] $msg $bool
+} -result {1 {can't set "y": variable must have boolean value} 1}
+test link-7.7 {access to linked variables via upvar} -setup {
+    testlink delete
+} -constraints {testlink} -body {
+    proc x {} {
+	upvar wide y
+	set y abc
+    }
+    testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+    testlink set -4 16.3 1 {} 778899 {} {} {} {} {} {} {} {} {}
+    list [catch x msg] $msg $wide
+} -result {1 {can't set "y": variable must have integer value} 778899}
+
+test link-8.1 {Tcl_UpdateLinkedVar procedure} {testlink} {
+    proc x args {
+	global x int real bool string wide
+	lappend x $args $int $real $bool $string $wide
+    }
+    set x {}
+    testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+    testlink set 14 -2.0 0 xyzzy 995511 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
+    trace var int w x
+    testlink update 32 4.0 3 abcd 113355 65 251 30001 60001 0xbabebeef 12322 32124 3.125 12312312340
+    trace vdelete int w x
+    return $x
+} {{int {} w} 32 -2.0 0 xyzzy 995511}
+test link-8.2 {Tcl_UpdateLinkedVar procedure} {testlink} {
+    proc x args {
+	global x int real bool string wide
+	lappend x $args $int $real $bool $string $wide
+    }
+    set x {}
+    testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+    testlink set 14 -2.0 0 xyzzy 995511 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
+    testlink delete
+    trace var int w x
+    testlink update 32 4.0 6 abcd 113355 65 251 30001 60001 0xbabebeef 12322 32124 3.125 12312312340
+    trace vdelete int w x
+    return $x
+} {}
+test link-8.3 {Tcl_UpdateLinkedVar procedure, read-only variable} {testlink} {
+    testlink create 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+    list [catch {
+	testlink update 47 {} {} {} {} {} {} {} {} {} {} {} {} {}
+    } msg] $msg $int
+} {0 {} 47}
+
+catch {testlink set 0 0 0 - 0 0 0 0 0 0 0 0 0 0}
+catch {testlink delete}
+foreach i {int real bool string wide} {
+    unset -nocomplain $i
+}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:

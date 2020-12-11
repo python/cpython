@@ -1,0 +1,110 @@
+'\"
+'\" Copyright (c) 1990-1992 The Regents of the University of California.
+'\" Copyright (c) 1994-1998 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tk_AllocFontFromObj 3 8.1 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_AllocFontFromObj, Tk_GetFont, Tk_GetFontFromObj, Tk_NameOfFont, Tk_FreeFontFromObj, Tk_FreeFont \- maintain database of fonts
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Tk_Font
+\fBTk_AllocFontFromObj(\fIinterp, tkwin, objPtr\fB)\fR
+.sp
+Tk_Font
+\fBTk_GetFont(\fIinterp, tkwin, string\fB)\fR
+.sp
+Tk_Font
+\fBTk_GetFontFromObj(\fItkwin, objPtr\fB)\fR
+.sp
+const char *
+\fBTk_NameOfFont(\fItkfont\fB)\fR
+.sp
+Tk_Font
+\fBTk_FreeFontFromObj(\fItkwin, objPtr\fB)\fR
+.sp
+void
+\fBTk_FreeFont(\fItkfont\fB)\fR
+.SH ARGUMENTS
+.AS "const char" *tkfont
+.AP "Tcl_Interp" *interp in
+Interpreter to use for error reporting.  If \fBNULL\fR, then no error
+messages are left after errors.
+.AP Tk_Window tkwin in
+Token for window in which font will be used.
+.AP Tcl_Obj *objPtr in/out
+Gives name or description of font.  See documentation
+for the \fBfont\fR command for details on acceptable formats.
+Internal rep will be modified to cache corresponding Tk_Font.
+.AP "const char" *string in
+Same as \fIobjPtr\fR except description of font is passed as a string and
+resulting Tk_Font is not cached.
+.AP Tk_Font tkfont in
+Opaque font token.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_AllocFontFromObj\fR finds the font indicated by \fIobjPtr\fR and
+returns a token that represents the font.  The return value can be used
+in subsequent calls to procedures such as \fBTk_GetFontMetrics\fR,
+\fBTk_MeasureChars\fR, and \fBTk_FreeFont\fR.  The Tk_Font token
+will remain valid until
+\fBTk_FreeFontFromObj\fR or \fBTk_FreeFont\fR is called to release it.
+\fIObjPtr\fR can contain either a symbolic name or a font description; see
+the documentation for the \fBfont\fR command for a description of the
+valid formats.  If \fBTk_AllocFontFromObj\fR is unsuccessful (because,
+for example, \fIobjPtr\fR did not contain a valid font specification) then it
+returns \fBNULL\fR and leaves an error message in \fIinterp\fR's result
+if \fIinterp\fR is not \fBNULL\fR.  \fBTk_AllocFontFromObj\fR caches
+information about the return
+value in \fIobjPtr\fR, which speeds up future calls to procedures
+such as \fBTk_AllocFontFromObj\fR and \fBTk_GetFontFromObj\fR.
+.PP
+\fBTk_GetFont\fR is identical to \fBTk_AllocFontFromObj\fR except
+that the description of the font is specified with a string instead
+of an object.  This prevents \fBTk_GetFont\fR from caching the
+matching Tk_Font, so \fBTk_GetFont\fR is less efficient than
+\fBTk_AllocFontFromObj\fR.
+.PP
+\fBTk_GetFontFromObj\fR returns the token for an existing font, given
+the window and description used to create the font.
+\fBTk_GetFontFromObj\fR does not actually create the font; the font
+must already have been created with a previous call to
+\fBTk_AllocFontFromObj\fR or \fBTk_GetFont\fR.  The return
+value is cached in \fIobjPtr\fR, which speeds up
+future calls to \fBTk_GetFontFromObj\fR with the same \fIobjPtr\fR
+and \fItkwin\fR.
+.PP
+\fBTk_AllocFontFromObj\fR and \fBTk_GetFont\fR maintain
+a database of all fonts they have allocated.  If
+the same font is requested multiple times (e.g. by different
+windows or for different purposes), then a single Tk_Font will be
+shared for all uses.  The underlying resources will be freed automatically
+when no-one is using the font anymore.
+.PP
+The procedure \fBTk_NameOfFont\fR is roughly the inverse of
+\fBTk_GetFont\fR.  Given a \fItkfont\fR that was created by
+\fBTk_GetFont\fR (or \fBTk_AllocFontFromObj\fR), the return value is
+the \fIstring\fR argument that was
+passed to \fBTk_GetFont\fR to create the font.  The string returned by
+\fBTk_NameOfFont\fR is only guaranteed to persist until the \fItkfont\fR
+is deleted.  The caller must not modify this string.
+.PP
+When a font is no longer needed,
+\fBTk_FreeFontFromObj\fR or \fBTk_FreeFont\fR should be called to
+release it.  For \fBTk_FreeFontFromObj\fR the font to release is specified
+with the same information used to create it; for
+\fBTk_FreeFont\fR the font to release is specified
+with its Tk_Font token.  There should be
+exactly one call to \fBTk_FreeFontFromObj\fR or \fBTk_FreeFont\fR
+for each call to \fBTk_AllocFontFromObj\fR or \fBTk_GetFont\fR.
+.SH "SEE ALSO"
+Tk_FontId(3)
+.SH KEYWORDS
+font

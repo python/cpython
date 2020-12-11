@@ -1,0 +1,195 @@
+'\"
+'\" Copyright (c) 1990-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH pack-old n 4.0 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+pack-old \- Obsolete syntax for packer geometry manager
+.SH SYNOPSIS
+\fBpack after \fIsibling \fIwindow options\fR ?\fIwindow options \fR...?
+.sp
+\fBpack append \fIparent \fIwindow options\fR ?\fIwindow options \fR...?
+.sp
+\fBpack before \fIsibling \fIwindow options\fR ?\fIwindow options \fR...?
+.sp
+\fBpack unpack \fIwindow\fR
+.BE
+.SH DESCRIPTION
+.PP
+\fINote: this manual entry describes the syntax for the \fBpack\fI
+command as it existed before Tk version 3.3.
+Although this syntax continues to be supported for backward
+compatibility, it is obsolete and should not be used anymore.
+At some point in the future it may cease to be supported.\fR
+.PP
+The packer is a geometry manager that arranges the
+children of a parent by packing them in order around the edges of
+the parent.  The first child is placed against one side of
+the window, occupying the entire span of the window along that
+side.  This reduces the space remaining for other children as
+if the side had been moved in by the size of the first child.
+Then the next child is placed against one side of the remaining
+cavity, and so on until all children have been placed or there
+is no space left in the cavity.
+.PP
+The \fBbefore\fR, \fBafter\fR, and \fBappend\fR forms of the \fBpack\fR
+command are used to insert one or more children into the packing order
+for their parent.  The \fBbefore\fR form inserts the children before
+window \fIsibling\fR in the order;  all of the other windows must be
+siblings of \fIsibling\fR.  The \fBafter\fR form inserts the windows
+after \fIsibling\fR, and the \fBappend\fR form appends one or more
+windows to the end of the packing order for \fIparent\fR.  If a
+\fIwindow\fR named in any of these commands is already packed in
+its parent, it is removed from its current position in the packing
+order and repositioned as indicated by the command.  All of these
+commands return an empty string as result.
+.PP
+The \fBunpack\fR form of the \fBpack\fR command removes \fIwindow\fR
+from the packing order of its parent and unmaps it.  After the
+execution of this command the packer will no longer manage
+\fIwindow\fR's geometry.
+.PP
+The placement of each child is actually a four-step process;
+the \fIoptions\fR argument following each \fIwindow\fR consists of
+a list of one or more fields that govern the placement of that
+window.  In the discussion below, the term \fIcavity\fR refers
+to the space left in a parent when a particular child is placed
+(i.e. all the space that was not claimed by earlier children in
+the packing order).  The term \fIparcel\fR refers to the space
+allocated to a particular child;  this is not necessarily the
+same as the child window's final geometry.
+.PP
+The first step in placing a child is to determine which side of
+the cavity it will lie against.  Any one of the following options
+may be used to specify a side:
+.TP
+\fBtop\fR
+Position the child's parcel against the top of the cavity,
+occupying the full width of the cavity.
+.TP
+\fBbottom\fR
+Position the child's parcel against the bottom of the cavity,
+occupying the full width of the cavity.
+.TP
+\fBleft\fR
+Position the child's parcel against the left side of the cavity,
+occupying the full height of the cavity.
+.TP
+\fBright\fR
+Position the child's parcel against the right side of the cavity,
+occupying the full height of the cavity.
+.LP
+At most one of these options should be specified for any given window.
+If no side is specified, then the default is \fBtop\fR.
+.PP
+The second step is to decide on a parcel for the child.  For \fBtop\fR
+and \fBbottom\fR windows, the desired parcel width is normally the cavity
+width and the desired parcel height is the window's requested height,
+as passed to \fBTk_GeometryRequest\fR. For \fBleft\fR and \fBright\fR
+windows, the desired parcel height is normally the cavity height and the
+desired width is the window's requested width.  However, extra
+space may be requested for the window using any of the following
+options:
+.TP 12
+\fBpadx \fInum\fR
+Add \fInum\fR pixels to the window's requested width before computing
+the parcel size as described above.
+.TP 12
+\fBpady \fInum\fR
+Add \fInum\fR pixels to the window's requested height before computing
+the parcel size as described above.
+.TP 12
+\fBexpand\fR
+This option requests that the window's parcel absorb any extra space left over
+in the parent's cavity after packing all the children.
+The amount of space left over depends on the sizes requested by the
+other children, and may be zero.  If several windows have all specified
+\fBexpand\fR then the extra width will be divided equally among all the
+\fBleft\fR and \fBright\fR windows that specified \fBexpand\fR and
+the extra height will be divided equally among all the \fBtop\fR and
+\fBbottom\fR windows that specified \fBexpand\fR.
+.LP
+If the desired width or height for a parcel is larger than the corresponding
+dimension of the cavity, then the cavity's dimension is used instead.
+.PP
+The third step in placing the window is to decide on the window's
+width and height.  The default is for the window to receive either
+its requested width and height or the those of the parcel, whichever
+is smaller.  If the parcel is larger than the window's requested
+size, then the following options may be used to expand the
+window to partially or completely fill the parcel:
+.TP
+\fBfill\fR
+Set the window's size to equal the parcel size.
+.TP
+\fBfillx\fR
+Increase the window's width to equal the parcel's width, but retain
+the window's requested height.
+.TP
+\fBfilly\fR
+Increase the window's height to equal the parcel's height, but retain
+the window's requested width.
+.PP
+The last step is to decide the window's location within its parcel.
+If the window's size equals the parcel's size, then the window simply
+fills the entire parcel.  If the parcel is larger than the window,
+then one of
+the following options may be used to specify where the window should
+be positioned within its parcel:
+.TP 15
+\fBframe center\fR
+Center the window in its parcel.  This is the default if no framing
+option is specified.
+.TP 15
+\fBframe n\fR
+Position the window with its top edge centered on the top edge of
+the parcel.
+.TP 15
+\fBframe ne\fR
+Position the window with its upper-right corner at the upper-right corner
+of the parcel.
+.TP 15
+\fBframe e\fR
+Position the window with its right edge centered on the right edge of
+the parcel.
+.TP 15
+\fBframe se\fR
+Position the window with its lower-right corner at the lower-right corner
+of the parcel.
+.TP 15
+\fBframe s\fR
+Position the window with its bottom edge centered on the bottom edge of
+the parcel.
+.TP 15
+\fBframe sw\fR
+Position the window with its lower-left corner at the lower-left corner
+of the parcel.
+.TP 15
+\fBframe w\fR
+Position the window with its left edge centered on the left edge of
+the parcel.
+.TP 15
+\fBframe nw\fR
+Position the window with its upper-left corner at the upper-left corner
+of the parcel.
+.PP
+The packer manages the mapped/unmapped state of all the packed
+children windows.  It automatically maps the windows when it packs
+them, and it unmaps any windows for which there was no space left
+in the cavity.
+.PP
+The packer makes geometry requests on behalf of the parent windows
+it manages.  For each parent window it requests a size large enough
+to accommodate all the options specified by all the packed children,
+such that zero space would be leftover for \fBexpand\fR options.
+.SH KEYWORDS
+geometry manager, location, packer, parcel, size
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

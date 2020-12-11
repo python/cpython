@@ -1,0 +1,103 @@
+'\"
+'\" Copyright (c) 2008 Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH try n 8.6 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+try \- Trap and process errors and exceptions
+.SH SYNOPSIS
+\fBtry\fI body\fR ?\fIhandler...\fR? ?\fBfinally\fI script\fR?
+.BE
+.SH DESCRIPTION
+.PP
+This command executes the script \fIbody\fR and, depending on what the outcome
+of that script is (normal exit, error, or some other exceptional result), runs
+a handler script to deal with the case. Once that has all happened, if the
+\fBfinally\fR clause is present, the \fIscript\fR it includes will be run and
+the result of the handler (or the \fIbody\fR if no handler matched) is allowed
+to continue to propagate. Note that the \fBfinally\fR clause is processed even
+if an error occurs and irrespective of which, if any, \fIhandler\fR is used.
+.PP
+The \fIhandler\fR clauses are each expressed as several words, and must have
+one of the following forms:
+.TP
+\fBon \fIcode variableList script\fR
+.
+This clause matches if the evaluation of \fIbody\fR completed with the
+exception code \fIcode\fR. The \fIcode\fR may be expressed as an integer or
+one of the following literal words: \fBok\fR, \fBerror\fR, \fBreturn\fR,
+\fBbreak\fR, or \fBcontinue\fR. Those literals correspond to the integers 0
+through 4 respectively.
+.TP
+\fBtrap \fIpattern variableList script\fR
+.
+This clause matches if the evaluation of \fIbody\fR resulted in an error and
+the prefix of the \fB\-errorcode\fR from the interpreter's status dictionary
+is equal to the \fIpattern\fR. The number of prefix words taken from the
+\fB\-errorcode\fR is equal to the list-length of \fIpattern\fR, and inter-word
+spaces are normalized in both the \fB\-errorcode\fR and \fIpattern\fR before
+comparison.
+.PP
+The \fIvariableList\fR word in each \fIhandler\fR is always interpreted as a
+list of variable names. If the first word of the list is present and
+non-empty, it names a variable into which the result of the evaluation of
+\fIbody\fR (from the main \fBtry\fR) will be placed; this will contain the
+human-readable form of any errors. If the second word of the list is present
+and non-empty, it names a variable into which the options dictionary of the
+interpreter at the moment of completion of execution of \fIbody\fR
+will be placed.
+.PP
+The \fIscript\fR word of each \fIhandler\fR is also always interpreted the
+same: as a Tcl script to evaluate if the clause is matched. If \fIscript\fR is
+a literal
+.QW \-
+and the \fIhandler\fR is not the last one, the \fIscript\fR of the following
+\fIhandler\fR is invoked instead (just like with the \fBswitch\fR command).
+.PP
+Note that \fIhandler\fR clauses are matched against in order, and that the
+first matching one is always selected. At most one \fIhandler\fR clause will
+selected. As a consequence, an \fBon error\fR will mask any subsequent
+\fBtrap\fR in the \fBtry\fR. Also note that \fBon error\fR is equivalent to
+\fBtrap {}\fR.
+.PP
+If an exception (i.e. any non-\fBok\fR result) occurs during the evaluation of
+either the \fIhandler\fR or the \fBfinally\fR clause, the original exception's
+status dictionary will be added to the new exception's status dictionary under
+the \fB\-during\fR key.
+.SH EXAMPLES
+.PP
+Ensure that a file is closed no matter what:
+.PP
+.CS
+set f [open /some/file/name a]
+\fBtry\fR {
+    puts $f "some message"
+    # ...
+} \fBfinally\fR {
+    close $f
+}
+.CE
+.PP
+Handle different reasons for a file to not be openable for reading:
+.PP
+.CS
+\fBtry\fR {
+    set f [open /some/file/name w]
+} \fBtrap\fR {POSIX EISDIR} {} {
+    puts "failed to open /some/file/name: it's a directory"
+} \fBtrap\fR {POSIX ENOENT} {} {
+    puts "failed to open /some/file/name: it doesn't exist"
+}
+.CE
+.SH "SEE ALSO"
+catch(n), error(n), return(n), throw(n)
+.SH "KEYWORDS"
+cleanup, error, exception, final, resource management
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

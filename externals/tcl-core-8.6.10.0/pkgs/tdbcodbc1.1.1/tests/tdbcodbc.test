@@ -1,0 +1,3906 @@
+# tdbcodbc.test --
+#
+#	Tests for the tdbc::odbc bridge
+#
+# Copyright (c) 2008 by Kevin B. Kenny
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id: tdbcodbc.tcl,v 1.47 2008/02/27 02:08:27 kennykb Exp $
+#
+#------------------------------------------------------------------------------
+
+package require tcltest 2
+namespace import -force ::tcltest::*
+loadTestedCommands
+package require tdbc::odbc
+
+# Test setup. Figure out what sort of database we have.  Default on Windows
+# is SQL Server Express, and on Unix is SQLite3
+
+if {![info exists ::env(TDBCODBC_TEST_TYPE)] || $::env(TDBCODBC_TEST_TYPE) eq {default}} {
+    set testdir [makeDirectory tdbctest]
+    if {$tcl_platform(platform) eq {windows}} {
+	set ::env(TDBCODBC_TEST_TYPE) sqlserver
+    } else {
+	set ::env(TDBCODBC_TEST_TYPE) sqlite
+    }
+}
+
+# Jet and SQL Server are Windows-only
+
+if {$::env(TDBCODBC_TEST_TYPE) in {jet sqlserver}} {
+    if {$::tcl_platform(platform) ne {windows}} {
+	puts "$::env(TDBCODBC_TEST_TYPE) testing is available on the\
+                     Windows platform only"
+	removeDirectory tdbctest
+	cleanupTests
+	return
+    }
+}
+
+# Configure the selected database
+
+switch -exact -- $::env(TDBCODBC_TEST_TYPE) {
+
+    jet {
+
+	# Begin by creating an empty .MDB file
+
+	set testdir [makeDirectory tdbctest]
+	set testFileName test.mdb
+	set testDBName [makeFile {} $testFileName $testdir]
+	set f [open [file join [file dirname [info script]] test.mdb] rb]
+	set emptyMDB [read $f]
+	close $f
+	set f [open $testDBName wb]
+	puts -nonewline $f $emptyMDB
+	close $f
+
+	# Set connection string
+
+	set testDBQ [file native [file normalize $testDBName]]
+	set connStr "DRIVER={Microsoft Access Driver (*.mdb)};FIL={MS Access};"
+	append connStr DBQ= $testDBQ
+
+	tcltest::testConstraint jet 1
+
+    }
+    sqlite {
+
+	# Begin with a nonexistent file for the test database
+
+	set testdir [makeDirectory tdbctest]
+	set testFileName test.db
+	set testDBName [file join $testdir $testFileName]
+	catch {file delete $testDBName}
+
+	# Set up the connection string
+
+	if {$::tcl_platform(platform) eq {windows}} {
+	    set connStr "DRIVER=SQLite3 ODBC Driver;"
+	} else {
+	    set connStr "DRIVER=SQLite3;"
+	}
+	append connStr Database= $testDBName
+
+	tcltest::testConstraint sqlite 1
+    }
+    sqlserver {
+
+	# Set up the connection string for 'tdbcTestDB' on the
+	# local machine using SQLEXPRESS
+
+	set dataSource "Provider=SQLNCLI"
+	append dataSource \; "Server=." \\ "SQLEXPRESS"
+	append dataSource \; "Initial Catalog=tdbcTestDB"
+	append dataSource \; "Trusted_Connection=yes"
+	set connStr "DRIVER=SQL Native Client;$dataSource"
+
+	tcltest::testConstraint sqlserver 1
+    }
+}
+
+tcltest::testConstraint odbcinst \
+    [expr {[namespace which -command ::tdbc::odbc::datasource] ne {}}]
+
+#-------------------------------------------------------------------------------
+
+test tdbc::odbc-1.1 {create a connection, wrong # args} {*}{
+    -body {
+	tdbc::odbc::connection create
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test tdbc::odbc-1.2 {create a connection, connection string missing} {*}{
+    -body {
+	tdbc::odbc::connection create db
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test tdbc::odbc-1.3 {create a connection, failure} {*}{
+    -body {
+	set status [catch {
+	    tdbc::odbc::connection create db {DRIVER={rubbish}}
+	} result]
+	list $status $::errorCode
+    }
+    -match glob
+    -result {1 *}
+}
+
+
+tcltest::testConstraint connect \
+    [expr {[catch {tdbc::odbc::connection create ::db $::connStr}] == 0}]
+catch {rename ::db {}}
+
+test tdbc::odbc-1.4 {create a connection, successful} {*}{
+    -constraints connect
+    -body {
+	tdbc::odbc::connection create ::db $::connStr
+    }
+    -result ::db
+    -cleanup {
+	catch {rename ::db {}}
+    }
+}
+
+#-------------------------------------------------------------------------------
+#
+# The tests that follow all require a connection to a database.
+
+if {![tcltest::testConstraint connect]} {
+    puts "tests requiring a db connection skipped."
+    removeDirectory tdbctest
+    cleanupTests
+    return
+}
+tdbc::odbc::connection create ::db $::connStr
+catch {::db allrows {DROP TABLE people}}
+
+#-------------------------------------------------------------------------------
+
+test tdbc::odbc-2.1 {prepare statement, wrong # args} {*}{
+    -body {
+	::db prepare
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test tdbc::odbc-2.2 {don't make a statement without a connection} {*}{
+    -body {
+	tdbc::odbc::statement create stmt rubbish moreRubbish
+    }
+    -returnCodes error
+    -result {rubbish does not refer to an object}
+}
+
+test tdbc::odbc-2.3 {don't make a statement without a connection} {*}{
+    -body {
+	tdbc::odbc::statement create stmt oo::class moreRubbish
+    }
+    -returnCodes error
+    -result {oo::class does not refer to an ODBC connection}
+}
+
+test tdbc::odbc-3.0 {prepare a valid statement} {*}{
+    -body {
+	set stmt [::db prepare {
+	    CREATE TABLE people(
+		idnum INTEGER PRIMARY KEY NOT NULL,
+		name VARCHAR(40) NOT NULL
+	    )
+	}]
+    }
+    -match glob
+    -result *Stmt*
+    -cleanup {
+	catch [rename $stmt {}]
+    }
+}
+
+test tdbc::odbc-3.1 {execute a valid statement with no results} {*}{
+    -body {
+	set stmt [::db prepare {
+	    CREATE TABLE people(
+		idnum INTEGER PRIMARY KEY NOT NULL,
+		name VARCHAR(40) NOT NULL
+	    )
+	}]
+	set rs [$stmt execute]
+	list [expr {[$rs rowcount] <= 0}] [$rs columns] [$rs nextrow nothing]
+    }
+    -result {1 {} 0}
+    -cleanup {
+	    rename $rs {}
+	    rename $stmt {}
+	    set stmt [::db prepare {
+		DROP TABLE people
+	    }]
+	    set rs [$stmt execute]
+	    rename $rs {}
+	    rename $stmt {}
+    }
+}
+
+test tdbc::odbc-3.2 {result set: wrong # args} {*}{
+    -body {
+	set stmt [::db prepare {
+	    CREATE TABLE people(
+		idnum INTEGER PRIMARY KEY NOT NULL,
+		name VARCHAR(40) NOT NULL
+	    )
+	}]
+	$stmt execute with extra args
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+    -cleanup {
+	catch [rename $stmt {}]
+    }
+}
+
+test tdbc::odbc-3.3 {result set: trying to create against a non-object} {*}{
+    -body {
+	tdbc::odbc::resultset create rs nothing
+    }
+    -returnCodes error
+    -result {nothing does not refer to an object}
+}
+
+test tdbc::odbc-3.4 {result set: trying to create against a non-statement} {*}{
+    -body {
+	tdbc::odbc::resultset create rs db
+    }
+    -returnCodes error
+    -result {db does not refer to an ODBC statement}
+}
+
+#-------------------------------------------------------------------------------
+#
+# Following tests need a 'people' table in the database
+
+set stmt [::db prepare {
+    CREATE TABLE people(
+	idnum INTEGER PRIMARY KEY NOT NULL,
+	name VARCHAR(40) NOT NULL,
+	info INTEGER
+    )
+}]
+set rs [$stmt execute]
+rename $rs {}
+rename $stmt {}
+
+test tdbc::odbc-4.1 {execute an insert with no params} {*}{
+    -body {
+	set stmt [::db prepare {
+	    INSERT INTO people(idnum, name, info) values(1, 'fred', 0)
+	}]
+	set rs [$stmt execute]
+	list [$rs rowcount] [$rs columns] [$rs nextrow nothing]
+    }
+    -result {1 {} 0}
+    -cleanup {
+	catch {
+	    rename $rs {}
+	    rename $stmt {}
+	    set stmt [::db prepare {
+		DELETE FROM people
+	    }]
+	    set rs [$stmt execute]
+	    rename $rs {}
+	    rename $stmt {}
+	}
+    }
+}
+
+test tdbc::odbc-4.2 {execute an insert with variable parameters} {*}{
+    -body {
+	set stmt [::db prepare {
+	    INSERT INTO people(idnum, name, info) values(:idnum, :name, 0)
+	}]
+	$stmt paramtype idnum integer
+	$stmt paramtype name varchar 40
+	set idnum 1
+	set name fred
+	set rs [$stmt execute]
+	list [$rs rowcount] [$rs columns] [$rs nextrow nothing]
+    }
+    -result {1 {} 0}
+    -cleanup {
+	catch {
+	    rename $rs {}
+	    rename $stmt {}
+	    set stmt [::db prepare {
+		DELETE FROM people
+	    }]
+	    set rs [$stmt execute]
+	    rename $rs {}
+	    rename $stmt {}
+	}
+    }
+}
+
+test tdbc::odbc-4.3 {execute an insert with dictionary parameters} {*}{
+    -body {
+	set stmt [::db prepare {
+	    INSERT INTO people(idnum, name, info) values(:idnum, :name, 0)
+	}]
+	$stmt paramtype idnum integer
+	$stmt paramtype name varchar 40
+	set rs [$stmt execute {idnum 1 name fred}]
+	list [$rs rowcount] [$rs columns] [$rs nextrow nothing]
+    }
+    -result {1 {} 0}
+    -cleanup {
+	catch {
+	    rename $rs {}
+	    rename $stmt {}
+	    set stmt [::db prepare {
+		DELETE FROM people
+	    }]
+	    set rs [$stmt execute]
+	    rename $rs {}
+	    rename $stmt {}
+	}
+    }
+}
+
+test tdbc::odbc-4.4 {bad dictionary} {*}{
+    -body {
+	set stmt [::db prepare {
+	    INSERT INTO people(idnum, name, info) values(:idnum, :name)
+	}]
+	$stmt paramtype idnum integer
+	$stmt paramtype name varchar 40
+	$stmt execute {idnum 1 name}
+    }
+    -returnCodes error
+    -result {missing value to go with key}
+    -cleanup {
+	catch {
+	    rename $stmt {}
+	    set stmt [::db prepare {
+		DELETE FROM people
+	    }]
+	    set rs [$stmt execute]
+	    rename $rs {}
+	    rename $stmt {}
+	}
+    }
+}
+
+test tdbc::odbc-4.5 {missing parameter variable} {*}{
+    -constraints jet||sqlserver
+    -setup {
+	catch {unset idnum}
+    }
+    -body {
+	set stmt [::db prepare {
+	    INSERT INTO people(idnum, name, info) values(:idnum, :name, 0)
+	}]
+	$stmt paramtype idnum integer
+	$stmt paramtype name varchar 40
+	set name fred
+	$stmt execute
+    }
+    -returnCodes error
+    -match glob
+    -result {*[nN]ull*}
+    -cleanup {
+	catch {
+	    rename $stmt {}
+	    set stmt [::db prepare {
+		DELETE FROM people
+	    }]
+	    set rs [$stmt execute]
+	    rename $rs {}
+	    rename $stmt {}
+	}
+    }
+}
+
+test tdbc::odbc-4.6 {missing parameter in dictionary} {*}{
+    -constraints jet||sqlserver
+    -body {
+	set stmt [::db prepare {
+	    INSERT INTO people(idnum, name, info) values(:idnum, :name, 0)
+	}]
+	$stmt paramtype idnum integer
+	$stmt paramtype name varchar 40
+	$stmt execute {name fred}
+    }
+    -returnCodes error
+    -match glob
+    -result {*[nN]ull*}
+    -cleanup {
+	catch {
+	    rename $stmt {}
+	    set stmt [::db prepare {
+		DELETE FROM people
+	    }]
+	    set rs [$stmt execute]
+	    rename $rs {}
+	    rename $stmt {}
+	}
+    }
+}
+
+test tdbc::odbc-4.7 {missing parameter - nullable} {*}{
+    -setup {
+	catch {unset info}
+	set stmt [::db prepare {
+	    INSERT INTO people(idnum, name, info) values(:idnum, :name, :info)
+	}]
+	$stmt paramtype idnum integer
+	$stmt paramtype name varchar 40
+	$stmt paramtype info integer
+	set stmt2 [::db prepare {
+	    SELECT name, info FROM people WHERE idnum = :idnum
+	}]
+	$stmt2 paramtype idnum integer
+    }
+    -body {
+	set name "mr. gravel"
+	set idnum 100
+	set rs [$stmt execute]
+	rename $rs {}
+	set rs [$stmt2 execute]
+	$rs nextrow -as dicts row
+	set row
+    }
+    -result {name {mr. gravel}}
+    -cleanup {
+	catch {rename $rs {}}
+	catch {
+	    rename $stmt {}
+	    rename $stmt2 {}
+	    set stmt [::db prepare {
+		DELETE FROM people
+	    }]
+	    set rs [$stmt execute]
+	    rename $rs {}
+	    rename $stmt {}
+	}
+    }
+}
+
+test tdbc::odbc-4.8 {missing parameter in dictionary - nullable} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    INSERT INTO people(idnum, name, info) values(:idnum, :name, :info)
+	}]
+	$stmt paramtype idnum integer
+	$stmt paramtype name varchar 40
+	$stmt paramtype info integer
+	set stmt2 [::db prepare {
+	    SELECT name, info FROM people WHERE idnum = :idnum
+	}]
+	$stmt2 paramtype idnum integer
+    }
+    -body {
+	set rs [$stmt execute {name {gary granite} idnum 200}]
+	rename $rs {}
+	set rs [$stmt2 execute {idnum 200}]
+	$rs nextrow -as dicts row
+	set row
+    }
+    -result {name {gary granite}}
+    -cleanup {
+	catch {rename $rs {}}
+	catch {
+	    rename $stmt {}
+	    rename $stmt2 {}
+	    set stmt [::db prepare {
+		DELETE FROM people
+	    }]
+	    set rs [$stmt execute]
+	    rename $rs {}
+	    rename $stmt {}
+	}
+    }
+}
+
+test tdbc::odbc-4.9 {two result sets open against the same statement} {*}{
+    -body {
+	set stmt [::db prepare {
+	    INSERT INTO people(idnum, name, info) values(:idnum, :name, 0)
+	}]
+	$stmt paramtype idnum integer
+	$stmt paramtype name varchar 40
+	set rs1 [$stmt execute {idnum 1 name fred}]
+	set rs2 [$stmt execute {idnum 2 name wilma}]
+	list [$rs1 rowcount] [$rs1 columns] [$rs1 nextrow nothing] \
+	    [$rs2 rowcount] [$rs2 columns] [$rs2 nextrow nothing]
+    }
+    -result {1 {} 0 1 {} 0}
+    -cleanup {
+	catch {
+	    rename $rs1 {}
+	    rename $rs2 {}
+	    rename $stmt {}
+	    set stmt [::db prepare {
+		DELETE FROM people
+	    }]
+	    set rs [$stmt execute]
+	    rename $rs {}
+	    rename $stmt {}
+	}
+    }
+}
+
+test tdbc::odbc-4.10 {failed execution} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    INSERT INTO people(idnum, name, info) values(:idnum, :name, 0)
+	}]
+	$stmt paramtype idnum integer
+	$stmt paramtype name varchar 40
+	set rs [$stmt execute {idnum 1 name fred}]
+	rename $rs {}
+    }
+    -body {
+	set status [catch {$stmt execute {idnum 1 name barney}} result]
+	list $status $::errorCode
+    }
+    -cleanup {
+	rename $stmt {}
+	set stmt [::db prepare {
+	    DELETE FROM people
+	}]
+	set rs [$stmt execute]
+	rename $rs {}
+	rename $stmt {}
+    }
+    -match glob
+    -result {1 {TDBC * ODBC *}}
+}
+
+test tdbc::odbc-5.1 {paramtype - too few args} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    INSERT INTO people(idnum, name, info) values(:idnum, :name, 0)
+	}]
+    }
+    -body {
+	$stmt paramtype idnum
+    }
+    -cleanup {
+	rename $stmt {}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test tdbc::odbc-5.2 {paramtype - just a direction} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    INSERT INTO people(idnum, name, info) values(:idnum, :name, 0)
+	}]
+    }
+    -body {
+	$stmt paramtype idnum in
+    }
+    -cleanup {
+	rename $stmt {}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test tdbc::odbc-5.3 {paramtype - bad type} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    INSERT INTO people(idnum, name, info) values(:idnum, :name, 0)
+	}]
+    }
+    -body {
+	$stmt paramtype idnum rubbish
+    }
+    -cleanup {
+	rename $stmt {}
+    }
+    -returnCodes error
+    -match glob
+    -result {bad SQL data type "rubbish":*}
+}
+
+test tdbc::odbc-5.4 {paramtype - bad scale} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    INSERT INTO people(idnum, name, info) values(:idnum, :name, 0)
+	}]
+    }
+    -body {
+	$stmt paramtype idnum decimal rubbish
+    }
+    -cleanup {
+	rename $stmt {}
+    }
+    -returnCodes error
+    -match glob
+    -result {expected integer but got "rubbish"}
+}
+
+test tdbc::odbc-5.5 {paramtype - bad precision} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    INSERT INTO people(idnum, name, info) values(:idnum, :name, 0)
+	}]
+    }
+    -body {
+	$stmt paramtype idnum decimal 12 rubbish
+    }
+    -cleanup {
+	rename $stmt {}
+    }
+    -returnCodes error
+    -match glob
+    -result {expected integer but got "rubbish"}
+}
+
+test tdbc::odbc-5.6 {paramtype - unknown parameter} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    INSERT INTO people(idnum, name, info) values(:idnum, :name, 0)
+	}]
+    }
+    -body {
+	$stmt paramtype rubbish integer
+    }
+    -cleanup {
+	rename $stmt {}
+    }
+    -returnCodes error
+    -match glob
+    -result {unknown parameter "rubbish":*}
+}
+
+test tdbc::odbc-6.1 {rowcount - wrong args} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    INSERT INTO people(idnum, name, info) values(:idnum, :name, 0)
+	}]
+	$stmt paramtype idnum integer
+	$stmt paramtype name varchar 40
+	set rs [$stmt execute {idnum 1 name fred}]
+    }
+    -body {
+	$rs rowcount rubbish
+    }
+    -cleanup {
+	rename $rs {}
+	rename $stmt {}
+	set stmt [::db prepare {
+	    DELETE FROM people
+	}]
+	set rs [$stmt execute]
+	rename $rs {}
+	rename $stmt {}
+    }
+    -returnCodes error
+    -match glob
+    -result "wrong \# args*"
+}
+
+#-------------------------------------------------------------------------------
+#
+# next tests require data in the database
+
+catch {
+    set stmt [db prepare {
+	INSERT INTO people(idnum, name, info) VALUES(:idnum, :name, NULL)
+    }]
+    $stmt paramtype idnum integer
+    $stmt paramtype name varchar 40
+    set idnum 1
+    foreach name {fred wilma pebbles barney betty bam-bam} {
+	set rs [$stmt execute]
+	rename $rs {}
+	incr idnum
+    }
+    rename $stmt {}
+}
+
+#-------------------------------------------------------------------------------
+
+test tdbc::odbc-7.1 {columns - bad args} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT * FROM people
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	$rs columns rubbish
+    }
+    -cleanup {
+	rename $rs {}
+	rename $stmt {}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test tdbc::odbc-7.2 {columns - get column names} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT * FROM people
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	$rs columns
+    }
+    -cleanup {
+	rename $rs {}
+	rename $stmt {}
+    }
+    -result {idnum name info}
+}
+
+test tdbc::odbc-8.1 {nextrow - as dicts} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people ORDER BY idnum
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	set idnum 1
+	set names {}
+	while {[$rs nextrow -- row]} {
+	    if {$idnum != [dict get $row idnum]} {
+		binary scan [dict get $row idnum] c* v
+		binary scan [dict get $row name] c* v
+		error [list bad idnum [dict get $row idnum] should be $idnum]
+	    }
+	    lappend names [dict get $row name]
+	    incr idnum
+	}
+	set names
+    }
+    -cleanup {
+	rename $rs {}
+	rename $stmt {}
+    }
+    -result {fred wilma pebbles barney betty bam-bam}
+}
+
+test tdbc::odbc-8.2 {nextrow - as lists} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people ORDER BY idnum
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	set idnum 1
+	set names {}
+	while {[$rs nextrow -as lists -- row]} {
+	    if {$idnum != [lindex $row 0]} {
+		error [list bad idnum [lindex $row 0] should be $idnum]
+	    }
+	    lappend names [lindex $row 1]
+	    incr idnum
+	}
+	set names
+    }
+    -cleanup {
+	rename $rs {}
+	rename $stmt {}
+    }
+    -result {fred wilma pebbles barney betty bam-bam}
+}
+
+test tdbc::odbc-8.3 {nextrow - bad cursor state} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people ORDER BY idnum
+	}]
+    }
+    -body {
+	set rs [$stmt execute]
+	set names {}
+	while {[$rs nextrow row]} {}
+	$rs nextrow row
+    }
+    -cleanup {
+	rename $rs {}
+	rename $stmt {}
+    }
+    -result 0
+}
+
+test tdbc::odbc-8.4 {anonymous columns - dicts} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT COUNT(*), MAX(idnum) FROM people
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	list \
+	    [$rs nextrow row] \
+	    $row \
+	    [$rs nextrow row]
+    }
+    -cleanup {
+	$stmt close
+    }
+    -match glob
+    -result {1 {* 6 * 6} 0}
+};
+
+test tdbc::odbc-8.5 {anonymous columns - lists} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT COUNT(*), MAX(idnum) FROM people
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	list [$rs nextrow -as lists row] \
+	    $row \
+	    [$rs nextrow -as lists row]
+    }
+    -cleanup {
+	$stmt close
+    }
+    -result {1 {6 6} 0}
+};
+
+test tdbc::odbc-8.6 {null results - dicts} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name, info FROM people WHERE name = 'fred'
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	list [$rs nextrow row] $row [$rs nextrow row]
+    }
+    -cleanup {
+	$stmt close
+    }
+    -result {1 {idnum 1 name fred} 0}
+}
+
+test tdbc::odbc-8.7 {null results - lists} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name, info FROM people WHERE name = 'fred'
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	list [$rs nextrow -as lists -- row] $row [$rs nextrow -as lists -- row]
+    }
+    -cleanup {
+	$stmt close
+    }
+    -result {1 {1 fred {}} 0}
+}
+
+test tdbc::odbc-8.8 {duplicate colunm names - dicts} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT p1.name, p2.name
+	    FROM people p1, people p2
+	    WHERE p1.idnum = 1 AND p2.idnum = p1.idnum + 1
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	list [$rs nextrow -as dicts -- row] $row [$rs nextrow -as dicts -- row]
+    }
+    -cleanup {
+	$stmt close
+    }
+    -match glob
+    -result {1 {*name* fred *name* wilma} 0}
+}
+
+
+test tdbc::odbc-9.1 {rs foreach var script} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	set result {}
+	$rs foreach row {
+	    lappend result $row
+	}
+	set result
+    }
+    -cleanup {
+	$rs close
+	$stmt close
+    }
+    -result {{idnum 4 name barney} {idnum 5 name betty} {idnum 6 name bam-bam}}
+}
+
+test tdbc::odbc-9.2 {stmt foreach var script} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+
+    }
+    -body {
+	set result {}
+	$stmt foreach row {
+	    lappend result $row
+	}
+	set result
+    }
+    -cleanup {
+	$stmt close
+    }
+    -result {{idnum 4 name barney} {idnum 5 name betty} {idnum 6 name bam-bam}}
+}
+
+test tdbc::odbc-9.3 {db foreach var sqlcode script} {*}{
+    -body {
+	set result {}
+	db foreach row {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	} {
+	    lappend result $row
+	}
+	set result
+    }
+    -result {{idnum 4 name barney} {idnum 5 name betty} {idnum 6 name bam-bam}}
+}
+
+test tdbc::odbc-9.4 {rs foreach -- var script} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	set result {}
+	$rs foreach -- row {
+	    lappend result $row
+	}
+	set result
+    }
+    -cleanup {
+	$rs close
+	$stmt close
+    }
+    -result {{idnum 4 name barney} {idnum 5 name betty} {idnum 6 name bam-bam}}
+}
+
+test tdbc::odbc-9.5 {stmt foreach -- var script} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+    }
+    -body {
+	set result {}
+	$stmt foreach -- row {
+	    lappend result $row
+	}
+	set result
+    }
+    -cleanup {
+	$stmt close
+    }
+    -result {{idnum 4 name barney} {idnum 5 name betty} {idnum 6 name bam-bam}}
+}
+
+test tdbc::odbc-9.6 {db foreach -- var query script} {*}{
+    -body {
+	set result {}
+	db foreach -- row {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	} {
+	    lappend result $row
+	}
+	set result
+    }
+    -result {{idnum 4 name barney} {idnum 5 name betty} {idnum 6 name bam-bam}}
+}
+
+test tdbc::odbc-9.7 {rs foreach -- -as lists} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name, info FROM people WHERE name LIKE 'b%'
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	set result {}
+	$rs foreach -as lists row {
+	    lappend result $row
+	}
+	set result
+    }
+    -cleanup {
+	$rs close
+	$stmt close
+    }
+    -result {{4 barney {}} {5 betty {}} {6 bam-bam {}}}
+}
+
+test tdbc::odbc-9.8 {stmt foreach -as lists} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name, info FROM people WHERE name LIKE 'b%'
+	}]
+    }
+    -body {
+	set result {}
+	$stmt foreach -as lists row {
+	    lappend result $row
+	}
+	set result
+    }
+    -cleanup {
+	$stmt close
+    }
+    -result {{4 barney {}} {5 betty {}} {6 bam-bam {}}}
+}
+
+test tdbc::odbc-9.9 {db foreach -as lists} {*}{
+    -body {
+	set result {}
+	db foreach -as lists row {
+	    SELECT idnum, name, info FROM people WHERE name LIKE 'b%'
+	} {
+	    lappend result $row
+	}
+	set result
+    }
+    -result {{4 barney {}} {5 betty {}} {6 bam-bam {}}}
+}
+
+test tdbc::odbc-9.10 {rs foreach -as lists --} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name, info FROM people WHERE name LIKE 'b%'
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	set result {}
+	$rs foreach -as lists -- row {
+	    lappend result $row
+	}
+	set result
+    }
+    -cleanup {
+	$rs close
+	$stmt close
+    }
+    -result {{4 barney {}} {5 betty {}} {6 bam-bam {}}}
+}
+
+test tdbc::odbc-9.11 {stmt foreach -as lists --} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name, info FROM people WHERE name LIKE 'b%'
+	}]
+    }
+    -body {
+	set result {}
+	$stmt foreach -as lists -- row {
+	    lappend result $row
+	}
+	set result
+    }
+    -cleanup {
+	$stmt close
+    }
+    -result {{4 barney {}} {5 betty {}} {6 bam-bam {}}}
+}
+
+test tdbc::odbc-9.12 {db foreach -as lists --} {*}{
+    -body {
+	set result {}
+	db foreach -as lists row {
+	    SELECT idnum, name, info FROM people WHERE name LIKE 'b%'
+	} {
+	    lappend result $row
+	}
+	set result
+    }
+    -result {{4 barney {}} {5 betty {}} {6 bam-bam {}}}
+}
+
+test tdbc::odbc-9.13 {rs foreach -as lists -columnsvar c --} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	set result {}
+	$rs foreach -as lists -columnsvar c -- row {
+	    foreach cn $c cv $row {
+		lappend result $cn $cv
+	    }
+	}
+	set result
+    }
+    -cleanup {
+	$rs close
+	$stmt close
+    }
+    -result {idnum 4 name barney idnum 5 name betty idnum 6 name bam-bam}
+}
+
+test tdbc::odbc-9.14 {stmt foreach -as lists -columnsvar c --} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+    }
+    -body {
+	set result {}
+	$stmt foreach -as lists -columnsvar c -- row {
+	    foreach cn $c cv $row {
+		lappend result $cn $cv
+	    }
+	}
+	set result
+    }
+    -cleanup {
+	$stmt close
+    }
+    -result {idnum 4 name barney idnum 5 name betty idnum 6 name bam-bam}
+}
+
+test tdbc::odbc-9.15 {db foreach -as lists -columnsvar c --} {*}{
+    -body {
+	set result {}
+	db foreach -as lists -columnsvar c -- row {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	} {
+	    foreach cn $c cv $row {
+		lappend result $cn $cv
+	    }
+	}
+	set result
+    }
+    -result {idnum 4 name barney idnum 5 name betty idnum 6 name bam-bam}
+}
+
+test tdbc::odbc-9.16 {rs foreach / break out of loop} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name, info FROM people WHERE name LIKE 'b%'
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	set result {}
+	$rs foreach -as lists -- row {
+	    if {[lindex $row 1] eq {betty}} break
+	    lappend result $row
+	}
+	set result
+    }
+    -cleanup {
+	$rs close
+	$stmt close
+    }
+    -result {{4 barney {}}}
+}
+
+test tdbc::odbc-9.17 {stmt foreach / break out of loop} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name, info FROM people WHERE name LIKE 'b%'
+	}]
+    }
+    -body {
+	set result {}
+	$stmt foreach -as lists -- row {
+	    if {[lindex $row 1] eq {betty}} break
+	    lappend result $row
+	}
+	set result
+    }
+    -cleanup {
+	$stmt close
+    }
+    -result {{4 barney {}}}
+}
+
+test tdbc::odbc-9.18 {db foreach / break out of loop} {*}{
+    -body {
+	set result {}
+	db foreach -as lists -- row {
+	    SELECT idnum, name, info FROM people WHERE name LIKE 'b%'
+	} {
+	    if {[lindex $row 1] eq {betty}} break
+	    lappend result $row
+	}
+	set result
+    }
+    -result {{4 barney {}}}
+}
+
+test tdbc::odbc-9.19 {rs foreach / continue in loop} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name, info FROM people WHERE name LIKE 'b%'
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	set result {}
+	$rs foreach -as lists -- row {
+	    if {[lindex $row 1] eq {betty}} continue
+	    lappend result $row
+	}
+	set result
+    }
+    -cleanup {
+	$rs close
+	$stmt close
+    }
+    -result {{4 barney {}} {6 bam-bam {}}}
+}
+
+test tdbc::odbc-9.20 {stmt foreach / continue in loop} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name, info FROM people WHERE name LIKE 'b%'
+	}]
+    }
+    -body {
+	set result {}
+	$stmt foreach -as lists -- row {
+	    if {[lindex $row 1] eq {betty}} continue
+	    lappend result $row
+	}
+	set result
+    }
+    -cleanup {
+	$stmt close
+    }
+    -result {{4 barney {}} {6 bam-bam {}}}
+}
+
+test tdbc::odbc-9.21 {db foreach / continue in loop} {*}{
+    -body {
+	set result {}
+	db foreach -as lists -- row {
+	    SELECT idnum, name, info FROM people WHERE name LIKE 'b%'
+	} {
+	    if {[lindex $row 1] eq {betty}} continue
+	    lappend result $row
+	}
+	set result
+    }
+    -result {{4 barney {}} {6 bam-bam {}}}
+}
+
+test tdbc::odbc-9.22 {rs foreach / return out of the loop} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+	set rs [$stmt execute]
+	proc tdbcodbc-9.22 {rs} {
+	    $rs foreach -as lists -- row {
+		if {[lindex $row 1] eq {betty}} {
+		    return [lindex $row 0]
+		}
+	    }
+	    return failed
+	}
+    }
+    -body {
+	tdbcodbc-9.22 $rs
+    }
+    -cleanup {
+	rename tdbcodbc-9.22 {}
+	rename $rs {}
+	rename $stmt {}
+    }
+    -result 5
+}
+
+test tdbc::odbc-9.23 {stmt foreach / return out of the loop} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+	proc tdbcodbc-9.23 {stmt} {
+	    $stmt foreach -as lists -- row {
+		if {[lindex $row 1] eq {betty}} {
+		    return [lindex $row 0]
+		}
+	    }
+	    return failed
+	}
+    }
+    -body {
+	tdbcodbc-9.23 $stmt
+    }
+    -cleanup {
+	rename tdbcodbc-9.23 {}
+	rename $stmt {}
+    }
+    -result 5
+}
+
+test tdbc::odbc-9.24 {db foreach / return out of the loop} {*}{
+    -setup {
+	proc tdbcodbc-9.24 {stmt} {
+	    db foreach -as lists -- row {
+		SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	    } {
+		if {[lindex $row 1] eq {betty}} {
+		    return [lindex $row 0]
+		}
+	    }
+	    return failed
+	}
+    }
+    -body {
+	tdbcodbc-9.24 $stmt
+    }
+    -cleanup {
+	rename tdbcodbc-9.24 {}
+    }
+    -result 5
+}
+
+test tdbc::odbc-9.25 {rs foreach / error out of the loop} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+	set rs [$stmt execute]
+	proc tdbcodbc-9.25 {rs} {
+	    $rs foreach -as lists -- row {
+		if {[lindex $row 1] eq {betty}} {
+		    error [lindex $row 0]
+		}
+	    }
+	    return failed
+	}
+    }
+    -body {
+	tdbcodbc-9.25 $rs
+    }
+    -cleanup {
+	rename tdbcodbc-9.25 {}
+	rename $rs {}
+	rename $stmt {}
+    }
+    -returnCodes error
+    -result 5
+}
+
+test tdbc::odbc-9.26 {stmt foreach - error out of the loop} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+	proc tdbcodbc-9.26 {stmt} {
+	    $stmt foreach -as lists -- row {
+		if {[lindex $row 1] eq {betty}} {
+		    error [lindex $row 0]
+		}
+	    }
+	    return failed
+	}
+    }
+    -body {
+	tdbcodbc-9.26 $stmt
+    }
+    -cleanup {
+	rename tdbcodbc-9.26 {}
+	rename $stmt {}
+    }
+    -returnCodes error
+    -result 5
+}
+
+test tdbc::odbc-9.27 {db foreach / error out of the loop} {*}{
+    -setup {
+	proc tdbcodbc-9.27 {} {
+	    db foreach -as lists -- row {
+		SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	    } {
+		if {[lindex $row 1] eq {betty}} {
+		    error [lindex $row 0]
+		}
+	    }
+	    return failed
+	}
+    }
+    -body {
+	tdbcodbc-9.27
+    }
+    -cleanup {
+	rename tdbcodbc-9.27 {}
+    }
+    -returnCodes error
+    -result 5
+}
+
+test tdbc::odbc-9.28 {rs foreach / unknown status from the loop} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+	set rs [$stmt execute]
+	proc tdbcodbc-9.28 {rs} {
+	    $rs foreach -as lists -- row {
+		if {[lindex $row 1] eq {betty}} {
+		    return -code 666 -level 0 [lindex $row 0]
+		}
+	    }
+	    return failed
+	}
+    }
+    -body {
+	tdbcodbc-9.28 $rs
+    }
+    -cleanup {
+	rename tdbcodbc-9.28 {}
+	rename $rs {}
+	rename $stmt {}
+    }
+    -returnCodes 666
+    -result 5
+}
+
+test tdbc::odbc-9.29 {stmt foreach / unknown status from the loop} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+	proc tdbcodbc-9.29 {stmt} {
+	    $stmt foreach -as lists -- row {
+		if {[lindex $row 1] eq {betty}} {
+		    return -code 666 -level 0 [lindex $row 0]
+		}
+	    }
+	    return failed
+	}
+    }
+    -body {
+	tdbcodbc-9.29 $stmt
+    }
+    -cleanup {
+	rename tdbcodbc-9.29 {}
+	rename $stmt {}
+    }
+    -returnCodes 666
+    -result 5
+}
+
+test tdbc::odbc-9.30 {db foreach / unknown status from the loop} {*}{
+    -setup {
+	proc tdbcodbc-9.30 {stmt} {
+	    db foreach -as lists -- row {
+		SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	    } {
+		if {[lindex $row 1] eq {betty}} {
+		    return -code 666 -level 0 [lindex $row 0]
+		}
+	    }
+	    return failed
+	}
+    }
+    -body {
+	tdbcodbc-9.30 $stmt
+    }
+    -cleanup {
+	rename tdbcodbc-9.30 {}
+    }
+    -returnCodes 666
+    -result 5
+}
+
+test tdbc::odbc-9.31 {stmt foreach / params in variables} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE :thePattern
+	}]
+	$stmt paramtype thePattern varchar 40
+    }
+    -body {
+	set result {}
+	set thePattern b%
+	$stmt foreach row {
+	    lappend result $row
+	}
+	set result
+    }
+    -cleanup {
+	$stmt close
+    }
+    -result {{idnum 4 name barney} {idnum 5 name betty} {idnum 6 name bam-bam}}
+}
+
+test tdbc::odbc-9.32 {db foreach / params in variables} {*}{
+    -body {
+	set result {}
+	set thePattern b%
+	db foreach row {
+	    SELECT idnum, name FROM people WHERE name LIKE :thePattern
+	} {
+	    lappend result $row
+	}
+	set result
+    }
+    -result {{idnum 4 name barney} {idnum 5 name betty} {idnum 6 name bam-bam}}
+}
+
+test tdbc::odbc-9.33 {stmt foreach / parameters in a dictionary} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE :thePattern
+	}]
+	$stmt paramtype thePattern varchar 40
+    }
+    -body {
+	set result {}
+	$stmt foreach row {thePattern b%} {
+	    lappend result $row
+	}
+	set result
+    }
+    -cleanup {
+	$stmt close
+    }
+    -result {{idnum 4 name barney} {idnum 5 name betty} {idnum 6 name bam-bam}}
+}
+
+test tdbc::odbc-9.34 {db foreach / parameters in a dictionary} {*}{
+    -body {
+	set result {}
+	db foreach row {
+	    SELECT idnum, name FROM people WHERE name LIKE :thePattern
+	} {thePattern b%} {
+	    lappend result $row
+	}
+	set result
+    }
+    -result {{idnum 4 name barney} {idnum 5 name betty} {idnum 6 name bam-bam}}
+}
+
+test tdbc::odbc-9.35 {stmt foreach - variable not found} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE :thePattern
+	}]
+	$stmt paramtype thePattern varchar 40
+	catch {unset thePattern}
+    }
+    -body {
+	set result {}
+	set thePattern(bogosity) {}
+	$stmt foreach row {
+	    lappend result $row
+	}
+	set result
+    }
+    -cleanup {
+	unset thePattern
+	$stmt close
+    }
+    -result {}
+}
+
+test tdbc::odbc-9.36 {db foreach - variable not found} {*}{
+    -setup {
+	catch {unset thePattern}
+    }
+    -body {
+	set result {}
+	set thePattern(bogosity) {}
+	db foreach row {
+	    SELECT idnum, name FROM people WHERE name LIKE :thePattern
+	} {
+	    lappend result $row
+	}
+	set result
+    }
+    -cleanup {
+	unset thePattern
+    }
+    -result {}
+}
+
+test tdbc::odbc-9.37 {rs foreach - too few args} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	$rs foreach row
+    }
+    -cleanup {
+	$rs close
+	$stmt close
+    }
+    -returnCodes error
+    -result {wrong # args*}
+    -match glob
+}
+
+test tdbc::odbc-9.38 {stmt foreach - too few args} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people
+	}]
+    }
+    -body {
+	$stmt foreach row
+    }
+    -cleanup {
+	$stmt close
+    }
+    -returnCodes error
+    -result {wrong # args*}
+    -match glob
+}
+
+test tdbc::odbc-9.39 {db foreach - too few args} {*}{
+    -body {
+	db foreach row {
+	    SELECT idnum, name FROM people
+	}
+    }
+    -returnCodes error
+    -result {wrong # args*}
+    -match glob
+}
+
+test tdbc::odbc-9.40 {rs foreach - too many args} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	$rs foreach row do something
+    }
+    -cleanup {
+	$rs close
+	$stmt close
+    }
+    -returnCodes error
+    -result {wrong # args*}
+    -match glob
+}
+
+test tdbc::odbc-9.41 {stmt foreach - too many args} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people
+	}]
+    }
+    -body {
+	$stmt foreach row do something else
+    }
+    -cleanup {
+	$stmt close
+    }
+    -returnCodes error
+    -result {wrong # args*}
+    -match glob
+}
+
+test tdbc::odbc-9.42 {db foreach - too many args} {*}{
+    -body {
+	db foreach row {
+	    SELECT idnum, name FROM people
+	} {} do something
+    }
+    -returnCodes error
+    -result {wrong # args*}
+    -match glob
+}
+
+test tdbc::odbc-10.1 {allrows - no args} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	$rs allrows
+    }
+    -cleanup {
+	rename $rs {}
+	rename $stmt {}
+    }
+    -result {{idnum 4 name barney} {idnum 5 name betty} {idnum 6 name bam-bam}}
+}
+
+test tdbc::odbc-10.2 {allrows - no args} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+    }
+    -body {
+	$stmt allrows
+    }
+    -cleanup {
+	rename $stmt {}
+    }
+    -result {{idnum 4 name barney} {idnum 5 name betty} {idnum 6 name bam-bam}}
+}
+
+test tdbc::odbc-10.3 {allrows - no args} {*}{
+    -body {
+	db allrows {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}
+    }
+    -result {{idnum 4 name barney} {idnum 5 name betty} {idnum 6 name bam-bam}}
+}
+
+test tdbc::odbc-10.4 {allrows --} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	$rs allrows --
+    }
+    -cleanup {
+	rename $rs {}
+	rename $stmt {}
+    }
+    -result {{idnum 4 name barney} {idnum 5 name betty} {idnum 6 name bam-bam}}
+}
+
+test tdbc::odbc-10.5 {allrows --} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+    }
+    -body {
+	$stmt allrows --
+    }
+    -cleanup {
+	rename $stmt {}
+    }
+    -result {{idnum 4 name barney} {idnum 5 name betty} {idnum 6 name bam-bam}}
+}
+
+test tdbc::odbc-10.6 {allrows --} {*}{
+    -body {
+	db allrows -- {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}
+    }
+    -result {{idnum 4 name barney} {idnum 5 name betty} {idnum 6 name bam-bam}}
+}
+
+test tdbc::odbc-10.7 {allrows -as lists} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	$rs allrows -as lists
+    }
+    -cleanup {
+	rename $rs {}
+	rename $stmt {}
+    }
+    -result {{4 barney} {5 betty} {6 bam-bam}}
+}
+
+test tdbc::odbc-10.8 {allrows -as lists} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+    }
+    -body {
+	$stmt allrows -as lists
+    }
+    -cleanup {
+	rename $stmt {}
+    }
+    -result {{4 barney} {5 betty} {6 bam-bam}}
+}
+
+test tdbc::odbc-10.9 {allrows -as lists} {*}{
+    -body {
+	db allrows -as lists {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}
+    }
+    -result {{4 barney} {5 betty} {6 bam-bam}}
+}
+
+test tdbc::odbc-10.10 {allrows -as lists --} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	$rs allrows -as lists --
+    }
+    -cleanup {
+	rename $rs {}
+	rename $stmt {}
+    }
+    -result {{4 barney} {5 betty} {6 bam-bam}}
+}
+
+test tdbc::odbc-10.11 {allrows -as lists --} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+    }
+    -body {
+	$stmt allrows -as lists --
+    }
+    -cleanup {
+	rename $stmt {}
+    }
+    -result {{4 barney} {5 betty} {6 bam-bam}}
+}
+
+test tdbc::odbc-10.12 {allrows -as lists --} {*}{
+    -body {
+	db allrows -as lists -- {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}
+    }
+    -result {{4 barney} {5 betty} {6 bam-bam}}
+}
+
+test tdbc::odbc-10.13 {allrows -as lists -columnsvar c} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	set result [$rs allrows -as lists -columnsvar c]
+	list $c $result
+    }
+    -cleanup {
+	rename $rs {}
+	rename $stmt {}
+    }
+    -result {{idnum name} {{4 barney} {5 betty} {6 bam-bam}}}
+}
+
+test tdbc::odbc-10.14 {allrows -as lists -columnsvar c} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+    }
+    -body {
+	set result [$stmt allrows -as lists -columnsvar c]
+	list $c $result
+    }
+    -cleanup {
+	rename $stmt {}
+    }
+    -result {{idnum name} {{4 barney} {5 betty} {6 bam-bam}}}
+}
+
+test tdbc::odbc-10.15 {allrows -as lists -columnsvar c} {*}{
+    -body {
+	set result [db allrows -as lists -columnsvar c {
+	    SELECT idnum, name FROM people WHERE name LIKE 'b%'
+	}]
+	list $c $result
+    }
+    -result {{idnum name} {{4 barney} {5 betty} {6 bam-bam}}}
+}
+
+test tdbc::odbc-10.16 {allrows - correct lexical scoping of variables} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE :thePattern
+	}]
+	$stmt paramtype thePattern varchar 40
+    }
+    -body {
+	set thePattern b%
+	$stmt allrows
+    }
+    -cleanup {
+	$stmt close
+    }
+    -result {{idnum 4 name barney} {idnum 5 name betty} {idnum 6 name bam-bam}}
+}
+
+test tdbc::odbc-10.17 {allrows - parameters in a dictionary} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people WHERE name LIKE :thePattern
+	}]
+	$stmt paramtype thePattern varchar 40
+    }
+    -body {
+	$stmt allrows {thePattern b%}
+    }
+    -cleanup {
+	$stmt close
+    }
+    -result {{idnum 4 name barney} {idnum 5 name betty} {idnum 6 name bam-bam}}
+}
+
+test tdbc::odbc-10.18 {allrows - parameters in a dictionary} {*}{
+    -body {
+	db allrows {
+	    SELECT idnum, name FROM people WHERE name LIKE :thePattern
+	} {thePattern b%}
+    }
+    -result {{idnum 4 name barney} {idnum 5 name betty} {idnum 6 name bam-bam}}
+}
+
+test tdbc::odbc-10.19 {allrows - variable not found} {*}{
+    -setup {
+	catch {unset thePattern}
+    }
+    -body {
+	set thePattern(bogosity) {}
+	db allrows {
+	    SELECT idnum, name FROM people WHERE name LIKE :thePattern
+	}
+    }
+    -cleanup {
+	unset thePattern
+    }
+    -result {}
+}
+
+test tdbc::odbc-10.20 {allrows - too many args} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT idnum, name FROM people
+	}]
+    }
+    -body {
+	$stmt allrows {} rubbish
+    }
+    -cleanup {
+	$stmt close
+    }
+    -returnCodes error
+    -result {wrong # args*}
+    -match glob
+}
+
+test tdbc::odbc-10.21 {bad -as} {*}{
+    -body {
+	db allrows -as trash {
+	    SELECT idnum, name FROM people
+	}
+    }
+    -returnCodes error
+    -result {bad variable type "trash": must be lists or dicts}
+}
+
+test tdbc::odbc-11.1 {update - no rows} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    UPDATE people SET info = 1 WHERE idnum > 6
+	}]
+	set rs [$stmt execute]
+    }
+    -body {
+	$rs rowcount
+    }
+    -cleanup {
+	rename $rs {}
+	rename $stmt {}
+    }
+    -result 0
+}
+
+test tdbc::odbc-11.2 {update - unique row} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    UPDATE people SET info = 1 WHERE name = 'fred'
+	}]
+    }
+    -body {
+	set rs [$stmt execute]
+	$rs rowcount
+    }
+    -cleanup {
+	rename $rs {}
+	rename $stmt {}
+    }
+    -result 1
+}
+
+test tdbc::odbc-11.3 {update - multiple rows} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    UPDATE people SET info = 1 WHERE name LIKE 'b%'
+	}]
+    }
+    -body {
+	set rs [$stmt execute]
+	$rs rowcount
+    }
+    -cleanup {
+	rename $rs {}
+	rename $stmt {}
+    }
+    -result 3
+}
+
+test tdbc::odbc-12.1 {delete - no rows} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    DELETE FROM people WHERE name = 'nobody'
+	}]
+    }
+    -body {
+	set rs [$stmt execute]
+	$rs rowcount
+    }
+    -cleanup {
+	rename $rs {}
+	rename $stmt {}
+    }
+    -result 0
+}
+
+test tdbc::odbc-12.2 {delete - unique row} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    DELETE FROM people WHERE name = 'fred'
+	}]
+    }
+    -body {
+	set rs [$stmt execute]
+	$rs rowcount
+    }
+    -cleanup {
+	rename $rs {}
+	rename $stmt {}
+    }
+    -result 1
+}
+
+test tdbc::odbc-12.3 {delete - multiple rows} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    DELETE FROM people WHERE name LIKE 'b%'
+	}]
+    }
+    -body {
+	set rs [$stmt execute]
+	$rs rowcount
+    }
+    -cleanup {
+	rename $rs {}
+	rename $stmt {}
+    }
+    -result 3
+}
+
+test tdbc::odbc-13.1 {resultsets - no results} {*}{
+    -setup {
+	set stmt [::db prepare {
+	    SELECT name FROM people WHERE idnum = $idnum
+	}]
+    }
+    -body {
+	list \
+	    [llength [$stmt resultsets]] \
+	    [llength [::db resultsets]]
+    }
+    -cleanup {
+	rename $stmt {}
+    }
+    -result {0 0}
+}
+
+# SQL Native Client does not allow more than one concurrent statement
+# per connection.  It might be possible to make tdbc::odbc to work around
+# this problem by replicating the connection, but that really has the feel
+# of working around a bug in the underlying infrastructure. Let's just
+# document it instead.
+
+test tdbc::odbc-13.2 {resultsets - various statements and results} {*}{
+    -constraints !sqlserver
+    -setup {
+	for {set i 0} {$i < 6} {incr i} {
+	    set stmts($i) [::db prepare {
+		SELECT name FROM people WHERE idnum = :idnum
+	    }]
+	    $stmts($i) paramtype idnum integer
+	    for {set j 0} {$j < $i} {incr j} {
+		set resultsets($i,$j) [$stmts($i) execute [list idnum $j]]
+	    }
+	    for {set j 1} {$j < $i} {incr j 2} {
+		$resultsets($i,$j) close
+		unset resultsets($i,$j)
+	    }
+	}
+    }
+    -body {
+	set x [list [llength [::db resultsets]]]
+	for {set i 0} {$i < 6} {incr i} {
+	    lappend x [llength [$stmts($i) resultsets]]
+	}
+	set x
+    }
+    -cleanup {
+	for {set i 0} {$i < 6} {incr i} {
+	    $stmts($i) close
+	}
+    }
+    -result {9 0 1 1 2 2 3}
+}
+
+#-------------------------------------------------------------------------------
+#
+# next tests require a fresh database connection.  Close the existing one down
+
+catch {
+    set stmt [db prepare {
+	DELETE FROM people
+    }]
+    $stmt execute
+}
+catch {
+    rename ::db {}
+}
+
+tdbc::odbc::connection create ::db $::connStr
+catch {
+    set stmt [db prepare {
+	INSERT INTO people(idnum, name, info) VALUES(:idnum, :name, NULL)
+    }]
+    $stmt paramtype idnum integer
+    $stmt paramtype name varchar 40
+    set idnum 1
+    foreach name {fred wilma pebbles barney betty bam-bam} {
+	set rs [$stmt execute]
+	rename $rs {}
+	incr idnum
+    }
+    rename $stmt {}
+}
+
+test tdbc::odbc-14.1 {begin transaction - wrong # args} {*}{
+    -body {
+	::db begintransaction junk
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test tdbc::odbc-14.2 {commit - wrong # args} {*}{
+    -body {
+	::db commit junk
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test tdbc::odbc-14.3 {rollback - wrong # args} {*}{
+    -body {
+	::db rollback junk
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test tdbc::odbc-14.4 {commit - not in transaction} {*}{
+    -body {
+	list [catch {::db commit} result] $result $::errorCode
+    }
+    -match glob
+    -result {1 {no transaction is in progress} {TDBC GENERAL_ERROR HY* ODBC *}}
+}
+
+test tdbc::odbc-14.5 {rollback - not in transaction} {*}{
+    -body {
+	list [catch {::db rollback} result] $result $::errorCode
+    }
+    -match glob
+    -result {1 {no transaction is in progress} {TDBC GENERAL_ERROR HY* ODBC *}}
+}
+
+test tdbc::odbc-14.6 {empty transaction} {*}{
+    -body {
+	::db begintransaction
+	::db commit
+    }
+    -result {}
+}
+
+test tdbc::odbc-14.7 {empty rolled-back transaction} {*}{
+    -body {
+	::db begintransaction
+	::db rollback
+    }
+    -result {}
+}
+
+test tdbcobdc-14.8 {rollback does not change database} {*}{
+    -body {
+	::db begintransaction
+	set stmt [::db prepare {DELETE FROM people WHERE name = 'fred'}]
+	set rs [$stmt execute]
+	while {[$rs nextrow trash]} {}
+	rename $rs {}
+	rename $stmt {}
+	::db rollback
+	set stmt [::db prepare {SELECT idnum FROM people WHERE name = 'fred'}]
+	set id {changes still visible after rollback}
+	set rs [$stmt execute]
+	while {[$rs nextrow -as lists row]} {
+	    set id [lindex $row 0]
+	}
+	rename $rs {}
+	rename $stmt {}
+	set id
+    }
+    -result 1
+}
+
+test tdbc::odbc-14.9 {commit does change database} {*}{
+    -setup {
+	set stmt1 [db prepare {
+	    INSERT INTO people(idnum, name, info)
+	    VALUES(7, 'mr. gravel', 0)
+	}]
+	set stmt2 [db prepare {
+	    SELECT idnum FROM people WHERE name = 'mr. gravel'
+	}]
+    }
+    -body {
+	::db begintransaction
+	set rs [$stmt1 execute]
+	rename $rs {}
+	::db commit
+	set rs [$stmt2 execute]
+	while {[$rs nextrow -as lists row]} {
+	    set id [lindex $row 0]
+	}
+	rename $rs {}
+	set id
+    }
+    -cleanup {
+	rename $stmt1 {}
+	rename $stmt2 {}
+    }
+    -result 7
+}
+
+test tdbc::odbc-14.10 {nested transactions} {*}{
+    -body {
+	::db begintransaction
+	list [catch {::db begintransaction} result] $result $::errorCode
+    }
+    -cleanup {
+	catch {::db rollback}
+    }
+    -match glob
+    -result {1 {ODBC does not support nested transactions} {TDBC GENERAL_ERROR HYC00 ODBC *}}
+}
+
+#------------------------------------------------------------------------------
+#
+# Clean up database again for the next round.
+
+catch {
+    set stmt [db prepare {
+	DELETE FROM people
+    }]
+    $stmt execute
+}
+catch {
+    rename ::db {}
+}
+
+tdbc::odbc::connection create ::db $::connStr
+catch {
+    set stmt [db prepare {
+	INSERT INTO people(idnum, name, info) VALUES(:idnum, :name, NULL)
+    }]
+    $stmt paramtype idnum integer
+    $stmt paramtype name varchar 40
+    set idnum 1
+    foreach name {fred wilma pebbles barney betty bam-bam} {
+	set rs [$stmt execute]
+	rename $rs {}
+	incr idnum
+    }
+    rename $stmt {}
+}
+
+test tdbc::odbc-15.1 {successful (empty) transaction} {*}{
+    -body {
+	db transaction {
+	    concat ok
+	}
+    }
+    -result ok
+}
+
+test tdbc::odbc-15.2 {failing transaction does not get committed} {*}{
+    -setup {
+	set stmt1 [db prepare {
+	    DELETE FROM people WHERE name = 'fred'
+	}]
+	set stmt2 [db prepare {
+	    SELECT idnum FROM people WHERE name = 'fred'
+	}]
+    }
+    -body {
+	catch {
+	    ::db transaction {
+		set rs [$stmt1 execute]
+		rename $rs {}
+		error "abort the transaction"
+	    }
+	} result
+	set id {failed transaction got committed}
+	set rs [$stmt2 execute]
+	while {[$rs nextrow -as lists row]} {
+	    set id [lindex $row 0]
+	}
+	rename $rs {}
+	list $result $id
+    }
+    -cleanup {
+	rename $stmt1 {}
+	rename $stmt2 {}
+    }
+    -result {{abort the transaction} 1}
+}
+
+test tdbc::odbc-15.3 {successful transaction gets committed} {*}{
+    -setup {
+	set stmt1 [db prepare {
+	    INSERT INTO people(idnum, name, info)
+	    VALUES(7, 'mr. gravel', 0)
+	}]
+	set stmt2 [db prepare {
+	    SELECT idnum FROM people WHERE name = 'mr. gravel'
+	}]
+    }
+    -body {
+	::db transaction {
+	    set rs [$stmt1 execute]
+	    rename $rs {}
+	}
+	set rs [$stmt2 execute]
+	while {[$rs nextrow -as lists row]} {
+	    set id [lindex $row 0]
+	}
+	rename $rs {}
+	set id
+    }
+    -cleanup {
+	rename $stmt1 {}
+	rename $stmt2 {}
+    }
+    -result 7
+}
+
+test tdbc::odbc-15.4 {break out of transaction commits it} {*}{
+    -setup {
+	set stmt1 [db prepare {
+	    INSERT INTO people(idnum, name, info)
+	    VALUES(8, 'gary granite', 0)
+	}]
+	set stmt2 [db prepare {
+	    SELECT idnum FROM people WHERE name = 'gary granite'
+	}]
+    }
+    -body {
+	while {1} {
+	    ::db transaction {
+		set rs [$stmt1 execute]
+		rename $rs {}
+		break
+	    }
+	}
+	set rs [$stmt2 execute]
+	while {[$rs nextrow -as lists row]} {
+	    set id [lindex $row 0]
+	}
+	rename $rs {}
+	set id
+    }
+    -cleanup {
+	rename $stmt1 {}
+	rename $stmt2 {}
+    }
+    -result 8
+}
+
+test tdbc::odbc-15.5 {continue in transaction commits it} {*}{
+    -setup {
+	set stmt1 [db prepare {
+	    INSERT INTO people(idnum, name, info)
+	    VALUES(9, 'hud rockstone', 0)
+	}]
+	set stmt2 [db prepare {
+	    SELECT idnum FROM people WHERE name = 'hud rockstone'
+	}]
+    }
+    -body {
+	for {set i 0} {$i < 1} {incr i} {
+	    ::db transaction {
+		set rs [$stmt1 execute]
+		rename $rs {}
+		continue
+	    }
+	}
+	set rs [$stmt2 execute]
+	while {[$rs nextrow -as lists row]} {
+	    set id [lindex $row 0]
+	}
+	rename $rs {}
+	set id
+    }
+    -cleanup {
+	rename $stmt1 {}
+	rename $stmt2 {}
+    }
+    -result 9
+}
+
+test tdbc::odbc-15.6 {return in transaction commits it} {*}{
+    -setup {
+	set stmt1 [db prepare {
+	    INSERT INTO people(idnum, name, info)
+	    VALUES(10, 'nelson stoneyfeller', 0)
+	}]
+	set stmt2 [db prepare {
+	    SELECT idnum FROM people WHERE name = 'nelson stoneyfeller'
+	}]
+	proc tdbcodbc-15.6 {stmt1} {
+	    ::db transaction {
+		set rs [$stmt1 execute]
+		rename $rs {}
+		return
+	    }
+	}
+    }
+    -body {
+	tdbcodbc-15.6 $stmt1
+	set rs [$stmt2 execute]
+	while {[$rs nextrow -as lists row]} {
+	    set id [lindex $row 0]
+	}
+	rename $rs {}
+	set id
+    }
+    -cleanup {
+	rename $stmt1 {}
+	rename $stmt2 {}
+	rename tdbcodbc-15.6 {}
+    }
+    -result 10
+}
+
+test tdbc::odbc-16.1 {database tables, wrong # args} {
+    -body {
+	set dict [::db tables % rubbish]
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test tdbc::odbc-16.2 {database tables - empty set} {
+    -body {
+	::db tables q%
+    }
+    -result {}
+}
+
+test tdbc::odbc-16.3 {enumerate database tables} {*}{
+    -body {
+	set dict [::db tables]
+	list [dict exists $dict people] [dict exists $dict property]
+    }
+    -result {1 0}
+}
+
+test tdbc::odbc-16.4 {enumerate database tables} {*}{
+    -body {
+	set dict [::db tables p%]
+	list [dict exists $dict people] [dict exists $dict property]
+    }
+    -result {1 0}
+}
+
+test tdbc::odbc-17.1 {database columns - wrong # args} {*}{
+    -body {
+	set dict [::db columns people % rubbish]
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+# sqlite driver appears to report "Function sequence error" if asked for
+# columns on a nonexistent table
+test tdbc::odbc-17.2 {database columns - no such table} {*}{
+    -constraints jet||sqlserver
+    -body {
+	::db columns rubbish
+    }
+    -result {}
+}
+
+# Jet driver promotes varchar to wvarchar
+test tdbc::odbc-17.3 {database columns - no match pattern} {*}{
+    -body {
+	set result {}
+	dict for {colname attrs} [::db columns people] {
+	    lappend result $colname \
+		[dict get $attrs type] \
+		[expr {[dict exists $attrs precision] ?
+		       [dict get $attrs precision] : {NULL}}] \
+		[expr {[dict exists $attrs scale] ?
+		       [dict get $attrs scale] : {NULL}}] \
+		[dict get $attrs nullable]
+	}
+	set result
+    }
+    -match glob
+    -result {idnum integer * * * name *varchar 40 * * info integer * * 1}
+}
+
+# sqlite driver appears not to implement pattern matching for SQLGetColumns
+test tdbc::odbc-17.4 {database columns - match pattern} {*}{
+    -constraints jet||sqlserver
+    -body {
+	set result {}
+	dict for {colname attrs} [::db columns people i%] {
+	    lappend result $colname \
+		[dict get $attrs type] \
+		[expr {[dict exists $attrs precision] ?
+		       [dict get $attrs precision] : {NULL}}] \
+		[expr {[dict exists $attrs scale] ?
+		       [dict get $attrs scale] : {NULL}}] \
+		[dict get $attrs nullable]
+	}
+	set result
+    }
+    -match glob
+    -result {idnum integer 10 0 * info integer 10 0 1}
+}
+
+test tdbc::odbc-18.1 {$statement params - excess arg} {*}{
+    -setup {
+	set s [::db prepare {
+	    SELECT name FROM people
+	    WHERE name LIKE :pattern
+	    AND idnum >= :minid
+	}]
+	$s paramtype minid numeric 10 0
+	$s paramtype pattern varchar 40
+    }
+    -body {
+	$s params excess
+    }
+    -cleanup {
+	rename $s {}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test tdbc::odbc-18.2 {$statement params - no params} {*}{
+    -setup {
+	set s [::db prepare {
+	    SELECT name FROM people
+	}]
+    }
+    -body {
+	$s params
+    }
+    -cleanup {
+	rename $s {}
+    }
+    -result {}
+}
+
+test tdbc::odbc-18.3 {$statement params - excess arg} {*}{
+    -setup {
+	set s [::db prepare {
+	    SELECT name FROM people
+	    WHERE name LIKE :pattern
+	    AND idnum >= :minid
+	}]
+	$s paramtype minid numeric 10 0
+	$s paramtype pattern varchar 40
+    }
+    -body {
+	set d [$s params]
+	list \
+	    [dict get $d minid direction] \
+	    [dict get $d minid type] \
+	    [dict get $d minid precision] \
+	    [dict get $d minid scale] \
+	    [dict get $d pattern direction] \
+	    [dict get $d pattern type] \
+	    [dict get $d pattern precision]
+    }
+    -cleanup {
+	rename $s {}
+    }
+    -result {in numeric 10 0 in varchar 40}
+}
+
+test tdbc::odbc-19.1 {$connection configure - no args} \
+    -body {
+	::db configure
+    } \
+    -match glob \
+    -result [list -encoding [encoding system] \
+		 -isolation * \
+		 -readonly 0 \
+		 -timeout 0]
+
+test tdbc::odbc-19.2 {$connection configure - unknown arg} {*}{
+    -body {
+	::db configure -junk
+    }
+    -returnCodes error
+    -match glob
+    -result "bad option *"
+}
+
+test tdbc::odbc-19.3 {$connection configure - inappropriate arg} {*}{
+    -body {
+	list [catch {::db configure -parent} result] $::errorCode
+    }
+    -match glob
+    -result {1 {TDBC GENERAL_ERROR HY* ODBC -1}}
+}
+
+test tdbc::odbc-19.4 {$connection configure - set unknown arg} {*}{
+    -body {
+	::db configure -junk morejunk
+    }
+    -returnCodes error
+    -match glob
+    -result "bad option *"
+}
+
+test tdbc::odbc-19.5 {$connection configure - set inappropriate arg} {*}{
+    -body {
+	list [catch {::db configure -parent .} result] $::errorCode
+    }
+    -match glob
+    -result {1 {TDBC GENERAL_ERROR HY* ODBC -1}}
+}
+
+test tdbc::odbc-19.6 {$connection configure - wrong # args} {*}{
+    -body {
+	::db configure -parent . -junk
+    }
+    -returnCodes error
+    -match glob
+    -result "wrong # args*"
+}
+
+test tdbc::odbc-19.7 {$connection configure - -encoding} {*}{
+    -body {
+	::db configure -encoding junk
+    }
+    -returnCodes error
+    -match glob
+    -result {unknown encoding *}
+}
+
+test tdbc::odbc-19.8 {$connection configure - -encoding} {*}{
+    -body {
+	list [catch {::db configure -encoding ebcdic} result] \
+	    [set result] \
+	    [set errorCode]
+    }
+    -match glob
+    -result {1 {optional function not implemented} {TDBC GENERAL_ERROR HYC00 ODBC *}}
+}
+
+test tdbc::odbc-19.9 {$connection configure - -encoding} \
+    -body {
+	list [::db configure -encoding [encoding system]] \
+	    [::db configure -encoding]
+    } \
+    -result [list {} [encoding system]]
+
+
+test tdbc::odbc-19.10 {$connection configure - -isolation} {*}{
+    -body {
+	::db configure -isolation junk
+    }
+    -returnCodes error
+    -match glob
+    -result {bad isolation level "junk"*}
+}
+
+test tdbc::odbc-19.11a {$connection configure - -isolation} {*}{
+    -constraints !sqlite
+    -body {
+	list [::db configure -isolation readcommitted] \
+	    [::db configure -isolation]
+    }
+    -result {{} readcommitted}
+}
+test tdbc::odbc-19.11b {$connection configure - -isolation} {*}{
+    -constraints sqlite
+    -body {
+	list [::db configure -isolation readcommitted] \
+	    [::db configure -isolation]
+    }
+    -result {{} serializable}
+}
+
+test tdbc::odbc-19.12 {$connection configure - -readonly} {*}{
+    -body {
+	::db configure -readonly junk
+    }
+    -returnCodes error
+    -result {expected boolean value but got "junk"}
+}
+
+# sqlite doesn't allow change to the readonly status
+test tdbc::odbc-19.13 {$connection configure - -readonly} {*}{
+    -constraints !sqlite
+    -body {
+	list [::db configure -readonly 1] \
+	    [::db configure -readonly] \
+	    [::db configure -readonly 0] \
+	    [::db configure -readonly]
+    }
+    -result {{} 1 {} 0}
+}
+
+test tdbc::odbc-19.14 {$connection configure - -timeout} {*}{
+    -body {
+	::db configure -timeout junk
+    }
+    -returnCodes error
+    -result {expected integer but got "junk"}
+}
+
+test tdbc::odbc-19.15 {$connection configure - -timeout} {*}{
+    -body {
+	catch {::db configure -timeout 5000} result
+	list [::db configure -timeout 0] [::db configure -timeout]
+    }
+    -result {{} 0}
+}
+
+test tdbc::odbc-20.1a {direct value transfers} {*}{
+    -constraints jet||sqlite
+    -setup {
+	db allrows {
+	    CREATE TABLE typetest (
+		xint1 INTEGER,
+		xsmall1 SMALLINT,
+		xbit1 BIT,
+		xdouble1 DOUBLE,
+		xreal1 REAL
+	    )
+	}
+	set stmt [db prepare {
+	    INSERT INTO typetest(xint1, xsmall1, xbit1, xdouble1, xreal1)
+	    VALUES (:i1, :s1, :b1, :d1, :r1)
+	}]
+	$stmt paramtype i1 integer
+	$stmt paramtype s1 smallint
+	$stmt paramtype b1 bit
+	$stmt paramtype d1 double
+	$stmt paramtype r1 real
+    }
+    -body {
+	set i1 0xbc614e
+	set s1 0x3039
+	set b1 1
+	set d1 1.125
+	set r1 1.125
+	$stmt allrows
+	db allrows -as lists {select * from typetest}
+    }
+    -result {{12345678 12345 1 1.125 1.125}}
+    -cleanup {
+	$stmt close
+	db allrows {
+	    DROP TABLE typetest
+	}
+    }
+}
+
+test tdbc::odbc-20.1b {direct value transfers} {*}{
+    -constraints sqlserver
+    -setup {
+	db allrows {
+	    CREATE TABLE typetest (
+		xbigint1 BIGINT,
+		xint1 INT,
+		xsmallint1 SMALLINT,
+		xtinyint1 TINYINT,
+                xbit1 BIT,
+		xdecimal1 DECIMAL(12,6),
+		xmoney1 MONEY,
+		xsmallmoney1 SMALLMONEY,
+		xfloat1 FLOAT,
+		xreal1 REAL
+	    )
+	}
+	set stmt [db prepare {
+	    INSERT INTO typetest(xbigint1, xint1, xsmallint1, xtinyint1, xbit1,
+				 xdecimal1, xmoney1, xsmallmoney1, xfloat1,
+				 xreal1)
+	    VALUES (:bi1, :i1, :si1, :ti1, :b1, :d1, :m1, :sm1, :f1, :r1)
+	}]
+	$stmt paramtype bi1 bigint
+	$stmt paramtype i1 integer
+	$stmt paramtype si1 smallint
+	$stmt paramtype ti1 tinyint
+	$stmt paramtype b1 bit
+	$stmt paramtype d1 decimal 12 6
+	$stmt paramtype m1 decimal 16 4
+	$stmt paramtype sm1 decimal 9 2
+	$stmt paramtype f1 float
+	$stmt paramtype r1 real
+    }
+    -body {
+	set bi1 0x7048860ddf79
+	set i1 0xbc614e
+	set si1 0x3039
+	set ti1 0x7b
+	set b1 1
+	set d1 12345.678901
+	set m1 12345.6789
+	set sm1 123.45
+	set f1 1.0000000149011612
+	set r1 1.125
+	$stmt allrows
+	db allrows -as lists {select * from typetest}
+    }
+    -result {{123456789012345 12345678 12345 123 1 12345.678901 12345.6789 123.45 1.0000000149011612 1.125}}
+    -cleanup {
+	$stmt close
+	db allrows {
+	    DROP TABLE typetest
+	}
+    }
+}
+
+test tdbc::odbc-21.2 {transfers of binary data} {*}{
+    -setup {
+	db allrows {
+	    CREATE TABLE bintest (
+		xint1 INTEGER PRIMARY KEY,
+		xbin VARBINARY(256)
+	    )
+	}
+	set stmt1 [db prepare {
+	    INSERT INTO bintest (xint1, xbin)
+	    VALUES(:i1, :b1)
+	}]
+	$stmt1 paramtype i1 integer
+	$stmt1 paramtype b1 varbinary 256
+	set stmt2 [db prepare {
+	    SELECT xbin FROM bintest WHERE xint1 = :i1
+	}]
+	$stmt2 paramtype i1 integer
+    }
+    -body {
+	set listdata {}
+	for {set i 0} {$i < 256} {incr i} {
+	    lappend listdata $i
+	}
+	set b1 [binary format c* $listdata]
+	set i1 123
+	$stmt1 allrows
+	$stmt2 foreach -as lists row { set b2 [lindex $row 0] }
+	list [string length $b2] [string compare $b1 $b2]
+    }
+    -result {256 0}
+    -cleanup {
+	$stmt1 close
+	$stmt2 close
+	db allrows {DROP TABLE bintest}
+    }
+}
+
+test tdbc::odbc-22.1 {datasources, wrong # args} {*}{
+    -body {
+	tdbc::odbc::datasources two args
+    }
+    -returnCodes error
+    -result {wrong # args*}
+    -match glob
+}
+
+test tdbc::odbc-22.2 {datasources, bad arg} {*}{
+    -body {
+	tdbc::odbc::datasources -rubbish
+    }
+    -returnCodes error
+    -result {bad option "-rubbish"*}
+    -match glob
+}
+
+test tdbc::odbc-22.3 {datasources, sys + user = all} {*}{
+    -body {
+	set d1 [tdbc::odbc::datasources -user]
+	set d2 [tdbc::odbc::datasources -system]
+	set d3 [tdbc::odbc::datasources]
+	set d4 $d1
+	lappend d4 {*}$d2
+	list [expr {[llength $d1] % 2}] [expr {[llength $d2] % 2}] \
+	    [expr {[llength $d3] == [llength $d1] + [llength $d2]}] \
+	    [string equal $d4 $d3]
+    }
+    -result {0 0 1 1}
+}
+
+test tdbc::odbc-23.1 {drivers, wrong # args} {*}{
+    -body {
+	tdbc::odbc::drivers rubbish
+    }
+    -returnCodes error
+    -result {wrong # args*}
+    -match glob
+}
+
+test tdbc::odbc-23.2 {drivers} {*}{
+    -body {
+	expr {[llength [tdbc::odbc::drivers]] % 2}
+    }
+    -result 0
+}
+
+test tdbc::odbc-24.1 {datasource - wrong # args} {*}{
+    -constraints {odbcinst}
+    -body {
+	tdbc::odbc::datasource
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test tdbc::odbc-24.2 {datasource - bad operation} {*}{
+    -constraints {odbcinst}
+    -body {
+	tdbc::odbc::datasource rubbish rubbish rubbish=rubbish
+    }
+    -returnCodes error
+    -match glob
+    -result {bad operation "rubbish"*}
+}
+
+test tdbc::odbc-24.3 {datasource - bad driver} {*}{
+    -constraints {odbcinst}
+    -body {
+	list [catch {
+	    tdbc::odbc::datasource add rubbish rubbish=rubbish
+	} result] \
+	    $::errorCode
+    }
+    -match glob
+    -result {1 {TDBC ODBC *}}
+}
+
+test tdbc::odbc-24.4 {datasource - add/remove} {*}{
+    -constraints odbcinst&&jet
+    -body {
+	list \
+	    [tdbc::odbc::datasource add \
+		 {Microsoft Access Driver (*.mdb)} \
+		 DSN=TdbcOdbcTestDB \
+		 DBQ=$testDBQ] \
+	    [dict exists [tdbc::odbc::datasources] TdbcOdbcTestDB] \
+	    [tdbc::odbc::datasource remove \
+		 {Microsoft Access Driver (*.mdb)} \
+		 DSN=TdbcOdbcTestDB] \
+	    [dict exists [tdbc::odbc::datasources] TdbcOdbcTestDB]
+    }
+    -result {{} 1 {} 0}
+}
+
+test tdbc::odbc-25.1a {error code} {*}{
+    -constraints sqlite
+    -setup {
+	db allrows {DELETE FROM people}
+	db allrows {INSERT INTO people(idnum, name) VALUES(1, 'fred')}
+    }
+    -body {
+	list [catch {
+	    db allrows {INSERT INTO people(idnum, name) VALUES(1, 'fred')}
+	} result] $result $::errorCode
+    }
+    -match glob
+    -result {1 * {TDBC GENERAL_ERROR HY* ODBC *}}
+}
+
+test tbdc::odbc-25.1b {error code} {*}{
+    -constraints jet||sqlserver
+    -setup {
+	db allrows {DELETE FROM people}
+	db allrows {INSERT INTO people(idnum, name) VALUES(1, 'fred')}
+    }
+    -body {
+	list [catch {
+	    db allrows {INSERT INTO people(idnum, name) VALUES(1, 'fred')}
+	} result] $result $::errorCode
+    }
+    -match glob
+    -result {1 * {TDBC CONSTRAINT_VIOLATION 23000 ODBC *}}
+}
+
+test tdbc::odbc-26.1 {parameters in native form} {*}{
+    -constraints jet||sqlserver
+    -body {
+	list [catch {
+	    db allrows {SELECT * from people where name = ?}
+	} result] $result $::errorCode
+    }
+    -match glob
+    -result {1 * {TDBC DYNAMIC_SQL_ERROR 07002 ODBC -1}}
+}
+
+test tdbc::odbc-27.1a {blobs} {*}{
+    -constraints sqlite
+    -setup {
+	db allrows {
+	    create table blobtest (
+	        id integer primary key,
+                stuff blob
+            )
+        }
+	set testblob [string repeat 0123456789abx 200]
+        db allrows {
+            insert into blobtest(id, stuff) values (1, :testblob)
+        }
+    }
+    -body {
+	set trouble {}
+	db foreach row {select id, stuff from blobtest} {
+            if {[dict get $row stuff] ne $testblob} {
+		set trouble       "blob is   \"[dict get $row stuff]\""
+                append trouble \n "should be \"" $testblob "\""
+		append trouble \n "length is [string length \
+                                                  [dict get $row stuff]]"
+		append trouble \n "should be [string length $testblob]"
+	    }
+	}
+	set trouble
+    }
+    -cleanup {
+	db allrows {
+	    drop table blobtest
+	}
+    }
+    -result {}
+}
+
+test tdbc::odbc-27.1b {blobs} {*}{
+    -constraints sqlserver
+    -setup {
+	db allrows {
+	    create table blobtest (
+	        id integer primary key,
+                stuff image
+            )
+        }
+	set testblob [string repeat 0123456789abx 200]
+        db allrows {
+            insert into blobtest(id, stuff) values (1, :testblob)
+        }
+    }
+    -body {
+	set trouble {}
+	db foreach row {select id, stuff from blobtest} {
+            if {[dict get $row stuff] ne $testblob} {
+		set trouble       "blob is   \"[dict get $row stuff]\""
+                append trouble \n "should be \"" $testblob "\""
+		append trouble \n "length is [string length \
+                                                  [dict get $row stuff]]"
+		append trouble \n "should be [string length $testblob]"
+	    }
+	}
+	set trouble
+    }
+    -cleanup {
+	db allrows {
+	    drop table blobtest
+	}
+    }
+    -result {}
+}
+
+test tdbc::odbc-27.2a {memos} {*}{
+    -constraints jet
+    -setup {
+	db allrows {
+	    create table blobtest (
+	        id integer primary key,
+                stuff memo
+            )
+        }
+	set testblob [string repeat 0123456789abs 200]
+        set stmt [db prepare {
+            insert into blobtest(id, stuff) values (1, :testblob)
+        }]
+	$stmt paramtype testblob longvarchar 65535
+	$stmt allrows
+	$stmt close
+    }
+    -body {
+	set trouble {}
+	set count 0
+	db foreach row {select id, stuff from blobtest} {
+	    incr count
+            if {[dict get $row stuff] ne $testblob} {
+		set trouble       "blob is   \"[dict get $row stuff]\""
+                append trouble \n "should be \"" $testblob "\""
+		append trouble \n "length is [string length \
+                                                  [dict get $row stuff]]"
+		append trouble \n "should be [string length $testblob]"
+	    }
+	}
+	if {$count != 1} {
+	    append trouble \n "$count rows returned, should have been 1"
+	}
+	set trouble
+    }
+    -cleanup {
+	db allrows {
+	    drop table blobtest
+	}
+    }
+    -result {}
+}
+
+test tdbc::odbc-27.2b {clobs} {*}{
+    -constraints sqlite
+    -setup {
+	db allrows {
+	    create table blobtest (
+	        id integer primary key,
+                stuff varchar(10240)
+            )
+        }
+	set testblob [string repeat 0123456789abc 200]
+        db allrows {
+            insert into blobtest(id, stuff) values (1, :testblob)
+        }
+    }
+    -body {
+	set trouble {}
+	db foreach row {select id, stuff from blobtest} {
+            if {[dict get $row stuff] ne $testblob} {
+		set trouble       "blob is   \"[dict get $row stuff]\""
+                append trouble \n "should be \"" $testblob "\""
+		append trouble \n "length is [string length \
+                                                  [dict get $row stuff]]"
+		append trouble \n "should be [string length $testblob]"
+	    }
+	}
+	set trouble
+    }
+    -cleanup {
+	db allrows {
+	    drop table blobtest
+	}
+    }
+    -result {}
+}
+
+test tdbc::odbc-27.2c {clobs} {*}{
+    -constraints sqlserver
+    -setup {
+	db allrows {
+	    create table blobtest (
+	        id integer primary key,
+                stuff nvarchar(max)
+            )
+        }
+	set testblob [string repeat 0123456789abc 200]
+        db allrows {
+            insert into blobtest(id, stuff) values (1, :testblob)
+        }
+    }
+    -body {
+	set trouble {}
+	db foreach row {select id, stuff from blobtest} {
+            if {[dict get $row stuff] ne $testblob} {
+		set trouble       "blob is   \"[dict get $row stuff]\""
+                append trouble \n "should be \"" $testblob "\""
+		append trouble \n "length is [string length \
+                                                  [dict get $row stuff]]"
+		append trouble \n "should be [string length $testblob]"
+	    }
+	}
+	set trouble
+    }
+    -cleanup {
+	db allrows {
+	    drop table blobtest
+	}
+    }
+    -result {}
+}
+
+test tdbc::odbc-27.4 {blobs} {*}{
+    -constraints sqlserver
+    -setup {
+	db allrows {
+	    create table blobtest (
+	        id integer primary key,
+                stuff nvarchar(max)
+            )
+        }
+	set testblob [string repeat 0123456789abc 200]
+        db allrows {
+            insert into blobtest(id, stuff) values (1, :testblob)
+        }
+    }
+    -body {
+	set trouble {}
+	db foreach row {select id, stuff from blobtest} {
+            if {[dict get $row stuff] ne $testblob} {
+		set trouble       "blob is   \"[dict get $row stuff]\""
+                append trouble \n "should be \"" $testblob "\""
+		append trouble \n "length is [string length \
+                                                  [dict get $row stuff]]"
+		append trouble \n "should be [string length $testblob]"
+	    }
+	}
+	set trouble
+    }
+    -cleanup {
+	db allrows {
+	    drop table blobtest
+	}
+    }
+    -result {}
+}
+
+# Information schema tests require additional tables in the database.
+# Create them now.
+
+catch {::db allrows {DROP TABLE d}}
+catch {::db allrows {DROP TABLE c}}
+catch {::db allrows {DROP TABLE b}}
+catch {::db allrows {DROP TABLE a}}
+
+# Create some tables with foreign key relationships to test querying
+# foreign keys
+
+::db allrows {
+    CREATE TABLE a (
+        k1 INTEGER,
+        CONSTRAINT pk_a PRIMARY KEY(k1)
+    )
+}
+
+::db allrows {
+    CREATE TABLE b (
+        k1 INTEGER,
+        k2 INTEGER,
+        CONSTRAINT pk_b PRIMARY KEY(k1, k2),
+        CONSTRAINT fk_b1 FOREIGN KEY (k1) REFERENCES a(k1),
+        CONSTRAINT fk_b2 FOREIGN KEY (k2) REFERENCES a(k1)
+    )
+}
+
+::db allrows {
+    CREATE TABLE c (
+        p1 INTEGER,
+        p2 INTEGER,
+        CONSTRAINT pk_c PRIMARY KEY(p1, p2),
+        CONSTRAINT fk_c1 FOREIGN KEY (p1) REFERENCES a(k1),
+        CONSTRAINT fk_c2 FOREIGN KEY (p2) REFERENCES a(k1),
+	CONSTRAINT fk_cpair FOREIGN KEY (p2,p1) REFERENCES b(k1,k2)
+    )
+}
+
+::db allrows {
+    CREATE TABLE d (
+	dtext VARCHAR(40)
+    )
+}
+
+test tdbc::odbc-28.1 {Primary keys - no arg} {*}{
+    -body {
+	::db primarykeys
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test tdbc::odbc-28.2 {Primary keys - no primary key} {*}{
+    -constraints !jet
+    -body {
+	::db primarykeys d
+    }
+    -result {}
+}
+test tdbc::odbc-28.3 {Primary keys - simple primary key} {*}{
+    -constraints !jet
+    -body {
+	set result {}
+	foreach row [::db primarykeys a] {
+	    lappend result [dict get $row columnName] [dict get $row ordinalPosition]
+	}
+	set result
+    }
+    -result {k1 1}
+}
+# next test uses unimplemented functionality in Jet, tickles a bug in
+# the Win32 SQLite ODBC driver
+test tdbc::odbc-28.4 {Primary keys - compound primary key} {*}{
+    -constraints !jet&&!(windows&&sqlite)
+    -body {
+	set result {}
+	foreach row [::db primarykeys b] {
+	    lappend result [dict get $row columnName] [dict get $row ordinalPosition]
+	}
+	set result
+    }
+    -result {k1 1 k2 2}
+}
+
+test tdbc::odbc-29.1 {Foreign keys - wrong # args} {*}{
+    -body {
+	::db foreignkeys -wrong
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test tdbc::odbc-29.2 {Foreign keys - bad arg} {*}{
+    -body {
+	::db foreignkeys -primary a -rubbish b
+    }
+    -returnCodes error
+    -match glob
+    -result {bad option "-rubbish"*}
+}
+
+test tdbc::odbc-29.3 {Foreign keys - redundant arg} {*}{
+    -body {
+	::db foreignkeys -primary a -primary b
+    }
+    -returnCodes error
+    -match glob
+    -result {duplicate option "-primary"*}
+}
+
+test tdbc::odbc-29.4 {Foreign keys - list all} \
+    -constraints knownBug \
+    -body {
+	set result {}
+	set wanted {a {} b {} c {} d {} people {}}
+	foreach row [::db foreignkeys] {
+	    if {[dict exists $wanted [dict get $row foreignTable]]} {
+		dict set result [dict get $row foreignConstraintName] \
+		    [dict get $row ordinalPosition] \
+		    [list [dict get $row foreignTable] \
+			 [dict get $row foreignColumn] \
+			 [dict get $row primaryTable] \
+			 [dict get $row primaryColumn]]
+	    }
+	}
+	lsort [dict values $result]
+    } \
+    -result [list \
+		 {1 {b k1 a k1}} \
+		 {1 {b k2 a k1}} \
+		 {1 {c p1 a k1}} \
+		 {1 {c p1 b k2} 2 {c p2 b k1}} \
+		 {1 {c p2 a k1}} \
+		 ]
+
+
+test tdbc::odbc-29.5 {Foreign keys - -foreign} \
+    -constraints !jet \
+    -body {
+	set result {}
+	set wanted {a {} b {} c {} d {} people {}}
+	foreach row [::db foreignkeys -foreign c] {
+	    if {[dict exists $wanted [dict get $row foreignTable]]} {
+		dict set result [dict get $row foreignConstraintName] \
+		    [dict get $row ordinalPosition] \
+		    [list [dict get $row foreignTable] \
+			 [dict get $row foreignColumn] \
+			 [dict get $row primaryTable] \
+			 [dict get $row primaryColumn]]
+	    }
+	}
+	lsort [dict values $result]
+    } \
+    -result [list \
+		 {1 {c p1 a k1}} \
+		 {1 {c p2 a k1}} \
+		 {1 {c p2 b k1} 2 {c p1 b k2}} \
+		]
+
+test tdbc::odbc-29.6 {Foreign keys - -primary} \
+    -constraints !jet \
+    -body {
+	set result {}
+	set wanted {a {} b {} c {} d {} people {}}
+	foreach row [::db foreignkeys -primary a] {
+	    if {[dict exists $wanted [dict get $row foreignTable]]} {
+		dict set result [dict get $row foreignConstraintName] \
+		    [dict get $row ordinalPosition] \
+		    [list [dict get $row foreignTable] \
+			 [dict get $row foreignColumn] \
+			 [dict get $row primaryTable] \
+			 [dict get $row primaryColumn]]
+	    }
+	}
+	lsort [dict values $result]
+    } \
+    -result [list \
+		 {1 {b k1 a k1}} \
+		 {1 {b k2 a k1}} \
+		 {1 {c p1 a k1}} \
+		 {1 {c p2 a k1}}]
+
+test tdbc::odbc-29.7 {Foreign keys - -foreign and -primary} \
+    -constraints !jet \
+    -body {
+	set result {}
+	set wanted {a {} b {} c {} d {} people {}}
+	foreach row [::db foreignkeys -foreign c -primary b] {
+	    if {[dict exists $wanted [dict get $row foreignTable]]} {
+		dict set result [dict get $row foreignConstraintName] \
+		    [dict get $row ordinalPosition] \
+		    [list [dict get $row foreignTable] \
+			 [dict get $row foreignColumn] \
+			 [dict get $row primaryTable] \
+			 [dict get $row primaryColumn]]
+	    }
+	}
+	lsort [dict values $result]
+    } \
+    -result [list {1 {c p2 b k1} 2 {c p1 b k2}}]
+
+# In next test, JET throws an error because there is no statement.
+# SQLite and SQL Server both return a single empty result set
+
+test tdbc::odbc-30.0 {Multiple result sets} {*}{
+    -constraints !jet
+    -body {
+	set stmt [::db prepare { }]
+	catch {
+	    set resultset [$stmt execute {}]
+	    catch {
+		set rowsets {}
+		while {1} {
+		    set rows {}
+		    while {[$resultset nextrow row]} {
+			lappend rows $row
+		    }
+		    lappend rowsets $rows
+		    if {[$resultset nextresults] == 0} break
+		}
+		set rowsets
+	    } results
+	    rename $resultset {}
+	    set results
+	} results
+	rename $stmt {}
+	set results
+    }
+    -result {{}}
+}
+
+test tdbc::odbc-30.1 {Multiple result sets - but in reality only one} {*}{
+    -setup {
+	::db allrows {delete from people}
+	set stmt [db prepare {
+	    INSERT INTO people(idnum, name, info) VALUES(:idnum, :name, NULL)
+	}]
+	$stmt paramtype idnum integer
+	$stmt paramtype name varchar 40
+	set idnum 1
+	foreach name {fred wilma pebbles barney betty bam-bam} {
+	    set rs [$stmt execute]
+	    rename $rs {}
+	    incr idnum
+	}
+	rename $stmt {}
+    }
+    -body {
+	set stmt [::db prepare {
+	    select idnum, name from people where name = :a;
+	}]
+	catch {
+	    set resultset [$stmt execute {a wilma}]
+	    catch {
+		set rowsets {}
+		while {1} {
+		    set rows {}
+		    while {[$resultset nextrow row]} {
+			lappend rows $row
+		    }
+		    lappend rowsets $rows
+		    if {[$resultset nextresults] == 0} break
+		}
+		set rowsets
+	    } results
+	    rename $resultset {}
+	    set results
+	} results
+	rename $stmt {}
+	set results
+    }
+    -result {{{idnum 2 name wilma}}}
+}
+
+# sqlite and jet drivers don't support multiple statements
+test tdbc::odbc-30.2 {Multiple result sets - actually multiple} {*}{
+    -constraints !jet&&!sqlite
+    -setup {
+	::db allrows {delete from people}
+	set stmt [db prepare {
+	    INSERT INTO people(idnum, name, info) VALUES(:idnum, :name, NULL)
+	}]
+	$stmt paramtype idnum integer
+	$stmt paramtype name varchar 40
+	set idnum 1
+	foreach name {fred wilma pebbles barney betty bam-bam} {
+	    set rs [$stmt execute]
+	    rename $rs {}
+	    incr idnum
+	}
+	rename $stmt {}
+    }
+    -body {
+	set stmt [::db prepare {
+	    select idnum, name from people where name = :a;
+	    select idnum, name, 1 as something from people where name = :b;
+	}]
+	catch {
+	    set resultset [$stmt execute {a wilma b pebbles}]
+	    catch {
+		set rowsets {}
+		while {1} {
+		    set rows {}
+		    while {[$resultset nextrow row]} {
+			lappend rows $row
+		    }
+		    lappend rowsets $rows
+		    if {[$resultset nextresults] == 0} break
+		}
+		set rowsets
+	    } results
+	    rename $resultset {}
+	    set results
+	} results
+	rename $stmt {}
+	set results
+    }
+    -result {{{idnum 2 name wilma}} {{idnum 3 name pebbles something 1}}}
+}
+
+test tdbc::odbc-30.3 {Multiple result sets - try to read past end} {*}{
+    -setup {
+	::db allrows {delete from people}
+	set stmt [db prepare {
+	    INSERT INTO people(idnum, name, info) VALUES(:idnum, :name, NULL)
+	}]
+	$stmt paramtype idnum integer
+	$stmt paramtype name varchar 40
+	set idnum 1
+	foreach name {fred wilma pebbles barney betty bam-bam} {
+	    set rs [$stmt execute]
+	    rename $rs {}
+	    incr idnum
+	}
+	rename $stmt {}
+    }
+    -body {
+	set stmt [::db prepare {
+	    select idnum, name from people where name = :a;
+	}]
+	catch {
+	    set resultset [$stmt execute {a wilma}]
+	    catch {
+		set rowsets {}
+		while {1} {
+		    set rows {}
+		    while {[$resultset nextrow row]} {
+			lappend rows $row
+		    }
+		    lappend rowsets $rows
+		    if {[$resultset nextresults] == 0} break
+		}
+	        lappend rowsets [catch {$resultset nextresults} msg] $msg
+		set rowsets
+	    } results
+	    rename $resultset {}
+	    set results
+	} results
+	rename $stmt {}
+	set results
+    }
+    -match glob
+    -result {{{idnum 2 name wilma}} 0 0}
+}
+
+test tdbc::odbc-30.4 {Multiple result sets - foreach} {*}{
+    -constraints !jet&&!sqlite
+    -setup {
+	::db allrows {delete from people}
+	set stmt [db prepare {
+	    INSERT INTO people(idnum, name, info) VALUES(:idnum, :name, NULL)
+	}]
+	$stmt paramtype idnum integer
+	$stmt paramtype name varchar 40
+	set idnum 1
+	foreach name {fred wilma pebbles barney betty bam-bam} {
+	    set rs [$stmt execute]
+	    rename $rs {}
+	    incr idnum
+	}
+	rename $stmt {}
+    }
+    -body {
+	set rows {}
+	::db foreach -columnsvar c -- row {
+	    select idnum, name from people where name = :a;
+	    select idnum, name, 1 as something from people where name = :b
+	} {a wilma b pebbles} {
+	    lappend rows $c $row
+	}
+	set rows
+    }
+    -result {{idnum name} {idnum 2 name wilma} {idnum name something} {idnum 3 name pebbles something 1}}
+}
+
+test tdbc::odbc-30.5 {Multiple result sets - allrows} {*}{
+    -constraints !jet&&!sqlite
+    -setup {
+	::db allrows {delete from people}
+	set stmt [db prepare {
+	    INSERT INTO people(idnum, name, info) VALUES(:idnum, :name, NULL)
+	}]
+	$stmt paramtype idnum integer
+	$stmt paramtype name varchar 40
+	set idnum 1
+	foreach name {fred wilma pebbles barney betty bam-bam} {
+	    set rs [$stmt execute]
+	    rename $rs {}
+	    incr idnum
+	}
+	rename $stmt {}
+    }
+    -body {
+	::db allrows -as dicts {
+	    select idnum, name from people where name = :a;
+	    select idnum, name, 1 as something from people where name = :b;
+	} {a wilma b pebbles}
+    }
+    -result {{idnum 2 name wilma} {idnum 3 name pebbles something 1}}
+}
+
+test tdbc::odbc-30.6 {rowcount in multiple result sets} {*}{
+    -constraints !jet&&!sqlite
+    -setup {
+	::db allrows {delete from people}
+	set stmt [db prepare {
+	    INSERT INTO people(idnum, name, info) VALUES(:idnum, :name, NULL)
+	}]
+	$stmt paramtype idnum integer
+	$stmt paramtype name varchar 40
+	set idnum 1
+	foreach name {fred wilma pebbles barney betty bam-bam} {
+	    set rs [$stmt execute]
+	    rename $rs {}
+	    incr idnum
+	}
+	rename $stmt {}
+	unset stmt
+    }
+    -body {
+	set stmt [db prepare {
+	    INSERT INTO PEOPLE(idnum, name, info)
+	    SELECT idnum+10, name+'2', info
+	    FROM PEOPLE
+	    WHERE name LIKE 'b%';
+	    INSERT INTO PEOPLE(idnum, name, info)
+	    SELECT idnum+20, name+'3', info
+	    FROM PEOPLE
+	    WHERE name LIKE 'f%'
+	}]
+	set rs [$stmt execute]
+	set result {}
+	while {1} {
+	    lappend result [$rs rowcount]
+	    if {![$rs nextresults]} break
+	}
+	set result
+    }
+    -cleanup {
+	catch {rename $rs {}}
+	catch {rename $stmt {}}
+	::db allrows {delete from people}
+    }
+    -result {3 1}
+}
+
+test tdbc::odbc-31.1 {stored procedure - invoke with default config} {*}{
+    -constraints sqlserver
+    -setup {
+	::db allrows {delete from people}
+	set stmt [db prepare {
+	    INSERT INTO people(idnum, name, info) VALUES(:idnum, :name, NULL)
+	}]
+	$stmt paramtype idnum integer
+	$stmt paramtype name varchar 40
+	set idnum 1
+	foreach name {fred wilma pebbles barney betty bam-bam} {
+	    set rs [$stmt execute]
+	    rename $rs {}
+	    incr idnum
+	}
+	rename $stmt {}
+	db allrows {
+            IF EXISTS(SELECT name FROM sysobjects
+                      WHERE name = 'find_person' AND type = 'P')
+                DROP PROCEDURE find_person
+	}
+	db allrows {
+	    CREATE PROCEDURE find_person
+	        @name VARCHAR(40),
+	        @idnum INTEGER OUTPUT
+            AS
+            SELECT @idnum = idnum FROM people WHERE name = @name
+	}
+	catch {unset stmt}
+    }
+    -body {
+ 	set stmt [::db prepare {
+ 	    DECLARE @x AS INTEGER;
+ 	    EXECUTE find_person :name, @x OUTPUT;
+	    SELECT @x AS result
+ 	}]
+	$stmt allrows {name barney}
+    }
+    -cleanup {
+	if {[info exists stmt]} {
+	    rename $stmt {}
+	}
+	db allrows {
+	    DROP PROCEDURE find_person
+	}
+    }
+    -result {{result 4}}
+}
+
+test tdbc::odbc-31.2 {stored procedure - invoke with escapes} {*}{
+    -constraints sqlserver&&knownBug
+    -setup {
+	::db allrows {delete from people}
+	set stmt [db prepare {
+	    INSERT INTO people(idnum, name, info) VALUES(:idnum, :name, NULL)
+	}]
+	$stmt paramtype idnum integer
+	$stmt paramtype name varchar 40
+	set idnum 1
+	foreach name {fred wilma pebbles barney betty bam-bam} {
+	    set rs [$stmt execute]
+	    rename $rs {}
+	    incr idnum
+	}
+	rename $stmt {}
+	db allrows {
+            IF EXISTS(SELECT name FROM sysobjects
+                      WHERE name = 'find_person' AND type = 'P')
+                DROP PROCEDURE find_person
+	}
+	db allrows -outputparams x {
+	    CREATE PROCEDURE find_person
+	        @name VARCHAR(40),
+	        @idnum INTEGER OUTPUT
+            AS
+            SELECT @idnum = idnum FROM people WHERE name = @name
+	}
+	catch {unset stmt}
+    }
+    -body {
+ 	set stmt [::db prepare {{CALL find_person(:name, :x)}}]
+	$stmt paramtype x out integer 10
+	puts [$stmt params]
+	$stmt allrows {name barney}
+    }
+    -cleanup {
+	if {[info exists stmt]} {
+	    rename $stmt {}
+	}
+	db allrows {
+	    DROP PROCEDURE find_person
+	}
+    }
+    -result {x 4}
+}
+
+#-------------------------------------------------------------------------------
+
+# Test cleanup. Drop tables and get rid of the test database.
+
+
+catch {::db allrows {DROP TABLE d}}
+catch {::db allrows {DROP TABLE c}}
+catch {::db allrows {DROP TABLE b}}
+catch {::db allrows {DROP TABLE a}}
+catch {::db allrows {DROP TABLE people}}
+
+catch {rename ::db {}}
+
+puts [info class instances tdbc::connection]
+puts [info class instances tdbc::statement]
+puts [info class instances tdbc::resultset]
+
+
+if {[info exists testFileName]} {
+    catch {removeFile $testFileName $testdir}
+}
+removeDirectory tdbctest
+
+cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

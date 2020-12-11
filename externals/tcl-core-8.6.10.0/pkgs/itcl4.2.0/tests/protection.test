@@ -1,0 +1,374 @@
+#
+# Tests for method/variable protection and access
+# ----------------------------------------------------------------------
+#   AUTHOR:  Michael J. McLennan
+#            Bell Labs Innovations for Lucent Technologies
+#            mmclennan@lucent.com
+#            http://www.tcltk.com/itcl
+# ----------------------------------------------------------------------
+#            Copyright (c) 1993-1998  Lucent Technologies, Inc.
+# ======================================================================
+# See the file "license.terms" for information on usage and
+# redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2.1
+namespace import ::tcltest::test
+::tcltest::loadTestedCommands
+package require itcl
+
+# ----------------------------------------------------------------------
+#  Class members are protected by access restrictions
+# ----------------------------------------------------------------------
+test protect-1.1 {define a class with various protection levels} {
+    itcl::class test_pr {
+        public {
+            variable pubv "public var"
+            common pubc "public com"
+            method pubm {} {return "public method"}
+            method ovpubm {} {return "overloaded public method"}
+            proc pubp {} {return "public proc"}
+        }
+        protected {
+            variable prov "protected var"
+            common proc "protected com"
+            method prom {} {return "protected method"}
+            method ovprom {} {return "overloaded protected method"}
+            proc prop {} {return "protected proc"}
+        }
+        private {
+            variable priv "private var"
+            common pric "private com"
+            method prim {} {return "private method"}
+            method ovprim {} {return "overloaded private method"}
+            proc prip {} {return "private proc"}
+        }
+        method do {args} {eval $args}
+    }
+} ""
+
+test protect-1.2 {create an object to execute tests} {
+    test_pr #auto
+} {test_pr0}
+
+test protect-1.3a {public methods can be accessed from outside} {
+    list [catch {test_pr0 pubm} msg] $msg
+} {0 {public method}}
+
+test protect-1.3b {public methods can be accessed from inside} {
+    list [catch {test_pr0 do pubm} msg] $msg
+} {0 {public method}}
+
+test protect-1.4a {protected methods are blocked from outside} {
+    list [catch {test_pr0 prom} msg] $msg
+} {1 {bad option "prom": should be one of...
+  test_pr0 cget -option
+  test_pr0 configure ?-option? ?value -option value...?
+  test_pr0 do ?arg arg ...?
+  test_pr0 isa className
+  test_pr0 ovpubm
+  test_pr0 pubm}}
+
+test protect-1.4b {protected methods can be accessed from inside} {
+    list [catch {test_pr0 do prom} msg] $msg
+} {0 {protected method}}
+
+test protect-1.5a {private methods are blocked from outside} {
+    list [catch {test_pr0 prim} msg] $msg
+} {1 {bad option "prim": should be one of...
+  test_pr0 cget -option
+  test_pr0 configure ?-option? ?value -option value...?
+  test_pr0 do ?arg arg ...?
+  test_pr0 isa className
+  test_pr0 ovpubm
+  test_pr0 pubm}}
+
+test protect-1.5b {private methods can be accessed from inside} {
+    list [catch {test_pr0 do prim} msg] $msg
+} {0 {private method}}
+
+test protect-1.6a {public procs can be accessed from outside} {
+    list [catch {test_pr::pubp} msg] $msg
+} {0 {public proc}}
+
+test protect-1.6b {public procs can be accessed from inside} {
+    list [catch {test_pr0 do pubp} msg] $msg
+} {0 {public proc}}
+
+test protect-1.7a {protected procs are blocked from outside} {
+    list [catch {test_pr::prop} msg] $msg
+} {1 {can't access "::test_pr::prop": protected function}}
+
+test protect-1.7b {protected procs can be accessed from inside} {
+    list [catch {test_pr0 do prop} msg] $msg
+} {0 {protected proc}}
+
+test protect-1.8a {private procs are blocked from outside} {
+    list [catch {test_pr::prip} msg] $msg
+} {1 {can't access "::test_pr::prip": private function}}
+
+test protect-1.8b {private procs can be accessed from inside} {
+    list [catch {test_pr0 do prip} msg] $msg
+} {0 {private proc}}
+
+test protect-1.9a {public commons can be accessed from outside} {
+    list [catch {set test_pr::pubc} msg] $msg
+} {0 {public com}}
+
+test protect-1.9b {public commons can be accessed from inside} {
+    list [catch {test_pr0 do set pubc} msg] $msg
+} {0 {public com}}
+
+test protect-1.10 {protected commons can be accessed from inside} {
+    list [catch {test_pr0 do set proc} msg] $msg
+} {0 {protected com}}
+
+test protect-1.11 {private commons can be accessed from inside} {
+    list [catch {test_pr0 do set pric} msg] $msg
+} {0 {private com}}
+
+test protect-1.12a {object-specific variables require an access command} {
+    list [catch {set test_pr::pubv} msg] $msg
+} {1 {can't read "test_pr::pubv": no such variable}}
+
+test protect-1.12b {public variables can be accessed from inside} {
+    list [catch {test_pr0 do set pubv} msg] $msg
+} {0 {public var}}
+
+test protect-1.13a {object-specific variables require an access command} {
+    list [catch {set test_pr::prov} msg] $msg
+} {1 {can't read "test_pr::prov": no such variable}}
+
+test protect-1.13b {protected variables can be accessed from inside} {
+    list [catch {test_pr0 do set prov} msg] $msg
+} {0 {protected var}}
+
+test protect-1.14a {object-specific variables require an access command} {
+    list [catch {set test_pr::priv} msg] $msg
+} {1 {can't read "test_pr::priv": no such variable}}
+
+test protect-1.14b {private variables can be accessed from inside} {
+    list [catch {test_pr0 do set priv} msg] $msg
+} {0 {private var}}
+
+# ----------------------------------------------------------------------
+#  Access restrictions work properly with inheritance
+# ----------------------------------------------------------------------
+test protect-2.1 {define a derived class} {
+    itcl::class test_pr_derived {
+        inherit test_pr
+        method do {args} {eval $args}
+
+        public method ovpubm {} {return "specific public method"}
+        protected method ovprom {} {return "specific protected method"}
+        private method ovprim {} {return "specific private method"}
+
+        public method dpubm {} {return "pub (only in derived)"}
+        protected method dprom {} {return "pro (only in derived)"}
+        private method dprim {} {return "pri (only in derived)"}
+    }
+} ""
+
+test protect-2.2 {create an object to execute tests} {
+    test_pr_derived #auto
+} {test_pr_derived0}
+
+test protect-2.3 {public methods can be accessed from inside} {
+    list [catch {test_pr_derived0 do pubm} msg] $msg
+} {0 {public method}}
+
+test protect-2.4 {protected methods can be accessed from inside} {
+    list [catch {test_pr_derived0 do prom} msg] $msg
+} {0 {protected method}}
+
+test protect-2.5 {private methods are blocked} {
+    list [catch {test_pr_derived0 do prim} msg] $msg
+} {1 {invalid command name "prim"}}
+
+test protect-2.6 {public procs can be accessed from inside} {
+    list [catch {test_pr_derived0 do pubp} msg] $msg
+} {0 {public proc}}
+
+test protect-2.7 {protected procs can be accessed from inside} {
+    list [catch {test_pr_derived0 do prop} msg] $msg
+} {0 {protected proc}}
+
+test protect-2.8 {private procs are blocked} {
+    list [catch {test_pr_derived0 do prip} msg] $msg
+} {1 {invalid command name "prip"}}
+
+test protect-2.9 {public commons can be accessed from inside} {
+    list [catch {test_pr_derived0 do set pubc} msg] $msg
+} {0 {public com}}
+
+test protect-2.10 {protected commons can be accessed from inside} {
+    list [catch {test_pr_derived0 do set proc} msg] $msg
+} {0 {protected com}}
+
+test protect-2.11 {private commons are blocked} {
+    list [catch {test_pr_derived0 do set pric} msg] $msg
+} {1 {can't read "pric": no such variable}}
+
+test protect-2.12 {public variables can be accessed from inside} {
+    list [catch {test_pr_derived0 do set pubv} msg] $msg
+} {0 {public var}}
+
+test protect-2.13 {protected variables can be accessed from inside} {
+    list [catch {test_pr_derived0 do set prov} msg] $msg
+} {0 {protected var}}
+
+test protect-2.14 {private variables are blocked} {
+    list [catch {test_pr_derived0 do set priv} msg] $msg
+} {1 {can't read "priv": no such variable}}
+
+test protect-2.15 {can access overloaded public method} {
+    set cmd {namespace eval test_pr_derived {test_pr_derived0 ovpubm}}
+    list [catch $cmd msg] $msg
+} {0 {specific public method}}
+
+test protect-2.16 {can access overloaded public method} {
+    set cmd {namespace eval test_pr_derived {test_pr_derived0 ovprom}}
+    list [catch $cmd msg] $msg
+} {0 {specific protected method}}
+
+test protect-2.17 {can access overloaded private method} {
+    set cmd {namespace eval test_pr_derived {test_pr_derived0 ovprim}}
+    list [catch $cmd msg] $msg
+} {0 {specific private method}}
+
+test protect-2.18 {can access overloaded public method from base class} {
+    set cmd {namespace eval test_pr {test_pr_derived0 ovpubm}}
+    list [catch $cmd msg] $msg
+} {0 {specific public method}}
+
+test protect-2.19 {can access overloaded protected method from base class} {
+    set cmd {namespace eval test_pr {test_pr_derived0 ovprom}}
+    list [catch $cmd msg] $msg
+} {0 {specific protected method}}
+
+test protect-2.20 {*cannot* access overloaded private method from base class} {
+    set cmd {namespace eval test_pr {test_pr_derived0 ovprim}}
+    list [catch $cmd msg] $msg
+} {1 {bad option "ovprim": should be one of...
+  test_pr_derived0 cget -option
+  test_pr_derived0 configure ?-option? ?value -option value...?
+  test_pr_derived0 do ?arg arg ...?
+  test_pr_derived0 dpubm
+  test_pr_derived0 isa className
+  test_pr_derived0 ovprom
+  test_pr_derived0 ovpubm
+  test_pr_derived0 prim
+  test_pr_derived0 prom
+  test_pr_derived0 pubm}}
+
+test protect-2.21 {can access non-overloaded public method from base class} {
+    set cmd {namespace eval test_pr {test_pr_derived0 dpubm}}
+    list [catch $cmd msg] $msg
+} {0 {pub (only in derived)}}
+
+test protect-2.22 {*cannot* access non-overloaded protected method from base class} {
+    set cmd {namespace eval test_pr {test_pr_derived0 dprom}}
+    list [catch $cmd msg] $msg
+} {1 {bad option "dprom": should be one of...
+  test_pr_derived0 cget -option
+  test_pr_derived0 configure ?-option? ?value -option value...?
+  test_pr_derived0 do ?arg arg ...?
+  test_pr_derived0 dpubm
+  test_pr_derived0 isa className
+  test_pr_derived0 ovprom
+  test_pr_derived0 ovpubm
+  test_pr_derived0 prim
+  test_pr_derived0 prom
+  test_pr_derived0 pubm}}
+
+test protect-2.23 {*cannot* access non-overloaded private method from base class} {
+    set cmd {namespace eval test_pr {test_pr_derived0 dprim}}
+    list [catch $cmd msg] $msg
+} {1 {bad option "dprim": should be one of...
+  test_pr_derived0 cget -option
+  test_pr_derived0 configure ?-option? ?value -option value...?
+  test_pr_derived0 do ?arg arg ...?
+  test_pr_derived0 dpubm
+  test_pr_derived0 isa className
+  test_pr_derived0 ovprom
+  test_pr_derived0 ovpubm
+  test_pr_derived0 prim
+  test_pr_derived0 prom
+  test_pr_derived0 pubm}}
+
+eval namespace delete [itcl::find classes test_pr*]
+
+# ----------------------------------------------------------------------
+#  Access restrictions don't mess up "info"
+# ----------------------------------------------------------------------
+test protect-3.1 {define a base class with private variables} {
+    itcl::class test_info_base {
+        private variable pribv "pribv-value"
+        private common pribc "pribc-value"
+        protected variable probv "probv-value"
+        protected common probc "probc-value"
+        public variable pubbv "pubbv-value"
+        public common pubbc "pubbc-value"
+    }
+    itcl::class test_info_derived {
+        inherit test_info_base
+        private variable pridv "pridv-value"
+        private common pridc "pridc-value"
+    }
+} ""
+
+test protect-3.2 {create an object to execute tests} {
+    test_info_derived #auto
+} {test_info_derived0}
+
+test protect-3.3 {all variables are reported} {
+    list [catch {test_info_derived0 info variable} msg] [lsort $msg]
+} {0 {::test_info_base::pribc ::test_info_base::pribv ::test_info_base::probc ::test_info_base::probv ::test_info_base::pubbc ::test_info_base::pubbv ::test_info_derived::pridc ::test_info_derived::pridv ::test_info_derived::this}}
+
+test protect-3.4 {private base class variables can be accessed} {
+    list [catch {test_info_derived0 info variable pribv} msg] $msg
+} {0 {private variable ::test_info_base::pribv pribv-value pribv-value}}
+
+test protect-3.5 {private base class commons can be accessed} {
+    list [catch {test_info_derived0 info variable pribc} msg] $msg
+} {0 {private common ::test_info_base::pribc pribc-value pribc-value}}
+
+test protect-3.6 {protected base class variables can be accessed} {
+    list [catch {test_info_derived0 info variable probv} msg] $msg
+} {0 {protected variable ::test_info_base::probv probv-value probv-value}}
+
+test protect-3.7 {protected base class commons can be accessed} {
+    list [catch {test_info_derived0 info variable probc} msg] $msg
+} {0 {protected common ::test_info_base::probc probc-value probc-value}}
+
+test protect-3.8 {public base class variables can be accessed} {
+    list [catch {test_info_derived0 info variable pubbv} msg] $msg
+} {0 {public variable ::test_info_base::pubbv pubbv-value {} pubbv-value}}
+
+test protect-3.9 {public base class commons can be accessed} {
+    list [catch {test_info_derived0 info variable pubbc} msg] $msg
+} {0 {public common ::test_info_base::pubbc pubbc-value pubbc-value}}
+
+test protect-3.10 {private derived class variables can be accessed} {
+    list [catch {test_info_derived0 info variable pridv} msg] $msg
+} {0 {private variable ::test_info_derived::pridv pridv-value pridv-value}}
+
+test protect-3.11 {private derived class commons can be accessed} {
+    list [catch {test_info_derived0 info variable pridc} msg] $msg
+} {0 {private common ::test_info_derived::pridc pridc-value pridc-value}}
+
+test protect-3.12 {private base class variables can't be accessed from class} {
+    list [catch {
+        namespace eval test_info_derived {info variable pribv}
+    } msg] $msg
+} {1 {cannot access object-specific info without an object context}}
+
+test protect-3.13 {private base class commons can be accessed from class} {
+    list [catch {
+        namespace eval test_info_derived {info variable pribc}
+    } msg] $msg
+} {0 {private common ::test_info_base::pribc pribc-value pribc-value}}
+
+eval namespace delete [itcl::find classes test_info*]
+
+::tcltest::cleanupTests
+return

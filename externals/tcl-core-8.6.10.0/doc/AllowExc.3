@@ -1,0 +1,44 @@
+'\"
+'\" Copyright (c) 1989-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_AllowExceptions 3 7.4 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_AllowExceptions \- allow all exceptions in next script evaluation
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+\fBTcl_AllowExceptions\fR(\fIinterp\fR)
+.SH ARGUMENTS
+.AS Tcl_Interp *interp
+.AP Tcl_Interp *interp in
+Interpreter in which script will be evaluated.
+.BE
+
+.SH DESCRIPTION
+.PP
+If a script is evaluated at top-level (i.e. no other scripts are
+pending evaluation when the script is invoked), and if the script
+terminates with a completion code other than \fBTCL_OK\fR, \fBTCL_ERROR\fR
+or \fBTCL_RETURN\fR, then Tcl normally converts this into a \fBTCL_ERROR\fR
+return with an appropriate message.  The particular script
+evaluation procedures of Tcl that act in the manner are
+\fBTcl_EvalObjEx\fR, \fBTcl_EvalObjv\fR, \fBTcl_Eval\fR, \fBTcl_EvalEx\fR,
+\fBTcl_GlobalEval\fR, \fBTcl_GlobalEvalObj\fR, \fBTcl_VarEval\fR and
+\fBTcl_VarEvalVA\fR.
+.PP
+However, if \fBTcl_AllowExceptions\fR is invoked immediately before
+calling one of those a procedures, then arbitrary completion
+codes are permitted from the script, and they are returned without
+modification.
+This is useful in cases where the caller can deal with exceptions
+such as \fBTCL_BREAK\fR or \fBTCL_CONTINUE\fR in a meaningful way.
+
+.SH KEYWORDS
+continue, break, exception, interpreter

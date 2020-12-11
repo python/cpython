@@ -1,0 +1,120 @@
+# This file contains tests for the tkMain.c file.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1997 by Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+
+test main-1.1 {StdinProc} -constraints stdio -setup {
+    set script [makeFile {close stdin; exit} script]
+} -body {
+    exec [interpreter] <$script
+} -cleanup {
+    removeFile script
+} -returnCodes ok
+
+test main-2.1 {Tk_MainEx: -encoding option} -constraints stdio -setup {
+	set script [makeFile {} script]
+	file delete $script
+	set f [open $script w]
+	fconfigure $f -encoding utf-8
+	puts $f {puts [list $argv0 $argv $tcl_interactive]}
+	puts -nonewline $f {puts [string equal \u20ac }
+	puts $f "\u20ac]; exit"
+	close $f
+	catch {set f [open "|[list [interpreter] -encoding utf-8 script]" r]}
+} -body {
+	read $f
+} -cleanup {
+	close $f
+	removeFile script
+} -result "script {} 0\n1\n"
+
+test main-2.2 {Tk_MainEx: -encoding option} -constraints stdio -setup {
+	set script [makeFile {} script]
+	file delete $script
+	set f [open $script w]
+	fconfigure $f -encoding utf-8
+	puts $f {puts [list $argv0 $argv $tcl_interactive]}
+	puts -nonewline $f {puts [string equal \u20ac }
+	puts $f "\u20ac]; exit"
+	close $f
+	catch {set f [open "|[list [interpreter] -encoding ascii script]" r]}
+} -body {
+	read $f
+} -cleanup {
+	close $f
+	removeFile script
+} -result "script {} 0\n0\n"
+
+    # Procedure to simulate interactive typing of commands, line by line, 
+	# for test 2.3
+    proc type {chan script} {
+        foreach line [split $script \n] {
+            if {[catch {
+                puts $chan $line
+                flush $chan
+            }]} {
+                return
+            }
+            # Grrr... Behavior depends on this value.
+            after 1000
+        }
+    }
+
+test main-2.3 {Tk_MainEx: -encoding option} -constraints stdio -setup {
+	set script [makeFile {} script]
+	file delete $script
+	set f [open $script w]
+	fconfigure $f -encoding utf-8
+	puts $f {puts [list $argv0 $argv $tcl_interactive]}
+	puts -nonewline $f {puts [string equal \u20ac }
+	puts $f "\u20ac]"
+	close $f
+	catch {set f [open "|[list [interpreter] -enc utf-8 script]" r+]}
+} -body {
+	type $f {
+		puts $argv
+		exit
+	}
+	gets $f
+} -cleanup {
+	close $f
+	removeFile script
+} -returnCodes ok -result {-enc utf-8 script}
+
+test main-3.1 {Tk_ParseArgv: -help option} -constraints unix -body {
+    # Run only on unix as Win32 pops up native dialog
+    exec [interpreter] -help
+} -returnCodes error -match glob -result {% application-specific initialization failed: Command-specific options:*}
+
+test main-3.2 {Tk_ParseArgv: -help option} -setup {
+    set maininterp [interp create]
+} -body {
+    $maininterp eval { set argc 1 ; set argv -help }
+    load {} Tk $maininterp
+} -cleanup {
+    interp delete $maininterp
+} -returnCodes error -match glob -result {Command-specific options:*}
+
+test main-3.3 {Tk_ParseArgv: -help option} -setup {
+    set maininterp [interp create]
+} -body {
+    # Repeat of 3.2 to catch cleanup, eg Bug 1927135
+    $maininterp eval { set argc 1 ; set argv -help }
+    load {} Tk $maininterp
+} -cleanup {
+    interp delete $maininterp
+} -returnCodes error -match glob -result {Command-specific options:*}
+
+# cleanup
+cleanupTests
+return

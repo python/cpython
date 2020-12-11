@@ -1,0 +1,67 @@
+'\" 
+'\" Copyright (c) 1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH fblocked n 7.5 Tcl "Tcl Built-In Commands"
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+fblocked \- Test whether the last input operation exhausted all available input
+.SH SYNOPSIS
+\fBfblocked \fIchannelId\fR
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBfblocked\fR command returns 1 if the most recent input operation
+on \fIchannelId\fR returned less information than requested because all
+available input was exhausted.
+For example, if \fBgets\fR is invoked when there are only three
+characters available for input and no end-of-line sequence, \fBgets\fR
+returns an empty string and a subsequent call to \fBfblocked\fR will
+return 1.
+.PP
+\fIChannelId\fR must be an identifier for an open channel such as a
+Tcl standard channel (\fBstdin\fR, \fBstdout\fR, or \fBstderr\fR),
+the return value from an invocation of \fBopen\fR or \fBsocket\fR, or
+the result of a channel creation command provided by a Tcl extension.
+.SH EXAMPLE
+The \fBfblocked\fR command is particularly useful when writing network
+servers, as it allows you to write your code in a line-by-line style
+without preventing the servicing of other connections.  This can be
+seen in this simple echo-service:
+.PP
+.CS
+# This is called whenever a new client connects to the server
+proc connect {chan host port} {
+    set clientName [format <%s:%d> $host $port]
+    puts "connection from $clientName"
+    fconfigure $chan -blocking 0 -buffering line
+    fileevent $chan readable [list echoLine $chan $clientName]
+}
+
+# This is called whenever either at least one byte of input
+# data is available, or the channel was closed by the client.
+proc echoLine {chan clientName} {
+    gets $chan line
+    if {[eof $chan]} {
+        puts "finishing connection from $clientName"
+        close $chan
+    } elseif {![\fBfblocked\fR $chan]} {
+        # Didn't block waiting for end-of-line
+        puts "$clientName - $line"
+        puts $chan $line
+    }
+}
+
+# Create the server socket and enter the event-loop to wait
+# for incoming connections...
+socket -server connect 12345
+vwait forever
+.CE
+.SH "SEE ALSO"
+gets(n), open(n), read(n), socket(n), Tcl_StandardChannels(3)
+.SH KEYWORDS
+blocking, nonblocking

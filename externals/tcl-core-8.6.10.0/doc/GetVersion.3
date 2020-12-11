@@ -1,0 +1,48 @@
+'\"
+'\" Copyright (c) 1999 Scriptics Corporation
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_GetVersion 3 7.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_GetVersion \- get the version of the library at runtime
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+\fBTcl_GetVersion\fR(\fImajor, minor, patchLevel, type\fR)
+.SH ARGUMENTS
+.AS Tcl_ReleaseType *patchLevel out
+.AP int *major out
+Major version number of the Tcl library.
+.AP int *minor out
+Minor version number of the Tcl library.
+.AP int *patchLevel out
+The patch level of the Tcl library (or alpha or beta number).
+.AP Tcl_ReleaseType *type out
+The type of release, also indicates the type of patch level. Can be
+one of \fBTCL_ALPHA_RELEASE\fR, \fBTCL_BETA_RELEASE\fR, or
+\fBTCL_FINAL_RELEASE\fR.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBTcl_GetVersion\fR should be used to query the version number
+of the Tcl library at runtime.  This is useful when using a
+dynamically loaded Tcl library or when writing a stubs-aware
+extension.  For instance, if you write an extension that is
+linked against the Tcl stubs library, it could be loaded into
+a program linked to an older version of Tcl than you expected.
+Use \fBTcl_GetVersion\fR to verify that fact, and possibly to
+change the behavior of your extension.
+.PP
+\fBTcl_GetVersion\fR accepts NULL for any of the arguments. For instance if
+you do not care about the \fIpatchLevel\fR of the library, pass
+a NULL for the \fIpatchLevel\fR argument.
+
+.SH KEYWORDS
+version, patchlevel, major, minor, alpha, beta, release
+

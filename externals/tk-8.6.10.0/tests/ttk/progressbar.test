@@ -1,0 +1,85 @@
+package require Tk 8.5
+package require tcltest ; namespace import -force tcltest::*
+loadTestedCommands
+
+
+test progressbar-1.1 "Setup" -body {
+    ttk::progressbar .pb
+} -result .pb
+
+test progressbar-1.2 "Linked variable" -body {
+    set PB 50
+    .pb configure -variable PB
+    .pb cget -value
+} -result 50
+
+test progressbar-1.3 "Change linked variable" -body {
+    set PB 80
+    .pb cget -value
+} -result 80
+
+test progressbar-1.4 "Set linked variable to bad value" -body {
+    set PB "bogus"
+    .pb instate invalid
+} -result 1
+
+test progressbar-1.4.1 "Set linked variable back to a good value" -body {
+    set PB 80
+    .pb instate invalid
+} -result 0
+
+test progressbar-1.5 "Set -variable to illegal variable" -body {
+    set BAD "bogus"
+    .pb configure -variable BAD
+    .pb instate invalid
+} -result 1
+
+test progressbar-1.6 "Unset -variable" -body {
+    unset -nocomplain UNSET
+    .pb configure -variable UNSET
+    .pb instate disabled
+} -result 1
+
+test progressbar-2.0 "step command" -body {
+    .pb configure -variable {}		;# @@@
+    .pb configure -value 5 -maximum 10 -mode determinate
+    .pb step
+    .pb cget -value
+} -result 6.0
+
+test progressbar-2.1 "step command, with stepamount" -body {
+    .pb step 3
+    .pb cget -value
+} -result 9.0
+
+test progressbar-2.2 "step wraps at -maximum in determinate mode" -body {
+    .pb step
+    .pb cget -value
+} -result 0.0
+
+test progressbar-2.3 "step doesn't wrap in indeterminate mode" -body {
+    .pb configure -value 8 -maximum 10 -mode indeterminate
+    .pb step
+    .pb step
+    .pb step
+    .pb cget -value
+} -result 11.0
+
+test progressbar-2.4 "step with linked variable" -body {
+    .pb configure -variable PB		;# @@@
+    set PB 5
+    .pb step
+    set PB
+} -result 6.0
+
+test progressbar-2.5 "error in write trace" -body {
+    trace variable PB w { error "YIPES!" ;# }
+    .pb step
+    set PB		;# NOTREACHED
+} -cleanup { unset PB } -returnCodes 1 -match glob -result "*YIPES!"
+
+test progressbar-end "Cleanup" -body {
+    destroy .pb
+}
+
+tcltest::cleanupTests

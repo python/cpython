@@ -1,0 +1,87 @@
+'\"
+'\" Copyright (c) 1995-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_SetAssocData 3 7.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_GetAssocData, Tcl_SetAssocData, Tcl_DeleteAssocData \- manage associations of string keys and user specified data with Tcl interpreters
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+ClientData
+\fBTcl_GetAssocData\fR(\fIinterp, key, delProcPtr\fR)
+.sp
+\fBTcl_SetAssocData\fR(\fIinterp, key, delProc, clientData\fR)
+.sp
+\fBTcl_DeleteAssocData\fR(\fIinterp, key\fR)
+.SH ARGUMENTS
+.AS Tcl_InterpDeleteProc **delProcPtr
+.AP Tcl_Interp *interp in
+Interpreter in which to execute the specified command.
+.AP "const char" *key in
+Key for association with which to store data or from which to delete or
+retrieve data.  Typically the module prefix for a package.
+.AP Tcl_InterpDeleteProc *delProc in
+Procedure to call when \fIinterp\fR is deleted.
+.AP Tcl_InterpDeleteProc **delProcPtr in
+Pointer to location in which to store address of current deletion procedure
+for association.  Ignored if NULL.
+.AP ClientData clientData in
+Arbitrary one-word value associated with the given key in this
+interpreter.  This data is owned by the caller.
+.BE
+
+.SH DESCRIPTION
+.PP
+These procedures allow extensions to associate their own data with
+a Tcl interpreter.
+An association consists of a string key, typically the name of
+the extension, and a one-word value, which is typically a pointer
+to a data structure holding data specific to the extension.
+Tcl makes no interpretation of either the key or the value for
+an association.
+.PP
+Storage management is facilitated by storing with each association a
+procedure to call when the interpreter is deleted. This
+procedure can dispose of the storage occupied by the client's data in any
+way it sees fit.
+.PP
+\fBTcl_SetAssocData\fR creates an association between a string
+key and a user specified datum in the given interpreter.
+If there is already an association with the given \fIkey\fR,
+\fBTcl_SetAssocData\fR overwrites it with the new information.
+It is up to callers to organize their use of names to avoid conflicts,
+for example, by using package names as the keys.
+If the \fIdeleteProc\fR argument is non-NULL it specifies the address of a
+procedure to invoke if the interpreter is deleted before the association
+is deleted.  \fIDeleteProc\fR should have arguments and result that match
+the type \fBTcl_InterpDeleteProc\fR:
+.PP
+.CS
+typedef void \fBTcl_InterpDeleteProc\fR(
+        ClientData \fIclientData\fR,
+        Tcl_Interp *\fIinterp\fR);
+.CE
+.PP
+When \fIdeleteProc\fR is invoked the \fIclientData\fR and \fIinterp\fR
+arguments will be the same as the corresponding arguments passed to
+\fBTcl_SetAssocData\fR.
+The deletion procedure will \fInot\fR be invoked if the association
+is deleted before the interpreter is deleted.
+.PP
+\fBTcl_GetAssocData\fR returns the datum stored in the association with the
+specified key in the given interpreter, and if the \fIdelProcPtr\fR field
+is non-\fBNULL\fR, the address indicated by it gets the address of the
+delete procedure stored with this association. If no association with the
+specified key exists in the given interpreter \fBTcl_GetAssocData\fR
+returns \fBNULL\fR.
+.PP
+\fBTcl_DeleteAssocData\fR deletes an association with a specified key in
+the given interpreter.  Then it calls the deletion procedure.
+.SH KEYWORDS
+association, data, deletion procedure, interpreter, key

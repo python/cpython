@@ -1,0 +1,25 @@
+package require tcltest
+namespace import ::tcltest::*
+tcltest::loadTestedCommands
+package require Thread
+
+# This test used to segfault before commit f4c95731c0.
+test tkt-84be1b5a73 {Ticket 84be1b5a73} -body {
+    set t [thread::create]
+    set resultvar() {}
+
+    trace add variable resultvar() write {
+        unset -nocomplain resultvar()
+        list}
+
+    proc errorproc {tid einfo} {}
+    thread::errorproc errorproc
+    thread::send -async $t {
+        error ""
+    } resultvar()
+
+    after 1000 {
+        set forever 1
+    }
+    vwait forever
+} -returnCodes 0

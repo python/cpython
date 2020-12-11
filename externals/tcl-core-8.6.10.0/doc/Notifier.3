@@ -1,0 +1,635 @@
+'\"
+'\" Copyright (c) 1998-1999 Scriptics Corporation
+'\" Copyright (c) 1995-1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Notifier 3 8.1 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_CreateEventSource, Tcl_DeleteEventSource, Tcl_SetMaxBlockTime, Tcl_QueueEvent, Tcl_ThreadQueueEvent, Tcl_ThreadAlert, Tcl_GetCurrentThread, Tcl_DeleteEvents, Tcl_InitNotifier, Tcl_FinalizeNotifier, Tcl_WaitForEvent, Tcl_AlertNotifier, Tcl_SetTimer, Tcl_ServiceAll, Tcl_ServiceEvent, Tcl_GetServiceMode, Tcl_SetServiceMode, Tcl_ServiceModeHook, Tcl_SetNotifier \- the event queue and notifier interfaces
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+void
+\fBTcl_CreateEventSource\fR(\fIsetupProc, checkProc, clientData\fR)
+.sp
+void
+\fBTcl_DeleteEventSource\fR(\fIsetupProc, checkProc, clientData\fR)
+.sp
+void
+\fBTcl_SetMaxBlockTime\fR(\fItimePtr\fR)
+.sp
+void
+\fBTcl_QueueEvent\fR(\fIevPtr, position\fR)
+.sp
+void
+\fBTcl_ThreadQueueEvent\fR(\fIthreadId, evPtr, position\fR)
+.sp
+void
+\fBTcl_ThreadAlert\fR(\fIthreadId\fR)
+.sp
+Tcl_ThreadId
+\fBTcl_GetCurrentThread\fR()
+.sp
+void
+\fBTcl_DeleteEvents\fR(\fIdeleteProc, clientData\fR)
+.sp
+ClientData
+\fBTcl_InitNotifier\fR()
+.sp
+void
+\fBTcl_FinalizeNotifier\fR(\fIclientData\fR)
+.sp
+int
+\fBTcl_WaitForEvent\fR(\fItimePtr\fR)
+.sp
+void
+\fBTcl_AlertNotifier\fR(\fIclientData\fR)
+.sp
+void
+\fBTcl_SetTimer\fR(\fItimePtr\fR)
+.sp
+int
+\fBTcl_ServiceAll\fR()
+.sp
+int
+\fBTcl_ServiceEvent\fR(\fIflags\fR)
+.sp
+int
+\fBTcl_GetServiceMode\fR()
+.sp
+int
+\fBTcl_SetServiceMode\fR(\fImode\fR)
+.sp
+void
+\fBTcl_ServiceModeHook\fR(\fImode\fR)
+.sp
+void
+\fBTcl_SetNotifier\fR(\fInotifierProcPtr\fR)
+.SH ARGUMENTS
+.AS Tcl_EventDeleteProc *notifierProcPtr
+.AP Tcl_EventSetupProc *setupProc in
+Procedure to invoke to prepare for event wait in \fBTcl_DoOneEvent\fR.
+.AP Tcl_EventCheckProc *checkProc in
+Procedure for \fBTcl_DoOneEvent\fR to invoke after waiting for
+events.  Checks to see if any events have occurred and, if so,
+queues them.
+.AP ClientData clientData in
+Arbitrary one-word value to pass to \fIsetupProc\fR, \fIcheckProc\fR, or
+\fIdeleteProc\fR.
+.AP "const Tcl_Time" *timePtr in
+Indicates the maximum amount of time to wait for an event.  This
+is specified as an interval (how long to wait), not an absolute
+time (when to wakeup).  If the pointer passed to \fBTcl_WaitForEvent\fR
+is NULL, it means there is no maximum wait time:  wait forever if
+necessary.
+.AP Tcl_Event *evPtr in
+An event to add to the event queue.  The storage for the event must
+have been allocated by the caller using \fBTcl_Alloc\fR or \fBckalloc\fR.
+.AP Tcl_QueuePosition position in
+Where to add the new event in the queue:  \fBTCL_QUEUE_TAIL\fR,
+\fBTCL_QUEUE_HEAD\fR, or \fBTCL_QUEUE_MARK\fR.
+.AP Tcl_ThreadId threadId in
+A unique identifier for a thread.
+.AP Tcl_EventDeleteProc *deleteProc in
+Procedure to invoke for each queued event in \fBTcl_DeleteEvents\fR.
+.AP int flags in
+What types of events to service.  These flags are the same as those
+passed to \fBTcl_DoOneEvent\fR.
+.AP int mode in
+Indicates whether events should be serviced by \fBTcl_ServiceAll\fR.
+Must be one of \fBTCL_SERVICE_NONE\fR or \fBTCL_SERVICE_ALL\fR.
+.AP Tcl_NotifierProcs* notifierProcPtr in
+Structure of function pointers describing notifier procedures that are
+to replace the ones installed in the executable.  See
+\fBREPLACING THE NOTIFIER\fR for details.
+.BE
+.SH INTRODUCTION
+.PP
+The interfaces described here are used to customize the Tcl event
+loop.  The two most common customizations are to add new sources of
+events and to merge Tcl's event loop with some other event loop, such
+as one provided by an application in which Tcl is embedded.  Each of
+these tasks is described in a separate section below.
+.PP
+The procedures in this manual entry are the building blocks out of which
+the Tcl event notifier is constructed.  The event notifier is the lowest
+layer in the Tcl event mechanism.  It consists of three things:
+.IP [1]
+Event sources: these represent the ways in which events can be
+generated.  For example, there is a timer event source that implements
+the \fBTcl_CreateTimerHandler\fR procedure and the \fBafter\fR
+command, and there is a file event source that implements the
+\fBTcl_CreateFileHandler\fR procedure on Unix systems.  An event
+source must work with the notifier to detect events at the right
+times, record them on the event queue, and eventually notify
+higher-level software that they have occurred.  The procedures
+\fBTcl_CreateEventSource\fR, \fBTcl_DeleteEventSource\fR,
+and \fBTcl_SetMaxBlockTime\fR, \fBTcl_QueueEvent\fR, and
+\fBTcl_DeleteEvents\fR are used primarily by event sources.
+.IP [2]
+The event queue: for non-threaded applications,
+there is a single queue for the whole application,
+containing events that have been detected but not yet serviced.  Event
+sources place events onto the queue so that they may be processed in
+order at appropriate times during the event loop. The event queue
+guarantees a fair discipline of event handling, so that no event
+source can starve the others.  It also allows events to be saved for
+servicing at a future time.  Threaded applications work in a
+similar manner, except that there is a separate event queue for
+each thread containing a Tcl interpreter.
+\fBTcl_QueueEvent\fR is used (primarily
+by event sources) to add events to the event queue and
+\fBTcl_DeleteEvents\fR is used to remove events from the queue without
+processing them.  In a threaded application, \fBTcl_QueueEvent\fR adds
+an event to the current thread's queue, and \fBTcl_ThreadQueueEvent\fR
+adds an event to a queue in a specific thread.
+.IP [3]
+The event loop: in order to detect and process events, the application
+enters a loop that waits for events to occur, places them on the event
+queue, and then processes them.  Most applications will do this by
+calling the procedure \fBTcl_DoOneEvent\fR, which is described in a
+separate manual entry.
+.PP
+Most Tcl applications need not worry about any of the internals of
+the Tcl notifier.  However, the notifier now has enough flexibility
+to be retargeted either for a new platform or to use an external event
+loop (such as the Motif event loop, when Tcl is embedded in a Motif
+application).  The procedures \fBTcl_WaitForEvent\fR and
+\fBTcl_SetTimer\fR are normally implemented by Tcl, but may be
+replaced with new versions to retarget the notifier (the
+\fBTcl_InitNotifier\fR, \fBTcl_AlertNotifier\fR,
+\fBTcl_FinalizeNotifier\fR, \fBTcl_Sleep\fR,
+\fBTcl_CreateFileHandler\fR, and \fBTcl_DeleteFileHandler\fR must
+also be replaced; see CREATING A NEW NOTIFIER below for details).
+The procedures \fBTcl_ServiceAll\fR, \fBTcl_ServiceEvent\fR,
+\fBTcl_GetServiceMode\fR, and \fBTcl_SetServiceMode\fR are provided
+to help connect Tcl's event loop to an external event loop such as
+Motif's.
+.SH "NOTIFIER BASICS"
+.PP
+The easiest way to understand how the notifier works is to consider
+what happens when \fBTcl_DoOneEvent\fR is called.
+\fBTcl_DoOneEvent\fR is passed a \fIflags\fR argument that indicates
+what sort of events it is OK to process and also whether or not to
+block if no events are ready.  \fBTcl_DoOneEvent\fR does the following
+things:
+.IP [1]
+Check the event queue to see if it contains any events that can
+be serviced.  If so, service the first possible event, remove it
+from the queue, and return.  It does this by calling
+\fBTcl_ServiceEvent\fR and passing in the \fIflags\fR argument.
+.IP [2]
+Prepare to block for an event.  To do this, \fBTcl_DoOneEvent\fR
+invokes a \fIsetup procedure\fR in each event source.
+The event source will perform event-source specific initialization and
+possibly call \fBTcl_SetMaxBlockTime\fR to limit how long
+\fBTcl_WaitForEvent\fR will block if no new events occur.
+.IP [3]
+Call \fBTcl_WaitForEvent\fR.  This procedure is implemented differently
+on different platforms;  it waits for an event to occur, based on the
+information provided by the event sources.
+It may cause the application to block if \fItimePtr\fR specifies
+an interval other than 0.
+\fBTcl_WaitForEvent\fR returns when something has happened,
+such as a file becoming readable or the interval given by \fItimePtr\fR
+expiring.  If there are no events for \fBTcl_WaitForEvent\fR to
+wait for, so that it would block forever, then it returns immediately
+and \fBTcl_DoOneEvent\fR returns 0.
+.IP [4]
+Call a \fIcheck procedure\fR in each event source.  The check
+procedure determines whether any events of interest to this source
+occurred.  If so, the events are added to the event queue.
+.IP [5]
+Check the event queue to see if it contains any events that can
+be serviced.  If so, service the first possible event, remove it
+from the queue, and return.
+.IP [6]
+See if there are idle callbacks pending. If so, invoke all of them and
+return.
+.IP [7]
+Either return 0 to indicate that no events were ready, or go back to
+step [2] if blocking was requested by the caller.
+.SH "CREATING A NEW EVENT SOURCE"
+.PP
+An event source consists of three procedures invoked by the notifier,
+plus additional C procedures that are invoked by higher-level code
+to arrange for event-driven callbacks.  The three procedures called
+by the notifier consist of the setup and check procedures described
+above, plus an additional procedure that is invoked when an event
+is removed from the event queue for servicing.
+.PP
+The procedure \fBTcl_CreateEventSource\fR creates a new event source.
+Its arguments specify the setup procedure and check procedure for
+the event source.
+\fISetupProc\fR should match the following prototype:
+.PP
+.CS
+typedef void \fBTcl_EventSetupProc\fR(
+        ClientData \fIclientData\fR,
+        int \fIflags\fR);
+.CE
+.PP
+The \fIclientData\fR argument will be the same as the \fIclientData\fR
+argument to \fBTcl_CreateEventSource\fR;  it is typically used to
+point to private information managed by the event source.
+The \fIflags\fR argument will be the same as the \fIflags\fR
+argument passed to \fBTcl_DoOneEvent\fR except that it will never
+be 0 (\fBTcl_DoOneEvent\fR replaces 0 with \fBTCL_ALL_EVENTS\fR).
+\fIFlags\fR indicates what kinds of events should be considered;
+if the bit corresponding to this event source is not set, the event
+source should return immediately without doing anything.  For
+example, the file event source checks for the \fBTCL_FILE_EVENTS\fR
+bit.
+.PP
+\fISetupProc\fR's job is to make sure that the application wakes up
+when events of the desired type occur.  This is typically done in a
+platform-dependent fashion.  For example, under Unix an event source
+might call \fBTcl_CreateFileHandler\fR; under Windows it might
+request notification with a Windows event.  For timer-driven event
+sources such as timer events or any polled event, the event source
+can call \fBTcl_SetMaxBlockTime\fR to force the application to wake
+up after a specified time even if no events have occurred.
+If no event source calls \fBTcl_SetMaxBlockTime\fR
+then \fBTcl_WaitForEvent\fR will wait as long as necessary for an
+event to occur; otherwise, it will only wait as long as the shortest
+interval passed to \fBTcl_SetMaxBlockTime\fR by one of the event
+sources.  If an event source knows that it already has events ready to
+report, it can request a zero maximum block time.  For example, the
+setup procedure for the X event source looks to see if there are
+events already queued.  If there are, it calls
+\fBTcl_SetMaxBlockTime\fR with a 0 block time so that
+\fBTcl_WaitForEvent\fR does not block if there is no new data on the X
+connection.
+The \fItimePtr\fR argument to \fBTcl_WaitForEvent\fR points to
+a structure that describes a time interval in seconds and
+microseconds:
+.PP
+.CS
+typedef struct Tcl_Time {
+    long \fIsec\fR;
+    long \fIusec\fR;
+} \fBTcl_Time\fR;
+.CE
+.PP
+The \fIusec\fR field should be less than 1000000.
+.PP
+Information provided to \fBTcl_SetMaxBlockTime\fR
+is only used for the next call to \fBTcl_WaitForEvent\fR; it is
+discarded after \fBTcl_WaitForEvent\fR returns.
+The next time an event wait is done each of the event sources'
+setup procedures will be called again, and they can specify new
+information for that event wait.
+.PP
+If the application uses an external event loop rather than
+\fBTcl_DoOneEvent\fR, the event sources may need to call
+\fBTcl_SetMaxBlockTime\fR at other times.  For example, if a new event
+handler is registered that needs to poll for events, the event source
+may call \fBTcl_SetMaxBlockTime\fR to set the block time to zero to
+force the external event loop to call Tcl.  In this case,
+\fBTcl_SetMaxBlockTime\fR invokes \fBTcl_SetTimer\fR with the shortest
+interval seen since the last call to \fBTcl_DoOneEvent\fR or
+\fBTcl_ServiceAll\fR.
+.PP
+In addition to the generic procedure \fBTcl_SetMaxBlockTime\fR, other
+platform-specific procedures may also be available for
+\fIsetupProc\fR, if there is additional information needed by
+\fBTcl_WaitForEvent\fR on that platform.  For example, on Unix systems
+the \fBTcl_CreateFileHandler\fR interface can be used to wait for file events.
+.PP
+The second procedure provided by each event source is its check
+procedure, indicated by the \fIcheckProc\fR argument to
+\fBTcl_CreateEventSource\fR.  \fICheckProc\fR must match the
+following prototype:
+.PP
+.CS
+typedef void \fBTcl_EventCheckProc\fR(
+        ClientData \fIclientData\fR,
+        int \fIflags\fR);
+.CE
+.PP
+The arguments to this procedure are the same as those for \fIsetupProc\fR.
+\fBCheckProc\fR is invoked by \fBTcl_DoOneEvent\fR after it has waited
+for events.  Presumably at least one event source is now prepared to
+queue an event.  \fBTcl_DoOneEvent\fR calls each of the event sources
+in turn, so they all have a chance to queue any events that are ready.
+The check procedure does two things.  First, it must see if any events
+have triggered.  Different event sources do this in different ways.
+.PP
+If an event source's check procedure detects an interesting event, it
+must add the event to Tcl's event queue.  To do this, the event source
+calls \fBTcl_QueueEvent\fR.  The \fIevPtr\fR argument is a pointer to
+a dynamically allocated structure containing the event (see below for
+more information on memory management issues).  Each event source can
+define its own event structure with whatever information is relevant
+to that event source.  However, the first element of the structure
+must be a structure of type \fBTcl_Event\fR, and the address of this
+structure is used when communicating between the event source and the
+rest of the notifier.  A \fBTcl_Event\fR has the following definition:
+.PP
+.CS
+typedef struct {
+    Tcl_EventProc *\fIproc\fR;
+    struct Tcl_Event *\fInextPtr\fR;
+} \fBTcl_Event\fR;
+.CE
+.PP
+The event source must fill in the \fIproc\fR field of
+the event before calling \fBTcl_QueueEvent\fR.
+The \fInextPtr\fR is used to link together the events in the queue
+and should not be modified by the event source.
+.PP
+An event may be added to the queue at any of three positions, depending
+on the \fIposition\fR argument to \fBTcl_QueueEvent\fR:
+.IP \fBTCL_QUEUE_TAIL\fR 24
+Add the event at the back of the queue, so that all other pending
+events will be serviced first.  This is almost always the right
+place for new events.
+.IP \fBTCL_QUEUE_HEAD\fR 24
+Add the event at the front of the queue, so that it will be serviced
+before all other queued events.
+.IP \fBTCL_QUEUE_MARK\fR 24
+Add the event at the front of the queue, unless there are other
+events at the front whose position is \fBTCL_QUEUE_MARK\fR;  if so,
+add the new event just after all other \fBTCL_QUEUE_MARK\fR events.
+This value of \fIposition\fR is used to insert an ordered sequence of
+events at the front of the queue, such as a series of
+Enter and Leave events synthesized during a grab or ungrab operation
+in Tk.
+.PP
+When it is time to handle an event from the queue (steps 1 and 4
+above) \fBTcl_ServiceEvent\fR will invoke the \fIproc\fR specified
+in the first queued \fBTcl_Event\fR structure.
+\fIProc\fR must match the following prototype:
+.PP
+.CS
+typedef int \fBTcl_EventProc\fR(
+        Tcl_Event *\fIevPtr\fR,
+        int \fIflags\fR);
+.CE
+.PP
+The first argument to \fIproc\fR is a pointer to the event, which will
+be the same as the first argument to the \fBTcl_QueueEvent\fR call that
+added the event to the queue.
+The second argument to \fIproc\fR is the \fIflags\fR argument for the
+current call to \fBTcl_ServiceEvent\fR;  this is used by the event source
+to return immediately if its events are not relevant.
+.PP
+It is up to \fIproc\fR to handle the event, typically by invoking
+one or more Tcl commands or C-level callbacks.
+Once the event source has finished handling the event it returns 1
+to indicate that the event can be removed from the queue.
+If for some reason the event source decides that the event cannot
+be handled at this time, it may return 0 to indicate that the event
+should be deferred for processing later;  in this case \fBTcl_ServiceEvent\fR
+will go on to the next event in the queue and attempt to service it.
+There are several reasons why an event source might defer an event.
+One possibility is that events of this type are excluded by the
+\fIflags\fR argument.
+For example, the file event source will always return 0 if the
+\fBTCL_FILE_EVENTS\fR bit is not set in \fIflags\fR.
+Another example of deferring events happens in Tk if
+\fBTk_RestrictEvents\fR has been invoked to defer certain kinds
+of window events.
+.PP
+When \fIproc\fR returns 1, \fBTcl_ServiceEvent\fR will remove the
+event from the event queue and free its storage.
+Note that the storage for an event must be allocated by
+the event source (using \fBTcl_Alloc\fR or the Tcl macro \fBckalloc\fR)
+before calling \fBTcl_QueueEvent\fR, but it
+will be freed by \fBTcl_ServiceEvent\fR, not by the event source.
+.PP
+Threaded applications work in a
+similar manner, except that there is a separate event queue for
+each thread containing a Tcl interpreter.
+Calling \fBTcl_QueueEvent\fR in a multithreaded application adds
+an event to the current thread's queue.
+To add an event to another thread's queue, use \fBTcl_ThreadQueueEvent\fR.
+\fBTcl_ThreadQueueEvent\fR accepts as an argument a Tcl_ThreadId argument,
+which uniquely identifies a thread in a Tcl application.  To obtain the
+Tcl_ThreadId for the current thread, use the \fBTcl_GetCurrentThread\fR
+procedure.  (A thread would then need to pass this identifier to other
+threads for those threads to be able to add events to its queue.)
+After adding an event to another thread's queue, you then typically
+need to call \fBTcl_ThreadAlert\fR to
+.QW "wake up"
+that thread's notifier to alert it to the new event.
+.PP
+\fBTcl_DeleteEvents\fR can be used to explicitly remove one or more
+events from the event queue.  \fBTcl_DeleteEvents\fR calls \fIproc\fR
+for each event in the queue, deleting those for with the procedure
+returns 1.  Events for which the procedure returns 0 are left in the
+queue.  \fIProc\fR should match the following prototype:
+.PP
+.CS
+typedef int \fBTcl_EventDeleteProc\fR(
+        Tcl_Event *\fIevPtr\fR,
+        ClientData \fIclientData\fR);
+.CE
+.PP
+The \fIclientData\fR argument will be the same as the \fIclientData\fR
+argument to \fBTcl_DeleteEvents\fR; it is typically used to point to
+private information managed by the event source.  The \fIevPtr\fR will
+point to the next event in the queue.
+.PP
+\fBTcl_DeleteEventSource\fR deletes an event source.  The \fIsetupProc\fR,
+\fIcheckProc\fR, and \fIclientData\fR arguments must exactly match those
+provided to the \fBTcl_CreateEventSource\fR for the event source to be deleted.
+If no such source exists, \fBTcl_DeleteEventSource\fR has no effect.
+.SH "CREATING A NEW NOTIFIER"
+.PP
+The notifier consists of all the procedures described in this manual
+entry, plus \fBTcl_DoOneEvent\fR and \fBTcl_Sleep\fR, which are
+available on all platforms, and \fBTcl_CreateFileHandler\fR and
+\fBTcl_DeleteFileHandler\fR, which are Unix-specific.  Most of these
+procedures are generic, in that they are the same for all notifiers.
+However, none of the procedures are notifier-dependent:
+\fBTcl_InitNotifier\fR, \fBTcl_AlertNotifier\fR,
+\fBTcl_FinalizeNotifier\fR, \fBTcl_SetTimer\fR, \fBTcl_Sleep\fR,
+\fBTcl_WaitForEvent\fR, \fBTcl_CreateFileHandler\fR,
+\fBTcl_DeleteFileHandler\fR and \fBTcl_ServiceModeHook\fR.  To support a
+new platform or to integrate Tcl with an application-specific event loop,
+you must write new versions of these procedures.
+.PP
+\fBTcl_InitNotifier\fR initializes the notifier state and returns
+a handle to the notifier state.  Tcl calls this
+procedure when initializing a Tcl interpreter.  Similarly,
+\fBTcl_FinalizeNotifier\fR shuts down the notifier, and is
+called by \fBTcl_Finalize\fR when shutting down a Tcl interpreter.
+.PP
+\fBTcl_WaitForEvent\fR is the lowest-level procedure in the notifier;
+it is responsible for waiting for an
+.QW interesting
+event to occur or
+for a given time to elapse.  Before \fBTcl_WaitForEvent\fR is invoked,
+each of the event sources' setup procedure will have been invoked.
+The \fItimePtr\fR argument to
+\fBTcl_WaitForEvent\fR gives the maximum time to block for an event,
+based on calls to \fBTcl_SetMaxBlockTime\fR made by setup procedures
+and on other information (such as the \fBTCL_DONT_WAIT\fR bit in
+\fIflags\fR).
+.PP
+Ideally, \fBTcl_WaitForEvent\fR should only wait for an event
+to occur; it should not actually process the event in any way.
+Later on, the
+event sources will process the raw events and create Tcl_Events on
+the event queue in their \fIcheckProc\fR procedures.
+However, on some platforms (such as Windows) this is not possible;
+events may be processed in \fBTcl_WaitForEvent\fR, including queuing
+Tcl_Events and more (for example, callbacks for native widgets may be
+invoked).  The return value from \fBTcl_WaitForEvent\fR must be either
+0, 1, or \-1.  On platforms such as Windows where events get processed in
+\fBTcl_WaitForEvent\fR, a return value of 1 means that there may be more
+events still pending that have not been processed.  This is a sign to the
+caller that it must call \fBTcl_WaitForEvent\fR again if it wants all
+pending events to be processed. A 0 return value means that calling
+\fBTcl_WaitForEvent\fR again will not have any effect: either this is a
+platform where \fBTcl_WaitForEvent\fR only waits without doing any event
+processing, or \fBTcl_WaitForEvent\fR knows for sure that there are no
+additional events to process (e.g. it returned because the time
+elapsed).  Finally, a return value of \-1 means that the event loop is
+no longer operational and the application should probably unwind and
+terminate.  Under Windows this happens when a WM_QUIT message is received;
+under Unix it happens when \fBTcl_WaitForEvent\fR would have waited
+forever because there were no active event sources and the timeout was
+infinite.
+.PP
+\fBTcl_AlertNotifier\fR is used in multithreaded applications to allow
+any thread to
+.QW "wake up"
+the notifier to alert it to new events on its
+queue.  \fBTcl_AlertNotifier\fR requires as an argument the notifier
+handle returned by \fBTcl_InitNotifier\fR.
+.PP
+If the notifier will be used with an external event loop, then it must
+also support the \fBTcl_SetTimer\fR interface.  \fBTcl_SetTimer\fR is
+invoked by \fBTcl_SetMaxBlockTime\fR whenever the maximum blocking
+time has been reduced.  \fBTcl_SetTimer\fR should arrange for the
+external event loop to invoke \fBTcl_ServiceAll\fR after the specified
+interval even if no events have occurred.  This interface is needed
+because \fBTcl_WaitForEvent\fR is not invoked when there is an external
+event loop.  If the
+notifier will only be used from \fBTcl_DoOneEvent\fR, then
+\fBTcl_SetTimer\fR need not do anything.
+.PP
+\fBTcl_ServiceModeHook\fR is called by the platform-independent portion
+of the notifier when client code makes a call to
+\fBTcl_SetServiceMode\fR. This hook is provided to support operating
+systems that require special event handling when the application is in
+a modal loop (the Windows notifier, for instance, uses this hook to
+create a communication window).
+.PP
+On Unix systems, the file event source also needs support from the
+notifier.  The file event source consists of the
+\fBTcl_CreateFileHandler\fR and \fBTcl_DeleteFileHandler\fR
+procedures, which are described in the \fBTcl_CreateFileHandler\fR
+manual page.
+.PP
+The \fBTcl_Sleep\fR and \fBTcl_DoOneEvent\fR interfaces are described
+in their respective manual pages.
+.PP
+The easiest way to create a new notifier is to look at the code
+for an existing notifier, such as the files \fBunix/tclUnixNotfy.c\fR
+or \fBwin/tclWinNotify.c\fR in the Tcl source distribution.
+.SH "REPLACING THE NOTIFIER"
+.PP
+A notifier that has been written according to the conventions above
+can also be installed in a running process in place of the standard
+notifier.  This mechanism is used so that a single executable can be
+used (with the standard notifier) as a stand-alone program and reused
+(with a replacement notifier in a loadable extension) as an extension
+to another program, such as a Web browser plugin.
+.PP
+To do this, the extension makes a call to \fBTcl_SetNotifier\fR
+passing a pointer to a \fBTcl_NotifierProcs\fR data structure.  The
+structure has the following layout:
+.PP
+.CS
+typedef struct Tcl_NotifierProcs {
+    Tcl_SetTimerProc *\fIsetTimerProc\fR;
+    Tcl_WaitForEventProc *\fIwaitForEventProc\fR;
+    Tcl_CreateFileHandlerProc *\fIcreateFileHandlerProc\fR;
+    Tcl_DeleteFileHandlerProc *\fIdeleteFileHandlerProc\fR;
+    Tcl_InitNotifierProc *\fIinitNotifierProc\fR;
+    Tcl_FinalizeNotifierProc *\fIfinalizeNotifierProc\fR;
+    Tcl_AlertNotifierProc *\fIalertNotifierProc\fR;
+    Tcl_ServiceModeHookProc *\fIserviceModeHookProc\fR;
+} \fBTcl_NotifierProcs\fR;
+.CE
+.PP
+Following the call to \fBTcl_SetNotifier\fR, the pointers given in
+the \fBTcl_NotifierProcs\fR structure replace whatever notifier had
+been installed in the process.
+.PP
+It is extraordinarily unwise to replace a running notifier. Normally,
+\fBTcl_SetNotifier\fR should be called at process initialization time
+before the first call to \fBTcl_InitNotifier\fR.
+.SH "EXTERNAL EVENT LOOPS"
+.PP
+The notifier interfaces are designed so that Tcl can be embedded into
+applications that have their own private event loops.  In this case,
+the application does not call \fBTcl_DoOneEvent\fR except in the case
+of recursive event loops such as calls to the Tcl commands \fBupdate\fR
+or \fBvwait\fR.  Most of the time is spent in the external event loop
+of the application.  In this case the notifier must arrange for the
+external event loop to call back into Tcl when something
+happens on the various Tcl event sources.  These callbacks should
+arrange for appropriate Tcl events to be placed on the Tcl event queue.
+.PP
+Because the external event loop is not calling \fBTcl_DoOneEvent\fR on
+a regular basis, it is up to the notifier to arrange for
+\fBTcl_ServiceEvent\fR to be called whenever events are pending on the
+Tcl event queue.  The easiest way to do this is to invoke
+\fBTcl_ServiceAll\fR at the end of each callback from the external
+event loop.  This will ensure that all of the event sources are
+polled, any queued events are serviced, and any pending idle handlers
+are processed before returning control to the application.  In
+addition, event sources that need to poll for events can call
+\fBTcl_SetMaxBlockTime\fR to force the external event loop to call
+Tcl even if no events are available on the system event queue.
+.PP
+As a side effect of processing events detected in the main external
+event loop, Tcl may invoke \fBTcl_DoOneEvent\fR to start a recursive event
+loop in commands like \fBvwait\fR.  \fBTcl_DoOneEvent\fR will invoke
+the external event loop, which will result in callbacks as described
+in the preceding paragraph, which will result in calls to
+\fBTcl_ServiceAll\fR.  However, in these cases it is undesirable to
+service events in \fBTcl_ServiceAll\fR.  Servicing events there is
+unnecessary because control will immediately return to the
+external event loop and hence to \fBTcl_DoOneEvent\fR, which can
+service the events itself.  Furthermore, \fBTcl_DoOneEvent\fR is
+supposed to service only a single event, whereas \fBTcl_ServiceAll\fR
+normally services all pending events.  To handle this situation,
+\fBTcl_DoOneEvent\fR sets a flag for \fBTcl_ServiceAll\fR
+that causes it to return without servicing any events.
+This flag is called the \fIservice mode\fR;
+\fBTcl_DoOneEvent\fR restores it to its previous value before it returns.
+.PP
+In some cases, however, it may be necessary for \fBTcl_ServiceAll\fR
+to service events
+even when it has been invoked from \fBTcl_DoOneEvent\fR.  This happens
+when there is yet another recursive event loop invoked via an
+event handler called by \fBTcl_DoOneEvent\fR (such as one that is
+part of a native widget).  In this case, \fBTcl_DoOneEvent\fR may not
+have a chance to service events so \fBTcl_ServiceAll\fR must service
+them all.  Any recursive event loop that calls an external event
+loop rather than \fBTcl_DoOneEvent\fR must reset the service mode so
+that all events get processed in \fBTcl_ServiceAll\fR.  This is done
+by invoking the \fBTcl_SetServiceMode\fR procedure.  If
+\fBTcl_SetServiceMode\fR is passed \fBTCL_SERVICE_NONE\fR, then calls
+to \fBTcl_ServiceAll\fR will return immediately without processing any
+events.  If \fBTcl_SetServiceMode\fR is passed \fBTCL_SERVICE_ALL\fR,
+then calls to \fBTcl_ServiceAll\fR will behave normally.
+\fBTcl_SetServiceMode\fR returns the previous value of the service
+mode, which should be restored when the recursive loop exits.
+\fBTcl_GetServiceMode\fR returns the current value of the service
+mode.
+.SH "SEE ALSO"
+Tcl_CreateFileHandler(3), Tcl_DeleteFileHandler(3), Tcl_Sleep(3),
+Tcl_DoOneEvent(3), Thread(3)
+.SH KEYWORDS
+event, notifier, event queue, event sources, file events, timer, idle, service mode, threads

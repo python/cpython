@@ -1,0 +1,42 @@
+#------------------------------------------------------------- -*- makefile -*-
+#
+# Makefile for TBDC Sqlite3 interface
+#
+# Basic test and install
+#   nmake /s /nologo /f makefile.vc INSTALLDIR=c:\path\to\installdir TCLDIR=c:\path\to\tcl\source test
+#   nmake /s /nologo /f makefile.vc INSTALLDIR=c:\path\to\installdir TCLDIR=c:\path\to\tcl\source install
+#
+# For other build options (debug, static etc.)
+# See TIP 477 (https://core.tcl.tk/tips/doc/trunk/tip/477.md) for
+# detailed documentation.
+# 
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+#------------------------------------------------------------------------------
+
+PROJECT = tdbcsqlite3
+!include "rules-ext.vc"
+
+# Pure Tcl extension, no object files
+PRJ_OBJS = 
+
+TM_INSTALL_DIR = $(_INSTALLDIR)\tcl$(TCL_MAJOR_VERSION)\$(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
+
+$(PROJECT):
+	@echo "This is a pure Tcl module and does not require a build step. Do a nmake install to install"
+setup: default-setup
+install: install-tm default-install-docs-n
+clean: default-clean
+realclean: hose
+hose: default-hose
+distclean: realclean default-distclean
+
+install-tm:
+	@echo Installing 'tdbcsqlite3.tcl' file to '$(TM_INSTALL_DIR)\tdbc\sqlite3-$(DOTVERSION).tm'
+	@if not exist "$(TM_INSTALL_DIR)\tdbc" mkdir "$(TM_INSTALL_DIR)\tdbc"
+	@if exist $(LIBDIR) $(COPY) $(LIBDIR)\tdbcsqlite3.tcl "$(TM_INSTALL_DIR)\tdbc\sqlite3-$(DOTVERSION).tm"
+
+test: default-test
+
+shell: default-shell

@@ -1,0 +1,602 @@
+'\"
+'\" Copyright (c) 2000 Jeffrey Hobbs.
+'\" Copyright (c) 2000 Ajuba Solutions.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH spinbox n 8.4 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+spinbox \- Create and manipulate 'spinbox' value spinner widgets
+.SH SYNOPSIS
+\fBspinbox\fR \fIpathName \fR?\fIoptions\fR?
+.SO
+\-activebackground	\-highlightthickness	\-repeatinterval
+\-background	\-insertbackground	\-selectbackground
+\-borderwidth	\-insertborderwidth	\-selectborderwidth
+\-cursor	\-insertontime	\-selectforeground
+\-exportselection	\-insertwidth	\-takefocus
+\-font	\-insertofftime	\-textvariable
+\-foreground	\-justify	\-xscrollcommand
+\-highlightbackground	\-relief
+\-highlightcolor	\-repeatdelay
+.SE
+.SH "WIDGET-SPECIFIC OPTIONS"
+.OP \-buttonbackground buttonBackground Background
+The background color to be used for the spin buttons.
+.OP \-buttoncursor buttonCursor Cursor
+The cursor to be used when over the spin buttons.  If this is empty
+(the default), a default cursor will be used.
+.OP \-buttondownrelief buttonDownRelief Relief
+The relief to be used for the upper spin button.
+.OP \-buttonuprelief buttonUpRelief Relief
+The relief to be used for the lower spin button.
+.OP \-command command Command
+Specifies a Tcl command to invoke whenever a spinbutton is invoked.
+The command recognizes several percent substitutions: \fB%W\fR for
+the widget path, \fB%s\fR for the current value of the widget, and
+\fB%d\fR for the direction of the button pressed (\fBup\fR or \fBdown\fR).
+.OP \-disabledbackground disabledBackground DisabledBackground
+Specifies the background color to use when the spinbox is disabled.  If
+this option is the empty string, the normal background color is used.
+.OP \-disabledforeground disabledForeground DisabledForeground
+Specifies the foreground color to use when the spinbox is disabled.  If
+this option is the empty string, the normal foreground color is used.
+.OP \-format format Format
+Specifies an alternate format to use when setting the string value
+when using the \fB\-from\fR and \fB\-to\fR range.
+This must be a format specifier of the form \fB%<pad>.<pad>f\fR,
+as it will format a floating-point number.
+.OP \-from from From
+A floating-point value corresponding to the lowest value for a spinbox, to
+be used in conjunction with \fB\-to\fR and \fB\-increment\fR.  When all
+are specified correctly, the spinbox will use these values to control its
+contents.  This value must be less than the \fB\-to\fR option.
+If \fB\-values\fR is specified, it supersedes this option.
+.OP "\-invalidcommand or \-invcmd" invalidCommand InvalidCommand
+Specifies a script to eval when \fB\-validatecommand\fR returns 0.  Setting
+it to an empty string disables this feature (the default).  The best use of
+this option is to set it to \fIbell\fR.  See \fBVALIDATION\fR below for
+more information.
+.OP \-increment increment Increment
+A floating-point value specifying the increment.  When used with
+\fB\-from\fR and \fB\-to\fR, the value in the widget will be adjusted by
+\fB\-increment\fR when a spin button is pressed (up adds the value,
+down subtracts the value).
+.OP \-readonlybackground readonlyBackground ReadonlyBackground
+Specifies the background color to use when the spinbox is readonly.  If
+this option is the empty string, the normal background color is used.
+.OP \-state state State
+Specifies one of three states for the spinbox:  \fBnormal\fR,
+\fBdisabled\fR, or \fBreadonly\fR.  If the spinbox is readonly, then the
+value may not be changed using widget commands and no insertion cursor
+will be displayed, even if the input focus is in the widget; the
+contents of the widget may still be selected.  If the spinbox is
+disabled, the value may not be changed, no insertion cursor will be
+displayed, the contents will not be selectable, and the spinbox may
+be displayed in a different color, depending on the values of the
+\fB\-disabledforeground\fR and \fB\-disabledbackground\fR options.
+.OP \-to to To
+A floating-point value corresponding to the highest value for the spinbox,
+to be used in conjunction with \fB\-from\fR and \fB\-increment\fR.  When
+all are specified correctly, the spinbox will use these values to control
+its contents.  This value must be greater than the \fB\-from\fR option.
+If \fB\-values\fR is specified, it supersedes this option.
+.OP \-validate validate Validate
+Specifies the mode in which validation should operate: \fBnone\fR,
+\fBfocus\fR, \fBfocusin\fR, \fBfocusout\fR, \fBkey\fR, or \fBall\fR.
+It defaults to \fBnone\fR.  When you want validation, you must explicitly
+state which mode you wish to use.  See \fBVALIDATION\fR below for more.
+.OP "\-validatecommand or \-vcmd" validateCommand ValidateCommand
+Specifies a script to evaluate when you want to validate the input in the
+widget.  Setting it to an empty string disables this feature (the default).
+Validation occurs according to the value of \fB\-validate\fR.
+This command must return a valid Tcl boolean value.  If it returns 0 (or
+the valid Tcl boolean equivalent) then the value of the widget will not
+change and the \fB\-invalidcommand\fR will be evaluated if it is set.  If it
+returns 1, then value will be changed.
+See \fBVALIDATION\fR below for more information.
+.OP \-values values Values
+Must be a proper list value.  If specified, the spinbox will use these
+values as to control its contents, starting with the first value.  This
+option has precedence over the \fB\-from\fR and \fB\-to\fR range.
+.OP \-width width Width
+Specifies an integer value indicating the desired width of the spinbox window,
+in average-size characters of the widget's font.
+If the value is less than or equal to zero, the widget picks a
+size just large enough to hold its current text.
+.OP \-wrap wrap wrap
+Must be a proper boolean value.  If on, the spinbox will wrap around the
+values of data in the widget.
+.BE
+.SH DESCRIPTION
+.PP
+The \fBspinbox\fR command creates a new window (given by the
+\fIpathName\fR argument) and makes it into a spinbox widget.
+Additional options, described above, may be specified on the
+command line or in the option database
+to configure aspects of the spinbox such as its colors, font,
+and relief.  The \fBspinbox\fR command returns its
+\fIpathName\fR argument.  At the time this command is invoked,
+there must not exist a window named \fIpathName\fR, but
+\fIpathName\fR's parent must exist.
+.PP
+A \fBspinbox\fR is an extended \fBentry\fR widget that allows he user
+to move, or spin, through a fixed set of ascending or descending values
+such as times or dates in addition to editing the value as in an
+\fBentry\fR.  When first created, a spinbox's string is empty.
+A portion of the spinbox may be selected as described below.
+If a spinbox is exporting its selection (see the \fB\-exportselection\fR
+option), then it will observe the standard protocols for handling the
+selection;  spinbox selections are available as type \fBSTRING\fR.
+Spinboxes also observe the standard Tk rules for dealing with the
+input focus.  When a spinbox has the input focus it displays an
+\fIinsertion cursor\fR to indicate where new characters will be
+inserted.
+.PP
+Spinboxes are capable of displaying strings that are too long to
+fit entirely within the widget's window.  In this case, only a
+portion of the string will be displayed; commands described below
+may be used to change the view in the window.  Spinboxes use
+the standard \fB\-xscrollcommand\fR mechanism for interacting with
+scrollbars (see the description of the \fB\-xscrollcommand\fR option
+for details).  They also support scanning, as described below.
+.SH VALIDATION
+.PP
+Validation works by setting the \fB\-validatecommand\fR
+option to a script which will be evaluated according to the \fB\-validate\fR
+option as follows:
+.PP
+.IP \fBnone\fR 10
+Default.  This means no validation will occur.
+.IP \fBfocus\fR 10
+The \fB\-validatecommand\fR will be called when the spinbox receives or
+loses focus.
+.IP \fBfocusin\fR 10
+The \fB\-validatecommand\fR will be called when the spinbox receives focus.
+.IP \fBfocusout\fR 10
+The \fB\-validatecommand\fR will be called when the spinbox loses focus.
+.IP \fBkey\fR 10
+The \fB\-validatecommand\fR will be called when the spinbox is edited.
+.IP \fBall\fR 10
+The \fB\-validatecommand\fR will be called for all above conditions.
+.PP
+It is possible to perform percent substitutions on the \fB\-validatecommand\fR
+and \fB\-invalidcommand\fR scripts, just as you would in a \fBbind\fR script.  The
+following substitutions are recognized:
+.PP
+.IP \fB%d\fR 5
+Type of action: 1 for \fBinsert\fR, 0 for \fBdelete\fR,
+or \-1 for focus, forced or textvariable validation.
+.IP \fB%i\fR 5
+Index of char string to be inserted/deleted, if any, otherwise \-1.
+.IP \fB%P\fR 5
+The value of the spinbox should edition occur.  If you are configuring the
+spinbox widget to have a new textvariable, this will be the value of that
+textvariable.
+.IP \fB%s\fR 5
+The current value of spinbox before edition.
+.IP \fB%S\fR 5
+The text string being inserted/deleted, if any.
+Otherwise it is an empty string.
+.IP \fB%v\fR 5
+The type of validation currently set.
+.IP \fB%V\fR 5
+The type of validation that triggered the callback
+(key, focusin, focusout, forced).
+.IP \fB%W\fR 5
+The name of the spinbox widget.
+.PP
+In general, the \fB\-textvariable\fR and \fB\-validatecommand\fR can be
+dangerous to mix.  Any problems have been overcome so that using the
+\fB\-validatecommand\fR will not interfere with the traditional behavior of
+the spinbox widget.  Using the \fB\-textvariable\fR for read-only purposes will
+never cause problems.  The danger comes when you try set the
+\fB\-textvariable\fR to something that the \fB\-validatecommand\fR would not
+accept, which causes \fB\-validate\fR to become \fBnone\fR (the
+\fB\-invalidcommand\fR will not be triggered).  The same happens
+when an error occurs evaluating the \fB\-validatecommand\fR.
+.PP
+Primarily, an error will occur when the \fB\-validatecommand\fR or
+\fB\-invalidcommand\fR encounters an error in its script while evaluating or
+\fB\-validatecommand\fR does not return a valid Tcl boolean value.  The
+\fB\-validate\fR option will also set itself to \fBnone\fR when you edit the
+spinbox widget from within either the \fB\-validatecommand\fR or the
+\fB\-invalidcommand\fR.  Such editions will override the one that was being
+validated.  If you wish to edit the value of the widget
+during validation and still have the \fB\-validate\fR option set, you should
+include the command
+.CS
+     \fI%W config \-validate %v\fR
+.CE
+in the \fB\-validatecommand\fR or \fB\-invalidcommand\fR (whichever one you
+were editing the spinbox widget from).  It is also recommended to not set an
+associated \fB\-textvariable\fR during validation, as that can cause the
+spinbox widget to become out of sync with the \fB\-textvariable\fR.
+.PP
+Also, the \fB-validate\fR option will set itself to \fBnone\fR when the
+spinbox value gets changed because of adjustment of \fB-from\fR or \fB-to\fR
+and the \fB-validatecommand\fR returns false. For instance
+.CS
+     \fIspinbox pathName \-from 1 \-to 10 \-validate all \-vcmd {return 0}\fR
+.CE
+will in fact set the \fB-validate\fR option to \fBnone\fR because the default
+value for the spinbox gets changed (due to the \fB-from\fR and \fB-to\fR
+options) to a value not accepted by the validation script.
+.PP
+Moreover, forced validation is performed when invoking any spinbutton of
+the spinbox. If the validation script returns false in this situation,
+then the \fB-validate\fR option will be automatically set to \fBnone\fR.
+.SH "WIDGET COMMAND"
+.PP
+The \fBspinbox\fR command creates a new Tcl command whose
+name is \fIpathName\fR.  This command may be used to invoke various
+operations on the widget.  It has the following general form:
+.CS
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+\fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command.
+.SS INDICES
+.PP
+Many of the widget commands for spinboxes take one or more indices as
+arguments.  An index specifies a particular character in the spinbox's
+string, in any of the following ways:
+.TP 12
+\fInumber\fR
+Specifies the character as a numerical index, where 0 corresponds
+to the first character in the string.
+.TP 12
+\fBanchor\fR
+Indicates the anchor point for the selection, which is set with the
+\fBselect from\fR and \fBselect adjust\fR widget commands.
+.TP 12
+\fBend\fR
+Indicates the character just after the last one in the spinbox's string.
+This is equivalent to specifying a numerical index equal to the length
+of the spinbox's string.
+.TP 12
+\fBinsert\fR
+Indicates the character adjacent to and immediately following the
+insertion cursor.
+.TP 12
+\fBsel.first\fR
+Indicates the first character in the selection.  It is an error to
+use this form if the selection is not in the spinbox window.
+.TP 12
+\fBsel.last\fR
+Indicates the character just after the last one in the selection.
+It is an error to use this form if the selection is not in the
+spinbox window.
+.TP 12
+\fB@\fInumber\fR
+In this form, \fInumber\fR is treated as an x-coordinate in the
+spinbox's window;  the character spanning that x-coordinate is used.
+For example,
+.QW \fB@0\fR
+indicates the left-most character in the window.
+.LP
+Abbreviations may be used for any of the forms above, e.g.
+.QW \fBe\fR
+or
+.QW \fBsel.f\fR .
+In general, out-of-range indices are automatically rounded to the
+nearest legal value.
+.SS SUBCOMMANDS
+.PP
+The following commands are possible for spinbox widgets:
+.TP
+\fIpathName \fBbbox \fIindex\fR
+Returns a list of four numbers describing the bounding box of the
+character given by \fIindex\fR.
+The first two elements of the list give the x and y coordinates of
+the upper-left corner of the screen area covered by the character
+(in pixels relative to the widget) and the last two elements give
+the width and height of the character, in pixels.
+The bounding box may refer to a region outside the visible area
+of the window.
+.TP
+\fIpathName \fBcget\fR \fIoption\fR
+Returns the current value of the configuration option given
+by \fIoption\fR.
+\fIOption\fR may have any of the values accepted by the \fBspinbox\fR
+command.
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? ?\fIvalue option value ...\fR?
+Query or modify the configuration options of the widget.
+If no \fIoption\fR is specified, returns a list describing all of
+the available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list).  If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s);  in
+this case the command returns an empty string.
+\fIOption\fR may have any of the values accepted by the \fBspinbox\fR
+command.
+.TP
+\fIpathName \fBdelete \fIfirst \fR?\fIlast\fR?
+Delete one or more elements of the spinbox.
+\fIFirst\fR is the index of the first character to delete, and
+\fIlast\fR is the index of the character just after the last
+one to delete.
+If \fIlast\fR is not specified it defaults to \fIfirst\fR+1,
+i.e. a single character is deleted.
+This command returns an empty string.
+.TP
+\fIpathName \fBget\fR
+Returns the spinbox's string.
+.TP
+\fIpathName \fBicursor \fIindex\fR
+Arrange for the insertion cursor to be displayed just before the character
+given by \fIindex\fR.  Returns an empty string.
+.TP
+\fIpathName \fBidentify\fI x y\fR
+Returns the name of the window element corresponding to coordinates
+\fIx\fR and \fIy\fR in the spinbox.  Return value is one of:
+\fBnone\fR, \fBbuttondown\fR, \fBbuttonup\fR, \fBentry\fR.
+.TP
+\fIpathName \fBindex\fI index\fR
+Returns the numerical index corresponding to \fIindex\fR.
+.TP
+\fIpathName \fBinsert \fIindex string\fR
+Insert the characters of \fIstring\fR just before the character
+indicated by \fIindex\fR.  Returns an empty string.
+.TP
+\fIpathName \fBinvoke\fI element\fR
+Causes the specified element, either \fBbuttondown\fR or \fBbuttonup\fR,
+to be invoked, triggering the action associated with it.
+.TP
+\fIpathName \fBscan\fR \fIoption args\fR
+This command is used to implement scanning on spinboxes.  It has
+two forms, depending on \fIoption\fR:
+.RS
+.TP
+\fIpathName \fBscan mark \fIx\fR
+Records \fIx\fR and the current view in the spinbox window;  used in
+conjunction with later \fBscan dragto\fR commands.  Typically this
+command is associated with a mouse button press in the widget.  It
+returns an empty string.
+.TP
+\fIpathName \fBscan dragto \fIx\fR
+This command computes the difference between its \fIx\fR argument
+and the \fIx\fR argument to the last \fBscan mark\fR command for
+the widget.  It then adjusts the view left or right by 10 times the
+difference in x-coordinates.  This command is typically associated
+with mouse motion events in the widget, to produce the effect of
+dragging the spinbox at high speed through the window.  The return
+value is an empty string.
+.RE
+.TP
+\fIpathName \fBselection \fIoption arg\fR
+This command is used to adjust the selection within a spinbox.  It
+has several forms, depending on \fIoption\fR:
+.RS
+.TP
+\fIpathName \fBselection adjust \fIindex\fR
+Locate the end of the selection nearest to the character given by
+\fIindex\fR, and adjust that end of the selection to be at \fIindex\fR
+(i.e. including but not going beyond \fIindex\fR).  The other
+end of the selection is made the anchor point for future
+\fBselect to\fR commands.  If the selection
+is not currently in the spinbox, then a new selection is created to
+include the characters between \fIindex\fR and the most recent
+selection anchor point, inclusive.
+Returns an empty string.
+.TP
+\fIpathName \fBselection clear\fR
+Clear the selection if it is currently in this widget.  If the
+selection is not in this widget then the command has no effect.
+Returns an empty string.
+.TP
+\fIpathName \fBselection element\fR ?\fIelement\fR?
+Sets or gets the currently selected element.  If a spinbutton element
+is specified, it will be displayed depressed.
+.TP
+\fIpathName \fBselection from \fIindex\fR
+Set the selection anchor point to just before the character
+given by \fIindex\fR.  Does not change the selection.
+Returns an empty string.
+.TP
+\fIpathName \fBselection present\fR
+Returns 1 if there is are characters selected in the spinbox,
+0 if nothing is selected.
+.TP
+\fIpathName \fBselection range \fIstart end\fR
+Sets the selection to include the characters starting with
+the one indexed by \fIstart\fR and ending with the one just
+before \fIend\fR.
+If \fIend\fR refers to the same character as \fIstart\fR or an
+earlier one, then the spinbox's selection is cleared.
+.TP
+\fIpathName \fBselection to \fIindex\fR
+If \fIindex\fR is before the anchor point, set the selection
+to the characters from \fIindex\fR up to but not including
+the anchor point.
+If \fIindex\fR is the same as the anchor point, do nothing.
+If \fIindex\fR is after the anchor point, set the selection
+to the characters from the anchor point up to but not including
+\fIindex\fR.
+The anchor point is determined by the most recent \fBselect from\fR
+or \fBselect adjust\fR command in this widget.
+If the selection is not in this widget then a new selection is
+created using the most recent anchor point specified for the widget.
+Returns an empty string.
+.RE
+.TP
+\fIpathName \fBset\fR ?\fIstring\fR?
+If \fIstring\fR is specified, the spinbox will try and set it to this
+value, otherwise it just returns the spinbox's string.
+If validation is on, it will occur when setting the string.
+.TP
+\fIpathName \fBvalidate\fR
+This command is used to force an evaluation of the \fB\-validatecommand\fR
+independent of the conditions specified by the \fB\-validate\fR option.
+This is done by temporarily setting the \fB\-validate\fR option to \fBall\fR.
+It returns 0 or 1.
+.TP
+\fIpathName \fBxview \fIargs\fR
+This command is used to query and change the horizontal position of the
+text in the widget's window.  It can take any of the following
+forms:
+.RS
+.TP
+\fIpathName \fBxview\fR
+Returns a list containing two elements.
+Each element is a real fraction between 0 and 1;  together they describe
+the horizontal span that is visible in the window.
+For example, if the first element is .2 and the second element is .6,
+20% of the spinbox's text is off-screen to the left, the middle 40% is visible
+in the window, and 40% of the text is off-screen to the right.
+These are the same values passed to scrollbars via the \fB\-xscrollcommand\fR
+option.
+.TP
+\fIpathName \fBxview \fIindex\fR
+Adjusts the view in the window so that the character given by \fIindex\fR
+is displayed at the left edge of the window.
+.TP
+\fIpathName \fBxview moveto\fI fraction\fR
+Adjusts the view in the window so that the character \fIfraction\fR of the
+way through the text appears at the left edge of the window.
+\fIFraction\fR must be a fraction between 0 and 1.
+.TP
+\fIpathName \fBxview scroll \fInumber what\fR
+This command shifts the view in the window left or right according to
+\fInumber\fR and \fIwhat\fR.
+\fINumber\fR must be an integer.
+\fIWhat\fR must be either \fBunits\fR or \fBpages\fR or an abbreviation
+of one of these.
+If \fIwhat\fR is \fBunits\fR, the view adjusts left or right by
+\fInumber\fR average-width characters on the display;  if it is
+\fBpages\fR then the view adjusts by \fInumber\fR screenfuls.
+If \fInumber\fR is negative then characters farther to the left
+become visible;  if it is positive then characters farther to the right
+become visible.
+.RE
+.SH "DEFAULT BINDINGS"
+.PP
+Tk automatically creates class bindings for spinboxes that give them
+the following default behavior.
+In the descriptions below,
+.QW word
+refers to a contiguous group of letters, digits, or
+.QW _
+characters, or any single character other than these.
+.IP [1]
+Clicking mouse button 1 positions the insertion cursor
+just before the character underneath the mouse cursor, sets the
+input focus to this widget, and clears any selection in the widget.
+Dragging with mouse button 1 strokes out a selection between
+the insertion cursor and the character under the mouse.
+.IP [2]
+Double-clicking with mouse button 1 selects the word under the mouse
+and positions the insertion cursor at the beginning of the word.
+Dragging after a double click will stroke out a selection consisting
+of whole words.
+.IP [3]
+Triple-clicking with mouse button 1 selects all of the text in the
+spinbox and positions the insertion cursor before the first character.
+.IP [4]
+The ends of the selection can be adjusted by dragging with mouse
+button 1 while the Shift key is down;  this will adjust the end
+of the selection that was nearest to the mouse cursor when button
+1 was pressed.
+If the button is double-clicked before dragging then the selection
+will be adjusted in units of whole words.
+.IP [5]
+Clicking mouse button 1 with the Control key down will position the
+insertion cursor in the spinbox without affecting the selection.
+.IP [6]
+If any normal printing characters are typed in a spinbox, they are
+inserted at the point of the insertion cursor.
+.IP [7]
+The view in the spinbox can be adjusted by dragging with mouse button 2.
+If mouse button 2 is clicked without moving the mouse, the selection
+is copied into the spinbox at the position of the mouse cursor.
+.IP [8]
+If the mouse is dragged out of the spinbox on the left or right sides
+while button 1 is pressed, the spinbox will automatically scroll to
+make more text visible (if there is more text off-screen on the side
+where the mouse left the window).
+.IP [9]
+The Left and Right keys move the insertion cursor one character to the
+left or right;  they also clear any selection in the spinbox and set
+the selection anchor.
+If Left or Right is typed with the Shift key down, then the insertion
+cursor moves and the selection is extended to include the new character.
+Control-Left and Control-Right move the insertion cursor by words, and
+Control-Shift-Left and Control-Shift-Right move the insertion cursor
+by words and also extend the selection.
+Control-b and Control-f behave the same as Left and Right, respectively.
+Meta-b and Meta-f behave the same as Control-Left and Control-Right,
+respectively.
+.IP [10]
+The Home key, or Control-a, will move the insertion cursor to the
+beginning of the spinbox and clear any selection in the spinbox.
+Shift-Home moves the insertion cursor to the beginning of the spinbox
+and also extends the selection to that point.
+.IP [11]
+The End key, or Control-e, will move the insertion cursor to the
+end of the spinbox and clear any selection in the spinbox.
+Shift-End moves the cursor to the end and extends the selection
+to that point.
+.IP [12]
+The Select key and Control-Space set the selection anchor to the position
+of the insertion cursor.  They do not affect the current selection.
+Shift-Select and Control-Shift-Space adjust the selection to the
+current position of the insertion cursor, selecting from the anchor
+to the insertion cursor if there was not any selection previously.
+.IP [13]
+Control-/ selects all the text in the spinbox.
+.IP [14]
+Control-\e clears any selection in the spinbox.
+.IP [15]
+The F16 key (labelled Copy on many Sun workstations) or Meta-w
+copies the selection in the widget to the clipboard, if there is a selection.
+.IP [16]
+The F20 key (labelled Cut on many Sun workstations) or Control-w
+copies the selection in the widget to the clipboard and deletes
+the selection.
+If there is no selection in the widget then these keys have no effect.
+.IP [17]
+The F18 key (labelled Paste on many Sun workstations) or Control-y
+inserts the contents of the clipboard at the position of the
+insertion cursor.
+.IP [18]
+The Delete key deletes the selection, if there is one in the spinbox.
+If there is no selection, it deletes the character to the right of
+the insertion cursor.
+.IP [19]
+The BackSpace key and Control-h delete the selection, if there is one
+in the spinbox.
+If there is no selection, it deletes the character to the left of
+the insertion cursor.
+.IP [20]
+Control-d deletes the character to the right of the insertion cursor.
+.IP [21]
+Meta-d deletes the word to the right of the insertion cursor.
+.IP [22]
+Control-k deletes all the characters to the right of the insertion
+cursor.
+.IP [23]
+Control-t reverses the order of the two characters to the right of
+the insertion cursor.
+.PP
+If the spinbox is disabled using the \fB\-state\fR option, then the spinbox's
+view can still be adjusted and text in the spinbox can still be selected,
+but no insertion cursor will be displayed and no text modifications will
+take place.
+.PP
+The behavior of spinboxes can be changed by defining new bindings for
+individual widgets or by redefining the class bindings.
+.SH "SEE ALSO"
+ttk::spinbox(n)
+.SH KEYWORDS
+spinbox, entry, widget
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

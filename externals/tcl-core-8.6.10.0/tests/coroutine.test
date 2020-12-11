@@ -1,0 +1,879 @@
+# Commands covered:  coroutine, yield, yieldto, [info coroutine]
+#
+# This file contains a collection of tests for experimental commands that are
+# found in ::tcl::unsupported. The tests will migrate to normal test files
+# if/when the commands find their way into the core.
+#
+# Copyright (c) 2008 by Miguel Sofer.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testnrelevels [llength [info commands testnrelevels]]
+testConstraint memory [llength [info commands memory]]
+
+set lambda [list {{start 0} {stop 10}} {
+    # init
+    set i    $start
+    set imax $stop
+    yield
+    while {$i < $imax} {
+	yield [expr {$i*$stop}]
+	incr i
+    }
+}]
+
+test coroutine-1.1 {coroutine basic} -setup {
+    coroutine foo ::apply $lambda
+    set res {}
+} -body {
+    for {set k 1} {$k < 4} {incr k} {
+	lappend res [foo]
+    }
+    set res
+} -cleanup {
+    rename foo {}
+    unset res
+} -result {0 10 20}
+test coroutine-1.2 {coroutine basic} -setup {
+    coroutine foo ::apply $lambda 2 8
+    set res {}
+} -body {
+    for {set k 1} {$k < 4} {incr k} {
+	lappend res [foo]
+    }
+    set res
+} -cleanup {
+    rename foo {}
+    unset res
+} -result {16 24 32}
+test coroutine-1.3 {yield returns new arg} -setup {
+    set body {
+	# init
+	set i    $start
+	set imax $stop
+	yield
+	while {$i < $imax} {
+	    set stop [yield [expr {$i*$stop}]]
+	    incr i
+	}
+    }
+    coroutine foo ::apply [list {{start 2} {stop 10}} $body] 
+    set res {}
+} -body {
+    for {set k 1} {$k < 4} {incr k} {
+	lappend res [foo $k]
+    }
+    set res
+} -cleanup {
+    rename foo {}
+    unset res
+} -result {20 6 12}
+test coroutine-1.4 {yield in nested proc} -setup {
+    proc moo {} {
+	upvar 1 i i stop stop
+	yield [expr {$i*$stop}]
+    }
+    set body {
+	# init
+	set i    $start
+	set imax $stop
+	yield
+	while {$i < $imax} {
+	    moo
+	    incr i
+	}
+    }
+    coroutine foo ::apply [list {{start 0} {stop 10}} $body]
+    set res {}
+} -body {
+    for {set k 1} {$k < 4} {incr k} {
+	lappend res [foo $k]
+    }
+    set res
+} -cleanup {
+    rename foo {}
+    rename moo {}
+    unset body res
+} -result {0 10 20}
+test coroutine-1.5 {just yield} -body {
+    coroutine foo yield
+    list [foo] [catch foo msg] $msg
+} -cleanup {
+    unset msg
+} -result {{} 1 {invalid command name "foo"}}
+test coroutine-1.6 {just yield} -body {
+    coroutine foo [list yield]
+    list [foo] [catch foo msg] $msg
+} -cleanup {
+    unset msg
+} -result {{} 1 {invalid command name "foo"}}
+test coroutine-1.7 {yield in nested uplevel} -setup {
+    set body {
+	# init
+	set i    $start
+	set imax $stop
+	yield
+	while {$i < $imax} {
+	    uplevel 0 [list yield [expr {$i*$stop}]]
+	    incr i
+	}
+    }
+    coroutine foo ::apply [list {{start 0} {stop 10}} $body]
+    set res {}
+} -body {
+    for {set k 1} {$k < 4} {incr k} {
+	lappend res [eval foo $k]
+    }
+    set res
+} -cleanup {
+    rename foo {}
+    unset body res
+} -result {0 10 20}
+test coroutine-1.8 {yield in nested uplevel} -setup {
+    set body {
+	# init
+	set i    $start
+	set imax $stop
+	yield
+	while {$i < $imax} {
+	    uplevel 0 yield [expr {$i*$stop}]
+	    incr i
+	}
+    }
+    coroutine foo ::apply [list {{start 0} {stop 10}} $body]
+    set res {}
+} -body {
+    for {set k 1} {$k < 4} {incr k} {
+	lappend res [eval foo $k]
+    }
+    set res
+} -cleanup {
+    rename foo {}
+    unset body res
+} -result {0 10 20}
+test coroutine-1.9 {yield in nested eval} -setup {
+    proc moo {} {
+	upvar 1 i i stop stop
+	yield [expr {$i*$stop}]
+    }
+    set body {
+	# init
+	set i    $start
+	set imax $stop
+	yield
+	while {$i < $imax} {
+	    eval moo
+	    incr i
+	}
+    }
+    coroutine foo ::apply [list {{start 0} {stop 10}} $body]
+    set res {}
+} -body {
+    for {set k 1} {$k < 4} {incr k} {
+	lappend res [foo $k]
+    }
+    set res
+} -cleanup {
+    rename moo {}
+    unset body res
+} -result {0 10 20}
+test coroutine-1.10 {yield in nested eval} -setup {
+    set body {
+	# init
+	set i    $start
+	set imax $stop
+	yield
+	while {$i < $imax} {
+	    eval yield [expr {$i*$stop}]
+	    incr i
+	}
+    }
+    coroutine foo ::apply [list {{start 0} {stop 10}} $body]
+    set res {}
+} -body {
+    for {set k 1} {$k < 4} {incr k} {
+	lappend res [eval foo $k]
+    }
+    set res
+} -cleanup {
+    unset body res
+} -result {0 10 20}
+test coroutine-1.11 {yield outside coroutine} -setup {
+    proc moo {} {
+	upvar 1 i i stop stop
+	yield [expr {$i*$stop}]
+    }
+} -body {
+    variable i 5 stop 6
+    moo
+} -cleanup {
+    rename moo {}
+    unset i stop
+} -returnCodes error -result {yield can only be called in a coroutine}
+test coroutine-1.12 {proc as coroutine} -setup {
+    set body {
+	# init
+	set i    $start
+	set imax $stop
+	yield
+	while {$i < $imax} {
+	    uplevel 0 [list yield [expr {$i*$stop}]]
+	    incr i
+	}
+    }
+    proc moo {{start 0} {stop 10}} $body
+    coroutine foo moo 2 8
+} -body {
+    list [foo] [foo]
+} -cleanup {
+    unset body
+    rename moo {}
+    rename foo {}
+} -result {16 24}
+test coroutine-1.13 {subst as coroutine: literal} {
+    list [coroutine foo eval {subst {>>[yield a],[yield b]<<}}] [foo x] [foo y]
+} {a b >>x,y<<}
+test coroutine-1.14 {subst as coroutine: in variable} {
+    set pattern {>>[yield c],[yield d]<<}
+    list [coroutine foo eval {subst $pattern}] [foo p] [foo q]
+} {c d >>p,q<<}
+
+test coroutine-2.1 {self deletion on return} -body {
+    coroutine foo set x 3
+    foo
+} -returnCodes error -result {invalid command name "foo"}
+test coroutine-2.2 {self deletion on return} -body {
+    coroutine foo ::apply [list {} {yield; yield 1; return 2}]
+    list [foo] [foo] [catch foo msg] $msg
+} -result {1 2 1 {invalid command name "foo"}}
+test coroutine-2.3 {self deletion on error return} -body {
+    coroutine foo ::apply [list {} {yield;yield 1; error ouch!}]
+    list [foo] [catch foo msg] $msg [catch foo msg] $msg
+} -result {1 1 ouch! 1 {invalid command name "foo"}}
+test coroutine-2.4 {self deletion on other return} -body {
+    coroutine foo ::apply [list {} {yield;yield 1; return -code 100 ouch!}]
+    list [foo] [catch foo msg] $msg [catch foo msg] $msg
+} -result {1 100 ouch! 1 {invalid command name "foo"}}
+test coroutine-2.5 {deletion of suspended coroutine} -body {
+    coroutine foo ::apply [list {} {yield; yield 1; return 2}]
+    list [foo] [rename foo {}] [catch foo msg] $msg
+} -result {1 {} 1 {invalid command name "foo"}}
+test coroutine-2.6 {deletion of running coroutine} -body {
+    coroutine foo ::apply [list {} {yield; rename foo {}; yield 1; return 2}]
+    list [foo] [catch foo msg] $msg
+} -result {1 1 {invalid command name "foo"}}
+
+test coroutine-3.1 {info level computation} -setup {
+    proc a {} {while 1 {yield [info level]}}
+    proc b {} foo
+} -body {
+    # note that coroutines execute in uplevel #0
+    set l0 [coroutine foo a]
+    set l1 [foo]
+    set l2 [b]
+    list $l0 $l1 $l2
+} -cleanup {
+    rename a {}
+    rename b {}
+} -result {1 1 1}
+test coroutine-3.2 {info frame computation} -setup {
+    proc a {} {while 1 {yield [info frame]}}
+    proc b {} foo
+} -body {
+    set l0 [coroutine foo a]
+    set l1 [foo]
+    set l2 [b]
+    expr {$l2 - $l1}
+} -cleanup {
+    rename a {}
+    rename b {}
+} -result 1
+test coroutine-3.3 {info coroutine} -setup {
+    proc a {} {info coroutine}
+    proc b {} a
+} -body {
+    b
+} -cleanup {
+    rename a {}
+    rename b {}
+} -result {}
+test coroutine-3.4 {info coroutine} -setup {
+    proc a {} {info coroutine}
+    proc b {} a
+} -body {
+    coroutine foo b
+} -cleanup {
+    rename a {}
+    rename b {}
+} -result ::foo
+test coroutine-3.5 {info coroutine} -setup {
+    proc a {} {info coroutine}
+    proc b {} {rename [info coroutine] {}; a}
+} -body {
+    coroutine foo b
+} -cleanup {
+    rename a {}
+    rename b {}
+} -result {}
+test coroutine-3.6 {info frame, bug #2910094} -setup {
+    proc stack {} {
+	set res [list "LEVEL:[set lev [info frame]]"]
+	for {set i 1} {$i < $lev} {incr i} {
+	    lappend res [info frame $i]
+	}
+	set res
+	# the precise command depends on line numbers and such, is likely not
+	# to be stable: just check that the test completes!
+	return
+    }
+    proc a {} stack
+} -body {
+    coroutine aa a
+} -cleanup {
+    rename stack {}
+    rename a {}
+} -result {}
+test coroutine-3.7 {bug 0b874c344d} {
+    dict get [coroutine X coroutine Y info frame 0] cmd
+} {coroutine X coroutine Y info frame 0}
+
+test coroutine-4.1 {bug #2093188} -setup {
+    proc foo {} {
+	set v 1
+	trace add variable v {write unset} bar
+	yield
+	set v 2
+	yield
+	set v 3
+    }
+    proc bar args {lappend ::res $args}
+    coroutine a foo
+} -body {
+    list [a] [a] $::res
+} -cleanup {
+    rename foo {}
+    rename bar {}
+    unset ::res
+} -result {{} 3 {{v {} write} {v {} write} {v {} unset}}}
+test coroutine-4.2 {bug #2093188} -setup {
+    proc foo {} {
+	set v 1
+	trace add variable v {read unset} bar
+	yield
+	set v 2
+	set v
+	yield
+	set v 3
+    }
+    proc bar args {lappend ::res $args}
+    coroutine a foo
+} -body {
+    list [a] [a] $::res
+} -cleanup {
+    rename foo {}
+    rename bar {}
+    unset ::res
+} -result {{} 3 {{v {} read} {v {} unset}}}
+
+test coroutine-4.3 {bug #2093947} -setup {
+    proc foo {} {
+	set v 1
+	trace add variable v {write unset} bar
+	yield
+	set v 2
+	yield
+	set v 3
+    }
+    proc bar args {lappend ::res $args}
+} -body {
+    coroutine a foo
+    a
+    a
+    coroutine a foo
+    a
+    rename a {}
+    set ::res
+} -cleanup {
+    rename foo {}
+    rename bar {}
+    unset ::res
+} -result {{v {} write} {v {} write} {v {} unset} {v {} write} {v {} unset}}
+
+test coroutine-4.4 {bug #2917627: cmd resolution} -setup {
+    proc a {} {return global}
+    namespace eval b {proc a {} {return local}}
+} -body {
+    namespace eval b {coroutine foo a}
+} -cleanup {
+    rename a {}
+    namespace delete b
+} -result local
+
+test coroutine-4.5 {bug #2724403} -constraints {memory} \
+-setup {
+    proc getbytes {} {
+	set lines [split [memory info] "\n"]
+	lindex $lines 3 3
+    }
+} -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	set ns ::y$i
+	namespace eval $ns {}
+	proc ${ns}::start {} {yield; puts hello}
+	coroutine ${ns}::run ${ns}::start
+	namespace delete $ns
+	set start $end
+	set end [getbytes]
+    }
+    set leakedBytes [expr {$end - $start}]
+} -cleanup {
+    rename getbytes {}
+    unset i ns start end
+} -result 0
+
+test coroutine-4.6 {compile context, bug #3282869} -setup {
+    unset -nocomplain ::x
+    proc f x {
+	coroutine D eval {yield X$x;yield Y}
+    }
+} -body {
+    f 12
+} -cleanup {
+    rename f {}
+} -returnCodes error -match glob -result {can't read *}
+
+test coroutine-4.7 {compile context, bug #3282869} -setup {
+    proc f x {
+	coroutine D eval {yield X$x;yield Y$x}
+    }
+} -body {
+    set ::x 15
+    set ::x [f 12]
+    D
+} -cleanup {
+    D
+    unset ::x
+    rename f {}
+} -result YX15
+
+test coroutine-5.1 {right numLevels on coro return} -constraints {testnrelevels} \
+-setup {
+    proc nestedYield {{val {}}} {
+	yield $val
+    }
+    proc getNumLevel {} {
+	# remove the level for this proc's call
+	expr {[lindex [testnrelevels] 1] - 1}
+    }
+    proc relativeLevel base {
+	# remove the level for this proc's call	
+	expr {[getNumLevel] - $base - 1}
+    }
+    proc foo {} {
+	while 1 {
+	    nestedYield
+	}
+    }
+    set res {}
+} -body {
+    set base [getNumLevel]
+    lappend res [relativeLevel $base]
+    eval {coroutine a foo}
+    # back to base level
+    lappend res [relativeLevel $base]
+    a
+    lappend res [relativeLevel $base]
+    eval a
+    lappend res [relativeLevel $base]
+    eval {eval a}
+    lappend res [relativeLevel $base]
+    rename a {}
+    lappend res [relativeLevel $base]
+    set res
+} -cleanup {
+    rename foo {}
+    rename nestedYield {}
+    rename getNumLevel {}
+    rename relativeLevel {}
+    unset res
+} -result {0 0 0 0 0 0}
+test coroutine-5.2 {right numLevels within coro} -constraints {testnrelevels} \
+-setup {
+    proc nestedYield {{val {}}} {
+	yield $val
+    }
+    proc getNumLevel {} {
+	# remove the level for this proc's call
+	expr {[lindex [testnrelevels] 1] - 1}
+    }
+    proc relativeLevel base {
+	# remove the level for this proc's call	
+	expr {[getNumLevel] - $base - 1}
+    }
+    proc foo base {
+	while 1 {
+	    set base [nestedYield [relativeLevel $base]]
+	}
+    }
+    set res {}
+} -body {
+    lappend res [eval {coroutine a foo [getNumLevel]}]
+    lappend res [a [getNumLevel]]
+    lappend res [eval {a [getNumLevel]}]
+    lappend res [eval {eval {a [getNumLevel]}}]
+    set base [lindex $res 0]
+    foreach x $res[set res {}] {
+	lappend res [expr {$x-$base}]
+    }
+    set res
+} -cleanup {
+    rename a {}
+    rename foo {}
+    rename nestedYield {}
+    rename getNumLevel {}
+    rename relativeLevel {}
+    unset res
+} -result {0 0 0 0}
+
+test coroutine-6.1 {coroutine nargs} -body {
+    coroutine a ::apply $lambda
+    a
+} -cleanup {
+    rename a {}
+} -result 0
+test coroutine-6.2 {coroutine nargs} -body {
+    coroutine a ::apply $lambda
+    a a
+} -cleanup {
+    rename a {}
+} -result 0
+test coroutine-6.3 {coroutine nargs} -body {
+    coroutine a ::apply $lambda
+    a a a
+} -cleanup {
+    rename a {}
+} -returnCodes error -result {wrong # args: should be "a ?arg?"}
+
+test coroutine-7.1 {yieldto} -body {
+    coroutine c apply {{} {
+	yield
+	yieldto return -level 0 -code 1 quux
+	return quuy
+    }}
+    set res [list [catch c msg] $msg]
+    lappend res [catch c msg] $msg
+    lappend res [catch c msg] $msg
+} -cleanup {
+    unset res
+} -result [list 1 quux 0 quuy 1 {invalid command name "c"}]
+test coroutine-7.2 {multi-argument yielding with yieldto} -body {
+    proc corobody {} {
+	set a 1
+	while 1 {
+	    set a [yield $a]
+	    set a [yieldto return -level 0 $a]
+	    lappend a [llength $a]
+	}
+    }
+    coroutine a corobody
+    coroutine b corobody
+    list [a x] [a y z] [a \{p] [a \{q r] [a] [a] [rename a {}] \
+	[b ok] [rename b {}] 
+} -cleanup {
+    rename corobody {}
+} -result {x {y z 2} \{p {\{q r 2} {} 0 {} ok {}}
+test coroutine-7.3 {yielding between coroutines} -body {
+    proc juggler {target {value ""}} {
+	if {$value eq ""} {
+	    set value [yield [info coroutine]]
+	}
+	while {[llength $value]} {
+	    lappend ::result $value [info coroutine]
+	    set value [lrange $value 0 end-1]
+	    lassign [yieldto $target $value] value
+	}
+	# Clear nested collection of coroutines
+	catch $target
+    }
+    set result ""
+    coroutine j1 juggler [coroutine j2 juggler [coroutine j3 juggler j1]]\
+	{a b c d e}
+    list $result [info command j1] [info command j2] [info command j3]
+} -cleanup {
+    catch {rename juggler ""}
+} -result {{{a b c d e} ::j1 {a b c d} ::j2 {a b c} ::j3 {a b} ::j1 a ::j2} {} {} {}}
+test coroutine-7.4 {Bug 8ff0cb9fe1} -setup {
+    proc foo {a b} {catch yield; return 1}
+} -cleanup {
+    rename foo {}
+} -body {
+    coroutine demo lsort -command foo {a b}
+} -result {b a}
+test coroutine-7.5 {return codes} {
+    set result {}
+    foreach code {0 1 2 3 4 5} {
+	lappend result [catch {coroutine demo return -level 0 -code $code}]
+    }
+    set result
+} {0 1 2 3 4 5}
+test coroutine-7.6 {Early yield crashes} -setup {
+    set i [interp create]
+} -body {
+    # Force into a child interpreter [bug 60559fd4a6]
+    $i eval {
+	proc foo args {}
+	trace add execution foo enter {catch yield}
+	coroutine demo foo
+	rename foo {}
+	return ok
+    }
+} -cleanup {
+    interp delete $i
+} -result ok
+test coroutine-7.7 {Bug 2486550} -setup {
+    set i [interp create]
+    $i hide yield
+} -body {
+    # Force into a child interpreter [bug 60559fd4a6]
+    $i eval {
+	coroutine demo interp invokehidden {} yield ok
+    }
+} -cleanup {
+    $i eval demo
+    interp delete $i
+} -result ok
+test coroutine-7.8 {yieldto context nuke: Bug a90d9331bc} -setup {
+    namespace eval cotest {}
+    set ::result ""
+} -body {
+    proc cotest::body {} {
+	lappend ::result a
+	yield OUT
+	lappend ::result b
+	yieldto ::return -level 0 123
+	lappend ::result c
+	return
+    }
+    lappend ::result [coroutine cotest cotest::body]
+    namespace delete cotest
+    namespace eval cotest {}
+    lappend ::result [cotest]
+    cotest
+    return $result
+} -returnCodes error -cleanup {
+    catch {namespace delete ::cotest}
+    catch {rename cotest ""}
+} -result {yieldto called in deleted namespace}
+test coroutine-7.9 {yieldto context nuke: Bug a90d9331bc} -setup {
+    namespace eval cotest {}
+    set ::result ""
+} -body {
+    proc cotest::body {} {
+	set y ::yieldto
+	lappend ::result a
+	yield OUT
+	lappend ::result b
+	$y ::return -level 0 123
+	lappend ::result c
+	return
+    }
+    lappend ::result [coroutine cotest cotest::body]
+    namespace delete cotest
+    namespace eval cotest {}
+    lappend ::result [cotest]
+    cotest
+    return $result
+} -returnCodes error -cleanup {
+    catch {namespace delete ::cotest}
+    catch {rename cotest ""}
+} -result {yieldto called in deleted namespace}
+test coroutine-7.10 {yieldto context nuke: Bug a90d9331bc} -setup {
+    namespace eval cotest {}
+    set ::result ""
+} -body {
+    proc cotest::body {} {
+	lappend ::result a
+	yield OUT
+	lappend ::result b
+	yieldto ::return -level 0 -cotest [namespace delete ::cotest] 123
+	lappend ::result c
+	return
+    }
+    lappend ::result [coroutine cotest cotest::body]
+    lappend ::result [cotest]
+    cotest
+    return $result
+} -returnCodes error -cleanup {
+    catch {namespace delete ::cotest}
+    catch {rename cotest ""}
+} -result {yieldto called in deleted namespace}
+test coroutine-7.11 {yieldto context nuke: Bug a90d9331bc} -setup {
+    namespace eval cotest {}
+    set ::result ""
+} -body {
+    proc cotest::body {} {
+	set y ::yieldto
+	lappend ::result a
+	yield OUT
+	lappend ::result b
+	$y ::return -level 0 -cotest [namespace delete ::cotest] 123
+	lappend ::result c
+	return
+    }
+    lappend ::result [coroutine cotest cotest::body]
+    lappend ::result [cotest]
+    cotest
+    return $result
+} -returnCodes error -cleanup {
+    catch {namespace delete ::cotest}
+    catch {rename cotest ""}
+} -result {yieldto called in deleted namespace}
+test coroutine-7.12 {coro floor above street level #3008307} -body {
+    proc c {} {
+	yield
+    }
+    proc cc {} {
+	coroutine C c
+    }
+    proc boom {} {
+	cc ; # coro created at level 2
+	C  ; # and called at level 1
+    }
+    boom   ; # does not crash: the coro floor is a good insulator
+    list
+} -cleanup {
+    rename boom {}; rename cc {}; rename c {}
+} -result {}
+
+test coroutine-8.0.0 {coro inject executed} -body {
+    coroutine demo apply {{} { foreach i {1 2} yield }}
+    demo
+    set ::result none
+    tcl::unsupported::inject demo set ::result inject-executed
+    demo
+    set ::result
+} -result {inject-executed}
+test coroutine-8.0.1 {coro inject after error} -body {
+    coroutine demo apply {{} { foreach i {1 2} yield; error test }}
+    demo
+    set ::result none
+    tcl::unsupported::inject demo set ::result inject-executed
+    lappend ::result [catch {demo} err] $err
+} -result {inject-executed 1 test}
+test coroutine-8.1.1 {coro inject, ticket 42202ba1e5ff566e} -body {
+    interp create slave
+    slave eval {
+	coroutine demo apply {{} { while {1} yield }}
+	demo
+	tcl::unsupported::inject demo set ::result inject-executed
+    }
+    interp delete slave
+} -result {}
+test coroutine-8.1.2 {coro inject with result, ticket 42202ba1e5ff566e} -body {
+    interp create slave
+    slave eval {
+	coroutine demo apply {{} { while {1} yield }}
+	demo
+	tcl::unsupported::inject demo set ::result inject-executed
+    }
+    slave eval demo
+    set result [slave eval {set ::result}]
+
+    interp delete slave
+    set result
+} -result {inject-executed}
+
+test coroutine-9.1 {coro type} {
+    coroutine demo eval {
+	yield
+	yield "PHASE 1"
+	yieldto string cat "PHASE 2"
+	::tcl::unsupported::corotype [info coroutine]
+    }
+    list [demo] [::tcl::unsupported::corotype demo] \
+	[demo] [::tcl::unsupported::corotype demo] [demo]
+} {{PHASE 1} yield {PHASE 2} yieldto active}
+test coroutine-9.2 {coro type} -setup {
+    catch {rename nosuchcommand ""}
+} -returnCodes error -body {
+    ::tcl::unsupported::corotype nosuchcommand
+} -result {can only get coroutine type of a coroutine}
+test coroutine-9.3 {coro type} -returnCodes error -body {
+    proc notacoroutine {} {}
+    ::tcl::unsupported::corotype notacoroutine
+} -returnCodes error -cleanup {
+    rename notacoroutine {}
+} -result {can only get coroutine type of a coroutine}
+
+test coroutine-10.1 {coroutine general introspection} -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	# Make the introspection code
+	namespace path tcl::unsupported
+	proc probe {type var} {
+	    upvar 1 $var v
+	    set f [info frame]
+	    incr f -1
+	    set result [list $v [dict get [info frame $f] proc]]
+	    if {$type eq "yield"} {
+		tailcall yield $result
+	    } else {
+		tailcall yieldto string cat $result
+	    }
+	}
+	proc pokecoro {c var} {
+	    inject $c probe [corotype $c] $var
+	    $c
+	}
+
+	# Coroutine implementations
+	proc cbody1 {} {
+	    set val [info coroutine]
+	    set accum {}
+	    while {[set val [yield $val]] ne ""} {
+		lappend accum $val
+		set val ok
+	    }
+	    return $accum
+	}
+	proc cbody2 {} {
+	    set val [info coroutine]
+	    set accum {}
+	    while {[llength [set val [yieldto string cat $val]]]} {
+		lappend accum {*}$val
+		set val ok
+	    }
+	    return $accum
+	}
+
+	# Make the coroutines
+	coroutine c1 cbody1
+	coroutine c2 cbody2
+	list [c1 abc] [c2 1 2 3] [pokecoro c1 accum] [pokecoro c2 accum] \
+	    [c1 def] [c2 4 5 6] [pokecoro c1 accum] [pokecoro c2 accum] \
+	    [c1] [c2]
+    }
+} -cleanup {
+    interp delete $i
+} -result {ok ok {abc ::cbody1} {{1 2 3} ::cbody2} ok ok {{abc def} ::cbody1} {{1 2 3 4 5 6} ::cbody2} {abc def} {1 2 3 4 5 6}}
+
+# cleanup
+unset lambda
+::tcltest::cleanupTests
+
+return
+
+# Local Variables:
+# mode: tcl
+# End:

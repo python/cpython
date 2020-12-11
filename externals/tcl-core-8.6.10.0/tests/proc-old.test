@@ -1,0 +1,517 @@
+# Commands covered:  proc, return, global
+#
+# This file, proc-old.test, includes the original set of tests for Tcl's
+# proc, return, and global commands. There is now a new file proc.test
+# that contains tests for the tclProc.c source file.
+#
+# Sourcing this file into Tcl runs the tests and generates output for
+# errors.  No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+catch {rename t1 ""}
+catch {rename foo ""}
+
+proc tproc {} {return a; return b}
+test proc-old-1.1 {simple procedure call and return} {tproc} a
+proc tproc x {
+    set x [expr $x+1]
+    return $x
+}
+test proc-old-1.2 {simple procedure call and return} {tproc 2} 3
+test proc-old-1.3 {simple procedure call and return} {
+    proc tproc {} {return foo}
+} {}
+test proc-old-1.4 {simple procedure call and return} {
+    proc tproc {} {return}
+    tproc
+} {}
+proc tproc1 {a}   {incr a; return $a}
+proc tproc2 {a b} {incr a; return $a}
+test proc-old-1.5 {simple procedure call and return (2 procs with same body but different parameters)} {
+    list [tproc1 123] [tproc2 456 789]
+} {124 457}
+test proc-old-1.6 {simple procedure call and return (shared proc body string)} {
+    set x {}
+    proc tproc {} {}   ;# body is shared with x
+    list [tproc] [append x foo]
+} {{} foo}
+
+test proc-old-2.1 {local and global variables} {
+    proc tproc x {
+	set x [expr $x+1]
+	return $x
+    }
+    set x 42
+    list [tproc 6] $x
+} {7 42}
+test proc-old-2.2 {local and global variables} {
+    proc tproc x {
+	set y [expr $x+1]
+	return $y
+    }
+    set y 18
+    list [tproc 6] $y
+} {7 18}
+test proc-old-2.3 {local and global variables} {
+    proc tproc x {
+	global y
+	set y [expr $x+1]
+	return $y
+    }
+    set y 189
+    list [tproc 6] $y
+} {7 7}
+test proc-old-2.4 {local and global variables} {
+    proc tproc x {
+	global y
+	return [expr $x+$y]
+    }
+    set y 189
+    list [tproc 6] $y
+} {195 189}
+catch {unset _undefined_}
+test proc-old-2.5 {local and global variables} {
+    proc tproc x {
+	global _undefined_
+	return $_undefined_
+    }
+    list [catch {tproc xxx} msg] $msg
+} {1 {can't read "_undefined_": no such variable}}
+test proc-old-2.6 {local and global variables} {
+    set a 114
+    set b 115
+    global a b
+    list $a $b
+} {114 115}
+
+proc do {cmd} {eval $cmd}
+test proc-old-3.1 {local and global arrays} {
+    catch {unset a}
+    set a(0) 22
+    list [catch {do {global a; set a(0)}} msg] $msg
+} {0 22}
+test proc-old-3.2 {local and global arrays} {
+    catch {unset a}
+    set a(x) 22
+    list [catch {do {global a; set a(x) newValue}} msg] $msg $a(x)
+} {0 newValue newValue}
+test proc-old-3.3 {local and global arrays} {
+    catch {unset a}
+    set a(x) 22
+    set a(y) 33
+    list [catch {do {global a; unset a(y)}; array names a} msg] $msg
+} {0 x}
+test proc-old-3.4 {local and global arrays} {
+    catch {unset a}
+    set a(x) 22
+    set a(y) 33
+    list [catch {do {global a; unset a; info exists a}} msg] $msg \
+	    [info exists a]
+} {0 0 0}
+test proc-old-3.5 {local and global arrays} {
+    catch {unset a}
+    set a(x) 22
+    set a(y) 33
+    list [catch {do {global a; unset a(y); array names a}} msg] $msg
+} {0 x}
+catch {unset a}
+test proc-old-3.6 {local and global arrays} {
+    catch {unset a}
+    set a(x) 22
+    set a(y) 33
+    do {global a; do {global a; unset a}; set a(z) 22}
+    list [catch {array names a} msg] $msg
+} {0 z}
+test proc-old-3.7 {local and global arrays} {
+    proc t1 {args} {global info; set info 1}
+    catch {unset a}
+    set info {}
+    do {global a; trace var a(1) w t1}
+    set a(1) 44
+    set info
+} 1
+test proc-old-3.8 {local and global arrays} {
+    proc t1 {args} {global info; set info 1}
+    catch {unset a}
+    trace var a(1) w t1
+    set info {}
+    do {global a; trace vdelete a(1) w t1}
+    set a(1) 44
+    set info
+} {}
+test proc-old-3.9 {local and global arrays} {
+    proc t1 {args} {global info; set info 1}
+    catch {unset a}
+    trace var a(1) w t1
+    do {global a; trace vinfo a(1)}
+} {{w t1}}
+catch {unset a}
+
+test proc-old-30.1 {arguments and defaults} {
+    proc tproc {x y z} {
+	return [list $x $y $z]
+    }
+    tproc 11 12 13
+} {11 12 13}
+test proc-old-30.2 {arguments and defaults} {
+    proc tproc {x y z} {
+	return [list $x $y $z]
+    }
+    list [catch {tproc 11 12} msg] $msg
+} {1 {wrong # args: should be "tproc x y z"}}
+test proc-old-30.3 {arguments and defaults} {
+    proc tproc {x y z} {
+	return [list $x $y $z]
+    }
+    list [catch {tproc 11 12 13 14} msg] $msg
+} {1 {wrong # args: should be "tproc x y z"}}
+test proc-old-30.4 {arguments and defaults} {
+    proc tproc {x {y y-default} {z z-default}} {
+	return [list $x $y $z]
+    }
+    tproc 11 12 13
+} {11 12 13}
+test proc-old-30.5 {arguments and defaults} {
+    proc tproc {x {y y-default} {z z-default}} {
+	return [list $x $y $z]
+    }
+    tproc 11 12
+} {11 12 z-default}
+test proc-old-30.6 {arguments and defaults} {
+    proc tproc {x {y y-default} {z z-default}} {
+	return [list $x $y $z]
+    }
+    tproc 11
+} {11 y-default z-default}
+test proc-old-30.7 {arguments and defaults} {
+    proc tproc {x {y y-default} {z z-default}} {
+	return [list $x $y $z]
+    }
+    list [catch {tproc} msg] $msg
+} {1 {wrong # args: should be "tproc x ?y? ?z?"}}
+test proc-old-30.8 {arguments and defaults} {
+    list [catch {
+	proc tproc {x {y y-default} z} {
+	    return [list $x $y $z]
+	}
+	tproc 2 3
+    } msg] $msg
+} {1 {wrong # args: should be "tproc x ?y? z"}}
+test proc-old-30.9 {arguments and defaults} {
+    proc tproc {x {y y-default} args} {
+	return [list $x $y $args]
+    }
+    tproc 2 3 4 5
+} {2 3 {4 5}}
+test proc-old-30.10 {arguments and defaults} {
+    proc tproc {x {y y-default} args} {
+	return [list $x $y $args]
+    }
+    tproc 2 3
+} {2 3 {}}
+test proc-old-30.11 {arguments and defaults} {
+    proc tproc {x {y y-default} args} {
+	return [list $x $y $args]
+    }
+    tproc 2
+} {2 y-default {}}
+test proc-old-30.12 {arguments and defaults} {
+    proc tproc {x {y y-default} args} {
+	return [list $x $y $args]
+    }
+    list [catch {tproc} msg] $msg
+} {1 {wrong # args: should be "tproc x ?y? ?arg ...?"}}
+
+test proc-old-4.1 {variable numbers of arguments} {
+    proc tproc args {return $args}
+    tproc
+} {}
+test proc-old-4.2 {variable numbers of arguments} {
+    proc tproc args {return $args}
+    tproc 1 2 3 4 5 6 7 8
+} {1 2 3 4 5 6 7 8}
+test proc-old-4.3 {variable numbers of arguments} {
+    proc tproc args {return $args}
+    tproc 1 {2 3} {4 {5 6} {{{7}}}} 8
+} {1 {2 3} {4 {5 6} {{{7}}}} 8}
+test proc-old-4.4 {variable numbers of arguments} {
+    proc tproc {x y args} {return $args}
+    tproc 1 2 3 4 5 6 7
+} {3 4 5 6 7}
+test proc-old-4.5 {variable numbers of arguments} {
+    proc tproc {x y args} {return $args}
+    tproc 1 2
+} {}
+test proc-old-4.6 {variable numbers of arguments} {
+    proc tproc {x missing args} {return $args}
+    list [catch {tproc 1} msg] $msg
+} {1 {wrong # args: should be "tproc x missing ?arg ...?"}}
+
+test proc-old-5.1 {error conditions} {
+    list [catch {proc} msg] $msg
+} {1 {wrong # args: should be "proc name args body"}}
+test proc-old-5.2 {error conditions} {
+    list [catch {proc tproc b} msg] $msg
+} {1 {wrong # args: should be "proc name args body"}}
+test proc-old-5.3 {error conditions} {
+    list [catch {proc tproc b c d e} msg] $msg
+} {1 {wrong # args: should be "proc name args body"}}
+test proc-old-5.4 {error conditions} {
+    list [catch {proc tproc \{xyz {return foo}} msg] $msg
+} {1 {unmatched open brace in list}}
+test proc-old-5.5 {error conditions} {
+    list [catch {proc tproc {{} y} {return foo}} msg] $msg
+} {1 {argument with no name}}
+test proc-old-5.6 {error conditions} {
+    list [catch {proc tproc {{} y} {return foo}} msg] $msg
+} {1 {argument with no name}}
+test proc-old-5.7 {error conditions} {
+    list [catch {proc tproc {{x 1 2} y} {return foo}} msg] $msg
+} {1 {too many fields in argument specifier "x 1 2"}}
+test proc-old-5.8 {error conditions} {
+    catch {return}
+} 2
+proc tproc {} {
+    set a 22
+    global a
+}
+test proc-old-5.10 {error conditions} {
+    list [catch {tproc} msg] $msg
+} {1 {variable "a" already exists}}
+test proc-old-5.11 {error conditions} {
+    catch {rename tproc {}}
+    catch {
+	proc tproc {x {} z} {return foo}
+    }
+    list [catch {tproc 1} msg] $msg
+} {1 {invalid command name "tproc"}}
+test proc-old-5.12 {error conditions} {
+    proc tproc {} {
+	set a 22
+	error "error in procedure"
+	return
+    }
+    list [catch tproc msg] $msg
+} {1 {error in procedure}}
+test proc-old-5.13 {error conditions} {
+    proc tproc {} {
+	set a 22
+	error "error in procedure"
+	return
+    }
+    catch tproc msg
+    set ::errorInfo
+} {error in procedure
+    while executing
+"error "error in procedure""
+    (procedure "tproc" line 3)
+    invoked from within
+"tproc"}
+test proc-old-5.14 {error conditions} {
+    proc tproc {} {
+	set a 22
+	break
+	return
+    }
+    catch tproc msg
+    set ::errorInfo
+} {invoked "break" outside of a loop
+    (procedure "tproc" line 1)
+    invoked from within
+"tproc"}
+test proc-old-5.15 {error conditions} {
+    proc tproc {} {
+	set a 22
+	continue
+	return
+    }
+    catch tproc msg
+    set ::errorInfo
+} {invoked "continue" outside of a loop
+    (procedure "tproc" line 1)
+    invoked from within
+"tproc"}
+test proc-old-5.16 {error conditions} {
+    proc foo args {
+	global fooMsg
+	set fooMsg "foo was called: $args"
+    }
+    proc tproc {} {
+	set x 44
+	trace var x u foo
+	while {$x < 100} {
+	    error "Nested error"
+	}
+    }
+    set fooMsg "foo not called"
+    list [catch tproc msg] $msg $::errorInfo $fooMsg
+} {1 {Nested error} {Nested error
+    while executing
+"error "Nested error""
+    (procedure "tproc" line 5)
+    invoked from within
+"tproc"} {foo was called: x {} u}}
+
+# The tests below will really only be useful when run under Purify or
+# some other system that can detect accesses to freed memory...
+
+test proc-old-6.1 {procedure that redefines itself} {
+    proc tproc {} {
+	proc tproc {} {
+	    return 44
+	}
+	return 45
+    }
+    tproc
+} 45
+test proc-old-6.2 {procedure that deletes itself} {
+    proc tproc {} {
+	rename tproc {}
+	return 45
+    }
+    tproc
+} 45
+
+proc tproc code {
+    return -code $code abc
+}
+test proc-old-7.1 {return with special completion code} {
+    list [catch {tproc ok} msg] $msg
+} {0 abc}
+test proc-old-7.2 {return with special completion code} {
+    list [catch {tproc error} msg] $msg $::errorInfo $::errorCode
+} {1 abc {abc
+    while executing
+"tproc error"} NONE}
+test proc-old-7.3 {return with special completion code} {
+    list [catch {tproc return} msg] $msg
+} {2 abc}
+test proc-old-7.4 {return with special completion code} {
+    list [catch {tproc break} msg] $msg
+} {3 abc}
+test proc-old-7.5 {return with special completion code} {
+    list [catch {tproc continue} msg] $msg
+} {4 abc}
+test proc-old-7.6 {return with special completion code} {
+    list [catch {tproc -14} msg] $msg
+} {-14 abc}
+test proc-old-7.7 {return with special completion code} -body {
+    tproc err
+} -returnCodes error -match glob -result {bad completion code "err": must be ok, error, return, break, continue*, or an integer}
+test proc-old-7.8 {return with special completion code} -body {
+    tproc 10b
+} -returnCodes error -match glob -result {bad completion code "10b": must be ok, error, return, break, continue*, or an integer}
+test proc-old-7.9 {return with special completion code} {
+    proc tproc2 {} {
+	tproc return
+    }
+    list [catch tproc2 msg] $msg
+} {0 abc}
+test proc-old-7.10 {return with special completion code} {
+    proc tproc2 {} {
+	return -code error
+    }
+    list [catch tproc2 msg] $msg
+} {1 {}}
+test proc-old-7.11 {return with special completion code} {
+    proc tproc2 {} {
+	global errorCode errorInfo
+	catch {open _bad_file_name r} msg
+	return -code error -errorinfo $errorInfo -errorcode $errorCode $msg
+    }
+    set msg [list [catch tproc2 msg] $msg $::errorInfo $::errorCode]
+    regsub -all [file join {} _bad_file_name] $msg "_bad_file_name" msg
+    normalizeMsg $msg
+} {1 {couldn't open "_bad_file_name": no such file or directory} {couldn't open "_bad_file_name": no such file or directory
+    while executing
+"open _bad_file_name r"
+    invoked from within
+"tproc2"} {posix enoent {no such file or directory}}}
+test proc-old-7.12 {return with special completion code} {
+    proc tproc2 {} {
+	global errorCode errorInfo
+	catch {open _bad_file_name r} msg
+	return -code error -errorcode $errorCode $msg
+    }
+    set msg [list [catch tproc2 msg] $msg $::errorInfo $::errorCode]
+    regsub -all [file join {} _bad_file_name] $msg "_bad_file_name" msg
+    normalizeMsg $msg
+} {1 {couldn't open "_bad_file_name": no such file or directory} {couldn't open "_bad_file_name": no such file or directory
+    while executing
+"tproc2"} {posix enoent {no such file or directory}}}
+test proc-old-7.13 {return with special completion code} {
+    proc tproc2 {} {
+	global errorCode errorInfo
+	catch {open _bad_file_name r} msg
+	return -code error -errorinfo $errorInfo $msg
+    }
+    set msg [list [catch tproc2 msg] $msg $::errorInfo $::errorCode]
+    regsub -all [file join {} _bad_file_name] $msg "_bad_file_name" msg
+    normalizeMsg $msg
+} {1 {couldn't open "_bad_file_name": no such file or directory} {couldn't open "_bad_file_name": no such file or directory
+    while executing
+"open _bad_file_name r"
+    invoked from within
+"tproc2"} none}
+test proc-old-7.14 {return with special completion code} {
+    proc tproc2 {} {
+	global errorCode errorInfo
+	catch {open _bad_file_name r} msg
+	return -code error $msg
+    }
+    set msg [list [catch tproc2 msg] $msg $::errorInfo $::errorCode]
+    regsub -all [file join {} _bad_file_name] $msg "_bad_file_name" msg
+    normalizeMsg $msg
+} {1 {couldn't open "_bad_file_name": no such file or directory} {couldn't open "_bad_file_name": no such file or directory
+    while executing
+"tproc2"} none}
+test proc-old-7.15 {return with special completion code} {
+    list [catch {return -badOption foo message} msg] $msg
+} {2 message}
+
+test proc-old-8.1 {unset and undefined local arrays} {
+    proc t1 {} {
+        foreach v {xxx, yyy} {
+            catch {unset $v}
+        }
+        set yyy(foo) bar
+    }
+    t1
+} bar
+
+test proc-old-9.1 {empty command name} {
+    catch {rename {} ""}
+    proc t1 {args} {
+        return
+    }
+    set v [t1]
+    catch {$v}
+} 1
+
+test proc-old-10.1 {ByteCode epoch change during recursive proc execution} {
+    proc t1 x {
+        set y 20
+        rename expr expr.old
+        rename expr.old expr
+        if $x then {t1 0} ;# recursive call after foo's code is invalidated
+        return 20
+    }
+    t1 1
+} 20
+
+# cleanup
+catch {rename t1 ""}
+catch {rename foo ""}
+::tcltest::cleanupTests
+return

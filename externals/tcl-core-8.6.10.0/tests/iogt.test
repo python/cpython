@@ -1,0 +1,955 @@
+# -*- tcl -*-
+# Commands covered:  transform, and stacking in general
+#
+# This file contains a collection of tests for Giot
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+# 
+# Copyright (c) 2000 Ajuba Solutions.
+# Copyright (c) 2000 Andreas Kupries.
+# All rights reserved.
+
+if {[catch {package require tcltest 2.1}]} {
+    puts stderr "Skipping tests in [info script].  tcltest 2.1 required."
+    return
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+namespace eval ::tcl::test::iogt {
+    namespace import ::tcltest::*
+
+testConstraint testchannel [llength [info commands testchannel]]
+
+set path(dummy) [makeFile {abcdefghijklmnopqrstuvwxyz0123456789,./?><;'\|":[]\}\{`~!@#$%^&*()_+-=
+} dummy]
+
+# " capture coloring of quotes
+
+set path(dummyout) [makeFile {} dummyout]
+
+set path(__echo_srv__.tcl) [makeFile {
+#!/usr/local/bin/tclsh
+# -*- tcl -*-
+# echo server
+#
+# arguments, options: port to listen on for connections.
+#                     delay till echo of first block
+#                     delay between blocks
+#                     blocksize ...
+
+set port [lindex $argv 0]
+set fdelay [lindex $argv 1]
+set idelay [lindex $argv 2]
+set bsizes [lrange $argv 3 end]
+set c 0
+
+proc newconn {sock rhost rport} {
+    variable fdelay
+    variable c
+    incr c
+    namespace upvar [namespace current] c$c conn
+
+    #puts stdout "C $sock $rhost $rport / $fdelay" ; flush stdout
+
+    set conn(after) {}
+    set conn(state) 0
+    set conn(size) 0
+    set conn(data) ""
+    set conn(delay) $fdelay
+
+    fileevent $sock readable [list echoGet $c $sock]
+    fconfigure $sock -translation binary -buffering none -blocking 0
+}
+
+proc echoGet {c sock} {
+    variable fdelay
+    namespace upvar [namespace current] c$c conn
+
+    if {[eof $sock]} {
+	# one-shot echo
+	exit
+    }
+    append conn(data) [read $sock]
+
+    #puts stdout "G $c $sock $conn(data) <<$conn(data)>>" ; flush stdout
+
+    if {$conn(after) == {}} {
+	set conn(after) [after $conn(delay) [list echoPut $c $sock]]
+    }
+}
+
+proc echoPut {c sock} {
+    variable idelay
+    variable fdelay
+    variable bsizes
+    namespace upvar [namespace current] c$c conn
+
+    if {[string length $conn(data)] == 0} {
+	#puts stdout "C $c $sock" ; flush stdout
+	# auto terminate
+	close $sock
+	exit
+	#set conn(delay) $fdelay
+	return
+    }
+
+    set conn(delay) $idelay
+    set n [lindex $bsizes $conn(size)]
+
+    #puts stdout "P $c $sock $n >>" ; flush stdout
+
+    #puts __________________________________________
+    #parray conn
+    #puts n=<$n>
+
+    if {[string length $conn(data)] >= $n} {
+	puts -nonewline $sock [string range $conn(data) 0 $n]
+	set conn(data) [string range $conn(data) [incr n] end]
+    }
+
+    incr conn(size)
+    if {$conn(size) >= [llength $bsizes]} {
+	set conn(size) [expr {[llength $bsizes]-1}]
+    }
+
+    set conn(after) [after $conn(delay) [list echoPut $c $sock]]
+}
+
+#fileevent stdin readable {exit ;#cut}
+
+# main
+socket -server newconn -myaddr 127.0.0.1 $port
+vwait forever
+} __echo_srv__.tcl]
+
+########################################################################
+
+proc fevent {fdelay idelay blocks script data} {
+    # Start and initialize an echo server, prepare data transmission, then
+    # hand over to the test script.  This has to start real transmission via
+    # 'flush'.  The server is stopped after completion of the test.
+
+    upvar 1 sock sk
+
+    # Fixed port, not so good. Lets hope for the best, for now.
+    set port 4000
+
+    exec tclsh __echo_srv__.tcl $port $fdelay $idelay {*}$blocks >@stdout &
+    after 500
+
+    #puts stdout "> $port"; flush stdout
+
+    set sk [socket localhost $port]
+    fconfigure $sk -blocking 0 -buffering full \
+	-buffersize [expr {10+[llength $data]}]
+    puts -nonewline $sk $data
+
+    # The channel is prepared to go off.
+
+    #puts stdout ">>>>>"; flush stdout
+
+    set res [uplevel 1 $script]
+    catch {close $sk}
+    return $res
+}
+
+# --------------------------------------------------------------
+# utility transformations ...
+
+proc id {op data} {
+    switch -- $op {
+	create/write - create/read - delete/write - delete/read - clear_read {
+	    #ignore
+	}
+	flush/write - flush/read - write - read {
+	    return $data
+	}
+	query/maxRead {
+	    return -1
+	}
+    }
+}
+
+proc id_optrail {var op data} {
+    variable $var
+    upvar 0 $var trail
+
+    lappend trail $op
+    switch -- $op {
+	create/write - create/read - delete/write - delete/read -
+	flush/read - clear/read {
+	    #ignore
+	}
+	flush/write - write - read {
+	    return $data
+	}
+	query/maxRead {
+	    return -1
+	}
+	default {
+	    lappend trail "error $op"
+	    error $op
+	}
+    }
+}
+
+proc id_fulltrail {var op data} {
+    namespace upvar [namespace current] $var trail
+
+    #puts stdout ">> $var $op $data" ; flush stdout
+
+    switch -- $op {
+	create/write - create/read - delete/write - delete/read - clear_read {
+	    set res *ignored*
+	}
+	flush/write - flush/read - write - read {
+	    set res $data
+	}
+	query/maxRead {
+	    set res -1
+	}
+    }
+
+    #catch {puts stdout "\t>* $res" ; flush stdout}
+    #catch {puts stdout "x$res"} msg
+
+    lappend trail [list $op $data $res]
+    return $res
+}
+
+proc id_torture {chan op data} {
+    switch -- $op {
+	create/write -
+	create/read  -
+	delete/write -
+	delete/read  -
+	clear_read   {;#ignore}
+	flush/write -
+	flush/read  {}
+	write       {
+	    global level
+	    if {$level} {
+		return
+	    }
+	    incr level
+	    testchannel unstack $chan
+	    testchannel transform $chan \
+		-command [namespace code [list id_torture $chan]]
+	    return $data
+	}
+	read        {
+	    testchannel unstack $chan
+	    testchannel transform $chan \
+		-command [namespace code [list id_torture $chan]]
+	    return $data
+	}
+	query/maxRead {return -1}
+    }
+}
+
+proc counter {var op data} {
+    namespace upvar [namespace current] $var n
+
+    switch -- $op {
+	create/write - create/read - delete/write - delete/read - clear_read {
+	    #ignore
+	}
+	flush/write - flush/read {
+	    return {}
+	}
+	write {
+	    return $data
+	}
+	read {
+	    if {$n > 0} {
+		incr n -[string length $data]
+		if {$n < 0} {
+		    set n 0
+		}
+	    }
+	    return $data
+	}
+	query/maxRead {
+	    return $n
+	}
+    }
+}
+
+proc counter_audit {var vtrail op data} {
+    namespace upvar [namespace current] $var n $vtrail trail
+
+    switch -- $op {
+	create/write - create/read - delete/write - delete/read - clear_read {
+	    set res {}
+	}
+	flush/write - flush/read {
+	    set res {}
+	}
+	write {
+	    set res $data
+	}
+	read {
+	    if {$n > 0} {
+		incr n -[string length $data]
+		if {$n < 0} {
+		    set n 0
+		}
+	    }
+	    set res $data
+	}
+	query/maxRead {
+	    set res $n
+	}
+    }
+
+    lappend trail [list counter:$op $data $res]
+    return $res
+}
+
+proc rblocks {var vtrail n op data} {
+    namespace upvar [namespace current] $var buf $vtrail trail
+
+    set res {}
+
+    switch -- $op {
+	create/write - create/read - delete/write - delete/read - clear_read {
+	    set buf {}
+	}
+	flush/write {
+	}
+	flush/read {
+	    set res $buf
+	    set buf {}
+	}
+	write {
+	    set data
+	}
+	read {
+	    append buf $data
+	    set b [expr {$n * ([string length $buf] / $n)}]
+	    append op " $n [string length $buf] :- $b"
+	    set res [string range $buf 0 [incr b -1]]
+	    set buf [string range $buf [incr b] end]
+	    #return $res
+	}
+	query/maxRead {
+	    set res -1
+	}
+    }
+
+    lappend trail [list rblock | $op $data $res | $buf]
+    return $res
+}
+
+# --------------------------------------------------------------
+# ... and convenience procedures to stack them
+
+proc identity {-attach channel} {
+    testchannel transform $channel -command [namespace code id]
+}
+proc audit_ops {var -attach channel} {
+    testchannel transform $channel -command [namespace code [list id_optrail $var]]
+}
+proc audit_flow {var -attach channel} {
+    testchannel transform $channel -command [namespace code [list id_fulltrail $var]]
+}
+
+proc torture {-attach channel} {
+    testchannel transform $channel -command [namespace code [list id_torture $channel]]
+}
+
+proc stopafter {var n -attach channel} {
+    namespace upvar [namespace current] $var vn
+    set vn $n
+    testchannel transform $channel -command [namespace code [list counter $var]]
+}
+proc stopafter_audit {var trail n -attach channel} {
+    namespace upvar [namespace current] $var vn
+    set vn $n
+    testchannel transform $channel -command [namespace code [list counter_audit $var $trail]]
+}
+proc rblocks_t {var trail n -attach channel} {
+    testchannel transform $channel -command [namespace code [list rblocks $var $trail $n]]
+}
+
+# --------------------------------------------------------------
+# serialize an array, with keys in sorted order.
+
+proc array_sget {v} {
+    upvar $v a
+    set res [list]
+    foreach n [lsort [array names a]] {
+	lappend res $n $a($n)
+    }
+    set res
+}
+proc asort {alist} {
+    # sort a list of key/value pairs by key, removes duplicates too.
+    array set a $alist
+    array_sget a
+}
+
+########################################################################
+
+test iogt-1.1 {stack/unstack} testchannel {
+    set fh [open $path(dummy) r]
+    identity -attach $fh
+    testchannel unstack $fh
+    close $fh
+} {}
+test iogt-1.2 {stack/close} testchannel {
+    set fh [open $path(dummy) r]
+    identity -attach $fh
+    close $fh
+} {}
+test iogt-1.3 {stack/unstack, configuration, options} testchannel {
+    set fh [open $path(dummy) r]
+    set ca [asort [fconfigure $fh]]
+    identity -attach $fh
+    set cb [asort [fconfigure $fh]]
+    testchannel unstack $fh
+    set cc [asort [fconfigure $fh]]
+    close $fh
+    # With this system none of the buffering, translation and encoding option
+    # may change their values with channels stacked upon each other or not.
+    # cb == ca == cc
+    list [string equal $ca $cb] [string equal $cb $cc] [string equal $ca $cc]
+} {1 1 1}
+test iogt-1.4 {stack/unstack, configuration} -setup {
+    set fh [open $path(dummy) r]
+} -constraints testchannel -body {
+    set ca [asort [fconfigure $fh]]
+    identity -attach $fh
+    fconfigure $fh -buffering line -translation cr -encoding shiftjis
+    testchannel unstack $fh
+    set cc [asort [fconfigure $fh]]
+    list [string equal $ca $cc] [fconfigure $fh -buffering] \
+	[fconfigure $fh -translation] [fconfigure $fh -encoding]
+} -cleanup {
+    close $fh
+} -result {0 line cr shiftjis}
+
+test iogt-2.0 {basic I/O going through transform} -setup {
+    set fin [open $path(dummy) r]
+    set fout [open $path(dummyout) w]
+} -constraints testchannel -body {
+    identity -attach $fin
+    identity -attach $fout
+    fcopy $fin $fout
+    close $fin
+    close $fout
+    set fin [open $path(dummy) r]
+    set fout [open $path(dummyout) r]
+    list [string equal [set in [read $fin]] [set out [read $fout]]] \
+	[string length $in] [string length $out]
+} -cleanup {
+    close $fin
+    close $fout
+} -result {1 71 71}
+test iogt-2.1 {basic I/O, operation trail} {testchannel unix} {
+    set fin [open $path(dummy) r]
+    set fout [open $path(dummyout) w]
+    set ain [list]; set aout [list]
+    audit_ops ain -attach $fin
+    audit_ops aout -attach $fout
+    fconfigure $fin -buffersize 10
+    fconfigure $fout -buffersize 10
+    fcopy $fin $fout
+    close $fin
+    close $fout
+    set res "[join $ain \n]\n--------\n[join $aout \n]"
+} {create/read
+query/maxRead
+read
+query/maxRead
+read
+query/maxRead
+read
+query/maxRead
+read
+query/maxRead
+read
+query/maxRead
+read
+query/maxRead
+read
+query/maxRead
+read
+query/maxRead
+flush/read
+query/maxRead
+delete/read
+--------
+create/write
+write
+write
+write
+write
+write
+write
+write
+write
+flush/write
+delete/write}
+test iogt-2.2 {basic I/O, data trail} {testchannel unix} {
+    set fin [open $path(dummy) r]
+    set fout [open $path(dummyout) w]
+    set ain [list]; set aout [list]
+    audit_flow ain -attach $fin
+    audit_flow aout -attach $fout
+    fconfigure $fin -buffersize 10
+    fconfigure $fout -buffersize 10
+    fcopy $fin $fout
+    close $fin
+    close $fout
+    set res "[join $ain \n]\n--------\n[join $aout \n]"
+} {create/read {} *ignored*
+query/maxRead {} -1
+read abcdefghij abcdefghij
+query/maxRead {} -1
+read klmnopqrst klmnopqrst
+query/maxRead {} -1
+read uvwxyz0123 uvwxyz0123
+query/maxRead {} -1
+read 456789,./? 456789,./?
+query/maxRead {} -1
+read {><;'\|":[]} {><;'\|":[]}
+query/maxRead {} -1
+read {\}\{`~!@#$} {\}\{`~!@#$}
+query/maxRead {} -1
+read %^&*()_+-= %^&*()_+-=
+query/maxRead {} -1
+read {
+} {
+}
+query/maxRead {} -1
+flush/read {} {}
+query/maxRead {} -1
+delete/read {} *ignored*
+--------
+create/write {} *ignored*
+write abcdefghij abcdefghij
+write klmnopqrst klmnopqrst
+write uvwxyz0123 uvwxyz0123
+write 456789,./? 456789,./?
+write {><;'\|":[]} {><;'\|":[]}
+write {\}\{`~!@#$} {\}\{`~!@#$}
+write %^&*()_+-= %^&*()_+-=
+write {
+} {
+}
+flush/write {} {}
+delete/write {} *ignored*}
+test iogt-2.3 {basic I/O, mixed trail} {testchannel unix} {
+    set fin [open $path(dummy) r]
+    set fout [open $path(dummyout) w]
+    set trail [list]
+    audit_flow trail -attach $fin
+    audit_flow trail -attach $fout
+    fconfigure $fin -buffersize 20
+    fconfigure $fout -buffersize 10
+    fcopy $fin $fout
+    close $fin
+    close $fout
+    join $trail \n
+} {create/read {} *ignored*
+create/write {} *ignored*
+query/maxRead {} -1
+read abcdefghijklmnopqrst abcdefghijklmnopqrst
+write abcdefghij abcdefghij
+write klmnopqrst klmnopqrst
+query/maxRead {} -1
+read uvwxyz0123456789,./? uvwxyz0123456789,./?
+write uvwxyz0123 uvwxyz0123
+write 456789,./? 456789,./?
+query/maxRead {} -1
+read {><;'\|":[]\}\{`~!@#$} {><;'\|":[]\}\{`~!@#$}
+write {><;'\|":[]} {><;'\|":[]}
+write {\}\{`~!@#$} {\}\{`~!@#$}
+query/maxRead {} -1
+read {%^&*()_+-=
+} {%^&*()_+-=
+}
+query/maxRead {} -1
+flush/read {} {}
+write %^&*()_+-= %^&*()_+-=
+write {
+} {
+}
+query/maxRead {} -1
+delete/read {} *ignored*
+flush/write {} {}
+delete/write {} *ignored*}
+
+test iogt-2.4 {basic I/O, mixed trail} {testchannel} {
+    set fh [open $path(dummy) r]
+    torture -attach $fh
+    chan configure $fh -buffersize 2
+    set x [read $fh]
+    testchannel unstack $fh
+    close   $fh
+    set x
+} {}
+test iogt-2.5 {basic I/O, mixed trail} {testchannel} {
+    set ::level 0
+    set fh [open $path(dummyout) w]
+    torture -attach $fh
+    puts -nonewline $fh abcdef
+    flush $fh
+    testchannel unstack $fh
+    close   $fh
+} {}
+
+test iogt-3.0 {Tcl_Channel valid after stack/unstack, fevent handling} -setup {
+    proc DoneCopy {n {err {}}} {
+	variable copy 1
+    }
+} -constraints {testchannel knownBug} -body {
+    # This test to check the validity of acquired Tcl_Channel references is not
+    # possible because even a backgrounded fcopy will immediately start to
+    # copy data, without waiting for the event loop. This is done only in case
+    # of an underflow on the read size!. So stacking transforms after the
+    # fcopy will miss information, or are not used at all.
+    #
+    # I was able to circumvent this by using the echo.tcl server with a big
+    # delay, causing the fcopy to underflow immediately.
+    set fin [open $path(dummy) r]
+    fevent 1000 500 {20 20 20 10 1 1} {
+	variable copy
+	close $fin
+	set fout [open dummyout w]
+	flush $sock;	# now, or fcopy will error us out
+	# But the 1 second delay should be enough to initialize everything
+	# else here.
+	fcopy $sock $fout -command [namespace code DoneCopy]
+	# Transform after fcopy got its handles!  They should be still valid
+	# for fcopy.
+	set trail [list]
+	audit_ops trail -attach $fout
+	vwait [namespace which -variable copy]
+    } [read $fin];	# {}
+    close $fout
+    # Check result of copy.
+    set fin [open $path(dummy) r]
+    set fout [open $path(dummyout) r]
+    set res [string equal [read $fin] [read $fout]]
+    close $fin
+    close $fout
+    list $res $trail
+} -cleanup {
+    rename DoneCopy {}
+} -result {1 {create/write create/read write flush/write flush/read delete/write delete/read}}
+
+test iogt-4.0 {fileevent readable, after transform} -setup {
+    set fin [open $path(dummy) r]
+    set data [read $fin]
+    close $fin
+    set trail [list]
+    set got [list]
+    proc Done {args} {
+	variable stop 1
+    }
+    proc Get {sock} {
+        variable trail
+        variable got
+        if {[eof $sock]} {
+            Done
+            lappend trail "xxxxxxxxxxxxx"
+            close $sock
+            return
+        }
+        lappend trail "vvvvvvvvvvvvv"
+        lappend trail "\tgot: [lappend got "\[\[[read $sock]\]\]"]"
+        lappend trail "============="
+        #puts stdout $__ ; flush stdout
+        #read $sock
+    }
+
+} -constraints {testchannel knownBug} -body {
+    fevent 1000 500 {20 20 20 10 1} {
+	variable stop
+	audit_flow trail -attach $sock
+	rblocks_t rbuf trail 23 -attach $sock
+
+	fileevent $sock readable [namespace code [list Get $sock]]
+
+	flush $sock;		# Now, or fcopy will error us out
+	# But the 1 second delay should be enough to initialize everything
+	# else here.
+	vwait [namespace which -variable stop]
+    } $data
+    join [list [join $got \n] ~~~~~~~~ [join $trail \n]] \n
+} -cleanup {
+    rename Done {}
+    rename Get {}
+} -result {[[]]
+[[abcdefghijklmnopqrstuvw]]
+[[xyz0123456789,./?><;'\|]]
+[[]]
+[[]]
+[[":[]\}\{`~!@#$%^&*()]]
+[[]]
+~~~~~~~~
+create/write {} *ignored*
+create/read {} *ignored*
+rblock | create/write {} {} | {}
+rblock | create/read {} {} | {}
+vvvvvvvvvvvvv
+rblock | query/maxRead {} -1 | {}
+query/maxRead {} -1
+read abcdefghijklmnopqrstu abcdefghijklmnopqrstu
+query/maxRead {} -1
+rblock | {read 23 21 :- 0} abcdefghijklmnopqrstu {} | abcdefghijklmnopqrstu
+rblock | query/maxRead {} -1 | abcdefghijklmnopqrstu
+query/maxRead {} -1
+	got: {[[]]}
+=============
+vvvvvvvvvvvvv
+rblock | query/maxRead {} -1 | abcdefghijklmnopqrstu
+query/maxRead {} -1
+read vwxyz0123456789,./?>< vwxyz0123456789,./?><
+query/maxRead {} -1
+rblock | {read 23 42 :- 23} vwxyz0123456789,./?>< abcdefghijklmnopqrstuvw | xyz0123456789,./?><
+rblock | query/maxRead {} -1 | xyz0123456789,./?><
+query/maxRead {} -1
+	got: {[[]]} {[[abcdefghijklmnopqrstuvw]]}
+=============
+vvvvvvvvvvvvv
+rblock | query/maxRead {} -1 | xyz0123456789,./?><
+query/maxRead {} -1
+read {;'\|":[]\}\{`~!@#$%^&} {;'\|":[]\}\{`~!@#$%^&}
+query/maxRead {} -1
+rblock | {read 23 40 :- 23} {;'\|":[]\}\{`~!@#$%^&} {xyz0123456789,./?><;'\|} | {":[]\}\{`~!@#$%^&}
+rblock | query/maxRead {} -1 | {":[]\}\{`~!@#$%^&}
+query/maxRead {} -1
+	got: {[[]]} {[[abcdefghijklmnopqrstuvw]]} {[[xyz0123456789,./?><;'\|]]}
+=============
+vvvvvvvvvvvvv
+rblock | query/maxRead {} -1 | {":[]\}\{`~!@#$%^&}
+query/maxRead {} -1
+read *( *(
+query/maxRead {} -1
+rblock | {read 23 19 :- 0} *( {} | {":[]\}\{`~!@#$%^&*(}
+rblock | query/maxRead {} -1 | {":[]\}\{`~!@#$%^&*(}
+query/maxRead {} -1
+	got: {[[]]} {[[abcdefghijklmnopqrstuvw]]} {[[xyz0123456789,./?><;'\|]]} {[[]]}
+=============
+vvvvvvvvvvvvv
+rblock | query/maxRead {} -1 | {":[]\}\{`~!@#$%^&*(}
+query/maxRead {} -1
+read ) )
+query/maxRead {} -1
+rblock | {read 23 20 :- 0} ) {} | {":[]\}\{`~!@#$%^&*()}
+rblock | query/maxRead {} -1 | {":[]\}\{`~!@#$%^&*()}
+query/maxRead {} -1
+	got: {[[]]} {[[abcdefghijklmnopqrstuvw]]} {[[xyz0123456789,./?><;'\|]]} {[[]]} {[[]]}
+=============
+vvvvvvvvvvvvv
+rblock | query/maxRead {} -1 | {":[]\}\{`~!@#$%^&*()}
+query/maxRead {} -1
+flush/read {} {}
+rblock | flush/read {} {":[]\}\{`~!@#$%^&*()} | {}
+rblock | query/maxRead {} -1 | {}
+query/maxRead {} -1
+	got: {[[]]} {[[abcdefghijklmnopqrstuvw]]} {[[xyz0123456789,./?><;'\|]]} {[[]]} {[[]]} {[[":[]\}\{`~!@#$%^&*()]]}
+=============
+vvvvvvvvvvvvv
+rblock | query/maxRead {} -1 | {}
+query/maxRead {} -1
+	got: {[[]]} {[[abcdefghijklmnopqrstuvw]]} {[[xyz0123456789,./?><;'\|]]} {[[]]} {[[]]} {[[":[]\}\{`~!@#$%^&*()]]} {[[]]}
+xxxxxxxxxxxxx
+rblock | flush/write {} {} | {}
+rblock | delete/write {} {} | {}
+rblock | delete/read {} {} | {}
+flush/write {} {}
+delete/write {} *ignored*
+delete/read {} *ignored*};	# catch unescaped quote "
+
+test iogt-5.0 {EOF simulation} -setup {
+    set fin [open $path(dummy) r]
+    set fout [open $path(dummyout) w]
+    set trail [list]
+} -constraints {testchannel knownBug} -result {
+    audit_flow trail -attach $fin
+    stopafter_audit d trail 20 -attach $fin
+    audit_flow trail -attach $fout
+    fconfigure $fin -buffersize 20
+    fconfigure $fout -buffersize 10
+    fcopy $fin $fout
+    testchannel unstack $fin
+    # now copy the rest in the channel
+    lappend trail {**after unstack**}
+    fcopy $fin $fout
+    close $fin
+    close $fout
+    join $trail \n
+} -result {create/read {} *ignored*
+counter:create/read {} {}
+create/write {} *ignored*
+counter:query/maxRead {} 20
+query/maxRead {} -1
+read {abcdefghijklmnopqrstuvwxyz0123456789,./?><;'\|":[]\}\{`~!@#$%^&*()_+-=
+} {abcdefghijklmnopqrstuvwxyz0123456789,./?><;'\|":[]\}\{`~!@#$%^&*()_+-=
+}
+query/maxRead {} -1
+flush/read {} {}
+counter:read abcdefghijklmnopqrst abcdefghijklmnopqrst
+write abcdefghij abcdefghij
+write klmnopqrst klmnopqrst
+counter:query/maxRead {} 0
+counter:flush/read {} {}
+counter:delete/read {} {}
+**after unstack**
+query/maxRead {} -1
+write uvwxyz0123 uvwxyz0123
+write 456789,./? 456789,./?
+write {><;'\|":[]} {><;'\|":[]}
+write {\}\{`~!@#$} {\}\{`~!@#$}
+write %^&*()_+-= %^&*()_+-=
+write {
+} {
+}
+query/maxRead {} -1
+delete/read {} *ignored*
+flush/write {} {}
+delete/write {} *ignored*}
+
+proc constX {op data} {
+    # replace anything coming in with a same-length string of x'es.
+    switch -- $op {
+	create/write - create/read - delete/write - delete/read - clear_read {
+	    #ignore
+	}
+	flush/write - flush/read - write - read {
+	    return [string repeat x [string length $data]]
+	}
+	query/maxRead {
+	    return -1
+	}
+    }
+}
+proc constx {-attach channel} {
+    testchannel transform $channel -command [namespace code constX]
+}
+
+test iogt-6.0 {Push back} -constraints testchannel -body {
+    set f [open $path(dummy) r]
+    # contents of dummy = "abcdefghi..."
+    read $f 3;		# skip behind "abc"
+    constx -attach $f
+    # expect to get "xxx" from the transform because of unread "def" input to
+    # transform which returns "xxx".
+    #
+    # Actually the IO layer pre-read the whole file and will read "def"
+    # directly from the buffer without bothering to consult the newly stacked
+    # transformation. This is wrong.
+    read $f 3
+} -cleanup {
+    close $f
+} -result {xxx}
+test iogt-6.1 {Push back and up} -constraints {testchannel knownBug} -body {
+
+    # This test demonstrates the bug/misfeature in the stacked
+    # channel implementation that data can be discarded if it is
+    # read into the buffers of one channel in the stack, and then
+    # that channel is popped before anything above it reads.
+    #
+    # This bug can be worked around by always setting -buffersize
+    # to 1, but who wants to do that?
+
+    set f [open $path(dummy) r]
+    # contents of dummy = "abcdefghi..."
+    read $f 3;		# skip behind "abc"
+    constx -attach $f
+    set res [read $f 3]
+    testchannel unstack $f
+    append res [read $f 3]
+} -cleanup {
+    close $f
+} -result {xxxghi}
+
+
+# Driver for a base channel that emits several short "files"
+# with each terminated by a fleeting EOF
+    proc driver {cmd args} {
+        variable buffer
+        variable index
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                set index($chan) 0
+                set buffer($chan) .....
+                return {initialize finalize watch read}
+            }
+            finalize {
+                if {![info exists index($chan)]} {return}
+                unset index($chan) buffer($chan)
+                return
+            }
+            watch {}
+            read {
+                set n [lindex $args 1]
+                if {![info exists index($chan)]} {
+                    driver initialize $chan
+                }
+                set new [expr {$index($chan) + $n}]
+                set result [string range $buffer($chan) $index($chan) $new-1]
+                set index($chan) $new
+                if {[string length $result] == 0} {
+                    driver finalize $chan
+                }
+                return $result
+            }
+        }
+    }
+
+test iogt-7.0 {Handle fleeting EOF} -constraints {testchannel} -body {
+    set chan [chan create read [namespace which driver]]
+    identity -attach $chan
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+
+proc delay {op data} {
+    variable store
+    switch -- $op {
+	create/write -	create/read  -
+	delete/write -	delete/read  -
+	flush/write -	write -
+	clear_read   {;#ignore}
+	flush/read  -
+	read        {
+	    if {![info exists store]} {set store {}}
+	    set reply $store
+	    set store $data
+	    return $reply
+	}
+	query/maxRead {return -1}
+    }
+}
+
+test iogt-7.1 {Handle fleeting EOF} -constraints {testchannel} -body {
+    set chan [chan create read [namespace which driver]]
+    testchannel transform $chan -command [namespace code delay]
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+
+rename delay {}
+rename driver {}
+
+# cleanup
+foreach file [list dummy dummyout __echo_srv__.tcl] {
+    removeFile $file
+}
+cleanupTests
+}
+namespace delete ::tcl::test::iogt
+return

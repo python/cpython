@@ -1,0 +1,183 @@
+'\"
+'\" $Id: tixLabelEntry.n,v 1.2 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH tixLabelEntry n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH NAME
+tixLabelEntry \- Create and manipulate tixLabelEntry widgets
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SYNOPSIS
+\fBtixLabelEntry \fIpathName \fR?\fIoptions\fR?
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SUPER-CLASS
+The \fBTixLabelEntry\fR class is derived from the \fBTixLabelWidget\fR
+class and inherits all the commands, options and subwidgets of its
+super-class.
+'\"
+'\"----------------------------------------------------------------------
+.SH "STANDARD OPTIONS"
+'\"
+The LabelEntry widget supports all the standard options of a frame
+widget. See the \fBoptions(n)\fR manual entry for details on the
+standard options.
+'\"
+'\"----------------------------------------------------------------------
+.SH "WIDGET-SPECIFIC OPTIONS"
+'\"
+'\"----------BEGIN
+.OP \-disableforeground disableForeground DisableForeground
+The foreground color to use for of the entry subwidget when the
+LabelEntry widget is disabled.
+'\"----------END
+'\"
+'\"
+'\"----------BEGIN
+.OP \-label label Label
+Specifies the string to display as the label of this LabelEntry widget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-labelside labelSide LabelSide
+Specifies where the label should be displayed relative to the entry
+subwidget. Valid options are: \fBtop\fR, \fBleft\fR, \fBright\fR,
+\fBbottom\fR, \fBnone\fR or \fBacrosstop\fR.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-state state State
+Specifies the whether the LabelEntry widget is normal or disabled. Only
+the values "normal" and "disabled" are recognized.
+'\"----------END
+'\"
+'\"----------------------------------------------------------------------
+.SH SUBWIDGETS
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBlabel\fR
+Class:		\fBLabel\fR
+.fi
+.IP
+The label subwidget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBentry\fR
+Class:		\fBEntry\fR
+.fi
+.IP
+The entry subwidget.
+'\"----------END
+.BE
+'\"
+'\"----------------------------------------------------------------------
+.SH DESCRIPTION
+'\"
+.PP
+'\"
+The \fBtixLabelEntry\fR command creates a new window (given by
+the \fIpathName\fR argument) and makes it into a LabelEntry
+widget. Additional options, described above, may be specified on the
+command line or in the option database to configure aspects of the
+LabelEntry such as its cursor and relief.
+.PP
+The LabelEntry widget packages an entry widget and a label into one
+mega widget. It can be used be used to simplify the creation of
+"entry-form" type of interface. In this kind of interface, one must
+create many entry widgets with label widgets next to them and describe
+the use of each of the entry widgets.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH WIDGET COMMANDS
+.PP
+'\"
+The \fBtixLabelEntry\fR command creates a new Tcl command whose
+name is the same as the path name of the LabelEntry's
+window. This command may be used to invoke various operations on the
+widget. It has the following general form:
+'\"
+.RS
+.CS
+'\"
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+.RE
+'\"
+\fIPathName\fR is the name of the command, which is the same as the
+LabelEntry widget's path name. \fIOption\fR and the
+\fIarg\fRs determine the exact behavior of the command. The following
+commands are possible for LabelEntry widgets:
+'\"
+.TP
+\fIpathName \fBcget\fR \fIoption\fR
+'\"
+Returns the current value of the configuration option given by
+\fIoption\fR. \fIOption\fR may have any of the values accepted by the
+\fBtixLabelEntry\fR command.
+'\"
+'\"
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? \fI?value option value ...\fR?
+'\"
+Query or modify the configuration options of the widget.  If no
+\fIoption\fR is specified, returns a list describing all of the
+available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list).  If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s); in
+this case the command returns an empty string.  \fIOption\fR may have
+any of the values accepted by the \fBtixLabelEntry\fR command.
+'\"
+'\"
+'\"
+.TP
+\fIpathName \fBsubwidget \fIname ?args?\fR 
+'\"
+When no options are given, this command returns the pathname of the
+subwidget of the specified name.
+
+When options are given, the widget command of the specified subwidget
+will be called with these options.
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+'\".SH BINDINGS
+'\".PP
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH KEYWORDS
+Tix(n)
+
+
+

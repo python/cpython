@@ -1,0 +1,163 @@
+#
+# Tests for argument lists and method execution
+# ----------------------------------------------------------------------
+#   AUTHOR:  Michael J. McLennan
+#            Bell Labs Innovations for Lucent Technologies
+#            mmclennan@lucent.com
+#            http://www.tcltk.com/itcl
+# ----------------------------------------------------------------------
+#            Copyright (c) 1993-1998  Lucent Technologies, Inc.
+# ======================================================================
+# See the file "license.terms" for information on usage and
+# redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2.1
+namespace import ::tcltest::test
+::tcltest::loadTestedCommands
+package require itcl
+
+# ----------------------------------------------------------------------
+#  Methods with various argument lists
+# ----------------------------------------------------------------------
+test methods-1.1 {define a class with lots of methods and arg lists} {
+    itcl::class test_args {
+        method none {} {
+            return "none"
+        }
+        method two {x y} {
+            return "two: $x $y"
+        }
+        method defvals {x {y def1} {z def2}} {
+            return "defvals: $x $y $z"
+        }
+        method varargs {x {y def1} args} {
+            return "varargs: $x $y ($args)"
+        }
+        method nomagic {args x} {
+            return "nomagic: $args $x"
+        }
+        method clash {x bang boom} {
+            return "clash: $x $bang $boom"
+        }
+        method clash_time {x bang boom} {
+            time {set result "clash_time: $x $bang $boom"} 1
+            return $result
+        }
+        proc crash {x bang boom} {
+            return "crash: $x $bang $boom"
+        }
+        proc crash_time {x bang boom} {
+            time {set result "crash_time: $x $bang $boom"} 1
+            return $result
+        }
+        variable bang "ok"
+        common boom "no-problem"
+    }
+} ""
+
+test methods-1.2 {create an object to execute tests} {
+    test_args ta
+} {ta}
+
+test methods-1.3 {argument checking: not enough args} {
+    list [catch {ta two 1} msg] $msg
+} {1 {wrong # args: should be "ta two x y"}}
+
+test methods-1.4a {argument checking: too many args} {
+    list [catch {ta two 1 2 3} msg] $msg
+} {1 {wrong # args: should be "ta two x y"}}
+
+test methods-1.4b {argument checking: too many args} {
+    list [catch {ta none 1 2 3} msg] $msg
+} {1 {wrong # args: should be "ta none"}}
+
+test methods-1.5a {argument checking: just right} {
+    list [catch {ta two 1 2} msg] $msg
+} {0 {two: 1 2}}
+
+test methods-1.5b {argument checking: just right} {
+    list [catch {ta none} msg] $msg
+} {0 none}
+
+test methods-1.6a {default arguments: not enough args} {
+    list [catch {ta defvals} msg] $msg
+} {1 {wrong # args: should be "ta defvals x ?y? ?z?"}}
+
+test methods-1.6b {default arguments: missing arguments supplied} {
+    list [catch {ta defvals 1} msg] $msg
+} {0 {defvals: 1 def1 def2}}
+
+test methods-1.6c {default arguments: missing arguments supplied} {
+    list [catch {ta defvals 1 2} msg] $msg
+} {0 {defvals: 1 2 def2}}
+
+test methods-1.6d {default arguments: all arguments assigned} {
+    list [catch {ta defvals 1 2 3} msg] $msg
+} {0 {defvals: 1 2 3}}
+
+test methods-1.6e {default arguments: too many args} {
+    list [catch {ta defvals 1 2 3 4} msg] $msg
+} {1 {wrong # args: should be "ta defvals x ?y? ?z?"}}
+
+test methods-1.7a {variable arguments: not enough args} {
+    list [catch {ta varargs} msg] $msg
+} {1 {wrong # args: should be "ta varargs x ?y? ?arg arg ...?"}}
+
+test methods-1.7b {variable arguments: empty} {
+    list [catch {ta varargs 1 2} msg] $msg
+} {0 {varargs: 1 2 ()}}
+
+test methods-1.7c {variable arguments: one} {
+    list [catch {ta varargs 1 2 one} msg] $msg
+} {0 {varargs: 1 2 (one)}}
+
+test methods-1.7d {variable arguments: two} {
+    list [catch {ta varargs 1 2 one two} msg] $msg
+} {0 {varargs: 1 2 (one two)}}
+
+test methods-1.8 {magic "args" argument has no magic unless at end of list} {
+    list [catch {ta nomagic 1 2 3 4} msg] $msg
+} {1 {wrong # args: should be "ta nomagic args x"}}
+
+test methods-1.9 {formal args don't clobber class members} {
+    list [catch {ta clash 1 2 3} msg] $msg \
+         [ta info variable bang -value] \
+         [ta info variable boom -value]
+} {0 {clash: 1 2 3} ok no-problem}
+
+test methods-1.10 {formal args don't clobber class members} {
+    list [catch {test_args::crash 4 5 6} msg] $msg \
+         [ta info variable bang -value] \
+         [ta info variable boom -value]
+} {0 {crash: 4 5 6} ok no-problem}
+
+test methods-1.11 {formal args don't clobber class members, even in "time"} {
+    list [catch {ta clash_time 7 8 9} msg] $msg \
+         [ta info variable bang -value] \
+         [ta info variable boom -value]
+} {0 {clash_time: 7 8 9} ok no-problem}
+
+test methods-1.12 {formal args don't clobber class members, even in "time"} {
+    list [catch {test_args::crash_time a b c} msg] $msg \
+         [ta info variable bang -value] \
+         [ta info variable boom -value]
+} {0 {crash_time: a b c} ok no-problem}
+
+test methods-2.1 {covers leak condition test for compiled locals, no args} {
+    for {set i 0} {$i < 100} {incr i} {
+	::itcl::class LeakClass {
+            proc leakProc {} { set n 1 }
+	}
+	LeakClass::leakProc
+	::itcl::delete class LeakClass
+    }
+    list 0
+} 0
+
+# ----------------------------------------------------------------------
+#  Clean up
+# ----------------------------------------------------------------------
+itcl::delete class test_args
+
+::tcltest::cleanupTests
+return

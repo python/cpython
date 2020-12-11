@@ -1,0 +1,68 @@
+# -*- mode: TCL; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
+# distyle.test --
+#
+#       This file is a Tcl script to test out tixDiStyle.c.
+#       It is organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 2000-2001 Tix Project Group.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# $Id: distyle.test,v 1.3 2002/11/13 21:12:17 idiscovery Exp $
+
+package require Tix
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
+
+set longword XX
+for {set i 0} {$i < 10} {incr i} {
+    set longword $longword$longword
+}
+
+test distyle-1.1 {DeleteStyle()} {
+    set stylename [tixDisplayStyle text -stylename foo]
+    foo delete
+    list [catch {
+        foo config
+    } msg] $msg
+} {1 {invalid command name "foo"}}
+
+test distyle-1.2 {GetDItemStyle(), DeleteStyle()} {
+    set stylename [tixDisplayStyle text -stylename $longword]
+    $stylename delete
+    expr {"$stylename" == "$longword"}
+} {1}
+
+test distyle-1.3 {FindStyle()} {
+    set stylename [tixDisplayStyle text -stylename $longword]
+    set a [list [catch {
+        tixDisplayStyle text -stylename $longword
+    } msg] $msg]
+    $stylename delete
+    set a
+} [list 1 "style \"$longword\" already exists"]
+
+test distyle-2.1 {Tix_ItemStyleCmd()} {
+    set x [tixDisplayStyle text]
+    $x delete
+
+    set x
+} {tixStyle0}
+
+test distyle-2.1 {Tix_ItemStyleCmd()} {
+    set x [tixDisplayStyle text -stylename tixStyle1]
+    set a [list [catch {
+        set y [tixDisplayStyle text]
+    }]]
+    $x delete
+    $y delete
+
+    list $a $x $y
+} {0 tixStyle1 tixStyle2}
+
+# cleanup
+::tcltest::cleanupTests
+return

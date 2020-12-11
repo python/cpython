@@ -1,0 +1,87 @@
+'\"
+'\" Copyright (c) 2000 Ajuba Solutions.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_SetClassProcs 3 8.4 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_SetClassProcs \- register widget specific procedures
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+\fBTk_SetClassProcs\fR(\fItkwin, procs, instanceData\fR)
+.SH ARGUMENTS
+.AS Tk_ClassProc instanceData
+.AP Tk_Window tkwin in
+Token for window to modify.
+.AP "const Tk_ClassProcs" *procs in
+Pointer to data structure containing widget specific procedures.
+The data structure pointed to by \fIprocs\fR must be static:
+Tk keeps a reference to it as long as the window exists.
+.AP ClientData instanceData in
+Arbitrary one-word value to pass to widget callbacks.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_SetClassProcs\fR is called to register a set of procedures that
+are used as callbacks in different places.
+.PP
+The structure pointed to by \fIprocs\fR contains the following:
+.CS
+typedef struct Tk_ClassProcs {
+    unsigned int \fIsize\fR;
+    Tk_ClassWorldChangedProc *\fIworldChangedProc\fR;
+    Tk_ClassCreateProc *\fIcreateProc\fR;
+    Tk_ClassModalProc *\fImodalProc\fR;
+} \fBTk_ClassProcs\fR;
+.CE
+The \fIsize\fR field is used to simplify future expansion of the
+structure. It should always be set to (literally) \fBsizeof(Tk_ClassProcs)\fR.
+.PP
+\fIworldChangedProc\fR is invoked when the system has altered
+in some way that requires some reaction from the widget.  For example,
+when a font alias (see the \fBfont\fR manual entry) is reconfigured,
+widgets configured to use that font alias must update their display
+accordingly.  \fIworldChangedProc\fR should have arguments and results
+that match the type \fBTk_ClassWorldChangedProc\fR:
+.CS
+typedef void \fBTk_ClassWorldChangedProc\fR(
+        ClientData \fIinstanceData\fR);
+.CE
+The \fIinstanceData\fR parameter passed to the \fIworldChangedProc\fR
+will be identical to the \fIinstanceData\fR parameter passed to
+\fBTk_SetClassProcs\fR.
+.PP
+\fIcreateProc\fR is used to create platform-dependent windows.  It is
+invoked by \fBTk_MakeWindowExist\fR.  \fIcreateProc\fR should have
+arguments and results that match the type \fBTk_ClassCreateProc\fR:
+.CS
+typedef Window \fBTk_ClassCreateProc\fR(
+        Tk_Window \fItkwin\fR,
+        Window \fIparent\fR,
+        ClientData \fIinstanceData\fR);
+.CE
+The \fItkwin\fR and \fIinstanceData\fR parameters will be identical to
+the \fItkwin\fR and \fIinstanceData\fR parameters passed to
+\fBTk_SetClassProcs\fR.  The \fIparent\fR parameter will be the parent
+of the window to be created.  The \fIcreateProc\fR should return the
+created window.
+.PP
+\fImodalProc\fR is invoked after all bindings on a widget have been
+triggered in order to handle a modal loop.  \fImodalProc\fR should
+have arguments and results that match the type \fBTk_ClassModalProc\fR:
+.CS
+typedef void \fBTk_ClassModalProc\fR(
+        Tk_Window \fItkwin\fR,
+        XEvent *\fIeventPtr\fR);
+.CE
+The \fItkwin\fR parameter to \fImodalProc\fR will be identical to the
+\fItkwin\fR parameter passed to \fBTk_SetClassProcs\fR.  The
+\fIeventPtr\fR parameter will be a pointer to an XEvent structure
+describing the event being processed.
+.SH KEYWORDS
+callback, class

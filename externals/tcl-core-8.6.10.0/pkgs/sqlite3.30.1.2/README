@@ -1,0 +1,59 @@
+This is the SQLite extension for Tcl using the Tcl Extension
+Architecture (TEA).  For additional information on SQLite see
+
+        http://www.sqlite.org/
+
+
+UNIX BUILD
+==========
+
+Building under most UNIX systems is easy, just run the configure script
+and then run make. For more information about the build process, see
+the tcl/unix/README file in the Tcl src dist. The following minimal
+example will install the extension in the /opt/tcl directory.
+
+	$ cd sqlite-*-tea
+	$ ./configure --prefix=/opt/tcl
+	$ make
+	$ make install
+
+WINDOWS BUILD
+=============
+
+The recommended method to build extensions under windows is to use the
+Msys + Mingw build process. This provides a Unix-style build while
+generating native Windows binaries. Using the Msys + Mingw build tools
+means that you can use the same configure script as per the Unix build
+to create a Makefile. See the tcl/win/README file for the URL of
+the Msys + Mingw download.
+
+If you have VC++ then you may wish to use the files in the win
+subdirectory and build the extension using just VC++. These files have
+been designed to be as generic as possible but will require some
+additional maintenance by the project developer to synchronise with
+the TEA configure.in and Makefile.in files. Instructions for using the
+VC++ makefile are written in the first part of the Makefile.vc
+file.
+
+TCL SPECIFIC CHANGES
+====================
+
+The version of SQLite provided by Tcl contains a number of additional
+enhancements and bug-fixes, in the process of being provided back to
+the SQLite developers.
+
+  * Enable SQLite Tcl binding to handle files from a Tcl VFS.
+  * Maximum path length enhanced from 260 to 4096 bytes for win32/cygwin
+  * Maximum path length enhanced from 512 to 4096 bytes for other platforms
+  * Maximum default page length enhanced from 8192 to 32768
+  * Maximum Number Of Attached Databases enhanced from 10 to 62
+  * VFS filename truncation issues
+    <https://www.sqlite.org/src/info/c060923a54>
+  * Wrong filename handling in sqlite3_load_extension() for Cygwin
+    <http://sqlite.1065341.n5.nabble.com/Wrong-filename-handling-in-sqlite3-load-extension-for-Cygwin-td74049.html>
+  * pragma database_list returns win32 paths on Cygwin
+    <http://sqlite.1065341.n5.nabble.com/pragma-database-list-returns-win32-paths-on-Cygwin-td74163.html>
+  * ISO time leap second
+    <http://sqlite.1065341.n5.nabble.com/ISO-time-leap-second-td77004.html>
+  * update to Unicode 12.1 for FTS3/4/5 tokenizer
+  * Extend memory interfaces from using "int" to "size_t".

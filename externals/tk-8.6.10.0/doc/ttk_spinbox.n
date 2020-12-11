@@ -1,0 +1,128 @@
+'\"
+'\" Copyright (c) 2008 Pat Thoyts
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH ttk::spinbox n 8.5 Tk "Tk Themed Widget"
+.so man.macros
+.BS
+.SH NAME
+ttk::spinbox \- Selecting text field widget
+.SH SYNOPSIS
+\fBttk::spinbox\fR \fIpathName \fR?\fIoptions\fR?
+.BE
+.SH DESCRIPTION
+.PP
+A \fBttk::spinbox\fR widget is a \fBttk::entry\fR widget with built-in
+up and down buttons that are used to either modify a numeric value or
+to select among a set of values. The widget implements all the features
+of the \fBttk::entry\fR widget including support of the
+\fB\-textvariable\fR option to link the value displayed by the widget
+to a Tcl variable.
+.SO ttk_widget
+\-class	\-cursor	\-state	\-style
+\-takefocus	\-xscrollcommand
+.SE
+.SO ttk_entry
+\-validate	\-validatecommand
+.SE
+.SH "WIDGET-SPECIFIC OPTIONS"
+.OP \-command command Command
+Specifies a Tcl command to be invoked whenever a spinbutton is invoked.
+.OP \-format format Format
+Specifies an alternate format to use when setting the string value
+when using the \fB\-from\fR and \fB\-to\fR range.
+This must be a format specifier of the form \fB%<pad>.<pad>f\fR,
+as it will format a floating-point number.
+.OP \-from from From
+A floating\-point value specifying the lowest value for the spinbox. This is
+used in conjunction with \fB\-to\fR and \fB\-increment\fR to set a numerical
+range.
+.OP \-increment increment Increment
+A floating\-point value specifying the change in value to be applied each
+time one of the widget spin buttons is pressed. The up button applies a
+positive increment, the down button applies a negative increment.
+.OP \-to to To
+A floating\-point value specifying the highest permissible value for the
+widget. See also \fB\-from\fR and \fB\-increment\fR.
+range.
+.OP \-values values Values
+This must be a Tcl list of values. If this option is set then this will
+override any range set using the \fB\-from\fR, \fB\-to\fR and
+\fB\-increment\fR options. The widget will instead use the values
+specified beginning with the first value.
+.OP \-wrap wrap Wrap
+Must be a proper boolean value.  If on, the spinbox will wrap around the
+values of data in the widget.
+.SH "INDICES"
+.PP
+See the \fBttk::entry\fR manual for information about indexing characters.
+.SH "VALIDATION"
+.PP
+See the \fBttk::entry\fR manual for information about using the
+\fB\-validate\fR and \fB\-validatecommand\fR options.
+.SH "WIDGET COMMAND"
+.PP
+The following subcommands are possible for spinbox widgets in addition to
+the commands described for the \fBttk::entry\fR widget:
+.TP
+\fIpathName \fBget\fR
+Returns the spinbox's current value.
+.TP
+\fIpathName \fBset \fIvalue\fR
+Set the spinbox string to \fIvalue\fR. If a \fB\-format\fR option has
+been configured then this format will be applied. If formatting fails
+or is not set or the \fB\-values\fR option has been used then the value
+is set directly.
+.SH "VIRTUAL EVENTS"
+.PP
+The spinbox widget generates a \fB<<Increment>>\fR virtual event when
+the user presses <Up>, and a \fB<<Decrement>>\fR virtual event when the
+user presses <Down>.
+.SH "STYLING OPTIONS"
+.PP
+The class name for a \fBttk::spinbox\fP is \fBTSpinbox\fP.
+.PP
+Dynamic states: \fBactive\fP, \fBdisabled\fP, \fBfocus\fP, \fBreadonly\fP.
+.PP
+\fBTSpinbox\fP styling options configurable with \fBttk::style\fP
+are:
+.PP
+\fB\-arrowcolor\fP \fIcolor\fP
+.br
+\fB\-arrowsize\fP \fIamount\fP
+.br
+\fB\-background\fP \fIcolor\fP
+.RS
+For backwards compatibility, when using the aqua theme (for macOS), this
+option behaves as an alias for the \fB\-fieldbackground\fP provided that no
+value is specified for \fB\-fieldbackground\fP. Otherwise it is ignored.
+.RE
+\fB\-bordercolor\fP \fIcolor\fP
+.br
+\fB\-darkcolor\fP \fIcolor\fP
+.br
+\fB\-fieldbackground\fP \fIcolor\fP
+.br
+\fB\-foreground\fP \fIcolor\fP
+.br
+\fB\-lightcolor\fP \fIcolor\fP
+.br
+\fB\-padding\fP \fIpadding\fP
+.br
+\fB\-selectbackground\fP \fIcolor\fP
+.br
+\fB\-selectforeground\fP \fIcolor\fP
+.PP
+Some options are only available for specific themes.
+.PP
+See the \fBttk::style\fP manual page for information on how to configure
+ttk styles.
+.SH "SEE ALSO"
+ttk::widget(n), ttk::entry(n), spinbox(n)
+.SH KEYWORDS
+entry, spinbox, widget, text field
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

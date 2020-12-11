@@ -1,0 +1,49 @@
+'\"
+'\" Copyright (c) 1990-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_OwnSelection 3 4.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_OwnSelection \- make a window the owner of the primary selection
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+\fBTk_OwnSelection\fR(\fItkwin, selection, proc, clientData\fR)
+.SH ARGUMENTS
+.AS Tk_LostSelProc clientData
+.AP Tk_Window tkwin in
+Window that is to become new selection owner.
+.AP Atom selection in
+The name of the selection to be owned, such as XA_PRIMARY.
+.AP Tk_LostSelProc *proc in
+Procedure to invoke when \fItkwin\fR loses selection ownership later.
+.AP ClientData clientData in
+Arbitrary one-word value to pass to \fIproc\fR.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_OwnSelection\fR arranges for \fItkwin\fR to become the
+new owner of the selection specified by the atom
+\fIselection\fR.  After this call completes, future requests
+for the selection will be directed to handlers created for
+\fItkwin\fR using \fBTk_CreateSelHandler\fR.  When \fItkwin\fR
+eventually loses the selection ownership, \fIproc\fR will be
+invoked so that the window can clean itself up (e.g. by
+unhighlighting the selection).  \fIProc\fR should have arguments and
+result that match the type \fBTk_LostSelProc\fR:
+.CS
+typedef void \fBTk_LostSelProc\fR(
+        ClientData \fIclientData\fR);
+.CE
+The \fIclientData\fR parameter to \fIproc\fR is a copy of the
+\fIclientData\fR argument given to \fBTk_OwnSelection\fR, and is
+usually a pointer to a data structure containing application-specific
+information about \fItkwin\fR.
+.SH KEYWORDS
+own, selection owner

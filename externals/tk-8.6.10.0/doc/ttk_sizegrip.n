@@ -1,0 +1,82 @@
+'\"
+'\" Copyright (c) 2006 Joe English
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH ttk::sizegrip n 8.5 Tk "Tk Themed Widget"
+.so man.macros
+.BS
+.SH NAME
+ttk::sizegrip \- Bottom-right corner resize widget
+.SH SYNOPSIS
+\fBttk::sizegrip\fR \fIpathName \fR?\fIoptions\fR?
+.BE
+.SH DESCRIPTION
+.PP
+A \fBttk::sizegrip\fR widget (also known as a \fIgrow box\fR)
+allows the user to resize the containing toplevel window
+by pressing and dragging the grip.
+.SO ttk_widget
+\-class	\-cursor
+\-style	\-takefocus
+.SE
+.SH "WIDGET COMMAND"
+.PP
+Sizegrip widgets support the standard
+\fBcget\fR, \fBconfigure\fR, \fBidentify\fR, \fBinstate\fR, and \fBstate\fR
+methods.  No other widget methods are used.
+.SH "PLATFORM-SPECIFIC NOTES"
+.PP
+On Mac OSX, toplevel windows automatically include a built-in
+size grip by default.
+Adding a \fBttk::sizegrip\fR there is harmless, since
+the built-in grip will just mask the widget.
+.SH EXAMPLES
+.PP
+Using pack:
+.CS
+pack [ttk::frame $top.statusbar] \-side bottom \-fill x
+pack [\fBttk::sizegrip\fR $top.statusbar.grip] \-side right \-anchor se
+.CE
+.PP
+Using grid:
+.CS
+grid [\fBttk::sizegrip\fR $top.statusbar.grip] \e
+    \-row $lastRow \-column $lastColumn \-sticky se
+# ... optional: add vertical scrollbar in $lastColumn,
+# ... optional: add horizontal scrollbar in $lastRow
+.CE
+.SH "BUGS"
+.PP
+If the containing toplevel's position was specified
+relative to the right or bottom of the screen
+(e.g.,
+.QW "\fBwm geometry ... \fIw\fBx\fIh\fB\-\fIx\fB\-\fIy\fR"
+instead of
+.QW "\fBwm geometry ... \fIw\fBx\fIh\fB+\fIx\fB+\fIy\fR" ),
+the sizegrip widget will not resize the window.
+.PP
+\fBttk::sizegrip\fR widgets only support
+.QW southeast
+resizing.
+.SH "STYLING OPTIONS"
+.PP
+The class name for a \fBttk::sizegrip\fP is \fBTSizegrip\fP.
+.PP
+\fBTSizegrip\fP styling options configurable with \fBttk::style\fP
+are:
+.PP
+\fB\-background\fP \fIcolor\fP
+.PP
+Some options are only available for specific themes.
+.PP
+See the \fBttk::style\fP manual page for information on how to configure
+ttk styles.
+.SH "SEE ALSO"
+ttk::widget(n)
+.SH "KEYWORDS"
+widget, sizegrip, grow box
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

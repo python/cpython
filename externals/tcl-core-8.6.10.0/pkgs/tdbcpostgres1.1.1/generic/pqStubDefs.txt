@@ -1,0 +1,50 @@
+# pqStubDefs.txt --
+#
+#	Definitions of routines in the PostgreSQL libraries that will be
+#	resolved and imported at run time.
+#
+# This file contains only function declarations necessary to
+# interoperability with the PostgreSQL application programming
+# interface. The programmers believe that the material in this file is
+# not subject to copyright, under the doctrines of scenes a faire and
+# of the merger of idea and expression.  Accordingly, this file is in
+# the public domain.
+#
+#-----------------------------------------------------------------------------
+
+* STUBSTRUCT: pqStubs
+* LIBRARY: pq
+
+const char* pg_encoding_to_char(int);
+void PQclear(PGresult*);
+int PQclientEncoding(const PGconn*);
+char* PQcmdTuples(PGresult*);
+PGconn* PQconnectdb(const char*);
+char* PQerrorMessage(const PGconn*);
+PGresult* PQdescribePrepared(PGconn*, const char*);
+PGresult* PQexec(PGconn*, const char*);
+PGresult* PQexecPrepared(PGconn*, const char*, int, const char *const*, const int*, const int*, int);
+char* PQdb(const PGconn *);
+void PQfinish(PGconn*);
+char* PQfname(PGresult*, int);
+int PQfnumber(const PGresult*, const char*);
+Oid PQftype(const PGresult*, int);
+int PQgetisnull(const PGresult*, int, int);
+int PQgetlength(const PGresult*, int, int);
+char* PQgetvalue(const PGresult*, int, int);
+char* PQhost(const PGconn*);
+int PQnfields(const PGresult*);
+int PQnparams(const PGresult*);
+int PQntuples(const PGresult*);
+char* PQoptions(const PGconn*);
+Oid PQparamtype(const PGresult*, int);
+char* PQpass(const PGconn*);
+char* PQport(const PGconn*);
+PGresult* PQprepare(PGconn*, const char*, const char*, int, const Oid*);
+char* PQresultErrorField(const PGresult*, int);
+ExecStatusType PQresultStatus(const PGresult*);
+int PQsetClientEncoding(PGconn*, const char*);
+PQnoticeProcessor PQsetNoticeProcessor(PGconn*, PQnoticeProcessor, void*);
+ConnStatusType PQstatus(PGconn*);
+char* PQuser(const PGconn*);
+char* PQtty(const PGconn*);

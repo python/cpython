@@ -1,0 +1,50 @@
+package require Tk 8.5
+package require tcltest ; namespace import -force tcltest::*
+loadTestedCommands
+
+test image-1.1 "Bad image element" -body {
+    ttk::style element create BadImage image badimage
+} -returnCodes error -result {image "badimage" doesn't exist}
+
+test image-1.2 "Duplicate element" -setup {
+    image create photo test.element -width 10 -height 10
+    ttk::style element create testElement image test.element
+} -body {
+    ttk::style element create testElement image test.element
+} -returnCodes 1 -result "Duplicate element testElement"
+
+test image-2.0 "Deletion of displayed image (label)" -setup {
+     image create photo test.image -width 10 -height 10
+} -body {
+    pack [set w [ttk::label .ttk_image20 -image test.image]]
+    tkwait visibility $w
+    image delete test.image
+    update
+} -cleanup {
+    destroy .ttk_image20
+} -result {}
+    
+test image-2.1 "Deletion of displayed image (checkbutton)" -setup {
+     image create photo test.image -width 10 -height 10
+} -body {
+    pack [set w [ttk::checkbutton .ttk_image21 -image test.image]]
+    tkwait visibility $w
+    image delete test.image
+    update
+} -cleanup {
+    destroy .ttk_image21
+} -result {}
+
+test image-2.2 "Deletion of displayed image (radiobutton)" -setup {
+     image create photo test.image -width 10 -height 10
+} -body {
+    pack [set w [ttk::radiobutton .ttk_image22 -image test.image]]
+    tkwait visibility $w
+    image delete test.image
+    update
+} -cleanup {
+    destroy .ttk_image22
+} -result {}
+
+#
+tcltest::cleanupTests

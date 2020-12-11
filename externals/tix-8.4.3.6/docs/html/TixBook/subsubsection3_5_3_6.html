@@ -1,0 +1,33 @@
+<HEAD>
+<TITLE> Selection<A NAME=336>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html874 HREF=section3_6.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html872 HREF=subsection3_5_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html868 HREF=subsubsection3_5_3_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html876 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html875 HREF=section3_6.html> Hierarchical Listbox</A>
+<B>Up:</B> <A NAME=tex2html873 HREF=subsection3_5_3.html> Creating Display Items </A>
+<B> Previous:</B> <A NAME=tex2html869 HREF=subsubsection3_5_3_5.html> Event Handling</A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00053600000000000000> Selection<A NAME=336>&nbsp;</A></A></H3>
+<P>
+The <tt>-selectmode</tt> option controls how many items the user can select at
+  one time. In the <tt>single</tt> and <tt>browse</tt> mode, the user can select
+  only one item at a time. In the <tt>multiple</tt> and <tt>extended</tt> mode,
+  the user can select multiple items; the <tt>extended</tt> mode allows
+  disjoint selections while the <tt>multiple</tt> mode does not.
+<P>
+   Normally, the user selects the items using the mouse or the
+  keyboard. You can find out which items the user has selected with the
+  <tt>info selection</tt> method, which returns a list of the currently
+  selected items. You can also set the selection using the <tt>selection
+  set</tt> method. For example, the command <tt>.tlist selection set 3</tt>
+  selects the item whose index is <tt>3</tt>. The command <tt>.tlist
+  selection set 2 10</tt> selects all the items at index <tt>2</tt> through <tt>10</tt>. The method <tt>selection clear</tt> empties the selection.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

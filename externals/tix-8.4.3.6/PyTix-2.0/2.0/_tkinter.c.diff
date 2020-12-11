@@ -1,0 +1,41 @@
+*** _tkinter.c.dist	Mon Oct 16 14:49:32 2000
+--- _tkinter.c	Wed Nov 22 00:27:54 2000
+***************
+*** 43,48 ****
+--- 43,51 ----
+  
+  #include <tcl.h>
+  #include <tk.h>
++ #ifdef WITH_TIX
++ #include <tix.h>
++ #endif
+  
+  #define TKMAJORMINOR (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION)
+  
+***************
+*** 427,432 ****
+--- 430,441 ----
+  		PySys_WriteStderr("Tk_Init error: %s\n", Tcl_GetStringResult(interp));
+  		return TCL_ERROR;
+  	}
++ #ifdef WITH_TIX
++ 	if (Tix_Init(interp) == TCL_ERROR) {
++ 		PySys_WriteStderr("Tix_Init error: %s\n", Tcl_GetStringResult(interp));
++ 		return TCL_ERROR;
++ 	}
++ #endif
+  	return TCL_OK;
+  }
+  #endif /* !WITH_APPINIT */
+***************
+*** 2121,2126 ****
+--- 2130,2138 ----
+  	ins_long(d, "DONT_WAIT", TCL_DONT_WAIT);
+  	ins_string(d, "TK_VERSION", TK_VERSION);
+  	ins_string(d, "TCL_VERSION", TCL_VERSION);
++ #ifdef WITH_TIX
++ 	ins_string(d, "TIX_VERSION", TIX_VERSION);
++ #endif
+  
+  	PyDict_SetItemString(d, "TkappType", (PyObject *)&Tkapp_Type);
+  

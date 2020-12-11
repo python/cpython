@@ -1,0 +1,49 @@
+<HEAD>
+<TITLE> Loading the New Classes<A NAME=67>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif_gr.gif"> <A NAME=tex2html1340 HREF=section3_8.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html1336 HREF=subsection3_8_6.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html1342 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B>Up:</B> <A NAME=tex2html1341 HREF=section3_8.html> Tix Object Oriented </A>
+<B> Previous:</B> <A NAME=tex2html1337 HREF=subsection3_8_6.html> Summary of Widget </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H2><A NAME=SECTION00087000000000000000> Loading the New Classes<A NAME=67>&nbsp;</A></A></H2>
+<P>
+Usually, you can use a separate script file to store the
+  implementaion of each new widget class. If you have several of those
+  files, it will be a good idea to group the files into a single
+  directory and create a <tt>tclIndex</tt> file for them so that the new
+  classes can be auto-loaded.
+<P>
+   Suppose you have put the class files into the directory <tt>/usr/my/tix/classes</tt>. You can create the <tt>tclIndex</tt> file using
+  the <tt>tools/tixindex</tt> program that comes with Tix:
+<P>
+<blockquote> <P><tt> cd /usr/my/tix/classes<BR>
+/usr/my/Tix8.1/tools/tixindex *.tcl
+</tt>
+<P></blockquote>
+    The <tt>tclIndex</tt> file must be created by the <tt>tixindex</tt>
+  program. You cannot use the standard <tt>auto_mkindex</tt> command
+  that comes with Tcl.
+<P>
+   Once you have created the <tt>tclIndex</tt> file, you can use your new
+  widget classes by auto-loading. Here is a small demo program that
+  uses the new TixArrowButton class:
+<P>
+<blockquote> <P><tt> #!/usr/local/bin/tixwish<BR>
+lappend auto_path /usr/my/tix/classes<BR>
+<BR>
+# Now I can use my TixArrowButton class!<BR>
+#<BR>
+tixArrowButton .arr -direction n<BR>
+pack .arr
+</tt>
+<P></blockquote>
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

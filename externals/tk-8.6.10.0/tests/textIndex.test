@@ -1,0 +1,971 @@
+# This file is a Tcl script to test the code in the file tkTextIndex.c.
+# This file is organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1994 The Regents of the University of California.
+# Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.1
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+namespace import -force tcltest::test
+
+catch {destroy .t}
+text .t -font {Courier -12} -width 20 -height 10
+pack .t -expand 1 -fill both
+update
+.t debug on
+wm geometry . {}
+  
+# The statements below reset the main window;  it's needed if the window
+# manager is mwm to make mwm forget about a previous minimum size setting.
+
+wm withdraw .
+wm minsize . 1 1
+wm positionfrom . user
+wm deiconify .
+
+.t insert 1.0 "Line 1
+abcdefghijklm
+12345
+Line 4
+b\u4e4fy GIrl .#@? x_yz
+!@#$%
+Line 7"
+
+image create photo textimage -width 10 -height 10
+textimage put red -to 0 0 9 9
+
+test textIndex-1.1 {TkTextMakeByteIndex} {testtext} {
+    # (lineIndex < 0)
+    testtext .t byteindex -1 3
+} {1.0 0}
+test textIndex-1.2 {TkTextMakeByteIndex} {testtext} {
+    # (lineIndex < 0), because lineIndex == strtol(argv[2]) - 1
+    testtext .t byteindex 0 3
+} {1.0 0}
+test textIndex-1.3 {TkTextMakeByteIndex} {testtext} {
+    # not (lineIndex < 0)
+    testtext .t byteindex 1 3
+} {1.3 3}
+test textIndex-1.4 {TkTextMakeByteIndex} {testtext} {
+    # (byteIndex < 0)
+    testtext .t byteindex 3 -1
+} {3.0 0}
+test textIndex-1.5 {TkTextMakeByteIndex} {testtext} {
+    # not (byteIndex < 0)
+    testtext .t byteindex 3 3
+} {3.3 3}
+test textIndex-1.6 {TkTextMakeByteIndex} {testtext} {
+    # (indexPtr->linePtr == NULL)
+    testtext .t byteindex 9 2
+} {8.0 0}
+test textIndex-1.7 {TkTextMakeByteIndex} {testtext} {
+    # not (indexPtr->linePtr == NULL)
+    testtext .t byteindex 7 2
+} {7.2 2}
+test textIndex-1.8 {TkTextMakeByteIndex: shortcut for 0} {testtext} {
+    # (byteIndex == 0)
+    testtext .t byteindex 1 0
+} {1.0 0}
+test textIndex-1.9 {TkTextMakeByteIndex: shortcut for 0} {testtext} {
+    # not (byteIndex == 0)
+    testtext .t byteindex 3 80
+} {3.5 5}
+test textIndex-1.10 {TkTextMakeByteIndex: verify index is in range} {testtext} {
+    # for (segPtr = indexPtr->linePtr->segPtr; ; segPtr = segPtr->nextPtr) 
+    # one segment
+
+    testtext .t byteindex 3 5
+} {3.5 5}
+test textIndex-1.11 {TkTextMakeByteIndex: verify index is in range} {testtext} {
+    # for (segPtr = indexPtr->linePtr->segPtr; ; segPtr = segPtr->nextPtr)
+    #     index += segPtr->size
+    # Multiple segments, make sure add segment size to index.
+
+    .t mark set foo 3.2 
+    set x [testtext .t byteindex 3 7]
+    .t mark unset foo
+    set x
+} {3.5 5}
+test textIndex-1.12 {TkTextMakeByteIndex: verify index is in range} {testtext} {
+    # (segPtr == NULL)
+    testtext .t byteindex 3 7
+} {3.5 5}
+test textIndex-1.13 {TkTextMakeByteIndex: verify index is in range} {testtext} {
+    # not (segPtr == NULL)
+    testtext .t byteindex 3 4
+} {3.4 4}
+test textIndex-1.14 {TkTextMakeByteIndex: verify index is in range} {testtext} {
+    # (index + segPtr->size > byteIndex)
+    # in this segment.
+
+    testtext .t byteindex 3 4
+} {3.4 4}
+test textIndex-1.15 {TkTextMakeByteIndex: verify index is in range} {testtext} {
+    # (index + segPtr->size > byteIndex), index != 0
+    # in this segment.
+
+    .t mark set foo 3.2
+    set x [testtext .t byteindex 3 4]
+    .t mark unset foo
+    set x
+} {3.4 4}
+test textIndex-1.16 {TkTextMakeByteIndex: UTF-8 characters} {testtext} {
+    testtext .t byteindex 5 100
+} {5.18 20}
+test textIndex-1.17 {TkTextMakeByteIndex: prevent splitting UTF-8 character} \
+	{testtext} {
+    # ((byteIndex > index) && (segPtr->typePtr == &tkTextCharType)) 
+    # Wrong answer would be \xb9 (the 2nd byte of UTF rep of 0x4e4f).
+
+    set x [testtext .t byteindex 5 2]
+    list $x [.t get insert]
+} {{5.2 4} y}
+test textIndex-1.18 {TkTextMakeByteIndex: prevent splitting UTF-8 character} \
+	{testtext} {
+    # ((byteIndex > index) && (segPtr->typePtr == &tkTextCharType)) 
+    testtext .t byteindex 5 1
+    .t get insert
+} "\u4e4f"
+
+test textIndex-2.1 {TkTextMakeCharIndex} {
+    # (lineIndex < 0)
+    .t index -1.3
+} 1.0
+test textIndex-2.2 {TkTextMakeCharIndex} {
+    # (lineIndex < 0), because lineIndex == strtol(argv[2]) - 1
+    .t index 0.3
+} 1.0
+test textIndex-2.3 {TkTextMakeCharIndex} {
+    # not (lineIndex < 0)
+    .t index 1.3
+} 1.3
+test textIndex-2.4 {TkTextMakeCharIndex} {
+    # (charIndex < 0)
+    .t index 3.-1
+} 3.0
+test textIndex-2.5 {TkTextMakeCharIndex} {
+    # (charIndex < 0)
+    .t index 3.3
+} 3.3
+test textIndex-2.6 {TkTextMakeCharIndex} {
+    # (indexPtr->linePtr == NULL)
+    .t index 9.2
+} 8.0
+test textIndex-2.7 {TkTextMakeCharIndex} {
+    # not (indexPtr->linePtr == NULL)
+    .t index 7.2
+} 7.2
+test textIndex-2.8 {TkTextMakeCharIndex: verify index is in range} {
+    # for (segPtr = indexPtr->linePtr->segPtr; ; segPtr = segPtr->nextPtr)
+    # one segment
+
+    .t index 3.5
+} 3.5
+test textIndex-2.9 {TkTextMakeCharIndex: verify index is in range} {
+    # for (segPtr = indexPtr->linePtr->segPtr; ; segPtr = segPtr->nextPtr)
+    # Multiple segments, make sure add segment size to index.
+
+    .t mark set foo 3.2 
+    set x [.t index 3.7]
+    .t mark unset foo
+    set x
+} 3.5
+test textIndex-2.10 {TkTextMakeCharIndex: verify index is in range} {
+    # (segPtr == NULL)
+    .t index 3.7
+} 3.5
+test textIndex-2.11 {TkTextMakeCharIndex: verify index is in range} {
+    # not (segPtr == NULL)
+    .t index 3.4
+} 3.4
+test textIndex-2.12 {TkTextMakeCharIndex: verify index is in range} {
+    # (segPtr->typePtr == &tkTextCharType)
+    # Wrong answer would be \xb9 (the 2nd byte of UTF rep of 0x4e4f).
+
+    .t mark set insert 5.2
+    .t get insert
+} y
+test textIndex-2.13 {TkTextMakeCharIndex: verify index is in range} {
+    # not (segPtr->typePtr == &tkTextCharType)
+
+    .t image create 5.2 -image textimage
+    .t mark set insert 5.5
+    set x [.t get insert]
+    .t delete 5.2
+    set x
+} "G"
+test textIndex-2.14 {TkTextMakeCharIndex: verify index is in range} {
+    # (charIndex < segPtr->size)
+
+    .t image create 5.0 -image textimage
+    set x [.t index 5.0]
+    .t delete 5.0
+    set x
+} 5.0
+
+.t mark set foo 3.2
+.t tag add x 2.8 2.11
+.t tag add x 6.0 6.2
+set weirdTag "funny . +- 22.1\n\t{"
+.t tag add $weirdTag 2.1  2.6
+set weirdMark "asdf \n{-+ 66.2\t"
+.t mark set $weirdMark 4.0
+.t tag config y -relief raised
+set weirdImage "foo-1"
+.t image create 2.1 -image [image create photo $weirdImage]
+set weirdEmbWin ".t.bar-1"
+entry $weirdEmbWin
+.t window create 3.1 -window $weirdEmbWin
+test textIndex-3.1 {TkTextGetIndex, weird mark names} {
+    list [catch {.t index $weirdMark} msg] $msg
+} {0 4.0}
+test textIndex-3.2 {TkTextGetIndex, weird mark names} knownBug {
+    list [catch {.t index "$weirdMark -1char"} msg] $msg
+} {0 4.0}
+test textIndex-3.3 {TkTextGetIndex, weird embedded window names} {
+    list [catch {.t index $weirdEmbWin} msg] $msg
+} {0 3.1}
+test textIndex-3.4 {TkTextGetIndex, weird embedded window names} knownBug {
+    list [catch {.t index "$weirdEmbWin -1char"} msg] $msg
+} {0 3.0}
+test textIndex-3.5 {TkTextGetIndex, weird image names} {
+    list [catch {.t index $weirdImage} msg] $msg
+} {0 2.1}
+test textIndex-3.6 {TkTextGetIndex, weird image names} knownBug {
+    list [catch {.t index "$weirdImage -1char"} msg] $msg
+} {0 2.0}
+.t delete 3.1  ; # remove the weirdEmbWin
+.t delete 2.1  ; # remove the weirdImage
+
+test textIndex-4.1 {TkTextGetIndex, tags} {
+    list [catch {.t index x.first} msg] $msg
+} {0 2.8}
+test textIndex-4.2 {TkTextGetIndex, tags} {
+    list [catch {.t index x.last} msg] $msg
+} {0 6.2}
+test textIndex-4.3 {TkTextGetIndex, weird tags} {
+    list [.t index $weirdTag.first+1c] [.t index $weirdTag.last+2c]
+} {2.2 2.8}
+test textIndex-4.4 {TkTextGetIndex, tags} {
+    list [catch {.t index x.gorp} msg] $msg
+} {1 {bad text index "x.gorp"}}
+test textIndex-4.5 {TkTextGetIndex, tags} {
+    list [catch {.t index foo.last} msg] $msg
+} {1 {bad text index "foo.last"}}
+test textIndex-4.6 {TkTextGetIndex, tags} {
+    list [catch {.t index y.first} msg] $msg
+} {1 {text doesn't contain any characters tagged with "y"}}
+test textIndex-4.7 {TkTextGetIndex, tags} {
+    list [catch {.t index x.last,} msg] $msg
+} {1 {bad text index "x.last,"}}
+test textIndex-4.8 {TkTextGetIndex, tags} {
+    .t tag add z 1.0
+    set result [list [.t index z.first] [.t index z.last]]
+    .t tag delete z
+    set result
+} {1.0 1.1}
+
+test textIndex-5.1 {TkTextGetIndex, "@"} {nonPortable fonts} {
+    .t index @12,9
+} 1.1
+test textIndex-5.2 {TkTextGetIndex, "@"} {fonts} {
+    .t index @-2,7
+} 1.0
+test textIndex-5.3 {TkTextGetIndex, "@"} {fonts} {
+    .t index @10,-7
+} 1.0
+test textIndex-5.4 {TkTextGetIndex, "@"} {fonts} {
+    list [catch {.t index @x} msg] $msg
+} {1 {bad text index "@x"}}
+test textIndex-5.5 {TkTextGetIndex, "@"} {fonts} {
+    list [catch {.t index @10q} msg] $msg
+} {1 {bad text index "@10q"}}
+test textIndex-5.6 {TkTextGetIndex, "@"} {fonts} {
+    list [catch {.t index @10,} msg] $msg
+} {1 {bad text index "@10,"}}
+test textIndex-5.7 {TkTextGetIndex, "@"} {fonts} {
+    list [catch {.t index @10,a} msg] $msg
+} {1 {bad text index "@10,a"}}
+test textIndex-5.8 {TkTextGetIndex, "@"} {fonts} {
+    list [catch {.t index @10,9,} msg] $msg
+} {1 {bad text index "@10,9,"}}
+
+test textIndex-6.1 {TkTextGetIndex, numeric} {
+    list [catch {.t index 2.3} msg] $msg
+} {0 2.3}
+test textIndex-6.2 {TkTextGetIndex, numeric} {
+    list [catch {.t index -} msg] $msg
+} {1 {bad text index "-"}}
+test textIndex-6.3 {TkTextGetIndex, numeric} {
+    list [catch {.t index 2.end} msg] $msg
+} {0 2.13}
+test textIndex-6.4 {TkTextGetIndex, numeric} {
+    list [catch {.t index 2.x} msg] $msg
+} {1 {bad text index "2.x"}}
+test textIndex-6.5 {TkTextGetIndex, numeric} {
+    list [catch {.t index 2.3x} msg] $msg
+} {1 {bad text index "2.3x"}}
+
+test textIndex-7.1 {TkTextGetIndex, miscellaneous other bases} {
+    list [catch {.t index end} msg] $msg
+} {0 8.0}
+test textIndex-7.2 {TkTextGetIndex, miscellaneous other bases} {
+    list [catch {.t index foo} msg] $msg
+} {0 3.2}
+test textIndex-7.3 {TkTextGetIndex, miscellaneous other bases} {
+    list [catch {.t index foo+1c} msg] $msg
+} {0 3.3}
+
+test textIndex-8.1 {TkTextGetIndex, modifiers} {
+    list [catch {.t index 2.1+1char} msg] $msg
+} {0 2.2}
+test textIndex-8.2 {TkTextGetIndex, modifiers} {
+    list [catch {.t index "2.1  	+1char"} msg] $msg
+} {0 2.2}
+test textIndex-8.3 {TkTextGetIndex, modifiers} {
+    list [catch {.t index 2.1-1char} msg] $msg
+} {0 2.0}
+test textIndex-8.4 {TkTextGetIndex, modifiers} {
+    list [catch {.t index {2.1  }} msg] $msg
+} {0 2.1}
+test textIndex-8.5 {TkTextGetIndex, modifiers} {
+    list [catch {.t index {2.1+foo bar}} msg] $msg
+} {1 {bad text index "2.1+foo bar"}}
+test textIndex-8.6 {TkTextGetIndex, modifiers} {
+    list [catch {.t index {2.1 foo bar}} msg] $msg
+} {1 {bad text index "2.1 foo bar"}}
+
+test textIndex-9.1 {TkTextIndexCmp} {
+    list [.t compare 3.1 < 3.2] [.t compare 3.1 == 3.2]
+} {1 0}
+test textIndex-9.2 {TkTextIndexCmp} {
+    list [.t compare 3.2 < 3.2] [.t compare 3.2 == 3.2]
+} {0 1}
+test textIndex-9.3 {TkTextIndexCmp} {
+    list [.t compare 3.3 < 3.2] [.t compare 3.3 == 3.2]
+} {0 0}
+test textIndex-9.4 {TkTextIndexCmp} {
+    list [.t compare 2.1 < 3.2] [.t compare 2.1 == 3.2]
+} {1 0}
+test textIndex-9.5 {TkTextIndexCmp} {
+    list [.t compare 4.1 < 3.2] [.t compare 4.1 == 3.2]
+} {0 0}
+
+test textIndex-10.1 {ForwBack} {
+    list [catch {.t index {2.3 + x}} msg] $msg
+} {1 {bad text index "2.3 + x"}}
+test textIndex-10.2 {ForwBack} {
+    list [catch {.t index {2.3 + 2 chars}} msg] $msg
+} {0 2.5}
+test textIndex-10.3 {ForwBack} {
+    list [catch {.t index {2.3 + 2c}} msg] $msg
+} {0 2.5}
+test textIndex-10.4 {ForwBack} {
+    list [catch {.t index {2.3 - 3ch}} msg] $msg
+} {0 2.0}
+test textIndex-10.5 {ForwBack} {
+    list [catch {.t index {1.3 + 3 lines}} msg] $msg
+} {0 4.3}
+test textIndex-10.6 {ForwBack} {
+    list [catch {.t index {2.3 -1l}} msg] $msg
+} {0 1.3}
+test textIndex-10.7 {ForwBack} {
+    list [catch {.t index {2.3 -1 gorp}} msg] $msg
+} {1 {bad text index "2.3 -1 gorp"}}
+test textIndex-10.8 {ForwBack} {
+    list [catch {.t index {2.3 - 4 lines}} msg] $msg
+} {0 1.3}
+test textIndex-10.9 {ForwBack} {
+    .t mark set insert 2.0
+    list [catch {.t index {insert -0 chars}} msg] $msg
+} {0 2.0}
+test textIndex-10.10 {ForwBack} {
+    .t mark set insert 2.end
+    list [catch {.t index {insert +0 chars}} msg] $msg
+} {0 2.13}
+
+test textIndex-11.1 {TkTextIndexForwBytes} {testtext} {
+    testtext .t forwbytes 2.3 -7
+} {1.3 3}
+test textIndex-11.2 {TkTextIndexForwBytes} {testtext} {
+    testtext .t forwbytes 2.3 5
+} {2.8 8}
+test textIndex-11.3 {TkTextIndexForwBytes} {testtext} {
+    testtext .t forwbytes 2.3 10
+} {2.13 13}
+test textIndex-11.4 {TkTextIndexForwBytes} {testtext} {
+    testtext .t forwbytes 2.3 11
+} {3.0 0}
+test textIndex-11.5 {TkTextIndexForwBytes} {testtext} {
+    testtext .t forwbytes 2.3 57
+} {7.6 6}
+test textIndex-11.6 {TkTextIndexForwBytes} {testtext} {
+    testtext .t forwbytes 2.3 58
+} {8.0 0}
+test textIndex-11.7 {TkTextIndexForwBytes} {testtext} {
+    testtext .t forwbytes 2.3 59
+} {8.0 0}
+
+test textIndex-12.1 {TkTextIndexForwChars} {
+    # (charCount < 0)
+    .t index {2.3 + -7 chars}
+} 1.3
+test textIndex-12.2 {TkTextIndexForwChars} {
+    # not (charCount < 0)
+    .t index {2.3 + 5 chars}
+} 2.8
+test textIndex-12.3 {TkTextIndexForwChars: find index} {
+    # for ( ; segPtr != NULL; segPtr = segPtr->nextPtr)
+    # one loop
+    .t index {2.3 + 9 chars}
+} 2.12
+test textIndex-12.4 {TkTextIndexForwChars: find index} {
+    # for ( ; segPtr != NULL; segPtr = segPtr->nextPtr)
+    # multiple loops
+    .t mark set foo 2.5
+    set x [.t index {2.3 + 9 chars}]
+    .t mark unset foo
+    set x
+} 2.12
+test textIndex-12.5 {TkTextIndexForwChars: find index} {
+    # for ( ; segPtr != NULL; segPtr = segPtr->nextPtr)
+    # border condition: last char
+
+    .t index {2.3 + 10 chars}
+} 2.13
+test textIndex-12.6 {TkTextIndexForwChars: find index} {
+    # for ( ; segPtr != NULL; segPtr = segPtr->nextPtr)
+    # border condition: segPtr == NULL -> beginning of next line
+    
+    .t index {2.3 + 11 chars}
+} 3.0
+test textIndex-12.7 {TkTextIndexForwChars: find index} {
+    # (segPtr->typePtr == &tkTextCharType)
+    .t index {2.3 + 2 chars}
+} 2.5
+test textIndex-12.8 {TkTextIndexForwChars: find index} {
+    # (charCount == 0)
+    # No more chars, so we found byte offset.
+
+    .t index {2.3 + 2 chars}
+} 2.5
+test textIndex-12.9 {TkTextIndexForwChars: find index} {
+    # not (segPtr->typePtr == &tkTextCharType)
+
+    .t image create 2.4 -image textimage
+    set x [.t get {2.3 + 3 chars}]
+    .t delete 2.4
+    set x    
+} "f"
+test textIndex-12.10 {TkTextIndexForwChars: find index} {
+    # dstPtr->byteIndex += segPtr->size - byteOffset
+    # When moving to next segment, account for bytes in last segment.
+    # Wrong answer would be 2.4
+
+    .t mark set foo 2.4
+    set x [.t index {2.3 + 5 chars}]
+    .t mark unset foo
+    set x
+} 2.8
+test textIndex-12.11 {TkTextIndexForwChars: go to next line} {
+    # (linePtr == NULL)
+    .t index {7.6 + 3 chars}
+} 8.0
+test textIndex-12.12 {TkTextIndexForwChars: go to next line} {
+    # Reset byteIndex to 0 now that we are on a new line.
+    # Wrong answer would be 2.9
+    .t index {1.3 + 6 chars}
+} 2.2
+test textIndex-12.13 {TkTextIndexForwChars} {
+    # right to end
+    .t index {2.3 + 56 chars}
+} 8.0
+test textIndex-12.14 {TkTextIndexForwChars} {
+    # try to go past end
+    .t index {2.3 + 57 chars}
+} 8.0
+
+test textIndex-13.1 {TkTextIndexBackBytes} {testtext} {
+    testtext .t backbytes 3.2 -10
+} {4.6 6}
+test textIndex-13.2 {TkTextIndexBackBytes} {testtext} {
+    testtext .t backbytes 3.2 2
+} {3.0 0}
+test textIndex-13.3 {TkTextIndexBackBytes} {testtext} {
+    testtext .t backbytes 3.2 3
+} {2.13 13}
+test textIndex-13.4 {TkTextIndexBackBytes} {testtext} {
+    testtext .t backbytes 3.2 22
+} {1.1 1}
+test textIndex-13.5 {TkTextIndexBackBytes} {testtext} {
+    testtext .t backbytes 3.2 23
+} {1.0 0}
+test textIndex-13.6 {TkTextIndexBackBytes} {testtext} {
+    testtext .t backbytes 3.2 24
+} {1.0 0}
+
+test textIndex-14.1 {TkTextIndexBackChars} {
+    # (charCount < 0)
+    .t index {3.2 - -10 chars}
+} 4.6
+test textIndex-14.2 {TkTextIndexBackChars} {
+    # not (charCount < 0)
+    .t index {3.2 - 2 chars}
+} 3.0
+test textIndex-14.3 {TkTextIndexBackChars: find starting segment} {
+    # for (segPtr = dstPtr->linePtr->segPtr; ; segPtr = segPtr->nextPtr)
+    # single loop
+
+    .t index {3.2 - 3 chars}
+} 2.13
+test textIndex-14.4 {TkTextIndexBackChars: find starting segment} {
+    # for (segPtr = dstPtr->linePtr->segPtr; ; segPtr = segPtr->nextPtr)
+    # multiple loop
+
+    .t mark set foo1 2.5
+    .t mark set foo2 2.7
+    .t mark set foo3 2.10
+    set x [.t index {2.9 - 1 chars}]
+    .t mark unset foo1 foo2 foo3
+    set x
+} 2.8
+test textIndex-14.5 {TkTextIndexBackChars: find starting seg and offset} {
+    # for (segPtr = dstPtr->linePtr->segPtr; ; segPtr = segPtr->nextPtr)
+    # Make sure segSize was decremented.  Wrong answer would be 2.10
+
+    .t mark set foo 2.2
+    set x [.t index {2.9 - 1 char}]
+    .t mark unset foo
+    set x
+} 2.8
+test textIndex-14.6 {TkTextIndexBackChars: back over characters} {
+    # (segPtr->typePtr == &tkTextCharType)
+
+    .t index {3.2 - 22 chars}
+} 1.1
+test textIndex-14.7 {TkTextIndexBackChars: loop backwards over chars} {
+    # (charCount == 0)
+    # No more chars, so we found byte offset.
+
+    .t index {3.4 - 2 chars}
+} 3.2
+test textIndex-14.8 {TkTextIndexBackChars: loop backwards over chars} {
+    # (p == start)
+    # Still more chars, but we reached beginning of segment
+
+    .t image create 5.6 -image textimage
+    set x [.t index {5.8 - 3 chars}]
+    .t delete 5.6
+    set x
+} 5.5
+test textIndex-14.9 {TkTextIndexBackChars: back over image} {
+    # not (segPtr->typePtr == &tkTextCharType)
+
+    .t image create 5.6 -image textimage
+    set x [.t get {5.8 - 4 chars}]
+    .t delete 5.6
+    set x
+} "G"
+test textIndex-14.10 {TkTextIndexBackChars: move to previous segment} {
+    # (segPtr != oldPtr)
+    # More segments to go
+
+    .t mark set foo 3.4
+    set x [.t index {3.5 - 2 chars}]
+    .t mark unset foo
+    set x
+} 3.3
+test textIndex-14.11 {TkTextIndexBackChars: move to previous segment} {
+    # not (segPtr != oldPtr)
+    # At beginning of line.
+
+    .t mark set foo 3.4
+    set x [.t index {3.5 - 10 chars}]
+    .t mark unset foo
+    set x
+} 2.9
+test textIndex-14.12 {TkTextIndexBackChars: move to previous line} {
+    # (lineIndex == 0) 
+    .t index {1.5 - 10 chars}
+} 1.0
+test textIndex-14.13 {TkTextIndexBackChars: move to previous line} {
+    # not (lineIndex == 0) 
+    .t index {2.5 - 10 chars}
+} 1.2
+test textIndex-14.14 {TkTextIndexBackChars: move to previous line} {
+    # for (segPtr = oldPtr; segPtr != NULL; segPtr = segPtr->nextPtr)
+    # Set byteIndex to end of previous line so we can subtract more
+    # bytes from it.  Otherwise we get an TkTextIndex with a negative
+    # byteIndex.
+
+    .t index {2.5 - 6 chars}
+} 1.6
+test textIndex-14.15 {TkTextIndexBackChars: UTF} {
+    .t get {5.3 - 1 chars}
+} y
+test textIndex-14.16 {TkTextIndexBackChars: UTF} {
+    .t get {5.3 - 2 chars}
+} \u4e4f
+test textIndex-14.17 {TkTextIndexBackChars: UTF} {
+    .t get {5.3 - 3 chars}
+} b
+
+proc getword index {
+    .t get [.t index "$index wordstart"] [.t index "$index wordend"]
+}
+test textIndex-15.1 {StartEnd} {
+    list [catch {.t index {2.3 lineend}} msg] $msg
+} {0 2.13}
+test textIndex-15.2 {StartEnd} {
+    list [catch {.t index {2.3 linee}} msg] $msg
+} {0 2.13}
+test textIndex-15.3 {StartEnd} {
+    list [catch {.t index {2.3 line}} msg] $msg
+} {1 {bad text index "2.3 line"}}
+test textIndex-15.4 {StartEnd} {
+    list [catch {.t index {2.3 linestart}} msg] $msg
+} {0 2.0}
+test textIndex-15.5 {StartEnd} {
+    list [catch {.t index {2.3 lines}} msg] $msg
+} {0 2.0}
+test textIndex-15.6 {StartEnd} {
+    getword 5.3
+} { }
+test textIndex-15.7 {StartEnd} {
+    getword 5.4
+} GIrl
+test textIndex-15.8 {StartEnd} {
+    getword 5.7
+} GIrl
+test textIndex-15.9 {StartEnd} {
+    getword 5.8
+} { }
+test textIndex-15.10 {StartEnd} {
+    getword 5.14
+} x_yz
+test textIndex-15.11 {StartEnd} {
+    getword 6.2
+} #
+test textIndex-15.12 {StartEnd} {
+    getword 3.4
+} 12345
+.t tag add x 2.8 2.11
+test textIndex-15.13 {StartEnd} {
+    list [catch {.t index {2.2 worde}} msg] $msg
+} {0 2.13}
+test textIndex-15.14 {StartEnd} {
+    list [catch {.t index {2.12 words}} msg] $msg
+} {0 2.0}
+test textIndex-15.15 {StartEnd} {
+    list [catch {.t index {2.12 word}} msg] $msg
+} {1 {bad text index "2.12 word"}}
+
+test textIndex-16.1 {TkTextPrintIndex} {
+    set t [text .t2]
+    $t insert end \n
+    $t window create end -window [button $t.b]
+    set result [$t index end-2c]
+    pack $t
+    catch {destroy $t}
+} 0
+
+test textIndex-16.2 {TkTextPrintIndex} {
+    set t [text .t2]
+    $t insert end \n
+    $t window create end -window [button $t.b]
+    set result [$t tag add {} end-2c]
+    pack $t
+    catch {destroy $t}
+} 0
+
+test textIndex-17.1 {Object indices} {
+    set res {}
+    set t [text .t2 -height 20]
+    for {set i 0} {$i < 100} {incr i} {
+	$t insert end $i\n
+    }
+    pack $t
+    update
+    set idx @0,0
+    lappend res $idx [$t index $idx]
+    $t yview scroll 2 pages
+    lappend res $idx [$t index $idx]
+    catch {destroy $t}
+    unset i
+    unset idx
+    list $res
+} {{@0,0 1.0 @0,0 37.0}}
+
+test textIndex-18.1 {Object indices don't cache mark names} {
+    set res {}
+    text .t2
+    .t2 insert 1.0 1234\n1234\n1234
+    set pos "insert"
+    lappend res [.t2 index $pos]
+    .t2 mark set $pos 3.0
+    lappend res [.t2 index $pos]
+    .t2 mark set $pos 1.0
+    lappend res [.t2 index $pos]
+    catch {destroy .t2}
+    set res
+} {3.4 3.0 1.0}
+
+frame .f -width 100 -height 20
+pack .f -side left
+
+set fixedFont {Courier -12}
+set fixedHeight [font metrics $fixedFont -linespace]
+set fixedWidth [font measure $fixedFont m]
+
+set varFont {Times -14}
+set bigFont {Helvetica -24}
+destroy .t
+text .t -font $fixedFont -width 20 -height 10 -wrap char
+pack .t -expand 1 -fill both
+.t tag configure big -font $bigFont
+.t debug on
+wm geometry . {}
+
+# The statements below reset the main window;  it's needed if the window
+# manager is mwm to make mwm forget about a previous minimum size setting.
+
+wm withdraw .
+wm minsize . 1 1
+wm positionfrom . user
+wm deiconify .
+update
+
+# Some window managers (like olwm under SunOS 4.1.3) misbehave in a way
+# that tends to march windows off the top and left of the screen.  If
+# this happens, some tests will fail because parts of the window will
+# not need to be displayed (because they're off-screen).  To keep this
+# from happening, move the window if it's getting near the left or top
+# edges of the screen.
+
+if {([winfo rooty .] < 50) || ([winfo rootx .] < 50)} {
+    wm geom . +50+50
+}
+
+set str [string repeat "hello " 20]
+
+.t insert end "$str one two three four five six seven height nine ten\n"
+.t insert end "$str one two three four five six seven height nine ten\n"
+.t insert end "$str one two three four five six seven height nine ten\n"
+
+test textIndex-19.1 {Display lines} {
+    .t index "2.7 displaylinestart"
+} {2.0}
+
+test textIndex-19.2 {Display lines} {
+    .t index "2.7 displaylineend"
+} {2.19}
+
+test textIndex-19.3 {Display lines} {
+    .t index "2.30 displaylinestart"
+} {2.20}
+
+test textIndex-19.4 {Display lines} {
+    .t index "2.30 displaylineend"
+} {2.39}
+
+test textIndex-19.5 {Display lines} {
+    .t index "2.40 displaylinestart"
+} {2.40}
+
+test textIndex-19.6 {Display lines} {
+    .t index "2.40 displaylineend"
+} {2.59}
+
+test textIndex-19.7 {Display lines} {
+    .t index "2.7 +1displaylines"
+} {2.27}
+
+test textIndex-19.8 {Display lines} {
+    .t index "2.7 -1displaylines"
+} {1.167}
+
+test textIndex-19.9 {Display lines} {
+    .t index "2.30 +1displaylines"
+} {2.50}
+
+test textIndex-19.10 {Display lines} {
+    .t index "2.30 -1displaylines"
+} {2.10}
+
+test textIndex-19.11 {Display lines} {
+    .t index "2.40 +1displaylines"
+} {2.60}
+
+test textIndex-19.12 {Display lines} {
+    .t index "2.40 -1displaylines"
+} {2.20}
+
+test textIndex-19.12.1 {Display lines} {
+    .t index "2.50 - 100 displaylines"
+} {1.0}
+
+test textIndex-19.12.2 {Display lines} {
+    .t compare [.t index "2.50 + 100 displaylines"] == "end - 1 c"
+} {1}
+
+test textIndex-19.13 {Display lines} {
+    destroy {*}[pack slaves .]
+    text .txt -height 1 -wrap word -yscroll ".sbar set" -width 400
+    scrollbar .sbar -command ".txt yview"
+    grid .txt .sbar -sticky news
+    grid configure .sbar -sticky ns
+    grid rowconfigure    . 0 -weight 1
+    grid columnconfigure . 0 -weight 1
+    .txt configure -width 10
+    .txt tag config STAMP -elide 1
+    .txt tag config NICK-tick -elide 0
+    .txt insert end "+++++ Loading History ++++++++++++++++\n"
+    .txt mark set HISTORY {2.0 - 1 line}
+    .txt insert HISTORY {	} STAMP
+    .txt insert HISTORY {tick	} {NICK NICK-tick}
+    .txt insert HISTORY "\n" {NICK NICK-tick}
+    .txt insert HISTORY {[23:51]	} STAMP
+    .txt insert HISTORY "\n" {NICK NICK-tick}
+    # Must not crash
+    .txt index "2.0 - 2 display lines"
+    destroy .txt .sbar
+} {}
+
+proc text_test_word {startend chars start} {
+    destroy .t
+    text .t
+    .t insert end $chars
+    if {[regexp {end} $start]} {
+	set start [.t index "${start}chars -2c"]
+    } else {
+	set start [.t index "1.0 + ${start}chars"]
+    }
+    if {[.t compare $start >= "end-1c"]} {
+	set start "end-2c"
+    }
+    set res [.t index "$start $startend"]
+    .t count 1.0 $res
+}
+
+# Following tests copied from tests from string wordstart/end in Tcl
+
+test textIndex-21.4 {text index wordend} {
+    text_test_word wordend abc. -1
+} 3
+test textIndex-21.5 {text index wordend} {
+    text_test_word wordend abc. 100
+} 4
+test textIndex-21.6 {text index wordend} {
+    text_test_word wordend "word_one two three" 2
+} 8
+test textIndex-21.7 {text index wordend} {
+    text_test_word wordend "one .&# three" 5
+} 6
+test textIndex-21.8 {text index wordend} {
+    text_test_word worde "x.y" 0
+} 1
+test textIndex-21.9 {text index wordend} {
+    text_test_word worde "x.y" end-1
+} 2
+test textIndex-21.10 {text index wordend, unicode} {
+    text_test_word wordend "xyz\u00c7de fg" 0
+} 6
+test textIndex-21.11 {text index wordend, unicode} {
+    text_test_word wordend "xyz\uc700de fg" 0
+} 6
+test textIndex-21.12 {text index wordend, unicode} {
+    text_test_word wordend "xyz\u203fde fg" 0
+} 6
+test textIndex-21.13 {text index wordend, unicode} {
+    text_test_word wordend "xyz\u2045de fg" 0
+} 3
+test textIndex-21.14 {text index wordend, unicode} {
+    text_test_word wordend "\uc700\uc700 abc" 8
+} 6
+
+test textIndex-22.5 {text index wordstart} {
+    text_test_word wordstart "one two three_words" 400
+} 8
+test textIndex-22.6 {text index wordstart} {
+    text_test_word wordstart "one two three_words" 2
+} 0
+test textIndex-22.7 {text index wordstart} {
+    text_test_word wordstart "one two three_words" -2
+} 0
+test textIndex-22.8 {text index wordstart} {
+    text_test_word wordstart "one .*&^ three" 6
+} 6
+test textIndex-22.9 {text index wordstart} {
+    text_test_word wordstart "one two three" 4
+} 4
+test textIndex-22.10 {text index wordstart} {
+    text_test_word wordstart "one two three" end-5
+} 7
+test textIndex-22.11 {text index wordstart, unicode} {
+    text_test_word wordstart "one tw\u00c7o three" 7
+} 4
+test textIndex-22.12 {text index wordstart, unicode} {
+    text_test_word wordstart "ab\uc700\uc700 cdef ghi" 12
+} 10
+test textIndex-22.13 {text index wordstart, unicode} {
+    text_test_word wordstart "\uc700\uc700 abc" 8
+} 3
+test textIndex-22.14 {text index wordstart, unicode, start index at internal segment start} {
+    catch {destroy .t}
+    text .t
+    .t insert end "C'est du texte en fran\u00e7ais\n"
+    .t insert end "\u042D\u0442\u043E\u0020\u0442\u0435\u043A\u0441\u0442\u0020\u043D\u0430\u0020\u0440\u0443\u0441\u0441\u043A\u043E\u043C"
+    .t mark set insert 1.23
+    set res [.t index "1.23 wordstart"]
+    .t mark set insert 2.16
+    lappend res [.t index "2.16 wordstart"] [.t index "2.15 wordstart"]
+} {1.18 2.13 2.13}
+test textIndex-22.15 {text index display wordstart} {
+    catch {destroy .t}
+    text .t
+    .t index "1.0 display wordstart"  ; # used to crash
+} 1.0
+
+test textIndex-23.1 {text paragraph start} {
+    pack [text .t2]
+    .t2 insert end " Text"
+    set res 2.0
+    for {set i 0} {$i < 2} {incr i} {
+	lappend res [::tk::TextPrevPara .t2 [lindex $res end]]
+    }
+    destroy .t2
+    set res
+} {2.0 1.1 1.1}
+
+test textIndex-24.1 {text mark prev} {
+    pack [text .t2]
+    .t2 insert end [string repeat "1 2 3 4 5 6 7 8 9 0\n" 12]
+    .t2 mark set 1.0 10.0
+    update
+    # then this crash Tk:
+    set res [.t2 mark previous 10.10]
+    destroy .t2
+    set res
+} {1.0}
+
+test textIndex-25.1 {IndexCountBytesOrdered, bug [3f1f79abcf]} {
+    pack [text .t2]
+    .t2 tag configure elided -elide 1
+    .t2 insert end "01\n02\n03\n04\n05\n06\n07\n08\n09\n10\n"
+    .t2 insert end "11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n"
+    .t2 insert end "21\n22\n23\n25\n26\n27\n28\n29\n30\n31"
+    .t2 insert end "32\n33\n34\n36\n37\n38\n39" elided
+    # then this used to crash Tk:
+    .t2 see end
+    focus -force .t2   ; # to see the cursor blink
+    destroy .t2
+} {}
+
+# cleanup
+rename textimage {}
+catch {destroy .t}
+cleanupTests
+return

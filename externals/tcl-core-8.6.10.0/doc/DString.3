@@ -1,0 +1,153 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_DString 3 7.4 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_DStringInit, Tcl_DStringAppend, Tcl_DStringAppendElement, Tcl_DStringStartSublist, Tcl_DStringEndSublist, Tcl_DStringLength, Tcl_DStringValue, Tcl_DStringSetLength, Tcl_DStringTrunc, Tcl_DStringFree, Tcl_DStringResult, Tcl_DStringGetResult \- manipulate dynamic strings
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+\fBTcl_DStringInit\fR(\fIdsPtr\fR)
+.sp
+char *
+\fBTcl_DStringAppend\fR(\fIdsPtr, bytes, length\fR)
+.sp
+char *
+\fBTcl_DStringAppendElement\fR(\fIdsPtr, element\fR)
+.sp
+\fBTcl_DStringStartSublist\fR(\fIdsPtr\fR)
+.sp
+\fBTcl_DStringEndSublist\fR(\fIdsPtr\fR)
+.sp
+int
+\fBTcl_DStringLength\fR(\fIdsPtr\fR)
+.sp
+char *
+\fBTcl_DStringValue\fR(\fIdsPtr\fR)
+.sp
+\fBTcl_DStringSetLength\fR(\fIdsPtr, newLength\fR)
+.sp
+\fBTcl_DStringTrunc\fR(\fIdsPtr, newLength\fR)
+.sp
+\fBTcl_DStringFree\fR(\fIdsPtr\fR)
+.sp
+\fBTcl_DStringResult\fR(\fIinterp, dsPtr\fR)
+.sp
+\fBTcl_DStringGetResult\fR(\fIinterp, dsPtr\fR)
+.SH ARGUMENTS
+.AS Tcl_DString newLength in/out
+.AP Tcl_DString *dsPtr in/out
+Pointer to structure that is used to manage a dynamic string.
+.AP "const char" *bytes in
+Pointer to characters to append to dynamic string.
+.AP "const char" *element in
+Pointer to characters to append as list element to dynamic string.
+.AP int length in
+Number of bytes from \fIbytes\fR to add to dynamic string.  If -1,
+add all characters up to null terminating character.
+.AP int newLength in
+New length for dynamic string, not including null terminating
+character.
+.AP Tcl_Interp *interp in/out
+Interpreter whose result is to be set from or moved to the
+dynamic string.
+.BE
+
+.SH DESCRIPTION
+.PP
+Dynamic strings provide a mechanism for building up arbitrarily long
+strings by gradually appending information.  If the dynamic string is
+short then there will be no memory allocation overhead;  as the string
+gets larger, additional space will be allocated as needed.
+.PP
+\fBTcl_DStringInit\fR initializes a dynamic string to zero length.
+The Tcl_DString structure must have been allocated by the caller.
+No assumptions are made about the current state of the structure;
+anything already in it is discarded.
+If the structure has been used previously, \fBTcl_DStringFree\fR should
+be called first to free up any memory allocated for the old
+string.
+.PP
+\fBTcl_DStringAppend\fR adds new information to a dynamic string,
+allocating more memory for the string if needed.
+If \fIlength\fR is less than zero then everything in \fIbytes\fR
+is appended to the dynamic string;  otherwise \fIlength\fR
+specifies the number of bytes to append.
+\fBTcl_DStringAppend\fR returns a pointer to the characters of
+the new string.  The string can also be retrieved from the
+\fIstring\fR field of the Tcl_DString structure.
+.PP
+\fBTcl_DStringAppendElement\fR is similar to \fBTcl_DStringAppend\fR
+except that it does not take a \fIlength\fR argument (it appends
+all of \fIelement\fR) and it converts the string to a proper list element
+before appending.
+\fBTcl_DStringAppendElement\fR adds a separator space before the
+new list element unless the new list element is the first in a
+list or sub-list (i.e. either the current string is empty, or it
+contains the single character
+.QW { ,
+or the last two characters of the current string are
+.QW " {" ).
+\fBTcl_DStringAppendElement\fR returns a pointer to the
+characters of the new string.
+.PP
+\fBTcl_DStringStartSublist\fR and \fBTcl_DStringEndSublist\fR can be
+used to create nested lists.
+To append a list element that is itself a sublist, first
+call \fBTcl_DStringStartSublist\fR, then call \fBTcl_DStringAppendElement\fR
+for each of the elements in the sublist, then call
+\fBTcl_DStringEndSublist\fR to end the sublist.
+\fBTcl_DStringStartSublist\fR appends a space character if needed,
+followed by an open brace;  \fBTcl_DStringEndSublist\fR appends
+a close brace.
+Lists can be nested to any depth.
+.PP
+\fBTcl_DStringLength\fR is a macro that returns the current length
+of a dynamic string (not including the terminating null character).
+\fBTcl_DStringValue\fR is a  macro that returns a pointer to the
+current contents of a dynamic string.
+.PP
+.PP
+\fBTcl_DStringSetLength\fR changes the length of a dynamic string.
+If \fInewLength\fR is less than the string's current length, then
+the string is truncated.
+If \fInewLength\fR is greater than the string's current length,
+then the string will become longer and new space will be allocated
+for the string if needed.
+However, \fBTcl_DStringSetLength\fR will not initialize the new
+space except to provide a terminating null character;  it is up to the
+caller to fill in the new space.
+\fBTcl_DStringSetLength\fR does not free up the string's storage space
+even if the string is truncated to zero length, so \fBTcl_DStringFree\fR
+will still need to be called.
+.PP
+\fBTcl_DStringTrunc\fR changes the length of a dynamic string.
+This procedure is now deprecated.  \fBTcl_DStringSetLength\fR  should
+be used instead.
+.PP
+\fBTcl_DStringFree\fR should be called when you are finished using
+the string.  It frees up any memory that was allocated for the string
+and reinitializes the string's value to an empty string.
+.PP
+\fBTcl_DStringResult\fR sets the result of \fIinterp\fR to the value of
+the dynamic string given by \fIdsPtr\fR.  It does this by moving
+a pointer from \fIdsPtr\fR to the interpreter's result.
+This saves the cost of allocating new memory and copying the string.
+\fBTcl_DStringResult\fR also reinitializes the dynamic string to
+an empty string.
+.PP
+\fBTcl_DStringGetResult\fR does the opposite of \fBTcl_DStringResult\fR.
+It sets the value of \fIdsPtr\fR to the result of \fIinterp\fR and
+it clears \fIinterp\fR's result.
+If possible it does this by moving a pointer rather than by copying
+the string.
+
+.SH KEYWORDS
+append, dynamic string, free, result

@@ -1,0 +1,33 @@
+<HEAD>
+<TITLE> Changing the Sizes of the Panes<A NAME=224>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html698 HREF=subsection3_4_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html696 HREF=subsection3_4_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html692 HREF=subsubsection3_4_2_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html700 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html699 HREF=subsection3_4_3.html> The Family of </A>
+<B>Up:</B> <A NAME=tex2html697 HREF=subsection3_4_2.html> PanedWindow</A>
+<B> Previous:</B> <A NAME=tex2html693 HREF=subsubsection3_4_2_3.html> Setting the Order </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00042400000000000000> Changing the Sizes of the Panes<A NAME=224>&nbsp;</A></A></H3>
+<P>
+If you want to change the sizes of the existing panes or change
+  their maximum/minimum size constraints, you can use the
+  <tt>paneconfigure</tt> method. For example, the following code changes the
+  size of <tt>pane2</tt> to 100 pixels and adjusts its minimum size
+  constraint to no less than 10 pixels:
+<P>
+<blockquote> <P><tt> .p paneconfigure pane2 -size 100 -min 10
+</tt>
+<P></blockquote>
+<P>
+   Notice that after you call the <tt>paneconfigure</tt> method, the
+  PanedWindow may jitter and that may annoy the user. Therefore, use
+  this method only when it is necessary.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

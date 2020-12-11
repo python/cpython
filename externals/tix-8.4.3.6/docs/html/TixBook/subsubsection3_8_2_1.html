@@ -1,0 +1,91 @@
+<HEAD>
+<TITLE> Using the tixWidgetClass Command<A NAME=621>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html1175 HREF=subsection3_8_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html1173 HREF=subsection3_8_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html1169 HREF=subsection3_8_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html1177 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html1176 HREF=subsection3_8_3.html> Writing Methods</A>
+<B>Up:</B> <A NAME=tex2html1174 HREF=subsection3_8_2.html> Widget Class Declaration</A>
+<B> Previous:</B> <A NAME=tex2html1170 HREF=subsection3_8_2.html> Widget Class Declaration</A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00082100000000000000> Using the tixWidgetClass Command<A NAME=621>&nbsp;</A></A></H3>
+<P>
+We can use the <tt>tixWidgetClass</tt> command to declare a new
+class. The syntax is:
+<P>
+<blockquote> <P><tt> tixWidgetClass classCommandName {<BR>
+    -switch value<BR>
+    -switch value<BR>
+    ....<BR>
+}</tt>
+<P></blockquote>
+<P>
+For example, the following is the declaration section of TixArrowButton:
+<P>
+<P><tt> tixWidgetClass tixArrowButton {<BR>
+    -classname  TixArrowButton<BR>
+    -superclass tixPrimitive<BR>
+    -method {<BR>
+        flash invoke invert<BR>
+    }<BR>
+    -flag {<BR>
+        -direction -state<BR>
+    }<BR>
+    -configspec {<BR>
+        {-direction direction Direction e}<BR>
+        {-state state State normal}<BR>
+    }<BR>
+    -alias {<BR>
+        {-dir -direction}<BR>
+    }<BR>
+    -default {<BR>
+        {*Button.anchor         c}<BR>
+        {*Button.padX           5}<BR>
+    }<BR>
+}</tt><P><P><CENTER>(Figure 6-2) declaration of the TixArrowButton Class<A NAME=62>&nbsp;</A>
+  </CENTER>
+<P>
+   We'll look at what each option means as I describe the command in
+  the following sections.
+<P>
+   The first argument for <tt>tixWidgetClass</tt> is the <em>command name</em>
+  for the widget class (<tt>tixArrowButton</tt>). Command names are used to
+  create widgets of this class. For example, the code
+<P>
+<blockquote> <P><tt> tixArrowButton .arrow
+</tt>
+<P></blockquote>
+   creates a widget instance <tt>.arrow</tt> of the class
+  TixArrowButton. Also, the command name is used as a prefix of all
+  the methods of this class. For example, the <tt>Foo</tt> and <tt>Bar</tt>
+  methods of the class TixArrowButton will be written as <tt>tixArrowButton:Foo</tt> and <tt>tixArrowButton:Bar</tt>.
+<P>
+   The <em>class name</em> of the class (<tt>TixArrowButton</tt>)is specified
+  by the <tt>-classname</tt> switch inside the main body of the
+  declaration. The class name is used only to specify options in the
+  TK option database. For example, the following commands specifies
+  the TixArrowButton widget instances should have the default value
+  <tt>up</tt> for their <tt>-direction</tt> option and the default value
+  <tt>normal</tt> for their <tt>-state</tt> option.
+<P>
+<blockquote> <P><tt> option add *TixArrowButton.direction up<BR>
+option add *TixArrowButton.state     normal
+</tt>
+<P></blockquote>
+<P>Notice the difference in the capitalization of the class name
+  and the command name of the TixArrowButton class: both of them has
+  the individual words capitalized, but the command name (<tt>tixArrowButton</tt>)starts with a lower case letter while the class name
+  (<tt>TixArrowButton</tt>) starts with an upper case letter. When you
+  create your own classes, you should follow this naming convention.
+<P>The <tt>-superclass</tt> switch specifies the superclass of the new
+  widget. In our example, we have set it to <tt>tixPrimitive</tt>. Again,
+  pay attention to the capitalization: we should use the command name
+  of the superclass, not its class name.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

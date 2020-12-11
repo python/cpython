@@ -1,0 +1,188 @@
+'\"
+'\" $Id: tixButtonBox.n,v 1.2 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH tixButtonBox n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH NAME
+tixButtonBox \- Create and manipulate Tix ButtonBox widgets
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SYNOPSIS
+\fBtixButtonBox \fIpathName \fR?\fIoptions\fR?
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SO
+\-anchor	\-background	\-cursor
+\-relief	\-borderWidth
+'\"
+.SE
+'\"----------------------------------------------------------------------
+.SH "WIDGET-SPECIFIC OPTIONS"
+'\"
+'\"
+'\"----------BEGIN
+.OP -orientation orientation Orientation
+\fBStatic Option\fR. Specifies the orientation of the button
+subwidgets. Only the values "horizontal" and "vertical" are recognized.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-padx padx Pad
+Specifies the horizontal padding between two neighboring button
+subwidgets in the ButtonBox widget.
+'\"----------END
+
+'\"----------BEGIN
+.OP \-pady pady Pad
+Specifies the vertical padding between two neighboring button
+subwidgets in the ButtonBox widget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-state state State
+Specifies the state of all the buttons inside the ButtonBox widget.
+
+\fINote\fR:
+Setting this option using the \fIconfig\fR widget command will enable
+or disable all the buttons subwidgets. Original states of the
+individual buttons are \fInot\fR saved. Only the values "normal" and
+"disabled" are recognized.
+'\"----------END
+'\"
+'\"----------------------------------------------------------------------
+.SH SUBWIDGETS
+.PP
+'\"
+All the button subwidgets created as a result of the \fBadd\fR command
+can be accessed by the \fBsubwidget\fR command. They are identified by
+the \fBbuttonName\fR parameter to the \fBadd\fR command. Here is an
+example:
+.PP
+.CS
+set bbox [tixButtonBox .bbox]
+pack $bbox
+$bbox add eat   -text Eat
+$bbox add sleep -text Sleep
+$bbox subwidget eat   config -fg green
+$bbox subwidget sleep config -fg red
+.CE
+.BE
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH DESCRIPTION
+'\"
+.PP
+'\"
+The \fBtixButtonBox\fR command creates a new window (given by the
+\fIpathName\fR argument) and makes it into a ButtonBox
+widget. Additional options, described above, may be specified on the
+command line or in the option database to configure aspects of the
+ButtonBox such as its cursor and relief.
+'\"
+.PP
+The ButtonBox widget can be used as a container widget to hold the
+``action'' buttons in a dialog box.
+'\"
+'\"----------------------------------------------------------------------
+.SH "WIDGET COMMAND"
+.PP
+'\"
+The \fBtixButtonBox\fR command creates a new Tcl command whose name is
+the same as the path name of the ButtonBox's window. This command may
+be used to invoke various operations on the widget. It has the
+following general form:
+'\"
+.RS
+.CS
+'\"
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+.RE
+'\"
+\fIPathName\fR is the name of the command, which is the same as
+the ButtonBox widget's path name.  \fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command.  The following
+commands are possible for ButtonBox widgets:
+'\"
+.TP
+\fIpathName \fBadd \fIbuttonName \fR?\fIoption value ...\fR?
+'\"
+Add a new button subwidget with the name \fIbuttonName\fR into
+the ButtonBox widget. Additional configuration options can be given to
+configure the new button subwidget.
+'\"
+.TP
+\fIpathName \fBcget\fR \fIoption\fR
+'\"
+Returns the current value of the configuration option given by
+\fIoption\fR. \fIOption\fR may have any of the values accepted by the
+\fBtixButtonBox\fR command.
+'\"
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? \fI?value option value ...\fR?
+'\"
+Query or modify the configuration options of the widget.  If no
+\fIoption\fR is specified, returns a list describing all of the
+available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list). If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s); in
+this case the command returns an empty string. \fIOption\fR may have
+any of the values accepted by the \fBtixButtonBox\fR command.
+'\"
+'\"
+.TP
+\fIpathName \fBinvoke \fIbuttonName\fR
+'\"
+Invoke the button subwidget with the name \fIbuttonName\fR.
+'\"
+.TP
+\fIpathName \fBsubwidget \fI name ?args?\fR 
+'\"
+When no additional arguments are given, returns the pathname of the
+subwidget of the specified name.
+
+When no additional arguments are given, the widget command of the
+specified subwidget will be called with these parameters.
+'\"
+'\"----------------------------------------------------------------------
+.SH BINDINGS
+.PP
+TixButtonBox widgets have no default bindings. The button subwidgets
+retain their default Tk bindings.
+'\"
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH KEYWORDS
+Tix(n), Container Widgets
+
+
+

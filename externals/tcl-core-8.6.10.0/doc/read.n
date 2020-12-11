@@ -1,0 +1,89 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH read n 8.1 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+read \- Read from a channel
+.SH SYNOPSIS
+\fBread \fR?\fB\-nonewline\fR? \fIchannelId\fR
+.sp
+\fBread \fIchannelId numChars\fR
+.BE
+.SH DESCRIPTION
+.PP
+In the first form, the \fBread\fR command reads all of the data from
+\fIchannelId\fR up to the end of the file.  If the \fB\-nonewline\fR
+switch is specified then the last character of the file is discarded
+if it is a newline.  In the second form, the extra argument specifies
+how many characters to read.  Exactly that many characters will be
+read and returned, unless there are fewer than \fInumChars\fR left in
+the file; in this case all the remaining characters are returned.  If
+the channel is configured to use a multi-byte encoding, then the
+number of characters read may not be the same as the number of bytes
+read.
+.PP
+\fIChannelId\fR must be an identifier for an open channel such as the
+Tcl standard input channel (\fBstdin\fR), the return value from an
+invocation of \fBopen\fR or \fBsocket\fR, or the result of a channel
+creation command provided by a Tcl extension. The channel must have
+been opened for input.
+.PP
+If \fIchannelId\fR is in nonblocking mode, the command may not read as
+many characters as requested: once all available input has been read,
+the command will return the data that is available rather than
+blocking for more input.  If the channel is configured to use a
+multi-byte encoding, then there may actually be some bytes remaining
+in the internal buffers that do not form a complete character.  These
+bytes will not be returned until a complete character is available or
+end-of-file is reached.  The \fB\-nonewline\fR switch is ignored if
+the command returns before reaching the end of the file.
+.PP
+\fBRead\fR translates end-of-line sequences in the input into
+newline characters according to the \fB\-translation\fR option
+for the channel.
+See the \fBfconfigure\fR manual entry for a discussion on ways in
+which \fBfconfigure\fR will alter input.
+.SH "USE WITH SERIAL PORTS"
+'\" Note:  this advice actually applies to many versions of Tcl
+.PP
+For most applications a channel connected to a serial port should be
+configured to be nonblocking: \fBfconfigure\fI channelId \fB\-blocking
+\fI0\fR.  Then \fBread\fR behaves much like described above.  Care
+must be taken when using \fBread\fR on blocking serial ports:
+.TP
+\fBread \fIchannelId numChars\fR
+.
+In this form \fBread\fR blocks until \fInumChars\fR have been received
+from the serial port.
+.TP
+\fBread \fIchannelId\fR
+.
+In this form \fBread\fR blocks until the reception of the end-of-file
+character, see \fBfconfigure\fR \fB\-eofchar\fR. If there no end-of-file
+character has been configured for the channel, then \fBread\fR will
+block forever.
+.SH "EXAMPLE"
+.PP
+This example code reads a file all at once, and splits it into a list,
+with each line in the file corresponding to an element in the list:
+.PP
+.CS
+set fl [open /proc/meminfo]
+set data [\fBread\fR $fl]
+close $fl
+set lines [split $data \en]
+.CE
+.SH "SEE ALSO"
+file(n), eof(n), fblocked(n), fconfigure(n), Tcl_StandardChannels(3)
+.SH KEYWORDS
+blocking, channel, end of line, end of file, nonblocking, read, translation, encoding
+'\"Local Variables:
+'\"mode: nroff
+'\"End:

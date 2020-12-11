@@ -1,0 +1,177 @@
+'\"
+'\" Copyright (c) 2004 Joe English
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH ttk::intro n 8.5 Tk "Tk Themed Widget"
+.so man.macros
+.BS
+.SH NAME
+ttk::intro \- Introduction to the Tk theme engine
+.BE
+.SH "OVERVIEW"
+.PP
+The Tk themed widget set is based on a revised and enhanced version
+of TIP #48 (https://tip.tcl-lang.org/48) specified style engine.
+The main concepts are described below.
+The basic idea is to separate, to the extent possible,
+the code implementing a widget's behavior from
+the code implementing its appearance.
+Widget class bindings are primarily responsible for
+maintaining the widget state and invoking callbacks;
+all aspects of the widget's appearance are controlled by the style of
+the widget (i.e. the style of the elements of the widget).
+.SH "THEMES"
+.PP
+A \fItheme\fR is a collection of elements and styles
+that determine the look and feel of the widget set.
+Themes can be used to:
+.IP \(bu
+isolate platform differences (X11 vs. classic Windows vs. XP vs. Aqua ...)
+.IP \(bu
+adapt to display limitations (low-color, grayscale, monochrome, tiny screens)
+.IP \(bu
+accessibility (high contrast, large type)
+.IP \(bu
+application suite branding
+.IP \(bu
+blend in with the rest of the desktop (Gnome, KDE, Java)
+.IP \(bu
+and, of course: eye candy.
+.SH "ELEMENTS"
+.PP
+An \fIelement\fR displays an individual part of a widget.
+For example, a vertical scrollbar widget contains \fBuparrow\fR,
+\fBdownarrow\fR, \fBtrough\fR and \fBslider\fR elements.
+.PP
+Element names use a recursive dotted notation.
+For example, \fBuparrow\fR identifies a generic arrow element,
+and \fBScrollbar.uparrow\fR and \fBCombobox.uparrow\fR identify
+widget-specific elements.
+When looking for an element, the style engine looks for
+the specific name first, and if an element of that name is
+not found it looks for generic elements by stripping off
+successive leading components of the element name.
+.PP
+Like widgets, elements have \fIoptions\fR which
+specify what to display and how to display it.
+For example, the \fBtext\fR element
+(which displays a text string) has
+\fB\-text\fR, \fB\-font\fR, \fB\-foreground\fR, \fB\-background\fR,
+\fB\-underline\fR, and \fB\-width\fR options.
+The value of an element option is taken from:
+.IP \(bu
+an option of the same name and type in the widget containing the element;
+.IP \(bu
+a dynamic setting specified by \fBstyle map\fR and the current state;
+.IP \(bu
+the default setting specified by \fBstyle configure\fR; or
+.IP \(bu
+the element's built-in default value for the option.
+.SH "LAYOUTS"
+.PP
+A \fIlayout\fR specifies which elements make up a widget
+and how they are arranged.
+The layout engine uses a simplified version of the \fBpack\fR
+algorithm: starting with an initial cavity equal to the size
+of the widget, elements are allocated a parcel within the cavity along
+the side specified by the \fB\-side\fR option,
+and placed within the parcel according to the \fB\-sticky\fR
+option.
+For example, the layout for a horizontal scrollbar is:
+.PP
+.CS
+ttk::\fBstyle layout\fR Horizontal.TScrollbar {
+    Scrollbar.trough \-children {
+	Scrollbar.leftarrow \-side left \-sticky w
+	Scrollbar.rightarrow \-side right \-sticky e
+	Scrollbar.thumb \-side left \-expand true \-sticky ew
+    }
+}
+.CE
+.PP
+By default, the layout for a widget is the same as its class name.
+Some widgets may override this (for example, the \fBttk::scrollbar\fR
+widget chooses different layouts based on the \fB\-orient\fR option).
+.SH "STATES"
+.PP
+In standard Tk, many widgets have a \fB\-state\fR option
+which (in most cases) is either \fBnormal\fR or \fBdisabled\fR.
+Some widgets support additional states, such
+as the \fBentry\fR widget which has a \fBreadonly\fR state
+and the various flavors of buttons which have \fBactive\fR state.
+.PP
+The themed Tk widgets generalizes this idea:
+every widget has a bitmap of independent state flags.
+Widget state flags include \fBactive\fR, \fBdisabled\fR,
+\fBpressed\fR, \fBfocus\fR, etc.,
+(see \fIttk::widget(n)\fR for the full list of state flags).
+.PP
+Instead of a \fB\-state\fR option, every widget now has
+a \fBstate\fR widget command which is used to set or query
+the state.
+A \fIstate specification\fR is a list of symbolic state names
+indicating which bits are set, each optionally prefixed with an
+exclamation point indicating that the bit is cleared instead.
+.PP
+For example, the class bindings for the \fBttk::button\fR
+widget are:
+.PP
+.CS
+bind TButton <Enter>		{ %W state active }
+bind TButton <Leave>		{ %W state !active }
+bind TButton <ButtonPress-1>	{ %W state pressed }
+bind TButton <Button1-Leave>	{ %W state !pressed }
+bind TButton <Button1-Enter>	{ %W state pressed }
+bind TButton <ButtonRelease-1>	\e
+    { %W instate {pressed} { %W state !pressed ; %W invoke } }
+.CE
+.PP
+This specifies that the widget becomes \fBactive\fR when
+the pointer enters the widget, and inactive when it leaves.
+Similarly it becomes \fBpressed\fR when the mouse button is pressed,
+and \fB!pressed\fR on the ButtonRelease event.
+In addition, the button unpresses if
+pointer is dragged outside the widget while Button-1 is held down,
+and represses if it's dragged back in.
+Finally, when the mouse button is released, the widget's
+\fB\-command\fR is invoked, but only if the button is currently
+in the \fBpressed\fR state.
+(The actual bindings are a little more complicated than the above,
+but not by much).
+'\" Note to self: rewrite that paragraph.  It's horrible.
+.SH "STYLES"
+.PP
+Each widget is associated with a \fIstyle\fR,
+which specifies values for element options.
+Style names use a recursive dotted notation like layouts and elements;
+by default, widgets use the class name to look up a style in the current theme.
+For example:
+.PP
+.CS
+ttk::\fBstyle configure\fR TButton \e
+	\-background #d9d9d9 \e
+	\-foreground black \e
+	\-relief raised \e
+	;
+.CE
+.PP
+Many elements are displayed differently depending on the widget state.
+For example, buttons have a different background when they are active,
+a different foreground when disabled, and a different relief when pressed.
+The \fBstyle map\fR command specifies dynamic option settings
+for a particular style:
+.PP
+.CS
+ttk::\fBstyle map\fR TButton \e
+	\-background [list disabled #d9d9d9  active #ececec] \e
+	\-foreground [list disabled #a3a3a3] \e
+	\-relief [list {pressed !disabled} sunken] \e
+	;
+.CE
+.SH "SEE ALSO"
+ttk::widget(n), ttk::style(n)
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

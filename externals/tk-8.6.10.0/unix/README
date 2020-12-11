@@ -1,0 +1,173 @@
+Tk UNIX README
+--------------
+
+This is the directory where you configure, compile, test, and install UNIX
+versions of Tk. This directory also contains source files for Tk that are
+specific to UNIX.
+
+The information in this file is maintained at:
+	https://www.tcl-lang.org//doc/howto/compile.html
+
+For information on platforms where Tcl/Tk is known to compile, along with any
+porting notes for getting it to work on those platforms, see:
+	https://www.tcl-lang.org//software/tcltk/platforms.html
+
+The rest of this file contains instructions on how to do this. The release
+should compile and run either "out of the box" or with trivial changes on any
+UNIX-like system that approximates POSIX, BSD, or System V. We know that it
+runs on workstations from Sun, H-P, DEC, IBM, and SGI, as well as PCs running
+Linux, BSDI, and SCO UNIX. To compile for a PC running Windows, see the README
+file in the directory ../win. To compile for MacOSX, see the README file in
+the directory ../macosx.
+
+How To Compile And Install Tk:
+------------------------------
+
+(a) Make sure that the Tcl release is present in the directory
+    ../../tcl<version> (or else use the "--with-tcl" switch described below).
+    This release of Tk will only work with the equivalently versioned Tcl
+    release. Also, be sure that you have configured Tcl before you configure
+    Tk.
+
+(b) Check for patches as described in ../README.
+
+(c) If you have already compiled Tk once in this directory and are now
+    preparing to compile again in the same directory but for a different
+    platform, or if you have applied patches, type "make distclean" to discard
+    all the configuration information computed previously.
+
+(d) Type "./configure". This runs a configuration script created by GNU
+    autoconf, which configures Tk for your system and creates a Makefile. The
+    configure script allows you to customize the Tk configuration for your
+    site; for details on how you can do this, type "./configure -help" or
+    refer to the autoconf documentation (not included here). Tk's "configure"
+    script supports the following special switches in addition to the standard
+    ones:
+
+	--with-tcl=DIR		Specifies the directory containing the Tcl
+				binaries and Tcl's platform-dependent
+				configuration information. By default the Tcl
+				directory is assumed to be in the location
+				given by (a) above.
+	--with-x=DIR		Tells configure where to find an installation
+				of the X Window System. Not normally needed.
+	--enable-threads	If this switch is set, Tk will compile itself
+				with multithreading support.
+	--enable-shared		If this switch is specified, Tk will compile
+				itself as a shared library if it can figure
+				out how to do that on this platform. This is
+				the default on platforms where we know how to
+				build shared libraries.
+	--disable-shared	If this switch is specified, Tk will compile
+				itself as a static library.
+	--disable-rpath		Turns off use of the rpath link option on
+				platforms that would otherwise use it.
+	--enable-symbols	Build with debugging symbols. By default
+				standard debugging symbols are used. You can
+				specify the value "mem" to include
+				TCL_MEM_DEBUG memory debugging.
+	--disable-symbols	Build without debugging symbols
+	--enable-64bit		Enable 64bit support (where applicable)
+	--disable-64bit		Disable 64bit support (where applicable)
+	--enable-64bit-vis	Enable 64bit Sparc VIS support
+	--disable-64bit-vis	Disable 64bit Sparc VIS support
+	--disable-xft		Disable support for antialiased fonts via the
+				Freetype/xft library. By default, this is
+				switched on whenever the configure script can
+				detect the required libraries.
+	--enable-man-symlinks	Use symlinks for linking the manpages that
+				should be reachable under several names.
+	--enable-man-compression=PROG
+				Compress the manpages using PROG.
+	--enable-man-suffix=STRING
+				Add STRING to the name of each of the manual
+				pages. If specified without giving STRING, the
+				suffix will be "tk".
+
+    Mac OS X only:
+
+	--enable-framework	Package Tk as a framework.
+	--disable-corefoundation Disable use of CoreFoundation API.
+	--enable-aqua		Use Aqua windowingsystem rather than X11,
+				requires --enable-corefoundation with Tcl and
+				Tk.
+
+    Note: by default gcc will be used if it can be located on the PATH. If you
+    want to use cc instead of gcc, set the CC environment variable to "cc"
+    before running configure. It is not safe to change the Makefile to use gcc
+    after configure is run.
+
+    Note: be sure to use only absolute path names (those starting with "/") in
+    the --prefix and --exec-prefix options.
+
+(e) Type "make". This will create a library archive called "libtk<version>.a"
+    or "libtk<version>.so" and an interpreter application called "wish" that
+    allows you to type Tcl/Tk commands interactively or execute script files.
+    It will also create a stub library archive "libtkstub<version>.a" that
+    developers may link against other C code to produce loadable extensions
+    that call into Tk's public interface routines.
+
+(f) If the make fails then you'll have to personalize the Makefile for your
+    site or possibly modify the distribution in other ways. First check the
+    porting Web page above to see if there are hints for compiling on your
+    system. If you need to modify Makefile, there are comments at the
+    beginning of it that describe the things you might want to change and how
+    to change them.
+
+(g) Type "make install" to install Tk's binaries and script files in standard
+    places. You'll need write permission on the installation directories to do
+    this. The installation directories are determined by the "configure"
+    script and may be specified with the --prefix and --exec-prefix options to
+    "configure". See the Makefile for information on what directories were
+    chosen. You should not override these choices by modifying the Makefile,
+    or by copying files post-install. The installed binaries have embedded
+    within them path values relative to the install directory. If you change
+    your mind about where Tk should be installed, start this procedure over
+    again from step (a) so that the path embedded in the binaries agrees with
+    the install location.
+
+(h) At this point you can play with Tk by running the installed "wish"
+    executable, or via the "make shell" target, and typing Tcl/Tk commands at
+    the interactive prompt.
+
+If you have trouble compiling Tk, see the URL noted above about working
+platforms. It contains information that people have provided about changes
+they had to make to compile Tk in various environments. We're also interested
+in hearing how to change the configuration setup so that Tk compiles on
+additional platforms "out of the box".
+
+Note: Do not specify either of the TCL_LIBRARY and TK_LIBRARY environment
+variables in a production installation, as this can cause conflicts between
+different versions of the libraries. Instead, the libraries should have the
+correct locations of their associated script directories built into them.
+
+Test suite
+----------
+
+Tk has a substantial self-test suite, consisting of a set of scripts in the
+subdirectory "tests". To run the test suite just type "make test" in this
+directory. You should then see a printout of the test files processed. If any
+errors occur, you'll see a much more substantial printout for each error. In
+order to avoid false error reports, be sure to run the tests with an empty
+resource database (e.g., remove your .Xdefaults file or delete any entries
+starting with *). Also, don't try to do anything else with your display or
+keyboard while the tests are running, or you may get false violations. See the
+README file in the "tests" directory for more information on the test suite.
+
+If the test suite generates errors, most likely they are due to non-portable
+tests that are interacting badly with your system configuration. We are
+gradually eliminating the non-portable tests, but this release includes many
+new tests so there will probably be some portability problems. As long as the
+test suite doesn't core dump, it's probably safe to conclude that any errors
+represent portability problems in the test suite and not fundamental flaws
+with Tk.
+
+There are also a number of visual tests for things such as screen layout,
+Postscript generation, etc. These tests all have to be run by manually
+enabling the "userInteraction" constraint when testing, and the results have
+to be verified visually. This can be done with:
+
+    make test TESTFLAGS="-constraints userInteraction"
+
+Some tests will present a main window with a bunch of menus, which you can use
+to select various tests.

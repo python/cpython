@@ -1,0 +1,164 @@
+'\"
+'\" Copyright (c) 1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2001 Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH subst n 7.4 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+subst \- Perform backslash, command, and variable substitutions
+.SH SYNOPSIS
+\fBsubst \fR?\fB\-nobackslashes\fR? ?\fB\-nocommands\fR? ?\fB\-novariables\fR? \fIstring\fR
+.BE
+.SH DESCRIPTION
+.PP
+This command performs variable substitutions, command substitutions,
+and backslash substitutions on its \fIstring\fR argument and
+returns the fully-substituted result.
+The substitutions are performed in exactly the same way as for
+Tcl commands.
+As a result, the \fIstring\fR argument is actually substituted twice,
+once by the Tcl parser in the usual fashion for Tcl commands, and
+again by the \fIsubst\fR command.
+.PP
+If any of the \fB\-nobackslashes\fR, \fB\-nocommands\fR, or
+\fB\-novariables\fR are specified, then the corresponding substitutions
+are not performed.
+For example, if \fB\-nocommands\fR is specified, command substitution
+is not performed:  open and close brackets are treated as ordinary characters
+with no special interpretation.
+.PP
+Note that the substitution of one kind can include substitution of
+other kinds.  For example, even when the \fB\-novariables\fR option
+is specified, command substitution is performed without restriction.
+This means that any variable substitution necessary to complete the
+command substitution will still take place.  Likewise, any command
+substitution necessary to complete a variable substitution will
+take place, even when \fB\-nocommands\fR is specified.  See the
+\fBEXAMPLES\fR below.
+.PP
+If an error occurs during substitution, then \fBsubst\fR will return
+that error.  If a break exception occurs during command or variable
+substitution, the result of the whole substitution will be the
+string (as substituted) up to the start of the substitution that
+raised the exception.  If a continue exception occurs during the
+evaluation of a command or variable substitution, an empty string
+will be substituted for that entire command or variable substitution
+(as long as it is well-formed Tcl.)  If a return exception occurs,
+or any other return code is returned during command or variable
+substitution, then the returned value is substituted for that
+substitution.  See the \fBEXAMPLES\fR below.  In this way, all exceptional
+return codes are
+.QW caught
+by \fBsubst\fR.  The \fBsubst\fR command
+itself will either return an error, or will complete successfully.
+.SH EXAMPLES
+.PP
+When it performs its substitutions, \fIsubst\fR does not give any
+special treatment to double quotes or curly braces (except within
+command substitutions) so the script
+.PP
+.CS
+set a 44
+\fBsubst\fR {xyz {$a}}
+.CE
+.PP
+returns
+.QW "\fBxyz {44}\fR" ,
+not
+.QW "\fBxyz {$a}\fR"
+and the script
+.PP
+.CS
+set a "p\e} q \e{r"
+\fBsubst\fR {xyz {$a}}
+.CE
+.PP
+returns
+.QW "\fBxyz {p} q {r}\fR" ,
+not
+.QW "\fBxyz {p\e} q \e{r}\fR".
+.PP
+When command substitution is performed, it includes any variable
+substitution necessary to evaluate the script.
+.PP
+.CS
+set a 44
+\fBsubst\fR -novariables {$a [format $a]}
+.CE
+.PP
+returns
+.QW "\fB$a 44\fR" ,
+not
+.QW "\fB$a $a\fR" .
+Similarly, when
+variable substitution is performed, it includes any command
+substitution necessary to retrieve the value of the variable.
+.PP
+.CS
+proc b {} {return c}
+array set a {c c [b] tricky}
+\fBsubst\fR -nocommands {[b] $a([b])}
+.CE
+.PP
+returns
+.QW "\fB[b] c\fR" ,
+not
+.QW "\fB[b] tricky\fR" .
+.PP
+The continue and break exceptions allow command substitutions to
+prevent substitution of the rest of the command substitution and the
+rest of \fIstring\fR respectively, giving script authors more options
+when processing text using \fIsubst\fR.  For example, the script
+.PP
+.CS
+\fBsubst\fR {abc,[break],def}
+.CE
+.PP
+returns
+.QW \fBabc,\fR ,
+not
+.QW \fBabc,,def\fR
+and the script
+.PP
+.CS
+\fBsubst\fR {abc,[continue;expr {1+2}],def}
+.CE
+.PP
+returns
+.QW \fBabc,,def\fR ,
+not
+.QW \fBabc,3,def\fR .
+.PP
+Other exceptional return codes substitute the returned value
+.PP
+.CS
+\fBsubst\fR {abc,[return foo;expr {1+2}],def}
+.CE
+.PP
+returns
+.QW \fBabc,foo,def\fR ,
+not
+.QW \fBabc,3,def\fR
+and
+.PP
+.CS
+\fBsubst\fR {abc,[return -code 10 foo;expr {1+2}],def}
+.CE
+.PP
+also returns
+.QW \fBabc,foo,def\fR ,
+not
+.QW \fBabc,3,def\fR .
+.SH "SEE ALSO"
+Tcl(n), eval(n), break(n), continue(n)
+.SH KEYWORDS
+backslash substitution, command substitution, quoting, substitution, variable substitution
+.\" Local Variables:
+.\" mode: nroff
+.\" End:

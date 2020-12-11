@@ -1,0 +1,77 @@
+'\"
+'\" Copyright (c) 1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_GetColormap 3 4.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_GetColormap, Tk_PreserveColormap, Tk_FreeColormap \- allocate and free colormaps
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Colormap
+\fBTk_GetColormap(\fIinterp, tkwin, string\fB)\fR
+.sp
+\fBTk_PreserveColormap(\fIdisplay, colormap\fB)\fR
+.sp
+\fBTk_FreeColormap(\fIdisplay, colormap\fB)\fR
+.SH ARGUMENTS
+.AS "Colormap" colormap
+.AP Tcl_Interp *interp in
+Interpreter to use for error reporting.
+.AP Tk_Window tkwin in
+Token for window in which colormap will be used.
+.AP "const char" *string in
+Selects a colormap:  either \fBnew\fR or the name of a window
+with the same screen and visual as \fItkwin\fR.
+.AP Display *display in
+Display for which \fIcolormap\fR was allocated.
+.AP Colormap colormap in
+Colormap to free or preserve;  must have been returned by a previous
+call to \fBTk_GetColormap\fR or \fBTk_GetVisual\fR.
+.BE
+.SH DESCRIPTION
+.PP
+These procedures are used to manage colormaps.
+\fBTk_GetColormap\fR returns a colormap suitable for use in \fItkwin\fR.
+If its \fIstring\fR argument is \fBnew\fR then a new colormap is
+created;  otherwise \fIstring\fR must be the name of another window
+with the same screen and visual as \fItkwin\fR, and the colormap from that
+window is returned.
+If \fIstring\fR does not make sense, or if it refers to a window on
+a different screen from \fItkwin\fR or with
+a different visual than \fItkwin\fR, then \fBTk_GetColormap\fR returns
+\fBNone\fR and leaves an error message in \fIinterp\fR's result.
+.PP
+\fBTk_PreserveColormap\fR increases the internal reference count for a
+colormap previously returned by \fBTk_GetColormap\fR, which allows the
+colormap to be stored in several locations without knowing which order
+they will be released.
+.PP
+\fBTk_FreeColormap\fR should be called when a colormap returned by
+\fBTk_GetColormap\fR is no longer needed.
+Tk maintains a reference count for each colormap returned by
+\fBTk_GetColormap\fR, so there should eventually be one call to
+\fBTk_FreeColormap\fR for each call to \fBTk_GetColormap\fR and each
+call to \fBTk_PreserveColormap\fR.
+When a colormap's reference count becomes zero, Tk releases the
+X colormap.
+.PP
+\fBTk_GetVisual\fR and \fBTk_GetColormap\fR work together, in that
+a new colormap created by \fBTk_GetVisual\fR may later be returned
+by \fBTk_GetColormap\fR.
+The reference counting mechanism for colormaps includes both procedures,
+so callers of \fBTk_GetVisual\fR must also call \fBTk_FreeColormap\fR
+to release the colormap.
+If \fBTk_GetColormap\fR is called with a \fIstring\fR value of
+\fBnew\fR then the resulting colormap will never
+be returned by \fBTk_GetVisual\fR;  however, it can be used in other
+windows by calling \fBTk_GetColormap\fR with the original window's
+name as \fIstring\fR.
+.SH KEYWORDS
+colormap, visual

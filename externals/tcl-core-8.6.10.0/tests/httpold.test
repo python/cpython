@@ -1,0 +1,300 @@
+# Commands covered:  http_config, http_get, http_wait, http_reset
+#
+# This file contains a collection of tests for the http script library.
+# Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+if {[catch {package require http 1.0}]} {
+    if {[info exists httpold]} {
+	catch {puts "Cannot load http 1.0 package"}
+	::tcltest::cleanupTests
+	return
+    } else {
+	catch {puts "Running http 1.0 tests in slave interp"}
+	set interp [interp create httpold]
+	$interp eval [list set httpold "running"]
+	$interp eval [list set argv $argv]
+	$interp eval [list source [info script]]
+	interp delete $interp
+	::tcltest::cleanupTests
+	return
+    }
+}
+
+if {$::tcl_platform(os) eq "Darwin"} {
+    # Name resolution often a problem on OSX; not focus of HTTP package anyway
+    set HOST localhost
+} else {
+    set HOST [info hostname]
+}
+
+set bindata "This is binary data\x0d\x0amore\x0dmore\x0amore\x00null"
+catch {unset data}
+
+##
+## The httpd script implement a stub http server
+##
+source [file join [file dirname [info script]] httpd]
+
+set port 8010
+if [catch {httpd_init $port} listen] {
+    puts "Cannot start http server, http test skipped"
+    unset port
+    ::tcltest::cleanupTests
+    return
+}
+
+test httpold-1.1 {http_config} {
+    http_config
+} {-accept */* -proxyfilter httpProxyRequired -proxyhost {} -proxyport {} -useragent {Tcl http client package 1.0}}
+
+test httpold-1.2 {http_config} {
+    http_config -proxyfilter
+} httpProxyRequired
+
+test httpold-1.3 {http_config} {
+    catch {http_config -junk}
+} 1
+
+test httpold-1.4 {http_config} {
+    http_config -proxyhost nowhere.come -proxyport 8080 -proxyfilter myFilter -useragent "Tcl Test Suite"
+    set x [http_config]
+    http_config -proxyhost {} -proxyport {} -proxyfilter httpProxyRequired \
+	-useragent "Tcl http client package 1.0"
+    set x
+} {-accept */* -proxyfilter myFilter -proxyhost nowhere.come -proxyport 8080 -useragent {Tcl Test Suite}}
+
+test httpold-1.5 {http_config} {
+    catch {http_config -proxyhost {} -junk 8080}
+} 1
+
+test httpold-2.1 {http_reset} {
+    catch {http_reset http#1}
+} 0
+
+test httpold-3.1 {http_get} {
+    catch {http_get -bogus flag}
+} 1
+test httpold-3.2 {http_get} {
+    catch {http_get http:junk} err
+    set err
+} {Unsupported URL: http:junk}
+
+set url ${::HOST}:$port
+test httpold-3.3 {http_get} {
+    set token [http_get $url]
+    http_data $token
+} "<html><head><title>HTTP/1.0 TEST</title></head><body>
+<h1>Hello, World!</h1>
+<h2>GET /</h2>
+</body></html>"
+
+set tail /a/b/c
+set url ${::HOST}:$port/a/b/c
+set binurl ${::HOST}:$port/binary
+
+test httpold-3.4 {http_get} {
+    set token [http_get $url]
+    http_data $token
+} "<html><head><title>HTTP/1.0 TEST</title></head><body>
+<h1>Hello, World!</h1>
+<h2>GET $tail</h2>
+</body></html>"
+
+proc selfproxy {host} {
+    global port
+    return [list ${::HOST} $port]
+}
+test httpold-3.5 {http_get} {
+    http_config -proxyfilter selfproxy
+    set token [http_get $url]
+    http_config -proxyfilter httpProxyRequired
+    http_data $token
+} "<html><head><title>HTTP/1.0 TEST</title></head><body>
+<h1>Hello, World!</h1>
+<h2>GET http://$url</h2>
+</body></html>"
+
+test httpold-3.6 {http_get} {
+    http_config -proxyfilter bogus
+    set token [http_get $url]
+    http_config -proxyfilter httpProxyRequired
+    http_data $token
+} "<html><head><title>HTTP/1.0 TEST</title></head><body>
+<h1>Hello, World!</h1>
+<h2>GET $tail</h2>
+</body></html>"
+
+test httpold-3.7 {http_get} {
+    set token [http_get $url -headers {Pragma no-cache}]
+    http_data $token
+} "<html><head><title>HTTP/1.0 TEST</title></head><body>
+<h1>Hello, World!</h1>
+<h2>GET $tail</h2>
+</body></html>"
+
+test httpold-3.8 {http_get} {
+    set token [http_get $url -query Name=Value&Foo=Bar]
+    http_data $token
+} "<html><head><title>HTTP/1.0 TEST</title></head><body>
+<h1>Hello, World!</h1>
+<h2>POST $tail</h2>
+<h2>Query</h2>
+<dl>
+<dt>Name<dd>Value
+<dt>Foo<dd>Bar
+</dl>
+</body></html>"
+
+test httpold-3.9 {http_get} {
+    set token [http_get $url -validate 1]
+    http_code $token
+} "HTTP/1.0 200 OK"
+
+
+test httpold-4.1 {httpEvent} {
+    set token [http_get $url]
+    upvar #0 $token data
+    array set meta $data(meta)
+    expr ($data(totalsize) == $meta(Content-Length))
+} 1
+
+test httpold-4.2 {httpEvent} {
+    set token [http_get $url]
+    upvar #0 $token data
+    array set meta $data(meta)
+    string compare $data(type) [string trim $meta(Content-Type)]
+} 0
+
+test httpold-4.3 {httpEvent} {
+    set token [http_get $url]
+    http_code $token
+} {HTTP/1.0 200 Data follows}
+
+test httpold-4.4 {httpEvent} {
+    set testfile [makeFile "" testfile]
+    set out [open $testfile w]
+    set token [http_get $url -channel $out]
+    close $out
+    set in [open $testfile]
+    set x [read $in]
+    close $in
+    removeFile $testfile
+    set x
+} "<html><head><title>HTTP/1.0 TEST</title></head><body>
+<h1>Hello, World!</h1>
+<h2>GET $tail</h2>
+</body></html>"
+
+test httpold-4.5 {httpEvent} {
+    set testfile [makeFile "" testfile]
+    set out [open $testfile w]
+    set token [http_get $url -channel $out]
+    close $out
+    upvar #0 $token data
+    removeFile $testfile
+    expr $data(currentsize) == $data(totalsize)
+} 1
+
+test httpold-4.6 {httpEvent} {
+    set testfile [makeFile "" testfile]
+    set out [open $testfile w]
+    set token [http_get $binurl -channel $out]
+    close $out
+    set in [open $testfile]
+    fconfigure $in -translation binary
+    set x [read $in]
+    close $in
+    removeFile $testfile
+    set x
+} "$bindata$binurl"
+
+proc myProgress {token total current} {
+    global progress httpLog
+    if {[info exists httpLog] && $httpLog} {
+	puts "progress $total $current"
+    }
+    set progress [list $total $current]
+}
+if 0 {
+    # This test hangs on Windows95 because the client never gets EOF
+    set httpLog 1
+    test httpold-4.6 {httpEvent} {
+	set token [http_get $url -blocksize 50 -progress myProgress]
+	set progress
+    } {111 111}
+}
+test httpold-4.7 {httpEvent} {
+    set token [http_get $url -progress myProgress]
+    set progress
+} {111 111}
+test httpold-4.8 {httpEvent} {
+    set token [http_get $url]
+    http_status $token
+} {ok}
+test httpold-4.9 {httpEvent} {
+    set token [http_get $url -progress myProgress]
+    http_code $token
+} {HTTP/1.0 200 Data follows}
+test httpold-4.10 {httpEvent} {
+    set token [http_get $url -progress myProgress]
+    http_size $token
+} {111}
+test httpold-4.11 {httpEvent} {
+    set token [http_get $url -timeout 1 -command {#}]
+    http_reset $token
+    http_status $token
+} {reset}
+test httpold-4.12 {httpEvent} {
+    update
+    set x {}
+    after 500 {lappend x ok}
+    set token [http_get $url -timeout 1 -command {lappend x fail}]
+    vwait x
+    list [http_status $token] $x
+} {timeout ok}
+
+test httpold-5.1 {http_formatQuery} {
+    http_formatQuery name1 value1 name2 "value two"
+} {name1=value1&name2=value+two}
+
+test httpold-5.2 {http_formatQuery} {
+    http_formatQuery name1 ~bwelch name2 \xa1\xa2\xa2
+} {name1=%7ebwelch&name2=%a1%a2%a2}
+
+test httpold-5.3 {http_formatQuery} {
+    http_formatQuery lines "line1\nline2\nline3"
+} {lines=line1%0d%0aline2%0d%0aline3}
+
+test httpold-6.1 {httpProxyRequired} {
+    update
+    http_config -proxyhost ${::HOST} -proxyport $port
+    set token [http_get $url]
+    http_wait $token
+    http_config -proxyhost {} -proxyport {}
+    upvar #0 $token data
+    set data(body)
+} "<html><head><title>HTTP/1.0 TEST</title></head><body>
+<h1>Hello, World!</h1>
+<h2>GET http://$url</h2>
+</body></html>"
+
+# cleanup
+catch {unset url}
+catch {unset port}
+catch {unset data}
+close $listen
+::tcltest::cleanupTests
+return

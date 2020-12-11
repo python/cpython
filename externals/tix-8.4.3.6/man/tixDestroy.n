@@ -1,0 +1,37 @@
+'\"
+'\" $Id: tixDestroy.n,v 1.1 2001/01/22 00:37:59 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+.TH tixDestroy n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+.SH NAME
+tixDestroy \- Destroy Tix Objects
+'\"
+.SH SYNOPSIS
+\fBtixDestroy\fR \fIobjectName\fR
+'\"
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBtixDestroy\fR destroys a Tix object whose class is declared by
+the \fBtixClass\fR keyword. When the object is destroyed, its
+\fBDestructor\fR function is called and the memory allocated for this
+object is freed.
+'\"
+.SH KEYWORDS
+Tix, Object
+

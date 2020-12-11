@@ -1,0 +1,32 @@
+<HEAD>
+<TITLE> Setting the Order of the Panes<A NAME=223>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html689 HREF=subsubsection3_4_2_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html687 HREF=subsection3_4_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html681 HREF=subsubsection3_4_2_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html691 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html690 HREF=subsubsection3_4_2_4.html> Changing the Sizes </A>
+<B>Up:</B> <A NAME=tex2html688 HREF=subsection3_4_2.html> PanedWindow</A>
+<B> Previous:</B> <A NAME=tex2html682 HREF=subsubsection3_4_2_2.html> Putting Widgets Inside </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00042300000000000000> Setting the Order of the Panes<A NAME=223>&nbsp;</A></A></H3>
+<P>
+Usually, when you create a new pane, it is always added to the
+  bottom or right of the list of panes. If you want to control the
+  order in which the panes appear inside the TixPanedWindow widget,
+  you can use the two optional parameters, <tt>-before</tt> and <tt>-after</tt>, for the <tt>add</tt> method.  For example, the call:
+<P><blockquote> <P><tt> .p add pane2 -after pane1
+</tt>
+<P></blockquote>
+ will place the new pane immediately after <tt>pane1</tt>. The call:
+<blockquote> <P><tt> .p add pane2 -before pane1
+</tt>
+<P></blockquote>
+will place the new pane immediately in front of <tt>pane1</tt>.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

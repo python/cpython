@@ -1,0 +1,208 @@
+'\"
+'\" Copyright (c) 1998 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH regexp n 8.3 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+regexp \- Match a regular expression against a string
+.SH SYNOPSIS
+\fBregexp \fR?\fIswitches\fR? \fIexp string \fR?\fImatchVar\fR? ?\fIsubMatchVar subMatchVar ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+Determines whether the regular expression \fIexp\fR matches part or
+all of \fIstring\fR and returns 1 if it does, 0 if it does not, unless
+\fB\-inline\fR is specified (see below).
+(Regular expression matching is described in the \fBre_syntax\fR
+reference page.)
+.PP
+If additional arguments are specified after \fIstring\fR then they
+are treated as the names of variables in which to return
+information about which part(s) of \fIstring\fR matched \fIexp\fR.
+\fIMatchVar\fR will be set to the range of \fIstring\fR that
+matched all of \fIexp\fR.  The first \fIsubMatchVar\fR will contain
+the characters in \fIstring\fR that matched the leftmost parenthesized
+subexpression within \fIexp\fR, the next \fIsubMatchVar\fR will
+contain the characters that matched the next parenthesized
+subexpression to the right in \fIexp\fR, and so on.
+.PP
+If the initial arguments to \fBregexp\fR start with \fB\-\fR then
+they are treated as switches.  The following switches are
+currently supported:
+.TP 15
+\fB\-about\fR
+.
+Instead of attempting to match the regular expression, returns a list
+containing information about the regular expression.  The first
+element of the list is a subexpression count.  The second element is a
+list of property names that describe various attributes of the regular
+expression. This switch is primarily intended for debugging purposes.
+.TP 15
+\fB\-expanded\fR
+.
+Enables use of the expanded regular expression syntax where
+whitespace and comments are ignored.  This is the same as specifying
+the \fB(?x)\fR embedded option (see the \fBre_syntax\fR manual page).
+.TP 15
+\fB\-indices\fR
+.
+Changes what is stored in the \fImatchVar\fR and \fIsubMatchVar\fRs.
+Instead of storing the matching characters from \fIstring\fR,
+each variable
+will contain a list of two decimal strings giving the indices
+in \fIstring\fR of the first and last characters in the matching
+range of characters.
+.TP 15
+\fB\-line\fR
+.
+Enables newline-sensitive matching.  By default, newline is a
+completely ordinary character with no special meaning.  With this
+flag,
+.QW [^
+bracket expressions and
+.QW .
+never match newline,
+.QW ^
+matches an empty string after any newline in addition to its normal
+function, and
+.QW $
+matches an empty string before any newline in
+addition to its normal function.  This flag is equivalent to
+specifying both \fB\-linestop\fR and \fB\-lineanchor\fR, or the
+\fB(?n)\fR embedded option (see the \fBre_syntax\fR manual page).
+.TP 15
+\fB\-linestop\fR
+.
+Changes the behavior of
+.QW [^
+bracket expressions and
+.QW .
+so that they
+stop at newlines.  This is the same as specifying the \fB(?p)\fR
+embedded option (see the \fBre_syntax\fR manual page).
+.TP 15
+\fB\-lineanchor\fR
+.
+Changes the behavior of
+.QW ^
+and
+.QW $
+(the
+.QW anchors )
+so they match the
+beginning and end of a line respectively.  This is the same as
+specifying the \fB(?w)\fR embedded option (see the \fBre_syntax\fR
+manual page).
+.TP 15
+\fB\-nocase\fR
+.
+Causes upper-case characters in \fIstring\fR to be treated as
+lower case during the matching process.
+.TP 15
+\fB\-all\fR
+.
+Causes the regular expression to be matched as many times as possible
+in the string, returning the total number of matches found.  If this
+is specified with match variables, they will contain information for
+the last match only.
+.TP 15
+\fB\-inline\fR
+.
+Causes the command to return, as a list, the data that would otherwise
+be placed in match variables.  When using \fB\-inline\fR,
+match variables may not be specified.  If used with \fB\-all\fR, the
+list will be concatenated at each iteration, such that a flat list is
+always returned.  For each match iteration, the command will append the
+overall match data, plus one element for each subexpression in the
+regular expression.  Examples are:
+.RS
+.PP
+.CS
+\fBregexp\fR -inline -- {\ew(\ew)} " inlined "
+      \fI\(-> in n\fR
+\fBregexp\fR -all -inline -- {\ew(\ew)} " inlined "
+      \fI\(-> in n li i ne e\fR
+.CE
+.RE
+.TP 15
+\fB\-start\fR \fIindex\fR
+.
+Specifies a character index offset into the string to start
+matching the regular expression at.
+The \fIindex\fR value is interpreted in the same manner
+as the \fIindex\fR argument to \fBstring index\fR.
+When using this switch,
+.QW ^
+will not match the beginning of the line, and \eA will still
+match the start of the string at \fIindex\fR.  If \fB\-indices\fR
+is specified, the indices will be indexed starting from the
+absolute beginning of the input string.
+\fIindex\fR will be constrained to the bounds of the input string.
+.TP 15
+\fB\-\|\-\fR
+.
+Marks the end of switches.  The argument following this one will
+be treated as \fIexp\fR even if it starts with a \fB\-\fR.
+.PP
+If there are more \fIsubMatchVar\fRs than parenthesized
+subexpressions within \fIexp\fR, or if a particular subexpression
+in \fIexp\fR does not match the string (e.g. because it was in a
+portion of the expression that was not matched), then the corresponding
+\fIsubMatchVar\fR will be set to
+.QW "\fB\-1 \-1\fR"
+if \fB\-indices\fR has been specified or to an empty string otherwise.
+.SH EXAMPLES
+.PP
+Find the first occurrence of a word starting with \fBfoo\fR in a
+string that is not actually an instance of \fBfoobar\fR, and get the
+letters following it up to the end of the word into a variable:
+.PP
+.CS
+\fBregexp\fR {\emfoo(?!bar\eM)(\ew*)} $string \-> restOfWord
+.CE
+.PP
+Note that the whole matched substring has been placed in the variable
+.QW \fB\->\fR ,
+which is a name chosen to look nice given that we are not
+actually interested in its contents.
+.PP
+Find the index of the word \fBbadger\fR (in any case) within a string
+and store that in the variable \fBlocation\fR:
+.PP
+.CS
+\fBregexp\fR \-indices {(?i)\embadger\eM} $string location
+.CE
+.PP
+This could also be written as a \fIbasic\fR regular expression (as opposed
+to using the default syntax of \fIadvanced\fR regular expressions) match by
+prefixing the expression with a suitable flag:
+.PP
+.CS
+\fBregexp\fR \-indices {(?ib)\e<badger\e>} $string location
+.CE
+.PP
+This counts the number of octal digits in a string:
+.PP
+.CS
+\fBregexp\fR \-all {[0\-7]} $string
+.CE
+.PP
+This lists all words (consisting of all sequences of non-whitespace
+characters) in a string, and is useful as a more powerful version of the
+\fBsplit\fR command:
+.PP
+.CS
+\fBregexp\fR \-all \-inline {\eS+} $string
+.CE
+.SH "SEE ALSO"
+re_syntax(n), regsub(n), string(n)
+.SH KEYWORDS
+match, parsing, pattern, regular expression, splitting, string
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

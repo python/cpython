@@ -1,0 +1,76 @@
+$Id: INSTALL-2.0.txt,v 1.4 2000/11/23 02:32:30 idiscovery Exp $
+
+Installing PyTix
+----------------
+
+0) To use PyTix, you need Tcl/Tk (V8.[012]), Tix (V8.1) and Python (V2.0).
+   PyTix has been written and tested on a Intel Pentium running RH Linux 5.2
+   with the above mentioned packages.
+
+   There is nothing OS-specific in PyTix itself so it should work on
+   any machine with Tix and Python installed.
+
+1) Build and install Tcl/Tk 8.0 8.1 or 8.2 and Tix 8.1.
+   Ensure that Tix is properly installed by running tixwish and executing
+   the demo programs. Under Unix use the --enable-shared configure option
+   for all three. We recommend tcl tcl8.2.3 for this release of PyTix.
+
+   Note that Tix 8.1 does not compile with Tcl 8.3 under Windows out of the
+   box although it seems to compile and run OK. You might want to use
+   Tcl 8.2 instead. 
+
+2) Modify _tkinter.c in the Modules directory of the Python distribution.
+   The modified _tkinter.c is supplied in the 2.0 subdirectory.
+   Modify tkappinit.c in the Modules directory of the Python distribution.
+   The modified tkappinit.c is supplied in the 2.0 subdirectory.
+   These modified files can be used for Tkinter with or without Tix.
+   
+3) Modify the Modules/Setup file to link in the Tix library according
+   to the comments in the file. On Linux this looks like
+
+# *** Always uncomment this (leave the leading underscore in!):
+ _tkinter _tkinter.c tkappinit.c -DWITH_APPINIT \
+# *** Uncomment and edit to reflect where your Tcl/Tk headers are:
+	-I/usr/local/src/tcl8.2.3/generic -I/usr/local/src/tk8.2.3/generic \
+# *** Uncomment and edit to reflect where your X11 header files are:
+	-I/usr/X11R6/include \
+# *** Or uncomment this for Solaris:
+#	-I/usr/openwin/include \
+# *** Uncomment and edit for Tix extension only:
+	-DWITH_TIX -I/usr/local/src/tix-8.1.1/generic -L/usr/local/src/tix-8.1.1/unix/tk8.2 -ltix8.1.8.2 \
+# *** Uncomment and edit for BLT extension only:
+#	-DWITH_BLT -I/usr/local/blt/blt8.0-unoff/include -lBLT8.0 \
+# *** Uncomment and edit for PIL (TkImaging) extension only:
+#	-DWITH_PIL -I../Extensions/Imaging/libImaging  tkImaging.c \
+# *** Uncomment and edit for TOGL extension only:
+#	-DWITH_TOGL togl.c \
+# *** Uncomment and edit to reflect where your Tcl/Tk libraries are:
+	-L/usr/local/src/tcl8.2.3/unix 	-L/usr/local/src/tk8.2.3/unix \
+# *** Uncomment and edit to reflect your Tcl/Tk versions:
+	-ltk8.2 -ltcl8.2 \
+# *** Uncomment and edit to reflect where your X11 libraries are:
+	-L/usr/X11R6/lib \
+# *** Or uncomment this for Solaris:
+#	-L/usr/openwin/lib \
+# *** Uncomment these for TOGL extension only:
+#	-lGL -lGLU -lXext -lXmu \
+# *** Uncomment for AIX:
+#	-lld \
+# *** Always uncomment this; X11 libraries to link with:
+	-lX11
+
+4) Modify Tkinter.py in the Lib/lib-tk directory of the Python distribution.
+   The modified Tkinter.py is supplied in the 2.0 subdirectory.
+   This modified file can be used for Tkinter with or without Tix.
+
+5) Copy Tix.py to the Lib/lib-tk directory of the Python distribution.
+
+6) Rebuild Python and reinstall.
+
+You should now have a working Tix implementation in Python. To see if all
+is as it should be, run the 'tixwidgets.py' script in the demos directory.
+
+If you find any bugs or have suggestions for improvement, please report them
+via http://tix.sourceforge.net
+
+

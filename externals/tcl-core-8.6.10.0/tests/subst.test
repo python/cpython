@@ -1,0 +1,311 @@
+# Commands covered:  subst
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1994 The Regents of the University of California.
+# Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-2000 Ajuba Solutions.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2.1
+    namespace import -force ::tcltest::*
+}
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testbytestring [llength [info commands testbytestring]]
+
+test subst-1.1 {basics} -returnCodes error -body {
+    subst
+} -result {wrong # args: should be "subst ?-nobackslashes? ?-nocommands? ?-novariables? string"}
+test subst-1.2 {basics} -returnCodes error -body {
+    subst a b c
+} -result {bad option "a": must be -nobackslashes, -nocommands, or -novariables}
+
+test subst-2.1 {simple strings} {
+    subst {}
+} {}
+test subst-2.2 {simple strings} {
+    subst a
+} a
+test subst-2.3 {simple strings} {
+    subst abcdefg
+} abcdefg
+test subst-2.4 {simple strings} testbytestring {
+    # Tcl Bug 685106
+    expr {[subst [testbytestring bar\x00soom]] eq [testbytestring bar\x00soom]}
+} 1
+
+test subst-3.1 {backslash substitutions} {
+    subst {\x\$x\[foo bar]\\}
+} "x\$x\[foo bar]\\"
+test subst-3.2 {backslash substitutions with utf chars} {
+    # 'j' is just a char that doesn't mean anything, and \344 is 'ä'
+    # that also doesn't mean anything, but is multi-byte in UTF-8.
+    list [subst \j] [subst \\j] [subst \\344] [subst \\\344]
+} "j j \344 \344"
+
+test subst-4.1 {variable substitutions} {
+    set a 44
+    subst {$a}
+} {44}
+test subst-4.2 {variable substitutions} {
+    set a 44
+    subst {x$a.y{$a}.z}
+} {x44.y{44}.z}
+test subst-4.3 {variable substitutions} -setup {
+    catch {unset a}
+} -body {
+    set a(13) 82
+    set i 13
+    subst {x.$a($i)}
+} -result {x.82}
+catch {unset a}
+set long {This is a very long string, intentionally made so long that it
+	will overflow the static character size for dstrings, so that
+	additional memory will have to be allocated by subst.  That way,
+	if the subst procedure forgets to free up memory while returning
+	an error, there will be memory that isn't freed (this will be
+	detected when the tests are run under a checking memory allocator
+	such as Purify).}
+test subst-4.4 {variable substitutions} -returnCodes error -body {
+    subst {$long $a}
+} -result {can't read "a": no such variable}
+
+test subst-5.1 {command substitutions} {
+    subst {[concat {}]}
+} {}
+test subst-5.2 {command substitutions} {
+    subst {[concat A test string]}
+} {A test string}
+test subst-5.3 {command substitutions} {
+    subst {x.[concat foo].y.[concat bar].z}
+} {x.foo.y.bar.z}
+test subst-5.4 {command substitutions} {
+    list [catch {subst {$long [set long] [bogus_command]}} msg] $msg
+} {1 {invalid command name "bogus_command"}}
+test subst-5.5 {command substitutions} {
+    set a 0
+    list [catch {subst {[set a 1}} msg] $a $msg 
+} {1 0 {missing close-bracket}}
+test subst-5.6 {command substitutions} {
+    set a 0
+    list [catch {subst {0[set a 1}} msg] $a $msg 
+} {1 0 {missing close-bracket}}
+test subst-5.7 {command substitutions} {
+    set a 0
+    list [catch {subst {0[set a 1; set a 2}} msg] $a $msg 
+} {1 1 {missing close-bracket}}
+
+# repeat the tests above simulating cmd line input
+test subst-5.8 {command substitutions} {
+    set script {[subst {[set a 1}]}
+    list [catch {exec [info nameofexecutable] << $script} msg] $msg 
+} {1 {missing close-bracket}}
+test subst-5.9 {command substitutions} {
+    set script {[subst {0[set a 1}]}
+    list [catch {exec [info nameofexecutable] << $script} msg] $msg 
+} {1 {missing close-bracket}}
+test subst-5.10 {command substitutions} {
+    set script {[subst {0[set a 1; set a 2}]}
+    list [catch {exec [info nameofexecutable] << $script} msg] $msg 
+} {1 {missing close-bracket}}
+
+test subst-6.1 {clear the result after command substitution} -body {
+    catch {unset a}
+    subst {[concat foo] $a}
+} -returnCodes error -result {can't read "a": no such variable}
+
+test subst-7.1 {switches} -returnCodes error -body {
+    subst foo bar
+} -result {bad option "foo": must be -nobackslashes, -nocommands, or -novariables}
+test subst-7.2 {switches} -returnCodes error -body {
+    subst -no bar
+} -result {ambiguous option "-no": must be -nobackslashes, -nocommands, or -novariables}
+test subst-7.3 {switches} -returnCodes error -body {
+    subst -bogus bar
+} -result {bad option "-bogus": must be -nobackslashes, -nocommands, or -novariables}
+test subst-7.4 {switches} {
+    set x 123
+    subst -nobackslashes {abc $x [expr 1+2] \\\x41}
+} {abc 123 3 \\\x41}
+test subst-7.5 {switches} {
+    set x 123
+    subst -nocommands {abc $x [expr 1+2] \\\x41}
+} {abc 123 [expr 1+2] \A}
+test subst-7.6 {switches} {
+    set x 123
+    subst -novariables {abc $x [expr 1+2] \\\x41}
+} {abc $x 3 \A}
+test subst-7.7 {switches} {
+    set x 123
+    subst -nov -nob -noc {abc $x [expr 1+2] \\\x41}
+} {abc $x [expr 1+2] \\\x41}
+
+test subst-8.1 {return in a subst} {
+    subst {foo [return {x}; bogus code] bar}
+} {foo x bar}
+test subst-8.2 {return in a subst} {
+    subst {foo [return x ; bogus code] bar}
+} {foo x bar}
+test subst-8.3 {return in a subst} {
+    subst {foo [if 1 { return {x}; bogus code }] bar}
+} {foo x bar}
+test subst-8.4 {return in a subst} {
+    subst {[eval {return hi}] there}
+} {hi there}
+test subst-8.5 {return in a subst} {
+    subst {foo [return {]}; bogus code] bar}
+} {foo ] bar}
+test subst-8.6 {return in a subst} -returnCodes error -body {
+    subst "foo \[return {x}; bogus code bar"
+} -result {missing close-bracket}
+test subst-8.7 {return in a subst, parse error} -body {
+    subst {foo [return {x} ; set a {}"" ; stuff] bar} 
+} -returnCodes error -result {extra characters after close-brace}
+test subst-8.8 {return in a subst, parse error} -body {
+    subst {foo [return {x} ; set bar baz ; set a {}"" ; stuff] bar}
+} -returnCodes error -result {extra characters after close-brace}
+test subst-8.9 {return in a variable subst} {
+    subst {foo $var([return {x}]) bar}
+} {foo x bar}
+
+test subst-9.1 {error in a subst} -body {
+    subst {[error foo; bogus code]bar}
+} -returnCodes error -result foo
+test subst-9.2 {error in a subst} -body {
+    subst {[if 1 { error foo; bogus code}]bar}
+} -returnCodes error -result foo
+test subst-9.3 {error in a variable subst} -setup {
+    catch {unset var}
+} -body {
+    subst {foo $var([error foo]) bar}
+} -returnCodes error -result foo
+
+test subst-10.1 {break in a subst} {
+    subst {foo [break; bogus code] bar}
+} {foo }
+test subst-10.2 {break in a subst} {
+    subst {foo [break; return x; bogus code] bar}
+} {foo }
+test subst-10.3 {break in a subst} {
+    subst {foo [if 1 { break; bogus code}] bar}
+} {foo }
+test subst-10.4 {break in a subst, parse error} {
+    subst {foo [break ; set a {}{} ; stuff] bar}
+} {foo }
+test subst-10.5 {break in a subst, parse error} {
+    subst {foo [break ;set bar baz ;set a {}{} ; stuff] bar}
+} {foo }
+test subst-10.6 {break in a variable subst} {
+    subst {foo $var([break]) bar}
+} {foo }
+
+test subst-11.1 {continue in a subst} {
+    subst {foo [continue; bogus code] bar}
+} {foo  bar}
+test subst-11.2 {continue in a subst} {
+    subst {foo [continue; return x; bogus code] bar}
+} {foo  bar}
+test subst-11.3 {continue in a subst} {
+    subst {foo [if 1 { continue; bogus code}] bar}
+} {foo  bar}
+test subst-11.4 {continue in a subst, parse error} -body {
+    subst {foo [continue ; set a {}{} ; stuff] bar}
+} -returnCodes error -result {extra characters after close-brace}
+test subst-11.5 {continue in a subst, parse error} -body {
+    subst {foo [continue ;set bar baz ;set a {}{} ; stuff] bar}
+} -returnCodes error -result {extra characters after close-brace}
+test subst-11.6 {continue in a variable subst} {
+    subst {foo $var([continue]) bar}
+} {foo  bar}
+
+test subst-12.1 {nasty case, Bug 1036649} {
+    for {set i 0} {$i < 10} {incr i} {
+	set res [list [catch {subst "\[subst {};"} msg] $msg]
+	if {$msg ne "missing close-bracket"} break
+    }
+    return $res
+} {1 {missing close-bracket}}
+test subst-12.2 {nasty case, Bug 1036649} {
+    for {set i 0} {$i < 10} {incr i} {
+	set res [list [catch {subst "\[subst {}; "} msg] $msg]
+	if {$msg ne "missing close-bracket"} break
+    }
+    return $res
+} {1 {missing close-bracket}}
+test subst-12.3 {nasty case, Bug 1036649} {
+    set x 0
+    for {set i 0} {$i < 10} {incr i} {
+	set res [list [catch {subst "\[incr x;"} msg] $msg]
+	if {$msg ne "missing close-bracket"} break
+    }
+    lappend res $x
+} {1 {missing close-bracket} 10}
+test subst-12.4 {nasty case, Bug 1036649} {
+    set x 0
+    for {set i 0} {$i < 10} {incr i} {
+	set res [list [catch {subst "\[incr x; "} msg] $msg]
+	if {$msg ne "missing close-bracket"} break
+    }
+    lappend res $x
+} {1 {missing close-bracket} 10}
+test subst-12.5 {nasty case, Bug 1036649} {
+    set x 0
+    for {set i 0} {$i < 10} {incr i} {
+	set res [list [catch {subst "\[incr x"} msg] $msg]
+	if {$msg ne "missing close-bracket"} break
+    }
+    lappend res $x
+} {1 {missing close-bracket} 0}
+test subst-12.6 {nasty case with compilation} {
+    set x unset
+    set y unset
+    list [eval [list subst {[set x 1;break;incr x][set y $x]}]] $x $y
+} {{} 1 unset}
+test subst-12.7 {nasty case with compilation} {
+    set x unset
+    set y unset
+    list [eval [list subst {[set x 1;continue;incr x][set y $x]}]] $x $y
+} {1 1 1}
+
+test subst-13.1 {Bug 3081065} -setup {
+    set script [makeFile {
+	proc demo {string} {
+	    subst $string
+	}
+	demo name2
+    } subst13.tcl]
+} -body {
+    interp create slave
+    slave eval [list source $script]
+    interp delete slave
+    interp create slave
+    slave eval {
+	set count 400
+	while {[incr count -1]} {
+	    lappend bloat [expr {rand()}]
+	}
+    }
+    slave eval [list source $script]
+    interp delete slave
+} -cleanup {
+    removeFile subst13.tcl
+}
+test subst-13.2 {Test for segfault} -body {
+    subst {[}
+} -returnCodes error -result * -match glob
+
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

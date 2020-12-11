@@ -1,0 +1,74 @@
+'\"
+'\" Copyright (c) 2006-2008 Joe Mistachkin.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_Cancel 3 8.6 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_CancelEval, Tcl_Canceled \- cancel Tcl scripts
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+int
+\fBTcl_CancelEval\fR(\fIinterp, resultObjPtr, clientData, flags\fR)
+.sp
+int
+\fBTcl_Canceled\fR(\fIinterp, flags\fR)
+.SH ARGUMENTS
+.AS Tcl_Interp *interp
+.AP Tcl_Interp *interp in
+Interpreter in which to cancel the script.
+.AP Tcl_Obj *resultObjPtr in
+Error message to use in the cancellation, or NULL to use a default message. If
+not NULL, this object will have its reference count decremented before
+\fBTcl_CancelEval\fR returns.
+.AP int flags in
+ORed combination of flag bits that specify additional options.
+For \fBTcl_CancelEval\fR, only \fBTCL_CANCEL_UNWIND\fR is currently
+supported.  For \fBTcl_Canceled\fR, only \fBTCL_LEAVE_ERR_MSG\fR and
+\fBTCL_CANCEL_UNWIND\fR are currently supported.
+.AP ClientData clientData in
+Currently reserved for future use.
+It should be set to NULL.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTcl_CancelEval\fR cancels or unwinds the script in progress soon after
+the next invocation of asynchronous handlers, causing \fBTCL_ERROR\fR to be
+the return code for that script.  This function is thread-safe and may be
+called from any thread in the process.
+.PP
+\fBTcl_Canceled\fR checks if the script in progress has been canceled and
+returns \fBTCL_ERROR\fR if it has.  Otherwise, \fBTCL_OK\fR is returned.
+Extensions can use this function to check to see if they should abort a long
+running command.  This function is thread sensitive and may only be called
+from the thread the interpreter was created in.
+.SS "FLAG BITS"
+Any ORed combination of the following values may be used for the
+\fIflags\fR argument to procedures such as \fBTcl_CancelEval\fR:
+.TP 20
+\fBTCL_CANCEL_UNWIND\fR
+.
+This flag is used by \fBTcl_CancelEval\fR and \fBTcl_Canceled\fR.
+For \fBTcl_CancelEval\fR, if this flag is set, the script in progress
+is canceled and the evaluation stack for the interpreter is unwound.
+For \fBTcl_Canceled\fR, if this flag is set, the script in progress
+is considered to be canceled only if the evaluation stack for the
+interpreter is being unwound.
+.TP 20
+\fBTCL_LEAVE_ERR_MSG\fR
+.
+This flag is only used by \fBTcl_Canceled\fR; it is ignored by
+other procedures.  If an error is returned and this bit is set in
+\fIflags\fR, then an error message will be left in the interpreter's
+result, where it can be retrieved with \fBTcl_GetObjResult\fR or
+\fBTcl_GetStringResult\fR.  If this flag bit is not set then no error
+message is left and the interpreter's result will not be modified.
+.SH "SEE ALSO"
+interp(n), Tcl_Eval(3),
+TIP 285
+.SH KEYWORDS
+cancel, unwind

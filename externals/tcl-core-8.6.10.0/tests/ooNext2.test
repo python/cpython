@@ -1,0 +1,1065 @@
+# This file contains a collection of tests for Tcl's built-in object system.
+# Sourcing this file into Tcl runs the tests and generates output for errors.
+# No output means no errors were found.
+#
+# Copyright (c) 2006-2011 Donal K. Fellows
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require TclOO 1.0.3
+package require tcltest 2
+if {"::tcltest" in [namespace children]} {
+    namespace import -force ::tcltest::*
+}
+
+testConstraint memory [llength [info commands memory]]
+if {[testConstraint memory]} {
+    proc getbytes {} {
+	set lines [split [memory info] \n]
+	return [lindex $lines 3 3]
+    }
+    proc leaktest {script {iterations 3}} {
+	set end [getbytes]
+	for {set i 0} {$i < $iterations} {incr i} {
+	    uplevel 1 $script
+	    set tmp $end
+	    set end [getbytes]
+	}
+	return [expr {$end - $tmp}]
+    }
+}
+
+test oo-nextto-1.1 {basic nextto functionality} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	method x args {
+	    lappend ::result ==A== $args
+	}
+    }
+    oo::class create B {
+	superclass A
+	method x args {
+	    lappend ::result ==B== $args
+	    nextto A B -> A {*}$args
+	}
+    }
+    oo::class create C {
+	superclass A
+	method x args {
+	    lappend ::result ==C== $args
+	    nextto A C -> A {*}$args
+	}
+    }
+    oo::class create D {
+	superclass B C
+	method x args {
+	    lappend ::result ==D== $args
+	    next foo
+	    nextto C bar
+	}
+    }
+    set ::result {}
+    [D new] x
+    return $::result
+} -cleanup {
+    root destroy
+} -result {==D== {} ==B== foo ==A== {B -> A foo} ==C== bar ==A== {C -> A bar}}
+test oo-nextto-1.2 {basic nextto functionality} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	method x args {
+	    lappend ::result ==A== $args
+	}
+    }
+    oo::class create B {
+	superclass A
+	method x args {
+	    lappend ::result ==B== $args
+	    nextto A B -> A {*}$args
+	}
+    }
+    oo::class create C {
+	superclass A
+	method x args {
+	    lappend ::result ==C== $args
+	    nextto A C -> A {*}$args
+	}
+    }
+    oo::class create D {
+	superclass B C
+	method x args {
+	    lappend ::result ==D== $args
+	    nextto B foo {*}$args
+	    nextto C bar {*}$args
+	}
+    }
+    set ::result {}
+    [D new] x 123
+    return $::result
+} -cleanup {
+    root destroy
+} -result {==D== 123 ==B== {foo 123} ==A== {B -> A foo 123} ==C== {bar 123} ==A== {C -> A bar 123}}
+test oo-nextto-1.3 {basic nextto functionality: constructors} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	variable result
+	constructor {a c} {
+	    lappend result ==A== a=$a,c=$c
+	}
+    }
+    oo::class create B {
+	superclass root
+	variable result
+	constructor {b} {
+	    lappend result ==B== b=$b
+	}
+    }
+    oo::class create C {
+	superclass A B
+	variable result
+	constructor {p q r} {
+	    lappend result ==C== p=$p,q=$q,r=$r
+	    # Route arguments to superclasses, in non-trival pattern
+	    nextto B $q
+	    nextto A $p $r
+	}
+	method result {} {return $result}
+    }
+    [C new x y z] result
+} -cleanup {
+    root destroy
+} -result {==C== p=x,q=y,r=z ==B== b=y ==A== a=x,c=z}
+test oo-nextto-1.4 {basic nextto functionality: destructors} -setup {
+    oo::class create root {destructor return}
+} -body {
+    oo::class create A {
+	superclass root
+	destructor {
+	    lappend ::result ==A==
+	    next
+	}
+    }
+    oo::class create B {
+	superclass root
+	destructor {
+	    lappend ::result ==B==
+	    next
+	}
+    }
+    oo::class create C {
+	superclass A B
+	destructor {
+	    lappend ::result ==C==
+	    lappend ::result |
+	    nextto B
+	    lappend ::result |
+	    nextto A
+	    lappend ::result |
+	    next
+	}
+    }
+    set ::result ""
+    [C new] destroy
+    return $::result
+} -cleanup {
+    root destroy
+} -result {==C== | ==B== | ==A== ==B== | ==A== ==B==}
+
+test oo-nextto-2.1 {errors in nextto} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	method x y {error $y}
+    }
+    oo::class create B {
+	superclass A
+	method x y {nextto A $y}
+    }
+    [B new] x boom
+} -cleanup {
+    root destroy
+} -result boom -returnCodes error
+test oo-nextto-2.2 {errors in nextto} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	method x y {error $y}
+    }
+    oo::class create B {
+	superclass root
+	method x y {nextto A $y}
+    }
+    [B new] x boom
+} -returnCodes error -cleanup {
+    root destroy
+} -result {method has no non-filter implementation by "A"}
+test oo-nextto-2.3 {errors in nextto} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	method x y {nextto $y}
+    }
+    oo::class create B {
+	superclass A
+	method x y {nextto A $y}
+    }
+    [B new] x B
+} -returnCodes error -cleanup {
+    root destroy
+} -result {method implementation by "B" not reachable from here}
+test oo-nextto-2.4 {errors in nextto} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	method x y {nextto $y}
+    }
+    oo::class create B {
+	superclass A
+	method x y {nextto}
+    }
+    [B new] x B
+} -returnCodes error -cleanup {
+    root destroy
+} -result {wrong # args: should be "nextto class ?arg...?"}
+test oo-nextto-2.5 {errors in nextto} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	method x y {nextto $y}
+    }
+    oo::class create B {
+	superclass A
+	method x y {nextto $y $y $y}
+    }
+    [B new] x A
+} -cleanup {
+    root destroy
+} -result {wrong # args: should be "nextto A y"} -returnCodes error
+test oo-nextto-2.6 {errors in nextto} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	method x y {nextto $y}
+    }
+    oo::class create B {
+	superclass A
+	method x y {nextto $y $y $y}
+    }
+    [B new] x [root create notAClass]
+} -cleanup {
+    root destroy
+} -result {"::notAClass" is not a class} -returnCodes error
+test oo-nextto-2.7 {errors in nextto} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	method x y {nextto $y}
+    }
+    oo::class create B {
+	superclass A
+	filter Y
+	method Y args {next {*}$args}
+    }
+    oo::class create C {
+	superclass B
+	method x y {nextto $y $y $y}
+    }
+    [C new] x B
+} -returnCodes error -cleanup {
+    root destroy
+} -result {method has no non-filter implementation by "B"}
+
+test oo-call-1.1 {object call introspection} -setup {
+    oo::class create root
+} -body {
+    oo::class create ::A {
+	superclass root
+	method x {} {}
+    }
+    A create y
+    info object call y x
+} -cleanup {
+    root destroy
+} -result {{method x ::A method}}
+test oo-call-1.2 {object call introspection} -setup {
+    oo::class create root
+} -body {
+    oo::class create ::A {
+	superclass root
+	method x {} {}
+    }
+    oo::class create ::B {
+	superclass A
+	method x {} {}
+    }
+    B create y
+    info object call y x
+} -cleanup {
+    root destroy
+} -result {{method x ::B method} {method x ::A method}}
+test oo-call-1.3 {object call introspection} -setup {
+    oo::class create root
+} -body {
+    oo::class create ::A {
+	superclass root
+	method x {} {}
+    }
+    A create y
+    oo::objdefine y method x {} {}
+    info object call y x
+} -cleanup {
+    root destroy
+} -result {{method x object method} {method x ::A method}}
+test oo-call-1.4 {object object call introspection - unknown} -setup {
+    oo::class create root
+} -body {
+    oo::class create ::A {
+	superclass root
+	method x {} {}
+    }
+    A create y
+    info object call y z
+} -cleanup {
+    root destroy
+} -result {{unknown unknown ::oo::object {core method: "unknown"}}}
+test oo-call-1.5 {object call introspection - filters} -setup {
+    oo::class create root
+} -body {
+    oo::class create ::A {
+	superclass root
+	method x {} {}
+	method y {} {}
+	filter y
+    }
+    A create y
+    info object call y x
+} -cleanup {
+    root destroy
+} -result {{filter y ::A method} {method x ::A method}}
+test oo-call-1.6 {object call introspection - filters} -setup {
+    oo::class create root
+} -body {
+    oo::class create ::A {
+	superclass root
+	method x {} {}
+	method y {} {}
+	filter y
+    }
+    oo::class create ::B {
+	superclass A
+	method x {} {}
+    }
+    B create y
+    info object call y x
+} -cleanup {
+    root destroy
+} -result {{filter y ::A method} {method x ::B method} {method x ::A method}}
+test oo-call-1.7 {object call introspection - filters} -setup {
+    oo::class create root
+} -body {
+    oo::class create ::A {
+	superclass root
+	method x {} {}
+	method y {} {}
+	filter y
+    }
+    oo::class create ::B {
+	superclass A
+	method x {} {}
+	method y {} {}
+    }
+    B create y
+    info object call y x
+} -cleanup {
+    root destroy
+} -result {{filter y ::B method} {filter y ::A method} {method x ::B method} {method x ::A method}}
+test oo-call-1.8 {object call introspection - filters} -setup {
+    oo::class create root
+} -body {
+    oo::class create ::A {
+	superclass root
+	method x {} {}
+	method y {} {}
+	filter y
+    }
+    oo::class create ::B {
+	superclass A
+	method x {} {}
+	method y {} {}
+	method z {} {}
+	filter z
+    }
+    B create y
+    info object call y x
+} -cleanup {
+    root destroy
+} -result {{filter z ::B method} {filter y ::B method} {filter y ::A method} {method x ::B method} {method x ::A method}}
+test oo-call-1.9 {object call introspection - filters} -setup {
+    oo::class create root
+} -body {
+    oo::class create ::A {
+	superclass root
+	method x {} {}
+	method y {} {}
+	filter y
+    }
+    oo::class create ::B {
+	superclass A
+	method x {} {}
+	method y {} {}
+	method z {} {}
+	filter z
+    }
+    B create y
+    info object call y y
+} -cleanup {
+    root destroy
+} -result {{filter z ::B method} {filter y ::B method} {filter y ::A method} {method y ::B method} {method y ::A method}}
+test oo-call-1.10 {object call introspection - filters + unknown} -setup {
+    oo::class create root
+} -body {
+    oo::class create ::A {
+	superclass root
+	method y {} {}
+	filter y
+    }
+    oo::class create ::B {
+	superclass A
+	method y {} {}
+	method unknown {} {}
+    }
+    B create y
+    info object call y x
+} -cleanup {
+    root destroy
+} -result {{filter y ::B method} {filter y ::A method} {unknown unknown ::B method} {unknown unknown ::oo::object {core method: "unknown"}}}
+test oo-call-1.11 {object call introspection - filters + unknown} -setup {
+    oo::class create root
+} -body {
+    oo::class create ::A {
+	superclass root
+	method y {} {}
+	filter y
+    }
+    A create y
+    oo::objdefine y method unknown {} {}
+    info object call y x
+} -cleanup {
+    root destroy
+} -result {{filter y ::A method} {unknown unknown object method} {unknown unknown ::oo::object {core method: "unknown"}}}
+test oo-call-1.12 {object call introspection - filters + unknown} -setup {
+    oo::class create root
+} -body {
+    oo::class create ::A {
+	superclass root
+	method y {} {}
+    }
+    A create y
+    oo::objdefine y {
+	method unknown {} {}
+	filter y
+    }
+    info object call y x
+} -cleanup {
+    root destroy
+} -result {{filter y ::A method} {unknown unknown object method} {unknown unknown ::oo::object {core method: "unknown"}}}
+test oo-call-1.13 {object call introspection - filters + unknown} -setup {
+    oo::class create root
+} -body {
+    oo::class create ::A {
+	superclass root
+	method y {} {}
+    }
+    A create y
+    oo::objdefine y {
+	method unknown {} {}
+	method x {} {}
+	filter y
+    }
+    info object call y x
+} -cleanup {
+    root destroy
+} -result {{filter y ::A method} {method x object method}}
+test oo-call-1.14 {object call introspection - errors} -body {
+    info object call
+} -returnCodes error -result {wrong # args: should be "info object call objName methodName"}
+test oo-call-1.15 {object call introspection - errors} -body {
+    info object call a
+} -returnCodes error -result {wrong # args: should be "info object call objName methodName"}
+test oo-call-1.16 {object call introspection - errors} -body {
+    info object call a b c
+} -returnCodes error -result {wrong # args: should be "info object call objName methodName"}
+test oo-call-1.17 {object call introspection - errors} -body {
+    info object call notanobject x
+} -returnCodes error -result {notanobject does not refer to an object}
+test oo-call-1.18 {object call introspection - memory leaks} -body {
+    leaktest {
+	info object call oo::object destroy
+    }
+} -constraints memory -result 0
+test oo-call-1.19 {object call introspection - memory leaks} -setup {
+    oo::class create leaktester { method foo {} {dummy} }
+} -body {
+    leaktest {
+	set lt [leaktester new]
+	oo::objdefine $lt method foobar {} {dummy}
+	list [info object call $lt destroy] \
+	    [info object call $lt foo] \
+	    [info object call $lt bar] \
+	    [info object call $lt foobar] \
+	    [$lt destroy]
+    }
+} -cleanup {
+    leaktester destroy
+} -constraints memory -result 0
+test oo-call-1.20 {object call introspection - complex case} -setup {
+    oo::class create root
+} -body {
+    oo::class create ::A {
+	superclass root
+	method x {} {}
+    }
+    oo::class create ::B {
+	superclass A
+	method x {} {}
+    }
+    oo::class create ::C {
+	superclass root
+	method x {} {}
+	mixin B
+    }
+    oo::class create ::D {
+	superclass C
+	method x {} {}
+    }
+    oo::class create ::E {
+	superclass root
+	method x {} {}
+    }
+    oo::class create ::F {
+	superclass E
+	method x {} {}
+    }
+    oo::class create ::G {
+	superclass root
+	method x {} {}
+    }
+    oo::class create ::H {
+	superclass G
+	method x {} {}
+    }
+    oo::define F mixin H
+    F create y
+    oo::objdefine y {
+	method x {} {}
+	mixin D
+    }
+    info object call y x
+} -cleanup {
+    root destroy
+} -result {{method x ::D method} {method x ::B method} {method x ::A method} {method x ::C method} {method x ::H method} {method x ::G method} {method x object method} {method x ::F method} {method x ::E method}}
+test oo-call-1.21 {object call introspection - complex case} -setup {
+    oo::class create root
+} -body {
+    oo::class create ::A {
+	superclass root
+	method y {} {}
+	filter y
+    }
+    oo::class create ::B {
+	superclass A
+	method y {} {}
+    }
+    oo::class create ::C {
+	superclass root
+	method x {} {}
+	mixin B
+    }
+    oo::class create ::D {
+	superclass C
+	filter x
+    }
+    oo::class create ::E {
+	superclass root
+	method y {} {}
+	method x {} {}
+    }
+    oo::class create ::F {
+	superclass E
+	method z {} {}
+	method q {} {}
+    }
+    F create y
+    oo::objdefine y {
+	method unknown {} {}
+	mixin D
+	filter q
+    }
+    info object call y z
+} -cleanup {
+    root destroy
+} -result {{filter x ::C method} {filter x ::E method} {filter y ::B method} {filter y ::A method} {filter y ::E method} {filter q ::F method} {method z ::F method}}
+
+test oo-call-2.1 {class call introspection} -setup {
+    oo::class create root
+} -body {
+    oo::class create ::A {
+	superclass root
+	method x {} {}
+    }
+    info class call A x
+} -cleanup {
+    root destroy
+} -result {{method x ::A method}}
+test oo-call-2.2 {class call introspection} -setup {
+    oo::class create root
+} -body {
+    oo::class create ::A {
+	superclass root
+	method x {} {}
+    }
+    oo::class create ::B {
+	superclass A
+	method x {} {}
+    }
+    list [info class call A x] [info class call B x]
+} -cleanup {
+    root destroy
+} -result {{{method x ::A method}} {{method x ::B method} {method x ::A method}}}
+test oo-call-2.3 {class call introspection} -setup {
+    oo::class create root
+} -body {
+    oo::class create ::A {
+	superclass root
+	method x {} {}
+    }
+    oo::class create ::B {
+	superclass A
+	method x {} {}
+    }
+    oo::class create ::C {
+	superclass A
+	method x {} {}
+    }
+    oo::class create ::D {
+	superclass C B
+	method x {} {}
+    }
+    info class call D x
+} -cleanup {
+    root destroy
+} -result {{method x ::D method} {method x ::C method} {method x ::B method} {method x ::A method}}
+test oo-call-2.4 {class call introspection - mixin} -setup {
+    oo::class create root
+} -body {
+    oo::class create ::A {
+	superclass root
+	method x {} {}
+    }
+    oo::class create ::B {
+	superclass A
+	method x {} {}
+    }
+    oo::class create ::C {
+	superclass A
+	method x {} {}
+    }
+    oo::class create ::D {
+	superclass C
+	mixin B
+	method x {} {}
+    }
+    info class call D x
+} -cleanup {
+    root destroy
+} -result {{method x ::B method} {method x ::D method} {method x ::C method} {method x ::A method}}
+test oo-call-2.5 {class call introspection - mixin + filter} -setup {
+    oo::class create root
+} -body {
+    oo::class create ::A {
+	superclass root
+	method x {} {}
+    }
+    oo::class create ::B {
+	superclass A
+	method x {} {}
+	method y {} {}
+	filter y
+    }
+    oo::class create ::C {
+	superclass A
+	method x {} {}
+	method y {} {}
+    }
+    oo::class create ::D {
+	superclass C
+	mixin B
+	method x {} {}
+    }
+    info class call D x
+} -cleanup {
+    root destroy
+} -result {{filter y ::B method} {filter y ::C method} {method x ::B method} {method x ::D method} {method x ::C method} {method x ::A method}}
+test oo-call-2.6 {class call introspection - mixin + filter + unknown} -setup {
+    oo::class create root
+} -body {
+    oo::class create ::A {
+	superclass root
+	method x {} {}
+	method unknown {} {}
+    }
+    oo::class create ::B {
+	superclass A
+	method x {} {}
+	method y {} {}
+	filter y
+    }
+    oo::class create ::C {
+	superclass A
+	method x {} {}
+	method y {} {}
+    }
+    oo::class create ::D {
+	superclass C
+	mixin B
+	method x {} {}
+	method unknown {} {}
+    }
+    info class call D z
+} -cleanup {
+    root destroy
+} -result {{filter y ::B method} {filter y ::C method} {unknown unknown ::D method} {unknown unknown ::A method} {unknown unknown ::oo::object {core method: "unknown"}}}
+test oo-call-2.7 {class call introspection - mixin + filter + unknown} -setup {
+    oo::class create root
+} -body {
+    oo::class create ::A {
+	superclass root
+	method x {} {}
+    }
+    oo::class create ::B {
+	superclass A
+	method x {} {}
+	filter x
+    }
+    info class call B x
+} -cleanup {
+    root destroy
+} -result {{filter x ::B method} {filter x ::A method} {method x ::B method} {method x ::A method}}
+test oo-call-2.8 {class call introspection - errors} -body {
+    info class call
+} -returnCodes error -result {wrong # args: should be "info class call className methodName"}
+test oo-call-2.9 {class call introspection - errors} -body {
+    info class call a
+} -returnCodes error -result {wrong # args: should be "info class call className methodName"}
+test oo-call-2.10 {class call introspection - errors} -body {
+    info class call a b c
+} -returnCodes error -result {wrong # args: should be "info class call className methodName"}
+test oo-call-2.11 {class call introspection - errors} -body {
+    info class call notaclass x
+} -returnCodes error -result {notaclass does not refer to an object}
+test oo-call-2.12 {class call introspection - errors} -setup {
+    oo::class create root
+} -body {
+    root create notaclass
+    info class call notaclass x
+} -returnCodes error -cleanup {
+    root destroy
+} -result {"notaclass" is not a class}
+test oo-call-2.13 {class call introspection - memory leaks} -body {
+    leaktest {
+	info class call oo::class destroy
+    }
+} -constraints memory -result 0
+test oo-call-2.14 {class call introspection - memory leaks} -body {
+    leaktest {
+	oo::class create leaktester { method foo {} {dummy} }
+	[leaktester new] destroy
+	list [info class call leaktester destroy] \
+	    [info class call leaktester foo] \
+	    [info class call leaktester bar] \
+	    [leaktester destroy]
+    }
+} -constraints memory -result 0
+
+test oo-call-3.1 {current call introspection} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	method x {} {lappend ::result [self call]}
+    }
+    oo::class create B {
+	superclass A
+	method x {} {lappend ::result [self call];next}
+    }
+    B create y
+    oo::objdefine y method x {} {lappend ::result [self call];next}
+    set ::result {}
+    y x
+} -cleanup {
+    root destroy
+} -result {{{{method x object method} {method x ::B method} {method x ::A method}} 0} {{{method x object method} {method x ::B method} {method x ::A method}} 1} {{{method x object method} {method x ::B method} {method x ::A method}} 2}}
+test oo-call-3.2 {current call introspection} -setup {
+    oo::class create root
+} -constraints memory -body {
+    oo::class create A {
+	superclass root
+	method x {} {self call}
+    }
+    oo::class create B {
+	superclass A
+	method x {} {self call;next}
+    }
+    B create y
+    oo::objdefine y method x {} {self call;next}
+    leaktest {
+	y x
+    }
+} -cleanup {
+    root destroy
+} -result 0
+test oo-call-3.3 {current call introspection: in constructors} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	constructor {} {lappend ::result [self call]}
+    }
+    oo::class create B {
+	superclass A
+	constructor {} {lappend ::result [self call]; next}
+    }
+    set ::result {}
+    [B new] destroy
+    return $::result
+} -cleanup {
+    root destroy
+} -result {{{{method <constructor> ::B method} {method <constructor> ::A method}} 0} {{{method <constructor> ::B method} {method <constructor> ::A method}} 1}}
+test oo-call-3.4 {current call introspection: in destructors} -setup {
+    oo::class create root
+} -body {
+    oo::class create A {
+	superclass root
+	destructor {lappend ::result [self call]}
+    }
+    oo::class create B {
+	superclass A
+	destructor {lappend ::result [self call]; next}
+    }
+    set ::result {}
+    [B new] destroy
+    return $::result
+} -cleanup {
+    root destroy
+} -result {{{{method <destructor> ::B method} {method <destructor> ::A method}} 0} {{{method <destructor> ::B method} {method <destructor> ::A method}} 1}}
+
+# Contributed tests from aspect, related to [0f42ff7871]
+#
+# dkf's "Principles Leading to a Fix"
+#
+#   A method ought to work "the same" whether or not it has been overridden by
+#   a subclass. A tailcalled command ought to have as parent stack the same
+#   thing you'd get with uplevel 1. A subclass will often expect the
+#   superclass's result to be the result that would be returned if the
+#   subclass was not there.
+
+# Common setup:
+#	any invocation of bar should emit "abc\nhi\n" then return to its
+#	caller
+set testopts {
+    -setup {
+	oo::class create Master
+	oo::class create Foo {
+	    superclass Master
+	    method bar {} {
+		puts abc
+		tailcall puts hi
+		puts xyz
+	    }
+	}
+	oo::class create Foo2 {
+	    superclass Master
+	}
+    }
+    -cleanup {
+	Master destroy
+    }
+}
+
+# these succeed, showing that without [next] the bug doesn't fire
+test next-tailcall-simple-1 "trivial case with one method" {*}$testopts -body {
+    [Foo create foo] bar
+} -output [join {abc hi} \n]\n
+test next-tailcall-simple-2 "my bar" {*}$testopts -body {
+    oo::define Foo method baz {} {
+	puts a
+	my bar
+	puts b
+    }
+    [Foo create foo] baz
+} -output [join {a abc hi b} \n]\n
+test next-tailcall-simple-3 "\[self\] bar" {*}$testopts -body {
+    oo::define Foo method baz {} {
+	puts a
+	[self] bar
+	puts b
+    }
+    [Foo create foo] baz
+} -output [join {a abc hi b} \n]\n
+test next-tailcall-simple-4 "foo bar" {*}$testopts -body {
+    oo::define Foo method baz {} {
+	puts a
+	foo bar
+	puts b
+    }
+    [Foo create foo] baz
+} -output [join {a abc hi b} \n]\n
+
+# everything from here on uses [next], and fails on 8.6.4 with compilation
+test next-tailcall-superclass-1 "next superclass" {*}$testopts -body {
+    oo::define Foo2 {
+	superclass Foo
+	method bar {} {
+	    puts a
+	    next
+	    puts b
+	}
+    }
+    [Foo2 create foo] bar
+} -output [join {a abc hi b} \n]\n
+test next-tailcall-superclass-2 "nextto superclass" {*}$testopts -body {
+    oo::define Foo2 {
+	superclass Foo
+	method bar {} {
+	    puts a
+	    nextto Foo
+	    puts b
+	}
+    }
+    [Foo2 create foo] bar
+} -output [join {a abc hi b} \n]\n
+
+test next-tailcall-mixin-1 "class mixin" {*}$testopts -body {
+    oo::define Foo2 {
+	method Bar {} {
+	    puts a
+	    next
+	    puts b
+	}
+	filter Bar
+    }
+    oo::define Foo mixin Foo2
+    Foo create foo
+    foo bar
+} -output [join {a abc hi b} \n]\n
+
+test next-tailcall-objmixin-1 "object mixin" {*}$testopts -body {
+    oo::define Foo2 {
+	method Bar {} {
+	    puts a
+	    next
+	    puts b
+	}
+	filter Bar
+    }
+    Foo create foo
+    oo::objdefine foo mixin Foo2
+    foo bar
+} -output [join {a abc hi b} \n]\n
+
+test next-tailcall-filter-1 "filter method" {*}$testopts -body {
+    oo::define Foo method Filter {} {
+	puts a
+	next
+	puts b
+    }
+    oo::define Foo filter Filter
+    [Foo new] bar
+} -output [join {a abc hi b} \n]\n
+
+test next-tailcall-forward-1 "forward method" {*}$testopts -body {
+    proc foobar {} {
+	puts "abc"
+	tailcall puts "hi"
+	puts "xyz"
+    }
+    oo::define Foo forward foobar foobar
+    oo::define Foo2 {
+	superclass Foo
+	method foobar {} {
+	    puts a
+	    next
+	    puts b
+	}
+    }
+    [Foo2 new] foobar
+} -output [join {a abc hi b} \n]\n
+
+test next-tailcall-constructor-1 "next in constructor" -body {
+    oo::class create Foo {
+	constructor {} {
+	    puts abc
+	    tailcall puts hi
+	    puts xyz
+	}
+    }
+    oo::class create Foo2 {
+	superclass Foo
+	constructor {} {
+	    puts a
+	    next
+	    puts b
+	}
+    }
+    list [Foo new] [Foo2 new]
+    return ""
+} -cleanup {
+    Foo destroy
+} -output [join {abc hi a abc hi b} \n]\n
+
+test next-tailcall-destructor-1 "next in destructor" -body {
+    oo::class create Foo {
+	destructor {
+	    puts abc
+	    tailcall puts hi
+	    puts xyz
+	}
+    }
+    oo::class create Foo2 {
+	superclass Foo
+	destructor {
+	    puts a
+	    next
+	    puts b
+	}
+    }
+    Foo create foo
+    Foo2 create foo2
+    foo destroy
+    foo2 destroy
+} -output [join {abc hi a abc hi b} \n]\n -cleanup {
+    Foo destroy
+}
+
+unset testopts
+
+cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

@@ -1,0 +1,162 @@
+'\"
+'\" Copyright (c) 1989-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_CreateMathFunc 3 8.4 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_CreateMathFunc, Tcl_GetMathFuncInfo, Tcl_ListMathFuncs \- Define, query and enumerate math functions for expressions
+.SH "NOTICE OF EVENTUAL DEPRECATION"
+.PP
+The \fBTcl_CreateMathFunc\fR and \fBTcl_GetMathFuncInfo\fR functions
+are rendered somewhat obsolete by the ability to create functions for
+expressions by placing commands in the \fBtcl::mathfunc\fR namespace,
+as described in the \fBmathfunc\fR manual page; the API described on
+this page is not expected to be maintained indefinitely.
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+void
+\fBTcl_CreateMathFunc\fR(\fIinterp, name, numArgs, argTypes, proc, clientData\fR)
+.sp
+int
+\fBTcl_GetMathFuncInfo\fR(\fIinterp, name, numArgsPtr, argTypesPtr, procPtr,
+                    clientDataPtr\fR)
+.sp
+Tcl_Obj *
+\fBTcl_ListMathFuncs\fR(\fIinterp, pattern\fR)
+.SH ARGUMENTS
+.AS Tcl_ValueType *clientDataPtr out
+.AP Tcl_Interp *interp in
+Interpreter in which new function will be defined.
+.AP "const char" *name in
+Name for new function.
+.AP int numArgs in
+Number of arguments to new function;  also gives size of \fIargTypes\fR array.
+.AP Tcl_ValueType *argTypes in
+Points to an array giving the permissible types for each argument to
+function.
+.AP Tcl_MathProc *proc in
+Procedure that implements the function.
+.AP ClientData clientData in
+Arbitrary one-word value to pass to \fIproc\fR when it is invoked.
+.AP int *numArgsPtr out
+Points to a variable that will be set to contain the number of
+arguments to the function.
+.AP Tcl_ValueType **argTypesPtr out
+Points to a variable that will be set to contain a pointer to an array
+giving the permissible types for each argument to the function which
+will need to be freed up using \fITcl_Free\fR.
+.AP Tcl_MathProc **procPtr out
+Points to a variable that will be set to contain a pointer to the
+implementation code for the function (or NULL if the function is
+implemented directly in bytecode).
+.AP ClientData *clientDataPtr out
+Points to a variable that will be set to contain the clientData
+argument passed to \fITcl_CreateMathFunc\fR when the function was
+created if the function is not implemented directly in bytecode.
+.AP "const char" *pattern in
+Pattern to match against function names so as to filter them (by
+passing to \fITcl_StringMatch\fR), or NULL to not apply any filter.
+.BE
+.SH DESCRIPTION
+.PP
+Tcl allows a number of mathematical functions to be used in
+expressions, such as \fBsin\fR, \fBcos\fR, and \fBhypot\fR.
+These functions are represented by commands in the namespace,
+\fBtcl::mathfunc\fR.  The \fBTcl_CreateMathFunc\fR function is
+an obsolete way for applications to add additional functions
+to those already provided by Tcl or to replace existing functions.
+It should not be used by new applications, which should create
+math functions using \fBTcl_CreateObjCommand\fR to create a command
+in the \fBtcl::mathfunc\fR namespace.
+.PP
+In the \fBTcl_CreateMathFunc\fR interface,
+\fIName\fR is the name of the function as it will appear in expressions.
+If \fIname\fR does not already exist in the \fB::tcl::mathfunc\fR
+namespace, then a new command is created in that namespace.
+If \fIname\fR does exist, then the existing function is replaced.
+\fINumArgs\fR and \fIargTypes\fR describe the arguments to the function.
+Each entry in the \fIargTypes\fR array must be
+one of \fBTCL_INT\fR, \fBTCL_DOUBLE\fR, \fBTCL_WIDE_INT\fR,
+or \fBTCL_EITHER\fR to indicate whether the corresponding argument must be an
+integer, a double-precision floating value, a wide (64-bit) integer,
+or any, respectively.
+.PP
+Whenever the function is invoked in an expression Tcl will invoke
+\fIproc\fR.  \fIProc\fR should have arguments and result that match
+the type \fBTcl_MathProc\fR:
+.PP
+.CS
+typedef int \fBTcl_MathProc\fR(
+        ClientData \fIclientData\fR,
+        Tcl_Interp *\fIinterp\fR,
+        Tcl_Value *\fIargs\fR,
+        Tcl_Value *\fIresultPtr\fR);
+.CE
+.PP
+When \fIproc\fR is invoked the \fIclientData\fR and \fIinterp\fR
+arguments will be the same as those passed to \fBTcl_CreateMathFunc\fR.
+\fIArgs\fR will point to an array of \fInumArgs\fR Tcl_Value structures,
+which describe the actual arguments to the function:
+.PP
+.CS
+typedef struct Tcl_Value {
+    Tcl_ValueType \fItype\fR;
+    long \fIintValue\fR;
+    double \fIdoubleValue\fR;
+    Tcl_WideInt \fIwideValue\fR;
+} \fBTcl_Value\fR;
+.CE
+.PP
+The \fItype\fR field indicates the type of the argument and is
+one of \fBTCL_INT\fR, \fBTCL_DOUBLE\fR or \fBTCL_WIDE_INT\fR.
+It will match the \fIargTypes\fR value specified for the function unless
+the \fIargTypes\fR value was \fBTCL_EITHER\fR. Tcl converts
+the argument supplied in the expression to the type requested in
+\fIargTypes\fR, if that is necessary.
+Depending on the value of the \fItype\fR field, the \fIintValue\fR,
+\fIdoubleValue\fR or \fIwideValue\fR
+field will contain the actual value of the argument.
+.PP
+\fIProc\fR should compute its result and store it either as an integer
+in \fIresultPtr->intValue\fR or as a floating value in
+\fIresultPtr->doubleValue\fR.
+It should set also \fIresultPtr->type\fR to one of
+\fBTCL_INT\fR, \fBTCL_DOUBLE\fR or \fBTCL_WIDE_INT\fR
+to indicate which value was set.
+Under normal circumstances \fIproc\fR should return \fBTCL_OK\fR.
+If an error occurs while executing the function, \fIproc\fR should
+return \fBTCL_ERROR\fR and leave an error message in the interpreter's result.
+.PP
+\fBTcl_GetMathFuncInfo\fR retrieves the values associated with
+function \fIname\fR that were passed to a preceding
+\fBTcl_CreateMathFunc\fR call.  Normally, the return code is
+\fBTCL_OK\fR but if the named function does not exist, \fBTCL_ERROR\fR
+is returned and an error message is placed in the interpreter's
+result.
+.PP
+If an error did not occur, the array reference placed in the variable
+pointed to by \fIargTypesPtr\fR is newly allocated, and should be
+released by passing it to \fBTcl_Free\fR.  Some functions (the
+standard set implemented in the core, and those defined by placing
+commands in the \fBtcl::mathfunc\fR namespace) do not have
+argument type information; attempting to retrieve values for
+them causes a NULL to be stored in the variable pointed to by
+\fIprocPtr\fR and the variable pointed to by \fIclientDataPtr\fR
+will not be modified.  The variable pointed to by \fInumArgsPointer\fR
+will contain -1, and no argument types will be stored in the variable
+pointed to by \fIargTypesPointer\fR.
+.PP
+\fBTcl_ListMathFuncs\fR returns a Tcl value containing a list of all
+the math functions defined in the interpreter whose name matches
+\fIpattern\fR.  The returned value has a reference count of zero.
+.SH "SEE ALSO"
+expr(n), info(n), Tcl_CreateObjCommand(3), Tcl_Free(3), Tcl_NewListObj(3)
+.SH KEYWORDS
+expression, mathematical function

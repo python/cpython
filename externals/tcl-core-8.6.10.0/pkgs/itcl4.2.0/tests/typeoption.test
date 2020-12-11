@@ -1,0 +1,556 @@
+#---------------------------------------------------------------------
+# TITLE:
+#       typeoption.test
+#
+# AUTHOR:
+#       Arnulf Wiedemann with a lot of code form the snit tests by
+#       Will Duquette
+#
+# DESCRIPTION:
+#       Test cases for ::itcl::type proc, method, typemethod commands.
+#       Uses the ::tcltest:: harness.
+#
+#    The tests assume tcltest 2.2
+#-----------------------------------------------------------------------
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+::tcltest::loadTestedCommands
+package require itcl
+
+interp alias {} type {} ::itcl::type
+
+#-----------------------------------------------------------------------
+# Options
+
+test option-1.1 {options get default values} -body {
+    type dog {
+        option -color golden
+    }
+
+    dog create spot
+    spot cget -color
+} -cleanup {
+    dog destroy
+} -result {golden}
+
+test option-1.2 {options can be set} -body {
+    type dog {
+        option -color golden
+    }
+
+    dog create spot
+    spot configure -color black
+    spot cget -color
+} -cleanup {
+    dog destroy
+} -result {black}
+
+test option-1.3 {multiple options can be set} -body {
+    type dog {
+        option -color golden
+        option -akc 0
+    }
+
+    dog create spot
+    spot configure -color brown -akc 1
+    list [spot cget -color] [spot cget -akc]
+} -cleanup {
+    dog destroy
+} -result {brown 1}
+
+test option-1.4 {options can be retrieved as instance variable} -body {
+    type dog {
+        option -color golden
+        option -akc 0
+
+        method listopts {} {
+            list $itcl_options(-color) $itcl_options(-akc)
+        }
+    }
+
+    dog create spot
+    spot configure -color black -akc 1
+    spot listopts
+} -cleanup {
+    dog destroy
+} -result {black 1}
+
+test option-1.5 {options can be set as an instance variable} -body {
+    type dog {
+        option -color golden
+        option -akc 0
+
+        method setopts {} {
+            set itcl_options(-color) black
+            set itcl_options(-akc) 1
+        }
+    }
+
+    dog create spot
+    spot setopts
+    list [spot cget -color] [spot cget -akc]
+} -cleanup {
+    dog destroy
+} -result {black 1}
+
+test option-1.6 {options can be set at creation time} -body {
+    type dog {
+        option -color golden
+        option -akc 0
+    }
+
+    dog create spot -color white -akc 1
+    list [spot cget -color] [spot cget -akc]
+} -cleanup {
+    dog destroy
+} -result {white 1}
+
+test option-1.7 {undefined option: cget} -body {
+    type dog {
+        option -color golden
+        option -akc 0
+    }
+
+    dog create spot
+    spot cget -colour
+} -returnCodes {
+    error
+} -cleanup {
+    dog destroy
+} -result {unknown option "-colour"}
+
+test option-1.8 {undefined option: configure} -body {
+    type dog {
+        option -color golden
+        option -akc 0
+    }
+
+    dog create spot
+    spot configure -colour blue
+} -returnCodes {
+    error
+} -cleanup {
+    dog destroy
+} -result {unknown option "-colour"}
+
+test option-1.9 {options default to ""} -body {
+    type dog {
+        option -color
+    }
+
+
+    dog create spot
+    spot cget -color
+} -cleanup {
+    dog destroy
+} -result {<undefined>}
+
+test option-1.10 {spaces allowed in option defaults} -body {
+    type dog {
+        option -breed "golden retriever"
+    }
+    dog fido
+    fido cget -breed
+} -cleanup {
+    dog destroy
+} -result {golden retriever}
+
+test option-1.11 {brackets allowed in option defaults} -body {
+    type dog {
+        option -regexp {[a-z]+}
+    }
+
+    dog fido
+    fido cget -regexp
+} -cleanup {
+    dog destroy
+} -result {[a-z]+}
+
+test option-2.1 {configure returns info, local options only} -body {
+    type dog {
+        option -color black
+        option -akc 1
+    }
+
+    dog create spot
+    spot configure -color red
+    spot configure -akc 0
+    lsort [spot configure]
+} -cleanup {
+    dog destroy
+} -result {{-akc akc Akc 1 0} {-color color Color black red}}
+
+test option-2.2 {configure -opt returns info, local options only} -body {
+    type dog {
+        option -color black
+        option -akc 1
+    }
+
+    dog create spot
+    spot configure -color red
+    spot configure -color
+} -cleanup {
+    dog destroy
+} -result {-color color Color black red}
+
+test option-2.3 {configure -opt returns info, explicit options} -body {
+    type papers {
+        option -akcflag 1
+    }
+
+    type dog {
+        option -color black
+        delegate option -akc to papers as -akcflag
+        constructor {args} {
+            set papers [papers create $self.papers]
+        }
+
+        destructor {
+            catch {$self.papers destroy}
+        }
+    }
+
+    dog create spot
+    spot configure -akc 0
+    spot configure -akc
+} -cleanup {
+    dog destroy
+    papers destroy
+} -result {-akc akc Akc 1 0}
+
+test option-2.4 {configure -unknownopt} -body {
+    type papers {
+        option -akcflag 1
+    }
+
+    type dog {
+        option -color black
+        delegate option -akc to papers as -akcflag
+        constructor {args} {
+            set papers [papers create $self.papers]
+        }
+
+        destructor {
+            catch {$self.papers destroy}
+        }
+    }
+
+    dog create spot
+    spot configure -foo
+} -returnCodes {
+    error
+} -cleanup {
+    dog destroy
+    papers destroy
+} -result {unknown option "-foo"}
+
+test option-3.1 {set option resource name explicitly} -body {
+    type dog {
+        option {-tailcolor tailColor} black
+    }
+
+    dog fido
+
+    fido configure -tailcolor
+} -cleanup {
+    dog destroy
+} -result {-tailcolor tailColor TailColor black black}
+
+test option-3.2 {set option class name explicitly} -body {
+    type dog {
+        option {-tailcolor tailcolor TailColor} black
+    }
+
+    dog fido
+
+    fido configure -tailcolor
+} -cleanup {
+    dog destroy
+} -result {-tailcolor tailcolor TailColor black black}
+
+test option-3.3 {delegated option's names come from owner} -body {
+    type tail {
+        option -color black
+    }
+
+    type dog {
+        delegate option -tailcolor to tail as -color
+
+        constructor {args} {
+            set tail [tail fidotail]
+        }
+    }
+
+    dog fido
+
+    fido configure -tailcolor
+} -cleanup {
+    dog destroy
+    tail destroy
+} -result {-tailcolor tailcolor Tailcolor black black}
+
+test option-3.4 {delegated option's resource name set explicitly} -body {
+    type tail {
+        option -color black
+    }
+
+    type dog {
+        delegate option {-tailcolor tailColor} to tail as -color
+
+        constructor {args} {
+            set tail [tail fidotail]
+        }
+    }
+
+    dog fido
+
+    fido configure -tailcolor
+} -cleanup {
+    dog destroy
+    tail destroy
+} -result {-tailcolor tailColor TailColor black black}
+
+test option-3.5 {delegated option's class name set explicitly} -body {
+    type tail {
+        option -color black
+    }
+
+    type dog {
+        delegate option {-tailcolor tailcolor TailColor} to tail as -color
+
+        constructor {args} {
+            set tail [tail fidotail]
+        }
+    }
+
+    dog fido
+
+    fido configure -tailcolor
+} -cleanup {
+    dog destroy
+    tail destroy
+} -result {-tailcolor tailcolor TailColor black black}
+
+test option-3.6 {delegated option's default comes from component} -body {
+    type tail {
+        option -color black
+    }
+
+    type dog {
+        delegate option -tailcolor to tail as -color
+
+        constructor {args} {
+            set tail [tail fidotail -color red]
+        }
+    }
+
+    dog fido
+
+    fido configure -tailcolor
+} -cleanup {
+    dog destroy
+    tail destroy
+} -result {-tailcolor tailcolor Tailcolor black red}
+
+test option-4.1 {local option name must begin with hyphen} -body {
+    type dog {
+        option nohyphen
+    }
+} -returnCodes {
+    error
+} -result {bad option name "nohyphen", options must start with a "-"}
+
+test option-4.2 {local option name must be lower case} -body {
+    type dog {
+        option -Upper
+    }
+} -returnCodes {
+    error
+} -result {bad option name "-Upper" , options must not contain uppercase characters}
+
+test option-4.3 {local option name may not contain spaces} -body {
+    type dog {
+        option {"-with space"}
+    }
+} -returnCodes {
+    error
+} -result {bad option name "-with space", option names must not contain " "}
+
+test option-4.4 {delegated option name must begin with hyphen} -body {
+    type dog {
+        delegate option nohyphen to tail
+    }
+} -returnCodes {
+    error
+} -result {bad delegated option name "nohyphen", options must start with a "-"}
+
+test option-4.5 {delegated option name must be lower case} -body {
+    type dog {
+        delegate option -Upper to tail
+    }
+} -returnCodes {
+    error
+} -result {bad option name "-Upper" , options must not contain uppercase characters}
+
+test option-4.6 {delegated option name may not contain spaces} -body {
+    type dog {
+        delegate option {"-with space"} to tail
+    }
+} -returnCodes {
+    error
+} -result {bad option name "-with space", option names must not contain " "}
+
+test option-6.1a {itcl_options variable is always there} -body {
+    type dog {
+        variable dummy
+    }
+
+    dog spot
+    spot info vars itcl_options
+} -cleanup {
+    dog destroy
+} -result {itcl_options}
+
+test option-6.2 {if no options, no options methods} -body {
+    type dog {
+        variable dummy
+    }
+
+    dog spot
+    spot info methods c*
+} -cleanup {
+    dog destroy
+} -result {}
+
+#-----------------------------------------------------------------------
+# option -validatemethod
+
+test validatemethod-1.1 {Validate method is called} -body {
+    type dog {
+        variable flag 0
+
+        option -color \
+            -default black \
+            -validatemethod ValidateColor
+
+        method ValidateColor {option value} {
+            set flag 1
+        }
+
+        method getflag {} {
+            return $flag
+        }
+    }
+
+    dog fido -color brown
+    fido getflag
+} -cleanup {
+    dog destroy
+} -result {1}
+
+test validatemethod-1.2 {Validate method gets correct arguments} -body {
+    type dog {
+        option -color \
+            -default black \
+            -validatemethod ValidateColor
+
+        method ValidateColor {option value} {
+            if {![string equal $option "-color"] ||
+                ![string equal $value "brown"]} {
+                error "Expected '-color brown'"
+            }
+        }
+    }
+
+    dog fido -color brown
+} -cleanup {
+    dog destroy
+} -result {::fido}
+
+test validatemethod-1.4 {Invalid -validatemethod causes error} -body {
+    type dog {
+        option -foo -default bar -validatemethod bogus
+    }
+
+    dog fido
+    fido configure -foo quux
+} -returnCodes {
+    error
+} -cleanup {
+    dog destroy
+} -result {invalid command name "bogus"}
+
+test validatemethod-1.5 {hierarchical -validatemethod} -body {
+    type dog {
+        option -foo -default bar -validatemethod {Val Opt}
+
+        method {Val Opt} {option value} {
+            error "Dummy"
+        }
+    }
+
+    dog fido -foo value
+} -returnCodes {
+    error
+} -cleanup {
+    dog destroy
+} -result {Dummy}
+
+
+
+#-----------------------------------------------------------------------
+# option -readonly semantics
+
+test optionreadonly-1.1 {Readonly options can be set at creation time} -body {
+    type dog {
+        option -color \
+            -default black \
+            -readonly true
+    }
+
+    dog fido -color brown
+
+    fido cget -color
+} -cleanup {
+    dog destroy
+} -result {brown}
+
+test optionreadonly-1.2 {Readonly options can't be set after creation} -body {
+    type dog {
+        option -color \
+            -default black \
+            -readonly true
+    }
+
+    dog fido
+
+    fido configure -color brown
+} -returnCodes {
+    error
+} -cleanup {
+    dog destroy
+} -result {option "-color" can only be set at instance creation}
+
+test optionreadonly-1.3 {Readonly options can't be set after creation} -body {
+    type dog {
+        option -color \
+            -default black \
+            -readonly true
+    }
+
+    dog fido -color yellow
+
+    fido configure -color brown
+} -returnCodes {
+    error
+} -cleanup {
+    dog destroy
+} -result {option "-color" can only be set at instance creation}
+
+
+#---------------------------------------------------------------------
+# Clean up
+
+cleanupTests
+return

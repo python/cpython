@@ -1,0 +1,313 @@
+# Commands covered:  unload
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1995 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 2003-2004 by Georgios Petasis
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+# Figure out what extension is used for shared libraries on this
+# platform.
+if {![info exists ext]} {
+    set ext [info sharedlibextension]
+}
+
+# Tests require the existence of one of the DLLs in the dltest directory.
+set testDir [file join [file dirname [info nameofexecutable]] dltest]
+set x [file join $testDir pkgua$ext]
+set dll "[file tail $x]Required"
+testConstraint $dll [file readable $x]
+
+# Tests also require that this DLL has not already been loaded.
+set loaded "[file tail $x]Loaded"
+set alreadyLoaded [info loaded]
+testConstraint $loaded [expr {![string match *pkgua* $alreadyLoaded]}]
+
+set alreadyTotalLoaded [info loaded]
+
+# Certain tests require the 'teststaticpkg' command from tcltest
+testConstraint teststaticpkg [llength [info commands teststaticpkg]]
+
+# Certain tests need the 'testsimplefilsystem' in tcltest
+testConstraint testsimplefilesystem \
+	[llength [info commands testsimplefilesystem]]
+
+proc loadIfNotPresent {pkg args} {
+    global testDir ext
+    set loaded [lmap x [info loaded {*}$args] {lindex $x 1}]
+    if {[string totitle $pkg] ni $loaded} {
+	load [file join $testDir $pkg$ext]
+    }
+}
+
+# Basic tests: parameter testing...
+test unload-1.1 {basic errors} -returnCodes error -body {
+    unload
+} -result {wrong # args: should be "unload ?-switch ...? fileName ?packageName? ?interp?"}
+test unload-1.2 {basic errors} -returnCodes error -body {
+    unload a b c d
+} -result {wrong # args: should be "unload ?-switch ...? fileName ?packageName? ?interp?"}
+test unload-1.3 {basic errors} -returnCodes error -body {
+    unload a b foobar
+} -result {could not find interpreter "foobar"}
+test unload-1.4 {basic errors} -returnCodes error -body {
+    unload {}
+} -result {must specify either file name or package name}
+test unload-1.5 {basic errors} -returnCodes error -body {
+    unload {} {}
+} -result {must specify either file name or package name}
+test unload-1.6 {basic errors} -returnCodes error -body {
+    unload {} Unknown
+} -result {package "Unknown" is loaded statically and cannot be unloaded}
+test unload-1.7 {-nocomplain switch} {
+    unload -nocomplain {} Unknown
+} {}
+
+set pkgua_loaded {}
+set pkgua_detached {}
+set pkgua_unloaded {}
+# Tests for loading/unloading in trusted (non-safe) interpreters...
+test unload-2.1 {basic loading of non-unloadable package, with guess for package name} [list $dll $loaded] {
+    loadIfNotPresent pkga
+    list [pkga_eq abc def] [lsort [info commands pkga_*]]
+} {0 {pkga_eq pkga_quote}}
+test unload-2.2 {basic loading of unloadable package, with guess for package name} [list $dll $loaded] {
+    list $pkgua_loaded $pkgua_detached $pkgua_unloaded \
+	    [load [file join $testDir pkgua$ext]] \
+	    [pkgua_eq abc def] [lsort [info commands pkgua_*]] \
+	    $pkgua_loaded $pkgua_detached $pkgua_unloaded
+} {{} {} {} {} 0 {pkgua_eq pkgua_quote} . {} {}}
+test unload-2.3 {basic unloading of non-unloadable package, with guess for package name} -setup {
+    loadIfNotPresent pkga
+} -constraints [list $dll $loaded] -returnCodes error -match glob -body {
+    unload [file join $testDir pkga$ext]
+} -result {file "*" cannot be unloaded under a trusted interpreter}
+test unload-2.4 {basic unloading of unloadable package, with guess for package name} -setup {
+    loadIfNotPresent pkgua
+} -constraints [list $dll $loaded] -body {
+    list $pkgua_loaded $pkgua_detached $pkgua_unloaded \
+	    [unload [file join $testDir pkgua$ext]] \
+	    [info commands pkgua_*] \
+	    $pkgua_loaded $pkgua_detached $pkgua_unloaded
+} -result {. {} {} {} {} . . .}
+test unload-2.5 {reloading of unloaded package, with guess for package name} -setup {
+    if {$pkgua_loaded eq ""} {
+	loadIfNotPresent pkgua
+	unload [file join $testDir pkgua$ext]
+    }
+} -constraints [list $dll $loaded] -body {
+    list $pkgua_loaded $pkgua_detached $pkgua_unloaded \
+	    [load [file join $testDir pkgua$ext]] \
+	    [pkgua_eq abc def] [lsort [info commands pkgua_*]] \
+	    $pkgua_loaded $pkgua_detached $pkgua_unloaded
+} -result {. . . {} 0 {pkgua_eq pkgua_quote} .. . .}
+test unload-2.6 {basic unloading of re-loaded package, with guess for package name} -setup {
+    # Establish expected state
+    if {$pkgua_loaded eq ""} {
+	loadIfNotPresent pkgua
+	unload [file join $testDir pkgua$ext]
+	load [file join $testDir pkgua$ext]
+    }
+} -constraints [list $dll $loaded] -body {
+    list $pkgua_loaded $pkgua_detached $pkgua_unloaded \
+	    [unload [file join $testDir pkgua$ext]] \
+	    [info commands pkgua_*] \
+	    $pkgua_loaded $pkgua_detached $pkgua_unloaded
+} -result {.. . . {} {} .. .. ..}
+
+# Tests for loading/unloading in safe interpreters...
+interp create -safe child
+child eval {
+    set pkgua_loaded {}
+    set pkgua_detached {}
+    set pkgua_unloaded {}
+}
+test unload-3.1 {basic loading of non-unloadable package in a safe interpreter, with package name conversion} \
+	[list $dll $loaded] {
+    catch {rename pkgb_sub {}}
+    load [file join $testDir pkgb$ext] pKgB child
+    list [child eval pkgb_sub 44 13] [catch {child eval pkgb_unsafe} msg] $msg \
+         [catch {pkgb_sub 12 10} msg2] $msg2
+} {31 1 {invalid command name "pkgb_unsafe"} 1 {invalid command name "pkgb_sub"}}
+test unload-3.2 {basic loading of unloadable package in a safe interpreter, with package name conversion} \
+	[list $dll $loaded] {
+    list [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}] \
+	    [load [file join $testDir pkgua$ext] pKgUA child] \
+	    [child eval pkgua_eq abc def] \
+	    [lsort [child eval info commands pkgua_*]] \
+	    [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}]
+} {{{} {} {}} {} 0 {pkgua_eq pkgua_quote} {. {} {}}}
+test unload-3.3 {unloading of a package that has never been loaded from a safe interpreter} -setup {
+    loadIfNotPresent pkga
+} -constraints [list $dll $loaded] -returnCodes error -match glob -body {
+    unload [file join $testDir pkga$ext] {} child
+} -result {file "*" has never been loaded in this interpreter}
+test unload-3.4 {basic unloading of a non-unloadable package from a safe interpreter, with guess for package name} -setup {
+    if {[lsearch -index 1 [info loaded child] Pkgb] == -1} {
+	load [file join $testDir pkgb$ext] pKgB child
+    }
+} -constraints [list $dll $loaded] -returnCodes error -match glob -body {
+    unload [file join $testDir pkgb$ext] {} child
+} -result {file "*" cannot be unloaded under a safe interpreter}
+test unload-3.5 {basic unloading of an unloadable package from a safe interpreter, with guess for package name} -setup {
+    if {[lsearch -index 1 [info loaded child] Pkgua] == -1} {
+	load [file join $testDir pkgua$ext] pkgua child
+    }
+} -constraints [list $dll $loaded] -body {
+    list [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}] \
+	    [unload [file join $testDir pkgua$ext] {} child] \
+	    [child eval info commands pkgua_*] \
+	    [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}]
+} -result {{. {} {}} {} {} {. . .}}
+test unload-3.6 {reloading of unloaded package in a safe interpreter, with guess for package name} -setup {
+    if {[child eval set pkgua_loaded] eq ""} {
+	load [file join $testDir pkgua$ext] {} child
+	unload [file join $testDir pkgua$ext] {} child
+    }
+} -constraints [list $dll $loaded] -body {
+    list [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}] \
+	    [load [file join $testDir pkgua$ext] {} child] \
+	    [child eval pkgua_eq abc def] \
+	    [lsort [child eval info commands pkgua_*]] \
+	    [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}]
+} -result {{. . .} {} 0 {pkgua_eq pkgua_quote} {.. . .}}
+test unload-3.7 {basic unloading of re-loaded package from a safe interpreter, with package name conversion} -setup {
+    if {[child eval set pkgua_loaded] eq ""} {
+	load [file join $testDir pkgua$ext] {} child
+	unload [file join $testDir pkgua$ext] {} child
+	load [file join $testDir pkgua$ext] {} child
+    }
+} -constraints [list $dll $loaded] -body {
+    list [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}] \
+	    [unload [file join $testDir pkgua$ext] pKgUa child] \
+	    [child eval info commands pkgua_*] \
+	    [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}]
+} -result {{.. . .} {} {} {.. .. ..}}
+
+# Tests for loading/unloading of a package among multiple interpreters...
+interp create child-trusted
+child-trusted eval {
+    set pkgua_loaded {}
+    set pkgua_detached {}
+    set pkgua_unloaded {}
+}
+array set load {M 0 C 0 T 0}
+## Load package in main trusted interpreter...
+test unload-4.1 {loading of unloadable package in trusted interpreter, with guess for package name} -setup {
+    set pkgua_loaded ""
+    set pkgua_detached ""
+    set pkgua_unloaded ""
+    incr load(M)
+} -constraints [list $dll $loaded] -body {
+    list [list $pkgua_loaded $pkgua_detached $pkgua_unloaded] \
+	    [load [file join $testDir pkgua$ext]] \
+	    [pkgua_eq abc def] [lsort [info commands pkgua_*]] \
+	    [list $pkgua_loaded $pkgua_detached $pkgua_unloaded]
+} -result {{{} {} {}} {} 0 {pkgua_eq pkgua_quote} {. {} {}}}
+## Load package in child-safe interpreter...
+test unload-4.2 {basic loading of unloadable package in a safe interpreter, with package name conversion} -setup {
+    child eval {
+	set pkgua_loaded ""
+	set pkgua_detached ""
+	set pkgua_unloaded ""
+    }
+    incr load(C)
+} -constraints [list $dll $loaded] -body {
+    list [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}] \
+	    [load [file join $testDir pkgua$ext] pKgUA child] \
+	    [child eval pkgua_eq abc def] \
+	    [lsort [child eval info commands pkgua_*]] \
+	    [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}]
+} -result {{{} {} {}} {} 0 {pkgua_eq pkgua_quote} {. {} {}}}
+## Load package in child-trusted interpreter...
+test unload-4.3 {basic loading of unloadable package in a second trusted interpreter, with package name conversion} -setup {
+    incr load(T)
+} -constraints [list $dll $loaded] -body {
+    list [child-trusted eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}] \
+	    [load [file join $testDir pkgua$ext] pkguA child-trusted] \
+	    [child-trusted eval pkgua_eq abc def] \
+	    [lsort [child-trusted eval info commands pkgua_*]] \
+	    [child-trusted eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}]
+} -result {{{} {} {}} {} 0 {pkgua_eq pkgua_quote} {. {} {}}}
+## Unload the package from the main trusted interpreter...
+test unload-4.4 {basic unloading of unloadable package from trusted interpreter, with guess for package name} -setup {
+    if {!$load(M)} {
+	load [file join $testDir pkgua$ext]
+    }
+    if {!$load(C)} {
+	load [file join $testDir pkgua$ext] {} child
+	incr load(C)
+    }
+    if {!$load(T)} {
+	load [file join $testDir pkgua$ext] {} child-trusted
+	incr load(T)
+    }
+} -constraints [list $dll $loaded] -body {
+    list [list $pkgua_loaded $pkgua_detached $pkgua_unloaded] \
+	    [unload [file join $testDir pkgua$ext]] \
+	    [info commands pkgua_*] \
+	    [list $pkgua_loaded $pkgua_detached $pkgua_unloaded]
+} -result {{. {} {}} {} {} {. . {}}}
+## Unload the package from the child safe interpreter...
+test unload-4.5 {basic unloading of unloadable package from a safe interpreter, with guess for package name} -setup {
+    if {!$load(C)} {
+	load [file join $testDir pkgua$ext] {} child
+    }
+    if {!$load(T)} {
+	load [file join $testDir pkgua$ext] {} child-trusted
+	incr load(T)
+    }
+} -constraints [list $dll $loaded] -body {
+    list [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}] \
+	    [unload [file join $testDir pkgua$ext] {} child] \
+	    [child eval info commands pkgua_*] \
+	    [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}]
+} -result {{. {} {}} {} {} {. . {}}}
+## Unload the package from the child trusted interpreter...
+test unload-4.6 {basic unloading of unloadable package from a safe interpreter, with guess for package name} -setup {
+    if {!$load(T)} {
+	load [file join $testDir pkgua$ext] {} child-trusted
+    }
+} -constraints [list $dll $loaded] -body {
+    list [child-trusted eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}] \
+	    [unload [file join $testDir pkgua$ext] {} child-trusted] \
+	    [child-trusted eval info commands pkgua_*] \
+	    [child-trusted eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}]
+} -result {{. {} {}} {} {} {. . .}}
+
+test unload-5.1 {unload a module loaded from vfs} \
+     -constraints [list $dll $loaded testsimplefilesystem] \
+     -setup {
+	 set dir [pwd]
+	 cd $testDir
+	 testsimplefilesystem 1
+	 load simplefs:/pkgua$ext pkgua
+     } \
+    -body {
+	list [catch {unload simplefs:/pkgua$ext} msg] $msg
+    } \
+    -result {0 {}}
+
+# cleanup
+interp delete child
+interp delete child-trusted
+unset ext
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

@@ -1,0 +1,86 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_Name 3 "" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_Name, Tk_PathName, Tk_NameToWindow \- convert between names and window tokens
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Tk_Uid
+\fBTk_Name\fR(\fItkwin\fR)
+.sp
+char *
+\fBTk_PathName\fR(\fItkwin\fR)
+.sp
+Tk_Window
+\fBTk_NameToWindow\fR(\fIinterp, pathName, tkwin\fR)
+.SH ARGUMENTS
+.AS Tcl_Interp *pathName
+.AP Tk_Window tkwin in
+Token for window.
+.AP Tcl_Interp *interp out
+Interpreter to use for error reporting.
+.AP "const char" *pathName in
+Character string containing path name of window.
+.BE
+.SH DESCRIPTION
+.PP
+Each window managed by Tk has two names, a short name that identifies
+a window among children of the same parent, and a path name that
+identifies the window uniquely among all the windows belonging to the
+same main window.  The path name is used more often in Tk than the
+short name;  many commands, like \fBbind\fR, expect path names as
+arguments.
+.PP
+The \fBTk_Name\fR macro returns a window's
+short name, which is the same as the \fIname\fR argument
+passed to \fBTk_CreateWindow\fR when
+the window was created.  The value is returned
+as a Tk_Uid, which may be used just like a string pointer but also has
+the properties of a unique identifier (see the manual entry for
+\fBTk_GetUid\fR for details).
+.PP
+The \fBTk_PathName\fR macro returns a hierarchical name for \fItkwin\fR.
+Path names have a structure similar to file names in Unix but with
+dots between elements instead of slashes:  the main window for
+an application has the path name
+.QW . ;
+its children have names like
+.QW .a
+and
+.QW .b ;
+their children have names like
+.QW .a.aa
+and
+.QW .b.bb ;
+and so on.  A window is considered to be a child of
+another window for naming purposes if the second window was named
+as the first window's \fIparent\fR when the first window was created.
+This is not always the same as the X window hierarchy.  For
+example, a pop-up
+is created as a child of the root window, but its logical parent will
+usually be a window within the application.
+.PP
+The procedure \fBTk_NameToWindow\fR returns the token for a window
+given its path name (the \fIpathName\fR argument) and another window
+belonging to the same main window (\fItkwin\fR).  It normally
+returns a token for the named window, but if no such window exists
+\fBTk_NameToWindow\fR leaves an error message in interpreter
+\fIinterp\fR's result
+and returns NULL.  The \fItkwin\fR argument to \fBTk_NameToWindow\fR
+is needed because path names are only unique within a single
+application hierarchy.  If, for example, a single process has opened
+two main windows, each will have a separate naming hierarchy and the
+same path name might appear in each of the hierarchies.  Normally
+\fItkwin\fR is the main window of the desired hierarchy, but this
+need not be the case:  any window in the desired hierarchy may be used.
+.SH KEYWORDS
+name, path name, token, window

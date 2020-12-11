@@ -1,0 +1,790 @@
+<!-- $Id: oop.tex.html,v 1.2 2000/11/11 23:34:47 idiscovery Exp $ -->
+<H1><A NAME=6>6 Tix Object Oriented Programming</H1>
+
+<p>  <i> This chapter is intended for experienced programmers who want to
+  create new Tix widgets. If you just want use the Tix widgets in your
+  applications, you can skip this chapter.</i>
+
+<p><H2><A NAME=6.1>6.1 Introduction to Tix Object Oriented Programming</H2>
+
+<p>  Tix comes with a simple object oriented programming (OOP) framework,
+  the <i> Tix Intrinsics</i>, for writing mega-widgets. The Tix
+  Intrinsics is not a general purpose OOP system and it does not
+  support some features found in general purpose OOP systems such as
+  <code> [incr Tcl]</code>. However, the Tix Intrinsics is specially designed
+  for writing mega-widgets. It provides a simple and efficient
+  interface for creating mega-widgets so that you can avoid the
+  complexity and overheads of the general purpose OOP extensions to
+  Tcl.
+
+<p>  The hard thing about programming with mega-widgets is to make sure
+  that each instance you create can handle its own activities.  Events
+  must be directed to the right widget, procedures must act on data
+  that is internal to that widget, and users should be able to change
+  the options associated with the widget.  For instance, we'll show an
+  arrow widget that needs to know what direction it's pointing; this
+  requires each instance of the widget to have its own variable.
+
+<p>  Furthermore, each widget should respond properly to changes
+  requested by the application programmer during the program's run.
+  The whole reason people use Tcl/Tk is because they can alter things
+  on the fly.
+
+<p>  The advantage of an object-oriented programming system is that you
+  can easily associate a widget with its own data and procedures
+  (methods).  This chapter shows how to do that, and how to configure
+  data both at the time the widget is initialized and later during the
+  program.
+
+<p>
+<H3><A NAME=6.1.1>6.1.1 Widget Classes and Widget Instances</H3>
+
+<p>  All the mega-widget classes in Tix, such as TixComboBox and
+  TixControl, are implemented in the Tix Intrinsics framework. Also,
+  you can write new <i> widget classes</i> with the Tix Intrinsics. In
+  the next section, I'll go through all the steps of creating a new
+  widget class in Tix. I'll illustrate the idea using a new class
+  ``TixArrowButton'' as an example. TixArrowButton is essentially a
+  button that can display an arrow in one of the for directions
+  (see figure <a href=oop.tex.html#6-1>6-1 </a>).
+
+<p><blockquote><a name=6-1>
+<center><img src=fig/oop/arrows.gif></center>
+<hr><center><h3>(Figure 6-1) Arrow Buttons</center></h3>
+</blockquote>
+
+<p>  Once you have defined your classes, you can create <i> widget
+  instances</i> of these classes. For example, the following code will
+  create four instances of your new TixArrowButton class:
+
+<p><blockquote><pre>
+tixArrowButton .up    -direction n
+tixArrowButton .left  -direction e
+tixArrowButton .right -direction w
+tixArrowButton .down  -direction s
+</pre></blockquote>
+
+<p><H3><A NAME=6.1.2>6.1.2 What is in a Widget Instance</H3>
+
+<p>  Each widget instance is composed of three integral parts: variables,
+  methods and component widgets
+
+<p><H4><A NAME=6.1.2.1> Variables</H4>
+
+<p>  Each widget instance is associated with a set of variables. In the
+  example of an instance of the TixArrowButton class, we may use a
+  variable to store the direction to which the arrow is pointing
+  to. We may also use a variable to count how many times the user has
+  pressed the button.
+
+<p>  Each variable can be public or private. Public variables may be
+  accessed by the application programmer (usually via <code> configure</code>
+  or cget <code> methods</code>) and their names usually start with a dash
+  (<code> -</code>). They usually are used to represent some user-configurable
+  options of the widget instance. Private variables, on the other
+  hand, cannot be accessed by the application programmer. They are
+  usually used to store information about the widget instance that are
+  of interests only to the widget writer.
+
+<p>  All the variables of an instance are stored in a global array that
+  has the same name as the instance. For example, the variables of the
+  instance <code> .up</code> are stored in the global array <code> .up:</code>. The
+  public variable <code> -direction</code>, which records the direction to
+  which the arrow is pointing to, is stored in <code> .up(-direction)</code>.
+  The private variable <code> count</code>, which counts how many times the
+  user has pressed the button, is stored in <code> .up(count)</code>. In
+  comparison, the same variables of the <code> .down</code> instance are
+  stored in <code> .down(-direction)</code> and <code> .down(count)</code>.
+
+<p><H4><A NAME=6.1.2.2> Methods</H4>
+
+<p>  To carry out operations on the widget, you define a set of
+  procedures called <i> methods</i> (to use common object-oriented
+  terminology). Each method can be declared as public or private. <i>
+  Public methods</i> can be called by the application programmer. For
+  example, if the TixArrowButton class supports the public methods
+  <code> invoke</code> and <code> invert</code>, the application programmer can issue
+  the commands to call these method for the widget instance <code> .up</code>.
+
+<p><blockquote><pre>
+.up invert
+.up invoke
+</pre></blockquote>
+  In contrast, <i> Private methods</i> are of interests only to widget
+  writers and cannot be called by application programmers.
+
+<p><H4><A NAME=6.1.2.3> Component Widgets</H4>
+
+<p>  A Tix mega-widget is composed of one or more component
+  widgets. The main part of a mega-widget is called the <i> root
+  widget</i>, which is usually a frame widget that encompasses all other
+  component widgets. The other component widgets are called <i>
+  subwidgets</i>.
+
+<p>  The root widget has the same name as the the mega-widget itself. In
+  the above example, we have a mega-widget called <code> .up</code>. It has a
+  root widget which is a frame widget and is also called <code>
+  .up</code>. Inside <code> .up</code> we have a button subwidget called <code>
+  .up.button</code>.
+
+<p>  Similar to variables and methods, component widgets are also
+  classified into public and private component widgets. Only public
+  widgets may be accessed by the application programmer, via the <code>
+  subwidget</code> method (see section <a href=intro.tex.html#1.3.1>1.3.1 </a>) of each widget
+  instance.
+
+<p><H2><A NAME=6.2>6.2 Widget Class Declaration</H2>
+
+<p>  The first step of writing a new widget class is to decide the base
+  class from which the new class. Usually, if the new class does not
+  share any common features with other classes, it should be derived
+  from the TixPrimitive class. If it does share common features with
+  other classes, then it should be derived from the appropriate base
+  class. For example, if the new class support scrollbars, it should
+  be derived from TixScrolledWidget; if it displays a label next to
+  its ``main area'', then it should be derived from TixLabelWidget.
+
+<p>  In the case of our new TixArrowButton class, it doesn't really share
+  any common features with other classes, so we decide to use the base
+  class TixPrimitive as its superclass.
+
+<p>
+<H3><A NAME=6.2.1>6.2.1 Using the tixWidgetClass Command</H3>
+
+<p>  We can use the <code> tixWidgetClass</code> command to declare a new
+  class. The syntax is:
+
+<p><blockquote><pre>
+tixWidgetClass classCommandName {
+    -switch value
+    -switch value
+    ....
+}
+</pre></blockquote>
+  For example, the following is the declaration section of
+  TixArrowButton:
+
+<p><blockquote><a name=6-2>
+<pre>
+tixWidgetClass tixArrowButton {
+    -classname  TixArrowButton
+    -superclass tixPrimitive
+    -method {
+        flash invoke invert
+    }
+    -flag {
+        -direction -state
+    }
+    -configspec {
+        {-direction direction Direction e}
+        {-state state State normal}
+    }
+    -alias {
+        {-dir -direction}
+    }
+    -default {
+        {*Button.anchor         c}
+        {*Button.padX           5}
+    }
+}
+</pre>
+<hr><center><h3>(Figure 6-2) declaration of the TixArrowButton Class</center></h3>
+</blockquote>
+
+<p>  We'll look at what each option means as I describe the command in
+  the following sections.
+
+<p>  The first argument for <code> tixWidgetClass</code> is the <i> command
+  name</i> for the widget class (<code> tixArrowButton</code>). Command names are
+  used to create widgets of this class. For example, the code
+
+<p><blockquote><pre>
+tixArrowButton .arrow
+</pre></blockquote>
+  creates a widget instance <code> .arrow</code> of the class
+  TixArrowButton. Also, the command name is used as a prefix of all
+  the methods of this class. For example, the <code> Foo</code> and <code> Bar</code>
+  methods of the class TixArrowButton will be written as <code>
+  tixArrowButton:Foo</code> and <code> tixArrowButton:Bar</code>.
+
+<p>  The <i> class name</i> of the class (<code> TixArrowButton</code>)is specified
+  by the <code> -classname</code> switch inside the main body of the
+  declaration. The class name is used only to specify options in the
+  TK option database. For example, the following commands specifies
+  the TixArrowButton widget instances should have the default value
+  <code> up</code> for their <code> -direction</code> option and the default value
+  <code> normal</code> for their <code> -state</code> option.
+
+<p><blockquote><pre>
+option add *TixArrowButton.direction up
+option add *TixArrowButton.state     normal
+</pre></blockquote>
+
+<p>  <!ignored:nind> Notice the difference in the capitalization of the class name
+  and the command name of the TixArrowButton class: both of them has
+  the individual words capitalized, but the command name (<code>
+  tixArrowButton</code>)starts with a lower case letter while the class name
+  (<code> TixArrowButton</code>) starts with an upper case letter. When you
+  create your own classes, you should follow this naming convention.
+
+<p>
+  The <code> -superclass</code> switch specifies the superclass of the new
+  widget. In our example, we have set it to <code> tixPrimitive</code>. Again,
+  pay attention to the capitalization: we should use the command name
+  of the superclass, not its class name.
+
+<p><H2><A NAME=6.3>6.3 Writing Methods</H2>
+
+<p>  After we have declared the new widget class, we can write methods
+  for this class to define its behavior. Methods are just a special
+  type of TCL procedures and they are created by the <code> proc</code>
+  command. There are, however, three requirements for methods. First,
+  their names must be prefixed by the command name of their
+  class. Second, they must accept at least one argument and the first
+  argument that they accept must be called <code> w</code>. Third, the first
+  command executed inside each method must be 
+
+<p><blockquote><pre>
+upvar #0 $w data
+</pre></blockquote>
+
+<p>  For example, the following is an implementation of the invert method
+  for the class TixArrowButton:
+
+<p><blockquote><pre>
+proc tixArrowButton:invert {w} {
+    upvar #0 $w data
+
+<p>    set curDirection $data(-direction)
+    case $curDirection {
+        n {
+            set newDirection s
+        }
+        s {
+            set newDirection n
+        }
+        # ....
+    }
+}
+</pre></blockquote>
+  Notice that the name of the method is prefixed by the command name
+  of the class (<code> tixArrowButton</code>). Also, the first and only
+  argument that it accepts is <code> w</code> and the first line it executes
+  is ``<code> upvar #0 $w data</code>''.
+
+<p>  The argument <code> w</code> specifies which widget instance this method
+  should act upon. For example, if the user has issued the command
+
+<p><blockquote><pre>
+.up invert
+</pre></blockquote>
+  on an instance <code> .up</code> of the class tixArrowButton, the method
+  <code> tixArrowButton:invert</code> will be called and the argument <code> w</code>
+  will have the value <code> .up</code>.
+
+<p>  The <code> invert</code> method is used to invert the direction of the
+  arrow. Therefore, it should examine the variable <code>
+  .up(-direction)</code>, which stores the current direction of the instance
+  <code> .up</code>, and modify it appropriately. It turns out that in TCL,
+  the only clean way to access an array whose name is stored in a
+  variable is the ``<code> upvar #0 $w data</code>'' technique: essentially
+  it tells the intepreter that the array data should be an alias for
+  the global array whose name is stored in <code> $w</code>. We will soon see
+  how the widget's methods use the data array.
+
+<p>  Once the mysterious ``<code> upvar #0 $w data</code>'' line is explained,
+  it becomes clear what the rest of the <code> tixArrowButton:invert</code>
+  method does: it examines the current direction of the arrow, which
+  is stored in <code> $data(-direction)</code> and inverts it.
+
+<p><H3><A NAME=6.3.1>6.3.1 Declaring Public Methods</H3>
+
+<p>  All the methods of a class are by default private methods and cannot
+  be accessed by the application programmer. If you want to make a
+  method public, you can include its name in the <code> -method</code> section
+  of the class declaration. In our TixArrowButton example, we have
+  declared that the methods <code> flash</code>, <code> invert</code> and <code> invoke</code>
+  are public methods and they can be accessed by the application
+  programmer. All other methods of the TixArrowButton class will be
+  private.
+
+<p>  Usually, the names of private methods start with a capital letter
+  with individual words capitalized. The names of public methods
+  start with a lowercase letter.
+
+<p><H2><A NAME=6.4>6.4 Standard Initialization Methods</H2>
+
+<p>  Each new mega-widget class must supply three standard initialization
+  methods.  When an instance of a Tix widget is created, three
+  three methods will be called to initialize this instance. The
+  methods are <code> InitWidgetRec</code>, <code> ConstructWidget</code> and <code>
+  SetBindings</code> and they will be called in that order. The following
+  sections show how these methods can be implemented.
+
+<p><H3><A NAME=6.4.1>6.4.1 The InitWidgetRec Method</H3>
+
+<p>  The purpose of the <code> InitWidgetRec</code> method is to initialize the
+  variables of the widget instance. For example, the following
+  implementation of <code> tixArrowButton:InitWidgetRec</code> sets the <code>
+  count</code> variable of each newly created instance to zero.
+
+<p><blockquote><pre>
+proc tixArrowButton:InitWidgetRec {w} {
+    upvar #0 $w data
+
+<p>    set data(count) 0
+}
+</pre></blockquote>
+
+<p>  Earlier, we showed how each widget you create is associated with an
+  array of the same name.  Within the methods, you always refer to
+  this array through the name <code> data</code> --the method then works
+  properly in each instance of the widget.
+
+<p><H4><A NAME=6.4.1.1> Chaining Methods</H4>
+
+<p>  The above implementation is not sufficient because our
+  TixArrowButton class is derived from TixPrimitive. The class
+  derivation in Tix is basically an <i> is-a</i> relationship:
+  TixArrowButton <i> is a</i> TixPrimitive. TixPrimitive defines the
+  method <code> tixPrimitive:InitWidgetRec</code> which sets up the instance
+  variables of every instance of TixPrimitive. Since an instance of
+  TixArrowButton is also an instance of TixPrimitive, we need to make
+  sure that the instance variables defined by TixPrimitive are also
+  properly initialized. The technique of calling a method defined in a
+  superclass is called the <i> chaining</i> of a method. The following
+  implementation does this correctly:
+
+<p>
+<blockquote><pre>
+proc tixArrowButton:InitWidgetRec {w} {
+    upvar #0 $w data
+
+<p>    tixPrimitive:InitWidgetRec $w
+    set data(count) 0
+}
+</pre></blockquote>
+  Notice that <code> tixPrimitive:InitWidgetRec</code> is called before anything
+  else is done. This way, we can define new classes by means of
+  successive refinement: we can first ask the superclass to set up the
+  instance variables, then we can modify some of those variables when
+  necessary and also define new variables.
+
+<p><H4><A NAME=6.4.1.2> The tixChainMethod call</H4>
+
+<p>  The above implementation of <code> tixArrowButton:InitWidgetRec</code> is
+  correct but it may be cumbersome if we want to switch
+  superclasses. For example, suppose we want to create a new base class
+  TixArrowWidget, which presumably defines common attributes of any
+  class that have arrows in them. Then, instead of deriving
+  TixArrowButton directly from TixPrimitive, we decide to derive
+  TixArrowButton from TixArrowWidget, which is in turn derived from
+  TixPrimitive:
+
+<p><blockquote><pre>
+tixWidgetClass tixArrowWidget {
+    -superclass tixPrimitive
+    ...
+}
+tixWidgetClass tixArrowButton {
+    -superclass tixArrowWidget
+    ...
+}
+</pre></blockquote>
+  Now we would need to change all the method chaining calls in
+  TixArrowButton from:
+
+<p><blockquote><pre>
+tixPrimitive:SomeMethod
+</pre></blockquote>
+  to:
+
+<p><blockquote><pre>
+tixArrowWidget:SomeMethod
+</pre></blockquote>
+  This may be a lot of work because you may have chained methods in many
+  places in the original implementation of TixArrowButton.
+
+<p>  The <code> tixChainMethod</code> command solves this problem. It will
+  automatically find a superclass that defines the method we want to
+  chain and calls this method for us. For example, the following is a
+  better implementation of <code> tixArrowButton:InitWidgetRec</code> that
+  uses <code> tixChainMethod</code> to avoid calling <code>
+  tixPrimitive:InitWidgetRec</code> directly:
+
+<p><blockquote><pre>
+proc tixArrowButton:InitWidgetRec {w} {
+    upvar #0 $w data
+
+<p>    tixChainMethod $w InitWidgetRec
+    set data(count) 0
+}
+</pre></blockquote>
+  Notice the order of the arguments for tixChainMethod: the name of
+  the instance, <code> $w</code>, is passed before the method we want to
+  chain, <code> InitWidgetRec</code>. In general, if the method we want to
+  chain has $1+n$ arguments:
+
+<p><blockquote><pre>
+proc tixPrimitive:MethodToChain {w arg1 arg2 ... argn} {
+    ...
+}
+</pre></blockquote>
+  We call it with the arguments in the following order
+
+<p><blockquote><pre>
+tixChainMethod $w MethodToChain $arg1 $arg2 ... $argn
+</pre></blockquote>
+  We'll come back to more detailed discussion of <code> tixChainMethod</code>
+  shortly. For the time being, let's take it for granted that <code>
+  tixChainMethod</code> must be used in the three standard initialization
+  methods: <code> InitWidgetRec</code>, <code> ConstructWidget</code> and <code>
+  SetBindings</code>
+
+<p><H3><A NAME=6.4.2>6.4.2 The ConstructWidget Method</H3>
+
+<p>  The <code> ConstructWidget</code> method is used to creates the components
+  of a widget instance. In the case of TixArrowButton, we want to
+  create a new button subwidget, whose name is <code> button</code>, and use a
+  bitmap to display an arrow on this button. Assuming the bitmap files
+  are stored in the files <code> up.xbm</code>, <code> down.xbm</code>, <code> left.xbm</code>
+  and <code> right.xbm</code>, the string substitution <code>
+  @$data(-direction).xbm</code> will give us the appropriate bitmap
+  depending on the current direction option of the widget instance.
+
+<p><blockquote><pre>
+proc tixArrowButton:ConstructWidget {w} {
+    upvar #0 $w data
+
+<p>    tixChainMethod $w ConstructWidget
+
+<p>    set data(w:button) [button $w.button -bitmap @$data(-direction).xbm]
+    pack $data(w:button) -expand yes -fill both
+}
+</pre></blockquote>
+
+<p>  The <code> tixArrowButton:ConstructWidget</code> method shown above sets
+  the variable <code> data(w:button)</code> to be the pathname of the <code>
+  button</code> subwidget. As a convention of the Tix Intrinsics, we must
+  declare a public subwidget <i> swid</i> by storing its pathname in the
+  variable <code> data(w:</code><i> swid</i><code> )</code>.
+
+<p><H3><A NAME=6.4.3>6.4.3 The SetBindings Method</H3>
+
+<p>  In your interface, you want to handle a lot of events in the
+  subwidgets that make up your mega-widget.  For instance, when
+  somebody presses the button in a TixArrowButton widget, you want the
+  button to handle the event. The <code> SetBindings</code> method is used to
+  creates event bindings for the components inside the mega-widget. In
+  our TixArrowButton example, we use the bind command to specify that
+  the method <code> tixArrowButton:IncrCount</code> should be called each
+  time when the user presses the first mouse button. As a result, we
+  can count the number of times the user has pressed on the button
+  (obviously for no better reasons than using it as a dumb example).
+
+<p><blockquote><pre>
+proc tixArrowButton:SetBindings {w} {
+    upvar #0 $w data
+
+<p>    tixChainMethod $w SetBindings
+
+<p>    bind $data(w:button) &lt;1&gt; "tixArrowButton:IncrCount $w"
+}
+
+<p>proc tixArrowButton:IncrCount {w} {
+    upvar #0 $w data
+
+<p>    incr data(count)
+}
+</pre></blockquote>
+
+<p><H2><A NAME=6.5>6.5 Declaring and Using Variables</H2>
+
+<p>  The private variables of a widget class do not need to be
+  declared. In fact they can be initialized and used anywhere by any
+  method. Usually, however, general purpose private variables are
+  initialized by the <code> InitWidgetRec</code> method and subwidget
+  variables are initialized in the <code> ConstructWidget</code> method.
+
+<p>  We have seen in the <code> tixArrowButton:InitWidgetRec</code> example that
+  the private variable <code> data(count)</code> was initialized there. Also,
+  the private variable <code> data(w:button)</code> was initialized in <code>
+  tixArrowButton:ConstructWidget</code> and subsequently used in <code>
+  tixArrowButton:SetBindings</code>.
+
+<p>  In contrast, public variables must be declared inside the class
+  declaration. The following arguments are used to declare the public
+  variables and specify various options for them:
+
+<p><blockquote><ul>
+
+<p>  <li> <code> -flag</code>: As shown in the class declaration in figure
+  <a href=oop.tex.html#6-2>6-2 </a>, the <code> -flag</code> argument declares all the public
+  variables of the TixArrowButton class, <code> -direction</code> and <code>
+  -state</code>
+
+<p>  <li> <code> -configspec</code>: We can use the <code> -configspec</code> argument to
+  specify the details of each public variable. For example, the
+  following declaration
+
+<p><blockquote><pre>
+-configspec {
+    {-direction direction Direction e}
+    {-state state State normal}
+}
+</pre></blockquote>
+
+<p>  <!ignored:nind> specifies that the <code> -direction</code> variable has the resource
+  name <code> direction</code> and resource class <code> Direction</code>; its default
+  value is <code> e</code>. The application programmer can assign value to
+  this variable by using the <code> -direction</code> option in the command
+  line or by specifying resources in the Tk option database with its
+  resource name or class. The declaration of <code> -state</code> installs
+  similar definitions for that variable.
+
+<p>  <li> <code> -alias</code>: The <code> -alias</code> argument is used to specify
+  alternative names for public variables. In our example, the setting
+
+<p><blockquote><pre>
+-alias {
+    {-dir -direction}
+}
+</pre></blockquote>
+  specifies that <code> -dir</code> is the same variable as <code>
+  -direction</code>. Therefore, when the application issue the command
+
+<p><blockquote><pre>
+.up config -dir w
+</pre></blockquote>
+ it is the same as issuing
+
+<p><blockquote><pre>
+.up config -direction w
+</pre></blockquote>
+  The <code> -alias</code> option provides only an alternative name for
+  the application programmer. Inside the widget's implementation code,
+  the variable is still accessed as <code> data(-direction)</code>, <i> not</i>
+  <code> data(-dir)</code>.  
+
+<p></blockquote></ul>
+
+<p><H3><A NAME=6.5.1>6.5.1 Initialization of Public Variables</H3>
+
+<p>  When a widget instance is created, all of its public variables are
+  initialized by the Tix Intrinsics before the <code> InitWidgetRec</code>
+  method is called. Therefore, <code> InitWidgetRec</code> and any other
+  method of this widgte instance are free to assume that all the
+  public variables have been properly initialized and use them as
+  such.
+
+<p>  The public variables are initialized by the following criteria.
+
+<p><blockquote><ul>
+
+<p>  <li>  Step 1: If the value of the variable is specified by the
+  creation command, this value is used. For example, if the
+  application programmer has created an instance in the following way:
+
+<p><blockquote><pre>
+tixArrowButton .arr -direction n
+</pre></blockquote>
+  The value <code> n</code> will be used for the -direction variable.
+
+<p>  <li>  Step 2: if step 1 fails but the value of the variable is
+  specified in the options database, that value is used. For example,
+  if the user has created an instance in the following way:
+
+<p><blockquote><pre>
+option add *TixArrowButton.direction w
+tixArrowButton .arr
+</pre></blockquote>
+  The value <code> w</code> will be used for the <code> -direction</code> variable.
+
+<p>  <li>  Step3: if step 2 also fails, the default value specified in
+  the <code> -configspec</code> secton of the class declaration will be used.
+
+<p></blockquote></ul>
+
+<p><H4><A NAME=6.5.1.1> Type Checker</H4>
+
+<p>  You can use a <i> type ckecker procedure</i> to check whether the user
+  has supplied a value of the correct type for a public variable. The
+  type checker is specified in the <code> -configspec</code> section of the
+  class declaration after the default value. The following code
+  specifies the type checker procedure <code> CheckDirection</code> for the
+  <code> -direction</code> variable:
+
+<p><blockquote><pre>
+    -configspec {
+        {-direction direction Direction e CheckDirection}
+        {-state state State normal}
+    }
+    ...
+}
+
+<p>proc CheckDirection {dir} {
+    if {[lsearch {n s w e} $dir] != -1} {
+        return $dir
+    } else {
+        error "wrong direction value &#92;&quot;$dir&#92;&quot;"
+}
+</pre></blockquote>
+  Notice that no type checker has been specified for the <code> -state</code>
+  variable and thus its value will not be checked.
+
+<p>  If a type checker procedure is specified for a public variable, this
+  procedure will be called once the value of a public variable is
+  determined by the three steps mentioned above.
+
+<p><H3><A NAME=6.5.2>6.5.2 Public Variable Configuration Methods</H3>
+
+<p>  After a widget instance is created, the user can assign new values
+  to the public variables using the configure method. For example, the
+  following code changes the <code> -direction</code> variable of the <code>
+  .arr</code> instance to <code> n</code>.
+
+<p><blockquote><pre>
+.arr configure -direction n
+</pre></blockquote>
+
+<p>  In order for configuration to work, you have to define a
+  configuration method that does what the programmer expects. The
+  configuration method of a public variable is invoked whenever the
+  user calls the configure method to change the value of this
+  variable. The name of a configuration method must be the name of the
+  public variable prefixed by the creation command of the class and
+  <code> :config</code>. For example, the name configuration method for the
+  <code> -direction</code> variable of the TixArrowButton class is <code>
+  tixArrowButton:config-direction</code>. The following code implements
+  this method:
+
+<p><blockquote><pre>
+proc tixArrowButton:config-direction {w value} {
+    upvar #0 $w data
+
+<p>    $data(w:button) config -bitmap @$value.xbm
+}
+</pre></blockquote>
+  Notice that when <code> tixArrowButton:config-direction</code> is called,
+  the <code> value</code> parameter contains the new value of the <code>
+  -direction</code> variable but <code> data(-direction)</code> contains the <code>
+  old</code> value. This is useful when the configuration method needs to
+  check the previous value of the variable before taking in the new
+  value.
+
+<p>  If a type checker is defined for a variable, it will be called
+  before the configuration method is called. Therefore, the
+  configuration method can assume that the type of the <code> value</code>
+  parameter is got is always correct.
+
+<p>  Sometimes it is necessary to override the value supplied by the
+  user. The following code illustrates this idea:
+
+<p><blockquote><pre>
+proc tixArrowButton:config-direction {w value} {
+    upvar #0 $w data
+
+<p>    if {$value == "n"} {
+        set value s
+        set data(-direction) $value
+    }
+
+<p>    $data(w:button) config -bitmap @$value.xbm
+    return $data(-direction)
+}
+</pre></blockquote>
+  Notice the above code always overrides values of <code> n</code> to <code>
+  s</code>. If you need to override the value, you must do the following two
+  things:
+
+<p><blockquote><ul>
+
+<p>  <li>  Explicitly set the instance variable inside the configuration
+  method (the <code> set data(-direction) $value</code> line).
+
+<p>  <li>  Return the modified value from the configuration method.
+</blockquote></ul>
+  If you do not need to override the value, you don't need to return
+  anything from the configuration method. In this case, the Tix
+  Intrinsics will assign the new value to the instance variable for
+  you.
+
+<p><H4><A NAME=6.5.2.1> Configuration Methods and Public Variable Initialization</H4>
+
+<p>  For efficiency reasons, the configuration methods are not called
+  during the intialization of the public variables. If you want to
+  force the configuration method to be called for a particular public
+  variable, you can specify it in the <code> -forcecall</code> section of the
+  class declaration. In the following example, we force the
+  configuration method of the <code> -direction</code> variable to be called
+  during intialization:
+
+<p><blockquote><pre>
+-forcecall {
+    -direction
+}
+</pre></blockquote>
+
+<p><H2><A NAME=6.6>6.6 Summary of Widget Instance Initialization</H2>
+
+<p>  The creation of a widget instance is a complex process. You must
+  understand how it works in order to write your widget classes. The
+  following is the steps taken by the Tix Intrinsics when a widget
+  instance is created:
+
+<p><blockquote><ul>
+
+<p>  <li>  When the user creates an instance, the public variables are
+  intilized as discussed in section <a href=oop.tex.html#6.5.1>6.5.1 </a>. Type checkers
+  are always called if they are specified. Configuration methods are
+  called only if they are specified in the <code> -forcecall</code> section.
+
+<p>  <li>  The <code> InitWidgetRec</code> method is called. It should initialize 
+  private variable, possibly according to the values the public
+  variables.
+
+<p>  <li>  The <code> ConstructWidget</code> method is called. It should create the
+  component widgets. It should also store the names of public
+  subwidgets into the subwidget variables.
+
+<p>  <li>  The <code> SetBinding</code> method is called. It should create bindings for
+  the component widgets.
+
+<p></blockquote></ul>
+  After the above steps, the creation of the instance is complete and the
+  user can iterate with it using its widget command.
+
+<p><H2><A NAME=6.7>6.7 Loading the New Classes</H2>
+
+<p>  Usually, you can use a separate script file to store the
+  implementaion of each new widget class. If you have several of those
+  files, it will be a good idea to group the files into a single
+  directory and create a <code> tclIndex</code> file for them so that the new
+  classes can be auto-loaded.
+
+<p>  Suppose you have put the class files into the directory <code>
+  /usr/my/tix/classes</code>. You can create the <code> tclIndex</code> file using
+  the <code> tools/tixindex</code> program that comes with Tix:
+
+<p><blockquote><pre>
+cd /usr/my/tix/classes
+/usr/my/Tix4.0/tools/tixindex *.tcl
+</pre></blockquote>
+
+<p>  <!ignored:nind> The <code> tclIndex</code> file must be created by the <code> tixindex</code>
+  program. You cannot use the standard <code> auto_mkindex</code> command
+  that comes with Tcl.
+
+<p>  Once you have created the <code> tclIndex</code> file, you can use your new
+  widget classes by auto-loading. Here is a small demo program that
+  uses the new TixArrowButton class:
+
+<p><blockquote><pre>
+#!/usr/local/bin/tixwish
+lappend auto_path /usr/my/tix/classes
+
+<p># Now I can use my TixArrowButton class!
+#
+tixArrowButton .arr -direction n
+pack .arr
+</pre></blockquote>

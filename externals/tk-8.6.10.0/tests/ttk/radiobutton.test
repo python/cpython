@@ -1,0 +1,48 @@
+#
+# ttk::radiobutton widget tests.
+#
+
+package require Tk
+package require tcltest ; namespace import -force tcltest::*
+loadTestedCommands
+
+test radiobutton-1.1 "Radiobutton check" -body {
+    pack \
+    	[ttk::radiobutton .rb1 -text "One" -variable choice -value 1] \
+	[ttk::radiobutton .rb2 -text "Two" -variable choice -value 2] \
+	[ttk::radiobutton .rb3 -text "Three" -variable choice -value 3] \
+	;
+}
+test radiobutton-1.2 "Radiobutton invoke" -body {
+    .rb1 invoke
+    set ::choice
+} -result 1
+
+test radiobutton-1.3 "Radiobutton state" -body {
+    .rb1 instate selected
+} -result 1
+
+test radiobutton-1.4 "Other radiobutton invoke" -body {
+    .rb2 invoke
+    set ::choice
+} -result 2
+
+test radiobutton-1.5 "Other radiobutton state" -body {
+    .rb2 instate selected
+} -result 1
+
+test radiobutton-1.6 "First radiobutton state" -body {
+    .rb1 instate selected
+} -result 0
+
+test radiobutton-1.7 "Unset radiobutton variable" -body {
+    unset ::choice
+    list [info exists ::choice] [.rb1 instate alternate] [.rb2 instate alternate]
+} -result {0 1 1}
+
+test radiobutton-1.8 "Reset radiobutton variable" -body {
+    set ::choice 2
+    list [info exists ::choice] [.rb1 instate alternate] [.rb2 instate alternate]
+} -result {1 0 0}
+
+tcltest::cleanupTests

@@ -1,0 +1,48 @@
+'\"
+'\" $Id: tixGetBoolean.n,v 1.2 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH tixGetBoolean n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+.SH NAME
+tixGetBoolean - Get the boolean value of a string.
+'\"
+'\"
+'\"
+.SH SYNOPSIS
+\fBtixGetBoolean\fI ?-nocomplain? string\fR
+.BE
+.SH DESCRIPTION
+.PP
+'\"
+'\"
+The command \fBtixGetBoolean\fR returns "0" if the string is a valid
+TCL string for the boolean value FALSE. It returns "1" if the string
+is a valid TCL string for the boolean value TRUE. 
+.PP
+When the string is not a valid TCL boolean value and the
+\fB-nocomplain\fR option is specified, \fBtixGetBoolean\fR will return
+"0". Otherwise it will generate an error.
+'\"
+'\"
+'\"
+'\"
+.PP
+.SH KEYWORDS
+Tix(n)
+

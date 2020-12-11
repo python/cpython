@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+	Copyright (c) 2005-2009 Daniel A. Steffen <das@users.sourceforge.net>
+	Copyright 2008-2009, Apple Inc.
+
+	See the file "license.terms" for information on usage and redistribution of
+	this file, and for a DISCLAIMER OF ALL WARRANTIES.
+-->
+<plist version="1.0">
+  <dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>English</string>
+    <key>CFBundleDocumentTypes</key>
+    <array>
+      <dict>
+	<key>CFBundleTypeExtensions</key>
+	<array>
+	  <string>tcl</string>
+	  <string>TCL</string>
+	  <string>*</string>
+	</array>
+	<key>CFBundleTypeMIMETypes</key>
+	<array>
+	  <string>application/x-tcl</string>
+	  <string>text/plain</string>
+	</array>
+	<key>CFBundleTypeName</key>
+	<string>NSStringPboardType</string>
+	<key>CFBundleTypeOSTypes</key>
+	<array>
+	  <string>TEXT</string>
+	  <string>****</string>
+	</array>
+	<key>CFBundleTypeRole</key>
+	<string>Viewer</string>
+      </dict>
+    </array>
+    <key>CFBundleURLTypes</key>
+    <array>
+      <dict>
+	<key>CFBundleTypeRole</key>
+        <string>Viewer</string>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>foo</string>
+        </array>
+        <key>CFBundleURLName</key>
+        <string>Get Foo</string>
+      </dict>
+    </array>
+    <key>CFBundleExecutable</key>
+    <string>Wish</string>
+    <key>CFBundleGetInfoString</key>
+    <string>Wish Shell @TK_VERSION@@TK_PATCH_LEVEL@,
+    Copyright © 1989-@TK_YEAR@ Tcl Core Team,
+    Copyright © 1989-@TK_YEAR@ Contributors,
+    Copyright © 2011-@TK_YEAR@ Kevin Walzer/WordTech Communications LLC,
+    Copyright © 2014-@TK_YEAR@ Marc Culler,
+    Copyright © 2002-@TK_YEAR@ Daniel A. Steffen,
+    Copyright © 2001-2009 Apple Inc.,
+    Copyright © 2001-2002 Jim Ingham &amp; Ian Reid</string>
+    <key>CFBundleIconFile</key>
+    <string>Wish.icns</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.tcltk.wish</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+      @CFBUNDLELOCALIZATIONS@
+    </array>
+    <key>CFBundleName</key>
+    <string>Wish</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>@TK_VERSION@@TK_PATCH_LEVEL@</string>
+    <key>CFBundleSignature</key>
+    <string>WiSH</string>
+    <key>CFBundleVersion</key>
+    <string>@TK_VERSION@@TK_PATCH_LEVEL@</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>10.6.0</string>
+    <key>LSRequiresCarbon</key>
+    <true/>
+    <key>NSAppleScriptEnabled</key>
+    <true/>
+    <key>OSAScriptingDefinition</key>
+    <string>Wish.sdef</string>
+    <key>NSHighResolutionCapable</key>
+    <string>True</string>
+    <key>NSServices</key>
+    <array>
+      <dict>
+	<key>NSMessage</key>
+	<string>provideService</string>
+	<key>NSPortName</key>
+	<string>Wish</string>
+	<key>NSSendTypes</key>
+	<array>
+          <string>NSStringPboardType</string>
+          <string>NSPasteboardTypeString</string>
+	</array>
+      </dict>
+    </array>
+  </dict>
+</plist>

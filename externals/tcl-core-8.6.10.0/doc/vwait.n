@@ -1,0 +1,246 @@
+'\"
+'\" Copyright (c) 1995-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH vwait n 8.0 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+vwait \- Process events until a variable is written
+.SH SYNOPSIS
+\fBvwait\fR \fIvarName\fR
+.BE
+.SH DESCRIPTION
+.PP
+This command enters the Tcl event loop to process events, blocking
+the application if no events are ready.  It continues processing
+events until some event handler sets the value of the global variable
+\fIvarName\fR.  Once \fIvarName\fR has been set, the \fBvwait\fR
+command will return as soon as the event handler that modified
+\fIvarName\fR completes.  The \fIvarName\fR argument is always interpreted as
+a variable name with respect to the global namespace, but can refer to any
+namespace's variables if the fully-qualified name is given.
+.PP
+In some cases the \fBvwait\fR command may not return immediately
+after \fIvarName\fR is set.  This happens if the event handler
+that sets \fIvarName\fR does not complete immediately.  For example,
+if an event handler sets \fIvarName\fR and then itself calls
+\fBvwait\fR to wait for a different variable, then it may not return
+for a long time.  During this time the top-level \fBvwait\fR is
+blocked waiting for the event handler to complete, so it cannot
+return either. (See the \fBNESTED VWAITS BY EXAMPLE\fR below.)
+.PP
+To be clear, \fImultiple \fBvwait\fI calls will nest and will not happen in
+parallel\fR.  The outermost call to \fBvwait\fR will not return until all the
+inner ones do.  It is recommended that code should never nest \fBvwait\fR
+calls (by avoiding putting them in event callbacks) but when that is not
+possible, care should be taken to add interlock variables to the code to
+prevent all reentrant calls to \fBvwait\fR that are not \fIstrictly\fR
+necessary. Be aware that the synchronous modes of operation of some Tcl
+packages (e.g.,\ \fBhttp\fR) use \fBvwait\fR internally; if using the event
+loop, it is best to use the asynchronous callback-based modes of operation of
+those packages where available.
+.SH EXAMPLES
+.PP
+Run the event-loop continually until some event calls \fBexit\fR.
+(You can use any variable not mentioned elsewhere, but the name
+\fIforever\fR reminds you at a glance of the intent.)
+.PP
+.CS
+\fBvwait\fR forever
+.CE
+.PP
+Wait five seconds for a connection to a server socket, otherwise
+close the socket and continue running the script:
+.PP
+.CS
+# Initialise the state
+after 5000 set state timeout
+set server [socket -server accept 12345]
+proc accept {args} {
+    global state connectionInfo
+    set state accepted
+    set connectionInfo $args
+}
+
+# Wait for something to happen
+\fBvwait\fR state
+
+# Clean up events that could have happened
+close $server
+after cancel set state timeout
+
+# Do something based on how the vwait finished...
+switch $state {
+    timeout {
+        puts "no connection on port 12345"
+    }
+    accepted {
+       puts "connection: $connectionInfo"
+       puts [lindex $connectionInfo 0] "Hello there!"
+    }
+}
+.CE
+.PP
+A command that will wait for some time delay by waiting for a namespace
+variable to be set.  Includes an interlock to prevent nested waits.
+.PP
+.CS
+namespace eval example {
+    variable v done
+    proc wait {delay} {
+        variable v
+        if {$v ne "waiting"} {
+            set v waiting
+            after $delay [namespace code {set v done}]
+            \fBvwait\fR [namespace which -variable v]
+        }
+        return $v
+    }
+}
+.CE
+.PP
+When running inside a \fBcoroutine\fR, an alternative to using \fBvwait\fR is
+to \fByield\fR to an outer event loop and to get recommenced when the variable
+is set, or at an idle moment after that.
+.PP
+.CS
+coroutine task apply {{} {
+    # simulate [after 1000]
+    after 1000 [info coroutine]
+    yield
+
+    # schedule the setting of a global variable, as normal
+    after 2000 {set var 1}
+
+    # simulate [\fBvwait\fR var]
+    proc updatedVar {task args} {
+        after idle $task
+        trace remove variable ::var write "updatedVar $task"
+    }
+    trace add variable ::var write "updatedVar [info coroutine]"
+    yield
+}}
+.CE
+.SS "NESTED VWAITS BY EXAMPLE"
+.PP
+This example demonstrates what can happen when the \fBvwait\fR command is
+nested. The script will never finish because the waiting for the \fIa\fR
+variable never finishes; that \fBvwait\fR command is still waiting for a
+script scheduled with \fBafter\fR to complete, which just happens to be
+running an inner \fBvwait\fR (for \fIb\fR) even though the event that the
+outer \fBvwait\fR was waiting for (the setting of \fIa\fR) has occurred.
+.PP
+.CS
+after 500 {
+    puts "waiting for b"
+    \fBvwait\fR b
+    puts "b was set"
+}
+after 1000 {
+    puts "setting a"
+    set a 10
+}
+puts "waiting for a"
+\fBvwait\fR a
+puts "a was set"
+puts "setting b"
+set b 42
+.CE
+.PP
+If you run the above code, you get this output:
+.PP
+.CS
+waiting for a
+waiting for b
+setting a
+.CE
+.PP
+The script will never print
+.QW "a was set"
+until after it has printed
+.QW "b was set"
+because of the nesting of \fBvwait\fR commands, and yet \fIb\fR will not be
+set until after the outer \fBvwait\fR returns, so the script has deadlocked.
+The only ways to avoid this are to either structure the overall program in
+continuation-passing style or to use \fBcoroutine\fR to make the continuations
+implicit. The first of these options would be written as:
+.PP
+.CS
+after 500 {
+    puts "waiting for b"
+    trace add variable b write {apply {args {
+        global a b
+        trace remove variable ::b write \e
+                [lrange [info level 0] 0 1]
+        puts "b was set"
+        set ::done ok
+    }}}
+}
+after 1000 {
+    puts "setting a"
+    set a 10
+}
+puts "waiting for a"
+trace add variable a write {apply {args {
+    global a b
+    trace remove variable a write [lrange [info level 0] 0 1]
+    puts "a was set"
+    puts "setting b"
+    set b 42
+}}}
+\fBvwait\fR done
+.CE
+.PP
+The second option, with \fBcoroutine\fR and some helper procedures, is done
+like this:
+.PP
+.CS
+# A coroutine-based wait-for-variable command
+proc waitvar globalVar {
+    trace add variable ::$globalVar write \e
+            [list apply {{v c args} {
+        trace remove variable $v write \e
+                [lrange [info level 0] 0 3]
+        after 0 $c
+    }} ::$globalVar [info coroutine]]
+    yield
+}
+# A coroutine-based wait-for-some-time command
+proc waittime ms {
+    after $ms [info coroutine]
+    yield
+}
+
+coroutine task-1 eval {
+    puts "waiting for a"
+    waitvar a
+    puts "a was set"
+    puts "setting b"
+    set b 42
+}
+coroutine task-2 eval {
+    waittime 500
+    puts "waiting for b"
+    waitvar b
+    puts "b was set"
+    set done ok
+}
+coroutine task-3 eval {
+    waittime 1000
+    puts "setting a"
+    set a 10
+}
+\fBvwait\fR done
+.CE
+.SH "SEE ALSO"
+global(n), update(n)
+.SH KEYWORDS
+asynchronous I/O, event, variable, wait
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

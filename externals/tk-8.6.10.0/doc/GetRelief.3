@@ -1,0 +1,82 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1998 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_GetReliefFromObj 3 8.1 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_GetReliefFromObj, Tk_GetRelief, Tk_NameOfRelief \- translate between strings and relief values
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+int
+\fBTk_GetReliefFromObj(\fIinterp, objPtr, reliefPtr\fB)\fR
+.sp
+int
+\fBTk_GetRelief(\fIinterp, name, reliefPtr\fB)\fR
+.sp
+const char *
+\fBTk_NameOfRelief(\fIrelief\fB)\fR
+.SH ARGUMENTS
+.AS "Tcl_Interp" *reliefPtr
+.AP Tcl_Interp *interp in
+Interpreter to use for error reporting.
+.AP Tcl_Obj *objPtr in/out
+String value contains name of relief, one of
+.QW \fBflat\fR ,
+.QW \fBgroove\fR ,
+.QW \fBraised\fR ,
+.QW \fBridge\fR ,
+.QW \fBsolid\fR ,
+or
+.QW \fBsunken\fR
+(or any unique abbreviation thereof on input);
+the internal rep will be modified to cache corresponding relief value.
+.AP char *string in
+Same as \fIobjPtr\fR except description of relief is passed as
+a string.
+.AP int *reliefPtr out
+Pointer to location in which to store relief value corresponding to
+\fIobjPtr\fR or \fIname\fR.
+.AP "const char" *name
+Name of the relief.
+.AP int relief in
+Relief value (one of \fBTK_RELIEF_FLAT\fR, \fBTK_RELIEF_RAISED\fR,
+\fBTK_RELIEF_SUNKEN\fR, \fBTK_RELIEF_GROOVE\fR, \fBTK_RELIEF_SOLID\fR,
+or \fBTK_RELIEF_RIDGE\fR).
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_GetReliefFromObj\fR places in \fI*reliefPtr\fR the relief value
+corresponding to the value of \fIobjPtr\fR.  This value will be one of
+\fBTK_RELIEF_FLAT\fR, \fBTK_RELIEF_RAISED\fR, \fBTK_RELIEF_SUNKEN\fR,
+\fBTK_RELIEF_GROOVE\fR, \fBTK_RELIEF_SOLID\fR, or \fBTK_RELIEF_RIDGE\fR.
+Under normal circumstances the return value is \fBTCL_OK\fR and
+\fIinterp\fR is unused.
+If \fIobjPtr\fR does not contain one of the valid relief names
+or an abbreviation of one of them, then \fBTCL_ERROR\fR is returned,
+\fI*reliefPtr\fR is unmodified, and an error message
+is stored in \fIinterp\fR's result if \fIinterp\fR is not NULL.
+\fBTk_GetReliefFromObj\fR caches information about the return
+value in \fIobjPtr\fR, which speeds up future calls to
+\fBTk_GetReliefFromObj\fR with the same \fIobjPtr\fR.
+.PP
+\fBTk_GetRelief\fR is identical to \fBTk_GetReliefFromObj\fR except
+that the description of the relief is specified with a string instead
+of an object.  This prevents \fBTk_GetRelief\fR from caching the
+return value, so \fBTk_GetRelief\fR is less efficient than
+\fBTk_GetReliefFromObj\fR.
+.PP
+\fBTk_NameOfRelief\fR is the logical inverse of \fBTk_GetRelief\fR.
+Given a relief value it returns the corresponding string (\fBflat\fR,
+\fBraised\fR, \fBsunken\fR, \fBgroove\fR, \fBsolid\fR, or \fBridge\fR).
+If \fIrelief\fR is not a legal relief value, then
+.QW "unknown relief"
+is returned.
+.SH KEYWORDS
+name, relief, string

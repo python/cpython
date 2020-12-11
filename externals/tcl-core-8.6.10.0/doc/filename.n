@@ -1,0 +1,178 @@
+'\"
+'\" Copyright (c) 1995-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH filename n 7.5 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+filename \- File name conventions supported by Tcl commands
+.BE
+.SH INTRODUCTION
+.PP
+All Tcl commands and C procedures that take file names as arguments
+expect the file names to be in one of three forms, depending on the
+current platform.  On each platform, Tcl supports file names in the
+standard forms(s) for that platform.  In addition, on all platforms,
+Tcl supports a Unix-like syntax intended to provide a convenient way
+of constructing simple file names.  However, scripts that are intended
+to be portable should not assume a particular form for file names.
+Instead, portable scripts must use the \fBfile split\fR and \fBfile
+join\fR commands to manipulate file names (see the \fBfile\fR manual
+entry for more details).
+.SH "PATH TYPES"
+.PP
+File names are grouped into three general types based on the starting point
+for the path used to specify the file: absolute, relative, and
+volume-relative.  Absolute names are completely qualified, giving a path to
+the file relative to a particular volume and the root directory on that
+volume.  Relative names are unqualified, giving a path to the file relative
+to the current working directory.  Volume-relative names are partially
+qualified, either giving the path relative to the root directory on the
+current volume, or relative to the current directory of the specified
+volume.  The \fBfile pathtype\fR command can be used to determine the
+type of a given path.
+.SH "PATH SYNTAX"
+.PP
+The rules for native names depend on the value reported in the Tcl
+\fBplatform\fR element of the \fBtcl_platform\fR array:
+.TP 10
+\fBUnix\fR
+On Unix and Apple MacOS X platforms, Tcl uses path names where the
+components are separated by slashes.  Path names may be relative or
+absolute, and file names may contain any character other than slash.
+The file names \fB\&.\fR and \fB\&..\fR are special and refer to the
+current directory and the parent of the current directory respectively.
+Multiple adjacent slash characters are interpreted as a single
+separator.  Any number of trailing slash characters at the end of a
+path are simply ignored, so the paths \fBfoo\fR, \fBfoo/\fR and
+\fBfoo//\fR are all identical, and in particular \fBfoo/\fR does not
+necessarily mean a directory is being referred.
+.RS
+.PP
+The following examples illustrate various forms of path
+names:
+.TP 15
+\fB/\fR
+Absolute path to the root directory.
+.TP 15
+\fB/etc/passwd\fR
+Absolute path to the file named \fBpasswd\fR in the directory
+\fBetc\fR in the root directory.
+.TP 15
+\fB\&.\fR
+Relative path to the current directory.
+.TP 15
+\fBfoo\fR
+Relative path to the file \fBfoo\fR in the current directory.
+.TP 15
+\fBfoo/bar\fR
+Relative path to the file \fBbar\fR in the directory \fBfoo\fR in the
+current directory.
+.TP 15
+\fB\&../foo\fR
+Relative path to the file \fBfoo\fR in the directory above the current
+directory.
+.RE
+.TP
+\fBWindows\fR
+On Microsoft Windows platforms, Tcl supports both drive-relative and UNC
+style names.  Both \fB/\fR and \fB\e\fR may be used as directory separators
+in either type of name.  Drive-relative names consist of an optional drive
+specifier followed by an absolute or relative path.  UNC paths follow the
+general form \fB\e\eservername\esharename\epath\efile\fR, but must at
+the very least contain the server and share components, i.e.
+\fB\e\eservername\esharename\fR.  In both forms,
+the file names \fB.\fR and \fB..\fR are special and refer to the current
+directory and the parent of the current directory respectively.  The
+following examples illustrate various forms of path names:
+.RS
+.TP 15
+\fB\&\e\eHost\eshare/file\fR
+Absolute UNC path to a file called \fBfile\fR in the root directory of
+the export point \fBshare\fR on the host \fBHost\fR.  Note that
+repeated use of \fBfile dirname\fR on this path will give
+\fB//Host/share\fR, and will never give just \fB//Host\fR.
+.TP 15
+\fBc:foo\fR
+Volume-relative path to a file \fBfoo\fR in the current directory on drive
+\fBc\fR.
+.TP 15
+\fBc:/foo\fR
+Absolute path to a file \fBfoo\fR in the root directory of drive
+\fBc\fR.
+.TP 15
+\fBfoo\ebar\fR
+Relative path to a file \fBbar\fR in the \fBfoo\fR directory in the current
+directory on the current volume.
+.TP 15
+\fB\&\efoo\fR
+Volume-relative path to a file \fBfoo\fR in the root directory of the current
+volume.
+.TP 15
+\fB\&\e\efoo\fR
+Volume-relative path to a file \fBfoo\fR in the root directory of the current
+volume.  This is not a valid UNC path, so the assumption is that the
+extra backslashes are superfluous.
+.RE
+.SH "TILDE SUBSTITUTION"
+.PP
+In addition to the file name rules described above, Tcl also supports
+\fIcsh\fR-style tilde substitution.  If a file name starts with a tilde,
+then the file name will be interpreted as if the first element is
+replaced with the location of the home directory for the given user.  If
+the tilde is followed immediately by a separator, then the \fB$HOME\fR
+environment variable is substituted.  Otherwise the characters between
+the tilde and the next separator are taken as a user name, which is used
+to retrieve the user's home directory for substitution.  This works on
+Unix, MacOS X and Windows (except very old releases).
+.PP
+Old Windows platforms do not support tilde substitution when a user name
+follows the tilde.  On these platforms, attempts to use a tilde followed
+by a user name will generate an error that the user does not exist when
+Tcl attempts to interpret that part of the path or otherwise access the
+file.  The behaviour of these paths when not trying to interpret them is
+the same as on Unix.  File names that have a tilde without a user name
+will be correctly substituted using the \fB$HOME\fR environment
+variable, just like for Unix.
+.SH "PORTABILITY ISSUES"
+.PP
+Not all file systems are case sensitive, so scripts should avoid code
+that depends on the case of characters in a file name.  In addition,
+the character sets allowed on different devices may differ, so scripts
+should choose file names that do not contain special characters like:
+\fB<>:?"/\e|\fR.
+'\""\" reset emacs highlighting
+The safest approach is to use names consisting of
+alphanumeric characters only.  Care should be taken with filenames
+which contain spaces (common on Windows systems) and
+filenames where the backslash is the directory separator (Windows
+native path names).  Also Windows 3.1 only supports file
+names with a root of no more than 8 characters and an extension of no
+more than 3 characters.
+.PP
+On Windows platforms there are file and path length restrictions.
+Complete paths or filenames longer than about 260 characters will lead
+to errors in most file operations.
+.PP
+Another Windows peculiarity is that any number of trailing dots
+.QW .
+in filenames are totally ignored, so, for example, attempts to create a
+file or directory with a name
+.QW foo.
+will result in the creation of a file/directory with name
+.QW foo .
+This fact is reflected in the results of \fBfile normalize\fR.
+Furthermore, a file name consisting only of dots
+.QW .........
+or dots with trailing characters
+.QW .....abc
+is illegal.
+.SH "SEE ALSO"
+file(n), glob(n)
+.SH KEYWORDS
+current directory, absolute file name, relative file name,
+volume-relative file name, portability

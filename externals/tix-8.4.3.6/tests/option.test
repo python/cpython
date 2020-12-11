@@ -1,0 +1,52 @@
+# -*- mode: TCL; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
+# option.test --
+#
+#       This file is a Tcl script to test out tixOption.c.
+#       It is organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 2000-2001 Tix Project Group.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# $Id: option.test,v 1.2 2002/11/13 21:12:17 idiscovery Exp $
+
+package require Tix
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
+
+if {![info exists widgetTestClass1]} {
+    source [file join [pwd] [file dirname [info script]] widgetTestClass1.tcl]
+}
+
+set longword [widgetTestClass1_longword]
+
+test option-1.1 {Tix_CallConfigMethod()} {
+    widgetTestClass1 .test
+    set a [.test config -$longword]
+    destroy .test
+    set a
+} [list -$longword $longword $longword $longword $longword]
+
+test option-1.2 {Tix_CallConfigMethod()} {
+    widgetTestClass1 .test
+    .test config -$longword 1234
+    set a [.test config -$longword]
+    destroy .test
+    set a
+} [list -$longword $longword $longword $longword 1234]
+
+test option-1.3 {Tix_CallConfigMethod()} {
+    widgetTestClass1 .test
+    .test config -x$longword 1234
+    set a [.test config -x$longword]
+    destroy .test
+    set a
+} [list -x$longword x$longword x$longword x$longword 1234-x$longword]
+
+
+# cleanup
+::tcltest::cleanupTests
+return

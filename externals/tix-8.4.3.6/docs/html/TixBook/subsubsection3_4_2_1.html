@@ -1,0 +1,59 @@
+<HEAD>
+<TITLE> Adding Panes Inside a TixPanedWindow Widget<A NAME=221>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html667 HREF=subsubsection3_4_2_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html665 HREF=subsection3_4_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html659 HREF=subsection3_4_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html669 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html668 HREF=subsubsection3_4_2_2.html> Putting Widgets Inside </A>
+<B>Up:</B> <A NAME=tex2html666 HREF=subsection3_4_2.html> PanedWindow</A>
+<B> Previous:</B> <A NAME=tex2html660 HREF=subsection3_4_2.html> PanedWindow</A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00042100000000000000> Adding Panes Inside a TixPanedWindow Widget<A NAME=221>&nbsp;</A></A></H3>
+<P>
+You can create a TixPanedWindow widget using the <tt>tixPanedWindow</tt>
+  command. After that, you can add panes into this widget using the
+  <tt>add</tt> method (see program 2-5).
+<P>When you use the <tt>add</tt> method, there are several optional
+  parameters which you can use to control the size of each of the
+  pane. The <tt>-min</tt> parameter controls the minimum size of the pane
+  and the <tt>-max</tt> parameter controls its maximum size. These two
+  parameters controls how much the user can expand or shrink a
+  pane. If neither is specified, then the pane can be expanded or
+  shrunk without restrictions.
+<P>In addition, the -size parameter specifies the initial size of the
+  pane. If it is not specified, then the initial size of the pane will
+  be its natural size.
+<P>
+   In program 2-5, we set the initial size of <tt>pane1</tt> to
+  100 pixels using the -size parameter. We don't set the <tt>-size</tt>
+  parameter for <tt>pane2</tt> so it will appear in its natural
+  size. However, we use the <tt>-max</tt> option for <tt>pane2</tt> so that
+  the user can never expand the size of <tt>pane2</tt> to more than 300
+  pixels.
+<P>
+<blockquote> <P><tt> tixPanedWindow .p<BR>
+.p add pane1 -size 100<BR>
+.p add pane2 -max 300<BR>
+<BR>
+set p1 [.p subwidget pane1]<BR>
+button $p1.b1 -text Button1<BR>
+button $p1.b2 -text Button2<BR>
+pack $p1.b1 $p1.b2 -side left -expand yes<BR>
+<BR>
+set p2 [.p subwidget pane2]<BR>
+button $p2.b -text &quot;Another Button&quot;<BR>
+pack $p2.b -side left -expand yes -fill both<BR>
+<BR>
+pack .p -expand yes -fill both
+</tt>
+<P></blockquote>
+<P><CENTER>(Figure 2-5) Adding Panes into a TixPanedWindow Widget<A NAME=25>&nbsp;</A>
+  </CENTER>
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

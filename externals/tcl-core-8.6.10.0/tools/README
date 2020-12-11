@@ -1,0 +1,25 @@
+This directory contains unsupported tools used to build parts of Tcl
+for distribution.
+
+
+uniParse.tcl -- Script for converting the Unicode character database
+	into a compact table stored in generic/tclUniData.c.
+
+uniClass.tcl -- Script for generating regexp class tables from the Tcl
+	"string is" classes
+
+Generating HTML files.
+The tcl-tk-man-html.tcl script from Robert Critchlow
+generates a nice set of HTML with good cross references.
+Use it like
+    tclsh tcl-tk-man-html.tcl --htmldir=/tmp/tcl8.2
+This script is very picky about the organization of man pages,
+effectively acting as a style enforcer.
+
+Generating Windows Help Files:
+1) Build tcl in the ../unix directory
+2) On UNIX, (after autoconf and configure), do
+	make
+    this converts the Nroff to RTF files.
+2) On Windows, convert the RTF to a Help doc, do
+	nmake helpfile

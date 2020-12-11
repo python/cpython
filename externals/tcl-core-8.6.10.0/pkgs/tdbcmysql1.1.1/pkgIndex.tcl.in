@@ -1,0 +1,8 @@
+# Index file to load the TDBC MySQL package.
+
+if {[catch {package require Tcl @TCL_VERSION_REQ@}]} {
+    return
+}
+package ifneeded tdbc::mysql @PACKAGE_VERSION@ \
+    "[list source [file join $dir @PACKAGE_NAME@.tcl]]\;\
+    [list load [file join $dir @PKG_LIB_FILE@] @PACKAGE_NAME@]"

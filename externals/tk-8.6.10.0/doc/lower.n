@@ -1,0 +1,40 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH lower n 3.3 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+lower \- Change a window's position in the stacking order
+.SH SYNOPSIS
+\fBlower \fIwindow \fR?\fIbelowThis\fR?
+.BE
+.SH DESCRIPTION
+.PP
+If the \fIbelowThis\fR argument is omitted then the command lowers
+\fIwindow\fR so that it is below all of its siblings in the stacking
+order (it will be obscured by any siblings that overlap it and
+will not obscure any siblings).
+If \fIbelowThis\fR is specified then it must be the path name of
+a window that is either a sibling of \fIwindow\fR or the descendant
+of a sibling of \fIwindow\fR.
+In this case the \fBlower\fR command will insert
+\fIwindow\fR into the stacking order just below \fIbelowThis\fR
+(or the ancestor of \fIbelowThis\fR that is a sibling of \fIwindow\fR);
+this could end up either raising or lowering \fIwindow\fR.
+.PP
+All \fBtoplevel\fR windows may be restacked with respect to each
+other, whatever their relative path names, but the window manager is
+not obligated to strictly honor requests to restack.
+.SH "SEE ALSO"
+raise
+.SH KEYWORDS
+lower, obscure, stacking order
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

@@ -1,0 +1,58 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH global n "" Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+global \- Access global variables
+.SH SYNOPSIS
+\fBglobal \fR?\fIvarname ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+This command has no effect unless executed in the context of a proc body.
+If the \fBglobal\fR command is executed in the context of a proc body, it
+creates local variables linked to the corresponding global variables (though
+these linked variables, like those created by \fBupvar\fR, are not included
+in the list returned by \fBinfo locals\fR).
+.PP
+If \fIvarname\fR contains namespace qualifiers, the local variable's name is
+the unqualified name of the global variable, as determined by the
+\fBnamespace tail\fR command.
+.PP
+\fIvarname\fR is always treated as the name of a variable, not an
+array element.  An error is returned if the name looks like an array element,
+such as \fBa(b)\fR.
+.SH EXAMPLES
+.PP
+This procedure sets the namespace variable \fI::a::x\fR
+.PP
+.CS
+proc reset {} {
+    \fBglobal\fR a::x
+    set x 0
+}
+.CE
+.PP
+This procedure accumulates the strings passed to it in a global
+buffer, separated by newlines.  It is useful for situations when you
+want to build a message piece-by-piece (as if with \fBputs\fR) but
+send that full message in a single piece (e.g. over a connection
+opened with \fBsocket\fR or as part of a counted HTTP response).
+.PP
+.CS
+proc accum {string} {
+    \fBglobal\fR accumulator
+    append accumulator $string \en
+}
+.CE
+.SH "SEE ALSO"
+namespace(n), upvar(n), variable(n)
+.SH KEYWORDS
+global, namespace, procedure, variable

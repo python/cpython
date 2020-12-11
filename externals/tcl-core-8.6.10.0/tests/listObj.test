@@ -1,0 +1,209 @@
+# Functionality covered: operation of the procedures in tclListObj.c that
+# implement the Tcl type manager for the list object type.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands. Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1995-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testobj [llength [info commands testobj]]
+
+catch {unset x}
+test listobj-1.1 {Tcl_GetListObjType} emptyTest {
+    # Test removed; tested an internal detail
+    # that's no longer correct, and duplicated test obj-1.1
+} {}
+
+test listobj-2.1 {Tcl_SetListObj, use in lappend} {
+    catch {unset x}
+    list [lappend x 1 abc def] [lappend x 1 ghi jkl] $x
+} {{1 abc def} {1 abc def 1 ghi jkl} {1 abc def 1 ghi jkl}}
+test listobj-2.2 {Tcl_SetListObj, use in ObjInterpProc} {
+    proc return_args {args} {
+        return $args
+    }
+    list [return_args] [return_args x] [return_args x y]
+} {{} x {x y}}
+test listobj-2.3 {Tcl_SetListObj, zero element count} {
+    list
+} {}
+
+test listobj-3.1 {Tcl_ListObjAppend, list conversion} {
+    catch {unset x}
+    list [lappend x 1 2 abc "long string"] $x
+} {{1 2 abc {long string}} {1 2 abc {long string}}}
+test listobj-3.2 {Tcl_ListObjAppend, list conversion} {
+    set x ""
+    list [lappend x first second] [lappend x third fourth] $x
+} {{first second} {first second third fourth} {first second third fourth}}
+test listobj-3.3 {Tcl_ListObjAppend, list conversion} {
+    set x "abc def"
+    list [lappend x first second] $x
+} {{abc def first second} {abc def first second}}
+test listobj-3.4 {Tcl_ListObjAppend, error in conversion} {
+    set x " \{"
+    list [catch {lappend x abc def} msg] $msg
+} {1 {unmatched open brace in list}}
+test listobj-3.5 {Tcl_ListObjAppend, force internal rep array to grow} {
+    set x ""
+    list [lappend x 1 1] [lappend x 2 2] [lappend x 3 3] [lappend x 4 4] \
+        [lappend x 5 5] [lappend x 6 6] [lappend x 7 7] [lappend x 8 8] $x
+} {{1 1} {1 1 2 2} {1 1 2 2 3 3} {1 1 2 2 3 3 4 4} {1 1 2 2 3 3 4 4 5 5} {1 1 2 2 3 3 4 4 5 5 6 6} {1 1 2 2 3 3 4 4 5 5 6 6 7 7} {1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8} {1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8}}
+
+test listobj-4.1 {Tcl_ListObjAppendElement, list conversion} {
+    catch {unset x}
+    list [lappend x 1] $x
+} {1 1}
+test listobj-4.2 {Tcl_ListObjAppendElement, list conversion} {
+    set x ""
+    list [lappend x first] [lappend x second] $x
+} {first {first second} {first second}}
+test listobj-4.3 {Tcl_ListObjAppendElement, list conversion} {
+    set x "abc def"
+    list [lappend x first] $x
+} {{abc def first} {abc def first}}
+test listobj-4.4 {Tcl_ListObjAppendElement, error in conversion} {
+    set x " \{"
+    list [catch {lappend x abc} msg] $msg
+} {1 {unmatched open brace in list}}
+test listobj-4.5 {Tcl_ListObjAppendElement, force internal rep array to grow} {
+    set x ""
+    list [lappend x 1] [lappend x 2] [lappend x 3] [lappend x 4] \
+        [lappend x 5] [lappend x 6] [lappend x 7] [lappend x 8] $x
+} {1 {1 2} {1 2 3} {1 2 3 4} {1 2 3 4 5} {1 2 3 4 5 6} {1 2 3 4 5 6 7} {1 2 3 4 5 6 7 8} {1 2 3 4 5 6 7 8}}
+
+test listobj-5.1 {Tcl_ListObjIndex, basic tests} {
+    lindex {a b c} 0
+} a
+test listobj-5.2 {Tcl_ListObjIndex, basic tests} {
+    lindex a 0
+} a
+test listobj-5.3 {Tcl_ListObjIndex, basic tests} {
+    lindex {a {b c d} x} 1
+} {b c d}
+test listobj-5.4 {Tcl_ListObjIndex, basic tests} {
+    lindex {a b c} 3
+} {}
+test listobj-5.5 {Tcl_ListObjIndex, basic tests} {
+    lindex {a b c} 100
+} {}
+test listobj-5.6 {Tcl_ListObjIndex, basic tests} {
+    lindex a 100
+} {}
+test listobj-5.7 {Tcl_ListObjIndex, basic tests} {
+    lindex {} -1
+} {}
+test listobj-5.8 {Tcl_ListObjIndex, error in conversion} {
+    set x " \{"
+    list [catch {lindex $x 0} msg] $msg
+} {1 {unmatched open brace in list}}
+
+test listobj-6.1 {Tcl_ListObjLength} {
+    llength {a b c d}
+} 4
+test listobj-6.2 {Tcl_ListObjLength} {
+    llength {a b c {a b {c d}} d}
+} 5
+test listobj-6.3 {Tcl_ListObjLength} {
+    llength {}
+} 0
+test listobj-6.4 {Tcl_ListObjLength, convert from non-list} {
+    llength 123
+} 1
+test listobj-6.5 {Tcl_ListObjLength, error converting from non-list} {
+    list [catch {llength "a b c \{"} msg] $msg
+} {1 {unmatched open brace in list}}
+test listobj-6.6 {Tcl_ListObjLength, error converting from non-list} {
+    list [catch {llength "a {b}c"} msg] $msg
+} {1 {list element in braces followed by "c" instead of space}}
+
+test listobj-7.1 {Tcl_ListObjReplace, conversion from non-list} {
+    lreplace 123 0 0 x
+} {x}
+test listobj-7.2 {Tcl_ListObjReplace, error converting from non-list} {
+    list [catch {lreplace "a b c \{" 1 1 x} msg] $msg
+} {1 {unmatched open brace in list}}
+test listobj-7.3 {Tcl_ListObjReplace, error converting from non-list} {
+    list [catch {lreplace "a {b}c" 1 2 x} msg] $msg
+} {1 {list element in braces followed by "c" instead of space}}
+test listobj-7.4 {Tcl_ListObjReplace, negative first element index} {
+    lreplace {1 2 3 4 5} -1 1 a
+} {a 3 4 5}
+test listobj-7.5 {Tcl_ListObjReplace, last element index >= num elems} {
+    lreplace {1 2 3 4 5} 3 7 a b c
+} {1 2 3 a b c}
+test listobj-7.6 {Tcl_ListObjReplace, first element index > last index} {
+    lreplace {1 2 3 4 5} 3 1 a b c
+} {1 2 3 a b c 4 5}
+test listobj-7.7 {Tcl_ListObjReplace, no new elements} {
+    lreplace {1 2 3 4 5} 1 1
+} {1 3 4 5}
+test listobj-7.8 {Tcl_ListObjReplace, shrink array in place} {
+    lreplace {1 2 3 4 5 6 7} 4 5
+} {1 2 3 4 7}
+test listobj-7.9 {Tcl_ListObjReplace, grow array in place} {
+    lreplace {1 2 3 4 5 6 7} 1 3 a b c d e
+} {1 a b c d e 5 6 7}
+test listobj-7.10 {Tcl_ListObjReplace, replace tail of array} {
+    lreplace {1 2 3 4 5 6 7} 3 6 a
+} {1 2 3 a}
+test listobj-7.11 {Tcl_ListObjReplace, must grow internal array} {
+    lreplace {1 2 3 4 5} 2 3 a b c d e f g h i j k l
+} {1 2 a b c d e f g h i j k l 5}
+test listobj-7.12 {Tcl_ListObjReplace, grow array, insert at start} {
+    lreplace {1 2 3 4 5} -1 -1 a b c d e f g h i j k l
+} {a b c d e f g h i j k l 1 2 3 4 5}
+test listobj-7.13 {Tcl_ListObjReplace, grow array, insert at end} {
+    lreplace {1 2 3 4 5} 4 1 a b c d e f g h i j k l
+} {1 2 3 4 a b c d e f g h i j k l 5}
+
+test listobj-8.1 {SetListFromAny} {
+    lindex {0 foo\x00help 2} 1
+} "foo\x00help"
+
+test listobj-9.1 {UpdateStringOfList} {
+    string length [list foo\x00help]
+} 8
+
+test listobj-10.1 {Bug [2971669]} {*}{
+    -constraints testobj
+    -setup {
+	testobj freeallvars
+    }
+    -body {
+	set result {}
+	lappend result \
+	    [testlistobj set 1 a b c d e] \
+	    [testlistobj replace 1 0x7fffffff 0x7fffffff f] \
+	    [testlistobj get 1]
+    }
+    -cleanup {
+	testobj freeallvars
+    }
+    -result {{a b c d e} {} {a b c d e f}}
+}
+
+test listobj-11.1 {Bug 3598580: Tcl_ListObjReplace refcount management} testobj {
+    testobj bug3598580
+} 123
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

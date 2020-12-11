@@ -1,0 +1,28 @@
+# This file is a Tcl script to test new object types in Tk.
+# It is organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+
+test obj-1.1 {TkGetPixelsFromObj} -body {
+} -result {}
+
+test obj-2.1 {FreePixelInternalRep} -body {
+} -result {}
+
+test obj-3.1 {DupPixelInternalRep} -body {
+} -result {}
+
+test obj-4.1 {SetPixelFromAny} -body {
+} -result {}
+
+
+# cleanup
+cleanupTests
+return

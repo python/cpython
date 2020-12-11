@@ -1,0 +1,102 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH bindtags n 4.0 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+bindtags \- Determine which bindings apply to a window, and order of evaluation
+.SH SYNOPSIS
+\fBbindtags \fIwindow \fR?\fItagList\fR?
+.BE
+.SH DESCRIPTION
+.PP
+When a binding is created with the \fBbind\fR command, it is
+associated either with a particular window such as \fB.a.b.c\fR,
+a class name such as \fBButton\fR, the keyword \fBall\fR, or any
+other string.
+All of these forms are called \fIbinding tags\fR.
+Each window contains a list of binding tags that determine how
+events are processed for the window.
+When an event occurs in a window, it is applied to each of the
+window's tags in order:  for each tag, the most specific binding
+that matches the given tag and event is executed.
+See the \fBbind\fR command for more information on the matching
+process.
+.PP
+By default, each window has four binding tags consisting of the
+name of the window, the window's class name, the name of the window's
+nearest toplevel ancestor, and \fBall\fR, in that order.
+Toplevel windows have only three tags by default, since the toplevel
+name is the same as that of the window.
+The \fBbindtags\fR command allows the binding tags for a window to be
+read and modified.
+.PP
+If \fBbindtags\fR is invoked with only one argument, then the
+current set of binding tags for \fIwindow\fR is returned as a list.
+If the \fItagList\fR argument is specified to \fBbindtags\fR,
+then it must be a proper list; the tags for \fIwindow\fR are changed
+to the elements of the list.
+The elements of \fItagList\fR may be arbitrary strings;  however,
+any tag starting with a dot is treated as the name of a window;  if
+no window by that name exists at the time an event is processed,
+then the tag is ignored for that event.
+The order of the elements in \fItagList\fR determines the order in
+which binding scripts are executed in response to events.
+For example, the command
+.CS
+\fBbindtags .b {all . Button .b}\fR
+.CE
+reverses the order in which binding scripts will be evaluated for
+a button named \fB.b\fR so that \fBall\fR bindings are invoked
+first, following by bindings for \fB.b\fR's toplevel
+.PQ . "" ,
+followed by class bindings, followed by bindings for \fB.b\fR.
+If \fItagList\fR is an empty list then the binding tags for \fIwindow\fR
+are returned to the default state described above.
+.PP
+The \fBbindtags\fR command may be used to introduce arbitrary
+additional binding tags for a window, or to remove standard tags.
+For example, the command
+.CS
+\fBbindtags .b {.b TrickyButton . all}\fR
+.CE
+replaces the \fBButton\fR tag for \fB.b\fR with \fBTrickyButton\fR.
+This means that the default widget bindings for buttons, which are
+associated with the \fBButton\fR tag, will no longer apply to \fB.b\fR,
+but any bindings associated with \fBTrickyButton\fR (perhaps some
+new button behavior) will apply.
+.SH EXAMPLE
+.PP
+If you have a set of nested \fBframe\fR widgets and you want events
+sent to a \fBbutton\fR widget to also be delivered to all the widgets
+up to the current \fBtoplevel\fR (in contrast to Tk's default
+behavior, where events are not delivered to those intermediate
+windows) to make it easier to have accelerators that are only active
+for part of a window, you could use a helper procedure like this to
+help set things up:
+.CS
+proc setupBindtagsForTreeDelivery {widget} {
+    set tags [list $widget [winfo class $widget]]
+    set w $widget
+    set t [winfo toplevel $w]
+    while {$w ne $t} {
+        set w [winfo parent $w]
+        lappend tags $w
+    }
+    lappend tags all
+    \fBbindtags\fR $widget $tags
+}
+.CE
+.SH "SEE ALSO"
+bind(n)
+.SH KEYWORDS
+binding, event, tag
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

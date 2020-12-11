@@ -1,0 +1,49 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tk_MapWindow 3 "" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_MapWindow, Tk_UnmapWindow \- map or unmap a window
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Tk_Window
+\fBTk_MapWindow\fR(\fItkwin\fR)
+.sp
+\fBTk_UnmapWindow\fR(\fItkwin\fR)
+.SH ARGUMENTS
+.AS Tk_Window parent
+.AP Tk_Window tkwin in
+Token for window.
+.BE
+.SH DESCRIPTION
+.PP
+These procedures may be used to map and unmap windows
+managed by Tk.  \fBTk_MapWindow\fR maps the window given
+by \fItkwin\fR, and also creates an X window corresponding
+to \fItkwin\fR if it does not already exist.  See the
+\fBTk_CreateWindow\fR manual entry for information on
+deferred window creation.
+\fBTk_UnmapWindow\fR unmaps \fItkwin\fR's window
+from the screen.
+.PP
+If \fItkwin\fR is a child window (i.e. \fBTk_CreateWindow\fR was
+used to create a child window), then event handlers interested in map
+and unmap events are invoked immediately.  If \fItkwin\fR is not an
+internal window, then the event handlers will be invoked later, after
+X has seen the request and returned an event for it.
+.PP
+These procedures should be used in place of the X procedures
+\fBXMapWindow\fR and \fBXUnmapWindow\fR, since they update
+Tk's local data structure for \fItkwin\fR.  Applications
+using Tk should not invoke \fBXMapWindow\fR and \fBXUnmapWindow\fR
+directly.
+.SH KEYWORDS
+map, unmap, window

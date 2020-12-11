@@ -1,0 +1,315 @@
+#
+# Tile package: entry widget tests
+#
+
+package require Tk 8.5
+package require tcltest ; namespace import -force tcltest::*
+loadTestedCommands
+
+variable scrollInfo
+proc scroll args {
+    global scrollInfo
+    set scrollInfo $args
+}
+
+# Some of the tests raise background errors;
+# override default bgerror to catch them.
+#
+variable bgerror ""
+proc bgerror {error} {
+    variable bgerror $error
+    variable bgerrorInfo $::errorInfo
+    variable bgerrorCode $::errorCode
+}
+
+#
+test entry-1.1 "Create entry widget" -body {
+    ttk::entry .e
+} -result .e
+
+test entry-1.2 "Insert" -body {
+    .e insert end abcde
+    .e get
+} -result abcde
+
+test entry-1.3 "Selection" -body {
+    .e selection range 1 3
+    selection get
+} -result bc
+
+test entry-1.4 "Delete" -body {
+    .e delete 1 3
+    .e get
+} -result ade
+
+test entry-1.5 "Deletion - insert cursor" -body {
+    .e insert end abcde
+    .e icursor 0
+    .e delete 0 end
+    .e index insert
+} -result 0
+
+test entry-1.6 "Deletion - insert cursor at end" -body {
+    .e insert end abcde
+    .e icursor end
+    .e delete 0 end
+    .e index insert
+} -result 0
+
+test entry-1.7 "Deletion - insert cursor in the middle " -body {
+    .e insert end abcde
+    .e icursor 3
+    .e delete 0 end
+    .e index insert
+} -result 0
+
+test entry-1.done "Cleanup" -body { destroy .e }
+
+# Scrollbar tests.
+
+test entry-2.1 "Create entry before scrollbar" -body {
+    pack [ttk::entry .te -xscrollcommand [list .tsb set]] \
+	-expand true -fill both
+    pack [ttk::scrollbar .tsb -orient horizontal -command [list .te xview]] \
+    	-expand false -fill x
+}  -cleanup {destroy .te .tsb}
+
+test entry-2.2 "Initial scroll position" -body {
+    ttk::entry .e -font fixed -width 5 -xscrollcommand scroll
+    .e insert end "0123456789"
+    pack .e;
+    set timeout [after 500 {set $scrollInfo "timeout"}]
+    vwait scrollInfo
+    set scrollInfo
+} -cleanup {
+    destroy .e
+    after cancel $timeout
+} -result {0.0 0.5}
+# NOTE: result can vary depending on font.
+
+# Bounding box / scrolling tests.
+test entry-3.0 "Series 3 setup" -body {
+    ttk::style theme use default
+    variable fixed TkFixedFont
+    variable cw [font measure $fixed a]
+    variable ch [font metrics $fixed -linespace]
+    variable bd 2	;# border + padding
+    variable ux [font measure $fixed \u4e4e]
+
+    pack [ttk::entry .e -font $fixed -width 20]
+    update
+}
+
+test entry-3.1 "bbox widget command" -body {
+    .e delete 0 end
+    .e bbox 0
+} -result [list $bd $bd 0 $ch]
+
+test entry-3.2 "xview" -body {
+    .e delete 0 end;
+    .e insert end [string repeat "0" 40]
+    set result [.e xview]
+} -result {0.0 0.5}
+
+test entry-3.3 "xview" -body {
+    .e delete 0 end;
+    .e insert end abcdefghijklmnopqrstuvwxyz
+    .e xview end
+    set result [.e index @0]
+} -result {7}
+
+test entry-3.4 "xview" -body {
+    .e delete 0 end;
+    .e insert end abcdefghijklmnopqrstuvwxyz
+    .e xview moveto 1.0
+    set result [.e index @0]
+} -result {7}
+
+test entry-3.5 "xview" -body {
+    .e delete 0 end;
+    .e insert end abcdefghijklmnopqrstuvwxyz
+    .e xview scroll 5 units
+    set result [.e index @0]
+} -result {5}
+
+test entry-3.6 "xview" -body {
+    .e delete 0 end;
+    .e insert end [string repeat abcdefghijklmnopqrstuvwxyz 5]
+    .e xview scroll 2 pages
+    set result [.e index @0]
+} -result {40}
+
+test entry-3.last "Series 3 cleanup" -body {
+    destroy .e
+}
+
+# Selection tests:
+
+test entry-4.0 "Selection test - setup" -body {
+    ttk::entry .e
+    .e insert end asdfasdf
+    .e selection range 0 end
+}
+
+test entry-4.1 "Selection test" -body {
+    selection get
+} -result asdfasdf
+
+test entry-4.2 "Disable -exportselection" -body {
+    .e configure -exportselection false
+    selection get
+} -returnCodes error -result "PRIMARY selection doesn't exist*" -match glob
+
+test entry-4.3 "Reenable -exportselection" -body {
+    .e configure -exportselection true
+    selection get
+} -result asdfasdf
+
+test entry-4.4 "Force selection loss" -body {
+    selection own .
+    .e index sel.first
+} -returnCodes error -result "selection isn't in widget .e"
+
+test entry-4.5 "Allow selection changes if readonly" -body {
+    .e delete 0 end
+    .e insert end 0123456789
+    .e selection range 0 end
+    .e configure -state readonly
+    .e selection range 2 4
+    .e configure -state normal
+    list [.e index sel.first] [.e index sel.last]
+} -result {2 4}
+
+test entry-4.6 "Disallow selection changes if disabled" -body {
+    .e delete 0 end
+    .e insert end 0123456789
+    .e selection range 0 end
+    .e configure -state disabled
+    .e selection range 2 4
+    .e configure -state normal
+    list [.e index sel.first] [.e index sel.last]
+} -result {0 10}
+
+test entry-4.7 {sel.first and sel.last gravity} -body {
+    set result [list]
+    .e delete 0 end
+    .e insert 0 0123456789
+    .e select range 2 6
+    .e insert 2 XXX
+    lappend result [.e index sel.first] [.e index sel.last]
+    .e insert 6 YYY
+    lappend result [.e index sel.first] [.e index sel.last] [.e get]
+} -result {5 9 5 12 01XXX2YYY3456789}
+
+# Self-destruct tests.
+
+test entry-5.1 {widget deletion while active} -body {
+    destroy .e
+    pack [ttk::entry .e]
+    update
+    .e config -xscrollcommand { destroy .e }
+    update idletasks
+    winfo exists .e
+} -result 0
+
+# TODO: test killing .e in -validatecommand, -invalidcommand, variable trace;
+
+
+# -textvariable tests.
+
+test entry-6.1 {Update linked variable in write trace} -body {
+    proc override args {
+	global x
+	set x "Overridden!"
+    }
+    catch {destroy .e}
+    set x ""
+    trace variable x w override
+    ttk::entry .e -textvariable x
+    .e insert 0 "Some text"
+    set result [list $x [.e get]]
+    set result
+} -result {Overridden! Overridden!} -cleanup {
+    unset x
+    rename override {}
+    destroy .e
+}
+
+test entry-6.2 {-textvariable tests} -body {
+    set result [list]
+    ttk::entry .e -textvariable x
+    set x "text"
+    lappend result [.e get]
+    unset x
+    lappend result [.e get]
+    .e insert end "newtext"
+    lappend result [.e get] [set x]
+} -result [list "text" "" "newtext" "newtext"] -cleanup {
+    destroy .e
+    unset -nocomplain x
+}
+
+test entry-7.1 {Bad style options} -body {
+    ttk::style theme create entry-7.1 -settings {
+	ttk::style configure TEntry -foreground BadColor
+	ttk::style map TEntry -foreground {readonly AnotherBadColor}
+	ttk::style map TEntry -font {readonly ABadFont}
+	ttk::style map TEntry \
+	    -selectbackground {{} BadColor} \
+	    -selectforeground {{} BadColor} \
+	    -insertcolor {{} BadColor}
+    }
+    pack [ttk::entry .e -text "Don't crash"]
+    ttk::style theme use entry-7.1
+    update
+    .e selection range 0 end
+    update
+    .e state readonly;
+    update
+} -cleanup { destroy .e ; ttk::style theme use default }
+
+test entry-8.1 "Unset linked variable" -body {
+    variable foo "bar"
+    pack [ttk::entry .e -textvariable foo]
+    unset foo
+    .e insert end "baz"
+    list [.e cget -textvariable] [.e get] [set foo]
+} -result [list foo "baz" "baz"] -cleanup { destroy .e }
+
+test entry-8.2 "Unset linked variable by deleting namespace" -body {
+    namespace eval ::test  { variable foo "bar" }
+    pack [ttk::entry .e -textvariable ::test::foo]
+    namespace delete ::test
+    .e insert end "baz"		;# <== error here
+    list [.e cget -textvariable] [.e get] [set foo]
+} -returnCodes error -result "*parent namespace doesn't exist*" -match glob
+# '-result [list ::test::foo "baz" "baz"]' would also be sensible,
+# but Tcl namespaces don't work that way.
+
+test entry-8.2a "Followup to test 8.2" -body {
+    .e cget -textvariable
+} -result ::test::foo -cleanup { destroy .e }
+# For 8.2a, -result {} would also be sensible.
+
+test entry-9.1 "Index range invariants" -setup {
+    # See bug#1721532 for discussion
+    proc entry-9.1-trace {n1 n2 op} {
+    	set ::V NO!
+    }
+    variable V
+    trace add variable V write entry-9.1-trace
+    ttk::entry .e -textvariable V
+} -body {
+    set result [list]
+    .e insert insert a ; lappend result [.e index insert] [.e index end]
+    .e insert insert b ; lappend result [.e index insert] [.e index end]
+    .e insert insert c ; lappend result [.e index insert] [.e index end]
+    .e insert insert d ; lappend result [.e index insert] [.e index end]
+    .e insert insert e ; lappend result [.e index insert] [.e index end]
+    set result
+} -result [list 1 3  2 3  3 3  3 3  3 3] -cleanup {
+    unset V
+    destroy .e
+}
+
+tcltest::cleanupTests

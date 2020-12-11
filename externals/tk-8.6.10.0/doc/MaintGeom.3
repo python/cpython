@@ -1,0 +1,99 @@
+'\"
+'\" Copyright (c) 1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_MaintainGeometry 3 4.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_MaintainGeometry, Tk_UnmaintainGeometry \- maintain geometry of one window relative to another
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+\fBTk_MaintainGeometry\fR(\fIslave, master, x, y, width, height\fR)
+.sp
+\fBTk_UnmaintainGeometry\fR(\fIslave, master\fR)
+.SH ARGUMENTS
+.AS Tk_Window master
+.AP Tk_Window slave in
+Window whose geometry is to be controlled.
+.AP Tk_Window master in
+Window relative to which \fIslave\fR's geometry will be controlled.
+.AP int x in
+Desired x-coordinate of \fIslave\fR in \fImaster\fR, measured in pixels
+from the inside of \fImaster\fR's left border to the outside of
+\fIslave\fR's left border.
+.AP int y in
+Desired y-coordinate of \fIslave\fR in \fImaster\fR, measured in pixels
+from the inside of \fImaster\fR's top border to the outside of
+\fIslave\fR's top border.
+.AP int width in
+Desired width for \fIslave\fR, in pixels.
+.AP int height in
+Desired height for \fIslave\fR, in pixels.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_MaintainGeometry\fR and \fBTk_UnmaintainGeometry\fR make it
+easier for geometry managers to deal with slaves whose masters are not
+their parents.
+Three problems arise if the master for a slave is not its parent:
+.IP [1]
+The x- and y-position of the slave must be translated from the
+coordinate system of the master to that of the parent before
+positioning the slave.
+.IP [2]
+If the master window, or any of its ancestors up to the slave's
+parent, is moved, then the slave must be repositioned within its
+parent in order to maintain the correct position relative to the
+master.
+.IP [3]
+If the master or one of its ancestors is mapped or unmapped, then
+the slave must be mapped or unmapped to correspond.
+.LP
+None of these problems is an issue if the parent and master are
+the same.  For example, if the master or one of its ancestors
+is unmapped, the slave is automatically removed by the screen
+by X.
+.PP
+\fBTk_MaintainGeometry\fR deals with these problems for slaves
+whose masters are not their parents, as well as handling the simpler
+case of slaves whose masters are their parents.
+\fBTk_MaintainGeometry\fR is typically called by a window manager
+once it has decided where a slave should be positioned relative
+to its master.
+\fBTk_MaintainGeometry\fR translates the coordinates to the
+coordinate system of \fIslave\fR's parent and then moves and
+resizes the slave appropriately.
+Furthermore, it remembers the desired position and creates event
+handlers to monitor the master and all of its ancestors up
+to (but not including) the slave's parent.
+If any of these windows is moved, mapped, or unmapped,
+the slave will be adjusted so that it is mapped only when the
+master is mapped and its geometry relative to the master
+remains as specified by \fIx\fR, \fIy\fR, \fIwidth\fR, and
+\fIheight\fR.
+.PP
+When a window manager relinquishes control over a window, or
+if it decides that it does not want the window to appear on the
+screen under any conditions, it calls \fBTk_UnmaintainGeometry\fR.
+\fBTk_UnmaintainGeometry\fR unmaps the window and cancels any
+previous calls to \fBTk_MaintainGeometry\fR for the
+\fImaster\fR\-\fIslave\fR pair, so that the slave's
+geometry and mapped state are no longer maintained
+automatically.
+\fBTk_UnmaintainGeometry\fR need not be called by a geometry
+manager if the slave, the master, or any of the master's ancestors
+is destroyed:  Tk will call it automatically.
+.PP
+If \fBTk_MaintainGeometry\fR is called repeatedly for the same
+\fImaster\fR\-\fIslave\fR pair, the information from the most
+recent call supersedes any older information.
+If \fBTk_UnmaintainGeometry\fR is called for a \fImaster\fR\-\fIslave\fR
+pair that is is not currently managed, the call has no effect.
+.SH KEYWORDS
+geometry manager, map, master, parent, position, slave, unmap

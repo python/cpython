@@ -1,0 +1,6 @@
+This directory contains various header and code files that are
+used make Tcl compatible with various releases of UNIX and UNIX-like
+systems.  Typically, files from this directory are used to compile
+Tcl when a system doesn't contain the corresponding files or when
+they are known to be incorrect.  When the whole world becomes POSIX-
+compliant this directory should be unnecessary.

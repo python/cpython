@@ -1,0 +1,308 @@
+'\"
+'\" Copyright (c) 2004-2010 Andreas Kupries <andreas_kupries@users.sourceforge.net>
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH tm n 8.5 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+tm \- Facilities for locating and loading of Tcl Modules
+.SH SYNOPSIS
+.nf
+\fB::tcl::tm::path add \fR?\fIpath\fR...?
+\fB::tcl::tm::path remove \fR?\fIpath\fR...?
+\fB::tcl::tm::path list\fR
+\fB::tcl::tm::roots \fR?\fIpath\fR...?
+.fi
+.BE
+.SH DESCRIPTION
+.PP
+This document describes the facilities for locating and loading Tcl
+Modules (see \fBMODULE DEFINITION\fR for the definition of a Tcl Module).
+The following commands are supported:
+.TP
+\fB::tcl::tm::path add \fR?\fIpath\fR...?
+.
+The paths are added at the head to the list of module paths, in order
+of appearance. This means that the last argument ends up as the new
+head of the list.
+.RS
+.PP
+The command enforces the restriction that no path may be an ancestor
+directory of any other path on the list. If any of the new paths
+violates this restriction an error will be raised, before any of the
+paths have been added. In other words, if only one path argument
+violates the restriction then none will be added.
+.PP
+If a path is already present as is, no error will be raised and no
+action will be taken.
+.PP
+Paths are searched later in the order of their appearance in the
+list. As they are added to the front of the list they are searched in
+reverse order of addition. In other words, the paths added last are
+looked at first.
+.RE
+.TP
+\fB::tcl::tm::path remove \fR?\fIpath\fR...?
+.
+Removes the paths from the list of module paths. The command silently
+ignores all paths which are not on the list.
+.TP
+\fB::tcl::tm::path list\fR
+.
+Returns a list containing all registered module paths, in the order
+that they are searched for modules.
+.TP
+\fB::tcl::tm::roots \fR?\fIpath\fR...?
+.
+Similar to \fBpath add\fR, and layered on top of it. This command
+takes a list of paths, extends each with
+.QW "\fBtcl\fIX\fB/site-tcl\fR" ,
+and
+.QW "\fBtcl\fIX\fB/\fIX\fB.\fIy\fR" ,
+for major version \fIX\fR of the
+Tcl interpreter and minor version \fIy\fR less than or equal to the
+minor version of the interpreter, and adds the resulting set of paths
+to the list of paths to search.
+.RS
+.PP
+This command is used internally by the system to set up the
+system-specific default paths.
+.PP
+The command has been exposed to allow a build system to define
+additional root paths beyond those described by this document.
+.RE
+.SH "MODULE DEFINITION"
+.PP
+A Tcl Module is a Tcl Package contained in a single file, and no other
+files required by it. This file has to be \fBsource\fRable. In other
+words, a Tcl Module is always imported via:
+.PP
+.CS
+source module_file
+.CE
+.PP
+The \fBload\fR command is not directly used. This restriction is not
+an actual limitation, as some may believe.
+Ever since 8.4 the Tcl \fBsource\fR command reads only until the first
+^Z character. This allows us to combine an arbitrary Tcl script with
+arbitrary binary data into one file, where the script processes the
+attached data in any it chooses to fully import and activate the
+package.
+.PP
+The name of a module file has to match the regular expression:
+.PP
+.CS
+([_[:alpha:]][:_[:alnum:]]*)-([[:digit:]].*)\e.tm
+.CE
+.PP
+The first capturing parentheses provides the name of the package, the
+second clause its version. In addition to matching the pattern, the
+extracted version number must not raise an error when used in the
+command:
+.PP
+.CS
+package vcompare $version 0
+.CE
+.SH "FINDING MODULES"
+.PP
+The directory tree for storing Tcl modules is separate from other
+parts of the filesystem and independent of \fBauto_path\fR.
+.PP
+Tcl Modules are searched for in all directories listed in the result
+of the command \fB::tcl::tm::path list\fR.
+This is called the \fIModule path\fR. Neither the \fBauto_path\fR nor
+the \fBtcl_pkgPath\fR variables are used.
+All directories on the module path have to obey one restriction:
+.RS
+.PP
+For any two directories, neither is an ancestor directory of the
+other.
+.RE
+.PP
+This is required to avoid ambiguities in package naming. If for
+example the two directories
+.QW "\fIfoo/\fR"
+and
+.QW "\fIfoo/cool\fR"
+were on
+the path a package named \fBcool::ice\fR could be found via the
+names \fBcool::ice\fR or \fBice\fR, the latter potentially
+obscuring a package named \fBice\fR, unqualified.
+.PP
+Before the search is started, the name of the requested package is
+translated into a partial path, using the following algorithm:
+.RS
+.PP
+All occurrences of
+.QW "\fB::\fR"
+in the package name are replaced by
+the appropriate directory separator character for the platform we are
+on. On Unix, for example, this is
+.QW "\fB/\fR" .
+.RE
+.PP
+Example:
+.RS
+.PP
+The requested package is \fBencoding::base64\fR. The generated
+partial path is
+.QW "\fIencoding/base64\fR" .
+.RE
+.PP
+After this translation the package is looked for in all module paths,
+by combining them one-by-one, first to last with the partial path to
+form a complete search pattern. Note that the search algorithm rejects
+all files where the filename does not match the regular expression
+given in the section \fBMODULE DEFINITION\fR. For the remaining
+files \fIprovide scripts\fR are generated and added to the package
+ifneeded database.
+.PP
+The algorithm falls back to the previous unknown handler when none of
+the found module files satisfy the request. If the request was
+satisfied the fall-back is ignored.
+.PP
+Note that packages in module form have \fIno\fR control over the
+\fIindex\fR and \fIprovide script\fRs entered into the package
+database for them.
+For a module file \fBMF\fR the \fIindex script\fR is always:
+.PP
+.CS
+package ifneeded \fBPNAME PVERSION\fR [list source \fBMF\fR]
+.CE
+.PP
+and the \fIprovide script\fR embedded in the above is:
+.PP
+.CS
+source \fBMF\fR
+.CE
+.PP
+Both package name \fBPNAME\fR and package version \fBPVERSION\fR are
+extracted from the filename \fBMF\fR according to the definition
+below:
+.PP
+.CS
+\fBMF\fR = /module_path/\fBPNAME\(fm\fR-\fBPVERSION\fR.tm
+.CE
+.PP
+Where \fBPNAME\(fm\fR is the partial path of the module as defined in
+section \fBFINDING MODULES\fR, and translated into \fBPNAME\fR by
+changing all directory separators to
+.QW "\fB::\fR" ,
+and \fBmodule_path\fR is the path (from the list of paths to search)
+that we found the module file under.
+.PP
+Note also that we are here creating a connection between package names
+and paths. Tcl is case-sensitive when it comes to comparing package
+names, but there are filesystems which are not, like NTFS. Luckily
+these filesystems do store the case of the name, despite not using the
+information when comparing.
+.PP
+Given the above we allow the names for packages in Tcl modules to have
+mixed-case, but also require that there are no collisions when
+comparing names in a case-insensitive manner. In other words, if a
+package \fBFoo\fR is deployed in the form of a Tcl Module,
+packages like \fBfoo\fR, \fBfOo\fR, etc. are not allowed
+anymore.
+.SH "DEFAULT PATHS"
+.PP
+The default list of paths on the module path is computed by a
+\fBtclsh\fR as follows, where \fIX\fR is the major version of the Tcl
+interpreter and \fIy\fR is less than or equal to the minor version of
+the Tcl interpreter.
+.PP
+All the default paths are added to the module path, even those paths
+which do not exist. Non-existent paths are filtered out during actual
+searches. This enables a user to create one of the paths searched when
+needed and all running applications will automatically pick up any
+modules placed in them.
+.PP
+The paths are added in the order as they are listed below, and for
+lists of paths defined by an environment variable in the order they
+are found in the variable.
+.SS "SYSTEM SPECIFIC PATHS"
+.TP
+\fBfile normalize [info library]/../tcl\fIX\fB/\fIX\fB.\fIy\fR
+.
+In other words, the interpreter will look into a directory specified
+by its major version and whose minor versions are less than or equal
+to the minor version of the interpreter.
+.RS
+.PP
+For example for Tcl 8.4 the paths searched are:
+.PP
+.CS
+\fB[info library]/../tcl8/8.4\fR
+\fB[info library]/../tcl8/8.3\fR
+\fB[info library]/../tcl8/8.2\fR
+\fB[info library]/../tcl8/8.1\fR
+\fB[info library]/../tcl8/8.0\fR
+.CE
+.PP
+This definition assumes that a package defined for Tcl \fIX\fB.\fIy\fR
+can also be used by all interpreters which have the same major number
+\fIX\fR and a minor number greater than \fIy\fR.
+.RE
+.TP
+\fBfile normalize EXEC/tcl\fIX\fB/\fIX\fB.\fIy\fR
+.
+Where \fBEXEC\fR is \fBfile normalize [info nameofexecutable]/../lib\fR
+or \fBfile normalize [::tcl::pkgconfig get libdir,runtime]\fR
+.RS
+.PP
+This sets of paths is handled equivalently to the set coming before,
+except that it is anchored in \fBEXEC_PREFIX\fR.
+For a build with \fBPREFIX\fR = \fBEXEC_PREFIX\fR the two sets are
+identical.
+.RE
+.SS "SITE SPECIFIC PATHS"
+.TP
+\fBfile normalize [info library]/../tcl\fIX\fB/site-tcl\fR
+.
+Note that this is always a single entry because \fIX\fR is always a
+specific value (the current major version of Tcl).
+.SS "USER SPECIFIC PATHS"
+.TP
+\fB$::env(TCL\fIX\fB_\fIy\fB_TM_PATH)\fR
+.
+A list of paths, separated by either \fB:\fR (Unix) or \fB;\fR
+(Windows). This is user and site specific as this environment variable
+can be set not only by the user's profile, but by system configuration
+scripts as well.
+.TP
+\fB$::env(TCL\fIX\fB.\fIy\fB_TM_PATH)\fR
+.
+Same meaning and content as the previous variable. However the use of
+dot '.' to separate major and minor version number makes this name
+less to non-portable and its use is discouraged. Support of this
+variable has been kept only for backward compatibility with the
+original specification, i.e. TIP 189.
+.PP
+These paths are seen and therefore shared by all Tcl shells in the
+\fB$::env(PATH)\fR of the user.
+.PP
+Note that \fIX\fR and \fIy\fR follow the general rules set out
+above. In other words, Tcl 8.4, for example, will look at these 10
+environment variables:
+.PP
+.CS
+\fB$::env(TCL8.4_TM_PATH)\fR  \fB$::env(TCL8_4_TM_PATH)\fR
+\fB$::env(TCL8.3_TM_PATH)\fR  \fB$::env(TCL8_3_TM_PATH)\fR
+\fB$::env(TCL8.2_TM_PATH)\fR  \fB$::env(TCL8_2_TM_PATH)\fR
+\fB$::env(TCL8.1_TM_PATH)\fR  \fB$::env(TCL8_1_TM_PATH)\fR
+\fB$::env(TCL8.0_TM_PATH)\fR  \fB$::env(TCL8_0_TM_PATH)\fR
+.CE
+.SH "SEE ALSO"
+package(n), Tcl Improvement Proposal #189
+.QW "\fITcl Modules\fR"
+(online at http://tip.tcl.tk/189.html), Tcl Improvement Proposal #190
+.QW "\fIImplementation Choices for Tcl Modules\fR"
+(online at http://tip.tcl.tk/190.html)
+.SH "KEYWORDS"
+modules, package
+.\" Local Variables:
+.\" mode: nroff
+.\" End:

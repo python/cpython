@@ -1,0 +1,59 @@
+<HEAD>
+<TITLE> Display Items<A NAME=32>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html773 HREF=subsubsection3_5_2_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html771 HREF=section3_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html765 HREF=subsection3_5_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html775 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html774 HREF=subsubsection3_5_2_1.html> Advantages of Display </A>
+<B>Up:</B> <A NAME=tex2html772 HREF=section3_5.html> Tabular Listbox and </A>
+<B> Previous:</B> <A NAME=tex2html766 HREF=subsection3_5_1.html> tixTList - The </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H2><A NAME=SECTION00052000000000000000> Display Items<A NAME=32>&nbsp;</A></A></H2>
+<P>
+Before we rush to discuss how to create the items inside a TixTList
+  widget, let's first spend some time on a very important topic about
+  the Tix library: the repationship between the display items and
+  their host widgets.
+<P>
+   We can better define the terms by taking a quick preview of the
+  TixHList widget, which will be covered in details in the next
+  chapter. Let's compare the items displayed on the two widgets in
+  figure 3-3. If we take a close look at the item
+  that shows the <tt>usr</tt> directory in the TixTList widget on the left
+  versus the TixHList widget on the right, we can see that this item
+  appears exactly the same on both widgets.
+<P>
+   If fact, all the items in these two widgets are of the <em>same</em> type:
+  they all display an image next to a textual name. The only difference
+  between these two widgets is how these items are arranged. The TixTList
+  widget arranges the items in rows and columns, while the TixHList widget
+  arranges the items in a hierachical format.
+<P>
+   With this observation in mind, we can see a separation of tasks
+  berween the widgets and the items they display. We call the TixHList
+  and TixTList widgets in figure 3-3 <em>host
+  widgets</em>: their task is to arrange the items according to their
+  particular rules. However, they don't really care what these items
+  display; they just treat the items as rectangle boxes. In contrast,
+  these items, which are called <em>display items</em> in Tix
+  terminology, controls the visual information they display, such as
+  the images, text strings, colors, fonts, etc. However, they don't
+  really care where on the host widget they will appear.
+<P>
+<blockquote> <P><P>
+<P><CENTER><IMG SRC="../gif/tix/tlist/widgets.gif">
+  </CENTER>
+</blockquote>
+<P>
+<HR>
+<UL> 
+<LI> <A NAME=tex2html776 HREF=subsubsection3_5_2_1.html#SECTION00052100000000000000> Advantages of Display Items<A NAME=321>&nbsp;</A></A>
+<LI> <A NAME=tex2html777 HREF=subsubsection3_5_2_2.html#SECTION00052200000000000000> Display Items and Display Styles<A NAME=322>&nbsp;</A></A>
+</UL>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

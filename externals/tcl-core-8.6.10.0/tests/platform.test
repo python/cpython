@@ -1,0 +1,90 @@
+# The file tests the tcl_platform variable and platform package.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1999 by Scriptics Corporation
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2
+package require tcltests
+
+namespace eval ::tcl::test::platform {
+    namespace import ::tcltest::testConstraint
+    namespace import ::tcltest::test
+    namespace import ::tcltest::cleanupTests
+
+    # This is not how [variable] works. See TIP 276.
+    #variable ::tcl_platform
+    namespace upvar :: tcl_platform tcl_platform
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testCPUID [llength [info commands testcpuid]]
+
+test platform-1.0 {tcl_platform(engine)} {
+  set tcl_platform(engine)
+} {Tcl}
+
+test platform-1.1 {TclpSetVariables: tcl_platform} {
+    interp create i
+    i eval {catch {unset tcl_platform(debug)}}
+    i eval {catch {unset tcl_platform(threaded)}}
+    set result [i eval {lsort [array names tcl_platform]}]
+    interp delete i
+    set result
+} {byteOrder engine machine os osVersion pathSeparator platform pointerSize user wordSize}
+
+# Test assumes twos-complement arithmetic, which is true of virtually
+# everything these days.  Note that this does *not* use wide(), and
+# this is intentional since that could make Tcl's numbers wider than
+# the machine-integer on some platforms...
+test platform-2.1 {tcl_platform(wordSize) indicates size of native word} {
+    set result [expr {int(1 << (8 * $tcl_platform(wordSize) - 1))}]
+    # Result must be the largest bit in a machine word, which this checks
+    # without assuming how wide the word really is
+    list [expr {$result < 0}] [expr {$result ^ int($result - 1)}]
+} {1 -1}
+
+# On Windows/UNIX, test that the CPU ID works
+
+test platform-3.1 {CPU ID on Windows/UNIX} \
+    -constraints testCPUID \
+    -body {		
+	set cpudata [testcpuid 0]
+	binary format iii \
+	    [lindex $cpudata 1] \
+	    [lindex $cpudata 3] \
+	    [lindex $cpudata 2] 
+    } \
+    -match regexp \
+    -result {^(?:AuthenticAMD|CentaurHauls|CyrixInstead|GenuineIntel)$}
+
+# The platform package makes very few promises, but does promise that the
+# format of string it produces consists of two non-empty words separated by a
+# hyphen.
+package require platform
+test platform-4.1 {format of platform::identify result} -constraints notValgrind -match regexp -body {
+    # [identify] may attempt to [exec] dpkg-architecture, which may not exist,
+    # in which case fork will not be followed by exec, and valgrind will issue
+    # "still reachable" reports.
+    platform::identify
+} -result {^([^-]+-)+[^-]+$}
+test platform-4.2 {format of platform::generic result} -match regexp -body {
+    platform::generic
+} -result {^([^-]+-)+[^-]+$}
+
+# cleanup
+cleanupTests
+
+}
+namespace delete ::tcl::test::platform
+return
+
+# Local Variables:
+# mode: tcl
+# End:

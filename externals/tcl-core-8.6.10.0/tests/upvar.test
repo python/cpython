@@ -1,0 +1,603 @@
+# Commands covered:  'upvar', 'namespace upvar'
+#
+# This file contains a collection of tests for one or more of the Tcl built-in
+# commands. Sourcing this file into Tcl runs the tests and generates output
+# for errors. No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testupvar [llength [info commands testupvar]]
+
+test upvar-1.1 {reading variables with upvar} {
+    proc p1 {a b} {set c 22; set d 33; p2}
+    proc p2 {} {upvar a x1 b x2 c x3 d x4; set a abc; list $x1 $x2 $x3 $x4 $a}
+    p1 foo bar
+} {foo bar 22 33 abc}
+test upvar-1.2 {reading variables with upvar} {
+    proc p1 {a b} {set c 22; set d 33; p2}
+    proc p2 {} {p3}
+    proc p3 {} {upvar 2 a x1 b x2 c x3 d x4; set a abc; list $x1 $x2 $x3 $x4 $a}
+    p1 foo bar
+} {foo bar 22 33 abc}
+test upvar-1.3 {reading variables with upvar} {
+    proc p1 {a b} {set c 22; set d 33; p2}
+    proc p2 {} {p3}
+    proc p3 {} {
+	upvar #1 a x1 b x2 c x3 d x4
+	set a abc
+	list $x1 $x2 $x3 $x4 $a
+    }
+    p1 foo bar
+} {foo bar 22 33 abc}
+test upvar-1.4 {reading variables with upvar} {
+    set x1 44
+    set x2 55
+    proc p1 {} {p2}
+    proc p2 {} {
+	upvar 2 x1 x1 x2 a
+	upvar #0 x1 b
+	set c $b
+	incr b 3
+	list $x1 $a $b
+    }
+    p1
+} {47 55 47}
+test upvar-1.5 {reading array elements with upvar} {
+    proc p1 {} {set a(0) zeroth; set a(1) first; p2}
+    proc p2 {} {upvar a(0) x; set x}
+    p1
+} {zeroth}
+
+test upvar-2.1 {writing variables with upvar} {
+    proc p1 {a b} {set c 22; set d 33; p2; list $a $b $c $d}
+    proc p2 {} {
+	upvar a x1 b x2 c x3 d x4
+	set x1 14
+	set x4 88
+    }
+    p1 foo bar
+} {14 bar 22 88}
+test upvar-2.2 {writing variables with upvar} {
+    set x1 44
+    set x2 55
+    proc p1 {x1 x2} {
+	upvar #0 x1 a
+	upvar x2 b
+	set a $x1
+	set b $x2
+    }
+    p1 newbits morebits
+    list $x1 $x2
+} {newbits morebits}
+test upvar-2.3 {writing variables with upvar} {
+    catch {unset x1}
+    catch {unset x2}
+    proc p1 {x1 x2} {
+	upvar #0 x1 a
+	upvar x2 b
+	set a $x1
+	set b $x2
+    }
+    p1 newbits morebits
+    list [catch {set x1} msg] $msg [catch {set x2} msg] $msg
+} {0 newbits 0 morebits}
+test upvar-2.4 {writing array elements with upvar} {
+    proc p1 {} {set a(0) zeroth; set a(1) first; list [p2] $a(0)}
+    proc p2 {} {upvar a(0) x; set x xyzzy}
+    p1
+} {xyzzy xyzzy}
+
+test upvar-3.1 {unsetting variables with upvar} {
+    proc p1 {a b} {set c 22; set d 33; p2; lsort [info vars]}
+    proc p2 {} {
+	upvar 1 a x1 d x2
+	unset x1 x2
+    }
+    p1 foo bar
+} {b c}
+test upvar-3.2 {unsetting variables with upvar} {
+    proc p1 {a b} {set c 22; set d 33; p2; lsort [info vars]}
+    proc p2 {} {
+	upvar 1 a x1 d x2
+	unset x1 x2
+	set x2 28
+    }
+    p1 foo bar
+} {b c d}
+test upvar-3.3 {unsetting variables with upvar} {
+    set x1 44
+    set x2 55
+    proc p1 {} {p2}
+    proc p2 {} {
+	upvar 2 x1 a
+	upvar #0 x2 b
+	unset a b
+    }
+    p1
+    list [info exists x1] [info exists x2]
+} {0 0}
+test upvar-3.4 {unsetting variables with upvar} {
+    set x1 44
+    set x2 55
+    proc p1 {} {
+	upvar x1 a x2 b
+	unset a b
+	set b 118
+    }
+    p1
+    list [info exists x1] [catch {set x2} msg] $msg
+} {0 0 118}
+test upvar-3.5 {unsetting array elements with upvar} {
+    proc p1 {} {
+	set a(0) zeroth
+	set a(1) first
+	set a(2) second
+	p2
+	array names a
+    }
+    proc p2 {} {upvar a(0) x; unset x}
+    lsort [p1]
+} {1 2}
+test upvar-3.6 {unsetting then resetting array elements with upvar} {
+    proc p1 {} {
+	set a(0) zeroth
+	set a(1) first
+	set a(2) second
+	p2
+	list [lsort [array names a]] [catch {set a(0)} msg] $msg
+    }
+    proc p2 {} {upvar a(0) x; unset x; set x 12345}
+    p1
+} {{0 1 2} 0 12345}
+
+test upvar-4.1 {nested upvars} {
+    set x1 88
+    proc p1 {a b} {set c 22; set d 33; p2}
+    proc p2 {} {global x1; upvar c x2; p3}
+    proc p3 {} {
+	upvar x1 a x2 b
+	list $a $b
+    }
+    p1 14 15
+} {88 22}
+test upvar-4.2 {nested upvars} {
+    set x1 88
+    proc p1 {a b} {set c 22; set d 33; p2; list $a $b $c $d}
+    proc p2 {} {global x1; upvar c x2; p3}
+    proc p3 {} {
+	upvar x1 a x2 b
+	set a foo
+	set b bar
+    }
+    list [p1 14 15] $x1
+} {{14 15 bar 33} foo}
+
+proc tproc {args} {global x; set x [list $args [uplevel info vars]]}
+test upvar-5.1 {traces involving upvars} {
+    proc p1 {a b} {set c 22; set d 33; trace var c rw tproc; p2}
+    proc p2 {} {upvar c x1; set x1 22}
+    set x ---
+    p1 foo bar
+    set x
+} {{x1 {} w} x1}
+test upvar-5.2 {traces involving upvars} {
+    proc p1 {a b} {set c 22; set d 33; trace var c rw tproc; p2}
+    proc p2 {} {upvar c x1; set x1}
+    set x ---
+    p1 foo bar
+    set x
+} {{x1 {} r} x1}
+test upvar-5.3 {traces involving upvars} {
+    proc p1 {a b} {set c 22; set d 33; trace var c rwu tproc; p2}
+    proc p2 {} {upvar c x1; unset x1}
+    set x ---
+    p1 foo bar
+    set x
+} {{x1 {} u} x1}
+
+test upvar-6.1 {retargeting an upvar} {
+    proc p1 {} {
+	set a(0) zeroth
+	set a(1) first
+	set a(2) second
+	p2
+    }
+    proc p2 {} {
+	upvar a x
+	set result {}
+	foreach i [array names x] {
+	    upvar a($i) x
+	    lappend result $x
+	}
+	lsort $result
+    }
+    p1
+} {first second zeroth}
+test upvar-6.2 {retargeting an upvar} {
+    set x 44
+    set y abcde
+    proc p1 {} {
+	global x
+	set result $x
+	upvar y x
+	lappend result $x
+    }
+    p1
+} {44 abcde}
+test upvar-6.3 {retargeting an upvar} {
+    set x 44
+    set y abcde
+    proc p1 {} {
+	upvar y x
+	lappend result $x
+	global x
+	lappend result $x
+    }
+    p1
+} {abcde 44}
+
+test upvar-7.1 {upvar to same level} {
+    set x 44
+    set y 55
+    catch {unset uv}
+    upvar #0 x uv
+    set uv abc
+    upvar 0 y uv
+    set uv xyzzy
+    list $x $y
+} {abc xyzzy}
+test upvar-7.2 {upvar to same level} {
+    set x 1234
+    set y 4567
+    proc p1 {x y} {
+	upvar 0 x uv
+	set uv $y
+	return "$x $y"
+    }
+    p1 44 89
+} {89 89}
+test upvar-7.3 {upvar to same level} {
+    set x 1234
+    set y 4567
+    proc p1 {x y} {
+	upvar #1 x uv
+	set uv $y
+	return "$x $y"
+    }
+    p1 xyz abc
+} {abc abc}
+test upvar-7.4 {upvar to same level: tricky problems when deleting variable table} {
+    proc tt {} {upvar #1 toto loc;  return $loc}
+    list [catch tt msg] $msg
+} {1 {can't read "loc": no such variable}}
+test upvar-7.5 {potential memory leak when deleting variable table} {
+    proc leak {} {
+	array set foo {1 2 3 4}
+	upvar 0 foo(1) bar
+    }
+    leak
+} {}
+
+test upvar-8.1 {errors in upvar command} -returnCodes error -body {
+    upvar
+} -result {wrong # args: should be "upvar ?level? otherVar localVar ?otherVar localVar ...?"}
+test upvar-8.2 {errors in upvar command} -returnCodes error -body {
+    upvar 1
+} -result {wrong # args: should be "upvar ?level? otherVar localVar ?otherVar localVar ...?"}
+test upvar-8.2.1 {upvar with numeric first argument} {
+    apply {{} {set 0 ok; apply {{} {upvar 0 x; return $x}}}}
+} ok
+test upvar-8.3 {errors in upvar command} -returnCodes error -body {
+    proc p1 {} {upvar a b c}
+    p1
+} -result {bad level "a"}
+test upvar-8.3.1 {bad level for upvar (upvar at top-level, bug [775ee88560])} -body {
+    proc p1 {} { uplevel { upvar b b; lappend b UNEXPECTED } }
+    uplevel #0 { p1 }
+} -returnCodes error -result {bad level "1"}
+test upvar-8.3.2 {bad level for upvar (upvar at top-level, bug [775ee88560])} -setup {
+    interp create i
+} -body {
+    i eval { upvar b b; lappend b UNEXPECTED }
+} -returnCodes error -result {bad level "1"} -cleanup {
+    interp delete i
+}
+test upvar-8.4 {errors in upvar command} -returnCodes error -body {
+    proc p1 {} {upvar 0 b b}
+    p1
+} -result {can't upvar from variable to itself}
+test upvar-8.5 {errors in upvar command} -returnCodes error -body {
+    proc p1 {} {upvar 0 a b; upvar 0 b a}
+    p1
+} -result {can't upvar from variable to itself}
+test upvar-8.6 {errors in upvar command} -returnCodes error -body {
+    proc p1 {} {set a 33; upvar b a}
+    p1
+} -result {variable "a" already exists}
+test upvar-8.7 {errors in upvar command} -returnCodes error -body {
+    proc p1 {} {trace variable a w foo; upvar b a}
+    p1
+} -result {variable "a" has traces: can't use for upvar}
+test upvar-8.8 {create nested array with upvar} -body {
+    proc p1 {} {upvar x(a) b; set b(2) 44}
+    catch {unset x}
+    p1
+} -returnCodes error -cleanup {
+    unset x
+} -result {can't set "b(2)": variable isn't array}
+test upvar-8.9 {upvar won't create namespace variable that refers to procedure variable} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+    catch {rename MakeLink ""}
+    namespace eval ::test_ns_1 {}
+} -returnCodes error -body {
+    proc MakeLink {a} {
+	namespace eval ::test_ns_1 {
+	    upvar a a
+	}
+	unset ::test_ns_1::a
+    }
+    MakeLink 1
+} -result {bad variable name "a": can't create namespace variable that refers to procedure variable}
+test upvar-8.10 {upvar will create element alias for new array element} -setup {
+    catch {unset upvarArray}
+} -body {
+    array set upvarArray {}
+    catch {upvar 0 upvarArray(elem) upvarArrayElemAlias}
+} -result {0}
+test upvar-8.11 {upvar will not create a variable that looks like an array} -setup {
+    catch {unset upvarArray}
+} -body {
+    array set upvarArray {}
+    upvar 0 upvarArray(elem) upvarArrayElemAlias(elem)
+} -returnCodes 1 -match glob -result *
+
+test upvar-9.1 {Tcl_UpVar2 procedure} testupvar {
+    list [catch {testupvar xyz a {} x global} msg] $msg
+} {1 {bad level "1"}}
+test upvar-9.1.1 {TclGetFrame, via Tcl_UpVar2} testupvar {
+    apply {{} {testupvar xyz a {} x local; set x foo}}
+    set a
+} foo
+test upvar-9.2 {Tcl_UpVar2 procedure} testupvar {
+    catch {unset a}
+    catch {unset x}
+    set a 44
+    list [catch "testupvar #0 a 1 x global" msg] $msg
+} {1 {can't access "a(1)": variable isn't array}}
+test upvar-9.3 {Tcl_UpVar2 procedure} testupvar {
+    proc foo {} {
+	testupvar 1 a {} x local
+	set x
+    }
+    catch {unset a}
+    catch {unset x}
+    set a 44
+    foo
+} {44}
+test upvar-9.4 {Tcl_UpVar2 procedure} testupvar {
+    proc foo {} {
+	testupvar 1 a {} _up_ global
+	list [catch {set x} msg] $msg
+    }
+    catch {unset a}
+    catch {unset _up_}
+    set a 44
+    concat [foo] $_up_
+} {1 {can't read "x": no such variable} 44}
+test upvar-9.5 {Tcl_UpVar2 procedure} testupvar {
+    proc foo {} {
+	testupvar 1 a b x local
+	set x
+    }
+    catch {unset a}
+    catch {unset x}
+    set a(b) 1234
+    foo
+} {1234}
+test upvar-9.6 {Tcl_UpVar procedure} testupvar {
+    proc foo {} {
+	testupvar 1 a x local
+	set x
+    }
+    catch {unset a}
+    catch {unset x}
+    set a xyzzy
+    foo
+} {xyzzy}
+test upvar-9.7 {Tcl_UpVar procedure} testupvar {
+    proc foo {} {
+	testupvar #0 a(b) x local
+	set x
+    }
+    catch {unset a}
+    catch {unset x}
+    set a(b) 1234
+    foo
+} {1234}
+catch {unset a}
+
+test upvar-10.1 {CompileWord OBOE} -setup {
+    proc linenumber {} {dict get [info frame -1] line}
+} -body {
+    apply {n {
+        upvar 1 {*}{
+        } [return [incr n -[linenumber]]] x
+    }} [linenumber]
+} -cleanup {
+    rename linenumber {}
+} -result 1
+
+#
+# Tests for 'namespace upvar'. As the implementation is essentially the same as
+# for 'upvar', we only test that the variables are linked correctly, i.e., we
+# assume that the behaviour of variables once the link is established has
+# already been tested above.
+#
+
+# Clear out any namespaces called test_ns_*
+catch {namespace delete {*}[namespace children :: test_ns_*]}
+namespace eval test_ns_0 {
+    variable x test_ns_0
+}
+set ::x test_global
+
+test upvar-NS-1.1 {nsupvar links to correct variable} -body {
+    namespace eval test_ns_1 {
+	namespace upvar ::test_ns_0 x w
+	set w
+    }
+} -result {test_ns_0} -cleanup {
+    namespace delete test_ns_1
+}
+test upvar-NS-1.2 {nsupvar links to correct variable} -body {
+    namespace eval test_ns_1 {
+	proc a {} {
+	    namespace upvar ::test_ns_0 x w
+	    set w
+	}
+	return [a]
+    }
+} -result {test_ns_0} -cleanup {
+    namespace delete test_ns_1
+}
+test upvar-NS-1.3 {nsupvar links to correct variable} -body {
+    namespace eval test_ns_1 {
+	namespace upvar test_ns_0 x w
+	set w
+    }
+} -returnCodes error -cleanup {
+    namespace delete test_ns_1
+} -result {namespace "test_ns_0" not found in "::test_ns_1"}
+test upvar-NS-1.4 {nsupvar links to correct variable} -body {
+    namespace eval test_ns_1 {
+	proc a {} {
+	    namespace upvar test_ns_0 x w
+	    set w
+	}
+	return [a]
+    }
+} -returnCodes error -cleanup {
+    namespace delete test_ns_1
+} -result {namespace "test_ns_0" not found in "::test_ns_1"}
+    
+test upvar-NS-1.5 {nsupvar links to correct variable} -body {
+    namespace eval test_ns_1 {
+	namespace eval test_ns_0 {}
+	namespace upvar test_ns_0 x w
+	set w
+    }
+} -cleanup {
+    namespace delete test_ns_1
+} -result {can't read "w": no such variable} -returnCodes error
+test upvar-NS-1.6 {nsupvar links to correct variable} -body {
+    namespace eval test_ns_1 {
+	namespace eval test_ns_0 {}
+	proc a {} {
+	    namespace upvar test_ns_0 x w
+	    set w
+	}
+	return [a]
+    }
+} -cleanup {
+    namespace delete test_ns_1
+} -result {can't read "w": no such variable} -returnCodes error
+test upvar-NS-1.7 {nsupvar links to correct variable} -body {
+    namespace eval test_ns_1 {
+	namespace eval test_ns_0 {
+	    variable x test_ns_1::test_ns_0
+	}
+	namespace upvar test_ns_0 x w
+	set w
+    }
+} -cleanup {
+    namespace delete test_ns_1
+} -result {test_ns_1::test_ns_0}
+test upvar-NS-1.8 {nsupvar links to correct variable} -body {
+    namespace eval test_ns_1 {
+	namespace eval test_ns_0 {
+	    variable x test_ns_1::test_ns_0
+	}
+	proc a {} {
+	    namespace upvar test_ns_0 x w
+	    set w
+	}
+	return [a]
+    }
+} -cleanup {
+    namespace delete test_ns_1
+} -result {test_ns_1::test_ns_0}
+test upvar-NS-1.9 {nsupvar links to correct variable} -body {
+    namespace eval test_ns_1 {
+	variable x test_ns_1
+	proc a {} {
+	    namespace upvar test_ns_0 x w
+	    set w
+	}
+	return [a]
+    }
+} -returnCodes error -cleanup {
+    namespace delete test_ns_1
+} -result {namespace "test_ns_0" not found in "::test_ns_1"}
+
+test upvar-NS-2.1 {TIP 323} -returnCodes error -body {
+    namespace upvar
+} -result {wrong # args: should be "namespace upvar ns ?otherVar myVar ...?"}
+test upvar-NS-2.2 {TIP 323} -setup {
+    namespace eval test_ns_1 {}
+} -body {
+    namespace upvar test_ns_1
+} -cleanup {
+    namespace delete test_ns_1
+} -result {}
+
+test upvar-NS-3.1 {CompileWord OBOE} -setup {
+    proc linenumber {} {dict get [info frame -1] line}
+} -body {
+    apply {n {
+        namespace upvar {*}{
+        } [return [incr n -[linenumber]]] x y
+    }} [linenumber]
+} -cleanup {
+    rename linenumber {}
+} -result 1
+test upvar-NS-3.2 {CompileWord OBOE} -setup {
+    proc linenumber {} {dict get [info frame -1] line}
+} -body {
+    apply {n {
+        namespace upvar :: {*}{
+        } [return [incr n -[linenumber]]] x
+    }} [linenumber]
+} -cleanup {
+    rename linenumber {}
+} -result 1
+test upvar-NS-3.3 {CompileWord OBOE} -setup {
+    proc linenumber {} {dict get [info frame -1] line}
+} -body {
+    apply {n {
+        variable x {*}{
+        } [return [incr n -[linenumber]]]
+    }} [linenumber]
+} -cleanup {
+    rename linenumber {}
+} -result 1
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

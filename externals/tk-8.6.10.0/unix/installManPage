@@ -1,0 +1,125 @@
+#!/bin/sh
+
+########################################################################
+### Parse Options
+###
+
+Gzip=:
+SymOrLoc=""
+Gz=""
+Suffix=""
+
+while true; do
+    case $1 in
+        -s | --symlinks  ) SymOrLoc="-s "      ;;
+        -z | --compress  )     Gzip=$2;  shift ;;
+	-e | --extension )       Gz=$2;  shift ;;
+	-x | --suffix    )   Suffix=$2;  shift ;;
+	-*) cat <<EOF
+Unknown option "$1". Supported options:
+    -s         Use symbolic links for manpages with multiple names.
+    -z PROG    Use PROG to compress manual pages.
+    -e EXT     Defines the extension added by -z PROG when compressing.
+    -x SUFF    Defines an extra extension suffix to use.
+Option names may not be combined getopt-style.
+EOF
+	    exit 1 ;;
+	*)  break ;;
+    esac
+    shift
+done
+if test "$#" != 2; then
+    echo "Usage: installManPages <options> file dir"
+    exit 1
+fi
+
+########################################################################
+### Parse Required Arguments
+###
+
+ManPage=$1
+Dir=$2
+if test -f $ManPage ; then : ; else
+    echo "source manual page file must exist"
+    exit 1
+fi
+if test -d $Dir ; then : ; else
+    echo "target directory must exist"
+    exit 1
+fi
+test -z "$SymOrLoc" && SymOrLoc="$Dir/"
+
+########################################################################
+### Extract Target Names from Manual Page
+###
+
+# A sed script to parse the alternative names out of a man page.
+#
+# Backslashes are trippled in the sed script, because it is in
+# backticks which doesn't pass backslashes literally.
+#
+Names=`sed -n '
+#                               Look for a line that starts with .SH NAME
+    /^\.SH NAME/{
+#                               Read next line
+	n
+#                               Remove all commas ...
+	s/,//g
+#                               ... and backslash-escaped spaces.
+	s/\\\ //g
+#                               Delete from \- to the end of line
+	s/ \\\-.*//
+#                               Convert all non-space non-alphanum sequences
+#                               to single underscores.
+	s/[^ A-Za-z0-9][^ A-Za-z0-9]*/_/g
+#                               print the result and exit
+	p;q
+    }' $ManPage`
+
+if test -z "$Names" ; then
+    echo "warning: no target names found in $ManPage"
+fi
+
+########################################################################
+### Remaining Set Up
+###
+
+case $ManPage in
+    *.1) Section=1 ;;
+    *.3) Section=3 ;;
+    *.n) Section=n ;;
+    *)	echo "unknown section for $ManPage"
+	exit 2 ;;
+esac
+
+Name=`basename $ManPage .$Section`
+SrcDir=`dirname $ManPage`
+
+########################################################################
+### Process Page to Create Target Pages
+###
+
+Specials="FindPhoto FontId MeasureChar"
+for n in $Specials; do
+    if [ "$Name" = "$n" ] ; then
+	Names="$n $Names"
+    fi
+done
+
+First=""
+for Target in $Names; do
+    Target=$Target.$Section$Suffix
+    rm -f $Dir/$Target $Dir/$Target.*
+    if test -z "$First" ; then
+	First=$Target
+	sed -e "/man\.macros/r $SrcDir/man.macros" -e "/man\.macros/d" \
+	    $ManPage > $Dir/$First
+	chmod 644 $Dir/$First
+	$Gzip $Dir/$First
+    else
+	ln $SymOrLoc$First$Gz $Dir/$Target$Gz
+    fi
+done
+
+########################################################################
+exit 0

@@ -1,0 +1,50 @@
+'\"
+'\" Copyright (c) 1995-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_QueueWindowEvent 3 7.5 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_CollapseMotionEvents, Tk_QueueWindowEvent \- Add a window event to the Tcl event queue
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+int
+\fBTk_CollapseMotionEvents\fR(\fIdisplay, collapse\fR)
+.sp
+\fBTk_QueueWindowEvent\fR(\fIeventPtr, position\fR)
+.SH ARGUMENTS
+.AS Tcl_QueuePosition position
+.AP Display *display  in
+Display for which to control motion event collapsing.
+.AP int collapse in
+Indicates whether motion events should be collapsed or not.
+.AP XEvent *eventPtr  in
+An event to add to the event queue. It is important
+that all unused fields of the structure be set to zero.
+.AP Tcl_QueuePosition position in
+Where to add the new event in the queue:  \fBTCL_QUEUE_TAIL\fR,
+\fBTCL_QUEUE_HEAD\fR, or \fBTCL_QUEUE_MARK\fR.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_QueueWindowEvent\fR places a window event on Tcl's internal event
+queue for eventual servicing.  It creates a Tcl_Event structure, copies the
+event into that structure, and calls \fBTcl_QueueEvent\fR to add the event
+to the queue.  When the event is eventually removed from the queue it is
+processed just like all window events.
+.PP
+When multiple motion events are received for the same window in rapid
+succession, they are collapsed by default.  This behavior can be controlled
+with \fBTk_CollapseMotionEvents\fR.  \fBTk_CollapseMotionEvents\fR always
+returns the previous value for collapse behavior on the \fIdisplay\fR.
+.PP
+The \fIposition\fR argument to \fBTk_QueueWindowEvent\fR has
+the same significance as for \fBTcl_QueueEvent\fR;  see the
+documentation for \fBTcl_QueueEvent\fR for details.
+.SH KEYWORDS
+callback, clock, handler, modal timeout, events

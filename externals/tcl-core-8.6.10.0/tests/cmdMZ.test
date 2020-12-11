@@ -1,0 +1,496 @@
+# The tests in this file cover the procedures in tclCmdMZ.c.
+#
+# This file contains a collection of tests for one or more of the Tcl built-in
+# commands. Sourcing this file into Tcl runs the tests and generates output
+# for errors. No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[catch {package require tcltest 2.1}]} {
+    puts stderr "Skipping tests in [info script]. tcltest 2.1 required."
+    return
+}
+
+namespace eval ::tcl::test::cmdMZ {
+    namespace import ::tcltest::cleanupTests
+    namespace import ::tcltest::customMatch
+    namespace import ::tcltest::makeFile
+    namespace import ::tcltest::removeFile
+    namespace import ::tcltest::temporaryDirectory
+    namespace import ::tcltest::testConstraint
+    namespace import ::tcltest::test
+
+    if {[namespace which -command ::tcl::unsupported::timerate] ne ""} {
+	namespace import ::tcl::unsupported::timerate
+    }
+
+    proc ListGlobMatch {expected actual} {
+	if {[llength $expected] != [llength $actual]} {
+	    return 0
+	}
+	foreach e $expected a $actual {
+	    if {![string match $e $a]} {
+		return 0
+	    }
+	}
+	return 1
+    }
+    customMatch listGlob [namespace which ListGlobMatch]
+
+# Tcl_PwdObjCmd
+
+test cmdMZ-1.1 {Tcl_PwdObjCmd} -returnCodes error -body {
+    pwd a
+} -result {wrong # args: should be "pwd"}
+test cmdMZ-1.2 {Tcl_PwdObjCmd: simple pwd} {
+    catch pwd
+} 0
+test cmdMZ-1.3 {Tcl_PwdObjCmd: simple pwd} -body {
+    pwd
+} -match glob -result {?*}
+test cmdMZ-1.4 {Tcl_PwdObjCmd: failure} -setup {
+    set cwd [pwd]
+    set foodir [file join [temporaryDirectory] foo]
+    file delete -force $foodir
+    file mkdir $foodir
+    cd $foodir
+} -constraints {unix nonPortable} -body {
+    # This test fails on various unix platforms (eg Linux) where permissions
+    # caching causes this to fail. The caching is strictly incorrect, but we
+    # have no control over that.
+    file attr . -permissions 000
+    pwd
+} -returnCodes error -cleanup {
+    cd $cwd
+    file delete -force $foodir
+} -result {error getting working directory name: permission denied}
+
+# The tests for Tcl_RegexpObjCmd, Tcl_RegsubObjCmd are in regexp.test
+
+# Tcl_RenameObjCmd
+
+test cmdMZ-2.1 {Tcl_RenameObjCmd: error conditions} -returnCodes error -body {
+    rename r1
+} -result {wrong # args: should be "rename oldName newName"}
+test cmdMZ-2.2 {Tcl_RenameObjCmd: error conditions} -returnCodes error -body {
+    rename r1 r2 r3
+} -result {wrong # args: should be "rename oldName newName"}
+test cmdMZ-2.3 {Tcl_RenameObjCmd: success} -setup {
+    catch {rename r2 {}}
+} -body {
+    proc r1 {} {return "r1"}
+    rename r1 r2
+    r2
+} -result {r1}
+test cmdMZ-2.4 {Tcl_RenameObjCmd: success} {
+    proc r1 {} {return "r1"}
+    rename r1 {}
+    list [catch {r1} msg] $msg
+} {1 {invalid command name "r1"}}
+
+# Some tests for Tcl_ReturnObjCmd are in proc-old.test
+
+test cmdMZ-return-1.0 {return checks for bad option values} -body {
+    return -options foo
+} -returnCodes error -match glob -result {bad -options value:*}
+test cmdMZ-return-1.1 {return checks for bad option values} -body {
+    return -code err
+} -returnCodes error -match glob -result {bad completion code "err": must be ok, error, return, break, continue*, or an integer}
+test cmdMZ-return-1.2 {return checks for bad option values} -body {
+    return -code 0x100000000
+} -returnCodes error -match glob -result {bad completion code "0x100000000": must be ok, error, return, break, continue*, or an integer}
+test cmdMZ-return-1.3 {return checks for bad option values} -body {
+    return -level foo
+} -returnCodes error -match glob -result {bad -level value: *}
+test cmdMZ-return-1.4 {return checks for bad option values} -body {
+    return -level -1
+} -returnCodes error -match glob -result {bad -level value: *}
+test cmdMZ-return-1.5 {return checks for bad option values} -body {
+    return -level 3.1415926
+} -returnCodes error -match glob -result {bad -level value: *}
+
+proc dictSort {d} {
+    set result {}
+    foreach k [lsort [dict keys $d]] {
+	dict set result $k [dict get $d $k]
+    }
+    return $result
+}
+
+test cmdMZ-return-2.0 {return option handling} {
+    list [catch return -> foo] [dictSort $foo]
+} {2 {-code 0 -level 1}}
+test cmdMZ-return-2.1 {return option handling} {
+    list [catch {return -bar soom} -> foo] [dictSort $foo]
+} {2 {-bar soom -code 0 -level 1}}
+test cmdMZ-return-2.2 {return option handling} {
+    list [catch {return -code return} -> foo] [dictSort $foo]
+} {2 {-code 0 -level 2}}
+test cmdMZ-return-2.3 {return option handling} {
+    list [catch {return -code return -level 10} -> foo] [dictSort $foo]
+} {2 {-code 0 -level 11}}
+test cmdMZ-return-2.4 {return option handling} -body {
+    return -level 0 -code error
+} -returnCodes error -result {}
+test cmdMZ-return-2.5 {return option handling} -body {
+    return -level 0 -code return
+} -returnCodes return -result {}
+test cmdMZ-return-2.6 {return option handling} -body {
+    return -level 0 -code break
+} -returnCodes break -result {}
+test cmdMZ-return-2.7 {return option handling} -body {
+    return -level 0 -code continue
+} -returnCodes continue -result {}
+test cmdMZ-return-2.8 {return option handling} -body {
+    return -level 0 -code -1
+} -returnCodes -1 -result {}
+test cmdMZ-return-2.9 {return option handling} -body {
+    return -level 0 -code 10
+} -returnCodes 10 -result {}
+test cmdMZ-return-2.10 {return option handling} -body {
+    list [catch {return -level 0 -code error} -> foo] [dictSort $foo]
+} -match glob -result {1 {-code 1 -errorcode NONE -errorinfo {
+    while executing
+"return -level 0 -code error"} -errorline 1 -errorstack * -level 0}}
+test cmdMZ-return-2.11 {return option handling} {
+    list [catch {return -level 0 -code break} -> foo] [dictSort $foo]
+} {3 {-code 3 -level 0}}
+test cmdMZ-return-2.12 {return option handling} -body {
+    return -level 0 -code error -options {-code ok}
+} -returnCodes ok -result {}
+test cmdMZ-return-2.13 {return option handling} -body {
+    return -level 0 -code error -options {-code err}
+} -returnCodes error -match glob -result {bad completion code "err": must be ok, error, return, break, continue*, or an integer}
+test cmdMZ-return-2.14 {return option handling} -body {
+    return -level 0 -code error -options {-code foo -options {-code break}}
+} -returnCodes break -result {}
+test cmdMZ-return-2.15 {return opton handling} {
+    list [catch {
+	apply {{} {
+	    return -code error -errorcode {a b} c
+	}}
+    } result] $result $::errorCode
+} {1 c {a b}}
+test cmdMZ-return-2.16 {return opton handling} {
+    list [catch {
+	apply {{} {
+	    return -code error -errorcode [list a b] c
+	}}
+    } result] $result $::errorCode
+} {1 c {a b}}
+test cmdMZ-return-2.17 {return opton handling} {
+    list [catch {
+	apply {{} {
+	    return -code error -errorcode a\ b c
+	}}
+    } result] $result $::errorCode
+} {1 c {a b}}
+test cmdMZ-return-2.18 {return option handling} {
+    list [catch {
+	return -code error -errorstack [list CALL a CALL b] yo
+    } -> foo] [dictSort $foo] [info errorstack]
+} {2 {-code 1 -errorcode NONE -errorstack {CALL a CALL b} -level 1} {CALL a CALL b}}
+
+# Check that the result of a [return -options $opts $result] is
+# indistinguishable from that of the originally caught script, no matter what
+# the script is/does. (TIP 90)
+foreach {testid script} {
+    cmdMZ-return-3.0 {}
+    cmdMZ-return-3.1 {format x}
+    cmdMZ-return-3.2 {set}
+    cmdMZ-return-3.3 {set a 1}
+    cmdMZ-return-3.4 {error}
+    cmdMZ-return-3.5 {error foo}
+    cmdMZ-return-3.6 {error foo bar}
+    cmdMZ-return-3.7 {error foo bar baz}
+    cmdMZ-return-3.8 {return -level 0}
+    cmdMZ-return-3.9 {return -code error}
+    cmdMZ-return-3.10 {return -code error -errorinfo foo}
+    cmdMZ-return-3.11 {return -code error -errorinfo foo -errorcode bar}
+    cmdMZ-return-3.12 {return -code error -errorinfo foo -errorcode bar -errorline 10}
+    cmdMZ-return-3.12.1 {return -code error -errorinfo foo -errorcode bar -errorline 10 -errorstack baz}
+    cmdMZ-return-3.13 {return -options {x y z 2}}
+    cmdMZ-return-3.14 {return -level 3 -code break sdf}
+} {
+    test $testid "check that return after a catch is same:\n$script" {
+	set one [list [catch $script foo bar] $foo [dictSort $bar] \
+		$::errorCode $::errorInfo]
+	set two [list [catch {return -options $bar $foo} foo2 bar2] \
+		$foo2 [dictSort $bar2] $::errorCode $::errorInfo]
+	string equal $one $two
+    } 1
+}
+
+# The tests for Tcl_ScanObjCmd are in scan.test
+
+# Tcl_SourceObjCmd
+# More tests of Tcl_SourceObjCmd are in source.test
+
+test cmdMZ-3.3 {Tcl_SourceObjCmd: error conditions} -constraints {
+    unixOrWin
+} -returnCodes error -body {
+    source
+} -match glob -result {wrong # args: should be "source*fileName"}
+test cmdMZ-3.4 {Tcl_SourceObjCmd: error conditions} -constraints {
+    unixOrWin
+} -returnCodes error -body {
+    source a b
+} -match glob -result {wrong # args: should be "source*fileName"}
+test cmdMZ-3.5 {Tcl_SourceObjCmd: error in script} -body {
+    set file [makeFile {
+	set x 146
+	error "error in sourced file"
+	set y $x
+    } source.file]
+    list [catch {source $file} msg] $msg $::errorInfo
+} -cleanup {
+    removeFile source.file
+} -match listGlob -result {1 {error in sourced file} {error in sourced file
+    while executing
+"error "error in sourced file""
+    (file "*" line 3)
+    invoked from within
+"source $file"}}
+test cmdMZ-3.6 {Tcl_SourceObjCmd: simple script} -body {
+    set file [makeFile {list ok} source.file]
+    source $file
+} -cleanup {
+    removeFile source.file
+} -result ok
+
+# Tcl_SplitObjCmd
+
+test cmdMZ-4.1 {Tcl_SplitObjCmd: split errors} -returnCodes error -body {
+    split
+} -result {wrong # args: should be "split string ?splitChars?"}
+test cmdMZ-4.2 {Tcl_SplitObjCmd: split errors} -returnCodes error -body {
+    split a b c
+} -result {wrong # args: should be "split string ?splitChars?"}
+test cmdMZ-4.3 {Tcl_SplitObjCmd: basic split commands} {
+    split "a\n b\t\r c\n "
+} {a {} b {} {} c {} {}}
+test cmdMZ-4.4 {Tcl_SplitObjCmd: basic split commands} {
+    split "word 1xyzword 2zword 3" xyz
+} {{word 1} {} {} {word 2} {word 3}}
+test cmdMZ-4.5 {Tcl_SplitObjCmd: basic split commands} {
+    split "12345" {}
+} {1 2 3 4 5}
+test cmdMZ-4.6 {Tcl_SplitObjCmd: basic split commands} {
+    split "a\}b\[c\{\]\$"
+} "a\\\}b\\\[c\\\{\\\]\\\$"
+test cmdMZ-4.7 {Tcl_SplitObjCmd: basic split commands} {
+    split {} {}
+} {}
+test cmdMZ-4.8 {Tcl_SplitObjCmd: basic split commands} {
+    split {}
+} {}
+test cmdMZ-4.9 {Tcl_SplitObjCmd: basic split commands} {
+    split {   }
+} {{} {} {} {}}
+test cmdMZ-4.10 {Tcl_SplitObjCmd: basic split commands} {
+    apply {{} {
+        set x {}
+        foreach f [split {]\n} {}] {
+            append x $f
+        }
+        return $x
+    }}
+} {]\n}
+test cmdMZ-4.11 {Tcl_SplitObjCmd: basic split commands} {
+    apply {{} {
+        set x ab\000c
+        set y [split $x {}]
+	binary scan $y c* z
+        return $z
+    }}
+} {97 32 98 32 0 32 99}
+test cmdMZ-4.12 {Tcl_SplitObjCmd: basic split commands} {
+    split "a0ab1b2bbb3\000c4" ab\000c
+} {{} 0 {} 1 2 {} {} 3 {} 4}
+test cmdMZ-4.13 {Tcl_SplitObjCmd: basic split commands} {
+    # if not UTF-8 aware, result is "a {} {} b qw\xe5 {} N wq"
+    split "a\u4e4eb qw\u5e4e\x4e wq" " \u4e4e"
+} "a b qw\u5e4eN wq"
+
+# The tests for Tcl_StringObjCmd are in string.test
+# The tests for Tcl_SubstObjCmd are in subst.test
+# The tests for Tcl_SwitchObjCmd are in switch.test
+
+# todo: rewrite this if monotonic clock is provided resp. command "after" 
+# gets microsecond accuracy (RFE [fdfbd5e10] gets merged):
+proc _nrt_sleep {msec} {
+    set usec [expr {$msec * 1000}]
+    set stime [clock microseconds]
+    while {abs([clock microseconds] - $stime) < $usec} {
+      # don't use after 0 unless it's NRT-capable, so yes - busy-wait (but it's more precise):
+      # after 0
+    }
+}
+_nrt_sleep 0; # warm up (clock, compile, etc)
+
+test cmdMZ-5.1 {Tcl_TimeObjCmd: basic format of command} -body {
+    time
+} -returnCodes error -result {wrong # args: should be "time command ?count?"}
+test cmdMZ-5.2 {Tcl_TimeObjCmd: basic format of command} -body {
+    time a b c
+} -returnCodes error -result {wrong # args: should be "time command ?count?"}
+test cmdMZ-5.3 {Tcl_TimeObjCmd: basic format of command} -body {
+    time a b
+} -returnCodes error -result {expected integer but got "b"}
+test cmdMZ-5.4 {Tcl_TimeObjCmd: nothing happens with negative iteration counts} {
+    time bogusCmd -12456
+} {0 microseconds per iteration}
+test cmdMZ-5.5 {Tcl_TimeObjCmd: result format} -body {
+    time {format 1}
+} -match regexp -result {^\d+ microseconds per iteration}
+test cmdMZ-5.6 {Tcl_TimeObjCmd: slower commands take longer} -body {
+    set m1 [lindex [time {_nrt_sleep 0.01}] 0]
+    set m2 [lindex [time {_nrt_sleep 10.0}] 0]
+    list \
+	[expr {$m1 < $m2}] \
+	$m1 $m2; # interesting only in error case.
+} -match glob -result [list 1 *]
+test cmdMZ-5.7 {Tcl_TimeObjCmd: errors generate right trace} {
+    list [catch {time {error foo}} msg] $msg $::errorInfo
+} {1 foo {foo
+    while executing
+"error foo"
+    invoked from within
+"time {error foo}"}}
+test cmdMZ-5.7.1 {Tcl_TimeObjCmd: return from time} {
+    set x 0
+    proc r1 {} {upvar x x; time {incr x; return "r1"; incr x} 10}
+    list [r1] $x
+} {r1 1}
+test cmdMZ-5.8 {Tcl_TimeObjCmd: done optimization: nested call of self inside time (if compiled)} {
+    set x [set y 0]
+    set m1 {
+	if {[incr x] <= 5} {
+	    # nested call should return result, so covering that:
+	    if {![string is integer -strict [eval $m1]]} {error unexpected}
+	}
+	# increase again (no "continue" from nested call):
+	incr x
+    }
+    time {incr y; eval $m1} 5
+    list $y $x
+} {5 20}
+
+test cmdMZ-6.1 {Tcl_TimeRateObjCmd: basic format of command} {
+    list [catch {timerate} msg] $msg
+} {1 {wrong # args: should be "timerate ?-direct? ?-calibrate? ?-overhead double? command ?time ?max-count??"}}
+test cmdMZ-6.2.1 {Tcl_TimeRateObjCmd: basic format of command} {
+    list [catch {timerate a b c d} msg] $msg
+} {1 {wrong # args: should be "timerate ?-direct? ?-calibrate? ?-overhead double? command ?time ?max-count??"}}
+test cmdMZ-6.2.2 {Tcl_TimeRateObjCmd: basic format of command} {
+    list [catch {timerate a b c} msg] $msg
+} {1 {expected integer but got "b"}}
+test cmdMZ-6.2.3 {Tcl_TimeRateObjCmd: basic format of command} {
+    list [catch {timerate a b} msg] $msg
+} {1 {expected integer but got "b"}}
+test cmdMZ-6.3 {Tcl_TimeRateObjCmd: basic format of command} {
+    list [catch {timerate -overhead b {} a b} msg] $msg
+} {1 {expected floating-point number but got "b"}}
+test cmdMZ-6.4 {Tcl_TimeRateObjCmd: compile of script happens even with negative iteration counts} {
+    list [catch {timerate "foreach a {c d e} \{" -12456} msg] $msg
+} {1 {missing close-brace}}
+test cmdMZ-6.5a {Tcl_TimeRateObjCmd: result format and one iteration} {
+    regexp {^\d+(?:\.\d+)? \ws/# 1 # \d+(?:\.\d+)? #/sec \d+(?:\.\d+)? net-ms$} [timerate {} 0]
+} 1
+test cmdMZ-6.5b {Tcl_TimeRateObjCmd: result format without iterations} {
+    regexp {^0 \ws/# 0 # 0 #/sec 0 net-ms$} [timerate {} 0 0]
+} 1
+test cmdMZ-6.6 {Tcl_TimeRateObjCmd: slower commands take longer, but it remains almost the same time of measument} -body {
+    set m1 [timerate {_nrt_sleep 0.01} 50]
+    set m2 [timerate {_nrt_sleep 1.00} 50]
+    list [list \
+	[expr {[lindex $m1 0] < [lindex $m2 0]}] \
+	[expr {[lindex $m1 0] < 100}] \
+	[expr {[lindex $m2 0] > 100}] \
+	[expr {[lindex $m1 2] > 500}] \
+	[expr {[lindex $m2 2] < 500}] \
+	[expr {[lindex $m1 4] > 10000}] \
+	[expr {[lindex $m2 4] < 10000}] \
+	[expr {[lindex $m1 6] > 5 && [lindex $m1 6] < 100}] \
+	[expr {[lindex $m2 6] > 5 && [lindex $m2 6] < 100}] \
+    ] $m1 $m2; # interesting only in error case.
+} -match glob -result [list [lrepeat 9 1] *]
+test cmdMZ-6.7 {Tcl_TimeRateObjCmd: errors generate right trace} {
+    list [catch {timerate {error foo} 1} msg] $msg $::errorInfo
+} {1 foo {foo
+    while executing
+"error foo"
+    invoked from within
+"timerate {error foo} 1"}}
+test cmdMZ-6.7.1 {Tcl_TimeRateObjCmd: return from timerate} {
+    set x 0
+    proc r1 {} {upvar x x; timerate {incr x; return "r1"; incr x} 1000 10}
+    list [r1] $x
+} {r1 1}
+test cmdMZ-6.8 {Tcl_TimeRateObjCmd: allow (conditional) break from timerate} -body {
+    set m1 [timerate {break}]
+    list [list \
+	[expr {[lindex $m1 0] < 1000}] \
+	[expr {[lindex $m1 2] == 1}] \
+	[expr {[lindex $m1 4] > 1000}] \
+	[expr {[lindex $m1 6] < 10}] \
+    ] $m1; # interesting only in error case.
+} -match glob -result [list {1 1 1 1} *]
+test cmdMZ-6.8.1 {Tcl_TimeRateObjCmd: allow (conditional) continue in timerate} -body {
+    set m1 [timerate {continue; return -code error "unexpected"} 1000 10]
+    list [list \
+	[expr {[lindex $m1 0] < 1000}] \
+	[expr {[lindex $m1 2] == 10}] \
+	[expr {[lindex $m1 4] > 1000}] \
+	[expr {[lindex $m1 6] < 100}] \
+    ] $m1; # interesting only in error case.
+} -match glob -result [list {1 1 1 1} *]
+test cmdMZ-6.9 {Tcl_TimeRateObjCmd: max count of iterations} {
+    set m1 [timerate {} 1000 5];	# max-count wins
+    set m2 [timerate {_nrt_sleep 20} 1 5];	# max-time wins
+    list [lindex $m1 2] [lindex $m2 2]
+} {5 1}
+test cmdMZ-6.10 {Tcl_TimeRateObjCmd: huge overhead cause 0us result} -body {
+    set m1 [timerate -overhead 1e6 {_nrt_sleep 10} 100 1]
+    list [list \
+	[expr {[lindex $m1 0] == 0.0}] \
+	[expr {[lindex $m1 2] == 1}] \
+	[expr {[lindex $m1 4] == 1000000}] \
+	[expr {[lindex $m1 6] <= 0.001}] \
+    ] $m1; # interesting only in error case.
+} -match glob -result [list {1 1 1 1} *]
+test cmdMZ-6.11 {Tcl_TimeRateObjCmd: done/continue optimization rollback} {
+    set m1 {set m2 ok}
+    if 1 $m1
+    timerate $m1 1000 10
+    if 1 $m1; # if rollback is missing throws an error: invoked "continue" outside of a loop
+} ok
+test cmdMZ-6.12 {Tcl_TimeRateObjCmd: done optimization: nested call of self inside timerate} {
+    set x 0
+    set m1 {
+	if {[incr x] <= 5} {
+	    # nested call should return result, so covering that:
+	    if {![string is integer -strict [eval $m1]]} {error unexpected}
+	}
+	# increase again (no "continue" from nested call):
+	incr x
+    }
+    list [lindex [timerate $m1 1000 5] 2] $x
+} {5 20}
+
+# The tests for Tcl_WhileObjCmd are in while.test
+
+# cleanup
+cleanupTests
+}
+namespace delete ::tcl::test::cmdMZ
+return
+
+# Local Variables:
+# mode: tcl
+# End:

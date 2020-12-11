@@ -1,0 +1,372 @@
+# Commands covered:  auto_mkindex auto_import
+#
+# This file contains tests related to autoloading and generating the
+# autoloading index.
+#
+# Copyright (c) 1998  Lucent Technologies, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+makeFile {# Test file for:
+#   auto_mkindex
+#
+# This file provides example cases for testing the Tcl autoloading facility.
+# Things are much more complicated with namespaces and classes.  The
+# "auto_mkindex" facility can no longer be built on top of a simple regular
+# expression parser.  It must recognize constructs like this:
+#
+#   namespace eval foo {
+#       proc test {x y} { ... }
+#       namespace eval bar {
+#           proc another {args} { ... }
+#       }
+#   }
+#
+# Note that procedures and itcl class definitions can be nested inside of
+# namespaces.
+#
+# Copyright (c) 1993-1998  Lucent Technologies, Inc.
+
+# This shouldn't cause any problems
+namespace import -force blt::*
+
+# Should be able to handle "proc" definitions, even if they are preceded by
+# white space.
+
+proc normal {x y} {return [expr $x+$y]}
+  proc indented {x y} {return [expr $x+$y]}
+
+#
+# Should be able to handle proc declarations within namespaces, even if they
+# have explicit namespace paths.
+#
+namespace eval buried {
+    proc inside {args} {return "inside: $args"}
+
+    namespace export pub_*
+    proc pub_one {args} {return "one: $args"}
+    proc pub_two {args} {return "two: $args"}
+}
+proc buried::within {args} {return "within: $args"}
+
+namespace eval buried {
+    namespace eval under {
+        proc neath {args} {return "neath: $args"}
+    }
+    namespace eval ::buried {
+        proc relative {args} {return "relative: $args"}
+        proc ::top {args} {return "top: $args"}
+        proc ::buried::explicit {args} {return "explicit: $args"}
+    }
+}
+
+# With proper hooks, we should be able to support other commands that create
+# procedures
+
+proc buried::myproc {name body args} {
+    ::proc $name $body $args
+}
+namespace eval ::buried {
+    proc mycmd1 args {return "mycmd"}
+    myproc mycmd2 args {return "mycmd"}
+}
+::buried::myproc mycmd3 args {return "another"}
+
+proc {buried::my proc} {name body args} {
+    ::proc $name $body $args
+}
+namespace eval ::buried {
+    proc mycmd4 args {return "mycmd"}
+    {my proc} mycmd5 args {return "mycmd"}
+}
+{::buried::my proc} mycmd6 args {return "another"}
+
+# A correctly functioning [auto_import] won't choke when a child namespace
+# [namespace import]s from its parent.
+#
+namespace eval ::parent::child {
+    namespace import ::parent::*
+}
+proc ::parent::child::test {} {}
+} autoMkindex.tcl
+
+# Save initial state of auto_mkindex_parser
+
+auto_load auto_mkindex
+if {[info exists auto_mkindex_parser::initCommands]} {
+    set saveCommands $auto_mkindex_parser::initCommands
+}
+proc AutoMkindexTestReset {} {
+    global saveCommands
+    if {[info exists saveCommands]} {
+	set auto_mkindex_parser::initCommands $saveCommands
+    } elseif {[info exists auto_mkindex_parser::initCommands]} {
+	unset auto_mkindex_parser::initCommands
+    }
+}
+
+set result ""
+
+set origDir [pwd]
+cd $::tcltest::temporaryDirectory
+
+test autoMkindex-1.1 {remove any existing tclIndex file} {
+    file delete tclIndex
+    file exists tclIndex
+} {0}
+test autoMkindex-1.2 {build tclIndex based on a test file} {
+    auto_mkindex . autoMkindex.tcl
+    file exists tclIndex
+} {1}
+set element "{source [file join . autoMkindex.tcl]}"
+test autoMkindex-1.3 {examine tclIndex} -setup {
+    file delete tclIndex
+} -body {
+    auto_mkindex . autoMkindex.tcl
+    namespace eval tcl_autoMkindex_tmp {
+        set dir "."
+        variable auto_index
+        source tclIndex
+        set ::result ""
+        foreach elem [lsort [array names auto_index]] {
+            lappend ::result [list $elem $auto_index($elem)]
+        }
+    }
+    return $result
+} -cleanup {
+    namespace delete tcl_autoMkindex_tmp
+} -result "{::buried::explicit $element} {::buried::inside $element} {{::buried::my proc} $element} {::buried::mycmd1 $element} {::buried::mycmd4 $element} {::buried::myproc $element} {::buried::pub_one $element} {::buried::pub_two $element} {::buried::relative $element} {::buried::under::neath $element} {::buried::within $element} {::parent::child::test $element} {indented $element} {normal $element} {top $element}"
+
+test autoMkindex-2.1 {commands on the autoload path can be imported} -setup {
+    file delete tclIndex
+    interp create slave
+} -body {
+    auto_mkindex . autoMkindex.tcl
+    slave eval {
+        namespace eval blt {}
+        set auto_path [linsert $auto_path 0 .]
+        set info [list [catch {namespace import buried::*} result] $result]
+        foreach name [lsort [info commands pub_*]] {
+            lappend info $name [namespace origin $name]
+        }
+        return $info
+    }
+} -cleanup {
+    interp delete slave
+} -result "0 {} pub_one ::buried::pub_one pub_two ::buried::pub_two"
+
+# Test auto_mkindex hooks
+
+# Slave hook executes interesting code in the interp used to watch code.
+test autoMkindex-3.1 {slaveHook} -setup {
+    file delete tclIndex
+} -body {
+    auto_mkindex_parser::slavehook {
+	_%@namespace eval ::blt {
+	    proc foo {} {}
+	    _%@namespace export foo
+	}
+    }
+    auto_mkindex_parser::slavehook { _%@namespace import -force ::blt::* }
+    auto_mkindex . autoMkindex.tcl
+    file exists tclIndex
+} -cleanup {
+    # Reset initCommands to avoid trashing other tests
+    AutoMkindexTestReset
+} -result 1 
+# The auto_mkindex_parser::command is used to register commands that create
+# new commands.
+test autoMkindex-3.2 {auto_mkindex_parser::command} -setup {
+    file delete tclIndex
+} -body {
+    auto_mkindex_parser::command buried::myproc {name args} {
+	variable index
+	variable scriptFile
+	append index [list set auto_index([fullname $name])] \
+		" \[list source \[file join \$dir [list $scriptFile]\]\]\n"
+    }
+    auto_mkindex . autoMkindex.tcl
+    namespace eval tcl_autoMkindex_tmp {
+        set dir "."
+        variable auto_index
+        source tclIndex
+        set ::result ""
+        foreach elem [lsort [array names auto_index]] {
+            lappend ::result [list $elem $auto_index($elem)]
+        }
+	return $::result
+    }
+} -cleanup {
+    namespace delete tcl_autoMkindex_tmp
+    # Reset initCommands to avoid trashing other tests
+    AutoMkindexTestReset
+} -result "{::buried::explicit $element} {::buried::inside $element} {{::buried::my proc} $element} {::buried::mycmd1 $element} {::buried::mycmd2 $element} {::buried::mycmd4 $element} {::buried::myproc $element} {::buried::pub_one $element} {::buried::pub_two $element} {::buried::relative $element} {::buried::under::neath $element} {::buried::within $element} {::parent::child::test $element} {indented $element} {mycmd3 $element} {normal $element} {top $element}"
+test autoMkindex-3.3 {auto_mkindex_parser::command} -setup {
+    file delete tclIndex
+} -constraints {knownBug} -body {
+    auto_mkindex_parser::command {buried::my proc} {name args} {
+	variable index
+	variable scriptFile
+	puts "my proc $name"
+	append index [list set auto_index([fullname $name])] \
+		" \[list source \[file join \$dir [list $scriptFile]\]\]\n"
+    }
+    auto_mkindex . autoMkindex.tcl
+    namespace eval tcl_autoMkindex_tmp {
+        set dir "."
+        variable auto_index
+        source tclIndex
+        set ::result ""
+        foreach elem [lsort [array names auto_index]] {
+            lappend ::result [list $elem $auto_index($elem)]
+        }
+    }
+    list [lsearch -inline $::result *mycmd4*] \
+	[lsearch -inline $::result *mycmd5*] \
+	[lsearch -inline $::result *mycmd6*]
+} -cleanup {
+    namespace delete tcl_autoMkindex_tmp
+    # Reset initCommands to avoid trashing other tests
+    AutoMkindexTestReset
+} -result "{::buried::mycmd4 $element} {::buried::mycmd5 $element} {mycmd6 $element}"
+makeFile {
+
+namespace eval wok {
+    namespace ensemble create -subcommands {commands vars}
+
+    proc commands {{pattern *}} {
+	puts [join [lsort -dictionary [info commands $pattern]] \n]
+    }
+
+    proc vars {{pattern *}} {
+	puts [join [lsort -dictionary [info vars $pattern]] \n]
+    }
+
+}
+
+} ensemblecommands.tcl
+
+test autoMkindex-3.4 {ensemble commands in tclIndex} {
+    file delete tclIndex
+    auto_mkindex . ensemblecommands.tcl
+    set f [open tclIndex r]
+    set dat [list]
+    foreach r [split [string trim [read $f]] "\n"] {
+	if {[string match {set auto_index*} $r]} {
+	    lappend dat $r
+	}
+    }
+    set result [lsort $dat]
+    close $f
+    set result
+} {{set auto_index(::wok::commands) [list source [file join $dir ensemblecommands.tcl]]} {set auto_index(::wok::vars) [list source [file join $dir ensemblecommands.tcl]]} {set auto_index(wok) [list source [file join $dir ensemblecommands.tcl]]}}
+removeFile ensemblecommands.tcl
+
+test autoMkindex-4.1 {platform independent source commands} -setup {
+    file delete tclIndex
+    makeDirectory pkg
+    makeFile {
+	package provide football 1.0
+	namespace eval ::pro:: {
+	    #
+	    # export only public functions.
+	    #
+	    namespace export {[a-z]*}
+	}
+	namespace eval ::college:: {
+	    #
+	    # export only public functions.
+	    #
+	    namespace export {[a-z]*}
+	}
+	proc ::pro::team {} {
+	    puts "go packers!"
+	    return true
+	}
+	proc ::college::team {} {
+	    puts "go badgers!"
+	    return true
+	}
+    } [file join pkg samename.tcl]
+} -body {
+    auto_mkindex . pkg/samename.tcl
+    set f [open tclIndex r]
+    lsort [lrange [split [string trim [read $f]] "\n"] end-1 end]
+} -cleanup {
+    catch {close $f}
+    removeFile [file join pkg samename.tcl]
+    removeDirectory pkg
+} -result {{set auto_index(::college::team) [list source [file join $dir pkg samename.tcl]]} {set auto_index(::pro::team) [list source [file join $dir pkg samename.tcl]]}}
+
+test autoMkindex-5.1 {escape magic tcl chars in general code} -setup {
+    file delete tclIndex
+    makeDirectory pkg
+    makeFile {
+	set dollar1 "this string contains an unescaped dollar sign -> \\$foo"
+	set dollar2 \
+	    "this string contains an escaped dollar sign -> \$foo \\\$foo"
+	set bracket1 "this contains an unescaped bracket [NoSuchProc]"
+	set bracket2 "this contains an escaped bracket \[NoSuchProc\]"
+	set bracket3 \
+	    "this contains nested unescaped brackets [[NoSuchProc]]"
+	proc testProc {} {}
+    } [file join pkg magicchar.tcl]
+    set result {}
+} -body {
+    auto_mkindex . pkg/magicchar.tcl
+    set f [open tclIndex r]
+    lindex [split [string trim [read $f]] "\n"] end
+} -cleanup {
+    catch {close $f}
+    removeFile [file join pkg magicchar.tcl]
+    removeDirectory pkg
+} -result {set auto_index(testProc) [list source [file join $dir pkg magicchar.tcl]]}
+test autoMkindex-5.2 {correctly locate auto loaded procs with []} -setup {
+    file delete tclIndex
+    makeDirectory pkg
+    makeFile {
+	proc {[magic mojo proc]} {} {}
+    } [file join pkg magicchar2.tcl]
+    set result {}
+    interp create slave
+} -body {
+    auto_mkindex . pkg/magicchar2.tcl
+    # Make a slave interp to test the autoloading
+    slave eval {lappend auto_path [pwd]}
+    slave eval {catch {{[magic mojo proc]}}}
+} -cleanup {
+    interp delete slave
+    removeFile [file join pkg magicchar2.tcl]
+    removeDirectory pkg
+} -result 0
+
+# Clean up.
+
+unset result
+AutoMkindexTestReset
+if {[info exists saveCommands]} {
+    unset saveCommands
+}
+rename AutoMkindexTestReset ""
+
+removeFile autoMkindex.tcl
+if {[file exists tclIndex]} {
+    file delete -force tclIndex
+}
+
+cd $origDir
+
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:

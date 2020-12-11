@@ -1,0 +1,153 @@
+'\"
+'\" Copyright (c) 1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_CreateBindingTable 3 4.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_CreateBindingTable, Tk_DeleteBindingTable, Tk_CreateBinding, Tk_DeleteBinding, Tk_GetBinding, Tk_GetAllBindings, Tk_DeleteAllBindings, Tk_BindEvent \- invoke scripts in response to X events
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Tk_BindingTable
+\fBTk_CreateBindingTable(\fIinterp\fB)\fR
+.sp
+\fBTk_DeleteBindingTable(\fIbindingTable\fB)\fR
+.sp
+unsigned long
+\fBTk_CreateBinding(\fIinterp, bindingTable, object, eventString, script, append\fB)\fR
+.sp
+int
+\fBTk_DeleteBinding(\fIinterp, bindingTable, object, eventString\fB)\fR
+.sp
+const char *
+\fBTk_GetBinding(\fIinterp, bindingTable, object, eventString\fB)\fR
+.sp
+\fBTk_GetAllBindings(\fIinterp, bindingTable, object\fB)\fR
+.sp
+\fBTk_DeleteAllBindings(\fIbindingTable, object\fB)\fR
+.sp
+\fBTk_BindEvent(\fIbindingTable, eventPtr, tkwin, numObjects, objectPtr\fB)\fR
+.SH ARGUMENTS
+.AS Tk_BindingTable bindingTable
+.AP Tcl_Interp *interp in
+Interpreter to use when invoking bindings in binding table.  Also
+used for returning results and errors from binding procedures.
+.AP Tk_BindingTable bindingTable in
+Token for binding table;  must have been returned by some previous
+call to \fBTk_CreateBindingTable\fR.
+.AP ClientData object in
+Identifies object with which binding is associated.
+.AP "const char" *eventString in
+String describing event sequence.
+.AP "const char" *script in
+Tcl script to invoke when binding triggers.
+.AP int append in
+Non-zero means append \fIscript\fR to existing script for binding,
+if any; zero means replace existing script with new one.
+.AP XEvent *eventPtr in
+X event to match against bindings in \fIbindingTable\fR.
+.AP Tk_Window tkwin in
+Identifier for any window on the display where the event occurred.
+Used to find display-related information such as key maps.
+.AP int numObjects in
+Number of object identifiers pointed to by \fIobjectPtr\fR.
+.AP ClientData *objectPtr in
+Points to an array of object identifiers:  bindings will be considered
+for each of these objects in order from first to last.
+.BE
+.SH DESCRIPTION
+.PP
+These procedures provide a general-purpose mechanism for creating
+and invoking bindings.
+Bindings are organized in terms of \fIbinding tables\fR.
+A binding table consists of a collection of bindings plus a history
+of recent events.
+Within a binding table, bindings are associated with \fIobjects\fR.
+The meaning of an object is defined by clients of the binding package.
+For example, Tk keeps uses one binding table to hold all of the bindings
+created by the \fBbind\fR command.
+For this table, objects are pointers to strings such as window names, class
+names, or other binding tags such as \fBall\fR.
+Tk also keeps a separate binding table for each canvas widget, which manages
+bindings created by the canvas's \fBbind\fR widget command;  within
+this table, an object is either a pointer to the internal structure for a
+canvas item or a Tk_Uid identifying a tag.
+.PP
+The procedure \fBTk_CreateBindingTable\fR creates a new binding
+table and associates \fIinterp\fR with it (when bindings in the
+table are invoked, the scripts will be evaluated in \fIinterp\fR).
+\fBTk_CreateBindingTable\fR returns a token for the table, which
+must be used in calls to other procedures such as \fBTk_CreateBinding\fR
+or \fBTk_BindEvent\fR.
+.PP
+\fBTk_DeleteBindingTable\fR frees all of the state associated
+with a binding table.
+Once it returns the caller should not use the \fIbindingTable\fR
+token again.
+.PP
+\fBTk_CreateBinding\fR adds a new binding to an existing table.
+The \fIobject\fR argument identifies the object with which the
+binding is to be associated, and it may be any one-word value.
+Typically it is a pointer to a string or data structure.
+The \fIeventString\fR argument identifies the event or sequence
+of events for the binding;  see the documentation for the
+\fBbind\fR command for a description of its format.
+\fIscript\fR is the Tcl script to be evaluated when the binding
+triggers.
+\fIappend\fR indicates what to do if there already
+exists a binding for \fIobject\fR and \fIeventString\fR:  if \fIappend\fR
+is zero then \fIscript\fR replaces the old script;  if \fIappend\fR
+is non-zero then the new script is appended to the old one.
+\fBTk_CreateBinding\fR returns an X event mask for all the events
+associated with the bindings.
+This information may be useful to invoke \fBXSelectInput\fR to
+select relevant events, or to disallow the use of certain events
+in bindings.
+If an error occurred while creating the binding (e.g., \fIeventString\fR
+refers to a non-existent event), then 0 is returned and an error
+message is left as the result of interpreter \fIinterp\fR.
+.PP
+\fBTk_DeleteBinding\fR removes from \fIbindingTable\fR the
+binding given by \fIobject\fR and \fIeventString\fR, if
+such a binding exists.
+\fBTk_DeleteBinding\fR always returns \fBTCL_OK\fR.
+In some cases it may reset the interpreter result to the default
+empty value.
+.PP
+\fBTk_GetBinding\fR returns a pointer to the script associated
+with \fIeventString\fR and \fIobject\fR in \fIbindingTable\fR.
+If no such binding exists then NULL is returned and an error
+message is left as the result of interpreter \fIinterp\fR.
+.PP
+\fBTk_GetAllBindings\fR returns in \fIinterp\fR's result a list
+of all the event strings for which there are bindings in
+\fIbindingTable\fR associated with \fIobject\fR.
+If there are no bindings for \fIobject\fR, the result will be an empty
+string.
+.PP
+\fBTk_DeleteAllBindings\fR deletes all of the bindings in
+\fIbindingTable\fR that are associated with \fIobject\fR.
+.PP
+\fBTk_BindEvent\fR is called to process an event.
+It makes a copy of the event in an internal history list associated
+with the binding table, then it checks for bindings that match
+the event.
+\fBTk_BindEvent\fR processes each of the objects pointed to
+by \fIobjectPtr\fR in turn.
+For each object, it finds all the bindings that match the current
+event history, selects the most specific binding using the priority
+mechanism described in the documentation for \fBbind\fR,
+and invokes the script for that binding.
+If there are no matching bindings for a particular object, then
+the object is skipped.
+\fBTk_BindEvent\fR continues through all of the objects, handling
+exceptions such as errors, \fBbreak\fR, and \fBcontinue\fR as
+described in the documentation for \fBbind\fR.
+.SH KEYWORDS
+binding, event, object, script

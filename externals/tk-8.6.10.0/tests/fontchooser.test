@@ -1,0 +1,201 @@
+# Test the "tk::fontchooser" command
+#
+# Copyright (c) 2008 Pat Thoyts
+
+package require tcltest 2.1
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+
+# the following helper functions are related to the functions used
+# in winDialog.test where they are used to send messages to the win32
+# dialog (hence the wierdness).
+
+proc start {cmd} {
+    set ::tk_dialog {}
+    set ::iter_after 0
+    after 1 $cmd
+}
+proc then {cmd} {
+    set ::command $cmd
+    set ::dialogresult {}
+    set ::testfont {}
+    afterbody
+    vwait ::dialogresult
+    return $::dialogresult
+}
+proc afterbody {} {
+    if {$::tk_dialog == {}} {
+        if {[incr ::iter_after] > 30} {
+            set ::dialogresult ">30 iterations waiting for tk_dialog"
+            return
+        }
+        after 150 {afterbody}
+        return
+    }
+    uplevel #0 {set dialogresult [eval $command]}
+}
+proc Click {button} {
+    switch -exact -- $button {
+        ok { $::tk_dialog.ok invoke }
+        cancel { $::tk_dialog.cancel invoke }
+        apply { $::tk_dialog.apply invoke }
+        default { return -code error "invalid button name \"$button\"" }
+    }
+}
+proc ApplyFont {font} {
+#    puts stderr "apply: $font"
+    set ::testfont $font
+}
+
+# -------------------------------------------------------------------------
+
+test fontchooser-1.1 {tk fontchooser: usage} -returnCodes error -body {
+    tk fontchooser -z
+} -result {unknown or ambiguous subcommand "-z": must be configure, hide, or show}
+
+test fontchooser-1.2 {tk fontchooser: usage} -returnCodes error -body {
+    tk fontchooser configure -z
+} -match glob -result {bad option "-z":*}
+
+test fontchooser-1.3 {tk fontchooser: usage} -returnCodes error -body {
+    tk fontchooser configure -parent . -font
+} -result {value for "-font" missing}
+
+test fontchooser-1.4 {tk fontchooser: usage} -returnCodes error -body {
+    tk fontchooser configure -parent . -title
+} -result {value for "-title" missing}
+
+test fontchooser-1.5 {tk fontchooser: usage} -returnCodes error -body {
+    tk fontchooser configure -parent . -command
+} -result {value for "-command" missing}
+
+test fontchooser-1.6 {tk fontchooser: usage} -returnCodes error -body {
+    tk fontchooser configure -title . -parent
+} -result {value for "-parent" missing}
+
+test fontchooser-1.7 {tk fontchooser: usage} -returnCodes error -body {
+    tk fontchooser configure -parent abc
+} -result {bad window path name "abc"}
+
+test fontchooser-1.8 {tk fontchooser: usage} -returnCodes ok -body {
+    tk fontchooser configure -visible
+} -result {0}
+
+test fontchooser-1.9 {tk fontchooser: usage} -returnCodes error -body {
+    tk fontchooser configure -visible 1
+} -match glob -result {*}
+
+# -------------------------------------------------------------------------
+#
+# The remaining tests in this file are only relevant for the script
+# implementation. They can be tested by sourcing the script file but
+# the Tk tests are run with -singleproc 1 and doing this affects the
+# result of later attempts to test the native implementations.
+#
+testConstraint scriptImpl [llength [info proc ::tk::fontchooser::Configure]]
+
+test fontchooser-2.0 {fontchooser -title} -constraints scriptImpl -body {
+    start {
+        tk::fontchooser::Configure -title "Hello"
+        tk::fontchooser::Show
+    }
+    then {
+        set x [wm title $::tk_dialog]
+        Click cancel
+    }
+    set x
+} -result {Hello}
+
+test fontchooser-2.1 {fontchooser -title (cyrillic)} -constraints scriptImpl -body {
+    start {
+        tk::fontchooser::Configure \
+            -title "\u041f\u0440\u0438\u0432\u0435\u0442"
+        tk::fontchooser::Show
+    }
+    then {
+        set x [wm title $::tk_dialog]
+        Click cancel
+    }
+    set x
+} -result "\u041f\u0440\u0438\u0432\u0435\u0442"
+
+test fontchooser-3.0 {fontchooser -parent} -constraints scriptImpl -body {
+    start {
+        tk::fontchooser::Configure -parent .
+        tk::fontchooser::Show
+    }
+    then {
+        set x [winfo parent $::tk_dialog]
+        Click cancel
+    }
+    set x
+} -result {.}
+
+test fontchooser-3.1 {fontchooser -parent (invalid)} -constraints scriptImpl -body {
+    tk::fontchooser::Configure -parent junk
+} -returnCodes error -match glob -result {bad window path *}
+
+test fontchooser-4.0 {fontchooser -font} -constraints scriptImpl -body {
+    start {
+        tk::fontchooser::Configure -command ApplyFont -font courier
+        tk::fontchooser::Show
+    }
+    then {
+        Click cancel
+    }
+    set ::testfont
+} -result {}
+
+test fontchooser-4.1 {fontchooser -font} -constraints scriptImpl -body {
+    start {
+        tk::fontchooser::Configure -command ApplyFont -font courier
+        tk::fontchooser::Show
+    }
+    then {
+        Click ok
+    }
+    expr {$::testfont ne {}}
+} -result {1}
+
+test fontchooser-4.2 {fontchooser -font} -constraints scriptImpl -body {
+    start {
+        tk::fontchooser::Configure -command ApplyFont -font TkDefaultFont
+        tk::fontchooser::Show
+    }
+    then {
+        Click ok
+    }
+    expr {$::testfont ne {}}
+} -result {1}
+
+test fontchooser-4.3 {fontchooser -font} -constraints scriptImpl -body {
+    start {
+        tk::fontchooser::Configure -command ApplyFont -font {times 14 bold}
+        tk::fontchooser::Show
+    }
+    then {
+        Click ok
+    }
+    expr {$::testfont ne {}}
+} -result {1}
+
+test fontchooser-4.4 {fontchooser -font} -constraints scriptImpl -body {
+    start {
+        tk::fontchooser::Configure -command ApplyFont -font {times 14 bold}
+        tk::fontchooser::Show
+    }
+    then {
+        Click ok
+    }
+    lrange $::testfont 1 end
+} -result {14 bold}
+
+# -------------------------------------------------------------------------
+
+cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# indent-tabs-mode: nil
+# End:

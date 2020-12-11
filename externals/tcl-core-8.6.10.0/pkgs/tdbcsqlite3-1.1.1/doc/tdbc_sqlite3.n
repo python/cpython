@@ -1,0 +1,119 @@
+'\"
+.\" tdbc_sqlite3.n --
+.\"
+.\" Copyright (c) 2008 by Kevin B. Kenny.
+.\"
+.\" See the file "license.terms" for information on usage and redistribution of
+.\" this file, and for a DISCLAIMER OF ALL WARRANTIES.
+.TH "tdbc::sqlite3" n 8.6 Tcl "Tcl Database Connectivity"
+.\" .so man.macros
+.if t .wh -1.3i ^B
+.nr ^l \n(.l
+.ad b
+.\"	# BS - start boxed text
+.\"	# ^y = starting y location
+.\"	# ^b = 1
+.de BS
+.br
+.mk ^y
+.nr ^b 1u
+.if n .nf
+.if n .ti 0
+.if n \l'\\n(.lu\(ul'
+.if n .fi
+..
+.\"	# BE - end boxed text (draw box now)
+.de BE
+.nf
+.ti 0
+.mk ^t
+.ie n \l'\\n(^lu\(ul'
+.el \{\
+.\"	Draw four-sided box normally, but don't draw top of
+.\"	box if the box started on an earlier page.
+.ie !\\n(^b-1 \{\
+\h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.el \}\
+\h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.\}
+.fi
+.br
+.nr ^b 0
+..
+.\"	# CS - begin code excerpt
+.de CS
+.RS
+.nf
+.ta .25i .5i .75i 1i
+..
+.\"	# CE - end code excerpt
+.de CE
+.fi
+.RE
+..
+.BS
+.SH "NAME"
+tdbc::sqlite3 \- TDBC driver for the SQLite3 database manager
+.SH "SYNOPSIS"
+package require \fBtdbc::sqlite3 1.0\fR
+.sp
+\fBtdbc::sqlite3::connection create\fR \fIdb\fR \fIfileName\fR ?\fI-option value...\fR?
+.BE
+.SH "DESCRIPTION"
+.PP
+The \fBtdbc::sqlite3\fR driver provides a database interface that conforms
+to Tcl DataBase Connectivity (TDBC) and allows a Tcl script to connect
+to a SQLite3 database.  It is also provided
+as a worked example of how to write a database driver in Tcl, so that
+driver authors have a starting point for further development.
+.PP
+Connection to a SQLite3 database is established by invoking
+\fBtdbc::sqlite3::connection create\fR, passing it a string to be used
+as the connection handle followed by the file name of
+the database. The side effect of \fBtdbc::sqlite3::connection
+create\fR is to create a new database connection..
+As an alternative, \fBtdbc::sqlite::connection new\fR may be used to create
+a database connection with an automatically assigned name. The return value
+from \fBtdbc::sqlite::connection new\fR is the name that was chosen for the
+connection handle. See
+\fBtdbc::connection(n)\fR for the details of how to use the connection
+to manipulate a database.
+.SH "CONFIGURATION OPTIONS"
+.PP
+The standard configuration options \fB-encoding\fR, \fB-isolation\fR,
+\fB-readonly\fR and \fB-timeout\fR are all recognized, both on
+\fBtdbc::sqlite3::connection create\fR and on the \fBconfigure\fR
+method of the resulting connection.
+.PP
+Since the encoding of a SQLite3 database is always well known, the
+\fB-encoding\fR option accepts only \fButf-8\fR as an encoding and
+always returns \fButf-8\fR for an encoding. The actual encoding may be
+set using a SQLite3 \fBPRAGMA\fR statement when creating a new
+database.
+.PP
+Only the isolation levels \fBreaduncommitted\fR and \fBserializable\fR
+are implemented. Other isolation levels are promoted to
+\fBserializable\fR.
+.PP
+The \fB-readonly\fR flag is not implemented. \fB-readonly 0\fR is
+accepted silently, while \fB-readonly 1\fR reports an error.
+.SH "BUGS"
+If any column name is not unique among the columns in a result set, the
+results of \fB-as dicts\fR returns will be missing all but the rightmost
+of the duplicated columns. This limitation can be worked around by adding
+appropriate \fBAS\fR clauses to \fBSELECT\fR statements to ensure that
+all returned column names are unique.  Plans are to fix this bug by using
+a C implementation of the driver, which will also improve performance
+significantly.
+.SH "SEE ALSO"
+tdbc(n), tdbc::connection(n),  tdbc::resultset(n), tdbc::statement(n)
+.SH "KEYWORDS"
+TDBC, SQL, SQLite3, database, connectivity, connection
+.SH "COPYRIGHT"
+Copyright (c) 2008 by Kevin B. Kenny.
+.\" Local Variables:
+.\" mode: nroff
+.\" End:
+.\"

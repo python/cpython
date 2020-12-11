@@ -1,0 +1,52 @@
+'\"
+'\" Copyright (c) 1998-1999 Scriptics Corporation
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_GetCwd 3 8.1 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_GetCwd, Tcl_Chdir \- manipulate the current working directory
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+char *
+\fBTcl_GetCwd\fR(\fIinterp\fR, \fIbufferPtr\fR)
+.sp
+int
+\fBTcl_Chdir\fR(\fIpath\fR)
+.SH ARGUMENTS
+.AS Tcl_DString *bufferPtr in/out
+.AP Tcl_Interp *interp in
+Interpreter in which to report an error, if any.
+.AP Tcl_DString *bufferPtr in/out
+This dynamic string is used to store the current working directory.
+At the time of the call it should be uninitialized or free.  The
+caller must eventually call \fBTcl_DStringFree\fR to free up
+anything stored here.
+.AP char *path in
+File path in UTF\-8 format.
+.BE
+
+.SH DESCRIPTION
+.PP
+These procedures may be used to manipulate the current working
+directory for the application.  They provide C\-level access to
+the same functionality as the Tcl \fBpwd\fR command.
+.PP
+\fBTcl_GetCwd\fR returns a pointer to a string specifying the current
+directory, or NULL if the current directory could not be determined.
+If NULL is returned, an error message is left in the \fIinterp\fR's result.
+Storage for the result string is allocated in bufferPtr; the caller
+must call \fBTcl_DStringFree()\fR when the result is no longer needed.
+The format of the path is UTF\-8.
+.PP
+\fBTcl_Chdir\fR changes the applications current working directory to
+the value specified in \fIpath\fR.  The format of the passed in string
+must be UTF\-8.  The function returns -1 on error or 0 on success.
+
+.SH KEYWORDS
+pwd

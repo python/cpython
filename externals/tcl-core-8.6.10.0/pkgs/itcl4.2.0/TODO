@@ -1,0 +1,9 @@
+This is the TODO list:
+
+- finish the feature list of ::itcl::extendedclass
+
+- describe the API's for ::itcl::extendedclass
+
+- enhance documentation (all parts)
+
+- maybe: add some demo examples for preferred use of ::itcl::extendedclass

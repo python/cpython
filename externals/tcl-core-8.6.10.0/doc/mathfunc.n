@@ -1,0 +1,305 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-2000 Sun Microsystems, Inc.
+'\" Copyright (c) 2005 by Kevin B. Kenny <kennykb@acm.org>. All rights reserved
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH mathfunc n 8.5 Tcl "Tcl Mathematical Functions"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+mathfunc \- Mathematical functions for Tcl expressions
+.SH SYNOPSIS
+package require \fBTcl 8.5\fR
+.sp
+\fB::tcl::mathfunc::abs\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::acos\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::asin\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::atan\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::atan2\fR \fIy\fR \fIx\fR
+.br
+\fB::tcl::mathfunc::bool\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::ceil\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::cos\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::cosh\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::double\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::entier\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::exp\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::floor\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::fmod\fR \fIx\fR \fIy\fR
+.br
+\fB::tcl::mathfunc::hypot\fR \fIx\fR \fIy\fR
+.br
+\fB::tcl::mathfunc::int\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::isqrt\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::log\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::log10\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::max\fR \fIarg\fR ?\fIarg\fR ...?
+.br
+\fB::tcl::mathfunc::min\fR \fIarg\fR ?\fIarg\fR ...?
+.br
+\fB::tcl::mathfunc::pow\fR \fIx\fR \fIy\fR
+.br
+\fB::tcl::mathfunc::rand\fR
+.br
+\fB::tcl::mathfunc::round\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::sin\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::sinh\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::sqrt\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::srand\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::tan\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::tanh\fR \fIarg\fR
+.br
+\fB::tcl::mathfunc::wide\fR \fIarg\fR
+.sp
+.BE
+.SH "DESCRIPTION"
+.PP
+The \fBexpr\fR command handles mathematical functions of the form
+\fBsin($x)\fR or \fBatan2($y,$x)\fR by converting them to calls of the
+form \fB[tcl::mathfunc::sin [expr {$x}]]\fR or
+\fB[tcl::mathfunc::atan2 [expr {$y}] [expr {$x}]]\fR.
+A number of math functions are available by default within the
+namespace \fB::tcl::mathfunc\fR; these functions are also available
+for code apart from \fBexpr\fR, by invoking the given commands
+directly.
+.PP
+Tcl supports the following mathematical functions in expressions, all
+of which work solely with floating-point numbers unless otherwise noted:
+.DS
+.ta 3c 6c 9c
+\fBabs\fR	\fBacos\fR	\fBasin\fR	\fBatan\fR
+\fBatan2\fR	\fBbool\fR	\fBceil\fR	\fBcos\fR
+\fBcosh\fR	\fBdouble\fR	\fBentier\fR	\fBexp\fR
+\fBfloor\fR	\fBfmod\fR	\fBhypot\fR	\fBint\fR
+\fBisqrt\fR	\fBlog\fR	\fBlog10\fR	\fBmax\fR
+\fBmin\fR	\fBpow\fR	\fBrand\fR	\fBround\fR
+\fBsin\fR	\fBsinh\fR	\fBsqrt\fR	\fBsrand\fR
+\fBtan\fR	\fBtanh\fR	\fBwide\fR
+.DE
+.PP
+In addition to these predefined functions, applications may
+define additional functions by using \fBproc\fR (or any other method,
+such as \fBinterp alias\fR or \fBTcl_CreateObjCommand\fR) to define
+new commands in the \fBtcl::mathfunc\fR namespace.  In addition, an
+obsolete interface named \fBTcl_CreateMathFunc\fR() is available to
+extensions that are written in C. The latter interface is not recommended
+for new implementations.
+.SS "DETAILED DEFINITIONS"
+.TP
+\fBabs \fIarg\fR
+.
+Returns the absolute value of \fIarg\fR.  \fIArg\fR may be either
+integer or floating-point, and the result is returned in the same form.
+.TP
+\fBacos \fIarg\fR
+.
+Returns the arc cosine of \fIarg\fR, in the range [\fI0\fR,\fIpi\fR]
+radians. \fIArg\fR should be in the range [\fI\-1\fR,\fI1\fR].
+.TP
+\fBasin \fIarg\fR
+.
+Returns the arc sine of \fIarg\fR, in the range [\fI\-pi/2\fR,\fIpi/2\fR]
+radians.  \fIArg\fR should be in the range [\fI\-1\fR,\fI1\fR].
+.TP
+\fBatan \fIarg\fR
+.
+Returns the arc tangent of \fIarg\fR, in the range [\fI\-pi/2\fR,\fIpi/2\fR]
+radians.
+.TP
+\fBatan2 \fIy x\fR
+.
+Returns the arc tangent of \fIy\fR/\fIx\fR, in the range [\fI\-pi\fR,\fIpi\fR]
+radians.  \fIx\fR and \fIy\fR cannot both be 0.  If \fIx\fR is greater
+than \fI0\fR, this is equivalent to
+.QW "\fBatan \fR[\fBexpr\fR {\fIy\fB/\fIx\fR}]" .
+.TP
+\fBbool \fIarg\fR
+.
+Accepts any numeric value, or any string acceptable to
+\fBstring is boolean\fR, and returns the corresponding
+boolean value \fB0\fR or \fB1\fR.  Non-zero numbers are true.
+Other numbers are false.  Non-numeric strings produce boolean value in
+agreement with \fBstring is true\fR and \fBstring is false\fR.
+.TP
+\fBceil \fIarg\fR
+.
+Returns the smallest integral floating-point value (i.e. with a zero
+fractional part) not less than \fIarg\fR.  The argument may be any
+numeric value.
+.TP
+\fBcos \fIarg\fR
+.
+Returns the cosine of \fIarg\fR, measured in radians.
+.TP
+\fBcosh \fIarg\fR
+.
+Returns the hyperbolic cosine of \fIarg\fR.  If the result would cause
+an overflow, an error is returned.
+.TP
+\fBdouble \fIarg\fR
+.
+The argument may be any numeric value,
+If \fIarg\fR is a floating-point value, returns \fIarg\fR, otherwise converts
+\fIarg\fR to floating-point and returns the converted value.  May return
+\fBInf\fR or \fB\-Inf\fR when the argument is a numeric value that exceeds
+the floating-point range.
+.TP
+\fBentier \fIarg\fR
+.
+The argument may be any numeric value.  The integer part of \fIarg\fR
+is determined and returned.  The integer range returned by this function
+is unlimited, unlike \fBint\fR and \fBwide\fR which
+truncate their range to fit in particular storage widths.
+.TP
+\fBexp \fIarg\fR
+.
+Returns the exponential of \fIarg\fR, defined as \fIe\fR**\fIarg\fR.
+If the result would cause an overflow, an error is returned.
+.TP
+\fBfloor \fIarg\fR
+.
+Returns the largest integral floating-point value (i.e. with a zero
+fractional part) not greater than \fIarg\fR.  The argument may be
+any numeric value.
+.TP
+\fBfmod \fIx y\fR
+.
+Returns the floating-point remainder of the division of \fIx\fR by
+\fIy\fR.  If \fIy\fR is 0, an error is returned.
+.TP
+\fBhypot \fIx y\fR
+.
+Computes the length of the hypotenuse of a right-angled triangle,
+approximately
+.QW "\fBsqrt\fR [\fBexpr\fR {\fIx\fB*\fIx\fB+\fIy\fB*\fIy\fR}]"
+except for being more numerically stable when the two arguments have
+substantially different magnitudes.
+.TP
+\fBint \fIarg\fR
+.
+The argument may be any numeric value.  The integer part of \fIarg\fR
+is determined, and then the low order bits of that integer value up
+to the machine word size are returned as an integer value.  For reference,
+the number of bytes in the machine word are stored in the \fBwordSize\fR
+element of the \fBtcl_platform\fR array.
+.TP
+\fBisqrt \fIarg\fR
+.
+Computes the integer part of the square root of \fIarg\fR.  \fIArg\fR must be
+a positive value, either an integer or a floating point number.
+Unlike \fBsqrt\fR, which is limited to the precision of a floating point
+number, \fIisqrt\fR will return a result of arbitrary precision.
+.TP
+\fBlog \fIarg\fR
+.
+Returns the natural logarithm of \fIarg\fR.  \fIArg\fR must be a
+positive value.
+.TP
+\fBlog10 \fIarg\fR
+.
+Returns the base 10 logarithm of \fIarg\fR.  \fIArg\fR must be a
+positive value.
+.TP
+\fBmax \fIarg\fB \fI...\fR
+.
+Accepts one or more numeric arguments.  Returns the one argument
+with the greatest value.
+.TP
+\fBmin \fIarg\fB \fI...\fR
+.
+Accepts one or more numeric arguments.  Returns the one argument
+with the least value.
+.TP
+\fBpow \fIx y\fR
+.
+Computes the value of \fIx\fR raised to the power \fIy\fR.  If \fIx\fR
+is negative, \fIy\fR must be an integer value.
+.TP
+\fBrand\fR
+.
+Returns a pseudo-random floating-point value in the range (\fI0\fR,\fI1\fR).
+The generator algorithm is a simple linear congruential generator that
+is not cryptographically secure.  Each result from \fBrand\fR completely
+determines all future results from subsequent calls to \fBrand\fR, so
+\fBrand\fR should not be used to generate a sequence of secrets, such as
+one-time passwords.  The seed of the generator is initialized from the
+internal clock of the machine or may be set with the \fBsrand\fR function.
+.TP
+\fBround \fIarg\fR
+.
+If \fIarg\fR is an integer value, returns \fIarg\fR, otherwise converts
+\fIarg\fR to integer by rounding and returns the converted value.
+.TP
+\fBsin \fIarg\fR
+.
+Returns the sine of \fIarg\fR, measured in radians.
+.TP
+\fBsinh \fIarg\fR
+.
+Returns the hyperbolic sine of \fIarg\fR.  If the result would cause
+an overflow, an error is returned.
+.TP
+\fBsqrt \fIarg\fR
+.
+The argument may be any non-negative numeric value.  Returns a floating-point
+value that is the square root of \fIarg\fR.  May return \fBInf\fR when the
+argument is a numeric value that exceeds the square of the maximum value of
+the floating-point range.
+.TP
+\fBsrand \fIarg\fR
+.
+The \fIarg\fR, which must be an integer, is used to reset the seed for
+the random number generator of \fBrand\fR.  Returns the first random
+number (see \fBrand\fR) from that seed.  Each interpreter has its own seed.
+.TP
+\fBtan \fIarg\fR
+.
+Returns the tangent of \fIarg\fR, measured in radians.
+.TP
+\fBtanh \fIarg\fR
+.
+Returns the hyperbolic tangent of \fIarg\fR.
+.TP
+\fBwide \fIarg\fR
+.
+The argument may be any numeric value.  The integer part of \fIarg\fR
+is determined, and then the low order 64 bits of that integer value
+are returned as an integer value.
+.SH "SEE ALSO"
+expr(n), mathop(n), namespace(n)
+.SH "COPYRIGHT"
+.nf
+Copyright (c) 1993 The Regents of the University of California.
+Copyright (c) 1994-2000 Sun Microsystems Incorporated.
+Copyright (c) 2005, 2006 by Kevin B. Kenny <kennykb@acm.org>.
+.fi
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

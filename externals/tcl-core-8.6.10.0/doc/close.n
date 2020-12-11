@@ -1,0 +1,108 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH close n 7.5 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+close \- Close an open channel
+.SH SYNOPSIS
+\fBclose \fIchannelId\fR ?r(ead)|w(rite)?
+.BE
+.SH DESCRIPTION
+.PP
+Closes or half-closes the channel given by \fIchannelId\fR.
+.PP
+\fIChannelId\fR must be an identifier for an open channel such as a
+Tcl standard channel (\fBstdin\fR, \fBstdout\fR, or \fBstderr\fR),
+the return value from an invocation of \fBopen\fR or \fBsocket\fR, or
+the result of a channel creation command provided by a Tcl extension.
+.PP
+The single-argument form is a simple
+.QW "full-close" :
+all buffered output is flushed to the channel's output device,
+any buffered input is discarded, the underlying file or device is closed,
+and \fIchannelId\fR becomes unavailable for use.
+.PP
+If the channel is blocking, the command does not return until all output
+is flushed.
+If the channel is nonblocking and there is unflushed output, the
+channel remains open and the command
+returns immediately; output will be flushed in the background and the
+channel will be closed when all the flushing is complete.
+.PP
+If \fIchannelId\fR is a blocking channel for a command pipeline then
+\fBclose\fR waits for the child processes to complete.
+.PP
+If the channel is shared between interpreters, then \fBclose\fR
+makes \fIchannelId\fR unavailable in the invoking interpreter but has no
+other effect until all of the sharing interpreters have closed the
+channel.
+When the last interpreter in which the channel is registered invokes
+\fBclose\fR, the cleanup actions described above occur. See the
+\fBinterp\fR command for a description of channel sharing.
+.PP
+Channels are automatically closed when an interpreter is destroyed and
+when the process exits.
+.VS 8.6
+From 8.6 on (TIP#398), nonblocking channels are no longer switched to blocking mode when exiting; this guarantees a timely exit even when the peer or a communication channel is stalled. To ensure proper flushing of stalled nonblocking channels on exit, one must now either (a) actively switch them back to blocking or (b) use the environment variable TCL_FLUSH_NONBLOCKING_ON_EXIT,  which when set and not equal to "0" restores the previous behavior.
+.VE 8.6
+.PP
+The command returns an empty string, and may generate an error if
+an error occurs while flushing output.  If a command in a command
+pipeline created with \fBopen\fR returns an error, \fBclose\fR
+generates an error (similar to the \fBexec\fR command.)
+.PP
+.VS 8.6
+The two-argument form is a
+.QW "half-close" :
+given a bidirectional channel like a
+socket or command pipeline and a (possibly abbreviated) direction, it closes
+only the sub-stream going in that direction. This means a shutdown() on a
+socket, and a close() of one end of a pipe for a command pipeline. Then, the
+Tcl-level channel data structure is either kept or freed depending on whether
+the other direction is still open.
+.PP
+A single-argument close on an already half-closed bidirectional channel is
+defined to just
+.QW "finish the job" .
+A half-close on an already closed half, or on a wrong-sided unidirectional
+channel, raises an error.
+.PP
+In the case of a command pipeline, the child-reaping duty falls upon the
+shoulders of the last close or half-close, which is thus allowed to report an
+abnormal exit error.
+.PP
+Currently only sockets and command pipelines support half-close. A future
+extension will allow reflected and stacked channels to do so.
+.VE 8.6
+.SH EXAMPLE
+.PP
+This illustrates how you can use Tcl to ensure that files get closed
+even when errors happen by combining \fBcatch\fR, \fBclose\fR and
+\fBreturn\fR:
+.PP
+.CS
+proc withOpenFile {filename channelVar script} {
+    upvar 1 $channelVar chan
+    set chan [open $filename]
+    catch {
+        uplevel 1 $script
+    } result options
+    \fBclose\fR $chan
+    return -options $options $result
+}
+.CE
+.SH "SEE ALSO"
+file(n), open(n), socket(n), eof(n), Tcl_StandardChannels(3)
+.SH KEYWORDS
+blocking, channel, close, nonblocking, half-close
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

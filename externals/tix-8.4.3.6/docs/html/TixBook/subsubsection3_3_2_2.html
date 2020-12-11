@@ -1,0 +1,51 @@
+<HEAD>
+<TITLE> Accessing The Value of a TixControl Widget<A NAME=122>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html299 HREF=subsubsectionstar3_3_2_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html297 HREF=subsection3_3_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html291 HREF=subsubsection3_3_2_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html301 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html300 HREF=subsubsectionstar3_3_2_3.html>  Disabling Callbacks Temporarily</A>
+<B>Up:</B> <A NAME=tex2html298 HREF=subsection3_3_2.html> Getting Started: the </A>
+<B> Previous:</B> <A NAME=tex2html292 HREF=subsubsection3_3_2_1.html> Creating a TixControl </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00032200000000000000> Accessing The Value of a TixControl Widget<A NAME=122>&nbsp;</A></A></H3>
+<P>
+The TixControl widget allows the user to input a value. There are
+  several ways to read this value in your program. First of all,
+  TixControl stores the current value in the <tt>-value</tt> option.  You
+  can use query the <tt>-value</tt> option by calling the command
+<P>
+<tt>     .c cget -value
+</tt>
+this command will return the current value of the tixContro widget
+  <tt>.c</tt>.  The following command sets the value of the widget to a
+  new number (100):
+<P>
+<tt>     .c config -value 100
+</tt>
+<P>
+The second way to access the value of TixControl is to use the <tt>-variable</tt> option. This options instructs the TixControl widget to
+  store the its value into a global variable so that you can read it
+  at any time. Also, by assigning a new value to this global variable,
+  you can change the value of the TixControl widget. Here is an
+  example:
+<P>
+<tt>     .c config -variable myvar<BR>
+    set myvar 100
+</tt>
+<P>
+   In some situations, you may want to be informed immediately when the
+  value of the TixControl widget changes. To accomplish this, you can use
+  the <tt>-command</tt> option.  The following line causes the TCL procedure
+  <tt>valueChanged</tt> to be called whenever the value of <tt>.c</tt> changes:
+<P>
+<tt>     tixControl .c -command valueChanged
+</tt>
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

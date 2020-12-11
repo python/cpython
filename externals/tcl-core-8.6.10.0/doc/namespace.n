@@ -1,0 +1,969 @@
+'\"
+'\" Copyright (c) 1993-1997 Bell Labs Innovations for Lucent Technologies
+'\" Copyright (c) 1997 Sun Microsystems, Inc.
+'\" Copyright (c) 2000 Scriptics Corporation.
+'\" Copyright (c) 2004-2005 Donal K. Fellows.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH namespace n 8.5 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+namespace \- create and manipulate contexts for commands and variables
+.SH SYNOPSIS
+\fBnamespace \fR?\fIsubcommand\fR? ?\fIarg ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+The \fBnamespace\fR command lets you create, access, and destroy
+separate contexts for commands and variables.
+See the section \fBWHAT IS A NAMESPACE?\fR below
+for a brief overview of namespaces.
+The legal values of \fIsubcommand\fR are listed below.
+Note that you can abbreviate the \fIsubcommand\fRs.
+.TP
+\fBnamespace children \fR?\fInamespace\fR? ?\fIpattern\fR?
+.
+Returns a list of all child namespaces that belong to the
+namespace \fInamespace\fR.
+If \fInamespace\fR is not specified,
+then the children are returned for the current namespace.
+This command returns fully-qualified names,
+which start with a double colon (\fB::\fR).
+If the optional \fIpattern\fR is given,
+then this command returns only the names that match the glob-style pattern.
+The actual pattern used is determined as follows:
+a pattern that starts with double colon (\fB::\fR) is used directly,
+otherwise the namespace \fInamespace\fR
+(or the fully-qualified name of the current namespace)
+is prepended onto the pattern.
+.TP
+\fBnamespace code \fIscript\fR
+.
+Captures the current namespace context for later execution
+of the script \fIscript\fR.
+It returns a new script in which \fIscript\fR has been wrapped
+in a \fBnamespace inscope\fR command.
+The new script has two important properties.
+First, it can be evaluated in any namespace and will cause
+\fIscript\fR to be evaluated in the current namespace
+(the one where the \fBnamespace code\fR command was invoked).
+Second, additional arguments can be appended to the resulting script
+and they will be passed to \fIscript\fR as additional arguments.
+For example, suppose the command
+\fBset script [namespace code {foo bar}]\fR
+is invoked in namespace \fB::a::b\fR.
+Then \fBeval $script [list x y]\fR
+can be executed in any namespace (assuming the value of
+\fBscript\fR has been passed in properly)
+and will have the same effect as the command
+\fB::namespace eval ::a::b {foo bar x y}\fR.
+This command is needed because
+extensions like Tk normally execute callback scripts
+in the global namespace.
+A scoped command captures a command together with its namespace context
+in a way that allows it to be executed properly later.
+See the section \fBSCOPED SCRIPTS\fR for some examples
+of how this is used to create callback scripts.
+.TP
+\fBnamespace current\fR
+.
+Returns the fully-qualified name for the current namespace.
+The actual name of the global namespace is
+.MT
+(i.e., an empty string),
+but this command returns \fB::\fR for the global namespace
+as a convenience to programmers.
+.TP
+\fBnamespace delete \fR?\fInamespace namespace ...\fR?
+.
+Each namespace \fInamespace\fR is deleted
+and all variables, procedures, and child namespaces
+contained in the namespace are deleted.
+If a procedure is currently executing inside the namespace,
+the namespace will be kept alive until the procedure returns;
+however, the namespace is marked to prevent other code from
+looking it up by name.
+If a namespace does not exist, this command returns an error.
+If no namespace names are given, this command does nothing.
+.TP
+\fBnamespace ensemble\fR \fIsubcommand\fR ?\fIarg ...\fR?
+.
+Creates and manipulates a command that is formed out of an ensemble of
+subcommands.  See the section \fBENSEMBLES\fR below for further
+details.
+.TP
+\fBnamespace eval\fR \fInamespace arg\fR ?\fIarg ...\fR?
+.
+Activates a namespace called \fInamespace\fR and evaluates some code
+in that context.
+If the namespace does not already exist, it is created.
+If more than one \fIarg\fR argument is specified,
+the arguments are concatenated together with a space between each one
+in the same fashion as the \fBeval\fR command,
+and the result is evaluated.
+.RS
+.PP
+If \fInamespace\fR has leading namespace qualifiers
+and any leading namespaces do not exist,
+they are automatically created.
+.RE
+.TP
+\fBnamespace exists\fR \fInamespace\fR
+.
+Returns \fB1\fR if \fInamespace\fR is a valid namespace in the current
+context, returns \fB0\fR otherwise.
+.TP
+\fBnamespace export \fR?\fB\-clear\fR? ?\fIpattern pattern ...\fR?
+.
+Specifies which commands are exported from a namespace.
+The exported commands are those that can be later imported
+into another namespace using a \fBnamespace import\fR command.
+Both commands defined in a namespace and
+commands the namespace has previously imported
+can be exported by a namespace.
+The commands do not have to be defined
+at the time the \fBnamespace export\fR command is executed.
+Each \fIpattern\fR may contain glob-style special characters,
+but it may not include any namespace qualifiers.
+That is, the pattern can only specify commands
+in the current (exporting) namespace.
+Each \fIpattern\fR is appended onto the namespace's list of export patterns.
+If the \fB\-clear\fR flag is given,
+the namespace's export pattern list is reset to empty before any
+\fIpattern\fR arguments are appended.
+If no \fIpattern\fRs are given and the \fB\-clear\fR flag is not given,
+this command returns the namespace's current export list.
+.TP
+\fBnamespace forget \fR?\fIpattern pattern ...\fR?
+.
+Removes previously imported commands from a namespace.
+Each \fIpattern\fR is a simple or qualified name such as
+\fBx\fR, \fBfoo::x\fR or \fBa::b::p*\fR.
+Qualified names contain double colons (\fB::\fR) and qualify a name
+with the name of one or more namespaces.
+Each
+.QW "qualified pattern"
+is qualified with the name of an exporting namespace
+and may have glob-style special characters in the command name
+at the end of the qualified name.
+Glob characters may not appear in a namespace name.
+For each
+.QW "simple pattern"
+this command deletes the matching commands of the
+current namespace that were imported from a different namespace.
+For
+.QW "qualified patterns" ,
+this command first finds the matching exported commands.
+It then checks whether any of those commands
+were previously imported by the current namespace.
+If so, this command deletes the corresponding imported commands.
+In effect, this un-does the action of a \fBnamespace import\fR command.
+.TP
+\fBnamespace import \fR?\fB\-force\fR? ?\fIpattern\fR \fIpattern ...\fR?
+.
+Imports commands into a namespace, or queries the set of imported
+commands in a namespace.  When no arguments are present,
+\fBnamespace import\fR returns the list of commands in
+the current namespace that have been imported from other
+namespaces.  The commands in the returned list are in
+the format of simple names, with no namespace qualifiers at all.
+This format is suitable for composition with \fBnamespace forget\fR
+(see \fBEXAMPLES\fR below).
+.RS
+.PP
+When \fIpattern\fR arguments are present,
+each \fIpattern\fR is a qualified name like
+\fBfoo::x\fR or \fBa::p*\fR.
+That is, it includes the name of an exporting namespace
+and may have glob-style special characters in the command name
+at the end of the qualified name.
+Glob characters may not appear in a namespace name.
+When the namespace name is not fully qualified (i.e., does not start
+with a namespace separator) it is resolved as a namespace name in the
+way described in the \fBNAME RESOLUTION\fR section; it is an error if
+no namespace with that name can be found.
+.PP
+All the commands that match a \fIpattern\fR string
+and which are currently exported from their namespace
+are added to the current namespace.
+This is done by creating a new command in the current namespace
+that points to the exported command in its original namespace;
+when the new imported command is called, it invokes the exported command.
+This command normally returns an error
+if an imported command conflicts with an existing command.
+However, if the \fB\-force\fR option is given,
+imported commands will silently replace existing commands.
+The \fBnamespace import\fR command has snapshot semantics:
+that is, only requested commands that are currently defined
+in the exporting namespace are imported.
+In other words, you can import only the commands that are in a namespace
+at the time when the \fBnamespace import\fR command is executed.
+If another command is defined and exported in this namespace later on,
+it will not be imported.
+.RE
+.TP
+\fBnamespace inscope\fR \fInamespace\fR \fIscript\fR ?\fIarg ...\fR?
+.
+Executes a script in the context of the specified \fInamespace\fR.
+This command is not expected to be used directly by programmers;
+calls to it are generated implicitly when applications
+use \fBnamespace code\fR commands to create callback scripts
+that the applications then register with, e.g., Tk widgets.
+The \fBnamespace inscope\fR command is much like the \fBnamespace eval\fR
+command except that the \fInamespace\fR must already exist,
+and \fBnamespace inscope\fR appends additional \fIarg\fRs
+as proper list elements.
+.RS
+.PP
+.CS
+\fBnamespace inscope ::foo $script $x $y $z\fR
+.CE
+.PP
+is equivalent to
+.PP
+.CS
+\fBnamespace eval ::foo [concat $script [list $x $y $z]]\fR
+.CE
+.PP
+thus additional arguments will not undergo a second round of substitution,
+as is the case with \fBnamespace eval\fR.
+.RE
+.TP
+\fBnamespace origin \fIcommand\fR
+.
+Returns the fully-qualified name of the original command
+to which the imported command \fIcommand\fR refers.
+When a command is imported into a namespace,
+a new command is created in that namespace
+that points to the actual command in the exporting namespace.
+If a command is imported into a sequence of namespaces
+\fIa, b,...,n\fR where each successive namespace
+just imports the command from the previous namespace,
+this command returns the fully-qualified name of the original command
+in the first namespace, \fIa\fR.
+If \fIcommand\fR does not refer to an imported command,
+the command's own fully-qualified name is returned.
+.TP
+\fBnamespace parent\fR ?\fInamespace\fR?
+.
+Returns the fully-qualified name of the parent namespace
+for namespace \fInamespace\fR.
+If \fInamespace\fR is not specified,
+the fully-qualified name of the current namespace's parent is returned.
+.TP
+\fBnamespace path\fR ?\fInamespaceList\fR?
+.
+Returns the command resolution path of the current namespace. If
+\fInamespaceList\fR is specified as a list of named namespaces, the
+current namespace's command resolution path is set to those namespaces
+and returns the empty list. The default command resolution path is
+always empty. See the section \fBNAME RESOLUTION\fR below for an
+explanation of the rules regarding name resolution.
+.TP
+\fBnamespace qualifiers\fR \fIstring\fR
+.
+Returns any leading namespace qualifiers for \fIstring\fR.
+Qualifiers are namespace names separated by double colons (\fB::\fR).
+For the \fIstring\fR \fB::foo::bar::x\fR,
+this command returns \fB::foo::bar\fR,
+and for \fB::\fR it returns an empty string.
+This command is the complement of the \fBnamespace tail\fR command.
+Note that it does not check whether the
+namespace names are, in fact,
+the names of currently defined namespaces.
+.TP
+\fBnamespace tail\fR \fIstring\fR
+.
+Returns the simple name at the end of a qualified string.
+Qualifiers are namespace names separated by double colons (\fB::\fR).
+For the \fIstring\fR \fB::foo::bar::x\fR,
+this command returns \fBx\fR,
+and for \fB::\fR it returns an empty string.
+This command is the complement of the \fBnamespace qualifiers\fR command.
+It does not check whether the namespace names are, in fact,
+the names of currently defined namespaces.
+.TP
+\fBnamespace upvar\fR \fInamespace\fR ?\fIotherVar myVar \fR...?
+.
+This command arranges for zero or more local variables in the current
+procedure to refer to variables in \fInamespace\fR. The namespace name is
+resolved as described in section \fBNAME RESOLUTION\fR.
+The command
+\fBnamespace upvar $ns a b\fR has the same behaviour as
+\fBupvar 0 ${ns}::a b\fR, with the sole exception of the resolution rules
+used for qualified namespace or variable names.
+\fBnamespace upvar\fR returns an empty string.
+.TP
+\fBnamespace unknown\fR ?\fIscript\fR?
+.
+Sets or returns the unknown command handler for the current namespace.
+The handler is invoked when a command called from within the namespace
+cannot be found in the current namespace, the namespace's path nor in
+the global namespace. 
+The \fIscript\fR argument, if given, should be a well
+formed list representing a command name and optional arguments. When
+the handler is invoked, the full invocation line will be appended to the
+script and the result evaluated in the context of the namespace. The
+default handler for all namespaces is \fB::unknown\fR. If no argument
+is given, it returns the handler for the current namespace.
+.TP
+\fBnamespace which\fR ?\fB\-command\fR? ?\fB\-variable\fR? \fIname\fR
+.
+Looks up \fIname\fR as either a command or variable
+and returns its fully-qualified name.
+For example, if \fIname\fR does not exist in the current namespace
+but does exist in the global namespace,
+this command returns a fully-qualified name in the global namespace.
+If the command or variable does not exist,
+this command returns an empty string.  If the variable has been
+created but not defined, such as with the \fBvariable\fR command
+or through a \fBtrace\fR on the variable, this command will return the
+fully-qualified name of the variable.
+If no flag is given, \fIname\fR is treated as a command name.
+See the section \fBNAME RESOLUTION\fR below for an explanation of
+the rules regarding name resolution.
+.SH "WHAT IS A NAMESPACE?"
+.PP
+A namespace is a collection of commands and variables.
+It encapsulates the commands and variables to ensure that they
+will not interfere with the commands and variables of other namespaces.
+Tcl has always had one such collection,
+which we refer to as the \fIglobal namespace\fR.
+The global namespace holds all global variables and commands.
+The \fBnamespace eval\fR command lets you create new namespaces.
+For example,
+.PP
+.CS
+\fBnamespace eval\fR Counter {
+    \fBnamespace export\fR bump
+    variable num 0
+
+    proc bump {} {
+        variable num
+        incr num
+    }
+}
+.CE
+.PP
+creates a new namespace containing the variable \fBnum\fR and
+the procedure \fBbump\fR.
+The commands and variables in this namespace are separate from
+other commands and variables in the same program.
+If there is a command named \fBbump\fR in the global namespace,
+for example, it will be different from the command \fBbump\fR
+in the \fBCounter\fR namespace.
+.PP
+Namespace variables resemble global variables in Tcl.
+They exist outside of the procedures in a namespace
+but can be accessed in a procedure via the \fBvariable\fR command,
+as shown in the example above.
+.PP
+Namespaces are dynamic.
+You can add and delete commands and variables at any time,
+so you can build up the contents of a
+namespace over time using a series of \fBnamespace eval\fR commands.
+For example, the following series of commands has the same effect
+as the namespace definition shown above:
+.PP
+.CS
+\fBnamespace eval\fR Counter {
+    variable num 0
+    proc bump {} {
+        variable num
+        return [incr num]
+    }
+}
+\fBnamespace eval\fR Counter {
+    proc test {args} {
+        return $args
+    }
+}
+\fBnamespace eval\fR Counter {
+     rename test ""
+}
+.CE
+.PP
+Note that the \fBtest\fR procedure is added to the \fBCounter\fR namespace,
+and later removed via the \fBrename\fR command.
+.PP
+Namespaces can have other namespaces within them,
+so they nest hierarchically.
+A nested namespace is encapsulated inside its parent namespace
+and can not interfere with other namespaces.
+.SH "QUALIFIED NAMES"
+.PP
+Each namespace has a textual name such as
+\fBhistory\fR or \fB::safe::interp\fR.
+Since namespaces may nest,
+qualified names are used to refer to
+commands, variables, and child namespaces contained inside namespaces.
+Qualified names are similar to the hierarchical path names for
+Unix files or Tk widgets,
+except that \fB::\fR is used as the separator
+instead of \fB/\fR or \fB.\fR.
+The topmost or global namespace has the name
+.MT
+(i.e., an empty string), although \fB::\fR is a synonym.
+As an example, the name \fB::safe::interp::create\fR
+refers to the command \fBcreate\fR in the namespace \fBinterp\fR
+that is a child of namespace \fB::safe\fR,
+which in turn is a child of the global namespace, \fB::\fR.
+.PP
+If you want to access commands and variables from another namespace,
+you must use some extra syntax.
+Names must be qualified by the namespace that contains them.
+From the global namespace,
+we might access the \fBCounter\fR procedures like this:
+.PP
+.CS
+Counter::bump 5
+Counter::Reset
+.CE
+.PP
+We could access the current count like this:
+.PP
+.CS
+puts "count = $Counter::num"
+.CE
+.PP
+When one namespace contains another, you may need more than one
+qualifier to reach its elements.
+If we had a namespace \fBFoo\fR that contained the namespace \fBCounter\fR,
+you could invoke its \fBbump\fR procedure
+from the global namespace like this:
+.PP
+.CS
+Foo::Counter::bump 3
+.CE
+.PP
+You can also use qualified names when you create and rename commands.
+For example, you could add a procedure to the \fBFoo\fR
+namespace like this:
+.PP
+.CS
+proc Foo::Test {args} {return $args}
+.CE
+.PP
+And you could move the same procedure to another namespace like this:
+.PP
+.CS
+rename Foo::Test Bar::Test
+.CE
+.PP
+There are a few remaining points about qualified names
+that we should cover.
+Namespaces have nonempty names except for the global namespace.
+\fB::\fR is disallowed in simple command, variable, and namespace names
+except as a namespace separator.
+Extra colons in any separator part of a qualified name are ignored;
+i.e. two or more colons are treated as a namespace separator.
+A trailing \fB::\fR in a qualified variable or command name
+refers to the variable or command named {}.
+However, a trailing \fB::\fR in a qualified namespace name is ignored.
+.SH "NAME RESOLUTION"
+.PP
+In general, all Tcl commands that take variable and command names
+support qualified names.
+This means you can give qualified names to such commands as
+\fBset\fR, \fBproc\fR, \fBrename\fR, and \fBinterp alias\fR.
+If you provide a fully-qualified name that starts with a \fB::\fR,
+there is no question about what command, variable, or namespace
+you mean.
+However, if the name does not start with a \fB::\fR
+(i.e., is \fIrelative\fR),
+Tcl follows basic rules for looking it up:
+.IP \(bu
+\fBVariable names\fR are always resolved by looking first in the current
+namespace, and then in the global namespace.
+.IP \(bu
+\fBCommand names\fR are always resolved by looking in the current namespace
+first. If not found there, they are searched for in every namespace on the
+current namespace's command path (which is empty by default). If not found
+there, command names are looked up in the global namespace (or, failing that,
+are processed by the appropriate \fBnamespace unknown\fR handler.)
+.IP \(bu
+\fBNamespace names\fR are always resolved by looking in only the current
+namespace.
+.PP
+In the following example,
+.PP
+.CS
+set traceLevel 0
+\fBnamespace eval\fR Debug {
+    printTrace $traceLevel
+}
+.CE
+.PP
+Tcl looks for \fBtraceLevel\fR in the namespace \fBDebug\fR
+and then in the global namespace.
+It looks up the command \fBprintTrace\fR in the same way.
+If a variable or command name is not found in either context,
+the name is undefined.
+To make this point absolutely clear, consider the following example:
+.PP
+.CS
+set traceLevel 0
+\fBnamespace eval\fR Foo {
+    variable traceLevel 3
+
+    \fBnamespace eval\fR Debug {
+        printTrace $traceLevel
+    }
+}
+.CE
+.PP
+Here Tcl looks for \fBtraceLevel\fR first in the namespace \fBFoo::Debug\fR.
+Since it is not found there, Tcl then looks for it
+in the global namespace.
+The variable \fBFoo::traceLevel\fR is completely ignored
+during the name resolution process.
+.PP
+You can use the \fBnamespace which\fR command to clear up any question
+about name resolution.
+For example, the command:
+.PP
+.CS
+\fBnamespace eval\fR Foo::Debug {\fBnamespace which\fR \-variable traceLevel}
+.CE
+.PP
+returns \fB::traceLevel\fR.
+On the other hand, the command,
+.PP
+.CS
+\fBnamespace eval\fR Foo {\fBnamespace which\fR \-variable traceLevel}
+.CE
+.PP
+returns \fB::Foo::traceLevel\fR.
+.PP
+As mentioned above,
+namespace names are looked up differently
+than the names of variables and commands.
+Namespace names are always resolved in the current namespace.
+This means, for example,
+that a \fBnamespace eval\fR command that creates a new namespace
+always creates a child of the current namespace
+unless the new namespace name begins with \fB::\fR.
+.PP
+Tcl has no access control to limit what variables, commands,
+or namespaces you can reference.
+If you provide a qualified name that resolves to an element
+by the name resolution rule above,
+you can access the element.
+.PP
+You can access a namespace variable
+from a procedure in the same namespace
+by using the \fBvariable\fR command.
+Much like the \fBglobal\fR command,
+this creates a local link to the namespace variable.
+If necessary, it also creates the variable in the current namespace
+and initializes it.
+Note that the \fBglobal\fR command only creates links
+to variables in the global namespace.
+It is not necessary to use a \fBvariable\fR command
+if you always refer to the namespace variable using an
+appropriate qualified name.
+.SH "IMPORTING COMMANDS"
+.PP
+Namespaces are often used to represent libraries.
+Some library commands are used so frequently
+that it is a nuisance to type their qualified names.
+For example, suppose that all of the commands in a package
+like BLT are contained in a namespace called \fBBlt\fR.
+Then you might access these commands like this:
+.PP
+.CS
+Blt::graph .g \-background red
+Blt::table . .g 0,0
+.CE
+.PP
+If you use the \fBgraph\fR and \fBtable\fR commands frequently,
+you may want to access them without the \fBBlt::\fR prefix.
+You can do this by importing the commands into the current namespace,
+like this:
+.PP
+.CS
+\fBnamespace import\fR Blt::*
+.CE
+.PP
+This adds all exported commands from the \fBBlt\fR namespace
+into the current namespace context, so you can write code like this:
+.PP
+.CS
+graph .g \-background red
+table . .g 0,0
+.CE
+.PP
+The \fBnamespace import\fR command only imports commands
+from a namespace that that namespace exported
+with a \fBnamespace export\fR command.
+.PP
+Importing \fIevery\fR command from a namespace is generally
+a bad idea since you do not know what you will get.
+It is better to import just the specific commands you need.
+For example, the command
+.PP
+.CS
+\fBnamespace import\fR Blt::graph Blt::table
+.CE
+.PP
+imports only the \fBgraph\fR and \fBtable\fR commands into the
+current context.
+.PP
+If you try to import a command that already exists, you will get an
+error.  This prevents you from importing the same command from two
+different packages.  But from time to time (perhaps when debugging),
+you may want to get around this restriction.  You may want to
+reissue the \fBnamespace import\fR command to pick up new commands
+that have appeared in a namespace.  In that case, you can use the
+\fB\-force\fR option, and existing commands will be silently overwritten:
+.PP
+.CS
+\fBnamespace import\fR \-force Blt::graph Blt::table
+.CE
+.PP
+If for some reason, you want to stop using the imported commands,
+you can remove them with a \fBnamespace forget\fR command, like this:
+.PP
+.CS
+\fBnamespace forget\fR Blt::*
+.CE
+.PP
+This searches the current namespace for any commands imported from \fBBlt\fR.
+If it finds any, it removes them.  Otherwise, it does nothing.
+After this, the \fBBlt\fR commands must be accessed with the \fBBlt::\fR
+prefix.
+.PP
+When you delete a command from the exporting namespace like this:
+.PP
+.CS
+rename Blt::graph ""
+.CE
+.PP
+the command is automatically removed from all namespaces that import it.
+.SH "EXPORTING COMMANDS"
+You can export commands from a namespace like this:
+.PP
+.CS
+\fBnamespace eval\fR Counter {
+    \fBnamespace export\fR bump reset
+    variable Num 0
+    variable Max 100
+
+    proc bump {{by 1}} {
+        variable Num
+        incr Num $by
+        Check
+        return $Num
+    }
+    proc reset {} {
+        variable Num
+        set Num 0
+    }
+    proc Check {} {
+        variable Num
+        variable Max
+        if {$Num > $Max} {
+            error "too high!"
+        }
+    }
+}
+.CE
+.PP
+The procedures \fBbump\fR and \fBreset\fR are exported,
+so they are included when you import from the \fBCounter\fR namespace,
+like this:
+.PP
+.CS
+\fBnamespace import\fR Counter::*
+.CE
+.PP
+However, the \fBCheck\fR procedure is not exported,
+so it is ignored by the import operation.
+.PP
+The \fBnamespace import\fR command only imports commands
+that were declared as exported by their namespace.
+The \fBnamespace export\fR command specifies what commands
+may be imported by other namespaces.
+If a \fBnamespace import\fR command specifies a command
+that is not exported, the command is not imported.
+.SH "SCOPED SCRIPTS"
+.PP
+The \fBnamespace code\fR command is the means by which a script may be
+packaged for evaluation in a namespace other than the one in which it
+was created.  It is used most often to create event handlers, Tk bindings,
+and traces for evaluation in the global context.  For instance, the following
+code indicates how to direct a variable \fBtrace\fR callback into the current
+namespace:
+.PP
+.CS
+\fBnamespace eval\fR a {
+    variable b
+    proc theTraceCallback { n1 n2 op } {
+        upvar 1 $n1 var
+        puts "the value of $n1 has changed to $var"
+        return
+    }
+    trace add variable b write [\fBnamespace code\fR theTraceCallback]
+}
+set a::b c
+.CE
+.PP
+When executed, it prints the message:
+.PP
+.CS
+the value of a::b has changed to c
+.CE
+.SH ENSEMBLES
+.PP
+The \fBnamespace ensemble\fR is used to create and manipulate ensemble
+commands, which are commands formed by grouping subcommands together.
+The commands typically come from the current namespace when the
+ensemble was created, though this is configurable.  Note that there
+may be any number of ensembles associated with any namespace
+(including none, which is true of all namespaces by default), though
+all the ensembles associated with a namespace are deleted when that
+namespace is deleted.  The link between an ensemble command and its
+namespace is maintained however the ensemble is renamed.
+.PP
+Three subcommands of the \fBnamespace ensemble\fR command are defined:
+.TP
+\fBnamespace ensemble create\fR ?\fIoption value ...\fR?
+.
+Creates a new ensemble command linked to the current namespace,
+returning the fully qualified name of the command created.  The
+arguments to \fBnamespace ensemble create\fR allow the configuration
+of the command as if with the \fBnamespace ensemble configure\fR
+command.  If not overridden with the \fB\-command\fR option, this
+command creates an ensemble with exactly the same name as the linked
+namespace.  See the section \fBENSEMBLE OPTIONS\fR below for a full
+list of options supported and their effects.
+.TP
+\fBnamespace ensemble configure \fIcommand\fR ?\fIoption\fR? ?\fIvalue ...\fR?
+.
+Retrieves the value of an option associated with the ensemble command
+named \fIcommand\fR, or updates some options associated with that
+ensemble command.  See the section \fBENSEMBLE OPTIONS\fR below for a
+full list of options supported and their effects.
+.TP
+\fBnamespace ensemble exists\fR \fIcommand\fR
+.
+Returns a boolean value that describes whether the command
+\fIcommand\fR exists and is an ensemble command.  This command only
+ever returns an error if the number of arguments to the command is
+wrong.
+.PP
+When called, an ensemble command takes its first argument and looks it
+up (according to the rules described below) to discover a list of
+words to replace the ensemble command and subcommand with.  The
+resulting list of words is then evaluated (with no further
+substitutions) as if that was what was typed originally (i.e. by
+passing the list of words through \fBTcl_EvalObjv\fR) and returning
+the result of the command.  Note that it is legal to make the target
+of an ensemble rewrite be another (or even the same) ensemble
+command.  The ensemble command will not be visible through the use of
+the \fBuplevel\fR or \fBinfo level\fR commands.
+.SS "ENSEMBLE OPTIONS"
+.PP
+The following options, supported by the \fBnamespace ensemble
+create\fR and \fBnamespace ensemble configure\fR commands, control how
+an ensemble command behaves:
+.TP
+\fB\-map\fR
+.
+When non-empty, this option supplies a dictionary that provides a
+mapping from subcommand names to a list of prefix words to substitute
+in place of the ensemble command and subcommand words (in a manner
+similar to an alias created with \fBinterp alias\fR; the words are not
+reparsed after substitution); if the first word of any target is not
+fully qualified when set, it is assumed to be relative to the
+\fIcurrent\fR namespace and changed to be exactly that (that is, it is
+always fully qualified when read). When this option is empty, the mapping
+will be from the local name of the subcommand to its fully-qualified
+name.  Note that when this option is non-empty and the
+\fB\-subcommands\fR option is empty, the ensemble subcommand names
+will be exactly those words that have mappings in the dictionary.
+.TP
+\fB\-parameters\fR
+.VS 8.6
+This option gives a list of named arguments (the names being used during
+generation of error messages) that are passed by the caller of the ensemble
+between the name of the ensemble and the subcommand argument. By default, it
+is the empty list.
+.VE 8.6
+.TP
+\fB\-prefixes\fR
+.
+This option (which is enabled by default) controls whether the
+ensemble command recognizes unambiguous prefixes of its subcommands.
+When turned off, the ensemble command requires exact matching of
+subcommand names.
+.TP
+\fB\-subcommands\fR
+.
+When non-empty, this option lists exactly what subcommands are in the
+ensemble.  The mapping for each of those commands will be either whatever
+is defined in the \fB\-map\fR option, or to the command with the same
+name in the namespace linked to the ensemble.  If this option is
+empty, the subcommands of the namespace will either be the keys of the
+dictionary listed in the \fB\-map\fR option or the exported commands
+of the linked namespace at the time of the invocation of the ensemble
+command.
+.TP
+\fB\-unknown\fR
+.
+When non-empty, this option provides a partial command (to which all
+the words that are arguments to the ensemble command, including the
+fully-qualified name of the ensemble, are appended) to handle the case
+where an ensemble subcommand is not recognized and would otherwise
+generate an error.  When empty (the default) an error (in the style of
+\fBTcl_GetIndexFromObj\fR) is generated whenever the ensemble is
+unable to determine how to implement a particular subcommand.  See
+\fBUNKNOWN HANDLER BEHAVIOUR\fR for more details.
+.PP
+The following extra option is allowed by \fBnamespace ensemble
+create\fR:
+.TP
+\fB\-command\fR
+.
+This write-only option allows the name of the ensemble created by
+\fBnamespace ensemble create\fR to be anything in any existing
+namespace.  The default value for this option is the fully-qualified
+name of the namespace in which the \fBnamespace ensemble create\fR
+command is invoked.
+.PP
+The following extra option is allowed by \fBnamespace ensemble
+configure\fR:
+.TP
+\fB\-namespace\fR
+.
+This read-only option allows the retrieval of the fully-qualified name
+of the namespace which the ensemble was created within.
+.SS "UNKNOWN HANDLER BEHAVIOUR"
+.PP
+If an unknown handler is specified for an ensemble, that handler is
+called when the ensemble command would otherwise return an error due
+to it being unable to decide which subcommand to invoke. The exact
+conditions under which that occurs are controlled by the
+\fB\-subcommands\fR, \fB\-map\fR and \fB\-prefixes\fR options as
+described above.
+.PP
+To execute the unknown handler, the ensemble mechanism takes the
+specified \fB\-unknown\fR option and appends each argument of the
+attempted ensemble command invocation (including the ensemble command
+itself, expressed as a fully qualified name). It invokes the resulting
+command in the scope of the attempted call. If the execution of the
+unknown handler terminates normally, the ensemble engine reparses the
+subcommand (as described below) and tries to dispatch it again, which
+is ideal for when the ensemble's configuration has been updated by the
+unknown subcommand handler. Any other kind of termination of the
+unknown handler is treated as an error.
+.PP
+The result of the unknown handler is expected to be a list (it is an
+error if it is not). If the list is an empty list, the ensemble
+command attempts to look up the original subcommand again and, if it
+is not found this time, an error will be generated just as if the
+\fB\-unknown\fR handler was not there (i.e. for any particular
+invocation of an ensemble, its unknown handler will be called at most
+once.) This makes it easy for the unknown handler to update the
+ensemble or its backing namespace so as to provide an implementation
+of the desired subcommand and reparse.
+.PP
+When the result is a non-empty list, the words of that list are used
+to replace the ensemble command and subcommand, just as if they had
+been looked up in the \fB\-map\fR. It is up to the unknown handler to
+supply all namespace qualifiers if the implementing subcommand is not
+in the namespace of the caller of the ensemble command. Also note that
+when ensemble commands are chained (e.g. if you make one of the
+commands that implement an ensemble subcommand into an ensemble, in a
+manner similar to the \fBtext\fR widget's tag and mark subcommands) then the
+rewrite happens in the context of the caller of the outermost
+ensemble. That is to say that ensembles do not in themselves place any
+namespace contexts on the Tcl call stack.
+.PP
+Where an empty \fB\-unknown\fR handler is given (the default), the
+ensemble command will generate an error message based on the list of
+commands that the ensemble has defined (formatted similarly to the
+error message from \fBTcl_GetIndexFromObj\fR). This is the error that
+will be thrown when the subcommand is still not recognized during
+reparsing. It is also an error for an \fB\-unknown\fR handler to
+delete its namespace.
+.SH EXAMPLES
+Create a namespace containing a variable and an exported command:
+.PP
+.CS
+\fBnamespace eval\fR foo {
+    variable bar 0
+    proc grill {} {
+        variable bar
+        puts "called [incr bar] times"
+    }
+    \fBnamespace export\fR grill
+}
+.CE
+.PP
+Call the command defined in the previous example in various ways.
+.PP
+.CS
+# Direct call
+::foo::grill
+
+# Use the command resolution path to find the name
+\fBnamespace eval\fR boo {
+    \fBnamespace path\fR ::foo
+    grill
+}
+
+# Import into current namespace, then call local alias
+\fBnamespace import\fR foo::grill
+grill
+
+# Create two ensembles, one with the default name and one with a
+# specified name.  Then call through the ensembles.
+\fBnamespace eval\fR foo {
+    \fBnamespace ensemble\fR create
+    \fBnamespace ensemble\fR create -command ::foobar
+}
+foo grill
+foobar grill
+.CE
+.PP
+Look up where the command imported in the previous example came from:
+.PP
+.CS
+puts "grill came from [\fBnamespace origin\fR grill]"
+.CE
+.PP
+Remove all imported commands from the current namespace:
+.PP
+.CS
+namespace forget {*}[namespace import]
+.CE
+.PP
+.VS 8.6
+Create an ensemble for simple working with numbers, using the
+\fB\-parameters\fR option to allow the operator to be put between the first
+and second arguments.
+.PP
+.CS
+\fBnamespace eval\fR do {
+    \fBnamespace export\fR *
+    \fBnamespace ensemble\fR create -parameters x
+    proc plus  {x y} {expr { $x + $y }}
+    proc minus {x y} {expr { $x - $y }}
+}
+
+# In use, the ensemble works like this:
+puts [do 1 plus [do 9 minus 7]]
+.CE
+.VE 8.6
+.SH "SEE ALSO"
+interp(n), upvar(n), variable(n)
+.SH KEYWORDS
+command, ensemble, exported, internal, variable
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

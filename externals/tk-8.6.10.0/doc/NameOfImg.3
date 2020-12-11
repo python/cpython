@@ -1,0 +1,30 @@
+'\"
+'\" Copyright (c) 1995-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tk_NameOfImage 3 4.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_NameOfImage \- Return name of image.
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+const char *
+\fBTk_NameOfImage\fR(\fIimageMaster\fR)
+.SH ARGUMENTS
+.AS Tk_ImageMaster imageMaster
+.AP Tk_ImageMaster imageMaster in
+Token for image, which was passed to image manager's \fIcreateProc\fR when
+the image was created.
+.BE
+.SH DESCRIPTION
+.PP
+This procedure is invoked by image managers to find out the name
+of an image.  Given the token for the image, it returns the
+string name for the image.
+.SH KEYWORDS
+image manager, image name

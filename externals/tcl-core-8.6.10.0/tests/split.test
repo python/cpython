@@ -1,0 +1,91 @@
+# Commands covered:  split
+#
+# This file contains a collection of tests for one or more of the Tcl built-in
+# commands. Sourcing this file into Tcl runs the tests and generates output
+# for errors. No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+test split-1.1 {basic split commands} {
+    split "a\n b\t\r c\n "
+} {a {} b {} {} c {} {}}
+test split-1.2 {basic split commands} {
+    split "word 1xyzword 2zword 3" xyz
+} {{word 1} {} {} {word 2} {word 3}}
+test split-1.3 {basic split commands} {
+    split "12345" {}
+} {1 2 3 4 5}
+test split-1.4 {basic split commands} {
+    split "a\}b\[c\{\]\$"
+} "a\\}b\\\[c\\{\\\]\\\$"
+test split-1.5 {basic split commands} {
+    split {} {}
+} {}
+test split-1.6 {basic split commands} {
+    split {}
+} {}
+test split-1.7 {basic split commands} {
+    split {   }
+} {{} {} {} {}}
+test split-1.8 {basic split commands} {
+    proc foo {} {
+        set x {}
+        foreach f [split {]\n} {}] {
+            append x $f
+        }
+        return $x	
+    }
+    foo
+} {]\n}
+test split-1.9 {basic split commands} {
+    proc foo {} {
+        set x ab\000c
+        set y [split $x {}]
+        return $y
+    }
+    foo
+} "a b \000 c"
+test split-1.10 {basic split commands} {
+    split "a0ab1b2bbb3\000c4" ab\000c
+} {{} 0 {} 1 2 {} {} 3 {} 4}
+test split-1.11 {basic split commands} {
+    split "12,3,45" {,}
+} {12 3 45}
+test split-1.12 {basic split commands} {
+    split "\u0001ab\u0001cd\u0001\u0001ef\u0001" \1
+} {{} ab cd {} ef {}}
+test split-1.13 {basic split commands} {
+    split "12,34,56," {,}
+} {12 34 56 {}}
+test split-1.14 {basic split commands} {
+    split ",12,,,34,56," {,}
+} {{} 12 {} {} 34 56 {}}
+test split-1.15 {basic split commands} -body {
+    split "a\U01f4a9b" {}
+} -result "a \U01f4a9 b"
+
+test split-2.1 {split errors} {
+    list [catch split msg] $msg $errorCode
+} {1 {wrong # args: should be "split string ?splitChars?"} {TCL WRONGARGS}}
+test split-2.2 {split errors} {
+    list [catch {split a b c} msg] $msg $errorCode
+} {1 {wrong # args: should be "split string ?splitChars?"} {TCL WRONGARGS}}
+
+# cleanup
+catch {rename foo {}}
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

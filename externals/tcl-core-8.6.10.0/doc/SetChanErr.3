@@ -1,0 +1,140 @@
+'\"
+'\" Copyright (c) 2005 Andreas Kupries <andreas_kupries@users.sourceforge.net>
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_SetChannelError 3 8.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Tcl_SetChannelError, Tcl_SetChannelErrorInterp, Tcl_GetChannelError, Tcl_GetChannelErrorInterp \- functions to create/intercept Tcl errors by channel drivers.
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+void
+\fBTcl_SetChannelError\fR(\fIchan, msg\fR)
+.sp
+void
+\fBTcl_SetChannelErrorInterp\fR(\fIinterp, msg\fR)
+.sp
+void
+\fBTcl_GetChannelError\fR(\fIchan, msgPtr\fR)
+.sp
+void
+\fBTcl_GetChannelErrorInterp\fR(\fIinterp, msgPtr\fR)
+.sp
+.SH ARGUMENTS
+.AS Tcl_Channel chan
+.AP Tcl_Channel chan in
+Refers to the Tcl channel whose bypass area is accessed.
+.AP Tcl_Interp* interp in
+Refers to the Tcl interpreter whose bypass area is accessed.
+.AP Tcl_Obj* msg in
+Error message put into a bypass area. A list of return options and values,
+followed by a string message. Both message and the option/value information
+are optional.
+.AP Tcl_Obj** msgPtr out
+Reference to a place where the message stored in the accessed bypass area can
+be stored in.
+.BE
+.SH DESCRIPTION
+.PP
+The current definition of a Tcl channel driver does not permit the direct
+return of arbitrary error messages, except for the setting and retrieval of
+channel options. All other functions are restricted to POSIX error codes.
+.PP
+The functions described here overcome this limitation. Channel drivers are
+allowed to use \fBTcl_SetChannelError\fR and \fBTcl_SetChannelErrorInterp\fR
+to place arbitrary error messages in \fBbypass areas\fR defined for channels
+and interpreters. And the generic I/O layer uses \fBTcl_GetChannelError\fR and
+\fBTcl_GetChannelErrorInterp\fR to look for messages in the bypass areas and
+arrange for their return as errors. The POSIX error codes set by a driver are
+used now if and only if no messages are present.
+.PP
+\fBTcl_SetChannelError\fR stores error information in the bypass area of the
+specified channel. The number of references to the \fBmsg\fR value goes up by
+one. Previously stored information will be discarded, by releasing the
+reference held by the channel. The channel reference must not be NULL.
+.PP
+\fBTcl_SetChannelErrorInterp\fR stores error information in the bypass area of
+the specified interpreter. The number of references to the \fBmsg\fR value
+goes up by one. Previously stored information will be discarded, by releasing
+the reference held by the interpreter. The interpreter reference must not be
+NULL.
+.PP
+\fBTcl_GetChannelError\fR places either the error message held in the bypass
+area of the specified channel into \fImsgPtr\fR, or NULL; and resets the
+bypass, that is, after an invocation all following invocations will return
+NULL, until an intervening invocation of \fBTcl_SetChannelError\fR with a
+non-NULL message. The \fImsgPtr\fR must not be NULL. The reference count of
+the message is not touched.  The reference previously held by the channel is
+now held by the caller of the function and it is its responsibility to release
+that reference when it is done with the value.
+.PP
+\fBTcl_GetChannelErrorInterp\fR places either the error message held in the
+bypass area of the specified interpreter into \fImsgPtr\fR, or NULL; and
+resets the bypass, that is, after an invocation all following invocations will
+return NULL, until an intervening invocation of
+\fBTcl_SetChannelErrorInterp\fR with a non-NULL message. The \fImsgPtr\fR must
+not be NULL. The reference count of the message is not touched.  The reference
+previously held by the interpreter is now held by the caller of the function
+and it is its responsibility to release that reference when it is done with
+the value.
+.PP
+Which functions of a channel driver are allowed to use which bypass function
+is listed below, as is which functions of the public channel API may leave a
+messages in the bypass areas.
+.IP \fBTcl_DriverCloseProc\fR
+May use \fBTcl_SetChannelErrorInterp\fR, and only this function.
+.IP \fBTcl_DriverInputProc\fR
+May use \fBTcl_SetChannelError\fR, and only this function.
+.IP \fBTcl_DriverOutputProc\fR
+May use \fBTcl_SetChannelError\fR, and only this function.
+.IP \fBTcl_DriverSeekProc\fR
+May use \fBTcl_SetChannelError\fR, and only this function.
+.IP \fBTcl_DriverWideSeekProc\fR
+May use \fBTcl_SetChannelError\fR, and only this function.
+.IP \fBTcl_DriverSetOptionProc\fR
+Has already the ability to pass arbitrary error messages. Must \fInot\fR use
+any of the new functions.
+.IP \fBTcl_DriverGetOptionProc\fR
+Has already the ability to pass arbitrary error messages. Must
+\fInot\fR use any of the new functions.
+.IP \fBTcl_DriverWatchProc\fR
+Must \fInot\fR use any of the new functions. Is internally called and has no
+ability to return any type of error whatsoever.
+.IP \fBTcl_DriverBlockModeProc\fR
+May use \fBTcl_SetChannelError\fR, and only this function.
+.IP \fBTcl_DriverGetHandleProc\fR
+Must \fInot\fR use any of the new functions. It is only a low-level function,
+and not used by Tcl commands.
+.IP \fBTcl_DriverHandlerProc\fR
+Must \fInot\fR use any of the new functions. Is internally called and has no
+ability to return any type of error whatsoever.
+.PP
+Given the information above the following public functions of the Tcl C API
+are affected by these changes; when these functions are called, the channel
+may now contain a stored arbitrary error message requiring processing by the
+caller.
+.DS
+.ta 1.9i 4i
+\fBTcl_Flush\fR	\fBTcl_GetsObj\fR	\fBTcl_Gets\fR
+\fBTcl_ReadChars\fR	\fBTcl_ReadRaw\fR	\fBTcl_Read\fR
+\fBTcl_Seek\fR	\fBTcl_StackChannel\fR	\fBTcl_Tell\fR
+\fBTcl_WriteChars\fR	\fBTcl_WriteObj\fR	\fBTcl_WriteRaw\fR
+\fBTcl_Write\fR
+.DE
+.PP
+All other API functions are unchanged. In particular, the functions below
+leave all their error information in the interpreter result.
+.DS
+.ta 1.9i 4i
+\fBTcl_Close\fR	\fBTcl_UnstackChannel\fR	\fBTcl_UnregisterChannel\fR
+.DE
+.SH "SEE ALSO"
+Tcl_Close(3), Tcl_OpenFileChannel(3), Tcl_SetErrno(3)
+.SH KEYWORDS
+channel driver, error messages, channel type

@@ -1,0 +1,437 @@
+# This file contains tests for the tkUnixSelect.c file.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+tcltest::configure {*}$argv
+tcltest::loadTestedCommands
+
+global longValue selValue selInfo
+
+set selValue {}
+set selInfo {}
+
+proc handler {type offset count} {
+    global selValue selInfo
+    lappend selInfo $type $offset $count
+    set numBytes [expr {[string length $selValue] - $offset}]
+    if {$numBytes <= 0} {
+    return ""
+    }
+    string range $selValue $offset [expr $numBytes+$offset]
+}
+
+proc errIncrHandler {type offset count} {
+    global selValue selInfo pass
+    if {$offset == 4000} {
+    if {$pass == 0} {
+        # Just sizing the selection;  don't do anything here.
+        set pass 1
+    } else {
+        # Fetching the selection;  wait long enough to cause a timeout.
+        after 6000
+    }
+    }
+    lappend selInfo $type $offset $count
+    set numBytes [expr {[string length $selValue] - $offset}]
+    if {$numBytes <= 0} {
+    return ""
+    }
+    string range $selValue $offset [expr $numBytes+$offset]
+}
+
+proc errHandler args {
+    error "selection handler aborted"
+}
+
+proc badHandler {path type offset count} {
+    global selValue selInfo
+    selection handle -type $type $path {}
+    lappend selInfo $path $type $offset $count
+    set numBytes [expr {[string length $selValue] - $offset}]
+    if {$numBytes <= 0} {
+    return ""
+    }
+    string range $selValue $offset [expr $numBytes+$offset]
+}
+proc reallyBadHandler {path type offset count} {
+    global selValue selInfo pass
+    if {$offset == 4000} {
+    if {$pass == 0} {
+        set pass 1
+    } else {
+        selection handle -type $type $path {}
+    }
+    }
+    lappend selInfo $path $type $offset $count
+    set numBytes [expr {[string length $selValue] - $offset}]
+    if {$numBytes <= 0} {
+    return ""
+    }
+    string range $selValue $offset [expr $numBytes+$offset]
+}
+
+# Eliminate any existing selection on the screen.  This is needed in case
+# there is a selection in some other application, in order to prevent races
+# from causing false errors in the tests below.
+
+selection clear .
+after 1500
+
+# common setup code
+proc setup {{path .f1} {display {}}} {
+    catch {destroy $path}
+    if {$display == {}} {
+    frame $path
+    } else {
+    toplevel $path -screen $display
+    wm geom $path +0+0
+    }
+    selection own $path
+}
+
+# set up a very large buffer to test INCR retrievals
+set longValue ""
+foreach i {a b c d e f g j h i j k l m o p q r s t u v w x y z} {
+    set j $i.1$i.2$i.3$i.4$i.5$i.6$i.7$i.8$i.9$i.10$i.11$i.12$i.13$i.14
+    append longValue A$j B$j C$j D$j E$j F$j G$j H$j I$j K$j L$j M$j N$j
+}
+
+# ----------------------------------------------------------------------
+
+test unixSelect-1.1 {TkSelGetSelection procedure: simple i18n text} -constraints {
+    x11
+} -setup {
+    destroy .e
+    setupbg
+} -body {
+    pack [entry .e]
+    update
+    .e insert 0 \u00fcber
+    .e selection range 0 end
+    dobg {string length [selection get]}
+} -cleanup {
+    cleanupbg
+    destroy .e
+} -result {4}
+
+test unixSelect-1.2 {TkSelGetSelection procedure: simple i18n text, iso8859-1} -constraints {
+    x11
+} -setup {
+    setupbg
+} -body {
+    dobg {
+        pack [entry .e]
+        update
+        .e insert 0 \u00fc\u0444
+        .e selection range 0 end
+    }
+    selection get
+} -cleanup {
+    cleanupbg
+} -result \u00fc?
+
+test unixSelect-1.3 {TkSelGetSelection procedure: simple i18n text, iso2022} -constraints {
+    x11
+} -setup {
+    setupbg
+    setup
+} -body {
+    selection handle -type COMPOUND_TEXT -format COMPOUND_TEXT . \
+        {handler COMPOUND_TEXT}
+    selection own .
+    set selValue \u00fc\u0444
+    set selInfo {}
+    set result [dobg {
+        set x [selection get -type COMPOUND_TEXT]
+        list [string equal \u00fc\u0444 $x] [string length $x]
+    }]
+    lappend result $selInfo
+} -cleanup {
+    cleanupbg
+} -result {1 2 {COMPOUND_TEXT 0 4000}}
+
+test unixSelect-1.4 {TkSelGetSelection procedure: INCR i18n text, iso2022} -constraints {
+    x11
+} -setup {
+    setupbg
+    setup
+} -body {
+    # This test is subtle.  The selection ends up getting fetched twice by
+    # Tk:  once to compute the length, and again to actually send the data.
+    # The first time through, we don't convert the data to ISO2022, so the
+    # buffer boundaries end up being different in the two passes.
+    selection handle -type COMPOUND_TEXT -format COMPOUND_TEXT . \
+        {handler COMPOUND_TEXT}
+    selection own .
+    set selValue [string repeat x 3999]\u00fc\u0444[string repeat x 3999]
+    set selInfo {}
+    set result [dobg {
+        set x [selection get -type COMPOUND_TEXT]
+        list [string equal \
+            [string repeat x 3999]\u00fc\u0444[string repeat x 3999] $x] \
+            [string length $x]
+    }]
+    lappend result $selInfo
+} -cleanup {
+    cleanupbg
+} -result {1 8000 {COMPOUND_TEXT 0 4000 COMPOUND_TEXT 4000 3999 COMPOUND_TEXT 7998 4000 COMPOUND_TEXT 0 4000 COMPOUND_TEXT 4000 3998 COMPOUND_TEXT 7997 4000}}
+
+test unixSelect-1.5 {TkSelGetSelection procedure: simple i18n text, iso2022} -constraints {
+    x11
+} -setup {
+    setupbg
+    setup
+} -body {
+    selection handle -type COMPOUND_TEXT -format COMPOUND_TEXT . \
+        {handler COMPOUND_TEXT}
+    selection own .
+    set selValue \u00fc\u0444
+    set selInfo {}
+    set result [dobg {
+        set x [selection get -type COMPOUND_TEXT]
+        list [string equal \u00fc\u0444 $x] [string length $x]
+    }]
+    lappend result $selInfo
+} -cleanup {
+    cleanupbg
+} -result {1 2 {COMPOUND_TEXT 0 4000}}
+
+test unixSelect-1.6 {TkSelGetSelection procedure: INCR i18n text} -constraints {
+    x11
+} -setup {
+    setupbg
+} -body {
+    dobg [subst -nobackslashes {entry .e; pack .e; update
+    .e insert 0 \u00fcber$longValue
+    .e selection range 0 end}]
+    string length [selection get]
+} -cleanup {
+    cleanupbg
+} -result [expr {4 + [string length $longValue]}]
+
+test unixSelect-1.7 {TkSelGetSelection procedure: INCR i18n text} -constraints {
+    x11
+} -setup {
+    setupbg
+} -body {
+    dobg {
+        pack [entry .e]
+        update
+        .e insert 0 [string repeat x 3999]\u00fc
+        .e selection range 0 end
+    }
+    selection get
+} -cleanup {
+    cleanupbg
+} -result [string repeat x 3999]\u00fc
+
+test unixSelect-1.8 {TkSelGetSelection procedure: INCR i18n text} -constraints {
+    x11
+} -setup {
+    setupbg
+} -body {
+    dobg {
+        pack [entry .e]
+        update
+        .e insert 0 \u00fc[string repeat x 3999]
+        .e selection range 0 end
+    }
+    selection get
+} -cleanup {
+    cleanupbg
+} -result \u00fc[string repeat x 3999]
+
+test unixSelect-1.9 {TkSelGetSelection procedure: INCR i18n text} -constraints {
+    x11
+} -setup {
+    setupbg
+} -body {
+    dobg {
+        pack [entry .e]
+        update
+        .e insert 0 [string repeat x 3999]\u00fc[string repeat x 4000]
+        .e selection range 0 end
+    }
+    selection get
+} -cleanup {
+    cleanupbg
+} -result [string repeat x 3999]\u00fc[string repeat x 4000]
+# Now some tests to make sure that the right thing is done when
+# transferring UTF8 selections, to prevent [Bug 614650] and its ilk
+# from rearing its ugly head again.
+
+test unixSelect-1.10 {TkSelGetSelection procedure: INCR i18n text, utf-8} -constraints {
+    x11
+} -setup {
+    setupbg
+} -body {
+    dobg {
+        pack [entry .e]
+        update
+        .e insert 0 [string repeat x 3999]\u00fc
+        .e selection range 0 end
+    }
+    selection get -type UTF8_STRING
+} -cleanup {
+    cleanupbg
+} -result [string repeat x 3999]\u00fc
+
+test unixSelect-1.11 {TkSelGetSelection procedure: INCR i18n text, utf-8} -constraints {
+    x11
+} -setup {
+    setupbg
+} -body {
+    dobg {
+        pack [entry .e]
+        update
+        .e insert 0 \u00fc[string repeat x 3999]
+        .e selection range 0 end
+    }
+    selection get -type UTF8_STRING
+} -cleanup {
+    cleanupbg
+} -result \u00fc[string repeat x 3999]
+
+test unixSelect-1.12 {TkSelGetSelection procedure: INCR i18n text, utf-8} -constraints {
+    x11
+} -setup {
+    setupbg
+} -body {
+    dobg {
+        pack [entry .e]
+        update
+        .e insert 0 [string repeat x 3999]\u00fc[string repeat x 4000]
+        .e selection range 0 end
+    }
+    selection get -type UTF8_STRING
+} -cleanup {
+    cleanupbg
+} -result [string repeat x 3999]\u00fc[string repeat x 4000]
+
+test unixSelect-1.13 {TkSelGetSelection procedure: simple i18n text, utf-8} -constraints {
+    x11
+} -setup {
+    destroy .e
+    setupbg
+} -body {
+    pack [entry .e]
+    update
+    .e insert 0 \u00fcber\u0444
+    .e selection range 0 end
+    dobg {string length [selection get -type UTF8_STRING]}
+} -cleanup {
+    destroy .e
+    cleanupbg
+} -result {5}
+
+test unixSelect-1.14 {TkSelGetSelection procedure: simple i18n text, utf-8} -constraints {
+    x11
+} -setup {
+    setupbg
+} -body {
+    dobg {
+        pack [entry .e]
+        update
+        .e insert 0 \u00fc\u0444
+        .e selection range 0 end
+    }
+    selection get -type UTF8_STRING
+} -cleanup {
+    cleanupbg
+} -result \u00fc\u0444
+
+test unixSelect-1.15 {TkSelGetSelection procedure: INCR i18n text, utf-8} -constraints {
+    x11
+} -setup {
+    setupbg
+} -body {
+    dobg {
+        pack [entry .e]
+        update
+        .e insert 0 [string repeat [string repeat \u00c4\u00e4 50]\n 21]
+        .e selection range 0 end
+    }
+    selection get -type UTF8_STRING
+} -cleanup {
+    cleanupbg
+} -result [string repeat [string repeat \u00c4\u00e4 50]\n 21]
+
+test unixSelect-1.16 {TkSelGetSelection procedure: INCR i18n text, utf-8} -constraints {
+    x11
+} -setup {
+    setupbg
+} -body {
+    dobg {
+        pack [entry .e]
+        update
+        .e insert 0 i[string repeat [string repeat \u00c4\u00e4 50]\n 21]
+        .e selection range 0 end
+    }
+    selection get -type UTF8_STRING
+} -cleanup {
+    cleanupbg
+} -result i[string repeat [string repeat \u00c4\u00e4 50]\n 21]
+
+test unixSelect-1.17 {TkSelGetSelection procedure: INCR i18n text, utf-8} -constraints {
+    x11
+} -setup {
+    setupbg
+} -body {
+    dobg {
+        pack [text .t]
+        update
+        .t insert 1.0 [string repeat [string repeat \u00c4\u00e4 50]\n 21]
+        # Has to be selected in a separate stage
+        .t tag add sel 1.0 21.end+1c
+    }
+    after 10
+    selection get -type UTF8_STRING
+} -cleanup {
+    cleanupbg
+} -result [string repeat [string repeat \u00c4\u00e4 50]\n 21]
+
+test unixSelect-1.18 {TkSelGetSelection procedure: INCR i18n text, utf-8} -constraints {
+    x11
+} -setup {
+    setupbg
+} -body {
+    dobg {
+        pack [text .t]
+        update
+        .t insert 1.0 i[string repeat [string repeat \u00c4\u00e4 50]\n 21]
+        # Has to be selected in a separate stage
+        .t tag add sel 1.0 21.end+1c
+    }
+    after 10
+    selection get -type UTF8_STRING
+} -cleanup {
+    cleanupbg
+} -result i[string repeat [string repeat \u00c4\u00e4 50]\n 21]
+
+test unixSelect-1.19 {Automatic UTF8_STRING support for selection handle} -constraints {
+    unix
+} -setup {
+    destroy .l
+} -body {
+    # See Bug #666346 "Selection handling crashes under KDE 3.0"
+    label .l
+    selection handle .l  [list handler STRING]
+    set selValue "This is the selection value"
+    selection own .l
+    selection get -type UTF8_STRING
+} -cleanup {
+    destroy .l
+} -result {This is the selection value}
+
+# cleanup
+cleanupTests
+return

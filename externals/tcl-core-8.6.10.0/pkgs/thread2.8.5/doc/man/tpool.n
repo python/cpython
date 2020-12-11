@@ -1,0 +1,496 @@
+'\"
+'\" Generated from file '' by tcllib/doctools with format 'nroff'
+'\"
+.TH "tpool" n 2\&.8  "Tcl Threading"
+.\" The -*- nroff -*- definitions below are for supplemental macros used
+.\" in Tcl/Tk manual entries.
+.\"
+.\" .AP type name in/out ?indent?
+.\"	Start paragraph describing an argument to a library procedure.
+.\"	type is type of argument (int, etc.), in/out is either "in", "out",
+.\"	or "in/out" to describe whether procedure reads or modifies arg,
+.\"	and indent is equivalent to second arg of .IP (shouldn't ever be
+.\"	needed;  use .AS below instead)
+.\"
+.\" .AS ?type? ?name?
+.\"	Give maximum sizes of arguments for setting tab stops.  Type and
+.\"	name are examples of largest possible arguments that will be passed
+.\"	to .AP later.  If args are omitted, default tab stops are used.
+.\"
+.\" .BS
+.\"	Start box enclosure.  From here until next .BE, everything will be
+.\"	enclosed in one large box.
+.\"
+.\" .BE
+.\"	End of box enclosure.
+.\"
+.\" .CS
+.\"	Begin code excerpt.
+.\"
+.\" .CE
+.\"	End code excerpt.
+.\"
+.\" .VS ?version? ?br?
+.\"	Begin vertical sidebar, for use in marking newly-changed parts
+.\"	of man pages.  The first argument is ignored and used for recording
+.\"	the version when the .VS was added, so that the sidebars can be
+.\"	found and removed when they reach a certain age.  If another argument
+.\"	is present, then a line break is forced before starting the sidebar.
+.\"
+.\" .VE
+.\"	End of vertical sidebar.
+.\"
+.\" .DS
+.\"	Begin an indented unfilled display.
+.\"
+.\" .DE
+.\"	End of indented unfilled display.
+.\"
+.\" .SO ?manpage?
+.\"	Start of list of standard options for a Tk widget. The manpage
+.\"	argument defines where to look up the standard options; if
+.\"	omitted, defaults to "options". The options follow on successive
+.\"	lines, in three columns separated by tabs.
+.\"
+.\" .SE
+.\"	End of list of standard options for a Tk widget.
+.\"
+.\" .OP cmdName dbName dbClass
+.\"	Start of description of a specific option.  cmdName gives the
+.\"	option's name as specified in the class command, dbName gives
+.\"	the option's name in the option database, and dbClass gives
+.\"	the option's class in the option database.
+.\"
+.\" .UL arg1 arg2
+.\"	Print arg1 underlined, then print arg2 normally.
+.\"
+.\" .QW arg1 ?arg2?
+.\"	Print arg1 in quotes, then arg2 normally (for trailing punctuation).
+.\"
+.\" .PQ arg1 ?arg2?
+.\"	Print an open parenthesis, arg1 in quotes, then arg2 normally
+.\"	(for trailing punctuation) and then a closing parenthesis.
+.\"
+.\"	# Set up traps and other miscellaneous stuff for Tcl/Tk man pages.
+.if t .wh -1.3i ^B
+.nr ^l \n(.l
+.ad b
+.\"	# Start an argument description
+.de AP
+.ie !"\\$4"" .TP \\$4
+.el \{\
+.   ie !"\\$2"" .TP \\n()Cu
+.   el          .TP 15
+.\}
+.ta \\n()Au \\n()Bu
+.ie !"\\$3"" \{\
+\&\\$1 \\fI\\$2\\fP (\\$3)
+.\".b
+.\}
+.el \{\
+.br
+.ie !"\\$2"" \{\
+\&\\$1	\\fI\\$2\\fP
+.\}
+.el \{\
+\&\\fI\\$1\\fP
+.\}
+.\}
+..
+.\"	# define tabbing values for .AP
+.de AS
+.nr )A 10n
+.if !"\\$1"" .nr )A \\w'\\$1'u+3n
+.nr )B \\n()Au+15n
+.\"
+.if !"\\$2"" .nr )B \\w'\\$2'u+\\n()Au+3n
+.nr )C \\n()Bu+\\w'(in/out)'u+2n
+..
+.AS Tcl_Interp Tcl_CreateInterp in/out
+.\"	# BS - start boxed text
+.\"	# ^y = starting y location
+.\"	# ^b = 1
+.de BS
+.br
+.mk ^y
+.nr ^b 1u
+.if n .nf
+.if n .ti 0
+.if n \l'\\n(.lu\(ul'
+.if n .fi
+..
+.\"	# BE - end boxed text (draw box now)
+.de BE
+.nf
+.ti 0
+.mk ^t
+.ie n \l'\\n(^lu\(ul'
+.el \{\
+.\"	Draw four-sided box normally, but don't draw top of
+.\"	box if the box started on an earlier page.
+.ie !\\n(^b-1 \{\
+\h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.el \}\
+\h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.\}
+.fi
+.br
+.nr ^b 0
+..
+.\"	# VS - start vertical sidebar
+.\"	# ^Y = starting y location
+.\"	# ^v = 1 (for troff;  for nroff this doesn't matter)
+.de VS
+.if !"\\$2"" .br
+.mk ^Y
+.ie n 'mc \s12\(br\s0
+.el .nr ^v 1u
+..
+.\"	# VE - end of vertical sidebar
+.de VE
+.ie n 'mc
+.el \{\
+.ev 2
+.nf
+.ti 0
+.mk ^t
+\h'|\\n(^lu+3n'\L'|\\n(^Yu-1v\(bv'\v'\\n(^tu+1v-\\n(^Yu'\h'-|\\n(^lu+3n'
+.sp -1
+.fi
+.ev
+.\}
+.nr ^v 0
+..
+.\"	# Special macro to handle page bottom:  finish off current
+.\"	# box/sidebar if in box/sidebar mode, then invoked standard
+.\"	# page bottom macro.
+.de ^B
+.ev 2
+'ti 0
+'nf
+.mk ^t
+.if \\n(^b \{\
+.\"	Draw three-sided box if this is the box's first page,
+.\"	draw two sides but no top otherwise.
+.ie !\\n(^b-1 \h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\h'|0u'\c
+.el \h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\h'|0u'\c
+.\}
+.if \\n(^v \{\
+.nr ^x \\n(^tu+1v-\\n(^Yu
+\kx\h'-\\nxu'\h'|\\n(^lu+3n'\ky\L'-\\n(^xu'\v'\\n(^xu'\h'|0u'\c
+.\}
+.bp
+'fi
+.ev
+.if \\n(^b \{\
+.mk ^y
+.nr ^b 2
+.\}
+.if \\n(^v \{\
+.mk ^Y
+.\}
+..
+.\"	# DS - begin display
+.de DS
+.RS
+.nf
+.sp
+..
+.\"	# DE - end display
+.de DE
+.fi
+.RE
+.sp
+..
+.\"	# SO - start of list of standard options
+.de SO
+'ie '\\$1'' .ds So \\fBoptions\\fR
+'el .ds So \\fB\\$1\\fR
+.SH "STANDARD OPTIONS"
+.LP
+.nf
+.ta 5.5c 11c
+.ft B
+..
+.\"	# SE - end of list of standard options
+.de SE
+.fi
+.ft R
+.LP
+See the \\*(So manual entry for details on the standard options.
+..
+.\"	# OP - start of full description for a single option
+.de OP
+.LP
+.nf
+.ta 4c
+Command-Line Name:	\\fB\\$1\\fR
+Database Name:	\\fB\\$2\\fR
+Database Class:	\\fB\\$3\\fR
+.fi
+.IP
+..
+.\"	# CS - begin code excerpt
+.de CS
+.RS
+.nf
+.ta .25i .5i .75i 1i
+..
+.\"	# CE - end code excerpt
+.de CE
+.fi
+.RE
+..
+.\"	# UL - underline word
+.de UL
+\\$1\l'|0\(ul'\\$2
+..
+.\"	# QW - apply quotation marks to word
+.de QW
+.ie '\\*(lq'"' ``\\$1''\\$2
+.\"" fix emacs highlighting
+.el \\*(lq\\$1\\*(rq\\$2
+..
+.\"	# PQ - apply parens and quotation marks to word
+.de PQ
+.ie '\\*(lq'"' (``\\$1''\\$2)\\$3
+.\"" fix emacs highlighting
+.el (\\*(lq\\$1\\*(rq\\$2)\\$3
+..
+.\"	# QR - quoted range
+.de QR
+.ie '\\*(lq'"' ``\\$1''\\-``\\$2''\\$3
+.\"" fix emacs highlighting
+.el \\*(lq\\$1\\*(rq\\-\\*(lq\\$2\\*(rq\\$3
+..
+.\"	# MT - "empty" string
+.de MT
+.QW ""
+..
+.BS
+.SH NAME
+tpool \- Part of the Tcl threading extension implementing pools of worker threads\&.
+.SH SYNOPSIS
+package require \fBTcl  8\&.4\fR
+.sp
+package require \fBThread  ?2\&.8?\fR
+.sp
+\fBtpool::create\fR ?options?
+.sp
+\fBtpool::names\fR
+.sp
+\fBtpool::post\fR ?-detached? ?-nowait? \fItpool\fR \fIscript\fR
+.sp
+\fBtpool::wait\fR \fItpool\fR \fIjoblist\fR ?varname?
+.sp
+\fBtpool::cancel\fR \fItpool\fR \fIjoblist\fR ?varname?
+.sp
+\fBtpool::get\fR \fItpool\fR \fIjob\fR
+.sp
+\fBtpool::preserve\fR \fItpool\fR
+.sp
+\fBtpool::release\fR \fItpool\fR
+.sp
+\fBtpool::suspend\fR \fItpool\fR
+.sp
+\fBtpool::resume\fR \fItpool\fR
+.sp
+.BE
+.SH DESCRIPTION
+This package creates and manages pools of worker threads\&. It allows you
+to post jobs to worker threads and wait for their completion\&. The
+threadpool implementation is Tcl event-loop aware\&. That means that any
+time a caller is forced to wait for an event (job being completed or
+a worker thread becoming idle or initialized), the implementation will
+enter the event loop and allow for servicing of other pending file or
+timer (or any other supported) events\&.
+.SH COMMANDS
+.TP
+\fBtpool::create\fR ?options?
+This command creates new threadpool\&. It accepts several options as
+key-value pairs\&. Options are used to tune some threadpool parameters\&.
+The command returns the ID of the newly created threadpool\&.
+.sp
+Following options are supported:
+.RS
+.TP
+\fB-minworkers\fR \fInumber\fR
+Minimum number of worker threads needed for this threadpool instance\&.
+During threadpool creation, the implementation will create somany
+worker threads upfront and will keep at least number of them alive
+during the lifetime of the threadpool instance\&.
+Default value of this parameter is 0 (zero)\&. which means that a newly
+threadpool will have no worker threads initialy\&. All worker threads
+will be started on demand by callers running \fBtpool::post\fR command
+and posting jobs to the job queue\&.
+.TP
+\fB-maxworkers\fR \fInumber\fR
+Maximum number of worker threads allowed for this threadpool instance\&.
+If a new job is pending and there are no idle worker threads available,
+the implementation will try to create new worker thread\&. If the number
+of available worker threads is lower than the given number,
+new worker thread will start\&. The caller will automatically enter the
+event loop and wait until the worker thread has initialized\&. If\&. however,
+the number of available worker threads is equal to the given number,
+the caller will enter the event loop and wait for the first worker thread
+to get idle, thus ready to run the job\&.
+Default value of this parameter is 4 (four), which means that the
+threadpool instance will allow maximum of 4 worker threads running jobs
+or being idle waiting for new jobs to get posted to the job queue\&.
+.TP
+\fB-idletime\fR \fIseconds\fR
+Time in seconds an idle worker thread waits for the job to get posted
+to the job queue\&. If no job arrives during this interval and the time
+expires, the worker thread will check the number of currently available
+worker threads and if the number is higher than the number set by the
+\fBminthreads\fR option, it will exit\&.
+If an \fBexitscript\fR has been defined, the exiting worker thread
+will first run the script and then exit\&. Errors from the exit script,
+if any, are ignored\&.
+.sp
+The idle worker thread is not servicing the event loop\&. If you, however,
+put the worker thread into the event loop, by evaluating the
+\fBvwait\fR or other related Tcl commands, the worker thread
+will not be in the idle state, hence the idle timer will not be
+taken into account\&.
+Default value for this option is unspecified\&.
+.TP
+\fB-initcmd\fR \fIscript\fR
+Sets a Tcl script used to initialize new worker thread\&. This is usually
+used to load packages and commands in the worker, set default variables,
+create namespaces, and such\&. If the passed script runs into a Tcl error,
+the worker will not be created and the initiating command (either the
+\fBtpool::create\fR or \fBtpool::post\fR) will throw error\&.
+Default value for this option is unspecified, hence, the Tcl interpreter of
+the worker thread will contain just the initial set of Tcl commands\&.
+.TP
+\fB-exitcmd\fR \fIscript\fR
+Sets a Tcl script run when the idle worker thread exits\&. This is normaly
+used to cleanup the state of the worker thread, release reserved resources,
+cleanup memory and such\&.
+Default value for this option is unspecified, thus no Tcl script will run
+on the worker thread exit\&.
+.RE
+.sp
+.TP
+\fBtpool::names\fR
+This command returns a list of IDs of threadpools created with the
+\fBtpool::create\fR command\&. If no threadpools were found, the
+command will return empty list\&.
+.TP
+\fBtpool::post\fR ?-detached? ?-nowait? \fItpool\fR \fIscript\fR
+This command sends a \fIscript\fR to the target \fItpool\fR threadpool
+for execution\&. The script will be executed in the first available idle
+worker thread\&. If there are no idle worker threads available, the command
+will create new one, enter the event loop and service events until the
+newly created thread is initialized\&. If the current number of worker
+threads is equal to the maximum number of worker threads, as defined
+during the threadpool creation, the command will enter the event loop and
+service events while waiting for one of the worker threads to become idle\&.
+If the optional ?-nowait? argument is given, the command will not wait
+for one idle worker\&. It will just place the job in the pool's job queue
+and return immediately\&.
+.sp
+The command returns the ID of the posted job\&. This ID is used for subsequent
+\fBtpool::wait\fR, \fBtpool::get\fR and \fBtpool::cancel\fR commands to wait
+for and retrieve result of the posted script, or cancel the posted job
+respectively\&. If the optional ?-detached? argument is specified, the
+command will post a detached job\&. A detached job can not be cancelled or
+waited upon and is not identified by the job ID\&.
+.sp
+If the threadpool \fItpool\fR is not found in the list of active
+thread pools, the command will throw error\&. The error will also be triggered
+if the newly created worker thread fails to initialize\&.
+.TP
+\fBtpool::wait\fR \fItpool\fR \fIjoblist\fR ?varname?
+This command waits for one or many jobs, whose job IDs are given in the
+\fIjoblist\fR to get processed by the worker thread(s)\&. If none of the
+specified jobs are ready, the command will enter the event loop, service
+events and wait for the first job to get ready\&.
+.sp
+The command returns the list of completed job IDs\&. If the optional variable
+?varname? is given, it will be set to the list of jobs in the
+\fIjoblist\fR which are still pending\&. If the threadpool \fItpool\fR
+is not found in the list of active thread pools, the command will throw error\&.
+.TP
+\fBtpool::cancel\fR \fItpool\fR \fIjoblist\fR ?varname?
+This command cancels the previously posted jobs given by the \fIjoblist\fR
+to the pool \fItpool\fR\&. Job cancellation succeeds only for job still
+waiting to be processed\&. If the job is already being executed by one of
+the worker threads, the job will not be cancelled\&.
+The command returns the list of cancelled job IDs\&. If the optional variable
+?varname? is given, it will be set to the list of jobs in the
+\fIjoblist\fR which were not cancelled\&. If the threadpool \fItpool\fR
+is not found in the list of active thread pools, the command will throw error\&.
+.TP
+\fBtpool::get\fR \fItpool\fR \fIjob\fR
+This command retrieves the result of the previously posted \fIjob\fR\&.
+Only results of jobs waited upon with the \fBtpool::wait\fR command
+can be retrieved\&. If the execution of the script resulted in error,
+the command will throw the error and update the \fBerrorInfo\fR and
+\fBerrorCode\fR variables correspondingly\&. If the pool \fItpool\fR
+is not found in the list of threadpools, the command will throw error\&.
+If the job \fIjob\fR is not ready for retrieval, because it is currently
+being executed by the worker thread, the command will throw error\&.
+.TP
+\fBtpool::preserve\fR \fItpool\fR
+Each call to this command increments the reference counter of the
+threadpool \fItpool\fR by one (1)\&. Command returns the value of the
+reference counter after the increment\&.
+By incrementing the reference counter, the caller signalizes that
+he/she wishes to use the resource for a longer period of time\&.
+.TP
+\fBtpool::release\fR \fItpool\fR
+Each call to this command decrements the reference counter of the
+threadpool \fItpool\fR by one (1)\&.Command returns the value of the
+reference counter after the decrement\&.
+When the reference counter reaches zero (0), the threadpool \fItpool\fR
+is marked for termination\&. You should not reference the threadpool
+after the \fBtpool::release\fR command returns zero\&. The \fItpool\fR
+handle goes out of scope and should not be used any more\&. Any following
+reference to the same threadpool handle will result in Tcl error\&.
+.TP
+\fBtpool::suspend\fR \fItpool\fR
+Suspends processing work on this queue\&. All pool workers are paused
+but additional work can be added to the pool\&. Note that adding the
+additional work will not increase the number of workers dynamically
+as the pool processing is suspended\&. Number of workers is maintained
+to the count that was found prior suspending worker activity\&.
+If you need to assure certain number of worker threads, use the
+\fBminworkers\fR option of the \fBtpool::create\fR command\&.
+.TP
+\fBtpool::resume\fR \fItpool\fR
+Resume processing work on this queue\&. All paused (suspended)
+workers are free to get work from the pool\&. Note that resuming pool
+operation will just let already created workers to proceed\&.
+It will not create additional worker threads to handle the work
+posted to the pool's work queue\&.
+.PP
+.SH DISCUSSION
+Threadpool is one of the most common threading paradigm when it comes
+to server applications handling a large number of relatively small tasks\&.
+A very simplistic model for building a server application would be to
+create a new thread each time a request arrives and service the request
+in the new thread\&. One of the disadvantages of this approach is that
+the overhead of creating a new thread for each request is significant;
+a server that created a new thread for each request would spend more time
+and consume more system resources in creating and destroying threads than
+in processing actual user requests\&. In addition to the overhead of
+creating and destroying threads, active threads consume system resources\&.
+Creating too many threads can cause the system to run out of memory or
+trash due to excessive memory consumption\&.
+.PP
+A thread pool offers a solution to both the problem of thread life-cycle
+overhead and the problem of resource trashing\&. By reusing threads for
+multiple tasks, the thread-creation overhead is spread over many tasks\&.
+As a bonus, because the thread already exists when a request arrives,
+the delay introduced by thread creation is eliminated\&. Thus, the request
+can be serviced immediately\&. Furthermore, by properly tuning the number
+of threads in the thread pool, resource thrashing may also be eliminated
+by forcing any request to wait until a thread is available to process it\&.
+.SH "SEE ALSO"
+thread, tsv, ttrace
+.SH KEYWORDS
+thread, threadpool

@@ -1,0 +1,389 @@
+<!-- $Id: container.tex.html,v 1.1 2000/10/10 19:48:13 idiscovery Exp $ -->
+<H1><A NAME=2>2 Container Widgets</H1>
+
+<p>  In addition to providing some nice-looking interface elements, Tix
+  offers some useful ways to organize the elements that you create.
+  It does this by providing <i> container widgets</i>, which are widgets
+  designed to contain whatever you want to put into them.
+
+<p>  Different container widgets have different policies as to how they
+  arrange the widgets inside them. In this chapter, we'll talk about
+  TixNoteBook, which arranges its subwidgets using a notebook
+  metaphor, TixPanedWindow, which arranges its subwidgets in
+  non-overlapping horizontal or vertical panes, and a family of
+  ``Scrolled Widgets'', which attach scrollbars to their subwidgets.
+
+<p><H2><A NAME=2.1>2.1 TixNoteBook</H2>
+
+<p>  When your need to put a lot of information into your interface, you
+  may find out that your window has to grow intolerably big in order
+  to hold all the information. Having a window that's 10000
+  pixels wide and 5000 pixels high doesn't seem to be the perfect
+  solution. Of course, you can ``chop up'' your big window into a set
+  of smaller dialog boxes, but the user will most likely find it
+  impossible to manage 20 different dialog boxes on their desktop.
+
+<p>  The TixNoteBook (fig <a href=container.tex.html#2-1>2-1 </a>) widget comes into
+  rescue. It allows you to pack a large interface into manageable
+  ``pages'' using a notebook metaphor: it contains multiple pages with
+  anything you want on them, displays one at a time, and attaches a
+  tab to each page so the user can bring it forward with a single
+  click on the tab.
+
+<p><blockquote><a name=2-1>
+<center><img src=fig/container/notebook.gif></center>
+<hr><center><h3>(Figure 2-1) The TixNoteBook Widget</center></h3>
+</blockquote>
+
+<p><H3><A NAME=2.1.1>2.1.1 Adding Pages to a TixNoteBook</H3>
+
+<p>  The example program in figure <a href=container.tex.html#2-2>2-2 </a> creates the
+  TixNoteBook widget shown in figure <a href=container.tex.html#2-1>2-1 </a>. In the first
+  three lines, we create the notebook widget and two pages inside
+  it. While we create the pages, we also set the labels on the tabs
+  associated with each page and use the <code> -underline</code> option to
+  indicate the keyboard accelerator for each page.
+
+<p>  Each time we create a page in the notebook using the <code> add</code>
+  method, a frame subwidget is created for us automatically. This
+  frame subwidget has the same name as the page (the first parameter
+  passed to the <code> add</code> method). We can use the <code> subwidget</code>
+  method to find out the pathname of this frame subwidget and pack
+  everything we want to display on the page into this frame
+  widget. Lines 4-10 of program <a href=container.tex.html#2-2>2-2 </a> shows how to create
+  the widgets inside the ``Hard Disk'' page. Creating the widgets
+  inside the ``Network'' page will be similar.
+
+<p><blockquote><a name=2-2>
+<blockquote><pre>
+tixNoteBook .n
+.n add hd  -label "Hard Disk" -underline 0
+.n add net -label "Network"   -underline 0
+
+<p>set frame [.n subwidget hd]
+tixControl $frame.access   -label "Access Time:"
+tixControl $frame.write    -label "Write Throughput:"
+tixControl $frame.read     -label "Read Througput:"
+tixControl $frame.capacity -label "Capacity:"
+pack $frame.access $frame.write $frame.read $frame.capacity <br>    -side top -fill x
+</pre></blockquote>
+<hr><center><h3>(Figure 2-2) Using The TixNoteBook Widget</center></h3>
+</blockquote>
+
+<p><H3><A NAME=2.1.2>2.1.2 Keyboard Accelerators</H3>
+
+<p>  Note that in line 2-3 of program <a href=container.tex.html#2-2>2-2 </a>, we have indicated
+  the keyboard accelerators for the two pages using the <code>
+  -underline</code> option. The value of this option is the position of the
+  character to be underlined in the string, where zero represents the
+  first character. When the user presses <code> &lt;Alt-N&gt;</code> or <code>
+  &lt;Meta-N&gt;</code> the ``Network'' page will be activated; on the other hand,
+  if he presses <code> &lt;Alt-H&gt;</code> or <code> &lt;Meta-H&gt;</code> the ``Hard Disk'' page
+  will be activated. The TixNoteBook widget will automatically create
+  the keyboard bindings for these accelerators for us, in a way
+  similar to what the menu widget does, so there is no need to set the
+  keyboard bindings ourself.
+
+<p><H3><A NAME=2.1.3>2.1.3 Delaying the Creation of New Pages</H3>
+
+<p>  If your notebook contains many complicated pages, it may take quite a
+  while to create all widgets inside these pages and your program will
+  probably freezes for a few seconds when it pops up the notebook for
+  the first time. To avoid embarrassing moments like this, we can use
+  the ``delayed page creation'' feature of the TixNoteBook widget.
+
+<p>  When we create a page using the <code> add</code> method, we can specify
+  the optional parameter <code> -createcmd</code> so that we only need to
+  create the page when the user wants to see it. This is illustrated
+  in program <a href=container.tex.html#2-3>2-3 </a>:
+
+<p><blockquote><a name=2-3>
+<blockquote><pre>
+tixNoteBook .n
+.n add hd  -label "Hard Disk" -underline 0 -createcmd CreateHd
+.n add net -label "Network"   -underline 0 -createCmd CreateNet
+
+<p>proc CreateHd {frame} {
+    tixControl $frame.access   -label "Access Time:"
+    tixControl $frame.write    -label "Write Throughput:"
+    tixControl $frame.read     -label "Read Througput:"
+    tixControl $frame.capacity -label "Capacity:"
+    pack $frame.access $frame.write $frame.read $frame.capacity <br>        -side top -fill x
+}
+
+<p>proc CreateNet {frame} {
+    ...
+}
+</pre></blockquote>
+<hr><center><h3>(Figure 2-3) Delayed Page Creation</center></h3>
+</blockquote>
+
+<p>  In line 2 of program <a href=container.tex.html#2-3>2-3 </a>, we use the <code> -createcmd</code>
+  option to specify that the procedure <code> CreateHd</code> should be called
+  when the ``Hard Disk'' page needs to be created. <code> CreateHd</code>
+  takes one argument, the frame subwidget of the page. As we can see,
+  program program <a href=container.tex.html#2-3>2-3 </a> is not very different than program
+  <a href=container.tex.html#2-2>2-2 </a>, except now we can issue less commands during the
+  set-up of the NoteBook widget and the interface can be started up
+  more quickly.
+
+<p><H3><A NAME=2.1.4>2.1.4 Changing Page Tabs and Deleting Pages</H3>
+
+<p>  To change the information in the tabs of the pages, we can use the
+  <code> pageconfigure</code> method. For example, the following command:
+
+<p><blockquote><pre>
+.nb pageconfigure hd -label "Fixed Disk"
+</pre></blockquote>
+  changes the label from ``Hard Disk'' to ``Fixed Disk''.  To delete a
+  page, we can use the <code> delete</code> method.
+
+<p>  You should avoid using the <code> pageconfigure</code> and <code>
+  delete</code>. Your users will just feel annoyed if the interface changes
+  all the time and notebook pages appear and disappear every now and
+  then.
+
+<p><H2><A NAME=2.2>2.2 PanedWindow</H2>
+
+<p>  The <i> TixPanedWindow</i> widget arranges arranges its subwidgets in
+  non-overlapping panes. As we can see in figure <a href=container.tex.html#2-4>2-4 </a>, the
+  PanedWindow widget puts a resize handle between the panes for the
+  user to manipulate the sizes of the panes interactively. The panes
+  can be arranged either vertically (figure <a href=container.tex.html#2-4>2-4 </a>) or
+  horizontally (<a href=container.tex.html#2-4>2-4 </a>).
+
+<p>  Each individual pane may have upper and lower limits of its
+  size. The user changes the sizes of the panes by dragging the resize
+  handle between two panes.
+
+<p><blockquote><a name=2-4>
+
+<center><TABLE BORDER=0><TR> 
+<p> <td valign=bottom>
+     <img src=fig/container/pane_vert.gif><p><h4><center>Vertical Panes</center></h4></td>
+<p> <td valign=bottom>
+     <img src=fig/container/pane_horz.gif><p><h4><center>Horizontal Panes</center></h4></td>
+ </TR></TABLE></center>
+
+<hr><center><h3>(Figure 2-4) The TixPane Widget</center></h3>
+</blockquote>
+
+<p><H3><A NAME=2.2.1>2.2.1 Adding Panes Inside a TixPanedWindow Widget</H3>
+
+<p>  You can create a TixPanedWindow widget using the <code> tixPanedWindow</code>
+  command. After that, you can add panes into this widget using the
+  <code> add</code> method (see program <a href=container.tex.html#2-5>2-5 </a>).
+
+<p>  When you use the <code> add</code> method, there are several optional
+  parameters which you can use to control the size of each of the
+  pane. The <code> -min</code> parameter controls the minimum size of the pane
+  and the <code> -max</code> parameter controls its maximum size. These two
+  parameters controls how much the user can expand or shrink a
+  pane. If neither is specified, then the pane can be expanded or
+  shrunk without restrictions.
+
+<p>  In addition, the -size parameter specifies the initial size of the
+  pane. If it is not specified, then the initial size of the pane will
+  be its natural size.
+
+<p>  In program <a href=container.tex.html#2-5>2-5 </a>, we set the initial size of <code> pane1</code> to
+  100 pixels using the -size parameter. We don't set the <code> -size</code>
+  parameter for <code> pane2</code> so it will appear in its natural
+  size. However, we use the <code> -max</code> option for <code> pane2</code> so that
+  the user can never expand the size of <code> pane2</code> to more than 300
+  pixels.
+
+<p><blockquote><a name=2-5>
+<blockquote><pre>
+tixPanedWindow .p
+.p add pane1 -size 100
+.p add pane2 -max 300
+
+<p>set p1 [.p subwidget pane1]
+button $p1.b1 -text Button1
+button $p1.b2 -text Button2
+pack $p1.b1 $p1.b2 -side left -expand yes
+
+<p>set p2 [.p subwidget pane2]
+button $p2.b -text "Another Button"
+pack $p2.b -side left -expand yes -fill both
+
+<p>pack .p -expand yes -fill both
+</pre></blockquote>
+<hr><center><h3>(Figure 2-5) Adding Panes into a TixPanedWindow Widget</center></h3>
+</blockquote>
+
+<p><H3><A NAME=2.2.2>2.2.2 Putting Widgets Inside the Panes</H3>
+
+<p>  Each pane we have created using the <code> add</code> method is essentially
+  a frame widget. After we have created the panes, we can put widgets
+  inside them. As shown inside program <a href=container.tex.html#2-5>2-5 </a>, we can use the
+  <code> subwidget</code> method to find out the name of the pane
+  subwidgets. Then we can just create new widgets as their children
+  and pack these new widgets inside the panes. The output of program
+  <a href=container.tex.html#2-5>2-5 </a> is shown in figure <a href=container.tex.html#2-6>2-6 </a>
+
+<p><blockquote><a name=2-6>
+<center><img src=fig/container/pane_add.gif></center>
+<hr><center><h3>(Figure 2-6) Output of Program <a href=container.tex.html#2-5>2-5 </a></center></h3>
+</blockquote>
+
+<p><H3><A NAME=2.2.3>2.2.3 Setting the Order of the Panes</H3>
+
+<p>  Usually, when you create a new pane, it is always added to the
+  bottom or right of the list of panes. If you want to control the
+  order in which the panes appear inside the TixPanedWindow widget,
+  you can use the two optional parameters, <code> -before</code> and <code>
+  -after</code>, for the <code> add</code> method.  For example, the call:
+
+<p><blockquote><pre>
+.p add pane2 -after pane1
+</pre></blockquote>
+  will place the new pane immediately after <code> pane1</code>. The call:
+  
+<blockquote><pre>
+.p add pane2 -before pane1
+</pre></blockquote>
+   will place the new pane immediately in front of <code> pane1</code>.
+ 
+<H3><A NAME=2.2.4>2.2.4 Changing the Sizes of the Panes</H3>
+
+<p>  If you want to change the sizes of the existing panes or change
+  their maximum/minimum size constraints, you can use the
+  <code> paneconfigure</code> method. For example, the following code changes the
+  size of <code> pane2</code> to 100 pixels and adjusts its minimum size
+  constraint to no less than 10 pixels:
+
+<p><blockquote><pre>
+.p paneconfigure pane2 -size 100 -min 10
+</pre></blockquote>
+  Notice that after you call the <code> paneconfigure</code> method, the
+  PanedWindow may jitter and that may annoy the user. Therefore, use
+  this method only when it is necessary.
+
+<p><H2><A NAME=2.3>2.3 The Family of Scrolled Widgets</H2>
+
+<p>  With plain Tcl/Tk, the widgets do not automatically come with
+  scrollbars. If you want to use scrollbars with the text, canvas or
+  listbox widgets, you will need to create scrollbars separately and
+  attach them to the widgets. This can be a lot of hassle because you
+  would almost always need scrollbars for these widgets. Sometimes you
+  will wonder why you need to write the same boring code again and
+  again just to get the scrollbars to working.
+
+<p>  The Tix scrolled widgets are here to make your life easier. With a
+  single command such as <code> tixScrolledListBox</code> or <code>
+  tixScrolledText</code>, you can create a listbox or text widget that comes
+  automatically with scrollbars attached.
+
+<p>  Another advantage of the Tix scrolled widgets is that you can
+  specify their scrolling policy so that the scrollbars appear only
+  when they are needed. This feature is especially useful if you are
+  displaying a lot of widgets and running out of screen real estate.
+
+<p><H3><A NAME=2.3.1>2.3.1 The Scrolled Listbox Widget</H3>
+
+<p>  You can create a scrolled listbox widget using the <code>
+  tixScrolledListBox</code> command. Notice that the widget created by the
+  <code> tixScrolledListBox</code> command is not itself a listbox
+  widget. Rather, it is a frame widget which contains two scrollbar
+  subwidgets: one is called <code> hsb</code> (the horizontal scrollbar) and
+  the other is called <code> vsb</code> (the vertical scrollbar). Similarly,
+  the listbox being scrolled is also a subwidget which is
+  appropriately called <code> listbox</code>. Therefore, if we need to put
+  things into the listbox (as we always do!), we can use the <code>
+  subwidget</code> method. As shown in program <a href=container.tex.html#2-7>2-7 </a>, we first
+  find the pathname of the <code> listbox</code> subwidget by calling ``<code>
+  .sl subwidget listbox</code>''. Then, we insert some items into the <code>
+  listbox</code> subwidget.
+
+<p><blockquote><a name=2-7>
+<blockquote><pre>
+tixScrolledListBox .sl -scrollbar auto
+set listbox [.sl subwidget listbox]
+
+<p>for {set x 0} {$x &lt; 6} {incr x} {
+    $listbox insert end "This is item $x"
+}
+
+<p>pack .sl -side left -expand yes -fill both
+</pre></blockquote>
+<hr><center><h3>(Figure 2-7) Scrolled Listbox Widget</center></h3>
+</blockquote>
+
+<p><blockquote><a name=2-8>
+
+<center><TABLE BORDER=0><TR> 
+<p> <td valign=bottom>
+     <img src=fig/container/sl-nobar.gif><p><h4><center>Scrollbars not displayed</center></h4></td>
+<p> <td valign=bottom>
+     <img src=fig/container/sl-bar.gif><p><h4><center>Scrollbars displayed only when needed</center></h4></td>
+ </TR></TABLE></center>
+
+<hr><center><h3>(Figure 2-8) Scrolled ListBox with Automatic Scrollbars</center></h3>
+</blockquote>
+
+<p>
+  Also, as seen in the first line of program <a href=container.tex.html#2-7>2-7 </a>, we use
+  the <code> -scrollbar</code> option to control the scrolling policy of the
+  TixScrolledListBox widget. Usually, we'll set it to ``<code> auto</code>'':
+  the scrollbars are displayed only if they are needed. Other possible
+  values are ``<code> both</code>'': the two scrollbars are always displayed;
+  ``<code> x</code>'': the horizontal scrollbar is always displayed, while the
+  vertical scrollbar is always hidden; ``<code> y</code>'': the opposite of
+  ``<code> x</code>''; ``<code> none</code>'': the two scrollbars are always
+  hidden. The result of program <a href=container.tex.html#2-7>2-7 </a> is shown in figure
+  <a href=container.tex.html#2-8>2-8 </a>.
+
+<p><H3><A NAME=2.3.2>2.3.2 Other Scrolled Widgets</H3>
+
+<p>  The <b> TixScrolledText</b> widget is very similar to the
+  TixScrolledListBox widget, except it scrolls a text subwidget, which
+  is called <code> text</code>. One problem with the TixScrolledText widget,
+  though, is its <code> -scrollbar</code> option doesn't work in the <b>
+  auto</b> mode. This is due to a bug in Tk which doesn't report the
+  width of the <b> text</b> subwidget correctly. Until this bug is fixed
+  in TK, the <b> auto</b> mode will behave the same way as the both mode
+  for the TixScrolledText widget.
+
+<p>  Another scrolled-widget is <b> TixScrolledWindow</b>. Sometimes you
+  have a large number of widgets that can't possibly be shown in the
+  screen all at once and your application doesn't allow you to divide
+  the widgets into several pages of a TixNoteBook. In this case you
+  can use TixScrolledWindow. It contains a frame subwidget called <code>
+  window</code>. You can just create as many widgets as you need as children
+  of the <code> window</code> subwidget. An example is shown in program
+  <a href=container.tex.html#2-9>2-9 </a>, which uses the TixScrolledWindow widget to
+  implement a ``cheap'' spreadsheet application. The boxes of the
+  spreadsheet are just entry widgets and they are packed inside the
+  <code> window</code> subwidget. The user will be able to scroll to different
+  parts of the spreadsheet if it is too large to fit in one screen.
+
+<p><blockquote><a name=2-9>
+<blockquote><pre>
+tixScrolledWindow .sw -scrollbar auto
+set f [.sw subwidget window]
+
+<p>for {set x 0} {$x &lt; 10} {incr x} {
+    frame $f.f$x
+    pack  $f.f$x -side top -expand yes -fill both
+    for {set y 0} {$y &lt; 10} {incr y} {
+        entry $f.f$x.e$y -width 10
+        pack $f.f$x.e$y -side left -fill x
+    }
+}
+
+<p>pack .sw -side left -expand yes -fill both
+</pre></blockquote>
+<hr><center><h3>(Figure 2-9) Cheap Spreadsheet Application with TixScrolledWindow</center></h3>
+</blockquote>
+
+<p>  There are two more scrolled-widgets in the Tix library: <b>
+  TixScrolledTList</b> scrolls a TixTList widget and <b>
+  TixScrolledHList</b> scrolls a TixHList widget. The subwidgets that
+  they scroll are called <code> tlist</code> and <code> hlist</code>,
+  respectively. The use of the TList and HList widgets will be
+  described in the next chapters.
+
+<p>
+

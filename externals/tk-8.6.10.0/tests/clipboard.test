@@ -1,0 +1,364 @@
+# This file is a Tcl script to test out Tk's clipboard management code,
+# especially the "clipboard" command.  It is organized in the standard
+# fashion for Tcl tests.
+#
+# Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+#
+# Note: Multiple display clipboard handling will only be tested if the
+# environment variable TK_ALT_DISPLAY is set to an alternate display.
+#
+
+#################################################################
+# Note that some of these tests may fail if another application #
+# is grabbing the clipboard (e.g. an X server, or a VNC viewer) #
+#################################################################
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+
+# set up a very large buffer to test INCR retrievals
+set longValue ""
+foreach i {a b c d e f g j h i j k l m o p q r s t u v w x y z} {
+    set j $i.1$i.2$i.3$i.4$i.5$i.6$i.7$i.8$i.9$i.10$i.11$i.12$i.13$i.14
+    append longValue A$j B$j C$j D$j E$j F$j G$j H$j I$j K$j L$j M$j N$j
+}
+
+# Now we start the main body of the test code
+
+test clipboard-1.1 {ClipboardHandler procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append "test"
+    clipboard get
+} -cleanup {
+    clipboard clear
+} -result {test}
+test clipboard-1.2 {ClipboardHandler procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append "test"
+    clipboard append "ing"
+    clipboard get
+} -cleanup {
+    clipboard clear
+} -result {testing}
+test clipboard-1.3 {ClipboardHandler procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append "t"
+    clipboard append "e"
+    clipboard append "s"
+    clipboard append "t"
+    clipboard get
+} -cleanup {
+    clipboard clear
+} -result {test}
+test clipboard-1.4 {ClipboardHandler procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append $longValue
+    clipboard get
+} -cleanup {
+    clipboard clear
+} -result "$longValue"
+test clipboard-1.5 {ClipboardHandler procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append $longValue
+    clipboard append "test"
+    clipboard get
+} -cleanup {
+    clipboard clear
+} -result "${longValue}test"
+test clipboard-1.6 {ClipboardHandler procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append -t TEST $longValue
+    clipboard append -t STRING "test"
+    list [clipboard get -t STRING] [clipboard get -t TEST]
+} -cleanup {
+    clipboard clear
+} -result [list test $longValue]
+test clipboard-1.7 {ClipboardHandler procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append -t TEST [string range $longValue 1 4000]
+    clipboard append -t STRING "test"
+    list [clipboard get -t STRING] [clipboard get -t TEST]
+} -cleanup {
+    clipboard clear
+} -result [list test [string range $longValue 1 4000]]
+test clipboard-1.8 {ClipboardHandler procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append ""
+    clipboard get
+} -cleanup {
+    clipboard clear
+} -result {}
+test clipboard-1.9 {ClipboardHandler procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append ""
+    clipboard append "Test"
+    clipboard get
+} -cleanup {
+    clipboard clear
+} -result {Test}
+
+##############################################################################
+
+test clipboard-2.1 {ClipboardAppHandler procedure} -setup {
+    set oldAppName [tk appname]
+    clipboard clear
+} -body {
+    tk appname UnexpectedName
+    clipboard append -type NEW_TYPE Data
+    selection get -selection CLIPBOARD -type TK_APPLICATION
+} -cleanup {
+    tk appname $oldAppName
+    clipboard clear
+} -result {UnexpectedName}
+
+##############################################################################
+
+test clipboard-3.1 {ClipboardWindowHandler procedure} -setup {
+    set oldAppName [tk appname]
+    clipboard clear
+} -body {
+    tk appname UnexpectedName
+    clipboard append -type NEW_TYPE Data
+    selection get -selection CLIPBOARD -type TK_WINDOW
+} -cleanup {
+    tk appname $oldAppName
+    clipboard clear
+} -result {.}
+
+##############################################################################
+
+test clipboard-4.1 {ClipboardLostSel procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append "Test"
+    selection clear -s CLIPBOARD
+    clipboard get
+} -cleanup {
+    clipboard clear
+}  -returnCodes error -result {CLIPBOARD selection doesn't exist or form "STRING" not defined}
+test clipboard-4.2 {ClipboardLostSel procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append "Test"
+    clipboard append -t TEST "Test2"
+    selection clear -s CLIPBOARD
+    clipboard get
+} -cleanup {
+    clipboard clear
+}  -returnCodes error -result {CLIPBOARD selection doesn't exist or form "STRING" not defined}
+test clipboard-4.3 {ClipboardLostSel procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append "Test"
+    clipboard append -t TEST "Test2"
+    selection clear -s CLIPBOARD
+    clipboard get -t TEST
+} -cleanup {
+    clipboard clear
+}  -returnCodes error -result {CLIPBOARD selection doesn't exist or form "TEST" not defined}
+test clipboard-4.4 {ClipboardLostSel procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append "Test"
+    clipboard append -t TEST "Test2"
+    clipboard append "Test3"
+    selection clear -s CLIPBOARD
+    clipboard get
+} -cleanup {
+    clipboard clear
+}  -returnCodes error -result {CLIPBOARD selection doesn't exist or form "STRING" not defined} 
+test clipboard-4.5 {ClipboardLostSel procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append "Test"
+    clipboard append -t TEST "Test2"
+    clipboard append "Test3"
+    selection clear -s CLIPBOARD
+    clipboard get -t TEST
+} -cleanup {
+    clipboard clear
+}  -returnCodes error -result {CLIPBOARD selection doesn't exist or form "TEST" not defined}
+
+
+
+##############################################################################
+
+test clipboard-5.1 {Tk_ClipboardClear procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append -t TEST "test"
+    set result [lsort [clipboard get TARGETS]]
+    clipboard clear
+    list $result [lsort [clipboard get TARGETS]]
+} -cleanup {
+    clipboard clear
+}  -result {{MULTIPLE TARGETS TEST TIMESTAMP TK_APPLICATION TK_WINDOW} {MULTIPLE TARGETS TIMESTAMP TK_APPLICATION TK_WINDOW}}
+test clipboard-5.2 {Tk_ClipboardClear procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append -t TEST "test"
+    set result [lsort [clipboard get TARGETS]]
+    selection own -s CLIPBOARD .
+    lappend result [lsort [clipboard get TARGETS]]
+    clipboard clear
+    clipboard append -t TEST "test"
+    lappend result [lsort [clipboard get TARGETS]]
+} -cleanup {
+    clipboard clear
+}  -result {MULTIPLE TARGETS TEST TIMESTAMP TK_APPLICATION TK_WINDOW {MULTIPLE TARGETS TIMESTAMP TK_APPLICATION TK_WINDOW} {MULTIPLE TARGETS TEST TIMESTAMP TK_APPLICATION TK_WINDOW}}
+
+##############################################################################
+
+test clipboard-6.1 {Tk_ClipboardAppend procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append "first chunk"
+    selection own -s CLIPBOARD .
+	clipboard append " second chunk"
+	clipboard get
+} -cleanup {
+    clipboard clear
+}  -returnCodes ok -result {first chunk second chunk}
+test clipboard-6.2 {Tk_ClipboardAppend procedure} -constraints x11 -setup {
+    clipboard clear
+} -body {
+    setupbg
+    clipboard append -f INTEGER -t TEST "16"
+    set result [dobg {clipboard get TEST}]
+    return $result
+} -cleanup {
+    clipboard clear
+    cleanupbg
+}  -result {0x10 }
+test clipboard-6.3 {Tk_ClipboardAppend procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append -f INTEGER -t TEST "16"
+    clipboard append -t TEST "test"
+} -cleanup {
+    clipboard clear
+}  -returnCodes error -result {format "STRING" does not match current format "INTEGER" for TEST}
+
+##############################################################################
+
+test clipboard-7.1 {Tk_ClipboardCmd procedure} -body {
+    clipboard
+} -returnCodes error -result {wrong # args: should be "clipboard option ?arg ...?"}
+test clipboard-7.2 {Tk_ClipboardCmd procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append --
+} -cleanup {
+    clipboard clear
+} -returnCodes ok -result {}
+test clipboard-7.3 {Tk_ClipboardCmd procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append --
+	selection get -selection CLIPBOARD
+} -cleanup {
+    clipboard clear
+} -result {--}
+test clipboard-7.4 {Tk_ClipboardCmd procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append -- information
+	selection get -selection CLIPBOARD
+} -cleanup {
+    clipboard clear
+} -result {information}
+test clipboard-7.5 {Tk_ClipboardCmd procedure} -body {
+    clipboard append --x a b
+} -returnCodes error -result {bad option "--x": must be -displayof, -format, or -type}
+test clipboard-7.6 {Tk_ClipboardCmd procedure} -body {
+    clipboard append -- a b
+} -returnCodes error -result {wrong # args: should be "clipboard append ?-option value ...? data"}
+test clipboard-7.7 {Tk_ClipboardCmd procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append -format
+} -returnCodes ok -result {}
+test clipboard-7.8 {Tk_ClipboardCmd procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append -format
+	selection get -selection CLIPBOARD
+} -cleanup {
+    clipboard clear
+} -result {-format}
+test clipboard-7.9 {Tk_ClipboardCmd procedure} -body {
+    clipboard append -displayofoo f
+} -returnCodes error -result {bad option "-displayofoo": must be -displayof, -format, or -type}
+test clipboard-7.10 {Tk_ClipboardCmd procedure} -body {
+    clipboard append -type TEST
+} -returnCodes error -result {wrong # args: should be "clipboard append ?-option value ...? data"}
+test clipboard-7.11 {Tk_ClipboardCmd procedure} -body {
+    clipboard append -displayof foo "test"
+} -returnCodes error -result {bad window path name "foo"}
+test clipboard-7.12 {Tk_ClipboardCmd procedure} -body {
+    clipboard clear -displayof
+} -returnCodes error -result {wrong # args: should be "clipboard clear ?-displayof window?"}
+test clipboard-7.13 {Tk_ClipboardCmd procedure} -body {
+    clipboard clear -displayofoo f
+} -returnCodes error -result {bad option "-displayofoo": must be -displayof}
+test clipboard-7.14 {Tk_ClipboardCmd procedure} -body {
+    clipboard clear foo
+} -returnCodes error -result {wrong # args: should be "clipboard clear ?-displayof window?"}
+test clipboard-7.15 {Tk_ClipboardCmd procedure} -body {
+    clipboard clear -displayof foo
+} -returnCodes error -result {bad window path name "foo"}
+test clipboard-7.16 {Tk_ClipboardCmd procedure} -body {
+    clipboard error
+} -returnCodes error -result {bad option "error": must be append, clear, or get}
+test clipboard-7.17 {Tk_ClipboardCmd procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append -displayof
+} -cleanup {
+    clipboard clear
+} -returnCodes ok -result {}
+test clipboard-7.18 {Tk_ClipboardCmd procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append -displayof
+	selection get -selection CLIPBOARD
+} -cleanup {
+    clipboard clear
+} -result {-displayof}
+test clipboard-7.19 {Tk_ClipboardCmd procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append -type
+} -cleanup {
+    clipboard clear
+} -returnCodes ok -result {}
+test clipboard-7.20 {Tk_ClipboardCmd procedure} -setup {
+    clipboard clear
+} -body {
+    clipboard append -type
+	selection get -selection CLIPBOARD
+} -cleanup {
+    clipboard clear
+} -result {-type}
+
+# cleanup
+cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

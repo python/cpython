@@ -1,0 +1,675 @@
+# This file contains a collection of tests for tclEncoding.c
+# Sourcing this file into Tcl runs the tests and generates output for errors.
+# No output means no errors were found.
+#
+# Copyright (c) 1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2
+
+namespace eval ::tcl::test::encoding {
+    variable x
+
+namespace import -force ::tcltest::*
+
+catch {
+    ::tcltest::loadTestedCommands
+    package require -exact Tcltest [info patchlevel]
+}
+
+proc toutf {args} {
+    variable x
+    lappend x "toutf $args"
+}
+proc fromutf {args} {
+    variable x
+    lappend x "fromutf $args"
+}
+
+proc runtests {} {
+    variable x
+
+# Some tests require the testencoding command
+testConstraint testencoding [llength [info commands testencoding]]
+testConstraint fullutf [expr {[format %c 0x010000] != "\ufffd"}]
+testConstraint exec [llength [info commands exec]]
+testConstraint testgetdefenc [llength [info commands testgetdefenc]]
+
+# TclInitEncodingSubsystem is tested by the rest of this file
+# TclFinalizeEncodingSubsystem is not currently tested
+
+test encoding-1.1 {Tcl_GetEncoding: system encoding} -setup {
+    set old [encoding system]
+} -constraints {testencoding} -body {
+    testencoding create foo [namespace origin toutf] [namespace origin fromutf]
+    encoding system foo
+    set x {}
+    encoding convertto abcd
+    return $x
+} -cleanup {
+    encoding system $old
+    testencoding delete foo
+} -result {{fromutf }}
+test encoding-1.2 {Tcl_GetEncoding: existing encoding} {testencoding} {
+    testencoding create foo [namespace origin toutf] [namespace origin fromutf]
+    set x {}
+    encoding convertto foo abcd
+    testencoding delete foo
+    return $x
+} {{fromutf }}
+test encoding-1.3 {Tcl_GetEncoding: load encoding} {
+    list [encoding convertto jis0208 \u4e4e] \
+	[encoding convertfrom jis0208 8C]
+} "8C \u4e4e"
+
+test encoding-2.1 {Tcl_FreeEncoding: refcount == 0} {
+    encoding convertto jis0208 \u4e4e
+} {8C}
+test encoding-2.2 {Tcl_FreeEncoding: refcount != 0} -setup {
+    set system [encoding system]
+    set path [encoding dirs]
+} -constraints {testencoding} -body {
+    encoding system shiftjis		;# incr ref count
+    encoding dirs [list [pwd]]
+    set x [encoding convertto shiftjis \u4e4e]	;# old one found
+    encoding system iso8859-1
+    llength shiftjis		;# Shimmer away any cache of Tcl_Encoding
+    lappend x [catch {encoding convertto shiftjis \u4e4e} msg] $msg
+} -cleanup {
+    encoding system iso8859-1
+    encoding dirs $path
+    encoding system $system
+} -result "\u008c\u00c1 1 {unknown encoding \"shiftjis\"}"
+
+test encoding-3.1 {Tcl_GetEncodingName, NULL} -setup {
+    set old [encoding system]
+} -body {
+    encoding system shiftjis
+    encoding system
+} -cleanup {
+    encoding system $old
+} -result {shiftjis}
+test encoding-3.2 {Tcl_GetEncodingName, non-null} -setup {
+    set old [fconfigure stdout -encoding]
+} -body {
+    fconfigure stdout -encoding jis0208
+    fconfigure stdout -encoding
+} -cleanup {
+    fconfigure stdout -encoding $old
+} -result {jis0208}
+
+test encoding-4.1 {Tcl_GetEncodingNames} -constraints {testencoding} -setup {
+    cd [makeDirectory tmp]
+    makeDirectory [file join tmp encoding]
+    set path [encoding dirs]
+    encoding dirs {}
+    catch {unset encodings}
+    catch {unset x}
+} -body {
+    foreach encoding [encoding names] {
+	set encodings($encoding) 1
+    }
+    makeFile {} [file join tmp encoding junk.enc]
+    makeFile {} [file join tmp encoding junk2.enc]
+    encoding dirs [list [file join [pwd] encoding]]
+    foreach encoding [encoding names] {
+	if {![info exists encodings($encoding)]} {
+	    lappend x $encoding
+	}
+    }
+    lsort $x
+} -cleanup {
+    encoding dirs $path
+    cd [workingDirectory]
+    removeFile [file join tmp encoding junk2.enc]
+    removeFile [file join tmp encoding junk.enc]
+    removeDirectory [file join tmp encoding]
+    removeDirectory tmp
+} -result {junk junk2}
+
+test encoding-5.1 {Tcl_SetSystemEncoding} -setup {
+    set old [encoding system]
+} -body {
+    encoding system jis0208
+    encoding convertto \u4e4e
+} -cleanup {
+    encoding system iso8859-1
+    encoding system $old
+} -result {8C}
+test encoding-5.2 {Tcl_SetSystemEncoding: test ref count} {
+    set old [encoding system]
+    encoding system $old
+    string compare $old [encoding system]
+} {0}
+
+test encoding-6.1 {Tcl_CreateEncoding: new} {testencoding} {
+    testencoding create foo [namespace code {toutf 1}] \
+	[namespace code {fromutf 2}]
+    set x {}
+    encoding convertfrom foo abcd
+    encoding convertto foo abcd
+    testencoding delete foo
+    return $x
+} {{toutf 1} {fromutf 2}}
+test encoding-6.2 {Tcl_CreateEncoding: replace encoding} {testencoding} {
+    testencoding create foo [namespace code {toutf a}] \
+	[namespace code {fromutf b}]
+    set x {}
+    encoding convertfrom foo abcd
+    encoding convertto foo abcd
+    testencoding delete foo
+    return $x
+} {{toutf a} {fromutf b}}
+
+test encoding-7.1 {Tcl_ExternalToUtfDString: small buffer} {
+    encoding convertfrom jis0208 8c8c8c8c
+} "\u543e\u543e\u543e\u543e"
+test encoding-7.2 {Tcl_UtfToExternalDString: big buffer} {
+    set a 8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C
+    append a $a
+    append a $a
+    append a $a
+    append a $a
+    set x [encoding convertfrom jis0208 $a]
+    list [string length $x] [string index $x 0]
+} "512 \u4e4e"
+
+test encoding-8.1 {Tcl_ExternalToUtf} {
+    set f [open [file join [temporaryDirectory] dummy] w]
+    fconfigure $f -translation binary -encoding iso8859-1
+    puts -nonewline $f "ab\x8c\xc1g"
+    close $f
+    set f [open [file join [temporaryDirectory] dummy] r]
+    fconfigure $f -translation binary -encoding shiftjis
+    set x [read $f]
+    close $f
+    file delete [file join [temporaryDirectory] dummy]
+    return $x
+} "ab\u4e4eg"
+
+test encoding-9.1 {Tcl_UtfToExternalDString: small buffer} {
+    encoding convertto jis0208 "\u543e\u543e\u543e\u543e"
+} {8c8c8c8c}
+test encoding-9.2 {Tcl_UtfToExternalDString: big buffer} {
+    set a \u4e4e\u4e4e\u4e4e\u4e4e\u4e4e\u4e4e\u4e4e\u4e4e
+    append a $a
+    append a $a
+    append a $a
+    append a $a
+    append a $a
+    append a $a
+    set x [encoding convertto jis0208 $a]
+    list [string length $x] [string range $x 0 1]
+} "1024 8C"
+
+test encoding-10.1 {Tcl_UtfToExternal} {
+    set f [open [file join [temporaryDirectory] dummy] w]
+    fconfigure $f -translation binary -encoding shiftjis
+    puts -nonewline $f "ab\u4e4eg"
+    close $f
+    set f [open [file join [temporaryDirectory] dummy] r]
+    fconfigure $f -translation binary -encoding iso8859-1
+    set x [read $f]
+    close $f
+    file delete [file join [temporaryDirectory] dummy]
+    return $x
+} "ab\x8c\xc1g"
+
+proc viewable {str} {
+    set res ""
+    foreach c [split $str {}] {
+	if {[string is print $c] && [string is ascii $c]} {
+	    append res $c
+	} else {
+	    append res "\\u[format %4.4x [scan $c %c]]"
+	}
+    }
+    return "$str ($res)"
+}
+
+test encoding-11.1 {LoadEncodingFile: unknown encoding} {testencoding} {
+    set system [encoding system]
+    set path [encoding dirs]
+    encoding system iso8859-1
+    encoding dirs {}
+    llength jis0208	;# Shimmer any cached Tcl_Encoding in shared literal
+    set x [list [catch {encoding convertto jis0208 \u4e4e} msg] $msg]
+    encoding dirs $path
+    encoding system $system
+    lappend x [encoding convertto jis0208 \u4e4e]
+} {1 {unknown encoding "jis0208"} 8C}
+test encoding-11.2 {LoadEncodingFile: single-byte} {
+    encoding convertfrom jis0201 \xa1
+} "\uff61"
+test encoding-11.3 {LoadEncodingFile: double-byte} {
+    encoding convertfrom jis0208 8C
+} "\u4e4e"
+test encoding-11.4 {LoadEncodingFile: multi-byte} {
+    encoding convertfrom shiftjis \x8c\xc1
+} "\u4e4e"
+test encoding-11.5 {LoadEncodingFile: escape file} {
+    viewable [encoding convertto iso2022 \u4e4e]
+} [viewable "\x1b\$B8C\x1b(B"]
+test encoding-11.5.1 {LoadEncodingFile: escape file} {
+    viewable [encoding convertto iso2022-jp \u4e4e]
+} [viewable "\x1b\$B8C\x1b(B"]
+test encoding-11.6 {LoadEncodingFile: invalid file} -constraints {testencoding} -setup {
+    set system [encoding system]
+    set path [encoding dirs]
+    encoding system iso8859-1
+} -body {
+    cd [temporaryDirectory]
+    encoding dirs [file join tmp encoding]
+    makeDirectory tmp
+    makeDirectory [file join tmp encoding]
+    set f [open [file join tmp encoding splat.enc] w]
+    fconfigure $f -translation binary
+    puts $f "abcdefghijklmnop"
+    close $f
+    encoding convertto splat \u4e4e
+} -returnCodes error -cleanup {
+    file delete [file join [temporaryDirectory] tmp encoding splat.enc]
+    removeDirectory [file join tmp encoding]
+    removeDirectory tmp
+    cd [workingDirectory]
+    encoding dirs $path
+    encoding system $system
+} -result {invalid encoding file "splat"}
+
+# OpenEncodingFile is fully tested by the rest of the tests in this file.
+
+test encoding-12.1 {LoadTableEncoding: normal encoding} {
+    set x [encoding convertto iso8859-3 \u120]
+    append x [encoding convertto iso8859-3 \ud5]
+    append x [encoding convertfrom iso8859-3 \xd5]
+} "\xd5?\u120"
+test encoding-12.2 {LoadTableEncoding: single-byte encoding} {
+    set x [encoding convertto iso8859-3 ab\u0120g]
+    append x [encoding convertfrom iso8859-3 ab\xd5g]
+} "ab\xd5gab\u120g"
+test encoding-12.3 {LoadTableEncoding: multi-byte encoding} {
+    set x [encoding convertto shiftjis ab\u4e4eg]
+    append x [encoding convertfrom shiftjis ab\x8c\xc1g]
+} "ab\x8c\xc1gab\u4e4eg"
+test encoding-12.4 {LoadTableEncoding: double-byte encoding} {
+    set x [encoding convertto jis0208 \u4e4e\u3b1]
+    append x [encoding convertfrom jis0208 8C&A]
+} "8C&A\u4e4e\u3b1"
+test encoding-12.5 {LoadTableEncoding: symbol encoding} {
+    set x [encoding convertto symbol \u3b3]
+    append x [encoding convertto symbol \u67]
+    append x [encoding convertfrom symbol \x67]
+} "\x67\x67\u3b3"
+
+test encoding-13.1 {LoadEscapeTable} {
+    viewable [set x [encoding convertto iso2022 ab\u4e4e\u68d9g]]
+} [viewable "ab\x1b\$B8C\x1b\$\(DD%\x1b(Bg"]
+
+test encoding-14.1 {BinaryProc} {
+    encoding convertto identity \x12\x34\x56\xff\x69
+} "\x12\x34\x56\xc3\xbf\x69"
+
+test encoding-15.1 {UtfToUtfProc} {
+    encoding convertto utf-8 \xa3
+} "\xc2\xa3"
+test encoding-15.2 {UtfToUtfProc null character output} {
+    set x \u0000
+    set y [encoding convertto utf-8 \u0000]
+    set y [encoding convertfrom identity $y]
+    binary scan $y H* z
+    list [string bytelength $x] [string bytelength $y] $z
+} {2 1 00}
+test encoding-15.3 {UtfToUtfProc null character input} {
+    set x [encoding convertfrom identity \x00]
+    set y [encoding convertfrom utf-8 $x]
+    binary scan [encoding convertto identity $y] H* z
+    list [string bytelength $x] [string bytelength $y] $z
+} {1 2 c080}
+test encoding-15.4 {UtfToUtfProc emoji character input} {
+    set x \xED\xA0\xBD\xED\xB8\x82
+    set y [encoding convertfrom utf-8 \xED\xA0\xBD\xED\xB8\x82]
+    list [string length $x] [string length $y] $y
+} "6 2 \uD83D\uDE02"
+test encoding-15.5 {UtfToUtfProc emoji character input} {
+    set x \xF0\x9F\x98\x82
+    set y [encoding convertfrom utf-8 \xF0\x9F\x98\x82]
+    list [string length $x] [string length $y] $y
+} "4 2 \uD83D\uDE02"
+test encoding-15.6 {UtfToUtfProc emoji character output} {
+    set x \uDE02\uD83D\uDE02\uD83D
+    set y [encoding convertto utf-8 \uDE02\uD83D\uDE02\uD83D]
+    binary scan $y H* z
+    list [string length $x] [string length $y] $z
+} {4 10 edb882f09f9882eda0bd}
+test encoding-15.7 {UtfToUtfProc emoji character output} {
+    set x \uDE02\uD83D\uD83D
+    set y [encoding convertto utf-8 \uDE02\uD83D\uD83D]
+    binary scan $y H* z
+    list [string length $x] [string length $y] $z
+} {3 9 edb882eda0bdeda0bd}
+test encoding-15.8 {UtfToUtfProc emoji character output} {
+    set x \uDE02\uD83D\xE9
+    set y [encoding convertto utf-8 \uDE02\uD83D\xE9]
+    binary scan $y H* z
+    list [string length $x] [string length $y] $z
+} {3 8 edb882eda0bdc3a9}
+test encoding-15.9 {UtfToUtfProc emoji character output} {
+    set x \uDE02\uD83DX
+    set y [encoding convertto utf-8 \uDE02\uD83DX]
+    binary scan $y H* z
+    list [string length $x] [string length $y] $z
+} {3 7 edb882eda0bd58}
+
+test encoding-16.1 {UnicodeToUtfProc} {
+    set val [encoding convertfrom unicode NN]
+    list $val [format %x [scan $val %c]]
+} "\u4e4e 4e4e"
+test encoding-16.2 {UnicodeToUtfProc} -constraints fullutf -body {
+    set val [encoding convertfrom unicode "\xd8\xd8\xdc\xdc"]
+    list $val [format %x [scan $val %c]]
+} -result "\U460dc 460dc"
+
+test encoding-17.1 {UtfToUnicodeProc} -constraints fullutf -body {
+    encoding convertto unicode "\U460dc"
+} -result "\xd8\xd8\xdc\xdc"
+
+test encoding-18.1 {TableToUtfProc} {
+} {}
+
+test encoding-19.1 {TableFromUtfProc} {
+} {}
+
+test encoding-20.1 {TableFreefProc} {
+} {}
+
+test encoding-21.1 {EscapeToUtfProc} {
+} {}
+
+test encoding-22.1 {EscapeFromUtfProc} {
+} {}
+
+set iso2022encData "\u001b\$B;d\$I\$b\$G\$O!\"%A%C%W\$49XF~;~\$K\$4EPO?\$\$\$?\$@\$\$\$?\$4=;=j\$r%-%c%C%7%e%\"%&%H\$N:]\$N\u001b(B
+\u001b\$B>.@Z<jAwIU@h\$H\$7\$F;HMQ\$7\$F\$*\$j\$^\$9!#62\$lF~\$j\$^\$9\$,!\"@5\$7\$\$=;=j\$r\$4EPO?\$7\$J\$*\u001b(B
+\u001b\$B\$*4j\$\$\$\$\$?\$7\$^\$9!#\$^\$?!\"BgJQ62=L\$G\$9\$,!\"=;=jJQ99\$N\$\"\$H!\"F|K\\8l%5!<%S%9It!J\u001b(B
+casino_japanese@___.com \u001b\$B!K\$^\$G\$4=;=jJQ99:Q\$NO\"Mm\$r\$\$\$?\$@\$1\$J\$\$\$G\u001b(B
+\u001b\$B\$7\$g\$&\$+!)\u001b(B"
+
+set iso2022uniData [encoding convertfrom iso2022-jp $iso2022encData]
+set iso2022uniData2 "\u79c1\u3069\u3082\u3067\u306f\u3001\u30c1\u30c3\u30d7\u3054\u8cfc\u5165\u6642\u306b\u3054\u767b\u9332\u3044\u305f\u3060\u3044\u305f\u3054\u4f4f\u6240\u3092\u30ad\u30e3\u30c3\u30b7\u30e5\u30a2\u30a6\u30c8\u306e\u969b\u306e
+\u5c0f\u5207\u624b\u9001\u4ed8\u5148\u3068\u3057\u3066\u4f7f\u7528\u3057\u3066\u304a\u308a\u307e\u3059\u3002\u6050\u308c\u5165\u308a\u307e\u3059\u304c\u3001\u6b63\u3057\u3044\u4f4f\u6240\u3092\u3054\u767b\u9332\u3057\u306a\u304a
+\u304a\u9858\u3044\u3044\u305f\u3057\u307e\u3059\u3002\u307e\u305f\u3001\u5927\u5909\u6050\u7e2e\u3067\u3059\u304c\u3001\u4f4f\u6240\u5909\u66f4\u306e\u3042\u3068\u3001\u65e5\u672c\u8a9e\u30b5\u30fc\u30d3\u30b9\u90e8\uff08
+\u0063\u0061\u0073\u0069\u006e\u006f\u005f\u006a\u0061\u0070\u0061\u006e\u0065\u0073\u0065\u0040\u005f\u005f\u005f\u002e\u0063\u006f\u006d\u0020\uff09\u307e\u3067\u3054\u4f4f\u6240\u5909\u66f4\u6e08\u306e\u9023\u7d61\u3092\u3044\u305f\u3060\u3051\u306a\u3044\u3067
+\u3057\u3087\u3046\u304b\uff1f"
+
+cd [temporaryDirectory]
+set fid [open iso2022.txt w]
+fconfigure $fid -encoding binary
+puts -nonewline $fid $iso2022encData
+close $fid
+
+test encoding-23.1 {iso2022-jp escape encoding test} {
+    string equal $iso2022uniData $iso2022uniData2
+} 1
+test encoding-23.2 {iso2022-jp escape encoding test} {
+    # This checks that 'gets' isn't resetting the encoding inappropriately.
+    # [Bug #523988]
+    set fid [open iso2022.txt r]
+    fconfigure $fid -encoding iso2022-jp
+    set out ""
+    set count 0
+    while {[set num [gets $fid line]] >= 0} {
+	if {$count} {
+	    incr count 1 ; # account for newline
+	    append out \n
+	}
+	append out $line
+	incr count $num
+    }
+    close $fid
+    if {[string compare $iso2022uniData $out]} {
+	return -code error "iso2022-jp read in doesn't match original"
+    }
+    list $count $out
+} [list [string length $iso2022uniData] $iso2022uniData]
+test encoding-23.3 {iso2022-jp escape encoding test} {
+    # read $fis <size> reads size in chars, not raw bytes.
+    set fid [open iso2022.txt r]
+    fconfigure $fid -encoding iso2022-jp
+    set data [read $fid 50]
+    close $fid
+    return $data
+} [string range $iso2022uniData 0 49] ; # 0 .. 49 inclusive == 50
+cd [workingDirectory]
+
+# Code to make the next few tests more intelligible; the code being tested
+# should be in the body of the test!
+proc runInSubprocess {contents {filename iso2022.tcl}} {
+    set theFile [makeFile $contents $filename]
+    try {
+	exec [interpreter] $theFile
+    } finally {
+	removeFile $theFile
+    }
+}
+
+test encoding-24.1 {EscapeFreeProc on open channels} exec {
+    runInSubprocess {
+	set f [open [file join [file dirname [info script]] iso2022.txt]]
+	fconfigure $f -encoding iso2022-jp
+	gets $f
+    }
+} {}
+test encoding-24.2 {EscapeFreeProc on open channels} {exec} {
+    # Bug #524674 output
+    viewable [runInSubprocess {
+	encoding system cp1252;	# Bug #2891556 crash revelator
+	fconfigure stdout -encoding iso2022-jp
+	puts ab\u4e4e\u68d9g
+	set env(TCL_FINALIZE_ON_EXIT) 1
+	exit
+    }]
+} "ab\x1b\$B8C\x1b\$(DD%\x1b(Bg (ab\\u001b\$B8C\\u001b\$(DD%\\u001b(Bg)"
+test encoding-24.3 {EscapeFreeProc on open channels} {stdio} {
+    # Bug #219314 - if we don't free escape encodings correctly on channel
+    # closure, we go boom
+    set file [makeFile {
+	encoding system iso2022-jp
+	set a "\u4e4e\u4e5e\u4e5f"; # 3 Japanese Kanji letters
+	puts $a
+    } iso2022.tcl]
+    set f [open "|[list [interpreter] $file]"]
+    fconfigure $f -encoding iso2022-jp
+    set count [gets $f line]
+    close $f
+    removeFile iso2022.tcl
+    list $count [viewable $line]
+} [list 3 "\u4e4e\u4e5e\u4e5f (\\u4e4e\\u4e5e\\u4e5f)"]
+
+test encoding-24.4 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xc0\x80"]
+} 1
+test encoding-24.5 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xc0\x81"]
+} 2
+test encoding-24.6 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xc1\xbf"]
+} 2
+test encoding-24.7 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xc2\x80"]
+} 1
+test encoding-24.8 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xe0\x80\x80"]
+} 3
+test encoding-24.9 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xe0\x9f\xbf"]
+} 3
+test encoding-24.10 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xe0\xa0\x80"]
+} 1
+test encoding-24.11 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xef\xbf\xbf"]
+} 1
+
+file delete [file join [temporaryDirectory] iso2022.txt]
+
+#
+# Begin jajp encoding round-trip conformity tests
+#
+proc foreach-jisx0208 {varName command} {
+    upvar 1 $varName code
+    foreach range {
+	{2121 217E}
+	{2221 222E}
+	{223A 2241}
+	{224A 2250}
+	{225C 226A}
+	{2272 2279}
+	{227E 227E}
+	{2330 2339}
+	{2421 2473}
+	{2521 2576}
+	{2821 2821}
+	{282C 282C}
+	{2837 2837}
+
+	{30 21 4E 7E}
+	{4F21 4F53}
+
+	{50 21 73 7E}
+	{7421 7426}
+    } {
+	if {[llength $range] == 2} {
+	    # for adhoc range. simple {first last}. inclusive.
+	    scan $range %x%x first last
+	    for {set i $first} {$i <= $last} {incr i} {
+		set code $i
+		uplevel 1 $command
+	    }
+	} elseif {[llength $range] == 4} {
+	    # for uniform range.
+	    scan $range %x%x%x%x h0 l0 hend lend
+	    for {set hi $h0} {$hi <= $hend} {incr hi} {
+		for {set lo $l0} {$lo <= $lend} {incr lo} {
+		    set code [expr {$hi << 8 | ($lo & 0xff)}]
+		    uplevel 1 $command
+		}
+	    }
+	} else {
+	    error "really?"
+	}
+    }
+}
+proc gen-jisx0208-euc-jp {code} {
+    binary format cc \
+	[expr {($code >> 8) | 0x80}] [expr {($code & 0xff) | 0x80}]
+}
+proc gen-jisx0208-iso2022-jp {code} {
+    binary format a3cca3 \
+	"\x1b\$B" [expr {$code >> 8}] [expr {$code & 0xff}] "\x1b(B"
+}
+proc gen-jisx0208-cp932 {code} {
+    set c1 [expr {($code >> 8) | 0x80}]
+    set c2 [expr {($code & 0xff)| 0x80}]
+    if {$c1 % 2} {
+	set c1 [expr {($c1 >> 1) + ($c1 < 0xdf ? 0x31 : 0x71)}]
+	incr c2 [expr {- (0x60 + ($c2 < 0xe0))}]
+    } else {
+	set c1 [expr {($c1 >> 1) + ($c1 < 0xdf ? 0x30 : 0x70)}]
+	incr c2 -2
+    }
+    binary format cc $c1 $c2
+}
+proc channel-diff {fa fb} {
+    set diff {}
+    while {[gets $fa la] >= 0 && [gets $fb lb] >= 0} {
+	if {[string compare $la $lb] == 0} continue
+	# lappend diff $la $lb
+
+	# For more readable (easy to analyze) output.
+	set code [lindex $la 0]
+	binary scan [lindex $la 1] H* expected
+	binary scan [lindex $lb 1] H* got
+	lappend diff [list $code $expected $got]
+    }
+    return $diff
+}
+
+# Create char tables.
+cd [temporaryDirectory]
+foreach enc {cp932 euc-jp iso2022-jp} {
+    set f [open $enc.chars w]
+    fconfigure $f -encoding binary
+    foreach-jisx0208 code {
+	puts $f [format "%04X %s" $code [gen-jisx0208-$enc $code]]
+    }
+    close $f
+}
+# shiftjis == cp932 for jisx0208.
+file copy -force cp932.chars shiftjis.chars
+
+set NUM 0
+foreach from {cp932 shiftjis euc-jp iso2022-jp} {
+    foreach to {cp932 shiftjis euc-jp iso2022-jp} {
+	test encoding-25.[incr NUM] "jisx0208 $from => $to" -setup {
+	    cd [temporaryDirectory]
+	} -body {
+	    set f [open $from.chars]
+	    fconfigure $f -encoding $from
+	    set out [open $from.$to.tcltestout w]
+	    fconfigure $out -encoding $to
+	    puts -nonewline $out [read $f]
+	    close $out
+	    close $f
+	    # then compare $to.chars <=> $from.to.tcltestout as binary.
+	    set fa [open $to.chars rb]
+	    set fb [open $from.$to.tcltestout rb]
+	    channel-diff $fa $fb
+	    # Difference should be empty.
+	} -cleanup {
+	    close $fa
+	    close $fb
+	} -result {}
+    }
+}
+
+test encoding-26.0 {Tcl_GetDefaultEncodingDir} -constraints {
+    testgetdefenc
+} -setup {
+    set origDir [testgetdefenc]
+    testsetdefenc slappy
+} -body {
+    testgetdefenc
+} -cleanup {
+    testsetdefenc $origDir
+} -result slappy
+
+file delete {*}[glob -directory [temporaryDirectory] *.chars *.tcltestout]
+# ===> Cut here <===
+
+# EscapeFreeProc, GetTableEncoding, unilen are fully tested by the rest of
+# this file.
+
+
+test encoding-27.1 {encoding dirs basic behavior} -returnCodes error -body {
+    encoding dirs ? ?
+} -result {wrong # args: should be "encoding dirs ?dirList?"}
+test encoding-27.2 {encoding dirs basic behavior} -returnCodes error -body {
+    encoding dirs "\{not a list"
+} -result "expected directory list but got \"\{not a list\""
+
+}
+runtests
+
+}
+
+# cleanup
+namespace delete ::tcl::test::encoding
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

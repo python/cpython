@@ -1,0 +1,441 @@
+# This file tests the tclUnixFCmd.c file.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1996 Sun Microsystems, Inc.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testchmod [llength [info commands testchmod]]
+
+# These tests really need to be run from a writable directory, which
+# it is assumed [temporaryDirectory] is.
+set oldcwd [pwd]
+cd [temporaryDirectory]
+
+# Several tests require need to match results against the unix username
+set user {}
+if {[testConstraint unix]} {
+    catch {set user [exec whoami]}
+    if {$user == ""} {
+	catch {regexp {^[^(]*\(([^)]*)\)} [exec id] dummy user}
+    }
+    if {$user == ""} {
+	set user "root"
+    }
+}
+
+# Find a group that exists on this system, or else skip tests that require
+# groups
+testConstraint foundGroup 0
+if {[testConstraint unix]} {
+    catch {
+	set groupList [exec groups]
+	set group [lindex $groupList 0]
+	testConstraint foundGroup 1
+    }
+}
+
+# check whether -readonly attribute is supported
+testConstraint readonlyAttr 0
+if {[testConstraint unix]} {
+    set f [makeFile "whatever" probe]
+    catch {
+	file attributes $f -readonly
+	testConstraint readonlyAttr 1
+    }
+    removeFile probe
+}
+
+proc openup {path} {
+    testchmod 0o777 $path
+    if {[file isdirectory $path]} {
+	catch {
+	    foreach p [glob -directory $path *] {
+		openup $p
+	    }
+	}
+    }
+}
+
+proc cleanup {args} {
+    foreach p ". $args" {
+	set x ""
+	catch {
+	    set x [glob -directory $p tf* td*]
+	}
+	foreach file $x {
+	    if {
+		[catch {file delete -force -- $file}]
+		&& [testConstraint testchmod]
+	    } then {
+		openup $file
+		file delete -force -- $file
+	    }
+	}
+    }
+}
+
+if {[testConstraint unix] && [testConstraint notRoot]} {
+    testConstraint execMknod [expr {![catch {exec mknod tf1 p}]}]
+    cleanup
+}
+
+test unixFCmd-1.1 {TclpRenameFile: EACCES} -setup {
+    cleanup
+} -constraints {unix notRoot} -body {
+    file mkdir td1/td2/td3
+    file attributes td1/td2 -permissions 0000
+    file rename td1/td2/td3 td2
+} -returnCodes error -cleanup {
+    file attributes td1/td2 -permissions 0755
+    cleanup
+} -result {error renaming "td1/td2/td3": permission denied}
+test unixFCmd-1.2 {TclpRenameFile: EEXIST} -setup {
+    cleanup
+} -constraints {unix notRoot} -body {
+    file mkdir td1/td2
+    file mkdir td2
+    file rename td2 td1
+} -returnCodes error -cleanup {
+    cleanup
+} -result {error renaming "td2" to "td1/td2": file already exists}
+test unixFCmd-1.3 {TclpRenameFile: EINVAL} -setup {
+    cleanup
+} -constraints {unix notRoot} -body {
+    file mkdir td1
+    file rename td1 td1
+} -returnCodes error -cleanup {
+    cleanup
+} -result {error renaming "td1" to "td1/td1": trying to rename a volume or move a directory into itself}
+test unixFCmd-1.4 {TclpRenameFile: EISDIR} {emptyTest unix notRoot} {
+    # can't make it happen
+} {}
+test unixFCmd-1.5 {TclpRenameFile: ENOENT} -setup {
+    cleanup
+} -constraints {unix notRoot} -body {
+    file mkdir td1
+    file rename td2 td1
+} -returnCodes error -cleanup {
+    cleanup
+} -result {error renaming "td2": no such file or directory}
+test unixFCmd-1.6 {TclpRenameFile: ENOTDIR} {emptyTest unix notRoot} {
+    # can't make it happen
+} {}
+test unixFCmd-1.7 {TclpRenameFile: EXDEV} -setup {
+    cleanup
+} -constraints {unix notRoot} -body {
+    file mkdir foo/bar
+    file attr foo -perm 040555
+    file rename foo/bar /tmp
+} -returnCodes error -cleanup {
+    catch {file delete /tmp/bar}
+    catch {file attr foo -perm 040777}
+    catch {file delete -force foo}
+} -match glob -result {*: permission denied}
+test unixFCmd-1.8 {Checking EINTR Bug} {unix notRoot nonPortable} {
+    testalarm
+    after 2000
+    list [testgotsig] [testgotsig]
+} {1 0}
+test unixFCmd-1.9 {Checking EINTR Bug} -constraints {unix notRoot nonPortable} -setup {
+    cleanup
+    set f [open tfalarm w]
+    puts $f {
+	after 2000
+	puts "hello world"
+	exit 0
+    }
+    close $f
+} -body {
+    testalarm
+    set pipe [open "|[info nameofexecutable] tfalarm" r+]
+    set line [read $pipe 1]
+    catch {close $pipe}
+    list $line [testgotsig]
+} -cleanup {
+    cleanup
+} -result {h 1}
+
+test unixFCmd-2.1 {TclpCopyFile: target exists: lstat(dst) == 0} -setup {
+    cleanup
+} -constraints {unix notRoot} -body {
+    close [open tf1 a]
+    close [open tf2 a]
+    file copy -force tf1 tf2
+} -cleanup {
+    cleanup
+} -result {}
+test unixFCmd-2.2.1 {TclpCopyFile: src is symlink} -setup {
+    cleanup
+} -constraints {unix notRoot dontCopyLinks} -body {
+    # copying links should end up with real files
+    close [open tf1 a]
+    file link -symbolic tf2 tf1
+    file copy tf2 tf3
+    file type tf3
+} -cleanup {
+    cleanup
+} -result file
+test unixFCmd-2.2.2 {TclpCopyFile: src is symlink} -setup {
+    cleanup
+} -constraints {unix notRoot} -body {
+    # copying links should end up with the links copied
+    close [open tf1 a]
+    file link -symbolic tf2 tf1
+    file copy tf2 tf3
+    file type tf3
+} -cleanup {
+    cleanup
+} -result link
+test unixFCmd-2.3 {TclpCopyFile: src is block} -setup {
+    cleanup
+} -constraints {unix notRoot} -body {
+    set null "/dev/null"
+    while {[file type $null] != "characterSpecial"} {
+	set null [file join [file dirname $null] [file readlink $null]]
+    }
+    # file copy $null tf1
+} -result {}
+test unixFCmd-2.4 {TclpCopyFile: src is fifo} -setup {
+    cleanup
+} -constraints {unix notRoot execMknod} -body {
+    exec mknod tf1 p
+    file copy tf1 tf2
+    list [file type tf1] [file type tf2]
+} -cleanup {
+    cleanup
+} -result {fifo fifo}
+test unixFCmd-2.5 {TclpCopyFile: copy attributes} -setup {
+    cleanup
+} -constraints {unix notRoot} -body {
+    close [open tf1 a]
+    file attributes tf1 -permissions 0472
+    file copy tf1 tf2
+    file attributes tf2 -permissions
+} -cleanup {
+    cleanup
+} -result 00472 ;# i.e. perms field of [exec ls -l tf2] is -r--rwx-w-
+
+test unixFCmd-3.1 {CopyFile not done} {emptyTest unix notRoot} {
+} {}
+
+test unixFCmd-4.1 {TclpDeleteFile not done} {emptyTest unix notRoot} {
+} {}
+
+test unixFCmd-5.1 {TclpCreateDirectory not done} {emptyTest unix notRoot} {
+} {}
+
+test unixFCmd-6.1 {TclpCopyDirectory not done} {emptyTest unix notRoot} {
+} {}
+
+test unixFCmd-7.1 {TclpRemoveDirectory not done} {emptyTest unix notRoot} {
+} {}
+
+test unixFCmd-8.1 {TraverseUnixTree not done} {emptyTest unix notRoot} {
+} {}
+
+test unixFCmd-9.1 {TraversalCopy not done} {emptyTest unix notRoot} {
+} {}
+
+test unixFCmd-10.1 {TraversalDelete not done} {emptyTest unix notRoot} {
+} {}
+
+test unixFCmd-11.1 {CopyFileAttrs not done} {emptyTest unix notRoot} {
+} {}
+
+test unixFCmd-12.1 {GetGroupAttribute - file not found} -setup {
+    catch {file delete -force -- foo.test}
+} -constraints {unix notRoot} -returnCodes error -body {
+    file attributes foo.test -group
+} -result {could not read "foo.test": no such file or directory}
+test unixFCmd-12.2 {GetGroupAttribute - file found} -setup {
+    catch {file delete -force -- foo.test}
+} -constraints {unix notRoot} -body {
+    close [open foo.test w]
+    file attributes foo.test -group
+} -cleanup {
+    file delete -force -- foo.test
+} -match glob -result *
+
+test unixFCmd-13.1 {GetOwnerAttribute - file not found} -setup {
+    catch {file delete -force -- foo.test}
+} -constraints {unix notRoot} -returnCodes error -body {
+    file attributes foo.test -group
+} -result {could not read "foo.test": no such file or directory}
+test unixFCmd-13.2 {GetOwnerAttribute} -setup {
+    catch {file delete -force -- foo.test}
+} -constraints {unix notRoot} -body {
+    close [open foo.test w]
+    file attributes foo.test -owner
+} -cleanup {
+    file delete -force -- foo.test
+} -result $user
+
+test unixFCmd-14.1 {GetPermissionsAttribute - file not found} -setup {
+    catch {file delete -force -- foo.test}
+} -constraints {unix notRoot} -returnCodes error -body {
+    file attributes foo.test -permissions
+} -result {could not read "foo.test": no such file or directory}
+test unixFCmd-14.2 {GetPermissionsAttribute} -setup {
+    catch {file delete -force -- foo.test}
+} -constraints {unix notRoot} -body {
+    close [open foo.test w]
+    file attribute foo.test -permissions
+} -cleanup {
+    file delete -force -- foo.test
+} -match glob -result *
+
+#groups hard to test
+test unixFCmd-15.1 {SetGroupAttribute - invalid group} -setup {
+    catch {file delete -force -- foo.test}
+} -constraints {unix notRoot} -body {
+    file attributes foo.test -group foozzz
+} -returnCodes error -cleanup {
+    file delete -force -- foo.test
+} -result {could not set group for file "foo.test": group "foozzz" does not exist}
+test unixFCmd-15.2 {SetGroupAttribute - invalid file} -setup {
+    catch {file delete -force -- foo.test}
+} -constraints {unix notRoot foundGroup} -returnCodes error -body {
+    file attributes foo.test -group $group
+} -result {could not set group for file "foo.test": no such file or directory}
+
+#changing owners hard to do
+test unixFCmd-16.1 {SetOwnerAttribute - current owner} -setup {
+    catch {file delete -force -- foo.test}
+} -constraints {unix notRoot} -body {
+    close [open foo.test w]
+    list [file attributes foo.test -owner $user] \
+	[file attributes foo.test -owner]
+} -cleanup {
+    file delete -force -- foo.test
+} -result [list {} $user]
+test unixFCmd-16.2 {SetOwnerAttribute - invalid file} -setup {
+    catch {file delete -force -- foo.test}
+} -constraints {unix notRoot} -returnCodes error -body {
+    file attributes foo.test -owner $user
+} -result {could not set owner for file "foo.test": no such file or directory}
+test unixFCmd-16.3 {SetOwnerAttribute - invalid owner} -setup {
+    catch {file delete -force -- foo.test}
+} -constraints {unix notRoot} -returnCodes error -body {
+    file attributes foo.test -owner foozzz
+} -result {could not set owner for file "foo.test": user "foozzz" does not exist}
+
+test unixFCmd-17.1 {SetPermissionsAttribute} -setup {
+    catch {file delete -force -- foo.test}
+} -constraints {unix notRoot} -body {
+    close [open foo.test w]
+    list [file attributes foo.test -permissions 0000] \
+	[file attributes foo.test -permissions]
+} -cleanup {
+    file delete -force -- foo.test
+} -result {{} 00000}
+test unixFCmd-17.2 {SetPermissionsAttribute} -setup {
+    catch {file delete -force -- foo.test}
+} -constraints {unix notRoot} -returnCodes error -body {
+    file attributes foo.test -permissions 0000
+} -result {could not set permissions for file "foo.test": no such file or directory}
+test unixFCmd-17.3 {SetPermissionsAttribute} -setup {
+    catch {file delete -force -- foo.test}
+} -constraints {unix notRoot} -body {
+    close [open foo.test w]
+    file attributes foo.test -permissions foo
+} -cleanup {
+    file delete -force -- foo.test
+} -returnCodes error -result {unknown permission string format "foo"}
+test unixFCmd-17.4 {SetPermissionsAttribute} -setup {
+    catch {file delete -force -- foo.test}
+} -constraints {unix notRoot} -body {
+    close [open foo.test w]
+    file attributes foo.test -permissions ---rwx
+} -cleanup {
+    file delete -force -- foo.test
+} -returnCodes error -result {unknown permission string format "---rwx"}
+
+close [open foo.test w]
+set ::i 4
+proc permcheck {testnum permList expected} {
+    test $testnum {SetPermissionsAttribute} {unix notRoot} {
+      set result {}
+      foreach permstr $permList {
+	file attributes foo.test -permissions $permstr
+	lappend result [file attributes foo.test -permissions]
+      }
+      set result
+    } $expected
+}
+permcheck unixFCmd-17.5   rwxrwxrwx	00777
+permcheck unixFCmd-17.6   r--r---w-	00442
+permcheck unixFCmd-17.7   {0 u+rwx,g+r u-w o+rwx} {00000 00740 00540 00547}
+permcheck unixFCmd-17.11  --x--x--x	00111
+permcheck unixFCmd-17.12  {0 a+rwx} {00000 00777}
+file delete -force -- foo.test
+
+test unixFCmd-18.1 {Unix pwd} -constraints {unix notRoot nonPortable} -setup {
+    set cd [pwd]
+} -body {
+    # This test is nonPortable because SunOS generates a weird error
+    # message when the current directory isn't readable.
+    set nd $cd/tstdir
+    file mkdir $nd
+    cd $nd
+    file attributes $nd -permissions 0000
+    pwd
+} -returnCodes error -cleanup {
+    cd $cd
+    file attributes $nd -permissions 0755
+    file delete $nd
+} -match glob -result {error getting working directory name:*}
+
+test unixFCmd-19.1 {GetReadOnlyAttribute - file not found} -setup {
+    catch {file delete -force -- foo.test}
+} -constraints {unix notRoot readonlyAttr} -returnCodes error -body {
+    file attributes foo.test -readonly
+} -result {could not read "foo.test": no such file or directory}
+test unixFCmd-19.2 {GetReadOnlyAttribute} -setup {
+    catch {file delete -force -- foo.test}
+} -constraints {unix notRoot readonlyAttr} -body {
+    close [open foo.test w]
+    file attribute foo.test -readonly
+} -cleanup {
+    file delete -force -- foo.test
+} -result 0
+
+test unixFCmd-20.1 {SetReadOnlyAttribute} -setup {
+    catch {file delete -force -- foo.test}
+} -constraints {unix notRoot readonlyAttr} -body {
+    close [open foo.test w]
+    list [catch {file attributes foo.test -readonly 1} msg] $msg \
+	    [catch {file attribute foo.test -readonly} msg] $msg \
+	    [catch {file delete -force -- foo.test}] \
+	    [catch {file attributes foo.test -readonly 0} msg] $msg \
+	    [catch {file attribute foo.test -readonly} msg] $msg
+} -cleanup {
+    file delete -force -- foo.test
+} -result {0 {} 0 1 1 0 {} 0 0}
+test unixFCmd-20.2 {SetReadOnlyAttribute} -setup {
+    catch {file delete -force -- foo.test}
+} -constraints {unix notRoot readonlyAttr} -returnCodes error -body {
+    file attributes foo.test -readonly 1
+} -result {could not read "foo.test": no such file or directory}
+
+# cleanup
+cleanup
+cd $oldcwd
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

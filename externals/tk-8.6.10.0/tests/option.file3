@@ -1,0 +1,18 @@
+! This file is a sample option (resource) database used to test
+! Tk's option-handling capabilities.
+
+! Comment line \
+  with a backslash-newline sequence embedded in it.
+
+*x1: 	blue
+	 tktest.x2		: green
+*\
+x3 \
+  : pur\
+ple
+*x 4:	brówn
+# More comments, this time delimited by hash-marks.
+	# Comment-line with space.
+*x6:	  
+*x9: \ \	\\\101\n
+# comment line as last line of file.

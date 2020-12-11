@@ -1,0 +1,92 @@
+'\"
+'\" Copyright (c) 1990-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_GeometryRequest 3 "8.4" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_GeometryRequest, Tk_SetMinimumRequestSize, Tk_SetInternalBorder, Tk_SetInternalBorderEx \- specify desired geometry or internal border for a window
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+\fBTk_GeometryRequest\fR(\fItkwin, reqWidth, reqHeight\fR)
+.sp
+\fBTk_SetMinimumRequestSize\fR(\fItkwin, minWidth, minHeight\fR)
+.sp
+\fBTk_SetInternalBorder\fR(\fItkwin, width\fR)
+.sp
+\fBTk_SetInternalBorderEx\fR(\fItkwin, left, right, top, bottom\fR)
+.SH ARGUMENTS
+.AS baseHeight clientData
+.AP Tk_Window tkwin in
+Window for which geometry is being requested.
+.AP int reqWidth in
+Desired width for \fItkwin\fR, in pixel units.
+.AP int reqHeight in
+Desired height for \fItkwin\fR, in pixel units.
+.AP int minWidth in
+Desired minimum requested width for \fItkwin\fR, in pixel units.
+.AP int minHeight in
+Desired minimum requested height for \fItkwin\fR, in pixel units.
+.AP int width in
+Space to leave for internal border for \fItkwin\fR, in pixel units.
+.AP int left in
+Space to leave for left side of internal border for \fItkwin\fR, in pixel units.
+.AP int right in
+Space to leave for right side of internal border for \fItkwin\fR, in pixel units.
+.AP int top in
+Space to leave for top side of internal border for \fItkwin\fR, in pixel units.
+.AP int bottom in
+Space to leave for bottom side of internal border for \fItkwin\fR, in pixel units.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_GeometryRequest\fR is called by widget code to indicate its
+preference for the dimensions of a particular window.  The arguments
+to \fBTk_GeometryRequest\fR are made available to the geometry
+manager for the window, which then decides on the actual geometry
+for the window.  Although geometry managers generally try to satisfy
+requests made to \fBTk_GeometryRequest\fR, there is no guarantee that
+this will always be possible.  Widget code should not assume that
+a geometry request will be satisfied until it receives a
+\fBConfigureNotify\fR event indicating that the geometry change has
+occurred.  Widget code should never call procedures like
+\fBTk_ResizeWindow\fR directly.  Instead, it should invoke
+\fBTk_GeometryRequest\fR and leave the final geometry decisions to
+the geometry manager.
+.PP
+If \fItkwin\fR is a top-level window, then the geometry information
+will be passed to the window manager using the standard ICCCM protocol.
+.PP
+\fBTk_SetInternalBorder\fR is called by widget code to indicate that
+the widget has an internal border.  This means that the widget draws
+a decorative border inside the window instead of using the standard
+X borders, which are external to the window's area.  For example,
+internal borders are used to draw 3-D effects.  \fIWidth\fR
+specifies the width of the border in pixels.  Geometry managers will
+use this information to avoid placing any children of \fItkwin\fR
+overlapping the outermost \fIwidth\fR pixels of \fItkwin\fR's area.
+.PP
+\fBTk_SetInternalBorderEx\fR works like \fBTk_SetInternalBorder\fR
+but lets you specify different widths for different sides of the window.
+.PP
+\fBTk_SetMinimumRequestSize\fR is called by widget code to indicate
+that a geometry manager should request at least this size for the
+widget.  This allows a widget to have some control over its size when
+a propagating geometry manager is used inside it.
+.PP
+The information specified in calls to \fBTk_GeometryRequest\fR,
+\fBTk_SetMinimumRequestSize\fR, \fBTk_SetInternalBorder\fR and
+\fBTk_SetInternalBorderEx\fR can be retrieved using the macros
+\fBTk_ReqWidth\fR, \fBTk_ReqHeight\fR, \fBTk_MinReqWidth\fR,
+\fBTk_MinReqHeight\fR, \fBTk_MinReqWidth\fR, \fBTk_InternalBorderLeft\fR,
+\fBTk_InternalBorderRight\fR, \fBTk_InternalBorderTop\fR and
+\fBTk_InternalBorderBottom\fR.
+See the \fBTk_WindowId\fR manual entry for details.
+.SH KEYWORDS
+geometry, request

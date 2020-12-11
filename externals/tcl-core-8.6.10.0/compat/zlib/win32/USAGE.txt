@@ -1,0 +1,97 @@
+
+Installing ZLIB1.DLL
+====================
+  Copy ZLIB1.DLL to the SYSTEM or the SYSTEM32 directory.
+  
+  If you want to install the 32-bit dll on a 64-bit
+  machine, use the SysWOW64 directory instead.
+
+
+Using ZLIB1.DLL with Microsoft Visual C++
+=========================================
+   1. Install the supplied header files "zlib.h" and "zconf.h"
+      into a directory found in the INCLUDE path list.
+
+   2. Install the supplied library file "zdll.lib" into a
+      directory found in the LIB path list.
+
+   3. Add "zdll.lib" to your project.
+
+
+Using ZLIB1.DLL with gcc/MinGW
+==============================
+   1. Install the supplied header files "zlib.h" and "zconf.h"
+      into the INCLUDE directory.
+
+   2. (32-bit): Copy the supplied library file "zdll.lib" to "libzdll.a":
+        cp lib/zdll.lib lib/libzdll.a
+
+      OR
+
+   2'. (64-bit): Copy the supplied library file "libz.dll.a" to "libzdll.a":
+        cp lib/libz.dll.a lib/libzdll.a
+
+      OR
+
+   2'' Build the import library from the supplied "zlib.def":
+        dlltool -D zlib1.dll -d lib/zlib.def -l lib/libzdll.a
+
+   3. Install "libzdll.a" into the LIB directory.
+
+   4. Add "libzdll.a" to your project, or use the -lzdll option.
+
+
+Using ZLIB1.DLL with gcc/Cygwin
+===============================
+  ZLIB1.DLL is not designed to work with Cygwin.  The Cygwin
+  system has its own DLL build of zlib, named CYGZ.DLL.
+
+
+Using ZLIB1.DLL with Borland C++
+================================
+   1. Install the supplied header files "zlib.h" and "zconf.h"
+      into a directory found in the INCLUDE path list.
+
+   2. Build the import library using the IMPLIB tool:
+        implib -a -c -f lib\zdllbor.lib zlib1.dll
+
+      OR
+
+   2' Convert the supplied library file "zdll.lib" to OMF format,
+      using the COFF2OMF tool:
+        coff2omf lib\zdll.lib lib\zdllbor.lib
+
+   3. Install "zdllbor.lib" into a directory found in the LIB path
+      list.
+
+   4. Add "zdllbor.lib" to your project.
+
+  Notes:
+  - The modules that are linked with "zdllbor.lib" must be compiled
+    using a 4-byte alignment (option -a):
+        bcc32 -a -c myprog.c
+        bcc32 myprog.obj zdllbor.lib
+  - If you wish, you may use "zlib1.lib" instead of "zdllbor.lib".
+
+
+Rebuilding ZLIB1.DLL
+====================
+  Depending on your build environment, use the appropriate
+  makefile from the win32/ directory, found in the zlib source
+  distribution.
+
+  Your custom build has to comply with the requirements stated
+  in DLL_FAQ.txt, including (but not limited to) the following:
+    - It must be built from an unaltered zlib source distribution.
+    - It must be linked to MSVCRT.DLL.
+    - The macros that compile out certain portions of the zlib
+      code (such as NO_GZCOMPRESS, NO_GZIP) must not be enabled.
+    - The ZLIB_WINAPI macro must not be enabled.
+
+  Furthermore, it has to run successfully with the test suite
+  found in this package.
+
+  It is recommended, however, to use the supplied ZLIB1.DLL,
+  instead of rebuilding it yourself.  You should rebuild it
+  only if you have a special reason.
+

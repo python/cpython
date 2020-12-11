@@ -1,0 +1,680 @@
+#
+# Tests for SF bugs
+# ----------------------------------------------------------------------
+#   AUTHOR:  Arnulf Wiedemann
+#            arnulf@wiedemann-pri.de
+# ----------------------------------------------------------------------
+#            Copyright (c) Arnulf Wiedemann
+# ======================================================================
+# See the file "license.terms" for information on usage and
+# redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2.1
+namespace import ::tcltest::test
+::tcltest::loadTestedCommands
+package require itcl
+
+global ::test_status
+
+# ----------------------------------------------------------------------
+#  Test bugs of the SourceForge bug tracker for incrtcl
+# ----------------------------------------------------------------------
+
+test sfbug-163 {upvar has to resolve instance variables in caller} -setup {
+    itcl::class o1 {
+        public method getValue {name} {
+	    upvar $name val
+	    set val 22
+	}
+    }
+    itcl::class o2 {
+	public variable command
+	constructor {cls2} {
+	    $cls2 getValue command
+	}
+	public method b {cls2} {
+	    return $command
+	}
+    }
+    o1 test1
+    o2 test2 test1
+} -body {
+    test2 b test1
+} -cleanup {
+    itcl::delete class o2
+    itcl::delete class o1
+} -result 22
+
+test sfbug-187 {upvar with this variable SF bug #187
+} -body {
+    ::itcl::class foo {
+      method test {} {
+          PopID
+      }
+
+      proc PopID {} {
+        upvar 1 this me
+        set me
+      }
+    }
+    foo bar
+    bar test
+} -result {::bar} \
+  -cleanup {::itcl::delete class foo}
+
+test sfbug-234 {chain with no argument SF bug #234
+} -body {
+    set ::test_status ""
+    itcl::class One {
+	public method t1 {x} {
+            lappend ::test_status "$this One.t1($x)"
+	}
+	public method t2 {} {
+            lappend ::test_status "$this One.t2"
+	}
+    }
+
+    itcl::class Two {
+        inherit One
+
+        public method t1 {x} {
+            lappend ::test_status "$this Two.t1($x)"
+            chain $x
+        }
+
+        public method t2 {} {
+            lappend ::test_status "$this Two.t2"
+            chain
+        }
+    }
+    set y [Two #auto]
+    $y t1 a
+    $y t2
+} -result {{::two0 Two.t1(a)} {::two0 One.t1(a)} {::two0 Two.t2} {::two0 One.t2}} \
+  -cleanup {::itcl::delete class Two}
+
+test sfbug-236 {problem with inheritance of methods SF bug #236
+} -body {
+    set ::test_status ""
+
+    ::itcl::class c_mem {
+        private method get_ports {}
+        public method get_mem {}
+    }
+
+    ::itcl::class c_rom {
+        inherit c_mem
+        private method get_ports {}
+    }
+
+    ::itcl::body c_rom::get_ports {} {
+        return "toto"
+    }
+
+    ::itcl::body c_mem::get_ports {} {
+        return "tata"
+    }
+
+    ::itcl::body c_mem::get_mem {} {
+        return [concat "titi" [get_ports]]
+    }
+
+    set ptr [c_rom #auto]
+    lappend ::test_status [$ptr get_mem]
+
+# expected output:
+# titi toto
+} -result {{titi toto}} \
+  -cleanup {::itcl::delete class c_rom}
+
+test sfbug-237 { problem with chain command SF bug #237
+} -body {
+    set ::test_status ""
+
+    itcl::class main {
+        constructor {} {
+            lappend ::test_status "OK ITCL constructor"
+	}
+
+        public method init_OK1 { parm } {
+            lappend ::test_status "OK1 MAIN $parm"
+        }
+        public method init_OK2 {} {
+            lappend ::test_status "OK2 MAIN"
+        }
+        public method init_ERR1 {} {
+            lappend ::test_status "ERR1 MAIN"
+        }
+    }
+
+    itcl::class child {
+        inherit main
+
+        constructor {} {}
+
+        public method init_OK1 {} {
+            lappend ::test_status "OK1 CHILD"
+            chain TEST
+        }
+
+        public method init_OK2 {} {
+            lappend ::test_status "OK2 CHILD"
+            next
+        }
+
+        public method init_ERR1 {} {
+            lappend ::test_status "ERR1 CHILD"
+            chain
+        }
+    }
+
+    set obj [child #auto]
+    $obj init_OK1
+    $obj init_OK2
+    $obj init_ERR1
+} -result {{OK ITCL constructor} {OK1 CHILD} {OK1 MAIN TEST} {OK2 CHILD} {OK2 MAIN} {ERR1 CHILD} {ERR1 MAIN}} \
+  -cleanup {::itcl::delete class child}
+
+test sfbug-243 {faulty namespace behaviour SF bug #243
+} -body {
+    set ::test_status ""
+
+    namespace eval ns {}
+
+    itcl::class ns::A {
+        method do {} {nsdo}
+
+        method nsdo {} {
+            lappend ::test_status "body do: [info function do -body]"
+        }
+    }
+
+    [ns::A #auto] do
+
+    itcl::body ns::A::do {} {A::nsdo}
+    [ns::A #auto] do
+
+    itcl::body ns::A::do {} {::ns::A::nsdo}
+    [ns::A #auto] do
+
+    itcl::body ns::A::do {} {ns::A::nsdo}
+    [ns::A #auto] do
+} -result {{body do: nsdo} {body do: A::nsdo} {body do: ::ns::A::nsdo} {body do: ns::A::nsdo}} \
+  -cleanup {::itcl::delete class ns::A}
+
+test sfbug-244 { SF bug 244
+} -body {
+    set ::test_status ""
+
+    proc foo {body} {
+        uplevel $body
+    }
+
+    itcl::class A {
+      method do {body} {foo $body}
+      method do2 {} {lappend ::test_status done}
+    }
+
+    set y [A #auto]
+    $y  do {
+        lappend ::test_status "I'm $this"
+        do2
+    }
+} -result {{I'm ::a0} done} \
+  -cleanup {::itcl::delete class A; rename foo {}}
+
+test sfbug-250 { SF bug #250
+} -body {
+    set ::test_status ""
+
+    ::itcl::class A {
+        variable b
+
+        constructor {} {
+            set b [B #auto]
+        }
+
+        public method m1 {} {
+            $b m3
+        }
+
+        public method m2 {} {
+            lappend ::test_status m2
+        }
+    }
+
+    ::itcl::class B {
+        public method m3 {} {
+          uplevel m2
+         }
+    }
+
+    set a [A #auto]
+    $a m1
+
+} -result {m2} \
+  -cleanup {::itcl::delete class A B}
+
+test sfbug-Schelte {bug with onfo reported from Schelte SF bug xxx
+} -body {
+    set ::test_status ""
+
+    itcl::class foo {
+        method kerplunk {args} {
+            lappend ::test_status [info level 0]
+            lappend ::test_status [::info level 0]
+            lappend ::test_status [[namespace which info] level 0]
+       }
+    }
+
+    [foo #auto] kerplunk hello world
+} -result {{foo0 kerplunk hello world} {foo0 kerplunk hello world} {foo0 kerplunk hello world}} \
+  -cleanup {::itcl::delete class foo}
+
+test sfbug-254.1 { SF bug #254 + bug [1dc2d851eb]
+} -body {
+    set interp [interp create]
+    set ::test_status ""
+    $interp eval {
+      oo::class destroy
+    }
+    lappend ::test_status "::oo::class destroy worked"
+    if {[catch {
+      $interp eval [::tcltest::loadScript]
+      $interp eval {
+        package require itcl
+      }
+    } msg]} {
+      lappend ::test_status $msg
+    }
+} -result {{::oo::class destroy worked} {::oo::class does not refer to an object}} \
+  -cleanup {interp delete $interp}
+
+test sfbug-254.2 { SF bug #254 + bug [1dc2d851eb]
+} -body {
+    set interp [interp create]
+    set ::test_status ""
+    $interp eval {set ::tcl::inl_mem_test 0}
+    $interp eval [::tcltest::loadScript]
+    $interp eval {
+      package require itcl
+
+      oo::class destroy
+    }
+    lappend ::test_status "::oo::class destroy worked"
+    if {[catch {
+      $interp eval {
+        ::itcl::class ::test {}
+      }
+    } msg]} {
+      lappend ::test_status $msg
+    }
+} -result {{::oo::class destroy worked} {oo-subsystem is deleted}} \
+  -cleanup {interp delete $interp}
+
+test sfbug-254.3 { delete oo-subsystem should remove all classes + summary of bug [1dc2d851eb]
+} -body {
+    set interp [interp create]
+    set ::test_status ""
+    $interp eval {set ::tcl::inl_mem_test 0}
+    $interp eval [::tcltest::loadScript]
+    $interp eval {
+      package require itcl
+
+      ::itcl::class ::test {}
+    }
+    lappend ::test_status "::test class created"
+    $interp eval {
+      oo::class destroy
+    }
+    lappend ::test_status "::oo::class destroy worked"
+    if {[catch {
+      $interp eval {
+        ::test x
+      }
+    } msg]} {
+      lappend ::test_status $msg
+    }
+    if {[catch {
+      $interp eval {
+        ::itcl::class ::test2 {inherit ::test}
+      }
+    } msg]} {
+      lappend ::test_status $msg
+    }
+} -result {{::test class created} {::oo::class destroy worked} {invalid command name "::test"} {oo-subsystem is deleted}} \
+  -cleanup {interp delete $interp}
+
+test sfbug-255 { SF bug #255
+} -body {
+    set ::test_status ""
+
+    proc ::sfbug_255_do_uplevel { body } {
+        uplevel 1 $body
+    }
+
+    proc ::sfbug_255_testclass { pathName args } {
+        uplevel TestClass $pathName $args
+    }
+
+    ::itcl::class TestClass {
+        public variable property "value"
+        constructor {} {
+        }
+
+        private method internal-helper {} {
+            return "TestClass::internal-helper"
+        }
+
+        public method api-call {} {
+            lappend ::test_status "TestClass::api-call"
+            lappend ::test_status [internal-helper]
+            lappend ::test_status [sfbug_255_do_uplevel { internal-helper }]
+            lappend ::test_status [cget -property]
+            sfbug_255_do_uplevel { lappend ::test_status [cget -property] }
+        }
+    }
+
+    [::sfbug_255_testclass tc] api-call
+} -result {TestClass::api-call TestClass::internal-helper TestClass::internal-helper value value} \
+  -cleanup {::itcl::delete class TestClass}
+
+test fossilbug-8 { fossil bug 2cd667f270b68ef66d668338e09d144e20405e23
+} -body {
+    ::itcl::class ::Naughty {
+        private method die {} {
+        }
+    }
+    ::Naughty die
+} -cleanup {
+    ::itcl::delete class ::Naughty
+} -result {die}
+
+test sfbug-256 { SF bug #256
+} -body {
+    set ::test_status ""
+
+    proc ::sfbug_256_do_uplevel { body } {
+        uplevel 1 $body
+    }
+
+    proc ::sfbug_256_testclass { pathName args } {
+        uplevel TestClass256 $pathName $args
+    }
+
+    ::itcl::class TestClass256 {
+        public variable property "value"
+        constructor {} {
+        }
+
+        private method internal-helper {} {
+            lappend ::test_status "TestClass::internal-helper"
+            sfbug_256_do_uplevel { lappend ::test_status [cget -property] }
+        }
+
+        public method api-call {} {
+            lappend ::test_status "TestClass::api-call"
+            lappend ::test_status [internal-helper]
+            lappend ::test_status [sfbug_256_do_uplevel { internal-helper }]
+            lappend ::test_status [cget -property]
+            sfbug_256_do_uplevel { lappend ::test_status [cget -property] }
+        }
+    }
+
+    [::sfbug_256_testclass tc] api-call
+} -result {TestClass::api-call TestClass::internal-helper value {TestClass::api-call TestClass::internal-helper value} TestClass::internal-helper value {TestClass::api-call TestClass::internal-helper value {TestClass::api-call TestClass::internal-helper value} TestClass::internal-helper value} value value} \
+  -cleanup {::itcl::delete class TestClass256}
+
+test sfbug-257 { SF bug #257
+} -body {
+    set interp [interp create]
+    $interp eval {set ::tcl::inl_mem_test 0}
+    $interp eval [::tcltest::loadScript]
+    $interp eval {
+      package require itcl
+      set ::test_status ""
+      ::itcl::class ::cl1 {
+        method m1 {} {
+          ::oo::class destroy
+          lappend ::test_status "method Hello World"
+        }
+        proc p1 {} {
+          lappend ::test_status "proc Hello World"
+        }
+      }
+      set obj1 [::cl1 #auto]
+      ::cl1::p1
+      $obj1 p1
+      $obj1 m1
+
+      catch {
+      $obj1 m1
+      ::cl1::p1
+      } msg
+      lappend ::test_status $msg
+    }
+} -result {{proc Hello World} {proc Hello World} {method Hello World} {invalid command name "cl10"}} \
+  -cleanup {interp delete $interp}
+
+test sfbug-259 { SF bug #257 } -setup {
+    interp create slave
+    load {} Itcl slave
+} -cleanup {
+    interp delete slave
+} -body {
+    slave eval {
+proc do_uplevel { body } {
+    uplevel 1 $body
+}
+proc ::testclass { pathName args } {
+    uplevel TestClass $pathName $args
+}
+itcl::class TestClass {
+    constructor {} {}
+    public variable property "value"
+    public method api-call {}
+    protected method internal-helper {}
+}
+itcl::body TestClass::internal-helper {} {
+}
+itcl::configbody TestClass::property {
+    internal-helper
+}
+itcl::body TestClass::api-call {} {
+    do_uplevel {configure -property blah}
+}
+set tc [::testclass .]
+$tc api-call
+    }
+}
+
+test sfbug-261 { SF bug #261 } -setup {
+    itcl::class A {
+	public method a1 {} {a2}
+	public method a2 {} {uplevel a3 hello}
+	public method a3 {s} {return $s}
+    }
+    A x
+} -body {
+    x a1
+} -cleanup {
+    itcl::delete class A
+} -result hello
+
+test sfbug-265.1 { SF bug #265 } -setup {
+    itcl::class C {}
+} -body {
+    namespace eval A {C c}
+    namespace eval B {C c}
+} -cleanup {
+    itcl::delete class C
+    namespace delete A B
+} -result c
+test sfbug-265.2 { SF bug #265 } -setup {
+    itcl::class C {}
+    itcl::class B::C {}
+} -body {
+    C ::A::B
+    B::C ::A
+} -cleanup {
+    itcl::delete class B::C
+    itcl::delete class C
+    namespace delete A B
+} -result ::A
+
+test sfbug-268 { SF bug #268 } -setup {
+    itcl::class C {
+	private variable v
+	destructor {error foo}
+	public method demo {} {set v 0}
+    }
+    C c
+} -body {
+    catch {itcl::delete object c}
+    c demo
+} -cleanup {
+    rename c {}
+    itcl::delete class C
+} -result 0
+
+test sfbug-273 { SF bug #273 } -setup {
+    itcl::class C {
+	public proc call {m} {$m}
+	public proc crash {} {
+	    call null
+	    info frame 2
+	    return ok
+	}
+	public proc null {} {}
+    }
+} -body {
+    C::call crash
+} -cleanup {
+    itcl::delete class C
+} -result ok
+
+
+test sfbug-276.0 { SF bug #276 } -setup {
+  set ::answer {}
+  itcl::class A {
+    constructor {} {
+      lappend ::answer [uplevel namespace current]
+    }
+  }
+  itcl::class B {
+    inherit A
+    constructor {} {}
+  }
+} -body {
+  B b
+  set ::answer
+} -cleanup {
+  itcl::delete class A B
+  unset -nocomplain ::answer
+} -result ::B
+
+test sfbug-276.1 { SF bug #276 } -setup {
+  set ::answer {}
+  itcl::class A {
+    constructor {} {
+      lappend ::answer [uplevel namespace current]
+    }
+  }
+  itcl::class E {
+    constructor {} {
+      lappend ::answer [uplevel namespace current]
+    }
+  }
+  itcl::class B {
+    inherit A E
+    constructor {} {}
+  }
+} -body {
+  B b
+  set ::answer
+} -cleanup {
+  itcl::delete class A B E
+  unset -nocomplain ::answer
+} -result {::B ::B}
+
+test fossil-9.0 {d0126511d9} -setup {
+    itcl::class N::B {}
+} -body {
+    itcl::class N {}
+} -cleanup {
+    itcl::delete class N::B N
+} -result {}
+
+test fossil-9.1 {d0126511d9} -setup {
+    itcl::class N::B {}
+    itcl::delete class N::B
+    namespace delete N
+} -body {
+    itcl::class N {}
+} -cleanup {
+    itcl::delete class N
+    catch {namespace delete N}
+} -result {}
+
+test fossil-9.2 {ec215db901} -setup {
+    set ::answer {}
+    itcl::class Object {
+	constructor {} {set n 1} {set ::answer $n}
+    }
+} -body {
+    Object foo
+    set ::answer
+} -cleanup {
+    itcl::delete class Object
+    unset -nocomplain ::answer
+} -result 1
+
+test fossil-9.3 {c45384364c} -setup {
+    itcl::class A {
+	method demo script {uplevel 1 $script}
+    }
+    A a
+    itcl::class B {
+	method demo script {eval $script; a demo $script}
+    }
+    B b
+} -body {
+    b demo {lappend result $this}
+} -cleanup {
+    itcl::delete class A B
+} -result {::b ::b}
+
+test fossil-9.4 {9eea4912b9} -setup {
+    itcl::class A {
+	public method foo WRONG
+    }
+} -body {
+    itcl::body A::foo {RIGHT} {}
+    A a
+    a info args foo
+} -cleanup {
+    itcl::delete class A
+} -result RIGHT
+
+test sfbugs-281 {Resolve inherited common} -setup {
+    itcl::class Parent {protected common x 0}
+} -cleanup {
+    itcl::delete class Parent
+} -body {
+    itcl::class Child {
+	inherit Parent
+	set Parent::x
+    }
+} -result {}
+
+
+
+#test sfbug-xxx { SF bug xxx
+#} -body {
+#    set ::test_status ""
+#
+#} -result {::bar} \
+#  -cleanup {::itcl::delete class yyy}
+
+::tcltest::cleanupTests
+return

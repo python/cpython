@@ -1,0 +1,997 @@
+# Commands covered:  regexp, regsub
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1998 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+# Procedure to evaluate a script within a proc, to test compilation
+# functionality
+
+proc evalInProc { script } {
+    proc testProc {} $script
+    set status [catch {
+	testProc 
+    } result]
+    rename testProc {}
+    return $result
+    #return [list $status $result]
+}
+
+unset -nocomplain foo
+
+test regexpComp-1.1 {basic regexp operation} {
+    evalInProc {
+	regexp ab*c abbbc
+    }
+} 1
+test regexpComp-1.2 {basic regexp operation} {
+    evalInProc {
+	regexp ab*c ac
+    }
+} 1
+test regexpComp-1.3 {basic regexp operation} {
+    evalInProc {
+	regexp ab*c ab
+    }
+} 0
+test regexpComp-1.4 {basic regexp operation} {
+    evalInProc {
+	regexp -- -gorp abc-gorpxxx
+    }
+} 1
+test regexpComp-1.5 {basic regexp operation} {
+    evalInProc {
+	regexp {^([^ ]*)[ ]*([^ ]*)} "" a
+    }
+} 1
+test regexpComp-1.6 {basic regexp operation} {
+    list [catch {regexp {} abc} msg] $msg
+} {0 1}
+test regexpComp-1.7 {regexp utf compliance} {
+    # if not UTF-8 aware, result is "0 1"
+    evalInProc {
+	set foo "\u4e4eb q"
+	regexp "\u4e4eb q" "a\u4e4eb qw\u5e4e\x4e wq" bar
+	list [string compare $foo $bar] [regexp 4 $bar]
+    }
+} {0 0}
+
+test regexpComp-1.8 {regexp ***= metasyntax} {
+    evalInProc {
+	regexp -- "***=o" "aeiou"
+    }
+} 1
+test regexpComp-1.9 {regexp ***= metasyntax} {
+    evalInProc {
+	set string "aeiou"
+	regexp -- "***=o" $string
+    }
+} 1
+test regexpComp-1.10 {regexp ***= metasyntax} {
+    evalInProc {
+	set string "aeiou"
+	set re "***=o"
+	regexp -- $re $string
+    }
+} 1
+test regexpComp-1.11 {regexp ***= metasyntax} {
+    evalInProc {
+	regexp -- "***=y" "aeiou"
+    }
+} 0
+test regexpComp-1.12 {regexp ***= metasyntax} {
+    evalInProc {
+	set string "aeiou"
+	regexp -- "***=y" $string
+    }
+} 0
+test regexpComp-1.13 {regexp ***= metasyntax} {
+    evalInProc {
+	set string "aeiou"
+	set re "***=y"
+	regexp -- $re $string
+    }
+} 0
+test regexpComp-1.14 {regexp ***= metasyntax} {
+    evalInProc {
+	set string "aeiou"
+	set re "***=e*o"
+	regexp -- $re $string
+    }
+} 0
+test regexpComp-1.15 {regexp ***= metasyntax} {
+    evalInProc {
+	set string "ae*ou"
+	set re "***=e*o"
+	regexp -- $re $string
+    }
+} 1
+test regexpComp-1.16 {regexp ***= metasyntax} {
+    evalInProc {
+	set string {ae*[o]?ua}
+	set re {***=e*[o]?u}
+	regexp -- $re $string
+    }
+} 1
+
+test regexpComp-2.1 {getting substrings back from regexp} {
+    evalInProc {
+	set foo {}
+	list [regexp ab*c abbbbc foo] $foo
+    }
+} {1 abbbbc}
+test regexpComp-2.2 {getting substrings back from regexp} {
+    evalInProc {
+	set foo {}
+	set f2 {}
+	list [regexp a(b*)c abbbbc foo f2] $foo $f2
+    }
+} {1 abbbbc bbbb}
+test regexpComp-2.3 {getting substrings back from regexp} {
+    evalInProc {
+	set foo {}
+	set f2 {}
+	list [regexp a(b*)(c) abbbbc foo f2] $foo $f2
+    }
+} {1 abbbbc bbbb}
+test regexpComp-2.4 {getting substrings back from regexp} {
+    evalInProc {
+	set foo {}
+	set f2 {}
+	set f3 {}
+	list [regexp a(b*)(c) abbbbc foo f2 f3] $foo $f2 $f3
+    }
+} {1 abbbbc bbbb c}
+test regexpComp-2.5 {getting substrings back from regexp} {
+    evalInProc {
+	set foo {}; set f1 {}; set f2 {}; set f3 {}; set f4 {}; set f5 {};
+	set f6 {}; set f7 {}; set f8 {}; set f9 {}; set fa {}; set fb {};
+	list [regexp (1*)(2*)(3*)(4*)(5*)(6*)(7*)(8*)(9*)(a*)(b*) \
+		12223345556789999aabbb \
+		foo f1 f2 f3 f4 f5 f6 f7 f8 f9 fa fb] $foo $f1 $f2 $f3 $f4 $f5 \
+		$f6 $f7 $f8 $f9 $fa $fb
+    }
+} {1 12223345556789999aabbb 1 222 33 4 555 6 7 8 9999 aa bbb}
+test regexpComp-2.6 {getting substrings back from regexp} {
+    evalInProc {
+	set foo 2; set f2 2; set f3 2; set f4 2
+	list [regexp (a)(b)? xay foo f2 f3 f4] $foo $f2 $f3 $f4
+    }
+} {1 a a {} {}}
+test regexpComp-2.7 {getting substrings back from regexp} {
+    evalInProc {
+	set foo 1; set f2 1; set f3 1; set f4 1
+	list [regexp (a)(b)?(c) xacy foo f2 f3 f4] $foo $f2 $f3 $f4
+    }
+} {1 ac a {} c}
+test regexpComp-2.8 {getting substrings back from regexp} {
+    evalInProc {
+	set match {}
+	list [regexp {^a*b} aaaab match] $match
+    }
+} {1 aaaab}
+
+test regexpComp-3.1 {-indices option to regexp} {
+    evalInProc {
+	set foo {}
+	list [regexp -indices ab*c abbbbc foo] $foo
+    }
+} {1 {0 5}}
+test regexpComp-3.2 {-indices option to regexp} {
+    evalInProc {
+	set foo {}
+	set f2 {}
+	list [regexp -indices a(b*)c abbbbc foo f2] $foo $f2
+    }
+} {1 {0 5} {1 4}}
+test regexpComp-3.3 {-indices option to regexp} {
+    evalInProc {
+	set foo {}
+	set f2 {}
+	list [regexp -indices a(b*)(c) abbbbc foo f2] $foo $f2
+    }
+} {1 {0 5} {1 4}}
+test regexpComp-3.4 {-indices option to regexp} {
+    evalInProc {
+	set foo {}
+	set f2 {}
+	set f3 {}
+	list [regexp -indices a(b*)(c) abbbbc foo f2 f3] $foo $f2 $f3
+    }
+} {1 {0 5} {1 4} {5 5}}
+test regexpComp-3.5 {-indices option to regexp} {
+    evalInProc {
+	set foo {}; set f1 {}; set f2 {}; set f3 {}; set f4 {}; set f5 {};
+	set f6 {}; set f7 {}; set f8 {}; set f9 {}
+	list [regexp -indices (1*)(2*)(3*)(4*)(5*)(6*)(7*)(8*)(9*) \
+		12223345556789999 \
+		foo f1 f2 f3 f4 f5 f6 f7 f8 f9] $foo $f1 $f2 $f3 $f4 $f5 \
+		$f6 $f7 $f8 $f9
+    }
+} {1 {0 16} {0 0} {1 3} {4 5} {6 6} {7 9} {10 10} {11 11} {12 12} {13 16}}
+test regexpComp-3.6 {getting substrings back from regexp} {
+    evalInProc {
+	set foo 2; set f2 2; set f3 2; set f4 2
+	list [regexp -indices (a)(b)? xay foo f2 f3 f4] $foo $f2 $f3 $f4
+    }
+} {1 {1 1} {1 1} {-1 -1} {-1 -1}}
+test regexpComp-3.7 {getting substrings back from regexp} {
+    evalInProc {
+	set foo 1; set f2 1; set f3 1; set f4 1
+	list [regexp -indices (a)(b)?(c) xacy foo f2 f3 f4] $foo $f2 $f3 $f4
+    }
+} {1 {1 2} {1 1} {-1 -1} {2 2}}
+
+test regexpComp-4.1 {-nocase option to regexp} {
+    evalInProc {
+	regexp -nocase foo abcFOo
+    }
+} 1
+test regexpComp-4.2 {-nocase option to regexp} {
+    evalInProc {
+	set f1 22
+	set f2 33
+	set f3 44
+	list [regexp -nocase {a(b*)([xy]*)z} aBbbxYXxxZ22 f1 f2 f3] $f1 $f2 $f3
+    }
+} {1 aBbbxYXxxZ Bbb xYXxx}
+test regexpComp-4.3 {-nocase option to regexp} {
+    evalInProc {
+	regexp -nocase FOo abcFOo
+    }
+} 1
+set ::x abcdefghijklmnopqrstuvwxyz1234567890
+set ::x $x$x$x$x$x$x$x$x$x$x$x$x
+test regexpComp-4.4 {case conversion in regexp} {
+    evalInProc {
+	list [regexp -nocase $::x $::x foo] $foo
+    }
+} "1 $x"
+unset -nocomplain ::x
+
+test regexpComp-5.1 {exercise cache of compiled expressions} {
+    evalInProc {
+	regexp .*a b
+	regexp .*b c
+	regexp .*c d
+	regexp .*d e
+	regexp .*e f
+	regexp .*a bbba
+    }
+} 1
+test regexpComp-5.2 {exercise cache of compiled expressions} {
+    evalInProc {
+	regexp .*a b
+	regexp .*b c
+	regexp .*c d
+	regexp .*d e
+	regexp .*e f
+	regexp .*b xxxb
+    }
+} 1
+test regexpComp-5.3 {exercise cache of compiled expressions} {
+    evalInProc {
+	regexp .*a b
+	regexp .*b c
+	regexp .*c d
+	regexp .*d e
+	regexp .*e f
+	regexp .*c yyyc
+    }
+} 1
+test regexpComp-5.4 {exercise cache of compiled expressions} {
+    evalInProc {
+	regexp .*a b
+	regexp .*b c
+	regexp .*c d
+	regexp .*d e
+	regexp .*e f
+	regexp .*d 1d
+    }
+} 1
+test regexpComp-5.5 {exercise cache of compiled expressions} {
+    evalInProc {
+	regexp .*a b
+	regexp .*b c
+	regexp .*c d
+	regexp .*d e
+	regexp .*e f
+	regexp .*e xe
+    }
+} 1
+
+test regexpComp-6.1 {regexp errors} {
+    evalInProc {
+	list [catch {regexp a} msg] $msg
+    }
+} {1 {wrong # args: should be "regexp ?-option ...? exp string ?matchVar? ?subMatchVar ...?"}}
+test regexpComp-6.2 {regexp errors} {
+    evalInProc {
+	list [catch {regexp -nocase a} msg] $msg
+    }
+} {1 {wrong # args: should be "regexp ?-option ...? exp string ?matchVar? ?subMatchVar ...?"}}
+test regexpComp-6.3 {regexp errors} {
+    evalInProc {
+	list [catch {regexp -gorp a} msg] $msg
+    }
+} {1 {bad option "-gorp": must be -all, -about, -indices, -inline, -expanded, -line, -linestop, -lineanchor, -nocase, -start, or --}}
+test regexpComp-6.4 {regexp errors} {
+    evalInProc {
+	list [catch {regexp a( b} msg] $msg
+    }
+} {1 {couldn't compile regular expression pattern: parentheses () not balanced}}
+test regexpComp-6.5 {regexp errors} {
+    evalInProc {
+	list [catch {regexp a( b} msg] $msg
+    }
+} {1 {couldn't compile regular expression pattern: parentheses () not balanced}}
+test regexpComp-6.6 {regexp errors} {
+    evalInProc {
+	list [catch {regexp a a f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1} msg] $msg
+    }
+} {0 1}
+test regexpComp-6.7 {regexp errors} {
+    evalInProc {
+	list [catch {regexp (x)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.) xyzzy} msg] $msg
+    }
+} {0 0}
+test regexpComp-6.8 {regexp errors} {
+    evalInProc {
+	unset -nocomplain f1
+	set f1 44
+	list [catch {regexp abc abc f1(f2)} msg] $msg
+    }
+} {1 {can't set "f1(f2)": variable isn't array}}
+test regexpComp-6.9 {regexp errors, -start bad int check} {
+    evalInProc {
+	list [catch {regexp -start bogus {^$} {}} msg] $msg
+    }
+} {1 {bad index "bogus": must be integer?[+-]integer? or end?[+-]integer?}}
+
+test regexpComp-7.1 {basic regsub operation} {
+    evalInProc {
+	list [regsub aa+ xaxaaaxaa 111&222 foo] $foo
+    }
+} {1 xax111aaa222xaa}
+test regexpComp-7.2 {basic regsub operation} {
+    evalInProc {
+	list [regsub aa+ aaaxaa &111 foo] $foo
+    }
+} {1 aaa111xaa}
+test regexpComp-7.3 {basic regsub operation} {
+    evalInProc {
+	list [regsub aa+ xaxaaa 111& foo] $foo
+    }
+} {1 xax111aaa}
+test regexpComp-7.4 {basic regsub operation} {
+    evalInProc {
+	list [regsub aa+ aaa 11&2&333 foo] $foo
+    }
+} {1 11aaa2aaa333}
+test regexpComp-7.5 {basic regsub operation} {
+    evalInProc {
+	list [regsub aa+ xaxaaaxaa &2&333 foo] $foo
+    }
+} {1 xaxaaa2aaa333xaa}
+test regexpComp-7.6 {basic regsub operation} {
+    evalInProc {
+	list [regsub aa+ xaxaaaxaa 1&22& foo] $foo
+    }
+} {1 xax1aaa22aaaxaa}
+test regexpComp-7.7 {basic regsub operation} {
+    evalInProc {
+	list [regsub a(a+) xaxaaaxaa {1\122\1} foo] $foo
+    }
+} {1 xax1aa22aaxaa}
+test regexpComp-7.8 {basic regsub operation} {
+    evalInProc {
+	list [regsub a(a+) xaxaaaxaa {1\\\122\1} foo] $foo
+    }
+} "1 {xax1\\aa22aaxaa}"
+test regexpComp-7.9 {basic regsub operation} {
+    evalInProc {
+	list [regsub a(a+) xaxaaaxaa {1\\122\1} foo] $foo
+    }
+} "1 {xax1\\122aaxaa}"
+test regexpComp-7.10 {basic regsub operation} {
+    evalInProc {
+	list [regsub a(a+) xaxaaaxaa {1\\&\1} foo] $foo
+    }
+} "1 {xax1\\aaaaaxaa}"
+test regexpComp-7.11 {basic regsub operation} {
+    evalInProc {
+	list [regsub a(a+) xaxaaaxaa {1\&\1} foo] $foo
+    }
+} {1 xax1&aaxaa}
+test regexpComp-7.12 {basic regsub operation} {
+    evalInProc {
+	list [regsub a(a+) xaxaaaxaa {\1\1\1\1&&} foo] $foo
+    }
+} {1 xaxaaaaaaaaaaaaaaxaa}
+test regexpComp-7.13 {basic regsub operation} {
+    evalInProc {
+	set foo xxx
+	list [regsub abc xyz 111 foo] $foo
+    }
+} {0 xyz}
+test regexpComp-7.14 {basic regsub operation} {
+    evalInProc {
+	set foo xxx
+	list [regsub ^ xyz "111 " foo] $foo
+    }
+} {1 {111 xyz}}
+test regexpComp-7.15 {basic regsub operation} {
+    evalInProc {
+	set foo xxx
+	list [regsub -- -foo abc-foodef "111 " foo] $foo
+    }
+} {1 {abc111 def}}
+test regexpComp-7.16 {basic regsub operation} {
+    evalInProc {
+	set foo xxx
+	list [regsub x "" y foo] $foo
+    }
+} {0 {}}
+test regexpComp-7.17 {regsub utf compliance} {
+    evalInProc {
+	# if not UTF-8 aware, result is "0 1"
+	set foo "xyz555ijka\u4e4ebpqr"
+	regsub a\u4e4eb xyza\u4e4ebijka\u4e4ebpqr 555 bar
+	list [string compare $foo $bar] [regexp 4 $bar]
+    }
+} {0 0}
+
+test regexpComp-8.1 {case conversion in regsub} {
+    evalInProc {
+	list [regsub -nocase a(a+) xaAAaAAay & foo] $foo
+    }
+} {1 xaAAaAAay}
+test regexpComp-8.2 {case conversion in regsub} {
+    evalInProc {
+	list [regsub -nocase a(a+) xaAAaAAay & foo] $foo
+    }
+} {1 xaAAaAAay}
+test regexpComp-8.3 {case conversion in regsub} {
+    evalInProc {
+	set foo 123
+	list [regsub a(a+) xaAAaAAay & foo] $foo
+    }
+} {0 xaAAaAAay}
+test regexpComp-8.4 {case conversion in regsub} {
+    evalInProc {
+	set foo 123
+	list [regsub -nocase a CaDE b foo] $foo
+    }
+} {1 CbDE}
+test regexpComp-8.5 {case conversion in regsub} {
+    evalInProc {
+	set foo 123
+	list [regsub -nocase XYZ CxYzD b foo] $foo
+    }
+} {1 CbD}
+test regexpComp-8.6 {case conversion in regsub} {
+    evalInProc {
+	set x abcdefghijklmnopqrstuvwxyz1234567890
+	set x $x$x$x$x$x$x$x$x$x$x$x$x
+	set foo 123
+	list [regsub -nocase $x $x b foo] $foo
+    }
+} {1 b}
+
+test regexpComp-9.1 {-all option to regsub} {
+    evalInProc {
+	set foo 86
+	list [regsub -all x+ axxxbxxcxdx |&| foo] $foo
+    }
+} {4 a|xxx|b|xx|c|x|d|x|}
+test regexpComp-9.2 {-all option to regsub} {
+    evalInProc {
+	set foo 86
+	list [regsub -nocase -all x+ aXxXbxxcXdx |&| foo] $foo
+    }
+} {4 a|XxX|b|xx|c|X|d|x|}
+test regexpComp-9.3 {-all option to regsub} {
+    evalInProc {
+	set foo 86
+	list [regsub x+ axxxbxxcxdx |&| foo] $foo
+    }
+} {1 a|xxx|bxxcxdx}
+test regexpComp-9.4 {-all option to regsub} {
+    evalInProc {
+	set foo 86
+	list [regsub -all bc axxxbxxcxdx |&| foo] $foo
+    }
+} {0 axxxbxxcxdx}
+test regexpComp-9.5 {-all option to regsub} {
+    evalInProc {
+	set foo xxx
+	list [regsub -all node "node node more" yy foo] $foo
+    }
+} {2 {yy yy more}}
+test regexpComp-9.6 {-all option to regsub} {
+    evalInProc {
+	set foo xxx
+	list [regsub -all ^ xxx 123 foo] $foo
+    }
+} {1 123xxx}
+test regexpComp-9.7 {Bug 84af1192f5: -all option to regsub} {
+    evalInProc {
+	regsub -all {\(.*} 123(qwe) ""
+    }
+} 123
+
+test regexpComp-10.1 {expanded syntax in regsub} {
+    evalInProc {
+	set foo xxx
+	list [regsub -expanded ". \#comment\n  . \#comment2" abc def foo] $foo
+    }
+} {1 defc}
+test regexpComp-10.2 {newline sensitivity in regsub} {
+    evalInProc {
+	set foo xxx
+	list [regsub -line {^a.*b$} "dabc\naxyb\n" 123 foo] $foo
+    }
+} "1 {dabc\n123\n}"
+test regexpComp-10.3 {newline sensitivity in regsub} {
+    evalInProc {
+	set foo xxx
+	list [regsub -line {^a.*b$} "dabc\naxyb\nxb" 123 foo] $foo
+    }
+} "1 {dabc\n123\nxb}"
+test regexpComp-10.4 {partial newline sensitivity in regsub} {
+    evalInProc {
+	set foo xxx
+	list [regsub -lineanchor {^a.*b$} "da\naxyb\nxb" 123 foo] $foo
+    }
+} "1 {da\n123}"
+test regexpComp-10.5 {inverse partial newline sensitivity in regsub} {
+    evalInProc {
+	set foo xxx
+	list [regsub -linestop {a.*b} "da\nbaxyb\nxb" 123 foo] $foo
+    }
+} "1 {da\nb123\nxb}"
+
+test regexpComp-11.1 {regsub errors} {
+    evalInProc {
+	list [catch {regsub a b} msg] $msg
+    }
+} {1 {wrong # args: should be "regsub ?-option ...? exp string subSpec ?varName?"}}
+test regexpComp-11.2 {regsub errors} {
+    evalInProc {
+	list [catch {regsub -nocase a b} msg] $msg
+    }
+} {1 {wrong # args: should be "regsub ?-option ...? exp string subSpec ?varName?"}}
+test regexpComp-11.3 {regsub errors} {
+    evalInProc {
+	list [catch {regsub -nocase -all a b} msg] $msg
+    }
+} {1 {wrong # args: should be "regsub ?-option ...? exp string subSpec ?varName?"}}
+test regexpComp-11.4 {regsub errors} {
+    evalInProc {
+	list [catch {regsub a b c d e f} msg] $msg
+    }
+} {1 {wrong # args: should be "regsub ?-option ...? exp string subSpec ?varName?"}}
+test regexpComp-11.5 {regsub errors} {
+    evalInProc {
+	list [catch {regsub -gorp a b c} msg] $msg
+    }
+} {1 {bad option "-gorp": must be -all, -nocase, -expanded, -line, -linestop, -lineanchor, -start, or --}}
+test regexpComp-11.6 {regsub errors} {
+    evalInProc {
+	list [catch {regsub -nocase a( b c d} msg] $msg
+    }
+} {1 {couldn't compile regular expression pattern: parentheses () not balanced}}
+test regexpComp-11.7 {regsub errors} {
+    evalInProc {
+	unset -nocomplain f1
+	set f1 44
+	list [catch {regsub -nocase aaa aaa xxx f1(f2)} msg] $msg
+    }
+} {1 {can't set "f1(f2)": variable isn't array}}
+test regexpComp-11.8 {regsub errors, -start bad int check} {
+    evalInProc {
+	list [catch {regsub -start bogus pattern string rep var} msg] $msg
+    }
+} {1 {bad index "bogus": must be integer?[+-]integer? or end?[+-]integer?}}
+
+# This test crashes on the Mac unless you increase the Stack Space to about 1
+# Meg.  This is probably bigger than most users want... 
+# 8.2.3 regexp reduced stack space requirements, but this should be
+# tested again
+test regexpComp-12.1 {Tcl_RegExpExec: large number of subexpressions} {macCrash} {
+    evalInProc {
+	list [regexp (.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.) abcdefghijklmnopqrstuvwxyz all a b c d e f g h i j k l m n o p q r s t u v w x y z] $all $a $b $c $d $e $f $g $h $i $j $k $l $m $n $o $p $q $r $s $t $u $v $w $x $y $z
+    }
+} {1 abcdefghijklmnopqrstuvwxyz a b c d e f g h i j k l m n o p q r s t u v w x y z}
+
+test regexpComp-13.1 {regsub of a very large string} {
+    # This test is designed to stress the memory subsystem in order
+    # to catch Bug #933.  It only fails if the Tcl memory allocator
+    # is in use.
+
+    set line {BEGIN_TABLE ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; END_TABLE}
+    set filedata [string repeat $line 200]
+    for {set i 1} {$i<10} {incr i} {
+	regsub -all "BEGIN_TABLE " $filedata "" newfiledata
+    }
+    set x done
+} {done}
+
+test regexpComp-14.1 {CompileRegexp: regexp cache} {
+    evalInProc {
+	regexp .*a b
+	regexp .*b c
+	regexp .*c d
+	regexp .*d e
+	regexp .*e f
+	set x .
+	append x *a
+	regexp $x bbba
+    }
+} 1
+test regexpComp-14.2 {CompileRegexp: regexp cache, different flags} {
+    evalInProc {
+	regexp .*a b
+	regexp .*b c
+	regexp .*c d
+	regexp .*d e
+	regexp .*e f
+	set x .
+	append x *a
+	regexp -nocase $x bbba
+    }
+} 1
+
+testConstraint exec [llength [info commands exec]]
+test regexpComp-14.3 {CompileRegexp: regexp cache, empty regexp and empty cache} -constraints {
+	exec
+} -setup {
+    set junk [makeFile {puts [regexp {} foo]} junk.tcl]
+} -body {
+    exec [interpreter] $junk
+} -cleanup {
+    removeFile junk.tcl
+} -result 1
+
+test regexpComp-15.1 {regexp -start} {
+    unset -nocomplain x
+    list [regexp -start -10 {\d} 1abc2de3 x] $x
+} {1 1}
+test regexpComp-15.2 {regexp -start} {
+    unset -nocomplain x
+    list [regexp -start 2 {\d} 1abc2de3 x] $x
+} {1 2}
+test regexpComp-15.3 {regexp -start} {
+    unset -nocomplain x
+    list [regexp -start 4 {\d} 1abc2de3 x] $x
+} {1 2}
+test regexpComp-15.4 {regexp -start} {
+    unset -nocomplain x
+    list [regexp -start 5 {\d} 1abc2de3 x] $x
+} {1 3}
+test regexpComp-15.5 {regexp -start, over end of string} {
+    unset -nocomplain x
+    list [regexp -start [string length 1abc2de3] {\d} 1abc2de3 x] [info exists x]
+} {0 0}
+test regexpComp-15.6 {regexp -start, loss of ^$ behavior} {
+    list [regexp -start 2 {^$} {}]
+} {0}
+
+test regexpComp-16.1 {regsub -start} {
+    unset -nocomplain x
+    list [regsub -all -start 2 {\d} a1b2c3d4e5 {/&} x] $x
+} {4 a1b/2c/3d/4e/5}
+test regexpComp-16.2 {regsub -start} {
+    unset -nocomplain x
+    list [regsub -all -start -25 {z} hello {/&} x] $x
+} {0 hello}
+test regexpComp-16.3 {regsub -start} {
+    unset -nocomplain x
+    list [regsub -all -start 3 {z} hello {/&} x] $x
+} {0 hello}
+test regexpComp-16.4 {regsub -start, \A behavior} {
+    set out {}
+    lappend out [regsub -start 0 -all {\A(\w)} {abcde} {/\1} x] $x
+    lappend out [regsub -start 2 -all {\A(\w)} {abcde} {/\1} x] $x
+} {5 /a/b/c/d/e 3 ab/c/d/e}
+
+test regexpComp-17.1 {regexp -inline} {
+    regexp -inline b ababa
+} {b}
+test regexpComp-17.2 {regexp -inline} {
+    regexp -inline (b) ababa
+} {b b}
+test regexpComp-17.3 {regexp -inline -indices} {
+    regexp -inline -indices (b) ababa
+} {{1 1} {1 1}}
+test regexpComp-17.4 {regexp -inline} {
+    regexp -inline {\w(\d+)\w} "   hello 23 there456def "
+} {e456d 456}
+test regexpComp-17.5 {regexp -inline no matches} {
+    regexp -inline {\w(\d+)\w} ""
+} {}
+test regexpComp-17.6 {regexp -inline no matches} {
+    regexp -inline hello goodbye
+} {}
+test regexpComp-17.7 {regexp -inline, no matchvars allowed} {
+    list [catch {regexp -inline b abc match} msg] $msg
+} {1 {regexp match variables not allowed when using -inline}}
+
+test regexpComp-18.1 {regexp -all} {
+    regexp -all b bbbbb
+} {5}
+test regexpComp-18.2 {regexp -all} {
+    regexp -all b abababbabaaaaaaaaaab
+} {6}
+test regexpComp-18.3 {regexp -all -inline} {
+    regexp -all -inline b abababbabaaaaaaaaaab
+} {b b b b b b}
+test regexpComp-18.4 {regexp -all -inline} {
+    regexp -all -inline {\w(\w)} abcdefg
+} {ab b cd d ef f}
+test regexpComp-18.5 {regexp -all -inline} {
+    regexp -all -inline {\w(\w)$} abcdefg
+} {fg g}
+test regexpComp-18.6 {regexp -all -inline} {
+    regexp -all -inline {\d+} 10:20:30:40
+} {10 20 30 40}
+test regexpComp-18.7 {regexp -all -inline} {
+    list [catch {regexp -all -inline b abc match} msg] $msg
+} {1 {regexp match variables not allowed when using -inline}}
+test regexpComp-18.8 {regexp -all} {
+    # This should not cause an infinite loop
+    regexp -all -inline {a*} a
+} {a}
+test regexpComp-18.9 {regexp -all} {
+    # Yes, the expected result is {a {}}.  Here's why:
+    # Start at index 0; a* matches the "a" there then stops.
+    # Go to index 1; a* matches the lambda (or {}) there then stops.  Recall
+    #   that a* matches zero or more "a"'s; thus it matches the string "b", as
+    #   there are zero or more "a"'s there.
+    # Go to index 2; this is past the end of the string, so stop.
+    regexp -all -inline {a*} ab
+} {a {}}
+test regexpComp-18.10 {regexp -all} {
+    # Yes, the expected result is {a {} a}.  Here's why:
+    # Start at index 0; a* matches the "a" there then stops.
+    # Go to index 1; a* matches the lambda (or {}) there then stops.   Recall
+    #   that a* matches zero or more "a"'s; thus it matches the string "b", as
+    #   there are zero or more "a"'s there.
+    # Go to index 2; a* matches the "a" there then stops.
+    # Go to index 3; this is past the end of the string, so stop.
+    regexp -all -inline {a*} aba
+} {a {} a}
+test regexpComp-18.11 {regexp -all} {
+    evalInProc {
+	regexp -all -inline {^a} aaaa
+    }
+} {a}
+test regexpComp-18.12 {regexp -all -inline -indices} {
+    evalInProc {
+	regexp -all -inline -indices a(b(c)d|e(f)g)h abcdhaefgh
+    }
+} {{0 4} {1 3} {2 2} {-1 -1} {5 9} {6 8} {-1 -1} {7 7}}
+
+test regexpComp-19.1 {regsub null replacement} {
+    evalInProc {
+	regsub -all {@} {@hel@lo@} "\0a\0" result
+	list $result [string length $result]
+    }
+} "\0a\0hel\0a\0lo\0a\0 14"
+
+test regexpComp-20.1 {regsub shared object shimmering} {
+    evalInProc {
+	# Bug #461322
+	set a abcdefghijklmnopqurstuvwxyz 
+	set b $a 
+	set c abcdefghijklmnopqurstuvwxyz0123456789 
+	regsub $a $c $b d 
+	list $d [string length $d] [string bytelength $d]
+    }
+} [list abcdefghijklmnopqurstuvwxyz0123456789 37 37]
+test regexpComp-20.2 {regsub shared object shimmering with -about} {
+    evalInProc {
+	eval regexp -about abc
+    }
+} {0 {}}
+
+test regexpComp-21.1 {regexp command compiling tests} {
+    evalInProc {
+	regexp foo bar
+    }
+} 0
+test regexpComp-21.2 {regexp command compiling tests} {
+    evalInProc {
+	regexp {^foo$} dogfood
+    }
+} 0
+test regexpComp-21.3 {regexp command compiling tests} {
+    evalInProc {
+	set a foo
+	regexp {^foo$} $a
+    }
+} 1
+test regexpComp-21.4 {regexp command compiling tests} {
+    evalInProc {
+	regexp foo dogfood
+    }
+} 1
+test regexpComp-21.5 {regexp command compiling tests} {
+    evalInProc {
+	regexp -nocase FOO dogfod
+    }
+} 0
+test regexpComp-21.6 {regexp command compiling tests} {
+    evalInProc {
+	regexp -n foo dogfoOd
+    }
+} 1
+test regexpComp-21.7 {regexp command compiling tests} {
+    evalInProc {
+	regexp -no -- FoO dogfood
+    }
+} 1
+test regexpComp-21.8 {regexp command compiling tests} {
+    evalInProc {
+	regexp -- foo dogfod
+    }
+} 0
+test regexpComp-21.9 {regexp command compiling tests} {
+    evalInProc {
+	list [catch {regexp -- -nocase foo dogfod} msg] $msg
+    }
+} {0 0}
+test regexpComp-21.10 {regexp command compiling tests} {
+    evalInProc {
+	list [regsub -all "" foo bar str] $str
+    }
+} {3 barfbarobaro}
+test regexpComp-21.11 {regexp command compiling tests} {
+    evalInProc {
+	list [regsub -all "" "" bar str] $str
+    }
+} {0 {}}
+
+test regexpComp-22.0.1 {Bug 1810038} {
+    evalInProc {
+	regexp ($|^X)* {}
+    }
+} 1
+
+test regexpComp-22.0.2 {regexp compile and backrefs, Bug 1857126} {
+    evalInProc {
+	regexp -- {([bc])\1} bb
+    }
+} 1
+
+set i 0
+foreach {str exp result} {
+    foo		^foo		1
+    foobar	^foobar$	1
+    foobar	bar$		1
+    foobar	^$		0
+    ""		^$		1
+    anything	$		1
+    anything	^.*$		1
+    anything	^.*a$		0
+    anything	^.*a.*$		1
+    anything	^.*.*$		1
+    anything	^.*..*$		1
+    anything	^.*b$		0
+    anything	^a.*$		1
+} {
+    test regexpComp-22.[incr i] {regexp command compiling tests} \
+	     [subst {evalInProc {set a "$str"; regexp {$exp} \$a}}] $result
+}
+
+set i 0
+foreach {str exp result} {
+    foo		^foo		1
+    foobar	^foobar$	1
+    foobar	bar$		1
+    foobar	^$		0
+    ""		^$		1
+    anything	$		1
+    anything	^.*$		1
+    anything	^.*a$		0
+    anything	^.*a.*$		1
+    anything	^.*.*$		1
+    anything	^.*..*$		1
+    anything	^.*b$		0
+    anything	^a.*$		1
+} {
+    test regexpComp-23.[incr i] {regexp command compiling tests INST_REGEXP} \
+	[subst {evalInProc {set a "$str"; set re "$exp"; regexp \$re \$a}}] $result
+}
+
+test regexpComp-24.1 {regexp command compiling tests} {
+    evalInProc {
+	set re foo
+	regexp -nocase $re bar
+    }
+} 0
+test regexpComp-24.2 {regexp command compiling tests} {
+    evalInProc {
+	set re {^foo$}
+	regexp $re dogfood
+    }
+} 0
+test regexpComp-24.3 {regexp command compiling tests} {
+    evalInProc {
+	set a foo
+	set re {^foo$}
+	regexp $re $a
+    }
+} 1
+test regexpComp-24.4 {regexp command compiling tests} {
+    evalInProc {
+	set re foo
+	regexp $re dogfood
+    }
+} 1
+test regexpComp-24.5 {regexp command compiling tests} {
+    evalInProc {
+	set re FOO
+	regexp -nocase $re dogfod
+    }
+} 0
+test regexpComp-24.6 {regexp command compiling tests} {
+    evalInProc {
+	set re foo
+	regexp -n $re dogfoOd
+    }
+} 1
+test regexpComp-24.7 {regexp command compiling tests} {
+    evalInProc {
+	set re FoO
+	regexp -no -- $re dogfood
+    }
+} 1
+test regexpComp-24.8 {regexp command compiling tests} {
+    evalInProc {
+	set re foo
+	regexp -- $re dogfod
+    }
+} 0
+test regexpComp-24.9 {regexp command compiling tests} {
+    evalInProc {
+	set re "("
+	list [catch {regexp -- $re dogfod} msg] $msg
+    }
+} {1 {couldn't compile regular expression pattern: parentheses () not balanced}}
+test regexpComp-24.10 {regexp command compiling tests} {
+    # Bug 1902436 - last * escaped
+    evalInProc {
+	set text {this is *bold* !}
+	set re {\*bold\*}
+	regexp -- $re $text
+    }
+} 1
+test regexpComp-24.11 {regexp command compiling tests} {
+    # Bug 1902436 - last * escaped
+    evalInProc {
+	set text {this is *bold* !}
+	set re {\*bold\*.*!}
+	regexp -- $re $text
+    }
+} 1
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

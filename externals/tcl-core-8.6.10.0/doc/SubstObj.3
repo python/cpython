@@ -1,0 +1,68 @@
+'\"
+'\" Copyright (c) 2001 Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_SubstObj 3 8.4 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_SubstObj \- perform substitutions on Tcl values
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+Tcl_Obj *
+\fBTcl_SubstObj\fR(\fIinterp, objPtr, flags\fR)
+.SH ARGUMENTS
+.AS Tcl_Interp **termPtr
+.AP Tcl_Interp *interp in
+Interpreter in which to execute Tcl scripts and lookup variables.  If
+an error occurs, the interpreter's result is modified to hold an error
+message.
+.AP Tcl_Obj *objPtr in
+A Tcl value containing the string to perform substitutions on.
+.AP int flags in
+ORed combination of flag bits that specify which substitutions to
+perform.  The flags \fBTCL_SUBST_COMMANDS\fR,
+\fBTCL_SUBST_VARIABLES\fR and \fBTCL_SUBST_BACKSLASHES\fR are
+currently supported, and \fBTCL_SUBST_ALL\fR is provided as a
+convenience for the common case where all substitutions are desired.
+.BE
+.SH DESCRIPTION
+.PP
+The \fBTcl_SubstObj\fR function is used to perform substitutions on
+strings in the fashion of the \fBsubst\fR command.  It gets the value
+of the string contained in \fIobjPtr\fR and scans it, copying
+characters and performing the chosen substitutions as it goes to an
+output value which is returned as the result of the function.  In the
+event of an error occurring during the execution of a command or
+variable substitution, the function returns NULL and an error message
+is left in \fIinterp\fR's result.
+.PP
+Three kinds of substitutions are supported.  When the
+\fBTCL_SUBST_BACKSLASHES\fR bit is set in \fIflags\fR, sequences that
+look like backslash substitutions for Tcl commands are replaced by
+their corresponding character.
+.PP
+When the \fBTCL_SUBST_VARIABLES\fR bit is set in \fIflags\fR,
+sequences that look like variable substitutions for Tcl commands are
+replaced by the contents of the named variable.
+.PP
+When the \fBTCL_SUBST_COMMANDS\fR bit is set in \fIflags\fR, sequences
+that look like command substitutions for Tcl commands are replaced by
+the result of evaluating that script.  Where an uncaught
+.QW "continue exception"
+occurs during the evaluation of a command substitution, an
+empty string is substituted for the command.  Where an uncaught
+.QW "break exception"
+occurs during the evaluation of a command substitution, the
+result of the whole substitution on \fIobjPtr\fR will be truncated at
+the point immediately before the start of the command substitution,
+and no characters will be added to the result or substitutions
+performed after that point.
+.SH "SEE ALSO"
+subst(n)
+.SH KEYWORDS
+backslash substitution, command substitution, variable substitution

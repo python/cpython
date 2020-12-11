@@ -1,0 +1,64 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_GetCapStyle 3 "" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_GetCapStyle, Tk_NameOfCapStyle \- translate between strings and cap styles
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+int
+\fBTk_GetCapStyle(\fIinterp, string, capPtr\fB)\fR
+.sp
+const char *
+\fBTk_NameOfCapStyle(\fIcap\fB)\fR
+.SH ARGUMENTS
+.AS "Tcl_Interp" *capPtr
+.AP Tcl_Interp *interp in
+Interpreter to use for error reporting.
+.AP "const char" *string in
+String containing name of cap style \- one of
+.QW \fBbutt\fR ,
+.QW \fBprojecting\fR ,
+or
+.QW \fBround\fR
+\- or a unique abbreviation of one.
+.AP int *capPtr out
+Pointer to location in which to store X cap style corresponding to
+\fIstring\fR.
+.AP int cap in
+Cap style: one of \fBCapButt\fR, \fBCapProjecting\fR, or \fBCapRound\fR.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_GetCapStyle\fR places in \fI*capPtr\fR the X cap style
+corresponding to \fIstring\fR.
+This will be one of the values
+\fBCapButt\fR, \fBCapProjecting\fR, or \fBCapRound\fR.
+Cap styles are typically used in X graphics contexts to indicate
+how the end-points of lines should be capped.
+See the X documentation for information on what each style
+implies.
+.PP
+Under normal circumstances the return value is \fBTCL_OK\fR and
+\fIinterp\fR is unused.
+If \fIstring\fR does not contain a valid cap style
+or an abbreviation of one of these names, then an error message is
+stored in interpreter \fIinterp\fR's result, \fBTCL_ERROR\fR is returned, and
+\fI*capPtr\fR is unmodified.
+.PP
+\fBTk_NameOfCapStyle\fR is the logical inverse of \fBTk_GetCapStyle\fR.
+Given a cap style such as \fBCapButt\fR it returns a
+statically-allocated string corresponding to \fIcap\fR.
+If \fIcap\fR is not a legal cap style, then
+.QW "unknown cap style"
+is returned.
+.SH KEYWORDS
+butt, cap style, projecting, round

@@ -1,0 +1,46 @@
+'\"
+'\" Copyright (c) 2008 Arnulf Wiedemann
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH component n 4.0 itcl "[incr\ Tcl]"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+itcl::component \- define components for extendedclass, widget or widgetadaptor
+.PP
+Parts of this description are "borrowed" from Tcl extension [snit], as the functionality is mostly identical.
+.SH WARNING!
+This is new functionality in [incr Tcl] where the API can still change!!
+.SH SYNOPSIS
+.nf
+\fBpublic component \fIcomp\fR ?\fB-inherit\fR?
+\fBprotected component \fIcomp\fR ?\fB-inherit\fR?
+\fBprivate component \fIcomp\fR ?\fB-inherit\fR?
+.fi
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBcomponent\fR command is used inside an \fB[incr\ Tcl]\fR
+extendedclass/widget/widgetadaptor definition to define components.
+.PP
+Explicitly declares a component called comp, and automatically defines
+the component's instance variable.
+.PP
+If the \fI-inherit\fR option is specified then all unknown methods
+and options will be delegated to this component. The name -inherit
+implies that instances of this new type inherit, in a sense,
+the methods and options of the component. That is,
+-inherit yes is equivalent to:
+.PP
+.CS
+component mycomp
+delegate option * to mycomp
+delegate method * to mycomp
+.CE
+
+.SH KEYWORDS
+component, widget, widgetadaptor, extendedclass

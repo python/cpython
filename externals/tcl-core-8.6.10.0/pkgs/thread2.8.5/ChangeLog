@@ -1,0 +1,1914 @@
+2016-06-03  Pietro Cerutti <gahr@gahr.ch>
+
+	* doc/*: Bump version to 2.8 in docs [Tkt b35544d2c8]
+
+2016-06-03  Pietro Cerutti <gahr@gahr.ch>
+
+	* generic/threadCmd.c: Add parenthesis to bit-shift macros [Tkt 957dbe231c]
+
+2016-05-31  Pietro Cerutti <gahr@gahr.ch>
+
+	* generic/threadSvCmd.c: Implement [tsv::handlers] command [Tkt 72b8ee4c76]
+	* doc/html/tsv.html
+	* doc/man/tsv.n
+	* doc/tsv.man
+	* tests/tsv.test
+
+2016-05-31  Pietro Cerutti <gahr@gahr.ch>
+
+	* generic/threadCmd.c: Add status arg to [thread::exit] [Tkt 3407860fff]
+	* tests/thread.test
+	* doc/thread.man
+	* doc/man/thread.n
+	* doc/html/thread.html
+
+2016-05-18  Pietro Cerutti <gahr@gahr.ch>
+
+	* generic/threadSvCmd.c: Fix race condition in thread finalization routine
+	[Tkt 3532972fff]
+	* tests/tkt-84be1b5a73.test: Add a test for [Tkt 84be1b5a73]
+
+2016-05-17  Pietro Cerutti <gahr@gahr.ch>
+
+	* generic/threadCmd.c: Fix -async and result trace [Tkt 84be1b5a73]
+	* doc/thread.man: Remove "id" arg from [thread::broadcast]'s manpage
+	* doc/man/thread.n: Regenerate documentation
+	* doc/html/thread.html
+
+2016-05-13  Pietro Cerutti <gahr@gahr.ch>
+
+	* aclocal.m4: Add support for LMDB persistent storage [Tkt 9378bb6795]
+	* configure
+	* configure.ac
+	* doc/html/tsv.html
+	* doc/man/tsv.n
+	* doc/tsv.man
+	* generic/psGdbm.c
+	* generic/psLmdb.c
+	* generic/psLmdb.h
+	* generic/threadSvCmd.c
+	* generic/threadSvCmd.h
+	* tests/French.txt version
+	* tests/store-load.tcl
+	* tests/tsv.test
+
+	* generic/tclThreadInt.h: Use spaces for indentation everywhere
+	* generic/tclXkeylist.c
+	* generic/threadCmd.c
+	* generic/threadNs.c
+	* generic/threadSpCmd.c
+	* generic/threadSpCmd.h
+	* generic/threadSvCmd.c
+
+2016-04-20  Pietro Cerutti <gahr@gahr.ch>
+
+	* configure, aclocal.m4: Correctly handle --without-gdbm [Tkt f8ff429a39]
+	* doc/tsv.man: Document side-effect of [tsv::array unbind] [Tkt be135da5f9]
+	* doc/*.(html|n): Regenerate documentation [Tkt 41922d3bb7]
+	* generic/threadSvCmd.c: Avoid double query to persistent storage in
+	tsv::array bind [Tkt a135697d8c]
+
+2013-05-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/threadSvKeylistCmd.c: Change a few internal variable
+	* generic/threadSvListCmd.c:    from type int to type size_t.
+	* generic/threadCmd.c:          Simplify determination of whether
+	Tcl is compiled with thread support.
+	* configure: re-generate with latest TEA.
+
+2012-12-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclThreadInt.h: Add runtime detection of Tcl_AddErrorInfo
+	* generic/*.c:	vs. Tcl_AppendObjToErrorInfo and Tcl_GetErrorLine vs.
+	interp->errorLine.
+
+2012-12-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/*.c: Rename Tcl_Free -> ckfree and Tcl_Alloc -> ckalloc,
+	which allows a debug build of Thread use the debug versions of
+	those functions.
+
+2012-12-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/threadCmd.c: Tcl_Free cannot be used directly as
+	freeProc (will break in "novem"), so use a small wrapper.
+
+2012-11-08  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 2.7.0 TAGGED FOR RELEASE (thread-2-7-0) ***
+
+	* README: Update for stable release.
+
+2012-11-14  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/threadCmd.c: Move back test for core threaded functionality
+	* pkgIndex.tcl.in:     from pkgIndex.tcl to threadCmd.c, so it cannot
+	be escaped any more.
+
+2012-11-13  Joe Mistachkin  <joe@mistachkin.com>
+
+	* generic/threadCmd.c: merge compileTipCheck to trunk. Additional
+	functionality to switch off TIP 143/285 functionality for static
+	builds.
+
+2012-11-10 Zoran Vasiljevic <zv@archiware.com>
+
+	* genric/threadCmd.c: fixed race condition on
+	thread-local storage in ThreadCancel().
+
+2012-11-10 Zoran Vasiljevic <zv@archiware.com>
+
+	*** Merged "thread-2-7for84+" branch ***
+
+2012-11-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* configure.in:		Bump to version 2.7.0
+	* lib/ttrace.tcl:
+	* win/pkg.vc:
+
+2012-09-13 Zoran Vasiljevic <zv@archiware.com>
+
+	*** 2.7b1 TAGGED FOR RELEASE (thread-2-7-b1) ***
+
+	* doc/html/tpool.html
+	* doc/man/tpool.n
+	* doc/tpool.man: fixed "tpool::create -idletime" description
+	[Tcl Bug 3534442]
+
+	* generic/threadSpCmd.h
+	* generic/threadSvCmd.h: removed some unused structure members
+	[Tcl Feature Request 3563391]
+
+2012-09-11  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* Makefile.in:       Use "::tcltest::loadTestedCommands" to make
+	* tests/all.tcl:     sure that the right Thread version is tested,
+	* tests/thread.test: without requiring explicit version numbers
+
+2012-08-29  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/*.c:  Remove all (deprecated) usages of
+	_ANSI_ARGS_ and TCL_PARSE_PART1
+	* generic/threadSpCmd.c: Fix [Tcl Bug #3562640]: problem loading Thread
+	* generic/threadSvCmd.c: in 8.5, when compiled for 8.6.
+	* win/makefile.vc
+	* Makefile.in
+
+2012-07-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/makefile.vc: [Bug 3544932]: Visual studio compiler check fails
+
+2012-07-05 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: Fixed leaking callback data in ThreadSend()
+	plus some minor cosmetic changes (tx to Gustaf Neumann).
+
+2012-07-03 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadPoolCmd.c: [Bugs 3534440, 3534581] fixed.
+	Also, promoted jobId to be Tcl_WideInt (was uint).
+
+2012-04-26  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/threadSpCmd.c:	Eliminate some tricky finalization
+	problems by converting the SpBucket arrays from dynamic storage to
+	static storage so they no longer need to be finalized.  Since they
+	have fixed size of NUMSPBUCKETS, I don't see any strong reason not
+	to do this.
+
+2012-04-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/threadCmd.c: [Bug 1603234] Stop leak in [thread::transfer].
+
+2011-12-05  Joe Mistachkin  <joe@mistachkin.com>
+
+	* generic/threadCmd.c: Fix #define issue when compiling for Tcl 8.5.
+
+2011-11-24   Jan Nijtmans <nijtmans@users.sourceforge.net>
+
+	* generic/tclThread.h:    Only export Thread_Init(), nothing more.
+	* generic/tclXkeylist.h
+	* generic/threadSpCmd.h
+	* generic/threadSvCmd.h
+	* generic/threadSvCmd.c
+	* generic/threadSvKeylistCmd.h
+	* generic/threadSvListCmd.h
+
+2011-11-20  Joe Mistachkin  <joe@mistachkin.com>
+
+	* generic/threadCmd.c: Correct check for current thread in the
+	ThreadReserve function [Bug 3411244].  Correct the order for releasing
+	the interpreter and freeing memory, see check-in [6067508840].
+
+2011-11-17  Joe Mistachkin  <joe@mistachkin.com>
+
+	* generic/threadCmd.c: Refactor ThreadEventProc to make sure all paths
+	out of the function call Tcl_Release on the necessary Tcl interpreters.
+	Also, call ThreadErrorProc consistently whenever the return code is not
+	TCL_OK (i.e. do not check for it to be equal to TCL_ERROR).
+
+2011-11-17  Joe Mistachkin  <joe@mistachkin.com>
+
+	* generic/threadCmd.c: The [thread::wait] command should use the
+	TCL_CANCEL_UNWIND flag when calling Tcl_Canceled because it manages its
+	own event processing loop.  Also, if the event processing loop is
+	terminated due to a script in progress being canceled or exceeding a
+	runtime limit, the registered error script should be evaluated, if any.
+
+2011-11-17  Joe Mistachkin  <joe@mistachkin.com>
+
+	* generic/threadCmd.c: The [thread::wait] command must cooperate with
+	the interpreter resource limiting (TIP #143) and asynchronous script
+	cancellation (TIP #285) functionality, when available.
+
+2011-11-17  Joe Mistachkin  <joe@mistachkin.com>
+
+	* generic/threadCmd.c: For [thread::cancel], avoid creating a new
+	Tcl_Obj when the default script cancellation result is desired.
+
+	* doc/thread.man: Update all remaining versions to 2.7b1.
+	* doc/tpool.man:
+	* doc/tsv.man:
+	* doc/ttrace.man:
+	* lib/ttrace.tcl:
+	* win/vc/pkg.vc:
+	* win/vc/thread_win.dsp:
+
+	* win/vc/makefile.vc: Stop using -debug:full as it causes an error
+	with the MSVC10 compiler.
+
+2011-09-12  Joe Mistachkin  <joe@mistachkin.com>
+
+	* generic/threadCmd.c: Add support for TIP #285 (asynchronous script
+	cancellation) via a new [thread::cancel] command (available only for
+	Tcl 8.6).
+	* win/vc/makefile.vc: Correct path to root of source checkout.
+
+2011-08-01  Don Porter  <dgp@users.sourceforge.net>
+
+	* win/vc/rules.vc: Extend support to MSVC10.  Thanks to Twylite.
+
+2011-06-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* configure.in:	Copied revisions from the "sampleextension" package
+	* Makefile.in:	to keep compatible with the latest INSTALL changes
+	in TEA 3.9.
+	* configure:	autoconf-2.59
+
+2010-12-08 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: Fixed Bug #3129844
+
+2010-11-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* Makefile.in:		Revised the `make dist` target so that the
+	* win/README.txt:	files under thread/win/vc in CVS are copied to
+	* win/vc/makefile.vc:	thread/win in the release, where tcl/pkgs/
+	* win/vc/thread_win.dsp:	expects to find them.
+
+	* configure:	autoconf-2.59
+
+2010-10-04 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/configure      Regenrated for TEA 3.9. Bumped version string
+	* generic/configiue.in   in all relevant files to 2.6.7  and autoconf'ed.
+	* win/vc/pkg.vc
+
+2010-09-28 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: Initialize tsdPtr->interp to NULL immediately after
+	releasing the interp on thread-exit that should hopefully resolve the
+	Tcl Bug #3026061
+
+	* generic/threadCmd.c: Removed safe-init so safe-interps should not be
+	able to run thread commands directly.
+
+	* lib/ttrace.tcl: Changed version to 2.6.7 to be in sync with main pkg.
+
+	* configure.in: Bumped version to 2.6.7 and autoconf'ed.
+
+2010-09-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/tpool.man, doc/tsv.man: Remove spaces in titledesc declaration;
+	doctools currently does not like it at all when generating correct
+	nroff output.
+
+2010-08-12  Andreas Kupries  <andreask@activestate.com>
+
+	* lib/ttrace.tcl (_serializensp, _serializeproc): Fixed typos which
+	smashed namespace name and opening brace of a script together, leading
+	to a syntax error for 'namespace eval' and preventing the use of
+	package Ttrace.
+
+2010-07-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* lib/ttrace.tcl: [Bug 3033206]: Be careful with variables outside of
+	procedures; Tcl's variable resolution rules can jump in if a variable
+	is not declared, which can be at best surprising.
+	Also rewrote the namespace serialization code to be more robust.
+
+2010-05-31  Andreas Kupries  <andreask@activestate.com>
+
+	* pkgIndex.tcl.in: Fixed procedure collisions for Thread package by
+	inlining the load command into the ifneeded script, as is standard for
+	most binary packages. Tweaked the procedure for Ttrace a bit, as the
+	result of [info commands] is a list, and using ::apply when possible.
+	A named procedure is only a fallback.
+
+2010-05-27  Andreas Kupries  <andreask@activestate.com>
+
+	* lib/ttrace.tcl: Resynchronized version number with Thread.
+
+2010-05-26  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/threadSpCmd.c (ThreadMutexObjCmd, ThreadRWMutexObjCmd):
+	[Bug 3007426]: Dropped trailing commas in enum definitions which
+	choked the strictly C89 AIX compiler.
+
+2010-04-01 Zoran Vasiljevic <zv@archiware.com>
+
+        * generic/tclXkeylist.c: Removed declaration of global TclX keylist
+	commands.
+
+2010-03-30 Zoran Vasiljevic <zv@archiware.com>
+
+	*** 2.6.6 TAGGED FOR RELEASE (thread-2-6-6) ***
+
+	* configure:              Redo for TEA 3.7
+	* configure.in:
+
+	* generic/tclThread.h:    Cosmetic changes for the inclusion
+	* generic/threadCmd.c:    in standard Tcl distribution.
+	* generic/threadPoolCmd.c:
+	* generic/threadSpCmd.c:
+	* generic/threadSvCmd.c:
+	* generic/threadSvCmd.h:
+
+2010-03-19   Jan Nijtmans <nijtmans@users.sourceforge.net>
+
+        * generic/threadSpCmd.c: Silence gcc warning: dereferencing
+        * .cvsignore:            type-punned pointer will break
+				 strict-aliasing rules.
+        * configure:             Regenerated using latest TEA
+
+2009-08-19 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadPoolCmd.c: Implemented [tpool::suspend]
+	* doc/tpool.man:           and [tpool::resume] commands
+	                           as per [RFE #2835615].
+	                           Also fixed [Bug #2833864].
+
+2009-07-22   Jan Nijtmans <nijtmans@users.sourceforge.net>
+
+	* generic/tclThread.h:   Remove unnecessary ';'s
+	* generic/tclXkeylist.c: Constify remaining of thread extension,
+	* generic/tclXkeylist.h: bringing it at the same level as Tcl 8.6
+	* generic/threadCmd.c:
+	* generic/threadPoolCmd.c:
+	* generic/threadSpCmd.c:
+	* generic/threadSvCmd.c:
+	* generic/threadSvCmd.h:
+	* generic/threadSvKeylistCmd.c:
+	* generic/threadSvKeylistCmd.h:
+	* generic/threadSvListCmd.c:
+
+2009-07-16   Alexandre Ferrieux <ferrieux@sourceforge.net>
+
+	* generic/tclXkeylist.c: Constify Tcl_ObjGetType return values to
+	* generic/threadSvCmd.c: get rid of const warnings; #if 0 of
+	* generic/threadSvCmd.h: SvFinalize which is unused.
+
+2009-05-04  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/vc/makefile.vc: Updated the MSVC build to work with MSCV 8
+	* win/vc/rules.vc:    and 9 on both intel and amd64 targets.
+	* win/vc/nmakehlp.c:
+
+2009-05-03  Alexandre Ferrieux <ferrieux@sourceforge.net>
+
+	* generic/threadSpCmd.c: Reorder things in RemoveMutex and RemoveCondv
+	[Bugs 2511424,2511408]; fix a Put* leak in an error path of rwmutexes
+	[Bug 2511420].
+
+2008-12-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/threadSvCmd.c: Handle TIP#336 addition of API to access
+	* generic/threadSpCmd.c: interp->errorLine
+
+2008-11-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/threadSvCmd.c (SvObjObjCmd): safely set interp result obj
+
+	* generic/threadCmd.c (ThreadCutChannel): fix const warning
+	(ThreadSend): safely set interp result object [Bug #1988779]
+
+2009-10-22 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadPool.c: fixed race condition when
+	creating minworkers worker thread upfront.
+	Failure to create one results in partial pool teardown.
+	Fix for [Bug #2005794].
+
+2008-05-22 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadSpCmd.h: Added one cond variable per
+	sync bucket to wait for item deletion.
+
+	* generic/threadSpCmd.c: Threads that want to delete
+	any sync primitive now wait properly until the last
+	thread that references the primitive detaches.
+
+	Fixed (broken) reference counting of items.
+
+	Fixed wrong release of an condition variable that is
+	about to be time-waited.
+
+2008-05-18 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadPoolCmd.c: Corrected potential race condition
+	in TpoolWorker().
+
+2007-06-30 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadPoolCmd.c: Fixed signedness compiler warning
+	on jobId in TpoolWaitObjCmd().
+
+2007-06-30 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadSvKeylistCmd.c: Fixed off-by-1 error in argument
+	parsing for SvKeylkeysObjCmd(). See [Tcl Bug #1575342].
+
+	* generic/threadPoolCmd.c: Fixed [Tcl Bug #1512225] (tpool::wait and
+	tpool::cancel setting wrong values to passed variables)
+
+2007-05-26 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadPoolCmd.c: Fixed [tpool::post -nowait] to start
+	  one new worker thread only if there are none started.
+
+2007-05-03  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/vc/rules.vc:     Updated the nmake build system to match
+	* win/vc/nmakehlp.c:   current 8.5. (support for non-intel build
+	* win/vc/makefile.vc:  and recent versions of msvc compiler)
+	* win/thread.rc:       Fixed line endings.
+
+2006-12-26 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: Fixed race condition for
+	creating preserved threads.
+
+	* generic/threadSv.c: Removed memory leak.
+
+2006-10-07 Zoran Vasiljevic <zv@archiware.com>
+
+	*** 2.6.5 TAGGED FOR RELEASE (thread-2-6-5) ***
+
+	Main changes since the last release:
+	------------------------------------
+
+	Set versioning of (embedded) Ttrace package to
+	the same revision level as the main Thread package.
+
+	The Ttrace must now explicitly be loaded in every
+	new thread created by [thread::create] command.
+
+	The [package require Ttrace] automatically loads
+	Thread package as well.
+
+	NOTE: be sure to configure/make/make install
+	because the pkgIndex.tcl loader file is modified.
+
+
+2006-10-06 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadPool.c:
+	* generic/threadCmd.c: Removed Tcl_PkgRequire
+	from the new thread initialization and just
+	initialize the C-aspect of the extension by
+	calling Therad_Init. This basically discards
+	the last checkin, which was in a sense bad
+	as it made thread creation very expensive
+	operation.
+
+	* pkgIndex.tcl.in: Added separate handling for
+	Ttrace loading. Now, users needing Ttrace caps
+	must "package require Ttrace" which in turn
+	automatically calls "package require Thread".
+	Also, each new thread created by [thread::create]
+	must be initialized for Ttrace by calling the
+	[package require Ttrace].
+	On the other hand, the "package require Thread"
+	is only necessary to first-load the package in
+	the startup thread. It is not necessary to call
+	this explicitly in every thread created by the
+	[thread::create] command as the C-code will
+	do that automatically as the first thing.
+
+	* doc/ttrace.man: Updated example usage to reflect
+	above changes.
+
+	* lib/ttrace.tcl: Spliced version numbering of the
+	Ttrace package to the version of the Thread package
+	because of the weirdness of the Tcl package loading
+	mechanism. Also, the broadcast script used within
+	the ttrace::eval now explicitly loads Ttrace package
+	in every broadcasted thread.
+
+2006-10-05 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadPool.c:
+	* generic/threadCmd.c: Call Tcl_PkgRequire() in the
+	NewThread() to properly initialize the extension
+	in any new thread.
+
+	* doc/ttrace.man: Add small example of ttrace usage.
+
+	* lib/ttrace.tcl: Fixed [ttrace:eval] to not to call
+	[package require Ttrace] in the broadcast script as
+	this is now done implicitly for all new threads.
+
+2006-08-06 Zoran Vasiljevic <zv@archiware.com>
+
+	*** 2.6.4 TAGGED FOR RELEASE (thread-2-6-4) ***
+
+	* generic/tclXkeylist.c: Silenced various
+	* generic/threadCmd.c    compiler warnings.
+	* generic/threadSvCmd.c:
+
+	* README: Removed version information.
+	* configure.in: Bumped to 2.6.4 version.
+	* confiigure: Regenerated.
+
+2006-06-04 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadSvCmd.c: SvIncrObjCmd() now implicitly creates
+	shared array and/or element and initializes it to zero if the
+	array and/or the element were not found.
+
+	* generic/tclThread.h: Removed some unusded debugging defs
+
+2006-04-05  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/vc/pkg.vc (PACKAGE_VERSION): correct to 2.6.3 for MSVC make.
+
+2006-03-28  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/threadPoolCmd.c (AppExitHandler): fix teardown to
+	destruct pool list correctly. [Bug 1427570]
+
+2006-03-16 Zoran Vasiljevic <zv@archiware.com>
+
+	*** 2.6.3 TAGGED FOR RELEASE (thread-2-6-3) ***
+
+	* README: Bumped to 2.6.3
+
+2006-03-15 Zoran Vasiljevic <zv@archiware.com>
+
+
+	* configure.in: Changed BUILD_sample to
+	BUILD_thread for Windows compile under MinGW.
+
+	+ configure: regen
+
+2006-03-14 Zoran Vasiljevic <zv@archiware.com>
+
+	* configure.in: Moved to 2.6.3 release
+	* configure: regen
+
+2006-02-09 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadSpCmd.c: fixed race condition when testing
+	constraints (mutex being locked by the caller thread) when
+	waiting on the condition variable. Also, fixed exclusive
+	mutex ownership and usage counting.
+	* configure.in: uses TEA 3.5
+	* tclconfig: updated to TEA3.5
+
+2006-01-28 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadSpCmd.c: Revamped handling because of the deep
+	* generic/threadSpCmd.h: race condition which resulted in
+	* tests/thread.test:     deadlocks when using exclusive mutexes.
+
+200i-10-15 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: channel transfer code cleans
+	  ready-to-fire events from the thread event queue
+	  prior to cutting the channel out of the interp.
+
+	* tests/thread.test: allows channel transfer tests
+	  for all Unices and Windows using Tcl 8.4.10+ core.
+
+2005-09-23 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: ThreadDetach() sets the both
+	  source and target thread ID's for the detached
+	  channel to zero, thus signalizing the cleanup code
+	  to leave the channel in the cleanup-list when the
+ 	  thread who detached it exits.
+
+2005-08-24 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/tclXkeylist.c: made some calls static
+	  so they do not interfere for static linking with
+          certain extensions.
+
+2005-08-08 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadSvCmd.c: fixed traversing the list
+	  of registered object types in Sv_DuplicateObj()
+	  (thx to eric.melbardis@netkitsolutions.com)
+
+2005-07-27 Zoran Vasiljevic <zv@archiware.com>
+
+	*** 2.6.2 TAGGED FOR RELEASE (thread-2-6-2) ***
+
+	* configure: regen
+	* unix/README: added some clarifications about usage
+	  of --with-gdbm switch
+	* README:
+	* configure.in: bumped version to 2.6.2
+	* aclocal.m4: fixed for alternate gdbm lib location
+	  as per patch request #1245204
+	* generic/tclThread.c: removed Thread_Unload and
+	  Thread_SafeUnload because we can't really be unloaded.
+	* html/thread.html: regen
+	* html/tpool.html: regen
+	* html/tsv.html: regen
+	* html/ttrace.html: regen
+	* man/thread.n: regen
+	* man/tpool.n: regen
+	* man/tsv.n: regen
+	* man/ttrace.n: regen
+
+2005-07-26  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* Makefile.in: Remove SYSTEM_TCLSH and any
+	code that tries to run tclsh at build time
+	aside from running the test cases.
+	* configure: Regen.
+	* configure.in: Remove calls to TEA_BUILD_TCLSH
+	and TEA_BUILD_WISH since these were removed
+	from tcl.m4. This fixes up the build when
+	--with-tcl indicates either a build dir or
+	and install dir.
+
+2005-07-25 Zoran Vasiljevic <zv@archiware.com>
+
+	* pkgIndex.tcl.in: simplified by introducing a
+	helper procedure, thus avoiding too much quoting.
+
+2005-07-24  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* Makefile.in: Subst TCLSH_PROG as SYSTEM_TCLSH
+	and subst BUILD_TCLSH and BUILD_TCLSH_PROG.
+	* configure: Regen.
+	* configure.in: Invoke TEA_BUILD_TCLSH from
+	tcl.m4 to correctly determine BUILD_TCLSH.
+
+2005-04-12 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/tclThread.h:
+	* generic/threadCmd.c: reverted some changes by the
+	last checkin which slipped in by mistake
+
+2005-04-09 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/tclThread.h:
+	* generic/threadCmd.c: added Thread_Unload and
+	Thread_SafeUnload to be able to load into the
+	8.5 shell. Both calls are still no-ops.
+
+2005-03-18  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* Makefile.in (AR): use @AR@
+	(TCLSH_ENV): add TCL_THREAD_LIBRARY var
+	* pkgIndex.tcl.in: grok TCL_THREAD_LIBRARY var
+
+	* configure, configure.in: update to TEA 3.2
+
+2005-03-15 Zoran Vasiljevic <zv@archiware.com>
+
+	* pkgIndex.tcl.in: Applied patch for Bug #1163357.
+	Also, fixed the case when directory path contains blanks.
+
+2005-03-05 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadSvCmd.c: fixed potential access
+	to the unlocked (and thus eventually freed) container
+
+	* lib/ttrace.tcl: the overloaded [info] command now
+	does the right thing when applied to non-existing
+	procedures. We now transparently resolve them and
+	then allow the [info] to operate on them.
+
+	The ttrace::enable can now be called recursively.
+
+	Also, fixed stript generation issues for namespaced
+	variables containing wild escape sequences.
+
+2005-01-03 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadPoolCmd.c: fixed Tcl Bug #1095370.
+	We were wrongly tearing down workers on idle timer
+	expiry *below* the number of workers set by the
+	"-minworkers" option.
+
+	* lib/ttrace.tcl: added [ttrace::config] to control
+	some runtime options. The only option it allows now
+	is "-doepochs". This is a boolean flag turning the
+        epoch generation off/on.
+	Also, improved handling of XOTcl introspections in
+	regard to namespaced objects/classes.
+
+2005-01-03 Zoran Vasiljevic <zv@archiware.com>
+
+	* lib/ttrace.tcl: added [ttrace::isenabled] and modified
+	the [ttrace::addtrace] to dynamically activate the tracer
+	if the tracing is already enabled. This way we can dynamically
+	load tracer scripts.
+
+2005-01-03 Zoran Vasiljevic <zv@archiware.com>
+
+        **** RELEASE: 2.6.1 Tagged ****
+
+	* aolserver.m4:
+	* configure.in:
+	* configure: rebuild and include conditional compilation
+	for AOLserver which was wrongly ommited since the switch
+	to the TEA3 build system.
+	Also, we will now revert to <major>.<minor>.<patch>
+	version numbers for all releases.
+
+	* generic/threadCmd.c: added new option "-head" to the
+	[thread::send] command so scripts can be placed on the
+	head of the thread event queue instead of the tail only.
+
+	* doc: rebuild html/nroff files from doctools sources
+
+	* generic/threadPoolCmd.c:
+	* generic/threadSvCmd.h:
+	* generic/tclThread.h: removed compat macros for 8.3 core
+
+	* test/thread.test: added case for [thread::send -head]
+
+2004-12-23 Zoran Vasiljevic <zv@archiware.com>
+
+        **** RELEASE: 2.6 Tagged ****
+
+	* tcl/cmdsrv/cmdsrv.tcl: example command server listens on
+	loopback interface (127.0.0.1) only
+
+	* README: removed stuff about (now unsupported) Tcl8.3 core
+	* unix/README: clarified usage of the CONFIG file
+	* win/vc: adjusted MSVC files for changes introduced by TEA3
+
+2004-12-18 Zoran Vasiljevic <zv@archiware.com>
+
+	**** COMPATIBILITY: Dropped support for Tcl8.3 ****
+
+	* aclocal.m4: Adjusted for TEA3
+	* Makefile.in:
+	* configure.in:
+	* pkgIndex.tcl.in:
+
+	* configure: Rebuild with autoconf 2.59
+
+	* tests/all.tcl:    Removed extra handling for Tcl 8.3
+	* tests/thread.tcl: since we do not support 8.3 any more
+	* generic/psGdbm.c:
+	* generic/threadCmd.c:
+	* generic/threadSvCmd.c:
+
+	* doc/thread.man: Updated docs for the 2.6 release
+	* doc/tpool.man:
+	* doc/tsv.man:
+	* doc/ttrace.man:
+
+2004-11-27 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadPoolCmd.c: Fixed race condition which resulted
+	in blocking at pool creation with high -minworkers threads.
+	This fixes the Tcl Bug #933975.
+
+2004-11-25 Zoran Vasiljevic <zv@archiware.com>
+
+	* tests/thread.tcl: Disabled all tests handling channel transfer
+	for Windows ports until core is capable of handling this correctly.
+
+        * generic/threadSpCmd.c: Fixed segmentation problems observed on
+	Windows ports and related to notification of an uninitialized
+	condition variable(s). This closes Bug #1051068 (wrongly posted
+	under Tcl Patches at SF).
+
+	* doc/thread.man: Fixed mutex/condvar code example. Thanks to
+	Gustaf Neumann of XOTcl for the tip.
+
+2004-10-21  Andreas Kupries <andreask@activestate.com>
+
+	* tests/thread.test: Added two tests checking the working of
+	fileevents after a pipe channel has been transfered. The second
+	has to fail for any core where TIP #218 is not applied, because
+	the incoming alert is directed to the wrong thread for event
+	processing.
+
+2004-10-20 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c (ThreadSetResult): adjusted handling of
+	interp result to accomodate for recent changes in Tcl core.
+	This closes Tcl Bug# 1050490.
+
+2004-10-19  Andreas Kupries <andreask@activestate.com>
+
+	* generic/threadSvCmd.c: Added a prototype for
+	SvObjDispatchObjCmd. Prevented compilation of debug variant on
+	Windows due to warning as error.
+
+	* tests/thread.test: Added more tests transfering channels between
+	threads for in-core drivers.
+
+2004-10-18  Andreas Kupries <andreask@activestate.com>
+
+	* generic/threadCmd.c (ThreadErrorProc): Added code to explicitly
+	initialize the field 'interp' in ThreadSendData. This was ok
+	(NULL) for a regular build, but when build with symbols the
+	guard pattern forced a crash in test thread-16.2.
+
+	* tests/thread.test: Duplicate test id thread-16.1 renamed to
+	thread-16.2.
+
+2004-08-14 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadPoolCmd.c: fixed broken parsing of
+	pool handles. Pool handles are now generated in the
+	same format as thread handles.
+
+	* generic/threadCmd.c: thread handles are now cased to
+	(void*) and sprint/sscanf calls are used to generate thread
+	handles. This concludes the effort of correcting broken
+	handles on 64-bit machines since the problem was actually
+	in Tcl itself, rather than here.
+
+2004-07-21 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/tclThread.h: corrected namespace prefix for
+	AOLserver 4.x or higher, since namespaced commands are
+	now supported.
+
+	* generic/threadCmd.c: allows for re-initializing of package
+	commands for AOLserver 4.x (or higheri) interpreters. This way
+	we assure to have correct set of commands even if nobody
+	loaded the package on server startup.
+	Also, thread handles returned by the package now have the form:
+	"tid<number>" in (yet another) attempt to rectify problems found
+	on Cray computers.
+
+	* generic/threadPoolCmd.c: adjusted handles of the pools to
+	match ones of threads (see above).
+
+2004-07-21 Zoran Vasiljevic <zv@archiware.com>
+
+	* doc/*: reformatted docs and added some clarifications
+	about mutex handling.
+
+	* generic/threadCmd.c: rewritten handling of thread handles
+	as passed to Tcl. Instead of casting Tcl_ThreadId to unsigned int
+	which brought some problems on Cray machines, we're now generating
+	opaque handles and match them to Tcl_ThreadId internally.
+
+	NOTE: this is not supposed to be a compatibility issue since
+	thread-handles should have been treated as opaque anyways.
+
+	* generic/threadSpCmd.*: improved behaviour when destroying locked
+	mutexes and locking the same mutex twice from the same thread.
+	In both cases we throw Tcl error instead of coring  the process
+	or deadlocking the (naive) application.
+
+	* generic/threadSvCmd.*: number of tsv buckets is now compile
+	time constant.
+
+	* lib/ttrace.tcl: Fixed error in unknown wrapper when the passed
+	command was empty string.
+
+	* tests/all.tcl
+	* tests/thread.test: rewritten from scratch.
+
+	* tests/tpool.test:
+	* tests/ttrace.test:
+	* tests/tsv.test: new files, currently no-ops.
+
+2004-01-31 Zoran Vasiljevic <zv@archiware.com>
+
+	* lib/ttrace.tcl: added unconditional "package require"
+	call to ttrace::eval so we need not explicitly load the
+	Ttrace package in each and every thread. Also, fixed some
+	issues with errorInfo/errorCode handling.
+
+	* pkgIndex.tcl.in: fixed Tcl Bug #918137
+	* doc/format.tcl: fixed inclusion of man.macros in
+	every *.n doc file
+
+2004-01-31 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: fixed incorrect handling of return
+        codes from the scripts passed to threads. We were wrongly
+        triggering error for non-error return codes such as TCL_RETURN,
+	TCL_BREAK, TCL_CONTINUE etc. Now we trigger error only for
+	TCL_ERROR and return other codes (as-is) to the caller.
+	This also fixes the Tcl Bug #884549.
+
+2003-12-22 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadSpCmd.c: added recursive and reader/writer locks
+	and associated commands
+
+	* generic/threadSpCmd.h: added new file
+
+	* generic/lib/ttrace.tcl: added Ttrace package implementation
+
+	* doc: added documentation for Ttrace package and synced other
+	doc files to match the release 2.6 state.
+
+
+2003-12-01 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: removed the concept of foreign
+	thread since it broke our async message bouncing. We
+	still have to find the way how we should avoid broadcasting
+	non-package threads (like for aolserver).
+
+2003-11-27 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: fixed mutex release in ThreadSend
+	when refusing to send message to foreign thread.
+	Also, clear the result of the thread::broadcast since it
+	should not return anything to the caller, no matter the
+	outcome of the command.
+
+2003-11-27 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: mark threads created by the package
+	to distinguish them from "foreign" threads. We will forbid
+	sending messages to those since they will probably never listen.
+
+	* generic/threadSvCmd.c: corrected some typos
+
+	* generic/threadSvListCmd.c: added implementation for the
+	"tsv::lset" command
+
+	* generic/threadPoolCmd.c: added optional varname argument
+	(last arg) to the tpool::cancel
+
+2003-11-25 Zoran Vasiljevic <zv@archiware.com>
+
+	* doc/format.tcl: new file with a simple poor man's
+	documentation formatter.
+
+	* doc/thread.man
+	* doc/tpool.man
+	* doc/tsv.man: new doctools source files for building
+	the package documentation.
+
+	* Makefile.in: added support for building nroff and html
+	files out of doctools sources found in doc directory.
+
+2003-11-18 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: added implementation of the
+	thread::broadcast command. This one asynchronously
+	sends a script to all known threads, except the caller.
+
+2003-09-03 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/tclXkeylist.(c|h): added keyed-list datatype
+	implementation borrowed from the TclX package. This is
+	now part of the shared variable command set.
+
+	* generic/threadSvCmd.(c|h): modified to support persistent
+	shared variables with plugin-architecture for different
+	persistent store implementations.
+
+	* generic/threadSvlistCmd.(c|h): modified to reflect added
+	support for persistent shared variables.
+
+	* generic/psGdbm.(c|h): added persistent store wrapper
+	for the GNU gdbm package.
+
+	* configure et al: regenerated with autoconf because of
+	added optional comilation with GNU gdbm. Updated makefiles
+	to process newly added files for keyed lists and persistent
+	stores.
+
+2003-08-27 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadPoolCmd.c: after expiration of the idle
+	timer, all idle workers exit unconditionaly. Before the
+	change, idle threads exited after getting the first job
+	posted. This way we were loosing work.
+
+2003-08-26 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadPoolCmd.c: fixed result list corruption
+	in TpoolCancelObjCmd.
+
+2003-07-27 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadPoolCmd.c: added "-nowait" option
+	to the "tpool::post" commandi. This allows the
+ 	caller to post jobs to the threadpool queue without
+	waiting for an idle thread. The implementation will
+	start at least one worker thread if there is none
+	available to satisfy the first request.
+	Added "tpool::cancel" command. See docs for info.
+
+2003-05-31 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: fixed ListRemoveInner for
+	the Tcl Bug #746352
+
+	* generic/threadSpCmd.c: modified Sp_Init to
+	return a proper value for Tcl Bug #746352
+
+2003-05-17 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: sets the name of the new thread
+	to "-tclthread-" when compiled for AOLserver
+
+2003-04-29 Zoran Vasiljevic <zv@archiware.com>
+
+        Tagged interim 2.5.2 release.
+
+	* configure.in
+	* configure: Added quick fix for autoconf issues
+        related to $srcdir and building of the package
+        from the top-level dir instead of unix/win subdir.
+        Thanks to Mo DeJong for the fix.
+
+2003-04-10 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: removed checking of stopped flag
+	during walk of the list of active threads. This
+	solves some subtle thread reservation problems
+	with threads marked to unwind on error.
+	Also, added new "-errorstate" configuration option
+	to set/get error state of reserved unwinding thread.
+
+2003-04-02 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c:
+	* generic/threadPoolCmd.c:
+	* generic/threadSpCmd.c:
+	* generic/threadSvCmd.c: always call registered exit callbacks
+	with non-NULL clientData, otherwise Tcl won't invoke
+	the registered  callback.
+
+2003-03-28 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadSvList.c
+	* generic/threadSvCmd.c: fixed some rare cases
+	where we incorrectly deep-copied the list object
+	having zero elements.
+
+	* generic/threadCmd.c: fixed broken AOLserver 3.x
+	compatibility mode introduced by last 4.x changes.
+
+2003-03-17 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadSvCmd.c: fixed incompatibility
+	with Tcl 8.4.2 filepath object
+
+	* generic/threadCmd.c:
+	* aolstub.cpp: adjusted for AOLserver 4.0
+
+2003-02-24 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: fixed ThreadSetResult
+	to correctly initialize all elements of the
+	result structure.
+
+2003-02-08 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: fixed ListRemoveInner
+	to correctly update global threadList ptr when
+	the last referenced thread exits. This was not
+	the case before and we were trashing memory
+	leading to process exitus.
+
+2003-01-25  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* generic/threadCmd.c (ThreadSendObjCmd):
+	The thread::send command was not working
+	under Win32 because threads that had an id
+	that was a negative number were generating
+	a usage error in the thread::send command.
+	* tests/thread.test: Add test for negative
+	number as thread id.
+
+2003-01-22 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: fixed reference to errorInfo
+	when reporting error from the passed script.
+
+2003-01-21  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* configure: Regenerate to include recent fixes
+	for mingw build support in tclconfig module.
+
+2002-12-18 Zoran Vasiljevic <zv@archiware.com>
+
+	* README: added some AOLserver info
+	* tcl/tpool/tpool.tcl: added missing tpool::names command
+
+2002-12-14 Zoran Vasiljevic <zv@archiware.com>
+
+	* doc/*: finished docs for the 2.5 release
+
+2002-12-09 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadPoolCmd.c: added tpool::names command
+	added -exitscript for tpool::create
+
+	* doc/tpool.tmml
+	* doc/man/tpool.n
+	* doc/html/tpool.html: added files. This is still the
+	work in progress.
+
+2002-12-06 Zoran Vasiljevic <zv@archiware.com>
+
+	* configure.in
+	* configure
+	* Makefile.in
+	* aolserver.m4: added support for compilation under
+	AOLserver as loadable module.
+
+2002-12-06 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadSvCmd.c: the tsv::lock now allows
+	for unsetting the shared array within the script argument.
+
+	* generic/threadPoolCmd.c: fixed one missing mutex unlock
+	in the ThreadRelease.
+
+        * tcl/tpool/tpool.tcl: implemented missing API calls found
+ 	in the C-level implementation.
+
+	* tcl/phttpd/phttpd.tcl: simplified switching to Tcl-level
+	threadpool implementation.
+
+2002-12-04 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadPoolcmd.c: rewritten to use
+	worker threads sitting on the cond var instead of
+	in the event loop. The poster thread still respects
+	i.e. does not block the event loop while posting jobs.
+
+2002-12-03 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/tclthread.h: added SpliceIn/SpliceOut macros.
+	Fixed to include exports from threadPoolCmd.c
+
+	* generic/threadSpCmd.c: does regular namespace handling
+	over the NS variable instead of hard-coding the "thread"
+	prefix for mutex/cond commands.
+
+	* generic/threadCmd.c: rewritten to use SpliceIn/SpliceOut
+        macros instead of hand-fiddling with linked lists.
+
+	* generic/threadPoolCmd.c: new file
+
+	* Makefile.in: added threadPoolCmd.c to list of source files.
+
+2002-11-25 Zoran Vasiljevic <zv@archiware.com>
+
+	* tcl/phttpd/phttpd.tcl: added raw file; no thread support
+	* tcl/cmdsrv/cmdsrv.tcl: first working version
+
+2002-11-24 Zoran Vasiljevic <zv@archiware.com>
+
+	* tcl/tpool/tpool.tcl: added threadpool implementation in Tcl
+	* tcl/phttpd: added directory for later mt-enabled pico-httpd
+	* tcl/cmdsrv: added directory for later socket command server
+	* doc/man/thread.n
+	* doc/thread.tmml
+	* doc/html/thread.html: new tsv::eval, thread::attach, thread::detach
+
+	* generic/threadSvCmd.h
+	* generic/threadSvCmd.c: added tsv::eval command
+
+	* generic/threadCmd.c: added thread::attach, thread::detach
+	Also, fixed thread::preserve and thread::release to accept
+	the thread id as the optional paramter.
+
+2002-11-23 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: fixed ListRemoveInner() to recognize
+	and ignore already removed tsd thread structures.
+	Fixed some invalid TCL_OK returns which masked serious errors.
+
+2002-11-07 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: fixes problem when trying to report
+	the error from an async callback when the stderr channel is
+	not available (wish/tclkit on windows). Thanks to
+	Wojciech Kocjan <wojciech@kocjan.org> for the correction.
+
+2002-10-23 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: added handling of background errors
+	while doing an async callback.
+
+2002-10-20 Zoran Vasiljevic <zv@archiware.com>
+
+	* doc/html/thread.html
+	* doc/man/thread.n
+	* doc/thread.tmml: fixed "thread::send" command summary.
+	It was showing the wrong position of the "-async" argument.
+
+	* generic/threadSpCmd.c: adjusted mutex/cond handles to
+	use the same format and handling as AOLserver counterparts
+	when compiled for AOLserver support. This way one can mix
+	and match primitives declared with ns_mutex and thread::mutex
+	and/or ns_event and thread::cond commands.
+	Added thread::eval command. See documentation for syntax and usage.
+
+2002-10-15  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* configure:
+	* configure.in: move the CFLAGS definition into TEA_ENABLE_SHARED
+	and make it pick up the env CFLAGS at configure time.
+
+2002-08-23 Zoran Vasiljevic <zv@archiware.com>
+
+	* threadCmd.c: fixed potential memory corruption
+	when releasing preserved interpreter.
+	[Tcl bug 599290]
+
+2002-08-19 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadSvCmd.c: we now properly invalidate
+	duped object string rep if the internal rep has been
+	regenerated.
+
+2002-08-18 Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: updated some comments
+	* generic/threadSvCmd.c:
+	* generic/threadSvListCmd.c: fixed silly mem leak
+	where we were registering commands and object types
+	for each new thread, resulting in unnecessary table
+	grow. Not a memory leak per-se, therefore not found
+	by Purify, but shows itself by observing the size
+	of the process using the top utility. Gosh!
+
+2002-08-03  Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadSvListCmd.c: corrected "tsv::lpush"
+	to correctly make a copy of the object pushed into
+	the list in shared array element.
+
+2002-07-22  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* README: Fix typo.
+	* doc/man/thread.n: Note that thread::join and
+	thread::transfer are only available with Tcl 8.4.
+
+2002-07-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
+        * generic/threadSvCmd.c (Sv_tclEmptyStringRep, Sv_Init):
+        Avoid linking to the tclEmptyStringRep variable defined
+        in Tcl since this makes it very difficult to load
+        the Thread package into an executable that has
+        also loaded Tcl. The previous approach used a hack
+        under Windows, we now use this same hack on all systems.
+	[Tcl patch 584123]
+
+2002-07-19  Zoran Vasiljevic <zv@archiware.com>
+
+	* threadCmd.c: added some macros to simplify
+	adding and removing result structure in and
+	out of the corresponding lists
+
+2002-07-18  Zoran Vasiljevic <zv@archiware.com>
+
+	* threadCmd.c: modified thread::release to allow
+	for optional "-wait" argument. This will result in
+	the thread waiting until the target thread has really
+	exited. Otherwise, the command exits immediately and
+	target thread may exit asynchronously some time later.
+ 	This is not techically needed since one can always join
+	the exiting thread, but the join command is not
+	available for some older Tcl versions.
+
+2002-07-13  Zoran Vasiljevic <zv@archiware.com>
+
+	* doc/man:
+	* doc/html: added two directories with TMML generated files
+	* doc/thread.tmml: fixed for the final 2.4 release
+	* Makefile.in: updated install-doc target to look for man files
+	under doc/man instead only under doc directory
+
+2002-07-12  Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadSvCmd.s: fixed handling of string rep
+	in shared var object duplicator
+
+2002-07-09  Zoran Vasiljevic <zv@archiware.com>
+	* README: added this file
+ 	* license.terms: added this file
+
+2002-07-05  Zoran Vasiljevic <zv@archiware.com>
+
+        * tclconfig/tcl.m4: fixed reference to MINGW so we can
+	compile w/o MSVC under windows.
+
+2002-07-03  Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadSvCmd.c: simplified object duplicator
+
+2002-06-17  Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: cleanup of some unused variables
+	* generic/threadSvCmd.c:
+	* generic/ThreadSpCmd.c:
+	* generic/threadSvList.c: added CONST qualifiers to avoid warnings
+	when compiling against 8.4 core.
+
+2002-05-25  Zoran Vasiljevic <zv@archiware.com>
+	* generic/threadCmd.c: added some typecasts to satisfy Windows
+	* generic/threadSvCmd.h: added some typecasts to satisfy Windows
+
+2002-05-04  Zoran Vasiljevic <zv@archiware.com>
+	* generic/threadSvCmd.c: removed errant reference to (still not)
+	supported shared dictionary and shared keylist datatypes.
+
+2002-04-27  Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: fixed processing of -eventmark. We now
+	properly wait for target thread to catch up with processing events.
+
+2002-04-07  Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: added call to Ns_TclMarkForDelete(interp)
+	when compiled for AOLserver support, otherwise we were leaking std
+	channels on thread exit.
+
+2002-04-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* Makefile.in: improved use of DESTDIR in install targets.
+	Removed need for installdirs target.
+	Broke TCLSH_PROG into TCLSH_ENV and TCLSH_PROG with TCLSH var and
+	added comments about TCLSH_ENV.
+	Added default shell and gdb targets.
+
+	* configure:
+	* configure.in: updated to new TEA base that: prefixes all macros
+	with TEA_* instead of SC_*; adds TEA_PREFIX, which defaults the
+	prefix and exec_prefix values to what Tcl used; adds
+	TEA_SETUP_COMPILER, which handles basic compiler / support program
+	checks and simplifies the configure.in.  Turn on --enable-threads
+	by default and do sanity checking as well.
+
+2002-04-01  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* Makefile.in (install-lib-binaries): ensure that binary files are
+	installed with executable bit set (use INSTALL_PROGRAM)
+
+2002-03-28  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* configure:
+	* configure.in: BUILD_${PACKAGE} had to be static BUILD_thread in
+	AC_DEFINE because autoconf wasn't substituting ${PACKAGE}.
+
+2002-03-27  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* Makefile.in (TCLSH_PROG): moved and updated env var definitions
+	to have tclsh work from build dir.  Removed TCL_EXTRA_CFLAGS,
+	TCL_LD_FLAGS, TCL_SHLIB_LD_LIBS, TCL_DBGX, TCL_STUB_LIB_FILE,
+	TCL_STUB_LIB_SPEC as they aren't needed (configure acquires all
+	that info for us).  TCL_LIBS is also not needed, but left in as a
+	reference to the libs Tcl used.
+
+	* configure: regen based on updated tclconfig/tcl.m4
+	* configure.in: moved the SHLIB_LD_LIBS magic into
+	tclconfig/tcl.m4 and noted where users can modify (SHLIB_LD_)LIBS.
+
+2002-03-19  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclThread.h:
+	* generic/threadCmd.c: added stub voodoo magic to allow building
+	against Tcl 8.3 and still get all the 8.4+ functionality when later
+	loaded into an 8.4+ interp.
+
+	* pkgIndex.tcl.in: simplified auto-generated pkgIndex.tcl file.
+
+	* tests/all.tcl:
+	* tests/thread.test: improved to detect 8.3/8.4 pkg differences
+
+	* tclconfig/tcl.m4,install-sh (new):
+	* config/* (removed):
+	* aclocal.m4:
+	* configure:
+	* configure.in:
+	* Makefile.in: Updated build system to use tclconfig (TEA 2002)
+	structure.
+
+2002-03-09  Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadSvCmd.c: fixed memory leak when copying objects
+	using custom object duplicator. If a duplicator was registered
+	more than once, we were leaking memory.
+
+2002-03-08  Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: added thread::configure -unwindonerror
+	configuration option. See docs for usage.
+
+	* doc/thread.n: added docs for thread::configure -unwindonerror
+
+2002-03-07  Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadSvCmd.c: tsv::names will skip reporting shared
+	arrays with leading dot in their names. This is turned-on
+	only for AOLserver builds with the HIDE_DOTNAMES. For the
+	regular Tcl builds, all arrays are reported, regardless of
+	the name. Motivation behind this feature is to allow certain
+	data privacy. It is not name-clash proof, though.
+
+2002-02-12  Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: fixed thread::preserve glitch. We never
+	actually did bump the reservation counter by a silly mistake.
+
+2002-02-12  Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: added thread::preserve and thread::release
+	commands. These allow for a simple reference counting when creating
+	and/or tearing-down threads. Instead of calling thread::unwind in
+	the target thread, one can use "thread::release id" to dispose it.
+	This is much easier to use and it can be coupled with calls to
+	thread::preserve to implement simple thread reservation mechanism.
+
+	* doc/thread.n: added docs for thread::preserve/thread::release
+
+2002-02-09  Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: added thread::configure interface.
+	Currently only "-eventmark" option is supported.
+	Allows for AOLserver builds to change the "thread::" prefix
+	by re-defining the "NS" compile-time constant.
+
+	* doc/thread.n: added docs for thread::configure
+
+2002-02-06  Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/aolserv.cpp: (new) added for loading into the AOLserver.
+	Still needs to fix the Makefile and friends to get it up and
+	running.
+
+	* generic/threadCmd.c: added conditional setup of the command
+ 	prefix. Now, the "NS" can be used to select the command prefix
+ 	for thread::* commands.
+
+2002-01-26  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/threadSvCmd.c:  A small 'const' qualifier change to remove a
+	warning.  It's a bit more wordy now, but reads a little clearer to me.
+	Unscambling pointer math gives me a headache and combined with a cast
+	tends to get dangerous.
+
+	* win/threadWin.c: new idea for thread::kill added.  It's wrapped in an
+	#if 0/#endif for now.  I do notice that tcl.h is now typedef'ing
+	ClientData as an 'int *'.  It used to 'void *', didn't it??  The
+	ISO/ANSI/CLEAN C style of setting a typed pointer to a void* now doesn't
+	want to work.  Maybe I do too much C++ to have noticed this before...
+
+2002-01-23  Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: fixed address of the target interpreter when
+	doing the callback async script processing. All messages went to the
+	main interpreter instead of the selected interpreter, causing process
+	to hung when posting callbacks to more that one interp at the same time.
+	(thanks Jean-Luc Fontaine for the tip)
+
+2002-01-20  Zoran Vasiljevic <zv@archiware.com>
+
+	* generic/threadCmd.c: fixed multiple async reporting of error events
+	(thanks Jean-Luc Fontaine for the tip)
+
+2002-01-02  Zoran Vasiljevic <zv@archiware.com>
+
+        * generic/threadSvListCmd.* (new): added for the new implementation
+        of the thread-shared-variable (tsv) interface.
+        * generic/threadSvCmd.c: now uses shared Tcl objects instead of strings
+        for storing data in shared arrays. This improves performance on large
+        shared data structures.
+        Added new tsv::* syntax, per request. This replaces older thread::sv_*
+        interface. Older commands are still present but will be removed as
+        soon we hit the 3.0 version.
+        * generic/threadCmd.c: revamped to support asynchronous backfiring
+        of scripts so we can vwait on the results of thread processing.
+        This also corrected the bug #464340. Affected command is thread::send.
+        * doc/thread.n: added docs for all thread::* and tsv::* commands.
+        This fixes #416850 bug report. The html/tmml files are still out of date.
+        * configure: built with autoconf 2.52
+        * config/config.guess (new): needed for the new configure
+        * config/config.sub (new): needed for the new configure
+        * Makefile.in: added lines for new generic/threadSvListCmd.c
+        * configure.in: moving to 2.4 version.
+        * unix/threadUnix.c: removed traces of ThreadKill. It is still not clear
+        wether we should implement this functionality or not.
+        * win/threadWin.c: see above.
+        * pkgIndex.tcl.in: fixed to correctly handle version for different Tcl core
+        versions.
+
+2001-09-05  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/*:
+	* win/threadWin.c (new): updated for a new threadWin.c and finished
+	replacing use of thread.h with tclThread.h.  threadWin.c is an
+	experiment to add a 'thread::kill' command.  Not done yet.
+
+	* win/vc/thread.rc (removed):
+	* win/thread.rc (new): moved it up a directory.
+
+2001-09-04  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/thread.h (deleted):
+	* generic/tclThread.h (new):
+	* generic/threadCmd.c:  decided to change the name of 'thread.h' to
+	'tclThread.h', per request.
+
+	* generic/thread.h:
+	* generic/threadCmd.c:  Re-added original implimentation of [thread::exit].
+	for `emergency use only`.  You have been warned ;)
+
+	* configure.in:
+	* configure:
+	* win/vc/thread.dsp:
+	* win/vc/pkg.vc:  Upped version numbers to 2.3 and 2.1.3 because I just cut
+	a release.
+
+2001-09-04  David Gravereaux <davygrvy@pobox.com>
+
+	-=[ Official 2.2 Tagged and cut. ]=-
+
+2001-05-27  David Gravereaux <davygrvy@pobox.com>
+
+	* tests/thread.test: fixed small typo in comments.
+
+2001-08-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* Makefile.in: corrected handling of VERSION
+
+	* generic/threadCmd.c:
+	* generic/thread.h: added Thread_SafeInit
+
+	* win/vc/makefile.vc: added -DBUILD_thread to cflags.
+
+2001-05-27  David Gravereaux <davygrvy@pobox.com>
+
+	* configure:
+	* configure.in:
+	* Makefile.in:
+		Added package versions to the compile flags. [bug #421246]
+
+2001-04-28  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/threadCmd.c (NewThread): removed the previous addition of
+	Tcl_FinalizeThread.  Tcl_ExitThread calls it anyways (my mistake).
+	The resource leak was in the core.  See ->
+	http://sourceforge.net/tracker/?func=detail&atid=110894&aid=419683&group_id=10894
+	for the fix.  That patch is pending approval.
+
+	To acheive the same behavior of emptying the event loop the way
+	thread::wait used to work, use the following:
+		set T [thread::create {thread::wait; update}]
+		thread::send -async $T thread::unwind
+
+	* generic/thread.h:
+	* win/vc/makefile.vc:
+	* win/vc/thread.rc:
+	* win/vc/pkg.vc (new): Moved version numbers from the header file.  It isn't
+	an export API or anything.  Moved version numbers to the build files.  I'll
+	modify configure.in and makefile.in a little later.
+
+2001-04-26  David Gravereaux <davygrvy@pobox.com>
+
+	* config/* (new): old site-wide config directory re-added.
+
+	* generic/threadCmd.c (ThreadEventProc): ThreadErrorProc now
+	supported in asyncronous sends when Tcl_Eval returns other than
+	TCL_OK.  Errors were silently ignored prior to this. Bug #219324
+
+	==== INTERFACE CHANGE ====
+	* generic/threadCmd.c:
+	* generic/thread.h: thread::exit renamed to thread::unwind. The
+	name of 'exit' is misleading.  An exit implies an unconditional
+	return.  But there are conditions.  'unwind' describes with more
+	clarity what's happening to the prior thread::wait.  For example:
+
+	  # parent thread
+	  set T [thread::create {source worker.tcl}]
+	  ....
+	  thread::send -async $T doStuff
+	  ....
+	  thread::send -async $T doStuff
+	  ....
+	  thread::send -async $T thread::unwind
+
+	  # worker.tcl
+	  proc init    {} {#do initialization}
+	  proc cleanup {} {#do cleanup}
+	  proc doStuff {} {#the work}
+	  init
+	  thread::wait
+	  cleanup
+
+	When worker.tcl is sourced, the execution stops at thread::wait and
+	the event loop is entered.  When thread::unwind is sent to the worker,
+	thread::wait falls-out and cleanup is called.  The condition for
+	thread::unwind to cause an exit is determined by the script.  If
+	thread::wait was the last Tcl command in the script, yes the thread
+	will exit.  But if thread::wait is not the last, the execution of the
+	script is just continued.  Hence, the name change to clarify this fact.
+
+	Package version has not been changed.  There hasn't been an official
+	release of 2.2, so it stays.
+
+	* doc/thread.n:
+	* tests/thread.test: Replaced thread::exit with thread::unwind and
+	documented the change and clarified the subtleties.
+
+	* win/vc/makefile.vc:
+	* win/vc/thread.dsp: Changed NODEBUG macro to be DEBUG instead.
+	Double negatives give me a headache.  DEBUG=1 makes more sense
+	to me than NODEBUG=0.  Not that I didn't think you wouldn't have
+	disagreed it was confusing, no?
+
+	* win/vc/config.vc: Added a reminder to edit before using.
+	* win/vc/thread.rc: Added authors and removed the Ajuba branding.
+
+2001-04-25  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/threadCmd.c (ThreadWait)(NewThread): Removed the event
+	loop sinking which was probably done because Tcl_FinalizeThread
+	was missing from NewThread().  Now the event loop is cleaned
+	by Tcl_FinalizeThread and ThreadWait doesn't manipulate events
+	that don't belong to it.  Bug #418689 and #418693
+
+	* generic/threadCmd.c (Thread_Init): logic fix in a version check
+	for determining the 8.3 package subset.
+
+2000-11-02  David Gravereaux <davygrvy@ajubasolutions.com>
+
+	* generic/threadCmd.c (NewThread): Added logic to test for a
+	working Tcl_Init() based on the core version at runtime and ignore
+	its failure in versions 8.3.[1,2] and 8.4a1.  [BUG: 5301]
+
+2000-10-26  David Gravereaux <davygrvy@ajubasolutions.com>
+
+	* generic/thread.h:
+	* win/vc/config.vc:
+	* win/vc/makefile.vc:
+	* win/vc/thread.dsp: upped version numbers to 2.2 along with adding
+	a new macro (THREAD_VERSION_SUBSET83) defining the version when
+	loaded into an 8.3 core.  Which happens to be "2.1.1" at this time.
+
+	* generic/threadCmd.c (Thread_Init): Added logic to allow setting
+	the package version at runtime to "2.2" when compiled against 8.4
+	and loaded into 8.4.  When compiled against 8.4, yet loaded into
+	8.3, thread::join and thread::transfer are not added to the interp
+	and the package version is set to "2.1.1" instead from the single
+	binary.  [ie. multiple interfaces in one binary]  When compiled
+	against 8.3, thread::join and thread::transfer are non-existant and
+	the package version is always "2.1.1" to maintain a consistent
+	interface in all combinations (as per discussions with Don Porter).
+
+2000-10-16  Zoran Vasiljevic <zv@munich.com>
+
+	* generic/threadSvCmd.c ThreadSvUnsetObjCmd(): deadlocked.
+        Forgot to release shared-array lock which resulted in
+        deadlock after first successful unset of the variable.
+
+2000-08-29  David Gravereaux <davygrvy@ajubasolutions.com>
+
+	* generic/threadCmd.c (NewThread): Tcl_Init return value wasn't
+	being verified.  Added a check and failure logic to fall-out.
+	[Bug: 5301]
+
+2000-08-28  David Gravereaux <davygrvy@ajubasolutions.com>
+
+	* generic/threadCmds.c (Thread_Init): Added logic to enable
+	thread::join and thread::transfer when loaded into an 8.4+ core.
+	We don't want a seg fault when the Stubs tables don't match for
+	the functions that don't exist in an 8.3 core.
+
+2000-08-23  Brent Welch <welch@ajubasolutions.com>
+
+	* configure.in:
+	* win/vc/makefile.vc: Changed to version 2.1
+	* generic/threadCmds.c: Made the code that uses new Tcl 8.4 APIs
+	conditional using #ifdef.  Tested with 8.3.2
+	* Applied thread-2-1 tag for use with tclhttpd bundled release.
+
+2000-08-21  David Gravereaux <davygrvy@ajubasolutions.com>
+
+	* win/vc/makefile.vc:
+	* win/vc/thread.rc: added version numbers to filename to follow
+	Tcl standards.
+
+	* doc/thread.tmml(new): Initial TMML document.
+
+2000-08-20  David Gravereaux <davygrvy@ajubasolutions.com>
+
+	* win/vc/config.vc:
+	* win/vc/makefile.vc:
+	* win/vc/README.txt:
+	* win/vc/thread.dsp:  A near top down rewrite that adds
+	four more build configurations.  See README.TXT for the
+	details.
+
+	* win/vc/.cvsignore:  A few more glob patterns added to match
+	the new build directories.
+
+2000-08-09  David Gravereaux <davygrvy@ajubasolutions.com>
+
+	* win/vc/thread.rc: swapped "Scriptics Corp" for "Ajuba
+	Solutions"
+
+	* win/vc/config.vc:
+	* win/vc/makefile.vc: cleaned-up old cruft.  Added new files
+	from Zoran's patches.  made swapping to MSDev 6.0 easier.
+	Removed the '!if $(_NMAKE_VER) > 162' test for 2 reasons.
+
+	1) batchmode inference rules are valid since MSDev 5.0 and
+	the core can't be built with less.  So don't bother testing.
+
+	2) nmake.exe that comes with MSDev 6.0 has a bug with the
+	meaning of that macro and MS decided to use a string instead
+	breaking the integer comparison test.
+
+	Also added vcvars32.bat to a new setup rule and got config.vc
+	much smaller.
+
+	* win/vc/thread.dsp: Added new files from Zoran's patch.
+
+	* win/.cvsignore(deleted):
+	* win/vc/.cvsignore(added): moved file to help keep a cleaner
+	build environment.
+
+	* generic/threadSvCmd.c: Added some additional casting of
+	Tcl_GetHashValue to prevent compiler warnings.
+
+	* generic/threadCmd.c(ThreadWait): Removed the event loop
+	sinking after the "while(..) Tcl_DoOneEvent();" because this
+	extension is only responsible for it's own events in the event
+	loop.  Any other extension that's queueing events must be
+	responsible for it's own cleanup and should be aware of when
+	the interp (ie. this thread) is going away when we fall-out
+	to Tcl_DeleteInterp from the Tcl_Eval in NewThread().  If other
+	extensions (like Tk) don't become aware, then they need to add
+	a Tcl_CallWhenDeleted handler.
+
+2000-07-14 Zoran Vasiljevic <zv@munich.com>
+
+	* generic/threadCmd.c: improved thread::exit behaviour
+	  now does a better job of draining the event loop before exit.
+	  may have some wishes open, though - see ThreadWait().
+
+	* generic/threadSpCmd.c, generic/threadSvCmd.c:
+	  added some comments in function headers.
+	  docs/tests for above still pending.
+
+2000-07-03 Zoran Vasiljevic <zv@munich.com>
+
+   	Summary of changes:
+
+	* generic/threadSpCmd.c: new file with implementation of
+	  "thread::mutex" and "thread::cond" commands. Documentation
+	  and tests are still pending.
+
+	* generic/threadSvCmd.c: new file with implementation of
+	  "thread::sv_*" family of commands modeled after AOLserver
+	  nsv_* ones. Documentation and tests are still pending.
+
+	* Makefile.in: fixed for the two above
+
+	* doc/thread.html
+	* doc/thread.n: added 'thread::exists' docs
+
+	* generic/thread.h added declarations for new commands (above)
+
+	* generic/threadCmd.c:
+
+	  Added "thread::exists" command.
+
+	  Moved most of internal functions in threadCmd.c to statics,
+          except the Thread*ObjCmd().
+
+	  Changed behaviour of "thread::exit". It now simply flips the
+          bit to signal thread stuck in thread::wait to gracefuly exit.
+          Consequence: command now does not trigger error on thread exit.
+          Also, thread event queue is now properly cleared.
+          ThreadWait() and ThreadStop() are newly added to support this.
+          Also the ThreadSpecificData has one more integer: "stopped"
+
+	  Replaced ref's to obsolete Tcl_GlobalEval() with Tcl_EvalEx().
+
+	  Fixed broken 'thread::create -joinable script';
+          was missing initialization of script variable
+
+	  Added calls to initialize new commands in threadSpCmd.c
+	  and threadSvCmd.c files.
+
+2000-05-18 Brent Welch <welch@scriptics.com>
+
+	* Restored Andreas' changes for transferring sockets.
+
+2000-05-16 Brent Welch <welch@scriptics.com>
+
+	* Temprarily rolled back Andreas' changes so I can fix up
+	the 2.0 release (configure and Make).  Also need to apply
+	a 2.0 tag.
+
+2000-05-09 Andreas Kupries  <a.kupries@westend.com>
+
+	* tests/thread.test: Removed dependency on aclocals.m4. Using a
+	  real temporary file now, as created by a call to
+	  tcltest::makeFile. Updated test 6.3 to use the correct length
+	  information.
+
+2000-05-04  Andreas Kupries <a.kupries@westend.com>
+
+	* Overall changes:
+	  (1) Added joinable threads.
+	  (2) Added transfer of channels between threads.
+
+	* generic/threadCmd.c: Added functions Thread_Join and
+	  ThreadJoinObjCmd.
+
+	  Extended function ThreadCreateObjCmd to handle a
+	  -joinable flag.
+
+	  Fixed bug in Thread_Create, the argument 'stacksize' was not
+	  used.
+
+	  Removed declaration of ThreadObjCmd, which was not used anywhere
+	  else in the code.
+
+	  Added functions Thread_Transfer, ThreadTransferEventProc and
+	  ThreadTransferObjCmd. Extended behaviour of ThreadDeleteEvent
+	  and ThreadExitProc to deal with the new class of events.
+
+	  Changed usage of ckfree to the more canonical Tcl_Free. Same for
+	  ckalloc and Tcl_Alloc.
+
+	* Makefile.in: Fixed bug with regard to the installation of
+	  documentation.
+
+	* doc/thread.*: Added documentation of create -joinable,
+	  thread::join and thread::transfer.
+
+	* tests/thread.test: Added tests for joining of threads and moving
+	  channels between threads.
+
+2000-04-19  Brent Welch <welch@scriptics.com>
+
+	* win/vc/config.rc, Makefile.vc: Fixes from David Gravereaux
+
+2000-04-18  Brent Welch <welch@scriptics.com>
+
+	* Makefile.in: Fixes for make install
+
+2000-04-17  Brent Welch <welch@scriptics.com>
+
+	* generic/threadCmd.c
+	Added Tcl_CreateThreadType and TCL_RETURN_THREAD_TYPE
+	macros for declaring the NewThread callback proc.
+
+2000-04-11  Brent Welch <welch@scriptics.com>
+
+	* Picked up minor changes from David Gravereaux <davygrvy@bigfoot.com>
+	* for compilation on windows with his alternate project files.
+
+2000-04-10  Brent Welch <welch@scriptics.com>
+
+	* Moved all the configure.in, Makefile.in etc. up to the top level out
+	* of the unix (and win) subdirectories.  These are now shared.
+	* If you are using CVS, you'll want to get the "config" module into
+	* this directory, or do the checkout of thread again so the config
+	* module is brought in.  You should have a "config" subdirectory of
+	* your main thread workspace directory.
+
+2000-04-09  Brent Welch <welch@scriptics.com>
+
+	* Updated to compile against 8.3.1 export thread APIs
+	* Added Windows makefiles
+
+2000-03-27  Brent Welch <welch@scriptics.com> (proxy for Andreas Kupries)
+
+	* tests/all.tcl: Added this file
+	* tests/thread.test: fixed to use tcltest
+	* doc/thread.n: Added this file as clone of thread.html
+	# doc/thread.html: fixed typo

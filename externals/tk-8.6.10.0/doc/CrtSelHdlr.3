@@ -1,0 +1,116 @@
+'\"
+'\" Copyright (c) 1990-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tk_CreateSelHandler 3 4.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_CreateSelHandler, Tk_DeleteSelHandler \- arrange to handle requests for a selection
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+\fBTk_CreateSelHandler\fR(\fItkwin, selection, target, proc, clientData, format\fR)
+.sp
+\fBTk_DeleteSelHandler\fR(\fItkwin, selection, target\fR)
+.SH ARGUMENTS
+.AS Tk_SelectionProc clientData
+.AP Tk_Window tkwin in
+Window for which \fIproc\fR will provide selection information.
+.AP Atom selection in
+The name of the selection for which \fIproc\fR will provide
+selection information.
+.AP Atom target in
+Form in which \fIproc\fR can provide the selection (e.g. STRING
+or FILE_NAME).  Corresponds to \fItype\fR arguments in \fBselection\fR
+commands.
+.AP Tk_SelectionProc *proc in
+Procedure to invoke whenever the selection is owned by \fItkwin\fR
+and the selection contents are requested in the format given by
+\fItarget\fR.
+.AP ClientData clientData in
+Arbitrary one-word value to pass to \fIproc\fR.
+.AP Atom format in
+If the selection requestor is not in this process, \fIformat\fR determines
+the representation used to transmit the selection to its
+requestor.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_CreateSelHandler\fR arranges for a particular procedure
+(\fIproc\fR) to be called whenever \fIselection\fR is owned by
+\fItkwin\fR and the selection contents are requested in the
+form given by \fItarget\fR.
+\fITarget\fR should be one of
+the entries defined in the left column of Table 2 of the
+X Inter-Client Communication Conventions Manual (ICCCM) or
+any other form in which an application is willing to present
+the selection.  The most common form is STRING.
+.PP
+\fIProc\fR should have arguments and result that match the
+type \fBTk_SelectionProc\fR:
+.CS
+typedef int \fBTk_SelectionProc\fR(
+        ClientData \fIclientData\fR,
+        int \fIoffset\fR,
+        char *\fIbuffer\fR,
+        int \fImaxBytes\fR);
+.CE
+The \fIclientData\fR parameter to \fIproc\fR is a copy of the
+\fIclientData\fR argument given to \fBTk_CreateSelHandler\fR.
+Typically, \fIclientData\fR points to a data
+structure containing application-specific information that is
+needed to retrieve the selection.  \fIOffset\fR specifies an
+offset position into the selection, \fIbuffer\fR specifies a
+location at which to copy information about the selection, and
+\fImaxBytes\fR specifies the amount of space available at
+\fIbuffer\fR.  \fIProc\fR should place a NULL-terminated string
+at \fIbuffer\fR containing \fImaxBytes\fR or fewer characters
+(not including the terminating NULL), and it should return a
+count of the number of non-NULL characters stored at
+\fIbuffer\fR.  If the selection no longer exists (e.g. it once
+existed but the user deleted the range of characters containing
+it), then \fIproc\fR should return \-1.
+.PP
+When transferring large selections, Tk will break them up into
+smaller pieces (typically a few thousand bytes each) for more
+efficient transmission.  It will do this by calling \fIproc\fR
+one or more times, using successively higher values of \fIoffset\fR
+to retrieve successive portions of the selection.  If \fIproc\fR
+returns a count less than \fImaxBytes\fR it means that the entire
+remainder of the selection has been returned.  If \fIproc\fR's return
+value is \fImaxBytes\fR it means there may be additional information
+in the selection, so Tk must make another call to \fIproc\fR to
+retrieve the next portion.
+.PP
+\fIProc\fR always returns selection information in the form of a
+character string.  However, the ICCCM allows for information to
+be transmitted from the selection owner to the selection requestor
+in any of several formats, such as a string, an array of atoms, an
+array of integers, etc.  The \fIformat\fR argument to
+\fBTk_CreateSelHandler\fR indicates what format should be used to
+transmit the selection to its requestor (see the middle column of
+Table 2 of the ICCCM for examples).  If \fIformat\fR is not
+STRING, then Tk will take the value returned by \fIproc\fR and divided
+it into fields separated by white space.  If \fIformat\fR is ATOM,
+then Tk will return the selection as an array of atoms, with each
+field in \fIproc\fR's result treated as the name of one atom.  For
+any other value of \fIformat\fR, Tk will return the selection as an
+array of 32-bit values where each field of \fIproc\fR's result is
+treated as a number and translated to a 32-bit value.  In any event,
+the \fIformat\fR atom is returned to the selection requestor along
+with the contents of the selection.
+.PP
+If \fBTk_CreateSelHandler\fR is called when there already exists a
+handler for \fIselection\fR and \fItarget\fR on \fItkwin\fR, then the
+existing handler is replaced with a new one.
+.PP
+\fBTk_DeleteSelHandler\fR removes the handler given by \fItkwin\fR,
+\fIselection\fR, and \fItarget\fR, if such a handler exists.
+If there is no such handler then it has no effect.
+.SH KEYWORDS
+format, handler, selection, target

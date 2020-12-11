@@ -1,0 +1,88 @@
+$Id: Release-8.1.0.txt,v 1.1 2000/11/03 03:20:42 idiscovery Exp $
+
+============
+BUILDING TIX
+============
+1. You must have a recent source distribution of Tcl/Tk installed (we
+   have tested with and 8.0.5 and 8.2.3). Stubs are not yet supported.
+
+2. For Unix,  Change to unix, then
+
+sh configure
+
+   DO NOT make yet.
+   
+   You may find the configure options --prefix, and 
+   --with-tclconfig, --with-tkconfig useful. For help on the options, run
+   	sh configure --help
+   
+   For example, I prefer to install Tix to
+   /home/tmp, so I use something like this:
+
+        sh ./configure \
+            --prefix=/home/tmp --enable-gcc --enable-shared \
+            --with-tclconfig=../../tcl8.2.3 \
+            --with-tkconfig=../../tk8.2.3
+
+    Next, choose the subdirectory that corresponds to your Tcl version,
+    and change to that directory
+	cd tk8.2
+	
+    Configure and compile with:
+
+	./configure
+	make > make.log
+
+      or in the example above
+  
+         sh ./configure \
+            --prefix=/home/tmp --enable-gcc --enable-shared \
+            --with-tclconfig=../../../tcl8.2.3 \
+            --with-tkconfig=../../../tk8.2.3
+
+
+   Before running "make", you can edit the Makefile and change the -O
+   compile option to -O2 for slightly better performance with gcc/egcs.
+
+   If the compile failed for some reason, you can look at the file
+   make.log for clues.
+
+3. If the compile is successful, you should now be able to run it:
+
+	./tixwish
+	cd ../../tests
+        source Driver.tcl
+   This will bring up a demo window with lots of Tix megawidgets.
+
+4. You can now run the test suite if you wish and install Tix:
+      make tests [optional]
+      make install
+    
+   Then install in the unix/ directory
+   
+   	cd ..
+	make install
+	
+	
+
+
+========================
+NOTES ON FUTURE RELEASES
+========================
+
+1. If you are interested in support see the web site at:
+   http://www.sourceforge.net
+
+2. Support for all versions of Tcl/Tk preceding 8.0 is now discontinued.
+
+====================
+CHANGES in tix-8.1.0
+====================
+
+1. Added RedHat's Source Navigator's approach to configure.
+
+2. Changed Tix version number to 8.1
+
+
+
+

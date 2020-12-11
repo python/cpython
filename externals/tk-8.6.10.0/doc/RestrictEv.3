@@ -1,0 +1,79 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_RestrictEvents 3 "" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_RestrictEvents \- filter and selectively delay X events
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Tk_RestrictProc *
+\fBTk_RestrictEvents\fR(\fIproc, arg, prevArgPtr\fR)
+.SH ARGUMENTS
+.AS Tk_RestrictProc **prevArgPtr
+.AP Tk_RestrictProc *proc in
+Predicate procedure to call to filter incoming X events.
+NULL means do not restrict events at all.
+.AP ClientData arg in
+Arbitrary argument to pass to \fIproc\fR.
+.AP ClientData *prevArgPtr out
+Pointer to place to save argument to previous restrict procedure.
+.BE
+.SH DESCRIPTION
+.PP
+This procedure is useful in certain situations where applications
+are only prepared to receive certain X events.  After
+\fBTk_RestrictEvents\fR is called, \fBTcl_DoOneEvent\fR (and
+hence \fBTk_MainLoop\fR) will filter X input events through
+\fIproc\fR.  \fIProc\fR indicates whether a
+given event is to be processed immediately, deferred until some
+later time (e.g. when the event restriction is lifted), or discarded.
+\fIProc\fR
+is a procedure with arguments and result that match
+the type \fBTk_RestrictProc\fR:
+.CS
+typedef Tk_RestrictAction \fBTk_RestrictProc\fR(
+        ClientData \fIarg\fR,
+        XEvent *\fIeventPtr\fR);
+.CE
+The \fIarg\fR argument is a copy of the \fIarg\fR passed
+to \fBTk_RestrictEvents\fR; it may be used to provide \fIproc\fR with
+information it needs to filter events.  The \fIeventPtr\fR points to
+an event under consideration.  \fIProc\fR returns a restrict action
+(enumerated type \fBTk_RestrictAction\fR) that indicates what
+\fBTcl_DoOneEvent\fR should do with the event.  If the return value is
+\fBTK_PROCESS_EVENT\fR, then the event will be handled immediately.
+If the return value is \fBTK_DEFER_EVENT\fR, then the event will be
+left on the event queue for later processing.  If the return value is
+\fBTK_DISCARD_EVENT\fR, then the event will be removed from the event
+queue and discarded without being processed.
+.PP
+\fBTk_RestrictEvents\fR uses its return value and \fIprevArgPtr\fR
+to return information about the current event restriction procedure
+(a NULL return value means there are currently no restrictions).
+These values may be used to restore the previous restriction state
+when there is no longer any need for the current restriction.
+.PP
+There are very few places where \fBTk_RestrictEvents\fR is needed.
+In most cases, the best way to restrict events is by changing the
+bindings with the \fBbind\fR Tcl command or by calling
+\fBTk_CreateEventHandler\fR and \fBTk_DeleteEventHandler\fR from C.
+The main place where \fBTk_RestrictEvents\fR must be used is when
+performing synchronous actions (for example, if you need to wait
+for a particular event to occur on a particular window but you do not
+want to invoke any handlers for any other events).  The
+.QW obvious
+solution in these situations is to call \fBXNextEvent\fR or
+\fBXWindowEvent\fR, but these procedures cannot be used because
+Tk keeps its own event queue that is separate from the X event
+queue.  Instead, call \fBTk_RestrictEvents\fR to set up a filter,
+then call \fBTcl_DoOneEvent\fR to retrieve the desired event(s).
+.SH KEYWORDS
+delay, event, filter, restriction

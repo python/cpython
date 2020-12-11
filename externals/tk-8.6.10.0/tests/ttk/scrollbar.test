@@ -1,0 +1,108 @@
+package require Tk 8.5
+package require tcltest ; namespace import -force tcltest::*
+loadTestedCommands
+
+testConstraint coreScrollbar [expr {[tk windowingsystem] eq "aqua"}]
+
+# Before 2019 the code in library/ttk/scrollbar.tcl would replace the
+# constructor of ttk::scrollbar with the constructor of tk::scrollbar
+# unless the -class or -style options were specified..
+# Now there is an implementation of ttk::scrollbar for macOS.  The
+# tests are left in place, though, except that scrollbar-swapout-1
+# test was changed to expect the class to be TScrollbar instead of
+# Scrollbar.
+
+test scrollbar-swapout-1 "Don't use core scrollbars on OSX..." \
+ -constraints {
+     coreScrollbar
+} -body {
+    ttk::scrollbar .sb -command "yadda"
+    list [winfo class .sb] [.sb cget -command]
+} -result [list TScrollbar yadda] -cleanup { 
+    destroy .sb 
+}
+
+test scrollbar-swapout-2 "... regardless of whether -style ..." \
+-constraints {
+    coreScrollbar
+} -body {
+    ttk::style layout Vertical.Custom.TScrollbar \
+    	[ttk::style layout Vertical.TScrollbar] ; # See #1833339
+    ttk::scrollbar .sb -command "yadda" -style Custom.TScrollbar 
+    list [winfo class .sb] [.sb cget -command] [.sb cget -style]
+} -result [list TScrollbar yadda Custom.TScrollbar] -cleanup {
+    destroy .sb
+}
+
+test scrollbar-swapout-3 "... or -class is specified." -constraints {
+    coreScrollbar
+} -body {
+    ttk::scrollbar .sb -command "yadda" -class Custom.TScrollbar 
+    list [winfo class .sb] [.sb cget -command]
+} -result [list Custom.TScrollbar yadda] -cleanup {
+    destroy .sb
+}
+
+test scrollbar-1.0 "Setup" -body {
+    ttk::scrollbar .tsb
+} -result .tsb
+
+test scrollbar-1.1 "Set method" -body {
+    .tsb set 0.2 0.4
+    .tsb get
+} -result [list 0.2 0.4]
+
+test scrollbar-1.2 "Set orientation" -body {
+    .tsb configure -orient vertical
+    pack .tsb -side right -anchor e -expand 1 -fill y
+    wm geometry . 200x200
+    update
+    set w [winfo width .tsb] ; set h [winfo height .tsb]
+    expr {$h > $w}
+} -result 1
+
+test scrollbar-1.3 "Change orientation" -body {
+    .tsb configure -orient horizontal
+    pack .tsb -side bottom -anchor s -expand 1 -fill x
+    wm geometry . 200x200
+    update
+    set w [winfo width .tsb] ; set h [winfo height .tsb]
+    expr {$h < $w}
+} -result 1
+
+#
+# Scale tests:
+#
+
+test scale-1.0 "Self-destruction" -body {
+    trace variable v w { destroy .s ;# }
+    ttk::scale .s -variable v
+    pack .s ; update
+    .s set 1 ; update
+} -returnCodes 1 -match glob -result "*"
+
+test scale-2.1 "-state option" -setup {
+    ttk::scale .s
+    set res ""
+} -body {
+    # defaults
+    lappend res [.s instate disabled] [.s cget -state]
+    # set -state: instate returns accordingly
+    .s configure -state disabled
+    lappend res [.s instate disabled] [.s cget -state]
+    # back to normal
+    .s configure -state normal
+    lappend res [.s instate disabled] [.s cget -state]
+    # use state command: -state does NOT reflect it
+    .s state disabled
+    lappend res [.s instate disabled] [.s cget -state]
+    # further use state command
+    .s state readonly
+    lappend res [.s state] [.s cget -state]
+} -cleanup {
+    destroy .s
+    unset -nocomplain res
+} -result {0 normal 1 disabled 0 normal 1 normal {disabled readonly} normal}
+
+tcltest::cleanupTests
+

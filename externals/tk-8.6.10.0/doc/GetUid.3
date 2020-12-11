@@ -1,0 +1,45 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_GetUid 3 "" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_GetUid, Tk_Uid \- convert from string to unique identifier
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Tk_Uid
+\fBTk_GetUid\fR(\fIstring\fR)
+.SH ARGUMENTS
+.AP char *string in
+String for which the corresponding unique identifier is
+desired.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_GetUid\fR returns the unique identifier corresponding
+to \fIstring\fR.
+Unique identifiers are similar to atoms in Lisp, and are used
+in Tk to speed up comparisons and
+searches.  A unique identifier (type Tk_Uid) is a string pointer
+and may be used anywhere that a variable of type
+.QW "char *"
+could be used.  However, there is guaranteed to be exactly
+one unique identifier for any given string value.  If \fBTk_GetUid\fR
+is called twice, once with string \fIa\fR and once with string
+\fIb\fR, and if \fIa\fR and \fIb\fR have the same string value
+(strcmp(a, b) == 0), then \fBTk_GetUid\fR will return exactly
+the same Tk_Uid value for each call (Tk_GetUid(a) == Tk_GetUid(b)).
+This means that variables of type
+Tk_Uid may be compared directly (x == y) without having to call
+\fBstrcmp\fR.
+In addition, the return value from \fBTk_GetUid\fR will have the
+same string value as its argument (strcmp(Tk_GetUid(a), a) == 0).
+.SH KEYWORDS
+atom, unique identifier

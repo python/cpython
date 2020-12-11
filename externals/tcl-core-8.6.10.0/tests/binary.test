@@ -1,0 +1,2901 @@
+# This file tests the tclBinary.c file and the "binary" Tcl command.
+#
+# This file contains a collection of tests for one or more of the Tcl built-in
+# commands. Sourcing this file into Tcl runs the tests and generates output
+# for errors. No output means no errors were found.
+#
+# Copyright (c) 1997 by Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+testConstraint bigEndian [expr {$tcl_platform(byteOrder) eq "bigEndian"}]
+testConstraint littleEndian [expr {$tcl_platform(byteOrder) eq "littleEndian"}]
+
+# Big test for correct ordering of data in [expr]
+proc testIEEE {} {
+    variable ieeeValues
+    binary scan [binary format dd -1.0 1.0] c* c
+    switch -exact -- $c {
+	{0 0 0 0 0 0 -16 -65 0 0 0 0 0 0 -16 63} {
+	    # little endian
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xff d \
+		ieeeValues(-Infinity)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xbf d \
+		ieeeValues(-Normal)
+	    binary scan \x00\x00\x00\x00\x00\x00\x08\x80 d \
+		ieeeValues(-Subnormal)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x80 d \
+		ieeeValues(-0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x08\x00 d \
+		ieeeValues(+Subnormal)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x3f d \
+		ieeeValues(+Normal)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x7f d \
+		ieeeValues(+Infinity)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf8\x7f d \
+		ieeeValues(NaN)
+	    set ieeeValues(littleEndian) 1
+	    return 1
+	}
+	{-65 -16 0 0 0 0 0 0 63 -16 0 0 0 0 0 0} {
+	    binary scan \xff\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Infinity)
+	    binary scan \xbf\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Normal)
+	    binary scan \x80\x08\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Subnormal)
+	    binary scan \x80\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+0)
+	    binary scan \x00\x08\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Subnormal)
+	    binary scan \x3f\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Normal)
+	    binary scan \x7f\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Infinity)
+	    binary scan \x7f\xf8\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(NaN)
+	    set ieeeValues(littleEndian) 0
+	    return 1
+	}
+	default {
+	    return 0
+	}
+    }
+}
+
+testConstraint ieeeFloatingPoint [testIEEE]
+
+# ----------------------------------------------------------------------
+
+test binary-0.1 {DupByteArrayInternalRep} {
+    set hdr [binary format cc 0 0316]
+    set buf hellomatt
+    set data $hdr
+    append data $buf
+    string length $data
+} 11
+
+test binary-1.1 {Tcl_BinaryObjCmd: bad args} -body {
+    binary
+} -returnCodes error -match glob -result {wrong # args: *}
+test binary-1.2 {Tcl_BinaryObjCmd: bad args} -returnCodes error -body {
+    binary foo
+} -match glob -result {unknown or ambiguous subcommand "foo": *}
+test binary-1.3 {Tcl_BinaryObjCmd: format error} -returnCodes error -body {
+    binary f
+} -result {wrong # args: should be "binary format formatString ?arg ...?"}
+test binary-1.4 {Tcl_BinaryObjCmd: format} -body {
+    binary format ""
+} -result {}
+
+test binary-2.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format a
+} -result {not enough arguments for all format specifiers}
+test binary-2.2 {Tcl_BinaryObjCmd: format} {
+    binary format a0 foo
+} {}
+test binary-2.3 {Tcl_BinaryObjCmd: format} {
+    binary format a f
+} {f}
+test binary-2.4 {Tcl_BinaryObjCmd: format} {
+    binary format a foo
+} {f}
+test binary-2.5 {Tcl_BinaryObjCmd: format} {
+    binary format a3 foo
+} {foo}
+test binary-2.6 {Tcl_BinaryObjCmd: format} {
+    binary format a5 foo
+} foo\x00\x00
+test binary-2.7 {Tcl_BinaryObjCmd: format} {
+    binary format a*a3 foobarbaz blat
+} foobarbazbla
+test binary-2.8 {Tcl_BinaryObjCmd: format} {
+    binary format a*X3a2 foobar x
+} foox\x00r
+
+test binary-3.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format A
+} -result {not enough arguments for all format specifiers}
+test binary-3.2 {Tcl_BinaryObjCmd: format} {
+    binary format A0 f
+} {}
+test binary-3.3 {Tcl_BinaryObjCmd: format} {
+    binary format A f
+} {f}
+test binary-3.4 {Tcl_BinaryObjCmd: format} {
+    binary format A foo
+} {f}
+test binary-3.5 {Tcl_BinaryObjCmd: format} {
+    binary format A3 foo
+} {foo}
+test binary-3.6 {Tcl_BinaryObjCmd: format} {
+    binary format A5 foo
+} {foo  }
+test binary-3.7 {Tcl_BinaryObjCmd: format} {
+    binary format A*A3 foobarbaz blat
+} foobarbazbla
+test binary-3.8 {Tcl_BinaryObjCmd: format} {
+    binary format A*X3A2 foobar x
+} {foox r}
+
+test binary-4.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format B
+} -result {not enough arguments for all format specifiers}
+test binary-4.2 {Tcl_BinaryObjCmd: format} {
+    binary format B0 1
+} {}
+test binary-4.3 {Tcl_BinaryObjCmd: format} {
+    binary format B 1
+} \x80
+test binary-4.4 {Tcl_BinaryObjCmd: format} {
+    binary format B* 010011
+} \x4c
+test binary-4.5 {Tcl_BinaryObjCmd: format} {
+    binary format B8 01001101
+} \x4d
+test binary-4.6 {Tcl_BinaryObjCmd: format} {
+    binary format A2X2B9 oo 01001101
+} \x4d\x00
+test binary-4.7 {Tcl_BinaryObjCmd: format} {
+    binary format B9 010011011010
+} \x4d\x80
+test binary-4.8 {Tcl_BinaryObjCmd: format} {
+    binary format B2B3 10 010
+} \x80\x40
+test binary-4.9 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format B1B5 1 foo
+} -result {expected binary string but got "foo" instead}
+
+test binary-5.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format b
+} -result {not enough arguments for all format specifiers}
+test binary-5.2 {Tcl_BinaryObjCmd: format} {
+    binary format b0 1
+} {}
+test binary-5.3 {Tcl_BinaryObjCmd: format} {
+    binary format b 1
+} \x01
+test binary-5.4 {Tcl_BinaryObjCmd: format} {
+    binary format b* 010011
+} 2
+test binary-5.5 {Tcl_BinaryObjCmd: format} {
+    binary format b8 01001101
+} \xb2
+test binary-5.6 {Tcl_BinaryObjCmd: format} {
+    binary format A2X2b9 oo 01001101
+} \xb2\x00
+test binary-5.7 {Tcl_BinaryObjCmd: format} {
+    binary format b9 010011011010
+} \xb2\x01
+test binary-5.8 {Tcl_BinaryObjCmd: format} {
+    binary format b17 1
+} \x01\00\00
+test binary-5.9 {Tcl_BinaryObjCmd: format} {
+    binary format b2b3 10 010
+} \x01\x02
+test binary-5.10 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format b1b5 1 foo
+} -result {expected binary string but got "foo" instead}
+
+test binary-6.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format h
+} -result {not enough arguments for all format specifiers}
+test binary-6.2 {Tcl_BinaryObjCmd: format} {
+    binary format h0 1
+} {}
+test binary-6.3 {Tcl_BinaryObjCmd: format} {
+    binary format h 1
+} \x01
+test binary-6.4 {Tcl_BinaryObjCmd: format} {
+    binary format h c
+} \x0c
+test binary-6.5 {Tcl_BinaryObjCmd: format} {
+    binary format h* baadf00d
+} \xab\xda\x0f\xd0
+test binary-6.6 {Tcl_BinaryObjCmd: format} {
+    binary format h4 c410
+} \x4c\x01
+test binary-6.7 {Tcl_BinaryObjCmd: format} {
+    binary format h6 c4102
+} \x4c\x01\x02
+test binary-6.8 {Tcl_BinaryObjCmd: format} {
+    binary format h5 c41020304
+} \x4c\x01\x02
+test binary-6.9 {Tcl_BinaryObjCmd: format} {
+    binary format a3X3h5 foo 2
+} \x02\x00\x00
+test binary-6.10 {Tcl_BinaryObjCmd: format} {
+    binary format h2h3 23 456
+} \x32\x54\x06
+test binary-6.11 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format h2 foo
+} -result {expected hexadecimal string but got "foo" instead}
+
+test binary-7.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format H
+} -result {not enough arguments for all format specifiers}
+test binary-7.2 {Tcl_BinaryObjCmd: format} {
+    binary format H0 1
+} {}
+test binary-7.3 {Tcl_BinaryObjCmd: format} {
+    binary format H 1
+} \x10
+test binary-7.4 {Tcl_BinaryObjCmd: format} {
+    binary format H c
+} \xc0
+test binary-7.5 {Tcl_BinaryObjCmd: format} {
+    binary format H* baadf00d
+} \xba\xad\xf0\x0d
+test binary-7.6 {Tcl_BinaryObjCmd: format} {
+    binary format H4 c410
+} \xc4\x10
+test binary-7.7 {Tcl_BinaryObjCmd: format} {
+    binary format H6 c4102
+} \xc4\x10\x20
+test binary-7.8 {Tcl_BinaryObjCmd: format} {
+    binary format H5 c41023304
+} \xc4\x10\x20
+test binary-7.9 {Tcl_BinaryObjCmd: format} {
+    binary format a3X3H5 foo 2
+} \x20\x00\x00
+test binary-7.10 {Tcl_BinaryObjCmd: format} {
+    binary format H2H3 23 456
+} \x23\x45\x60
+test binary-7.11 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format H2 foo
+} -result {expected hexadecimal string but got "foo" instead}
+
+test binary-8.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format c
+} -result {not enough arguments for all format specifiers}
+test binary-8.2 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format c blat
+} -result {expected integer but got "blat"}
+test binary-8.3 {Tcl_BinaryObjCmd: format} {
+    binary format c0 0x50
+} {}
+test binary-8.4 {Tcl_BinaryObjCmd: format} {
+    binary format c 0x50
+} P
+test binary-8.5 {Tcl_BinaryObjCmd: format} {
+    binary format c 0x5052
+} R
+test binary-8.6 {Tcl_BinaryObjCmd: format} {
+    binary format c2 {0x50 0x52}
+} PR
+test binary-8.7 {Tcl_BinaryObjCmd: format} {
+    binary format c2 {0x50 0x52 0x53}
+} PR
+test binary-8.8 {Tcl_BinaryObjCmd: format} {
+    binary format c* {0x50 0x52}
+} PR
+test binary-8.9 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format c2 {0x50}
+} -result {number of elements in list does not match count}
+test binary-8.10 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    set a {0x50 0x51}
+    binary format c $a
+} -result "expected integer but got \"0x50 0x51\""
+test binary-8.11 {Tcl_BinaryObjCmd: format} {
+    set a {0x50 0x51}
+    binary format c1 $a
+} P
+
+test binary-9.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format s
+} -result {not enough arguments for all format specifiers}
+test binary-9.2 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format s blat
+} -result {expected integer but got "blat"}
+test binary-9.3 {Tcl_BinaryObjCmd: format} {
+    binary format s0 0x50
+} {}
+test binary-9.4 {Tcl_BinaryObjCmd: format} {
+    binary format s 0x50
+} P\x00
+test binary-9.5 {Tcl_BinaryObjCmd: format} {
+    binary format s 0x5052
+} RP
+test binary-9.6 {Tcl_BinaryObjCmd: format} {
+    binary format s 0x505251 0x53
+} QR
+test binary-9.7 {Tcl_BinaryObjCmd: format} {
+    binary format s2 {0x50 0x52}
+} P\x00R\x00
+test binary-9.8 {Tcl_BinaryObjCmd: format} {
+    binary format s* {0x5051 0x52}
+} QPR\x00
+test binary-9.9 {Tcl_BinaryObjCmd: format} {
+    binary format s2 {0x50 0x52 0x53} 0x54
+} P\x00R\x00
+test binary-9.10 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format s2 {0x50}
+} -result {number of elements in list does not match count}
+test binary-9.11 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    set a {0x50 0x51}
+    binary format s $a
+} -result "expected integer but got \"0x50 0x51\""
+test binary-9.12 {Tcl_BinaryObjCmd: format} {
+    set a {0x50 0x51}
+    binary format s1 $a
+} P\x00
+
+test binary-10.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format S
+} -result {not enough arguments for all format specifiers}
+test binary-10.2 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format S blat
+} -result {expected integer but got "blat"}
+test binary-10.3 {Tcl_BinaryObjCmd: format} {
+    binary format S0 0x50
+} {}
+test binary-10.4 {Tcl_BinaryObjCmd: format} {
+    binary format S 0x50
+} \x00P
+test binary-10.5 {Tcl_BinaryObjCmd: format} {
+    binary format S 0x5052
+} PR
+test binary-10.6 {Tcl_BinaryObjCmd: format} {
+    binary format S 0x505251 0x53
+} RQ
+test binary-10.7 {Tcl_BinaryObjCmd: format} {
+    binary format S2 {0x50 0x52}
+} \x00P\x00R
+test binary-10.8 {Tcl_BinaryObjCmd: format} {
+    binary format S* {0x5051 0x52}
+} PQ\x00R
+test binary-10.9 {Tcl_BinaryObjCmd: format} {
+    binary format S2 {0x50 0x52 0x53} 0x54
+} \x00P\x00R
+test binary-10.10 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format S2 {0x50}
+} -result {number of elements in list does not match count}
+test binary-10.11 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    set a {0x50 0x51}
+    binary format S $a
+} -result "expected integer but got \"0x50 0x51\""
+test binary-10.12 {Tcl_BinaryObjCmd: format} {
+    set a {0x50 0x51}
+    binary format S1 $a
+} \x00P
+
+test binary-11.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format i
+} -result {not enough arguments for all format specifiers}
+test binary-11.2 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format i blat
+} -result {expected integer but got "blat"}
+test binary-11.3 {Tcl_BinaryObjCmd: format} {
+    binary format i0 0x50
+} {}
+test binary-11.4 {Tcl_BinaryObjCmd: format} {
+    binary format i 0x50
+} P\x00\x00\x00
+test binary-11.5 {Tcl_BinaryObjCmd: format} {
+    binary format i 0x5052
+} RP\x00\x00
+test binary-11.6 {Tcl_BinaryObjCmd: format} {
+    binary format i 0x505251 0x53
+} QRP\x00
+test binary-11.7 {Tcl_BinaryObjCmd: format} {
+    binary format i1 {0x505251 0x53}
+} QRP\x00
+test binary-11.8 {Tcl_BinaryObjCmd: format} {
+    binary format i 0x53525150
+} PQRS
+test binary-11.9 {Tcl_BinaryObjCmd: format} {
+    binary format i2 {0x50 0x52}
+} P\x00\x00\x00R\x00\x00\x00
+test binary-11.10 {Tcl_BinaryObjCmd: format} {
+    binary format i* {0x50515253 0x52}
+} SRQPR\x00\x00\x00
+test binary-11.11 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format i2 {0x50}
+} -result {number of elements in list does not match count}
+test binary-11.12 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    set a {0x50 0x51}
+    binary format i $a
+} -result "expected integer but got \"0x50 0x51\""
+test binary-11.13 {Tcl_BinaryObjCmd: format} {
+    set a {0x50 0x51}
+    binary format i1 $a
+} P\x00\x00\x00
+
+test binary-12.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format I
+} -result {not enough arguments for all format specifiers}
+test binary-12.2 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format I blat
+} -result {expected integer but got "blat"}
+test binary-12.3 {Tcl_BinaryObjCmd: format} {
+    binary format I0 0x50
+} {}
+test binary-12.4 {Tcl_BinaryObjCmd: format} {
+    binary format I 0x50
+} \x00\x00\x00P
+test binary-12.5 {Tcl_BinaryObjCmd: format} {
+    binary format I 0x5052
+} \x00\x00PR
+test binary-12.6 {Tcl_BinaryObjCmd: format} {
+    binary format I 0x505251 0x53
+} \x00PRQ
+test binary-12.7 {Tcl_BinaryObjCmd: format} {
+    binary format I1 {0x505251 0x53}
+} \x00PRQ
+test binary-12.8 {Tcl_BinaryObjCmd: format} {
+    binary format I 0x53525150
+} SRQP
+test binary-12.9 {Tcl_BinaryObjCmd: format} {
+    binary format I2 {0x50 0x52}
+} \x00\x00\x00P\x00\x00\x00R
+test binary-12.10 {Tcl_BinaryObjCmd: format} {
+    binary format I* {0x50515253 0x52}
+} PQRS\x00\x00\x00R
+test binary-12.11 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format i2 {0x50}
+} -result {number of elements in list does not match count}
+test binary-12.12 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    set a {0x50 0x51}
+    binary format I $a
+} -result "expected integer but got \"0x50 0x51\""
+test binary-12.13 {Tcl_BinaryObjCmd: format} {
+    set a {0x50 0x51}
+    binary format I1 $a
+} \x00\x00\x00P
+
+test binary-13.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format f
+} -result {not enough arguments for all format specifiers}
+test binary-13.2 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format f blat
+} -result {expected floating-point number but got "blat"}
+test binary-13.3 {Tcl_BinaryObjCmd: format} {
+    binary format f0 1.6
+} {}
+test binary-13.4 {Tcl_BinaryObjCmd: format} bigEndian {
+    binary format f 1.6
+} \x3f\xcc\xcc\xcd
+test binary-13.5 {Tcl_BinaryObjCmd: format} littleEndian {
+    binary format f 1.6
+} \xcd\xcc\xcc\x3f
+test binary-13.6 {Tcl_BinaryObjCmd: format} bigEndian {
+    binary format f* {1.6 3.4}
+} \x3f\xcc\xcc\xcd\x40\x59\x99\x9a
+test binary-13.7 {Tcl_BinaryObjCmd: format} littleEndian {
+    binary format f* {1.6 3.4}
+} \xcd\xcc\xcc\x3f\x9a\x99\x59\x40
+test binary-13.8 {Tcl_BinaryObjCmd: format} bigEndian {
+    binary format f2 {1.6 3.4}
+} \x3f\xcc\xcc\xcd\x40\x59\x99\x9a
+test binary-13.9 {Tcl_BinaryObjCmd: format} littleEndian {
+    binary format f2 {1.6 3.4}
+} \xcd\xcc\xcc\x3f\x9a\x99\x59\x40
+test binary-13.10 {Tcl_BinaryObjCmd: format} bigEndian {
+    binary format f2 {1.6 3.4 5.6}
+} \x3f\xcc\xcc\xcd\x40\x59\x99\x9a
+test binary-13.11 {Tcl_BinaryObjCmd: format} littleEndian {
+    binary format f2 {1.6 3.4 5.6}
+} \xcd\xcc\xcc\x3f\x9a\x99\x59\x40
+test binary-13.12 {Tcl_BinaryObjCmd: float overflow} bigEndian {
+    binary format f -3.402825e+38
+} \xff\x7f\xff\xff
+test binary-13.13 {Tcl_BinaryObjCmd: float overflow} littleEndian {
+    binary format f -3.402825e+38
+} \xff\xff\x7f\xff
+test binary-13.14 {Tcl_BinaryObjCmd: float underflow} bigEndian {
+    binary format f -3.402825e-100
+} \x80\x00\x00\x00
+test binary-13.15 {Tcl_BinaryObjCmd: float underflow} littleEndian {
+    binary format f -3.402825e-100
+} \x00\x00\x00\x80
+test binary-13.16 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format f2 {1.6}
+} -result {number of elements in list does not match count}
+test binary-13.17 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    set a {1.6 3.4}
+    binary format f $a
+} -result "expected floating-point number but got \"1.6 3.4\""
+test binary-13.18 {Tcl_BinaryObjCmd: format} bigEndian {
+    set a {1.6 3.4}
+    binary format f1 $a
+} \x3f\xcc\xcc\xcd
+test binary-13.19 {Tcl_BinaryObjCmd: format} littleEndian {
+    set a {1.6 3.4}
+    binary format f1 $a
+} \xcd\xcc\xcc\x3f
+
+test binary-14.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format d
+} -result {not enough arguments for all format specifiers}
+test binary-14.2 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format d blat
+} -result {expected floating-point number but got "blat"}
+test binary-14.3 {Tcl_BinaryObjCmd: format} {
+    binary format d0 1.6
+} {}
+test binary-14.4 {Tcl_BinaryObjCmd: format} bigEndian {
+    binary format d 1.6
+} \x3f\xf9\x99\x99\x99\x99\x99\x9a
+test binary-14.5 {Tcl_BinaryObjCmd: format} littleEndian {
+    binary format d 1.6
+} \x9a\x99\x99\x99\x99\x99\xf9\x3f
+test binary-14.6 {Tcl_BinaryObjCmd: format} bigEndian {
+    binary format d* {1.6 3.4}
+} \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33
+test binary-14.7 {Tcl_BinaryObjCmd: format} littleEndian {
+    binary format d* {1.6 3.4}
+} \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40
+test binary-14.8 {Tcl_BinaryObjCmd: format} bigEndian {
+    binary format d2 {1.6 3.4}
+} \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33
+test binary-14.9 {Tcl_BinaryObjCmd: format} littleEndian {
+    binary format d2 {1.6 3.4}
+} \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40
+test binary-14.10 {Tcl_BinaryObjCmd: format} bigEndian {
+    binary format d2 {1.6 3.4 5.6}
+} \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33
+test binary-14.11 {Tcl_BinaryObjCmd: format} littleEndian {
+    binary format d2 {1.6 3.4 5.6}
+} \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40
+test binary-14.14 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format d2 {1.6}
+} -result {number of elements in list does not match count}
+test binary-14.15 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    set a {1.6 3.4}
+    binary format d $a
+} -result "expected floating-point number but got \"1.6 3.4\""
+test binary-14.16 {Tcl_BinaryObjCmd: format} bigEndian {
+    set a {1.6 3.4}
+    binary format d1 $a
+} \x3f\xf9\x99\x99\x99\x99\x99\x9a
+test binary-14.17 {Tcl_BinaryObjCmd: format} littleEndian {
+    set a {1.6 3.4}
+    binary format d1 $a
+} \x9a\x99\x99\x99\x99\x99\xf9\x3f
+test binary-14.18 {FormatNumber: Bug 1116542} {
+    binary scan [binary format d 1.25] d w
+    set w
+} 1.25
+
+test binary-15.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format ax*a "y" "z"
+} -result {cannot use "*" in format string with "x"}
+test binary-15.2 {Tcl_BinaryObjCmd: format} {
+    binary format axa "y" "z"
+} y\x00z
+test binary-15.3 {Tcl_BinaryObjCmd: format} {
+    binary format ax3a "y" "z"
+} y\x00\x00\x00z
+test binary-15.4 {Tcl_BinaryObjCmd: format} {
+    binary format a*X3x3a* "foo" "z"
+} \x00\x00\x00z
+test binary-15.5 {Tcl_BinaryObjCmd: format - bug #1923966} {
+    binary format x0s 1
+} \x01\x00
+test binary-15.6 {Tcl_BinaryObjCmd: format - bug #1923966} {
+    binary format x0ss 1 1
+} \x01\x00\x01\x00
+test binary-15.7 {Tcl_BinaryObjCmd: format - bug #1923966} {
+    binary format x1s 1
+} \x00\x01\x00
+test binary-15.8 {Tcl_BinaryObjCmd: format - bug #1923966} {
+    binary format x1ss 1 1
+} \x00\x01\x00\x01\x00
+
+test binary-16.1 {Tcl_BinaryObjCmd: format} {
+    binary format a*X*a "foo" "z"
+} zoo
+test binary-16.2 {Tcl_BinaryObjCmd: format} {
+    binary format aX3a "y" "z"
+} z
+test binary-16.3 {Tcl_BinaryObjCmd: format} {
+    binary format a*Xa* "foo" "zy"
+} fozy
+test binary-16.4 {Tcl_BinaryObjCmd: format} {
+    binary format a*X3a "foobar" "z"
+} foozar
+test binary-16.5 {Tcl_BinaryObjCmd: format} {
+    binary format a*X3aX2a "foobar" "z" "b"
+} fobzar
+
+test binary-17.1 {Tcl_BinaryObjCmd: format} {
+    binary format @1
+} \x00
+test binary-17.2 {Tcl_BinaryObjCmd: format} {
+    binary format @5a2 "ab"
+} \x00\x00\x00\x00\x00\x61\x62
+test binary-17.3 {Tcl_BinaryObjCmd: format} {
+    binary format {a*  @0  a2 @* a*} "foobar" "ab" "blat"
+} abobarblat
+
+test binary-18.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format u0a3 abc abd
+} -result {bad field specifier "u"}
+
+test binary-19.1 {Tcl_BinaryObjCmd: errors} -returnCodes error -body {
+    binary s
+} -result {wrong # args: should be "binary scan value formatString ?varName ...?"}
+test binary-19.2 {Tcl_BinaryObjCmd: errors} -returnCodes error -body {
+    binary scan foo
+} -result {wrong # args: should be "binary scan value formatString ?varName ...?"}
+test binary-19.3 {Tcl_BinaryObjCmd: scan} {
+    binary scan {} {}
+} 0
+
+test binary-20.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
+    binary scan abc a
+} -result {not enough arguments for all format specifiers}
+test binary-20.2 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -returnCodes error -body {
+    set arg1 1
+    binary scan abc a arg1(a)
+} -result {can't set "arg1(a)": variable isn't array}
+test binary-20.3 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -body {
+    set arg1 abc
+    list [binary scan abc a0 arg1] $arg1
+} -result {1 {}}
+test binary-20.4 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -body {
+    list [binary scan abc a* arg1] $arg1
+} -result {1 abc}
+test binary-20.5 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -body {
+    list [binary scan abc a5 arg1] [info exists arg1]
+} -result {0 0}
+test binary-20.6 {Tcl_BinaryObjCmd: scan} {
+    set arg1 foo
+    list [binary scan abc a2 arg1] $arg1
+} {1 ab}
+test binary-20.7 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+    unset -nocomplain arg2
+} -body {
+    list [binary scan abcdef a2a2 arg1 arg2] $arg1 $arg2
+} -result {2 ab cd}
+test binary-20.8 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -body {
+    list [binary scan abc a2 arg1(a)] $arg1(a)
+} -result {1 ab}
+test binary-20.9 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -body {
+    list [binary scan abc a arg1(a)] $arg1(a)
+} -result {1 a}
+
+test binary-21.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
+    binary scan abc A
+} -result {not enough arguments for all format specifiers}
+test binary-21.2 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -returnCodes error -body {
+    set arg1 1
+    binary scan abc A arg1(a)
+} -result {can't set "arg1(a)": variable isn't array}
+test binary-21.3 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -body {
+    set arg1 abc
+    list [binary scan abc A0 arg1] $arg1
+} -result {1 {}}
+test binary-21.4 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -body {
+    list [binary scan abc A* arg1] $arg1
+} -result {1 abc}
+test binary-21.5 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -body {
+    list [binary scan abc A5 arg1] [info exists arg1]
+} -result {0 0}
+test binary-21.6 {Tcl_BinaryObjCmd: scan} {
+    set arg1 foo
+    list [binary scan abc A2 arg1] $arg1
+} {1 ab}
+test binary-21.7 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+    unset -nocomplain arg2
+} -body {
+    list [binary scan abcdef A2A2 arg1 arg2] $arg1 $arg2
+} -result {2 ab cd}
+test binary-21.8 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -body {
+    list [binary scan abc A2 arg1(a)] $arg1(a)
+} -result {1 ab}
+test binary-21.9 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -body {
+    list [binary scan abc A2 arg1(a)] $arg1(a)
+} -result {1 ab}
+test binary-21.10 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -body {
+    list [binary scan abc A arg1(a)] $arg1(a)
+} -result {1 a}
+test binary-21.11 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -body {
+    list [binary scan "abc def \x00  " A* arg1] $arg1
+} -result {1 {abc def}}
+test binary-21.12 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -body {
+    list [binary scan "abc def \x00ghi  " A* arg1] $arg1
+} -result [list 1 "abc def \x00ghi"]
+
+test binary-22.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
+    binary scan abc b
+} -result {not enough arguments for all format specifiers}
+test binary-22.2 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\x53 b* arg1] $arg1
+} {1 0100101011001010}
+test binary-22.3 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x82\x53 b arg1] $arg1
+} {1 0}
+test binary-22.4 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x82\x53 b1 arg1] $arg1
+} {1 0}
+test binary-22.5 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x82\x53 b0 arg1] $arg1
+} {1 {}}
+test binary-22.6 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\x53 b5 arg1] $arg1
+} {1 01001}
+test binary-22.7 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\x53 b8 arg1] $arg1
+} {1 01001010}
+test binary-22.8 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\x53 b14 arg1] $arg1
+} {1 01001010110010}
+test binary-22.9 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    set arg1 foo
+    list [binary scan \x52 b14 arg1] $arg1
+} {0 foo}
+test binary-22.10 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -returnCodes error -body {
+    set arg1 1
+    binary scan \x52\x53 b1 arg1(a)
+} -result {can't set "arg1(a)": variable isn't array}
+test binary-22.11 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1 arg2
+} -body {
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x07\x87\x05 b5b* arg1 arg2] $arg1 $arg2
+} -result {2 11100 1110000110100000}
+
+test binary-23.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
+    binary scan abc B
+} -result {not enough arguments for all format specifiers}
+test binary-23.2 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\x53 B* arg1] $arg1
+} {1 0101001001010011}
+test binary-23.3 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x82\x53 B arg1] $arg1
+} {1 1}
+test binary-23.4 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x82\x53 B1 arg1] $arg1
+} {1 1}
+test binary-23.5 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\x53 B0 arg1] $arg1
+} {1 {}}
+test binary-23.6 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\x53 B5 arg1] $arg1
+} {1 01010}
+test binary-23.7 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\x53 B8 arg1] $arg1
+} {1 01010010}
+test binary-23.8 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\x53 B14 arg1] $arg1
+} {1 01010010010100}
+test binary-23.9 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    set arg1 foo
+    list [binary scan \x52 B14 arg1] $arg1
+} {0 foo}
+test binary-23.10 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -returnCodes error -body {
+    set arg1 1
+    binary scan \x52\x53 B1 arg1(a)
+} -result {can't set "arg1(a)": variable isn't array}
+test binary-23.11 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1 arg2
+} -body {
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x70\x87\x05 B5B* arg1 arg2] $arg1 $arg2
+} -result {2 01110 1000011100000101}
+
+test binary-24.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
+    binary scan abc h
+} -result {not enough arguments for all format specifiers}
+test binary-24.2 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3 h* arg1] $arg1
+} {1 253a}
+test binary-24.3 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \xc2\xa3 h arg1] $arg1
+} {1 2}
+test binary-24.4 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x82\x53 h1 arg1] $arg1
+} {1 2}
+test binary-24.5 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\x53 h0 arg1] $arg1
+} {1 {}}
+test binary-24.6 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \xf2\x53 h2 arg1] $arg1
+} {1 2f}
+test binary-24.7 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\x53 h3 arg1] $arg1
+} {1 253}
+test binary-24.8 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    set arg1 foo
+    list [binary scan \x52 h3 arg1] $arg1
+} {0 foo}
+test binary-24.9 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -returnCodes error -body {
+    set arg1 1
+    binary scan \x52\x53 h1 arg1(a)
+} -result {can't set "arg1(a)": variable isn't array}
+test binary-24.10 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1 arg2
+} -body {
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x70\x87\x05 h2h* arg1 arg2] $arg1 $arg2
+} -result {2 07 7850}
+
+test binary-25.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
+    binary scan abc H
+} -result {not enough arguments for all format specifiers}
+test binary-25.2 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3 H* arg1] $arg1
+} {1 52a3}
+test binary-25.3 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \xc2\xa3 H arg1] $arg1
+} {1 c}
+test binary-25.4 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x82\x53 H1 arg1] $arg1
+} {1 8}
+test binary-25.5 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\x53 H0 arg1] $arg1
+} {1 {}}
+test binary-25.6 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \xf2\x53 H2 arg1] $arg1
+} {1 f2}
+test binary-25.7 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\x53 H3 arg1] $arg1
+} {1 525}
+test binary-25.8 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    set arg1 foo
+    list [binary scan \x52 H3 arg1] $arg1
+} {0 foo}
+test binary-25.9 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -returnCodes error -body {
+    set arg1 1
+    binary scan \x52\x53 H1 arg1(a)
+} -result {can't set "arg1(a)": variable isn't array}
+test binary-25.10 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x70\x87\x05 H2H* arg1 arg2] $arg1 $arg2
+} {2 70 8705}
+
+test binary-26.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
+    binary scan abc c
+} -result {not enough arguments for all format specifiers}
+test binary-26.2 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3 c* arg1] $arg1
+} {1 {82 -93}}
+test binary-26.3 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3 c arg1] $arg1
+} {1 82}
+test binary-26.4 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3 c1 arg1] $arg1
+} {1 82}
+test binary-26.5 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3 c0 arg1] $arg1
+} {1 {}}
+test binary-26.6 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3 c2 arg1] $arg1
+} {1 {82 -93}}
+test binary-26.7 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \xff c arg1] $arg1
+} {1 -1}
+test binary-26.8 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    set arg1 foo
+    list [binary scan \x52 c3 arg1] $arg1
+} {0 foo}
+test binary-26.9 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -returnCodes error -body {
+    set arg1 1
+    binary scan \x52\x53 c1 arg1(a)
+} -result {can't set "arg1(a)": variable isn't array}
+test binary-26.10 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x70\x87\x05 c2c* arg1 arg2] $arg1 $arg2
+} {2 {112 -121} 5}
+test binary-26.11 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3 cu* arg1] $arg1
+} {1 {82 163}}
+test binary-26.12 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3 cu arg1] $arg1
+} {1 82}
+test binary-26.13 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \xff cu arg1] $arg1
+} {1 255}
+test binary-26.14 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x80\x80 cuc arg1 arg2] $arg1 $arg2
+} {2 128 -128}
+test binary-26.15 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x80\x80 ccu arg1 arg2] $arg1 $arg2
+} {2 -128 128}
+
+test binary-27.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
+    binary scan abc s
+} -result {not enough arguments for all format specifiers}
+test binary-27.2 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54 s* arg1] $arg1
+} {1 {-23726 21587}}
+test binary-27.3 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54 s arg1] $arg1
+} {1 -23726}
+test binary-27.4 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3 s1 arg1] $arg1
+} {1 -23726}
+test binary-27.5 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3 s0 arg1] $arg1
+} {1 {}}
+test binary-27.6 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54 s2 arg1] $arg1
+} {1 {-23726 21587}}
+test binary-27.7 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    set arg1 foo
+    list [binary scan \x52 s1 arg1] $arg1
+} {0 foo}
+test binary-27.8 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -returnCodes error -body {
+    set arg1 1
+    binary scan \x52\x53 s1 arg1(a)
+} -result {can't set "arg1(a)": variable isn't array}
+test binary-27.9 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x52\xa3\x53\x54\x05 s2c* arg1 arg2] $arg1 $arg2
+} {2 {-23726 21587} 5}
+test binary-27.10 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54 su* arg1] $arg1
+} {1 {41810 21587}}
+test binary-27.11 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \xff\xff\xff\xff sus arg1 arg2] $arg1 $arg2
+} {2 65535 -1}
+test binary-27.12 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \xff\xff\xff\xff ssu arg1 arg2] $arg1 $arg2
+} {2 -1 65535}
+
+test binary-28.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
+    binary scan abc S
+} -result {not enough arguments for all format specifiers}
+test binary-28.2 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54 S* arg1] $arg1
+} {1 {21155 21332}}
+test binary-28.3 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54 S arg1] $arg1
+} {1 21155}
+test binary-28.4 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3 S1 arg1] $arg1
+} {1 21155}
+test binary-28.5 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3 S0 arg1] $arg1
+} {1 {}}
+test binary-28.6 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54 S2 arg1] $arg1
+} {1 {21155 21332}}
+test binary-28.7 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    set arg1 foo
+    list [binary scan \x52 S1 arg1] $arg1
+} {0 foo}
+test binary-28.8 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -returnCodes error -body {
+    set arg1 1
+    binary scan \x52\x53 S1 arg1(a)
+} -result {can't set "arg1(a)": variable isn't array}
+test binary-28.9 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x52\xa3\x53\x54\x05 S2c* arg1 arg2] $arg1 $arg2
+} {2 {21155 21332} 5}
+test binary-28.10 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54 Su* arg1] $arg1
+} {1 {21155 21332}}
+test binary-28.11 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \xa3\x52\x54\x53 Su* arg1] $arg1
+} {1 {41810 21587}}
+
+test binary-29.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
+    binary scan abc i
+} -result {not enough arguments for all format specifiers}
+test binary-29.2 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 i* arg1] $arg1
+} {1 {1414767442 67305985}}
+test binary-29.3 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 i arg1] $arg1
+} {1 1414767442}
+test binary-29.4 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54 i1 arg1] $arg1
+} {1 1414767442}
+test binary-29.5 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53 i0 arg1] $arg1
+} {1 {}}
+test binary-29.6 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 i2 arg1] $arg1
+} {1 {1414767442 67305985}}
+test binary-29.7 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    set arg1 foo
+    list [binary scan \x52 i1 arg1] $arg1
+} {0 foo}
+test binary-29.8 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -returnCodes error -body {
+    set arg1 1
+    binary scan \x52\x53\x53\x54 i1 arg1(a)
+} -result {can't set "arg1(a)": variable isn't array}
+test binary-29.9 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04\x05 i2c* arg1 arg2] $arg1 $arg2
+} {2 {1414767442 67305985} 5}
+test binary-29.10 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1 arg2
+    list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff iui arg1 arg2] $arg1 $arg2
+} {2 4294967295 -1}
+test binary-29.11 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1 arg2
+    list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff iiu arg1 arg2] $arg1 $arg2
+} {2 -1 4294967295}
+test binary-29.12 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1 arg2
+    list [binary scan \x80\x00\x00\x00\x00\x00\x00\x80 iuiu arg1 arg2] $arg1 $arg2
+} {2 128 2147483648}
+
+test binary-30.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
+    binary scan abc I
+} -result {not enough arguments for all format specifiers}
+test binary-30.2 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 I* arg1] $arg1
+} {1 {1386435412 16909060}}
+test binary-30.3 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 I arg1] $arg1
+} {1 1386435412}
+test binary-30.4 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54 I1 arg1] $arg1
+} {1 1386435412}
+test binary-30.5 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53 I0 arg1] $arg1
+} {1 {}}
+test binary-30.6 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 I2 arg1] $arg1
+} {1 {1386435412 16909060}}
+test binary-30.7 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    set arg1 foo
+    list [binary scan \x52 I1 arg1] $arg1
+} {0 foo}
+test binary-30.8 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -returnCodes error -body {
+    set arg1 1
+    binary scan \x52\x53\x53\x54 I1 arg1(a)
+} -result {can't set "arg1(a)": variable isn't array}
+test binary-30.9 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04\x05 I2c* arg1 arg2] $arg1 $arg2
+} {2 {1386435412 16909060} 5}
+test binary-30.10 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1 arg2
+    list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff IuI arg1 arg2] $arg1 $arg2
+} {2 4294967295 -1}
+test binary-30.11 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1 arg2
+    list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff IIu arg1 arg2] $arg1 $arg2
+} {2 -1 4294967295}
+test binary-30.12 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1 arg2
+    list [binary scan \x80\x00\x00\x00\x00\x00\x00\x80 IuIu arg1 arg2] $arg1 $arg2
+} {2 2147483648 128}
+
+test binary-31.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
+    binary scan abc f
+} -result {not enough arguments for all format specifiers}
+test binary-31.2 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a f* arg1] $arg1
+} {1 {1.600000023841858 3.4000000953674316}}
+test binary-31.3 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40 f* arg1] $arg1
+} {1 {1.600000023841858 3.4000000953674316}}
+test binary-31.4 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a f arg1] $arg1
+} {1 1.600000023841858}
+test binary-31.5 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40 f arg1] $arg1
+} {1 1.600000023841858}
+test binary-31.6 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x3f\xcc\xcc\xcd f1 arg1] $arg1
+} {1 1.600000023841858}
+test binary-31.7 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \xcd\xcc\xcc\x3f f1 arg1] $arg1
+} {1 1.600000023841858}
+test binary-31.8 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x3f\xcc\xcc\xcd f0 arg1] $arg1
+} {1 {}}
+test binary-31.9 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \xcd\xcc\xcc\x3f f0 arg1] $arg1
+} {1 {}}
+test binary-31.10 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a f2 arg1] $arg1
+} {1 {1.600000023841858 3.4000000953674316}}
+test binary-31.11 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40 f2 arg1] $arg1
+} {1 {1.600000023841858 3.4000000953674316}}
+test binary-31.12 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    set arg1 foo
+    list [binary scan \x52 f1 arg1] $arg1
+} {0 foo}
+test binary-31.13 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -returnCodes error -body {
+    set arg1 1
+    binary scan \x3f\xcc\xcc\xcd f1 arg1(a)
+} -result {can't set "arg1(a)": variable isn't array}
+test binary-31.14 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a\x05 f2c* arg1 arg2] $arg1 $arg2
+} {2 {1.600000023841858 3.4000000953674316} 5}
+test binary-31.15 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40\x05 f2c* arg1 arg2] $arg1 $arg2
+} {2 {1.600000023841858 3.4000000953674316} 5}
+
+test binary-32.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
+    binary scan abc d
+} -result {not enough arguments for all format specifiers}
+test binary-32.2 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33 d* arg1] $arg1
+} {1 {1.6 3.4}}
+test binary-32.3 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40 d* arg1] $arg1
+} {1 {1.6 3.4}}
+test binary-32.4 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33 d arg1] $arg1
+} {1 1.6}
+test binary-32.5 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40 d arg1] $arg1
+} {1 1.6}
+test binary-32.6 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a d1 arg1] $arg1
+} {1 1.6}
+test binary-32.7 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f d1 arg1] $arg1
+} {1 1.6}
+test binary-32.8 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a d0 arg1] $arg1
+} {1 {}}
+test binary-32.9 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f d0 arg1] $arg1
+} {1 {}}
+test binary-32.10 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33 d2 arg1] $arg1
+} {1 {1.6 3.4}}
+test binary-32.11 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40 d2 arg1] $arg1
+} {1 {1.6 3.4}}
+test binary-32.12 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    set arg1 foo
+    list [binary scan \x52 d1 arg1] $arg1
+} {0 foo}
+test binary-32.13 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -returnCodes error -body {
+    set arg1 1
+    binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a d1 arg1(a)
+} -result {can't set "arg1(a)": variable isn't array}
+test binary-32.14 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33\x05 d2c* arg1 arg2] $arg1 $arg2
+} {2 {1.6 3.4} 5}
+test binary-32.15 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40\x05 d2c* arg1 arg2] $arg1 $arg2
+} {2 {1.6 3.4} 5}
+
+test binary-33.1 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    unset -nocomplain arg2
+    list [binary scan abcdefg a2xa3 arg1 arg2] $arg1 $arg2
+} {2 ab def}
+test binary-33.2 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    unset -nocomplain arg2
+    set arg2 foo
+    list [binary scan abcdefg a3x*a3 arg1 arg2] $arg1 $arg2
+} {1 abc foo}
+test binary-33.3 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    unset -nocomplain arg2
+    set arg2 foo
+    list [binary scan abcdefg a3x20a3 arg1 arg2] $arg1 $arg2
+} {1 abc foo}
+test binary-33.4 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    unset -nocomplain arg2
+    set arg2 foo
+    list [binary scan abc a3x20a3 arg1 arg2] $arg1 $arg2
+} {1 abc foo}
+test binary-33.5 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan abcdef x1a1 arg1] $arg1
+} {1 b}
+test binary-33.6 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan abcdef x5a1 arg1] $arg1
+} {1 f}
+test binary-33.7 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan abcdef x0a1 arg1] $arg1
+} {1 a}
+
+test binary-34.1 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    unset -nocomplain arg2
+    list [binary scan abcdefg a2Xa3 arg1 arg2] $arg1 $arg2
+} {2 ab bcd}
+test binary-34.2 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    unset -nocomplain arg2
+    set arg2 foo
+    list [binary scan abcdefg a3X*a3 arg1 arg2] $arg1 $arg2
+} {2 abc abc}
+test binary-34.3 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    unset -nocomplain arg2
+    set arg2 foo
+    list [binary scan abcdefg a3X20a3 arg1 arg2] $arg1 $arg2
+} {2 abc abc}
+test binary-34.4 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan abc X20a3 arg1] $arg1
+} {1 abc}
+test binary-34.5 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan abcdef x*X1a1 arg1] $arg1
+} {1 f}
+test binary-34.6 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan abcdef x*X5a1 arg1] $arg1
+} {1 b}
+test binary-34.7 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan abcdef x3X0a1 arg1] $arg1
+} {1 d}
+
+test binary-35.1 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+    unset -nocomplain arg2
+} -returnCodes error -body {
+    binary scan abcdefg a2@a3 arg1 arg2
+} -result {missing count for "@" field specifier}
+test binary-35.2 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    unset -nocomplain arg2
+    set arg2 foo
+    list [binary scan abcdefg a3@*a3 arg1 arg2] $arg1 $arg2
+} {1 abc foo}
+test binary-35.3 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    unset -nocomplain arg2
+    set arg2 foo
+    list [binary scan abcdefg a3@20a3 arg1 arg2] $arg1 $arg2
+} {1 abc foo}
+test binary-35.4 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan abcdef @2a3 arg1] $arg1
+} {1 cde}
+test binary-35.5 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan abcdef x*@1a1 arg1] $arg1
+} {1 b}
+test binary-35.6 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    list [binary scan abcdef x*@0a1 arg1] $arg1
+} {1 a}
+
+test binary-36.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
+    binary scan abcdef u0a3
+} -result {bad field specifier "u"}
+
+# GetFormatSpec is pretty thoroughly tested above, but there are a few cases
+# we should text explicitly
+
+test binary-37.1 {GetFormatSpec: whitespace} {
+    binary format "a3 a5     a3" foo barblat baz
+} foobarblbaz
+test binary-37.2 {GetFormatSpec: whitespace} {
+    binary format "      " foo
+} {}
+test binary-37.3 {GetFormatSpec: whitespace} {
+    binary format "     a3" foo
+} foo
+test binary-37.4 {GetFormatSpec: whitespace} {
+    binary format "" foo
+} {}
+test binary-37.5 {GetFormatSpec: whitespace} {
+    binary format "" foo
+} {}
+test binary-37.6 {GetFormatSpec: whitespace} {
+    binary format "     a3   " foo
+} foo
+test binary-37.7 {GetFormatSpec: numbers} -returnCodes error -body {
+    binary scan abcdef "x-1" foo
+} -result {bad field specifier "-"}
+test binary-37.8 {GetFormatSpec: numbers} {
+    unset -nocomplain arg1
+    set arg1 foo
+    list [binary scan abcdef "a0x3" arg1] $arg1
+} {1 {}}
+test binary-37.9 {GetFormatSpec: numbers} {
+    # test format of neg numbers
+    # bug report/fix provided by Harald Kirsch
+    set x [binary format f* {1 -1 2 -2 0}]
+    binary scan $x f* bla
+    set bla
+} {1.0 -1.0 2.0 -2.0 0.0}
+test binary-37.10 {GetFormatSpec: count overflow} {
+    binary scan x a[format %ld 0x7fffffff] r
+} 0
+test binary-37.11 {GetFormatSpec: count overflow} {
+    binary scan x a[format %ld 0x10000000] r
+} 0
+test binary-37.12 {GetFormatSpec: count overflow} {
+    binary scan x a[format %ld 0x100000000] r
+} 0
+test binary-37.13 {GetFormatSpec: count overflow} {
+    binary scan x a[format %lld 0x10000000000000000] r
+} 0
+
+test binary-38.1 {FormatNumber: word alignment} {
+    set x [binary format c1s1 1 1]
+} \x01\x01\x00
+test binary-38.2 {FormatNumber: word alignment} {
+    set x [binary format c1S1 1 1]
+} \x01\x00\x01
+test binary-38.3 {FormatNumber: word alignment} {
+    set x [binary format c1i1 1 1]
+} \x01\x01\x00\x00\x00
+test binary-38.4 {FormatNumber: word alignment} {
+    set x [binary format c1I1 1 1]
+} \x01\x00\x00\x00\x01
+test binary-38.5 {FormatNumber: word alignment} bigEndian {
+    set x [binary format c1d1 1 1.6]
+} \x01\x3f\xf9\x99\x99\x99\x99\x99\x9a
+test binary-38.6 {FormatNumber: word alignment} littleEndian {
+    set x [binary format c1d1 1 1.6]
+} \x01\x9a\x99\x99\x99\x99\x99\xf9\x3f
+test binary-38.7 {FormatNumber: word alignment} bigEndian {
+    set x [binary format c1f1 1 1.6]
+} \x01\x3f\xcc\xcc\xcd
+test binary-38.8 {FormatNumber: word alignment} littleEndian {
+    set x [binary format c1f1 1 1.6]
+} \x01\xcd\xcc\xcc\x3f
+
+test binary-39.1 {ScanNumber: sign extension} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3 c2 arg1] $arg1
+} {1 {82 -93}}
+test binary-39.2 {ScanNumber: sign extension} {
+    unset -nocomplain arg1
+    list [binary scan \x01\x02\x01\x81\x82\x01\x81\x82 s4 arg1] $arg1
+} {1 {513 -32511 386 -32127}}
+test binary-39.3 {ScanNumber: sign extension} {
+    unset -nocomplain arg1
+    list [binary scan \x01\x02\x01\x81\x82\x01\x81\x82 S4 arg1] $arg1
+} {1 {258 385 -32255 -32382}}
+test binary-39.4 {ScanNumber: sign extension} {
+    unset -nocomplain arg1
+    list [binary scan \x01\x01\x01\x02\x81\x01\x01\x01\x01\x82\x01\x01\x01\x01\x82\x01\x01\x01\x01\x81 i5 arg1] $arg1
+} {1 {33620225 16843137 16876033 25297153 -2130640639}}
+test binary-39.5 {ScanNumber: sign extension} {
+    unset -nocomplain arg1
+    list [binary scan \x01\x01\x01\x02\x81\x01\x01\x01\x01\x82\x01\x01\x01\x01\x82\x01\x01\x01\x01\x81 I5 arg1] $arg1
+} {1 {16843010 -2130640639 25297153 16876033 16843137}}
+test binary-39.6 {ScanNumber: no sign extension} {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3 cu2 arg1] $arg1
+} {1 {82 163}}
+test binary-39.7 {ScanNumber: no sign extension} {
+    unset -nocomplain arg1
+    list [binary scan \x01\x02\x01\x81\x82\x01\x81\x82 su4 arg1] $arg1
+} {1 {513 33025 386 33409}}
+test binary-39.8 {ScanNumber: no sign extension} {
+    unset -nocomplain arg1
+    list [binary scan \x01\x02\x01\x81\x82\x01\x81\x82 Su4 arg1] $arg1
+} {1 {258 385 33281 33154}}
+test binary-39.9 {ScanNumber: no sign extension} {
+    unset -nocomplain arg1
+    list [binary scan \x01\x01\x01\x02\x81\x01\x01\x01\x01\x82\x01\x01\x01\x01\x82\x01\x01\x01\x01\x81 iu5 arg1] $arg1
+} {1 {33620225 16843137 16876033 25297153 2164326657}}
+test binary-39.10 {ScanNumber: no sign extension} {
+    unset -nocomplain arg1
+    list [binary scan \x01\x01\x01\x02\x81\x01\x01\x01\x01\x82\x01\x01\x01\x01\x82\x01\x01\x01\x01\x81 Iu5 arg1] $arg1
+} {1 {16843010 2164326657 25297153 16876033 16843137}}
+
+test binary-40.3 {ScanNumber: NaN} -body {
+    unset -nocomplain arg1
+    list [binary scan \xff\xff\xff\xff f1 arg1] $arg1
+} -match glob -result {1 -NaN*}
+test binary-40.4 {ScanNumber: NaN} -body {
+    unset -nocomplain arg1
+    list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff d arg1] $arg1
+} -match glob -result {1 -NaN*}
+
+test binary-41.1 {ScanNumber: word alignment} -setup {
+    unset -nocomplain arg1 arg2
+} -body {
+    list [binary scan \x01\x01\x00 c1s1 arg1 arg2] $arg1 $arg2
+} -result {2 1 1}
+test binary-41.2 {ScanNumber: word alignment} -setup {
+    unset -nocomplain arg1 arg2
+} -body {
+    list [binary scan \x01\x00\x01 c1S1 arg1 arg2] $arg1 $arg2
+} -result {2 1 1}
+test binary-41.3 {ScanNumber: word alignment} -setup {
+    unset -nocomplain arg1 arg2
+} -body {
+    list [binary scan \x01\x01\x00\x00\x00 c1i1 arg1 arg2] $arg1 $arg2
+} -result {2 1 1}
+test binary-41.4 {ScanNumber: word alignment} -setup {
+    unset -nocomplain arg1 arg2
+} -body {
+    list [binary scan \x01\x00\x00\x00\x01 c1I1 arg1 arg2] $arg1 $arg2
+} -result {2 1 1}
+test binary-41.5 {ScanNumber: word alignment} -setup {
+    unset -nocomplain arg1 arg2
+} -constraints bigEndian -body {
+    list [binary scan \x01\x3f\xcc\xcc\xcd c1f1 arg1 arg2] $arg1 $arg2
+} -result {2 1 1.600000023841858}
+test binary-41.6 {ScanNumber: word alignment} -setup {
+    unset -nocomplain arg1 arg2
+} -constraints littleEndian -body {
+    list [binary scan \x01\xcd\xcc\xcc\x3f c1f1 arg1 arg2] $arg1 $arg2
+} -result {2 1 1.600000023841858}
+test binary-41.7 {ScanNumber: word alignment} -setup {
+    unset -nocomplain arg1 arg2
+} -constraints bigEndian -body {
+    list [binary scan \x01\x3f\xf9\x99\x99\x99\x99\x99\x9a c1d1 arg1 arg2] $arg1 $arg2
+} -result {2 1 1.6}
+test binary-41.8 {ScanNumber: word alignment} -setup {
+    unset -nocomplain arg1 arg2
+} -constraints littleEndian -body {
+    list [binary scan \x01\x9a\x99\x99\x99\x99\x99\xf9\x3f c1d1 arg1 arg2] $arg1 $arg2
+} -result {2 1 1.6}
+
+test binary-42.1 {Tcl_BinaryObjCmd: bad arguments} -constraints {} -body {
+    binary ?
+} -returnCodes error -match glob -result {unknown or ambiguous subcommand "?": *}
+
+# Wide int (guaranteed at least 64-bit) handling
+test binary-43.1 {Tcl_BinaryObjCmd: format wide int} {} {
+    binary format w 7810179016327718216
+} HelloTcl
+test binary-43.2 {Tcl_BinaryObjCmd: format wide int} {} {
+    binary format W 7810179016327718216
+} lcTolleH
+
+test binary-44.1 {Tcl_BinaryObjCmd: scan wide int} {} {
+    binary scan HelloTcl W x
+    set x
+} 5216694956358656876
+test binary-44.2 {Tcl_BinaryObjCmd: scan wide int} {} {
+    binary scan lcTolleH w x
+    set x
+} 5216694956358656876
+test binary-44.3 {Tcl_BinaryObjCmd: scan wide int with bit 31 set} {} {
+    binary scan [binary format w [expr {wide(3) << 31}]] w x
+    set x
+} 6442450944
+test binary-44.4 {Tcl_BinaryObjCmd: scan wide int with bit 31 set} {} {
+    binary scan [binary format W [expr {wide(3) << 31}]] W x
+    set x
+} 6442450944
+test binary-43.5 {Tcl_BinaryObjCmd: scan wide int} {} {
+    unset -nocomplain arg1
+    list [binary scan \x80[string repeat \x00 7] W arg1] $arg1
+} {1 -9223372036854775808}
+test binary-43.6 {Tcl_BinaryObjCmd: scan unsigned wide int} {} {
+    unset -nocomplain arg1
+    list [binary scan \x80[string repeat \x00 7] Wu arg1] $arg1
+} {1 9223372036854775808}
+test binary-43.7 {Tcl_BinaryObjCmd: scan unsigned wide int} {} {
+    unset -nocomplain arg1
+    list [binary scan [string repeat \x00 7]\x80 wu arg1] $arg1
+} {1 9223372036854775808}
+test binary-43.8 {Tcl_BinaryObjCmd: scan unsigned wide int} {} {
+    unset -nocomplain arg1 arg2
+    list [binary scan \x80[string repeat \x00 7]\x80[string repeat \x00 7] WuW arg1 arg2] $arg1 $arg2
+} {2 9223372036854775808 -9223372036854775808}
+test binary-43.9 {Tcl_BinaryObjCmd: scan unsigned wide int} {} {
+    unset -nocomplain arg1 arg2
+    list [binary scan [string repeat \x00 7]\x80[string repeat \x00 7]\x80 wuw arg1 arg2] $arg1 $arg2
+} {2 9223372036854775808 -9223372036854775808}
+
+test binary-45.1 {Tcl_BinaryObjCmd: combined wide int handling} {
+    binary scan [binary format sws 16450 -1 19521] c* x
+    set x
+} {66 64 -1 -1 -1 -1 -1 -1 -1 -1 65 76}
+test binary-45.2 {Tcl_BinaryObjCmd: combined wide int handling} {
+    binary scan [binary format sWs 16450 0x7fffffff 19521] c* x
+    set x
+} {66 64 0 0 0 0 127 -1 -1 -1 65 76}
+
+test binary-46.1 {Tcl_BinaryObjCmd: handling of non-ISO8859-1 chars} {
+    binary format a* \u20ac
+} \u00ac
+test binary-46.2 {Tcl_BinaryObjCmd: handling of non-ISO8859-1 chars} {
+    list [binary scan [binary format a* \u20ac\u20bd] s x] $x
+} {1 -16980}
+test binary-46.3 {Tcl_BinaryObjCmd: handling of non-ISO8859-1 chars} {
+    set x {}
+    set y {}
+    set z {}
+    list [binary scan [binary format a* \u20ac\u20bd] aaa x y z] $x $y $z
+} "2 \u00ac \u00bd {}"
+test binary-46.4 {Tcl_BinaryObjCmd: handling of non-ISO8859-1 chars} {
+    set x [encoding convertto iso8859-15 \u20ac]
+    set y [binary format a* $x]
+    list $x $y
+} "\u00a4 \u00a4"
+test binary-46.5 {Tcl_BinaryObjCmd: handling of non-ISO8859-1 chars} {
+    set x [binary scan \u00a4 a* y]
+    list $x $y [encoding convertfrom iso8859-15 $y]
+} "1 \u00a4 \u20ac"
+
+test binary-47.1 {Tcl_BinaryObjCmd: number cache reference count handling} {
+    # This test is only reliable when memory debugging is turned on, but
+    # without even memory debugging it should still generate the expected
+    # answers and might therefore still pick up memory corruption caused by
+    # [Bug 851747].
+    list [binary scan aba ccc x x x] $x
+} {3 97}
+
+### TIP#129: endian specifiers ----
+
+# format t
+test binary-48.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format t
+} -result {not enough arguments for all format specifiers}
+test binary-48.2 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format t blat
+} -result {expected integer but got "blat"}
+test binary-48.3 {Tcl_BinaryObjCmd: format} {
+    binary format S0 0x50
+} {}
+test binary-48.4 {Tcl_BinaryObjCmd: format} bigEndian {
+    binary format t 0x50
+} \x00P
+test binary-48.5 {Tcl_BinaryObjCmd: format} littleEndian {
+    binary format t 0x50
+} P\x00
+test binary-48.6 {Tcl_BinaryObjCmd: format} bigEndian {
+    binary format t 0x5052
+} PR
+test binary-48.7 {Tcl_BinaryObjCmd: format} littleEndian {
+    binary format t 0x5052
+} RP
+test binary-48.8 {Tcl_BinaryObjCmd: format} bigEndian {
+    binary format t 0x505251 0x53
+} RQ
+test binary-48.9 {Tcl_BinaryObjCmd: format} littleEndian {
+    binary format t 0x505251 0x53
+} QR
+test binary-48.10 {Tcl_BinaryObjCmd: format} bigEndian {
+    binary format t2 {0x50 0x52}
+} \x00P\x00R
+test binary-48.11 {Tcl_BinaryObjCmd: format} littleEndian {
+    binary format t2 {0x50 0x52}
+} P\x00R\x00
+test binary-48.12 {Tcl_BinaryObjCmd: format} bigEndian {
+    binary format t* {0x5051 0x52}
+} PQ\x00R
+test binary-48.13 {Tcl_BinaryObjCmd: format} littleEndian {
+    binary format t* {0x5051 0x52}
+} QPR\x00
+test binary-48.14 {Tcl_BinaryObjCmd: format} bigEndian {
+    binary format t2 {0x50 0x52 0x53} 0x54
+} \x00P\x00R
+test binary-48.15 {Tcl_BinaryObjCmd: format} littleEndian {
+    binary format t2 {0x50 0x52 0x53} 0x54
+} P\x00R\x00
+test binary-48.16 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format t2 {0x50}
+} -result {number of elements in list does not match count}
+test binary-48.17 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    set a {0x50 0x51}
+    binary format t $a
+} -result "expected integer but got \"0x50 0x51\""
+test binary-48.18 {Tcl_BinaryObjCmd: format} bigEndian {
+    set a {0x50 0x51}
+    binary format t1 $a
+} \x00P
+test binary-48.19 {Tcl_BinaryObjCmd: format} littleEndian {
+    set a {0x50 0x51}
+    binary format t1 $a
+} P\x00
+
+# format n
+test binary-49.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format n
+} -result {not enough arguments for all format specifiers}
+test binary-49.2 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format n blat
+} -result {expected integer but got "blat"}
+test binary-49.3 {Tcl_BinaryObjCmd: format} {
+    binary format n0 0x50
+} {}
+test binary-49.4 {Tcl_BinaryObjCmd: format} littleEndian {
+    binary format n 0x50
+} P\x00\x00\x00
+test binary-49.5 {Tcl_BinaryObjCmd: format} littleEndian {
+    binary format n 0x5052
+} RP\x00\x00
+test binary-49.6 {Tcl_BinaryObjCmd: format} littleEndian {
+    binary format n 0x505251 0x53
+} QRP\x00
+test binary-49.7 {Tcl_BinaryObjCmd: format} littleEndian {
+    binary format i1 {0x505251 0x53}
+} QRP\x00
+test binary-49.8 {Tcl_BinaryObjCmd: format} littleEndian {
+    binary format n 0x53525150
+} PQRS
+test binary-49.9 {Tcl_BinaryObjCmd: format} littleEndian {
+    binary format n2 {0x50 0x52}
+} P\x00\x00\x00R\x00\x00\x00
+test binary-49.10 {Tcl_BinaryObjCmd: format} littleEndian {
+    binary format n* {0x50515253 0x52}
+} SRQPR\x00\x00\x00
+test binary-49.11 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format n2 {0x50}
+} -result {number of elements in list does not match count}
+test binary-49.12 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    set a {0x50 0x51}
+    binary format n $a
+} -result "expected integer but got \"0x50 0x51\""
+test binary-49.13 {Tcl_BinaryObjCmd: format} littleEndian {
+    set a {0x50 0x51}
+    binary format n1 $a
+} P\x00\x00\x00
+test binary-49.14 {Tcl_BinaryObjCmd: format} bigEndian {
+    binary format n 0x50
+} \x00\x00\x00P
+test binary-49.15 {Tcl_BinaryObjCmd: format} bigEndian {
+    binary format n 0x5052
+} \x00\x00PR
+test binary-49.16 {Tcl_BinaryObjCmd: format} bigEndian {
+    binary format n 0x505251 0x53
+} \x00PRQ
+test binary-49.17 {Tcl_BinaryObjCmd: format} bigEndian {
+    binary format i1 {0x505251 0x53}
+} QRP\x00
+test binary-49.18 {Tcl_BinaryObjCmd: format} bigEndian {
+    binary format n 0x53525150
+} SRQP
+test binary-49.19 {Tcl_BinaryObjCmd: format} bigEndian {
+    binary format n2 {0x50 0x52}
+} \x00\x00\x00P\x00\x00\x00R
+test binary-49.20 {Tcl_BinaryObjCmd: format} bigEndian {
+    binary format n* {0x50515253 0x52}
+} PQRS\x00\x00\x00R
+
+# format m
+test binary-50.1 {Tcl_BinaryObjCmd: format wide int} littleEndian {
+    binary format m 7810179016327718216
+} HelloTcl
+test binary-50.2 {Tcl_BinaryObjCmd: format wide int} bigEndian {
+    binary format m 7810179016327718216
+} lcTolleH
+test binary-50.3 {Tcl_BinaryObjCmd: scan wide int with bit 31 set} littleEndian {
+    binary scan [binary format m [expr {wide(3) << 31}]] w x
+    set x
+} 6442450944
+test binary-50.4 {Tcl_BinaryObjCmd: scan wide int with bit 31 set} bigEndian {
+    binary scan [binary format m [expr {wide(3) << 31}]] W x
+    set x
+} 6442450944
+
+# format Q/q
+test binary-51.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format Q
+} -result {not enough arguments for all format specifiers}
+test binary-51.2 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format q blat
+} -result {expected floating-point number but got "blat"}
+test binary-51.3 {Tcl_BinaryObjCmd: format} {
+    binary format q0 1.6
+} {}
+test binary-51.4 {Tcl_BinaryObjCmd: format} {} {
+    binary format Q 1.6
+} \x3f\xf9\x99\x99\x99\x99\x99\x9a
+test binary-51.5 {Tcl_BinaryObjCmd: format} {} {
+    binary format q 1.6
+} \x9a\x99\x99\x99\x99\x99\xf9\x3f
+test binary-51.6 {Tcl_BinaryObjCmd: format} {} {
+    binary format Q* {1.6 3.4}
+} \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33
+test binary-51.7 {Tcl_BinaryObjCmd: format} {} {
+    binary format q* {1.6 3.4}
+} \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40
+test binary-51.8 {Tcl_BinaryObjCmd: format} {} {
+    binary format Q2 {1.6 3.4}
+} \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33
+test binary-51.9 {Tcl_BinaryObjCmd: format} {} {
+    binary format q2 {1.6 3.4}
+} \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40
+test binary-51.10 {Tcl_BinaryObjCmd: format} {} {
+    binary format Q2 {1.6 3.4 5.6}
+} \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33
+test binary-51.11 {Tcl_BinaryObjCmd: format} {} {
+    binary format q2 {1.6 3.4 5.6}
+} \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40
+test binary-51.14 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format q2 {1.6}
+} -result {number of elements in list does not match count}
+test binary-51.15 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    set a {1.6 3.4}
+    binary format q $a
+} -result "expected floating-point number but got \"1.6 3.4\""
+test binary-51.16 {Tcl_BinaryObjCmd: format} {} {
+    set a {1.6 3.4}
+    binary format Q1 $a
+} \x3f\xf9\x99\x99\x99\x99\x99\x9a
+test binary-51.17 {Tcl_BinaryObjCmd: format} {} {
+    set a {1.6 3.4}
+    binary format q1 $a
+} \x9a\x99\x99\x99\x99\x99\xf9\x3f
+
+# format R/r
+test binary-53.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format r
+} -result {not enough arguments for all format specifiers}
+test binary-53.2 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format r blat
+} -result {expected floating-point number but got "blat"}
+test binary-53.3 {Tcl_BinaryObjCmd: format} {
+    binary format f0 1.6
+} {}
+test binary-53.4 {Tcl_BinaryObjCmd: format} {} {
+    binary format R 1.6
+} \x3f\xcc\xcc\xcd
+test binary-53.5 {Tcl_BinaryObjCmd: format} {} {
+    binary format r 1.6
+} \xcd\xcc\xcc\x3f
+test binary-53.6 {Tcl_BinaryObjCmd: format} {} {
+    binary format R* {1.6 3.4}
+} \x3f\xcc\xcc\xcd\x40\x59\x99\x9a
+test binary-53.7 {Tcl_BinaryObjCmd: format} {} {
+    binary format r* {1.6 3.4}
+} \xcd\xcc\xcc\x3f\x9a\x99\x59\x40
+test binary-53.8 {Tcl_BinaryObjCmd: format} {} {
+    binary format R2 {1.6 3.4}
+} \x3f\xcc\xcc\xcd\x40\x59\x99\x9a
+test binary-53.9 {Tcl_BinaryObjCmd: format} {} {
+    binary format r2 {1.6 3.4}
+} \xcd\xcc\xcc\x3f\x9a\x99\x59\x40
+test binary-53.10 {Tcl_BinaryObjCmd: format} {} {
+    binary format R2 {1.6 3.4 5.6}
+} \x3f\xcc\xcc\xcd\x40\x59\x99\x9a
+test binary-53.11 {Tcl_BinaryObjCmd: format} {} {
+    binary format r2 {1.6 3.4 5.6}
+} \xcd\xcc\xcc\x3f\x9a\x99\x59\x40
+test binary-53.12 {Tcl_BinaryObjCmd: float overflow} {} {
+    binary format R -3.402825e+38
+} \xff\x7f\xff\xff
+test binary-53.13 {Tcl_BinaryObjCmd: float overflow} {} {
+    binary format r -3.402825e+38
+} \xff\xff\x7f\xff
+test binary-53.14 {Tcl_BinaryObjCmd: float underflow} {} {
+    binary format R -3.402825e-100
+} \x80\x00\x00\x00
+test binary-53.15 {Tcl_BinaryObjCmd: float underflow} {} {
+    binary format r -3.402825e-100
+} \x00\x00\x00\x80
+test binary-53.16 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    binary format r2 {1.6}
+} -result {number of elements in list does not match count}
+test binary-53.17 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
+    set a {1.6 3.4}
+    binary format r $a
+} -result "expected floating-point number but got \"1.6 3.4\""
+test binary-53.18 {Tcl_BinaryObjCmd: format} {} {
+    set a {1.6 3.4}
+    binary format R1 $a
+} \x3f\xcc\xcc\xcd
+test binary-53.19 {Tcl_BinaryObjCmd: format} {} {
+    set a {1.6 3.4}
+    binary format r1 $a
+} \xcd\xcc\xcc\x3f
+
+# scan t (s)
+test binary-54.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
+    binary scan abc t
+} -result {not enough arguments for all format specifiers}
+test binary-54.2 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54 t* arg1] $arg1
+} {1 {-23726 21587}}
+test binary-54.3 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54 t arg1] $arg1
+} {1 -23726}
+test binary-54.4 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3 t1 arg1] $arg1
+} {1 -23726}
+test binary-54.5 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3 t0 arg1] $arg1
+} {1 {}}
+test binary-54.6 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54 t2 arg1] $arg1
+} {1 {-23726 21587}}
+test binary-54.7 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    set arg1 foo
+    list [binary scan \x52 t1 arg1] $arg1
+} {0 foo}
+test binary-54.8 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -returnCodes error -body {
+    set arg1 1
+    binary scan \x52\x53 t1 arg1(a)
+} -result {can't set "arg1(a)": variable isn't array}
+test binary-54.9 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x52\xa3\x53\x54\x05 t2c* arg1 arg2] $arg1 $arg2
+} {2 {-23726 21587} 5}
+test binary-54.10 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x00\x80\x00\x80 tut arg1 arg2] $arg1 $arg2
+} {2 32768 -32768}
+test binary-54.11 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x00\x80\x00\x80 ttu arg1 arg2] $arg1 $arg2
+} {2 -32768 32768}
+
+# scan t (b)
+test binary-55.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
+    binary scan abc t
+} -result {not enough arguments for all format specifiers}
+test binary-55.2 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54 t* arg1] $arg1
+} {1 {21155 21332}}
+test binary-55.3 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54 t arg1] $arg1
+} {1 21155}
+test binary-55.4 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3 t1 arg1] $arg1
+} {1 21155}
+test binary-55.5 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3 t0 arg1] $arg1
+} {1 {}}
+test binary-55.6 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54 t2 arg1] $arg1
+} {1 {21155 21332}}
+test binary-55.7 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    set arg1 foo
+    list [binary scan \x52 t1 arg1] $arg1
+} {0 foo}
+test binary-55.8 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -returnCodes error -body {
+    set arg1 1
+    binary scan \x52\x53 t1 arg1(a)
+} -result {can't set "arg1(a)": variable isn't array}
+test binary-55.9 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x52\xa3\x53\x54\x05 t2c* arg1 arg2] $arg1 $arg2
+} {2 {21155 21332} 5}
+test binary-55.10 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x80\x00\x80\x00 tut arg1 arg2] $arg1 $arg2
+} {2 32768 -32768}
+test binary-55.11 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x80\x00\x80\x00 ttu arg1 arg2] $arg1 $arg2
+} {2 -32768 32768}
+
+# scan n (s)
+test binary-56.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
+    binary scan abc n
+} -result {not enough arguments for all format specifiers}
+test binary-56.2 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 n* arg1] $arg1
+} {1 {1414767442 67305985}}
+test binary-56.3 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 n arg1] $arg1
+} {1 1414767442}
+test binary-56.4 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54 n1 arg1] $arg1
+} {1 1414767442}
+test binary-56.5 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53 n0 arg1] $arg1
+} {1 {}}
+test binary-56.6 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 n2 arg1] $arg1
+} {1 {1414767442 67305985}}
+test binary-56.7 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    set arg1 foo
+    list [binary scan \x52 n1 arg1] $arg1
+} {0 foo}
+test binary-56.8 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -returnCodes error -body {
+    set arg1 1
+    binary scan \x52\x53\x53\x54 n1 arg1(a)
+} -result {can't set "arg1(a)": variable isn't array}
+test binary-56.9 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04\x05 n2c* arg1 arg2] $arg1 $arg2
+} {2 {1414767442 67305985} 5}
+test binary-56.10 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x80\x00\x00\x00\x80\x00\x00\x00 nun arg1 arg2] $arg1 $arg2
+} {2 128 128}
+test binary-56.11 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x00\x00\x00\x80\x00\x00\x00\x80 nun arg1 arg2] $arg1 $arg2
+} {2 2147483648 -2147483648}
+
+# scan n (b)
+test binary-57.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
+    binary scan abc n
+} -result {not enough arguments for all format specifiers}
+test binary-57.2 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 n* arg1] $arg1
+} {1 {1386435412 16909060}}
+test binary-57.3 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 n arg1] $arg1
+} {1 1386435412}
+test binary-57.4 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54 n1 arg1] $arg1
+} {1 1386435412}
+test binary-57.5 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53 n0 arg1] $arg1
+} {1 {}}
+test binary-57.6 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04 n2 arg1] $arg1
+} {1 {1386435412 16909060}}
+test binary-57.7 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    set arg1 foo
+    list [binary scan \x52 n1 arg1] $arg1
+} {0 foo}
+test binary-57.8 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -returnCodes error -body {
+    set arg1 1
+    binary scan \x52\x53\x53\x54 n1 arg1(a)
+} -result {can't set "arg1(a)": variable isn't array}
+test binary-57.9 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04\x05 n2c* arg1 arg2] $arg1 $arg2
+} {2 {1386435412 16909060} 5}
+test binary-57.10 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x80\x00\x00\x00\x80\x00\x00\x00 nun arg1 arg2] $arg1 $arg2
+} {2 2147483648 -2147483648}
+test binary-57.11 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x00\x00\x00\x80\x00\x00\x00\x80 nun arg1 arg2] $arg1 $arg2
+} {2 128 128}
+
+# scan Q/q
+test binary-58.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
+    binary scan abc q
+} -result {not enough arguments for all format specifiers}
+test binary-58.2 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33 Q* arg1] $arg1
+} {1 {1.6 3.4}}
+test binary-58.3 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40 q* arg1] $arg1
+} {1 {1.6 3.4}}
+test binary-58.4 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33 Q arg1] $arg1
+} {1 1.6}
+test binary-58.5 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40 q arg1] $arg1
+} {1 1.6}
+test binary-58.6 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a Q1 arg1] $arg1
+} {1 1.6}
+test binary-58.7 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f q1 arg1] $arg1
+} {1 1.6}
+test binary-58.8 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a Q0 arg1] $arg1
+} {1 {}}
+test binary-58.9 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f q0 arg1] $arg1
+} {1 {}}
+test binary-58.10 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33 Q2 arg1] $arg1
+} {1 {1.6 3.4}}
+test binary-58.11 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40 q2 arg1] $arg1
+} {1 {1.6 3.4}}
+test binary-58.12 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    set arg1 foo
+    list [binary scan \x52 q1 arg1] $arg1
+} {0 foo}
+test binary-58.13 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -returnCodes error -body {
+    set arg1 1
+    binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a q1 arg1(a)
+} -result {can't set "arg1(a)": variable isn't array}
+test binary-58.14 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33\x05 Q2c* arg1 arg2] $arg1 $arg2
+} {2 {1.6 3.4} 5}
+test binary-58.15 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40\x05 q2c* arg1 arg2] $arg1 $arg2
+} {2 {1.6 3.4} 5}
+
+# scan R/r
+test binary-59.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
+    binary scan abc r
+} -result {not enough arguments for all format specifiers}
+test binary-59.2 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a R* arg1] $arg1
+} {1 {1.600000023841858 3.4000000953674316}}
+test binary-59.3 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40 r* arg1] $arg1
+} {1 {1.600000023841858 3.4000000953674316}}
+test binary-59.4 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a R arg1] $arg1
+} {1 1.600000023841858}
+test binary-59.5 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40 r arg1] $arg1
+} {1 1.600000023841858}
+test binary-59.6 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x3f\xcc\xcc\xcd R1 arg1] $arg1
+} {1 1.600000023841858}
+test binary-59.7 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \xcd\xcc\xcc\x3f r1 arg1] $arg1
+} {1 1.600000023841858}
+test binary-59.8 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x3f\xcc\xcc\xcd R0 arg1] $arg1
+} {1 {}}
+test binary-59.9 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \xcd\xcc\xcc\x3f r0 arg1] $arg1
+} {1 {}}
+test binary-59.10 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1
+    list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a R2 arg1] $arg1
+} {1 {1.600000023841858 3.4000000953674316}}
+test binary-59.11 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1
+    list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40 r2 arg1] $arg1
+} {1 {1.600000023841858 3.4000000953674316}}
+test binary-59.12 {Tcl_BinaryObjCmd: scan} {
+    unset -nocomplain arg1
+    set arg1 foo
+    list [binary scan \x52 r1 arg1] $arg1
+} {0 foo}
+test binary-59.13 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -returnCodes error -body {
+    set arg1 1
+    binary scan \x3f\xcc\xcc\xcd r1 arg1(a)
+} -result {can't set "arg1(a)": variable isn't array}
+test binary-59.14 {Tcl_BinaryObjCmd: scan} bigEndian {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a\x05 R2c* arg1 arg2] $arg1 $arg2
+} {2 {1.600000023841858 3.4000000953674316} 5}
+test binary-59.15 {Tcl_BinaryObjCmd: scan} littleEndian {
+    unset -nocomplain arg1 arg2
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40\x05 r2c* arg1 arg2] $arg1 $arg2
+} {2 {1.600000023841858 3.4000000953674316} 5}
+
+test binary-60.1 {[binary format] with NaN} -body {
+    binary scan [binary format dqQfrR NaN NaN NaN NaN NaN NaN] dqQfrR \
+	v1 v2 v3 v4 v5 v6
+    list $v1 $v2 $v3 $v4 $v5 $v6
+} -match regexp -result {NaN(\([[:xdigit:]]+\))? NaN(\([[:xdigit:]]+\))? NaN(\([[:xdigit:]]+\))? NaN(\([[:xdigit:]]+\))? NaN(\([[:xdigit:]]+\))? NaN(\([[:xdigit:]]+\))?}
+
+# scan m
+test binary-61.1 {Tcl_BinaryObjCmd: scan wide int} bigEndian {
+    binary scan HelloTcl m x
+    set x
+} 5216694956358656876
+test binary-61.2 {Tcl_BinaryObjCmd: scan wide int} littleEndian {
+    binary scan lcTolleH m x
+    set x
+} 5216694956358656876
+test binary-61.3 {Tcl_BinaryObjCmd: scan wide int with bit 31 set} littleEndian {
+    binary scan [binary format w [expr {wide(3) << 31}]] m x
+    set x
+} 6442450944
+test binary-61.4 {Tcl_BinaryObjCmd: scan wide int with bit 31 set} bigEndian {
+    binary scan [binary format W [expr {wide(3) << 31}]] m x
+    set x
+} 6442450944
+
+# scan/format infinities
+
+test binary-62.1 {infinity} ieeeFloatingPoint {
+    binary scan [binary format q Infinity] w w
+    format 0x%016lx $w
+} 0x7ff0000000000000
+test binary-62.2 {infinity} ieeeFloatingPoint {
+    binary scan [binary format q -Infinity] w w
+    format 0x%016lx $w
+} 0xfff0000000000000
+test binary-62.3 {infinity} ieeeFloatingPoint {
+    binary scan [binary format q Inf] w w
+    format 0x%016lx $w
+} 0x7ff0000000000000
+test binary-62.4 {infinity} ieeeFloatingPoint {
+    binary scan [binary format q -Infinity] w w
+    format 0x%016lx $w
+} 0xfff0000000000000
+test binary-62.5 {infinity} ieeeFloatingPoint {
+    binary scan [binary format w 0x7ff0000000000000] q d
+    set d
+} Inf
+test binary-62.6 {infinity} ieeeFloatingPoint {
+    binary scan [binary format w 0xfff0000000000000] q d
+    set d
+} -Inf
+
+# scan/format Not-a-Number
+
+test binary-63.1 {NaN} ieeeFloatingPoint {
+    binary scan [binary format q NaN] w w
+    format 0x%016lx [expr {$w & 0xfff3ffffffffffff}]
+} 0x7ff0000000000000
+test binary-63.2 {NaN} ieeeFloatingPoint {
+    binary scan [binary format q -NaN] w w
+    format 0x%016lx [expr {$w & 0xfff3ffffffffffff}]
+} 0xfff0000000000000
+test binary-63.3 {NaN} ieeeFloatingPoint {
+    binary scan [binary format q NaN(3123456789aBc)] w w
+    format 0x%016lx [expr {$w & 0xfff3ffffffffffff}]
+} 0x7ff3123456789abc
+test binary-63.4 {NaN} ieeeFloatingPoint {
+    binary scan [binary format q {NaN( 3123456789aBc)}] w w
+    format 0x%016lx [expr {$w & 0xfff3ffffffffffff}]
+} 0x7ff3123456789abc
+
+# Make sure TclParseNumber() rejects invalid nan-hex formats [Bug 3402540]
+test binary-63.5 {NaN} -constraints ieeeFloatingPoint -body {
+    binary format q Nan(
+} -returnCodes error -match glob -result {expected floating-point number*}
+test binary-63.6 {NaN} -constraints ieeeFloatingPoint -body {
+    binary format q Nan()
+} -returnCodes error -match glob -result {expected floating-point number*}
+test binary-63.7 {NaN} -constraints ieeeFloatingPoint -body {
+    binary format q Nan(g)
+} -returnCodes error -match glob -result {expected floating-point number*}
+test binary-63.8 {NaN} -constraints ieeeFloatingPoint -body {
+    binary format q Nan(1,2)
+} -returnCodes error -match glob -result {expected floating-point number*}
+test binary-63.9 {NaN} -constraints ieeeFloatingPoint -body {
+    binary format q Nan(1234567890abcd)
+} -returnCodes error -match glob -result {expected floating-point number*}
+
+test binary-64.1 {NaN} -constraints ieeeFloatingPoint -body {
+    binary scan [binary format w 0x7ff8000000000000] q d
+    set d
+} -match glob -result NaN*
+test binary-64.2 {NaN} -constraints ieeeFloatingPoint -body {
+    binary scan [binary format w 0x7ff0123456789aBc] q d
+    set d
+} -match glob -result NaN(*123456789abc)
+
+test binary-65.1 {largest significand} ieeeFloatingPoint {
+    binary scan [binary format w 0x3fcfffffffffffff] q d
+    set d
+} 0.24999999999999997
+test binary-65.2 {smallest significand} ieeeFloatingPoint {
+    binary scan [binary format w 0x3fd0000000000000] q d
+    set d
+} 0.25
+test binary-65.3 {largest significand} ieeeFloatingPoint {
+    binary scan [binary format w 0x3fdfffffffffffff] q d
+    set d
+} 0.49999999999999994
+test binary-65.4 {smallest significand} ieeeFloatingPoint {
+    binary scan [binary format w 0x3fe0000000000000] q d
+    set d
+} 0.5
+test binary-65.5 {largest significand} ieeeFloatingPoint {
+    binary scan [binary format w 0x3fffffffffffffff] q d
+    set d
+} 1.9999999999999998
+test binary-65.6 {smallest significand} ieeeFloatingPoint {
+    binary scan [binary format w 0x4000000000000000] q d
+    set d
+} 2.0
+test binary-65.7 {smallest significand} ieeeFloatingPoint {
+    binary scan [binary format w 0x434fffffffffffff] q d
+    set d
+} 18014398509481982.0
+test binary-65.8 {largest significand} ieeeFloatingPoint {
+    binary scan [binary format w 0x4350000000000000] q d
+    set d
+} 18014398509481984.0
+test binary-65.9 {largest significand} ieeeFloatingPoint {
+    binary scan [binary format w 0x4350000000000001] q d
+    set d
+} 18014398509481988.0
+
+test binary-70.1 {binary encode hex} -body {
+    binary encode hex
+} -returnCodes error -match glob -result "wrong # args: *"
+test binary-70.2 {binary encode hex} -body {
+    binary encode hex a
+} -result {61}
+test binary-70.3 {binary encode hex} -body {
+    binary encode hex {}
+} -result {}
+test binary-70.4 {binary encode hex} -body {
+    binary encode hex [string repeat a 20]
+} -result [string repeat 61 20]
+test binary-70.5 {binary encode hex} -body {
+    binary encode hex \0\1\2\3\4\0\1\2\3\4
+} -result {00010203040001020304}
+
+test binary-71.1 {binary decode hex} -body {
+    binary decode hex
+} -returnCodes error -match glob -result "wrong # args: *"
+test binary-71.2 {binary decode hex} -body {
+    binary decode hex 61
+} -result {a}
+test binary-71.3 {binary decode hex} -body {
+    binary decode hex {}
+} -result {}
+test binary-71.4 {binary decode hex} -body {
+    binary decode hex [string repeat 61 20]
+} -result [string repeat a 20]
+test binary-71.5 {binary decode hex} -body {
+    binary decode hex 00010203040001020304
+} -result "\0\1\2\3\4\0\1\2\3\4"
+test binary-71.6 {binary decode hex} -body {
+    binary decode hex "61 61"
+} -result {aa}
+test binary-71.7 {binary decode hex} -body {
+    binary decode hex "61\n\n\n61"
+} -result {aa}
+test binary-71.8 {binary decode hex} -body {
+    binary decode hex -strict "61 61"
+} -returnCodes error -result {invalid hexadecimal digit " " at position 2}
+test binary-71.9 {binary decode hex} -body {
+    set r [binary decode hex "6"]
+    list [string length $r] $r
+} -result {0 {}}
+test binary-71.10 {binary decode hex} -body {
+    string length [binary decode hex " "]
+} -result 0
+test binary-71.11 {binary decode hex: Bug b98fa55285} -body {
+    apply {{} {
+	set str "137b6f95e7519389e7c4b36599781e2ccf492699649249aae43fbe8c26\n"
+	set decoded [binary decode hex $str]
+	list [string length $decoded] [scan [string index $decoded end] %c]
+    }}
+} -result {29 38}
+test binary-71.12 {binary decode hex: Bug b98fa55285 cross check} -body {
+    apply {{} {
+	set str "137b6f95e7519389e7c4b36599781e2ccf492699649249aae43fbe8c2\n"
+	set decoded [binary decode hex $str]
+	list [string length $decoded] [scan [string index $decoded end] %c]
+    }}
+} -result {28 140}
+test binary-71.13 {binary decode hex: Bug b98fa55285 cross check} -body {
+    apply {{} {
+	set str "137b6f95e7519389e7c4b36599781e2ccf492699649249aae43fbe8c2\n\n"
+	set decoded [binary decode hex $str]
+	list [string length $decoded] [scan [string index $decoded end] %c]
+    }}
+} -result {28 140}
+test binary-71.14 {binary decode hex: Bug b98fa55285 cross check} -body {
+    apply {{} {
+	set str "137b6f95e7519389e7c4b36599781e2ccf492699649249aae43fbe8c2\n\n\n"
+	set decoded [binary decode hex $str]
+	list [string length $decoded] [scan [string index $decoded end] %c]
+    }}
+} -result {28 140}
+
+test binary-72.1 {binary encode base64} -body {
+    binary encode base64
+} -returnCodes error -match glob -result "wrong # args: *"
+test binary-72.2 {binary encode base64} -body {
+    binary encode base64 abc
+} -result {YWJj}
+test binary-72.3 {binary encode base64} -body {
+    binary encode base64 {}
+} -result {}
+test binary-72.4 {binary encode base64} -body {
+    binary encode base64 [string repeat abc 20]
+} -result [string repeat YWJj 20]
+test binary-72.5 {binary encode base64} -body {
+    binary encode base64 \0\1\2\3\4\0\1\2\3
+} -result {AAECAwQAAQID}
+test binary-72.6 {binary encode base64} -body {
+    binary encode base64 \0
+} -result {AA==}
+test binary-72.7 {binary encode base64} -body {
+    binary encode base64 \0\0
+} -result {AAA=}
+test binary-72.8 {binary encode base64} -body {
+    binary encode base64 \0\0\0
+} -result {AAAA}
+test binary-72.9 {binary encode base64} -body {
+    binary encode base64 \0\0\0\0
+} -result {AAAAAA==}
+test binary-72.10 {binary encode base64} -body {
+    binary encode base64 -maxlen 0 -wrapchar : abcabcabc
+} -result {YWJjYWJjYWJj}
+test binary-72.11 {binary encode base64} -body {
+    binary encode base64 -maxlen 1 -wrapchar : abcabcabc
+} -result {Y:W:J:j:Y:W:J:j:Y:W:J:j}
+test binary-72.12 {binary encode base64} -body {
+    binary encode base64 -maxlen 2 -wrapchar : abcabcabc
+} -result {YW:Jj:YW:Jj:YW:Jj}
+test binary-72.13 {binary encode base64} -body {
+    binary encode base64 -maxlen 3 -wrapchar : abcabcabc
+} -result {YWJ:jYW:JjY:WJj}
+test binary-72.14 {binary encode base64} -body {
+    binary encode base64 -maxlen 4 -wrapchar : abcabcabc
+} -result {YWJj:YWJj:YWJj}
+test binary-72.15 {binary encode base64} -body {
+    binary encode base64 -maxlen 5 -wrapchar : abcabcabc
+} -result {YWJjY:WJjYW:Jj}
+test binary-72.16 {binary encode base64} -body {
+    binary encode base64 -maxlen 6 -wrapchar : abcabcabc
+} -result {YWJjYW:JjYWJj}
+test binary-72.17 {binary encode base64} -body {
+    binary encode base64 -maxlen 7 -wrapchar : abcabcabc
+} -result {YWJjYWJ:jYWJj}
+test binary-72.18 {binary encode base64} -body {
+    binary encode base64 -maxlen 8 -wrapchar : abcabcabc
+} -result {YWJjYWJj:YWJj}
+test binary-72.19 {binary encode base64} -body {
+    binary encode base64 -maxlen 9 -wrapchar : abcabcabc
+} -result {YWJjYWJjY:WJj}
+test binary-72.20 {binary encode base64} -body {
+    binary encode base64 -maxlen 10 -wrapchar : abcabcabc
+} -result {YWJjYWJjYW:Jj}
+test binary-72.21 {binary encode base64} -body {
+    binary encode base64 -maxlen 11 -wrapchar : abcabcabc
+} -result {YWJjYWJjYWJ:j}
+test binary-72.22 {binary encode base64} -body {
+    binary encode base64 -maxlen 12 -wrapchar : abcabcabc
+} -result {YWJjYWJjYWJj}
+test binary-72.23 {binary encode base64} -body {
+    binary encode base64 -maxlen 13 -wrapchar : abcabcabc
+} -result {YWJjYWJjYWJj}
+test binary-72.24 {binary encode base64} -body {
+    binary encode base64 -maxlen 60 -wrapchar : abcabcabc
+} -result {YWJjYWJjYWJj}
+test binary-72.25 {binary encode base64} -body {
+    binary encode base64 -maxlen 2 -wrapchar * abcabcabc
+} -result {YW*Jj*YW*Jj*YW*Jj}
+test binary-72.26 {binary encode base64} -body {
+    binary encode base64 -maxlen 6 -wrapchar -*- abcabcabc
+} -result {YWJjYW-*-JjYWJj}
+test binary-72.27 {binary encode base64} -body {
+    binary encode base64 -maxlen 4 -wrapchar -*- abcabcabc
+} -result {YWJj-*-YWJj-*-YWJj}
+test binary-72.28 {binary encode base64} -body {
+    binary encode base64 -maxlen 6 -wrapchar 0123456789 abcabcabc
+} -result {YWJjYW0123456789JjYWJj}
+
+test binary-73.1 {binary decode base64} -body {
+    binary decode base64
+} -returnCodes error -match glob -result "wrong # args: *"
+test binary-73.2 {binary decode base64} -body {
+    binary decode base64 YWJj
+} -result {abc}
+test binary-73.3 {binary decode base64} -body {
+    binary decode base64 {}
+} -result {}
+test binary-73.4 {binary decode base64} -body {
+    binary decode base64 [string repeat YWJj 20]
+} -result [string repeat abc 20]
+test binary-73.5 {binary encode base64} -body {
+    binary decode base64 AAECAwQAAQID
+} -result "\0\1\2\3\4\0\1\2\3"
+test binary-73.6 {binary encode base64} -body {
+    binary decode base64 AA==
+} -result "\0"
+test binary-73.7 {binary encode base64} -body {
+    binary decode base64 AAA=
+} -result "\0\0"
+test binary-73.8 {binary encode base64} -body {
+    binary decode base64 AAAA
+} -result "\0\0\0"
+test binary-73.9 {binary encode base64} -body {
+    binary decode base64 AAAAAA==
+} -result "\0\0\0\0"
+test binary-73.10 {binary decode base64} -body {
+    set s "[string repeat YWJj 10]\n[string repeat YWJj 10]"
+    binary decode base64 $s
+} -result [string repeat abc 20]
+test binary-73.11 {binary decode base64} -body {
+    set s "[string repeat YWJj 10]\n    [string repeat YWJj 10]"
+    binary decode base64 $s
+} -result [string repeat abc 20]
+test binary-73.12 {binary decode base64} -body {
+    binary decode base64 -strict ":YWJj"
+} -returnCodes error -match glob -result {invalid base64 character ":" at position 0}
+test binary-73.13 {binary decode base64} -body {
+    set s "[string repeat YWJj 10]:[string repeat YWJj 10]"
+    binary decode base64 -strict $s
+} -returnCodes error -match glob -result {invalid base64 character ":" at position 40}
+test binary-73.14 {binary decode base64} -body {
+    set s "[string repeat YWJj 10]\n    [string repeat YWJj 10]"
+    binary decode base64 -strict $s
+} -returnCodes error -match glob -result {invalid base64 character *}
+test binary-73.20 {binary decode base64} -body {
+    set r [binary decode base64 Y]
+    list [string length $r] $r
+} -result {0 {}}
+test binary-73.21 {binary decode base64} -body {
+    set r [binary decode base64 YW]
+    list [string length $r] $r
+} -result {1 a}
+test binary-73.22 {binary decode base64} -body {
+    set r [binary decode base64 YWJ]
+    list [string length $r] $r
+} -result {2 ab}
+test binary-73.23 {binary decode base64} -body {
+    set r [binary decode base64 YWJj]
+    list [string length $r] $r
+} -result {3 abc}
+test binary-73.24 {binary decode base64} -body {
+    string length [binary decode base64 " "]
+} -result 0
+test binary-73.25 {binary decode base64} -body {
+    list [string length [set r [binary decode base64 WA==\n]]] $r
+} -result {1 X}
+test binary-73.26 {binary decode base64} -body {
+    list [string length [set r [binary decode base64 WFk=\n]]] $r
+} -result {2 XY}
+test binary-73.27 {binary decode base64} -body {
+    list [string length [set r [binary decode base64 WFla\n]]] $r
+} -result {3 XYZ}
+test binary-73.28 {binary decode base64} -body {
+    list [string length [set r [binary decode base64 -strict WA==\n]]] $r
+} -returnCodes error -match glob -result {invalid base64 character *}
+test binary-73.29 {binary decode base64} -body {
+    list [string length [set r [binary decode base64 -strict WFk=\n]]] $r
+} -returnCodes error -match glob -result {invalid base64 character *}
+test binary-73.30 {binary decode base64} -body {
+    list [string length [set r [binary decode base64 -strict WFla\n]]] $r
+} -returnCodes error -match glob -result {invalid base64 character *}
+test binary-73.31 {binary decode base64} -body {
+    list [string length [set r [binary decode base64 WA==WFla]]] $r
+} -returnCodes error -match glob -result {invalid base64 character *}
+test binary-73.32 {binary decode base64, bug [00d04c4f12]} -body {
+    list \
+	[string length [binary decode base64 =]] \
+	[string length [binary decode base64 " ="]] \
+	[string length [binary decode base64 "   ="]] \
+	[string length [binary decode base64 "\r\n\t="]] \
+} -result [lrepeat 4 0]
+test binary-73.33 {binary decode base64, bug [00d04c4f12]} -body {
+    list \
+	[string length [binary decode base64 ==]] \
+	[string length [binary decode base64 " =="]] \
+	[string length [binary decode base64 "  =="]] \
+	[string length [binary decode base64 "   =="]] \
+} -result [lrepeat 4 0]
+test binary-73.34 {binary decode base64, (compatibility) unfulfilled base64 (single char) in non-strict mode} -body {
+    list \
+	[expr {[binary decode base64 a] eq [binary decode base64 ""]}] \
+	[expr {[binary decode base64 abcda] eq [binary decode base64 "abcd"]}]
+} -result [lrepeat 2 1]
+test binary-73.35 {binary decode base64, bad base64 in strict mode} -body {
+    set r {}
+    foreach c {a " a" "  a" "   a" "    a" abcda abcdabcda a= a== abcda= abcda==} {
+	lappend r \
+	    [catch {binary decode base64 $c}] \
+	    [catch {binary decode base64 -strict $c}]
+    }
+    set r
+} -result [lrepeat 11 0 1]
+test binary-73.36 {binary decode base64: check encoded & decoded equals original} -body {
+    set r {}
+    for {set i 0} {$i < 255 && [llength $r] < 20} {incr i} {
+	foreach c {1 2 3 4 5 6 7 8} {
+	    set c [string repeat [format %c $i] $c]
+	    if {[set a [binary decode base64 [set x [binary encode base64 $c]]]] ne $c} {
+		lappend r "encode & decode is wrong on string `$c` (encoded: $x): `$a` != `$c`"
+	    }
+	}
+    }
+    join $r \n
+} -result {}
+
+test binary-74.1 {binary encode uuencode} -body {
+    binary encode uuencode
+} -returnCodes error -match glob -result "wrong # args: *"
+test binary-74.2 {binary encode uuencode} -body {
+    binary encode uuencode abc
+} -result {#86)C
+}
+test binary-74.3 {binary encode uuencode} -body {
+    binary encode uuencode {}
+} -result {}
+test binary-74.4 {binary encode uuencode} -body {
+    binary encode uuencode [string repeat abc 20]
+} -result "M[string repeat 86)C 15]\n/[string repeat 86)C 5]\n"
+test binary-74.5 {binary encode uuencode} -body {
+    binary encode uuencode \0\1\2\3\4\0\1\2\3
+} -result ")``\$\"`P0``0(#\n"
+test binary-74.6 {binary encode uuencode} -body {
+    binary encode uuencode \0
+} -result {!``
+}
+test binary-74.7 {binary encode uuencode} -body {
+    binary encode uuencode \0\0
+} -result "\"```
+"
+test binary-74.8 {binary encode uuencode} -body {
+    binary encode uuencode \0\0\0
+} -result {#````
+}
+test binary-74.9 {binary encode uuencode} -body {
+    binary encode uuencode \0\0\0\0
+} -result {$``````
+}
+test binary-74.10 {binary encode uuencode} -returnCodes error -body {
+    binary encode uuencode -foo 30 abcabcabc
+} -result {bad option "-foo": must be -maxlen or -wrapchar}
+test binary-74.11 {binary encode uuencode} -returnCodes error -body {
+    binary encode uuencode -maxlen 1 abcabcabc
+} -result {line length out of range}
+test binary-74.12 {binary encode uuencode} -body {
+    binary encode uuencode -maxlen 3 -wrapchar | abcabcabc
+} -result {!80|!8@|!8P|!80|!8@|!8P|!80|!8@|!8P|}
+
+test binary-75.1 {binary decode uuencode} -body {
+    binary decode uuencode
+} -returnCodes error -match glob -result "wrong # args: *"
+test binary-75.2 {binary decode uuencode} -body {
+    binary decode uuencode "#86)C\n"
+} -result {abc}
+test binary-75.3 {binary decode uuencode} -body {
+    binary decode uuencode {}
+} -result {}
+test binary-75.3.1 {binary decode uuencode} -body {
+    binary decode uuencode `\n
+} -result {}
+test binary-75.4 {binary decode uuencode} -body {
+    binary decode uuencode "M[string repeat 86)C 15]\n/[string repeat 86)C 5]\n"
+} -result [string repeat abc 20]
+test binary-75.5 {binary decode uuencode} -body {
+    binary decode uuencode ")``\$\"`P0``0(#"
+} -result "\0\1\2\3\4\0\1\2\3"
+test binary-75.6 {binary decode uuencode} -body {
+    string length [binary decode uuencode "`\n"]
+} -result 0
+test binary-75.7 {binary decode uuencode} -body {
+    string length [binary decode uuencode "!`\n"]
+} -result 1
+test binary-75.8 {binary decode uuencode} -body {
+    string length [binary decode uuencode "\"``\n"]
+} -result 2
+test binary-75.9 {binary decode uuencode} -body {
+    string length [binary decode uuencode "#```\n"]
+} -result 3
+test binary-75.10 {binary decode uuencode} -body {
+    set s ">[string repeat 86)C 10]\n>[string repeat 86)C 10]"
+    binary decode uuencode $s
+} -result [string repeat abc 20]
+test binary-75.11 {binary decode uuencode} -body {
+    set s ">[string repeat 86)C 10]\n\t>\t[string repeat 86)C 10]\r"
+    binary decode uuencode $s
+} -result [string repeat abc 20]
+test binary-75.12 {binary decode uuencode} -body {
+    binary decode uuencode -strict "|86)C"
+} -returnCodes error -match glob -result {invalid uuencode character "|" at position 0}
+test binary-75.13 {binary decode uuencode} -body {
+    set s ">[string repeat 86)C 10]|[string repeat 86)C 10]"
+    binary decode uuencode -strict $s
+} -returnCodes error -match glob -result {invalid uuencode character "|" at position 41}
+test binary-75.14 {binary decode uuencode} -body {
+    set s ">[string repeat 86)C 10]\na[string repeat 86)C 10]"
+    binary decode uuencode -strict $s
+} -returnCodes error -match glob -result {invalid uuencode character *}
+test binary-75.20 {binary decode uuencode} -body {
+    set r [binary decode uuencode " 8"]
+    list [string length $r] $r
+} -result {0 {}}
+test binary-75.21 {binary decode uuencode} -body {
+    set r [binary decode uuencode "!86"]
+    list [string length $r] $r
+} -result {1 a}
+test binary-75.22 {binary decode uuencode} -body {
+    set r [binary decode uuencode "\"86)"]
+    list [string length $r] $r
+} -result {2 ab}
+test binary-75.23 {binary decode uuencode} -body {
+    set r [binary decode uuencode "#86)C"]
+    list [string length $r] $r
+} -result {3 abc}
+test binary-75.24 {binary decode uuencode} -body {
+    set s "#04)\# "
+    binary decode uuencode $s
+} -result ABC
+test binary-75.25 {binary decode uuencode} -body {
+    set s "#04)\#z"
+    binary decode uuencode $s
+} -returnCodes error -match glob -result {invalid uuencode character "z" at position 5}
+test binary-75.26 {binary decode uuencode} -body {
+    string length [binary decode uuencode " "]
+} -result 0
+
+test binary-76.1 {binary string appending growth algorithm} unix {
+    # Create zero-length byte array first
+    set f [open /dev/null rb]
+    chan configure $f -blocking 0
+    set str [read $f 2]
+    close $f
+    # Append to it
+    string length [append str [binary format a* foo]]
+} 3
+test binary-76.2 {binary string appending growth algorithm} win {
+    # Create zero-length byte array first
+    set f [open NUL rb]
+    chan configure $f -blocking 0
+    set str [read $f 2]
+    close $f
+    # Append to it
+    string length [append str [binary format a* foo]]
+} 3
+
+# ----------------------------------------------------------------------
+# cleanup
+
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

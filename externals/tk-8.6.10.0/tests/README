@@ -1,0 +1,5 @@
+README -- Tk test suite design document.
+
+This directory contains a set of validation tests for the Tk commands.
+Please see the tests/README file in the Tcl source distribution for
+information about the test suite.

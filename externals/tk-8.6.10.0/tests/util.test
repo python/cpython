@@ -1,0 +1,68 @@
+# This file is a Tcl script to test out the procedures in the file
+# tkUtil.c.  It is organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1994 The Regents of the University of California.
+# Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+namespace import -force tcltest::test
+
+listbox .l -width 20 -height 5 -relief sunken -bd 2
+pack .l
+.l insert 0 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19
+update
+test util-1.1 {Tk_GetScrollInfo procedure} -body {
+    .l yview moveto a b
+} -returnCodes error -result {wrong # args: should be ".l yview moveto fraction"}
+test util-1.2 {Tk_GetScrollInfo procedure} -body {
+    .l yview moveto xyz
+} -returnCodes error -result {expected floating-point number but got "xyz"}
+test util-1.3 {Tk_GetScrollInfo procedure} -body {
+    .l yview 0
+    .l yview moveto .5
+    .l yview
+} -result {0.5 0.75}
+test util-1.4 {Tk_GetScrollInfo procedure} -body {
+    .l yview scroll a
+} -returnCodes error -result {wrong # args: should be ".l yview scroll number units|pages"}
+test util-1.5 {Tk_GetScrollInfo procedure} -body {
+    .l yview scroll a b c
+} -returnCodes error -result {wrong # args: should be ".l yview scroll number units|pages"}
+test util-1.6 {Tk_GetScrollInfo procedure} -body {
+    .l yview scroll xyz units
+} -returnCodes error -result {expected integer but got "xyz"}
+test util-1.7 {Tk_GetScrollInfo procedure} -body {
+    .l yview 0
+    .l yview scroll 2 pages
+    .l nearest 0
+} -result {6}
+test util-1.8 {Tk_GetScrollInfo procedure} -body {
+    .l yview 15
+    .l yview scroll -2 pages
+    .l nearest 0
+} -result {9}
+test util-1.9 {Tk_GetScrollInfo procedure} -body {
+    .l yview 0
+    .l yview scroll 2 units
+    .l nearest 0
+} -result {2}
+test util-1.10 {Tk_GetScrollInfo procedure} -body {
+    .l yview 15
+    .l yview scroll -2 units
+    .l nearest 0
+} -result {13}
+test util-1.11 {Tk_GetScrollInfo procedure} -body {
+    .l yview scroll 3 zips
+} -returnCodes error -result {bad argument "zips": must be units or pages}
+test util-1.12 {Tk_GetScrollInfo procedure} -body {
+    .l yview dropdead 3 times
+} -returnCodes error -result {unknown option "dropdead": must be moveto or scroll}
+
+# cleanup
+cleanupTests
+return
+

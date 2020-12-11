@@ -1,0 +1,466 @@
+'\"
+'\" $Id: tixComboBox.n,v 1.2 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH tixComboBox n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH NAME
+tixComboBox - Create and manipulate tixComboBox widgets
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SYNOPSIS
+\fBtixComboBox \fIpathName \fR?\fIoptions\fR?
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SUPER-CLASS
+The \fBTixComboBox\fR class is derived from the \fBTixLabelWidget\fR
+class and inherits all the commands, options and subwidgets
+of its super-class.
+'\"
+'\"----------------------------------------------------------------------
+.SH "STANDARD OPTIONS"
+'\"
+\fBTixComboBox\fR supports all the standard options of a frame widget.
+See the options(n) manual entry for details on the standard options.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.PP
+.SH "WIDGET-SPECIFIC OPTIONS"
+'\"
+'\"
+'\"
+'\"----------BEGIN
+.OP \-anchor anchor Anchor
+Specifies how the string inside the entry subwidget should be aligned.
+Only the values "w" or "e" are allowed. When set the "w", the entry is
+aligned to its beginning. When set to "e", it is aligned to its end.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-arrowbitmap arrowBitmap ArrowBitmap
+Specifies the bitmap to be used in the arrow button beside the entry
+widget. The default is an downward arrow bitmap in the file
+$tix_library/bitmaps/cbxarrow
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-browsecmd browseCmd BrowseCmd
+Specifies the command to be called when the user browses through the
+listbox. This command can be used to provide instant feedback when the
+user examines items in the listbox before committing a choice.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-command command Command
+Specifies the command to be called when the ComboBox is invoked
+or when the \fB\-value\fR of the ComboBox is changed.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-crossbitmap crossBitmap CrossBitmap
+Specifies the bitmap to be used in the "cross" button to the left of
+the entry widget. The default is a bitmap in the file
+$tix_library/bitmaps/cross
+'\"
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-disablecallback disableCallback DisableCallback
+A boolean value indicating whether callbacks should be disabled. When
+set to true, the TCL command specified by the \fB\-command\fR option
+is not executed when the \fB\-value\fR of the ComboBox.
+changes.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-disabledforeground disabledforeground DisabledForeground
+Specifies the foreground color to be used when the ComboBox is disabled.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-dropdown dropdown Dropdown
+A Boolean value specifying the style of the ComboBox. When set to
+"true", the listbox is only displayed temporarily when the arrow
+button is pressed. When set to "false", the listbox is always
+displayed.
+'\"
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-editable editable Editable
+Specifies whether the user is allowed to type into the entry subwidget of
+the ComboBox.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-fancy fancy Fancy
+A Boolean value specifying whether the cross and tick button
+subwidgets should be shown.
+'\"----------END
+'\"
+'\"
+'\"----------BEGIN
+.OP \-grab grab Grab
+Specifies the pointer grabbing policy when the listbox is popped up.
+Only values "global", "local" or "none" are allowed. By default global
+grab is used. However, when you are developing your application, you
+may want to use only local grabbing so that in the event of errors,
+your X display won't be locked up.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBhistoryLimit\fR
+Class:		\fBhistoryLimit\fR
+Switch:		\fB\-historylimit\fR
+Alias:		\fB\-histlimit\fR
+.fi
+.IP
+Specifies how many previous user inputs can be stored in the history
+list.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-history history History
+A Boolean value specifying whether previous user inputs should be
+stored in the history list.
+'\"
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-label label Label
+Specifies the string to display as the label of this ComboBox widget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-labelside labelSide LabelSide
+Specifies where the label should be displayed relative to the entry
+subwidget. Valid options are: \fBtop\fR, \fBleft\fR, \fBright\fR,
+\fBbottom\fR, \fBnone\fR or \fBacrosstop\fR.
+'\"----------END
+'\"'
+'\"----------BEGIN
+.OP \-listcmd listCmd listCmd
+Specifies a TCL command to be called every time when the listbox pops
+up. This option allows you to fill up the listbox on-demand. This
+option is ignored when the listbox is not in the \fBdropdown\fR style.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-listwidth listWidth listWidth
+If set, this option controls the width of the listbox subwidget when
+it is popped up. The option is ignored when the listbox is not in the
+\fBdropdown\fR style.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-prunehistory prunehistory PruneHistory
+Specifies whether duplicated previous user inputs should be pruned
+from the the history list. Only Boolean values are allowed.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-selection selection Selection
+Contains the selection in the ComboBox (the string displayed in the
+entry subwidget). Depending on the \fB\-selectmode\fR, the selection
+of a ComboBox may be different than its \fB\-value\fR.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-selection selection Selection
+This option stores the temporary selection. When the user types in a
+text string inside the entry widget, that string is considered as a
+temporary input and is stored inside the \fB\-selection\fR option. The
+\fB\-value\fR option is updated only when the user presses the return
+key.
+'\"
+'\"----------BEGIN
+.OP \-selectmode selectMode SelectMode
+Specifies the how the combobox responds to the mouse button events in
+the listbox subwidget; can eithet be \fB"browse"\fR or
+\fB"immediate"\fR. The default \fB\-selectmode\fR is "browse". See the
+\fBBINDINGS\fR section below.
+'\"----------END
+'\"----------BEGIN
+.OP \-state state State
+Specifies the whether the ComboBox is normal or disabled.
+Only the values "normal" and "disabled" are recognized.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-tickbitmap tickBitmap tickBitmap
+Specifies the bitmap to be used in the "tick" button to the left of
+the entry widget. The default is a bitmap in the file
+$tix_library/bitmaps/tick
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-validatecmd validateCmd ValidateCmd
+Specifies a TCL command to be called when the \fB\-value\fR of the
+ComboBox is about to change. This command is called with one parameter
+-- the new \fB\-value\fR entered by the user. This command is to
+validate this new value by returning a value it deems valid.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-value value Value
+Specifies the string to be displayed in the entry subwidget of the
+ComboBox. When queried, the returned value is the last value
+selected by the user. When the \fB\-value\fR option is changed as a
+result of the \fBconfig -value\fR widget command, the TCL command
+specified by the \fB\-command\fR option is called.
+'\"----------END
+'\"
+'\"
+'\"
+'\"----------BEGIN
+.OP \-variable variable Variable
+Specifies the global variable in which the value of the
+ComboBox should be stored. The value of the ComboBox
+will be automatically updated when this variable is changed.
+'\"
+'\"----------END
+'\"
+'\"----------------------------------------------------------------------
+.SH SUBWIDGETS
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBarrow\fR
+Class:		\fBButton\fR
+.fi
+.IP
+The down arrow button.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBcross\fR
+Class:		\fBButton\fR
+.fi
+.IP
+The cross button. Available only when \fB\-fancy\fR is set.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBentry\fR
+Class:		\fBEntry\fR
+.fi
+.IP
+The entry that shows the value of this \fBtixControl\fR.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBlabel\fR
+Class:		\fBLabel\fR
+.fi
+.IP
+The label subwidget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBlistbox\fR
+Class:		\fBListbox\fR
+.fi
+.IP
+The listbox that holds all the list entries.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBslistbox\fR
+Class:		\fBTixScrolledListBox\fR
+.fi
+.IP
+The scrolled-listbox that provides the scrollbars.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBtick\fR
+Class:		\fBButton\fR
+.fi
+.IP
+The tick button. Available only when \fB\-fancy\fR is set.
+'\"----------END
+'\"
+.BE
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH DESCRIPTION
+'\"
+.PP
+'\"
+The \fBtixComboBox\fR command creates a new window (given by the
+\fIpathName\fR argument) and makes it into a \fBtixComboBox\fR widget.
+Additional options, described above, may be specified on the command
+line or in the option database to configure aspects of the
+ComboBox such as its cursor and relief.
+
+The Tix ComboBox widget is similar to the combo box control in
+MS Windows. The user can select a choice by either typing in the entry
+subwdget or selecting from the listbox subwidget.
+'\"
+'\"----------------------------------------------------------------------
+.SH WIDGET COMMANDS
+.PP
+'\"
+The \fBtixComboBox\fR command creates a new Tcl command whose name is the
+same as the path name of the ComboBox's window.  This command
+may be used to invoke various operations on the widget. It has the
+following general form:
+'\"
+.RS
+.CS
+'\"
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+.RE
+'\"
+\fIPathName\fR is the name of the command, which is the same as the
+ComboBox widget's path name. \fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command.  The following commands
+are possible for ComboBox widgets:
+'\"
+.TP
+\fIpathName \fBaddhistory\fI string \fR
+'\"
+Add the string to the beinning of the listbox.
+'\"
+.TP
+\fIpathName \fBappendhistory\fI string \fR
+Append the string to the end of the listbox.
+'\"
+.TP
+\fIpathName \fBcget\fR \fIoption\fR
+Returns the current value of the configuration option given by
+\fIoption\fR.  \fIOption\fR may have any of the values accepted by the
+\fBtixComboBox\fR command.
+'\"
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? \fI?value option value ...\fR?
+'\"
+Query or modify the configuration options of the widget.  If no
+\fIoption\fR is specified, returns a list describing all of the
+available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list).  If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s); in
+this case the command returns an empty string.  \fIOption\fR may have
+any of the values accepted by the \fBtixComboBox\fR command.
+'\"
+'\"
+.TP
+\fIpathName \fBflash \fIindex string\fR
+'\"
+Flashes the ComboBox. \fBflash\fR is usually called by a
+\fI\-command\fR procedure to acknowledge to the user that he has
+selected a value for the ComboBox.
+'\"
+'\"
+.TP
+\fIpathName \fBinsert \fIindex string\fR
+Insert the \fI string\fR into the listbox at the specified index.
+\fIindex\fR must be a valid listbox index.
+'\"
+'\"
+.TP
+\fIpathName \fBpick \fIindex\fR 
+Set the (\fIindex\fR)th item in the listbox to be the current value of
+the ComboBox. As a result, the \fIvalue\fR of the ComboBox is changed
+and the TCL command sepcified by the \fI\-command\fR option will be
+called.
+'\"
+.TP
+\fIpathName \fBsubwidget \fI name ?args?\fR 
+When no options are given, returns the pathname of the subwidget of
+the specified name.
+
+When options are given, the widget command of the specified subwidget will
+be called with these options.
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.PP
+.SH BINDINGS
+.PP
+.IP [1]
+If the \fB\-selectmode\fR is "immediate", when the user enters a
+keystroke, clicks on an item or drags the mouse pointer in the
+listbox, the \fB\-value\fR of the ComboBox will be immediately set to
+this item and the \fB\-command\fR procedure will be called.
+'\"
+'\"
+.IP [2]
+If the \fB\-selectmode\fR is "browse", when the user enters a
+keystroke, clicks on an item or drags the mouse pointer in the
+listbox, the \fB\-selection\fR of the ComboBox will be immediately set
+to the new content of the entry subwidget; also the \fB\-browsecmd\fR
+procedure will be called. The \fB\-value\fR option will be changed
+only when the user invokes the ComboBox (see [3] below). If the user
+presses the <Escape> key at any time, any new \fB\-selection\fR will
+be ignored and the text inside the entry subwidget will be restored to
+the current \fB\-value\fR of the ComboBox.
+'\"
+.IP [3]
+If the \fB\-dropdown\fR option is true, the user can invoke the
+ComboBox by releasing the left mouse button over the desired item in
+the listbox. If the \fB\-dropdown\fR option is false, the user can
+invoke the ComboBox by double-clicking over the desired item in the
+listbox. In both cases, the user can also invoke the listbox by
+pressing the <Return> or <Tab> key inside the entry subwidget, or
+switching the input focus to another widget inside the same toplevel
+widget
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.PP
+.SH BUGS
+.PP
+Starting from Tix vetsion 4.0, the default \fB\-value\fR of the
+ComboBox is the empty string. If you want the ComboBox to show a
+string by default, you must configure its \fB\-value\fR option
+explicitly.
+'\"
+'\"----------------------------------------------------------------------
+.PP
+.SH KEYWORDS
+Tix(n), ComboBox(n), listbox(n)
+
+

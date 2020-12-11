@@ -1,0 +1,70 @@
+'\"
+'\" Copyright (c) 1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tk_Main 3 4.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_Main \- main program for Tk-based applications
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+\fBTk_Main\fR(\fIargc, argv, appInitProc\fR)
+.SH ARGUMENTS
+.AS Tcl_AppInitProc *appInitProc
+.AP int argc in
+Number of elements in \fIargv\fR.
+.AP char *argv[] in
+Array of strings containing command-line arguments. On Windows, when
+using -DUNICODE, the parameter type changes to wchar_t *.
+.AP Tcl_AppInitProc *appInitProc in
+Address of an application-specific initialization procedure.
+The value for this argument is usually \fBTcl_AppInit\fR.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_Main\fR acts as the main program for most Tk-based applications.
+Starting with Tk 4.0 it is not called \fBmain\fR anymore because it
+is part of the Tk library and having a function \fBmain\fR
+in a library (particularly a shared library) causes problems on many
+systems.
+Having \fBmain\fR in the Tk library would also make it hard to use
+Tk in C++ programs, since C++ programs must have special C++
+\fBmain\fR functions.
+.PP
+Normally each application contains a small \fBmain\fR function that does
+nothing but invoke \fBTk_Main\fR.
+\fBTk_Main\fR then does all the work of creating and running a
+\fBwish\fR-like application.
+.PP
+When it is has finished its own initialization, but before
+it processes commands, \fBTk_Main\fR calls the procedure given by
+the \fIappInitProc\fR argument.  This procedure provides a
+.QW hook
+for the application to perform its own initialization, such as defining
+application-specific commands.  The procedure must have an interface
+that matches the type \fBTcl_AppInitProc\fR:
+.CS
+typedef int \fBTcl_AppInitProc\fR(
+        Tcl_Interp *\fIinterp\fR);
+.CE
+\fIAppInitProc\fR is almost always a pointer to \fBTcl_AppInit\fR;
+for more details on this procedure, see the documentation
+for \fBTcl_AppInit\fR.
+.PP
+\fBTk_Main\fR functions much the same as \fBTcl_Main\fR.  In particular,
+\fBTk_Main\fR supports both an interactive mode and a startup script
+mode, with the file name and encoding of a startup script under the
+control of the \fBTcl_SetStartupScript\fR and \fBTcl_GetStartupScript\fR
+routines. However it calls \fBTk_MainLoop\fR after processing any
+supplied script, and in interactive uses events registered with
+\fBTcl_CreateFileHandler\fR to process user input.
+.SH "SEE ALSO"
+Tcl_DoOneEvent(3)
+.SH KEYWORDS
+application-specific initialization, command-line arguments, main program

@@ -1,0 +1,43 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH cd n "" Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+cd \- Change working directory
+.SH SYNOPSIS
+\fBcd \fR?\fIdirName\fR?
+.BE
+.SH DESCRIPTION
+.PP
+Change the current working directory to \fIdirName\fR, or to the
+home directory (as specified in the HOME environment variable) if
+\fIdirName\fR is not given.
+Returns an empty string.
+Note that the current working directory is a per-process resource; the
+\fBcd\fR command changes the working directory for all interpreters
+and (in a threaded environment) all threads.
+.SH EXAMPLES
+.PP
+Change to the home directory of the user \fBfred\fR:
+.PP
+.CS
+\fBcd\fR ~fred
+.CE
+.PP
+Change to the directory \fBlib\fR that is a sibling directory of the
+current one:
+.PP
+.CS
+\fBcd\fR ../lib
+.CE
+.SH "SEE ALSO"
+filename(n), glob(n), pwd(n)
+.SH KEYWORDS
+working directory

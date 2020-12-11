@@ -1,0 +1,20 @@
+$Id: Release-8.1.1.txt,v 1.2 2000/11/23 02:26:57 idiscovery Exp $
+
+Release notes for 8.1.1
+
+	See Release-8.1.0.txt
+
+Changes for 8.1.1
+
+	1) Added tixDebug procedure. To activate debugging messages, use
+		tix configure -debug
+	2) Minor bug fixes.
+	3) Bulletproofed ComboBox.tcl against a bug showing up under Python.
+	4) Fixed Windows to properly handle TCL_STORAGE_CLASS with USE_TCL_STUBS
+	5) Fixed TkConsole declarations in tixWinMain.c
+	6) Added winDumpExts.c for 8.3 - should change to use Tcl 8.3's method.
+	7) Rewrote the patches to Tkinter.py so it will work with or without Tix.
+	8) Updated README files to say that Tix should now build under 8.3,
+	   but it's not "supported" in that it hasn't been tested on it yet.
+
+

@@ -1,0 +1,48 @@
+# -*- sqlite3 -*-
+# Commands covered:  julianday
+#
+# This file contains a testcase which checks whether sqlite3
+# can parse a ISO-8601 timestap containing a leap second. Last
+# leap second (to date) happened at "2012-06-30 23:59:60", which
+# is a perfectly valid time-stap, but stock sqlite cannot handle that.
+#
+# This file is put into public domain, under the same terms as the
+# rest of the SQLite code.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+
+
+package require sqlite3
+
+set path [file join [file nativename [pwd]] test.db]
+file delete $path
+sqlite3 db $path
+
+test pkgconfig-1.1 {query keys} {
+  db eval {
+    BEGIN EXCLUSIVE;
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(julianday('2012-06-30 23:59:60'));
+    SELECT x FROM t1 ORDER BY x;
+    COMMIT;
+  }
+} {2456109.5}
+
+db close
+file delete $path
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# tcl-indent-level: 4
+# fill-column: 78
+# End:
+

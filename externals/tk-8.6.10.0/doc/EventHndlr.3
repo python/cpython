@@ -1,0 +1,75 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_CreateEventHandler 3 "" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_CreateEventHandler, Tk_DeleteEventHandler \- associate procedure callback with an X event
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+\fBTk_CreateEventHandler\fR(\fItkwin, mask, proc, clientData\fR)
+.sp
+\fBTk_DeleteEventHandler\fR(\fItkwin, mask, proc, clientData\fR)
+.SH ARGUMENTS
+.AS "unsigned long" clientData
+.AP Tk_Window tkwin in
+Token for window in which events may occur.
+.AP "unsigned long" mask in
+Bit-mask of events (such as \fBButtonPressMask\fR)
+for which \fIproc\fR should be called.
+.AP Tk_EventProc *proc in
+Procedure to invoke whenever an event in \fImask\fR occurs
+in the window given by \fItkwin\fR.
+.AP ClientData clientData in
+Arbitrary one-word value to pass to \fIproc\fR.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_CreateEventHandler\fR arranges for \fIproc\fR to be
+invoked in the future whenever one of the event types specified
+by \fImask\fR occurs in the window specified by \fItkwin\fR.
+The callback to \fIproc\fR will be made by \fBTk_HandleEvent\fR;
+this mechanism only works in programs that dispatch events
+through \fBTk_HandleEvent\fR (or through other Tk procedures that
+call \fBTk_HandleEvent\fR, such as \fBTcl_DoOneEvent\fR or
+\fBTk_MainLoop\fR).
+.PP
+\fIProc\fR should have arguments and result that match the
+type \fBTk_EventProc\fR:
+.CS
+typedef void \fBTk_EventProc\fR(
+        ClientData \fIclientData\fR,
+        XEvent *\fIeventPtr\fR);
+.CE
+The \fIclientData\fR parameter to \fIproc\fR is a copy of the \fIclientData\fR
+argument given to \fBTk_CreateEventHandler\fR when the callback
+was created.  Typically, \fIclientData\fR points to a data
+structure containing application-specific information about
+the window in which the event occurred.  \fIEventPtr\fR is
+a pointer to the X event, which will be one of the ones
+specified in the \fImask\fR argument to \fBTk_CreateEventHandler\fR.
+.PP
+\fBTk_DeleteEventHandler\fR may be called to delete a
+previously-created event handler:  it deletes the first handler
+it finds that is associated with \fItkwin\fR and matches the
+\fImask\fR, \fIproc\fR, and \fIclientData\fR arguments.  If
+no such handler exists, then \fBTk_HandleEvent\fR returns
+without doing anything.  Although Tk supports it, it's probably
+a bad idea to have more than one callback with the same \fImask\fR,
+\fIproc\fR, and \fIclientData\fR arguments.
+When a window is deleted all of its handlers will be deleted
+automatically;  in this case there is no need to call
+\fBTk_DeleteEventHandler\fR.
+.PP
+If multiple handlers are declared for the same type of X event
+on the same window, then the handlers will be invoked in the
+order they were created.
+.SH KEYWORDS
+bind, callback, event, handler

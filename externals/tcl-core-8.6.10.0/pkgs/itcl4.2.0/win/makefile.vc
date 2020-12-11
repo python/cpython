@@ -1,0 +1,98 @@
+#------------------------------------------------------------- -*- makefile -*-
+#
+# Makefile for ITcl
+#
+# Basic build, test and install
+#   nmake /s /nologo /f makefile.vc INSTALLDIR=c:\path\to\installdir TCLDIR=c:\path\to\tcl\source
+#   nmake /s /nologo /f makefile.vc INSTALLDIR=c:\path\to\installdir TCLDIR=c:\path\to\tcl\source test
+#   nmake /s /nologo /f makefile.vc INSTALLDIR=c:\path\to\installdir TCLDIR=c:\path\to\tcl\source install
+#
+# For other build options (debug, static etc.)
+# See TIP 477 (https://core.tcl.tk/tips/doc/trunk/tip/477.md) for
+# detailed documentation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+#------------------------------------------------------------------------------
+
+PROJECT         = itcl
+NEED_TCL_SOURCE = 1
+RCFILE      = itcl.rc
+
+!include "rules-ext.vc"
+
+PRJ_OBJS = \
+        $(TMP_DIR)\itcl2TclOO.obj \
+        $(TMP_DIR)\itclBase.obj \
+        $(TMP_DIR)\itclBuiltin.obj \
+        $(TMP_DIR)\itclClass.obj \
+        $(TMP_DIR)\itclCmd.obj \
+        $(TMP_DIR)\itclEnsemble.obj \
+        $(TMP_DIR)\itclHelpers.obj \
+        $(TMP_DIR)\itclInfo.obj \
+        $(TMP_DIR)\itclLinkage.obj \
+        $(TMP_DIR)\itclMethod.obj \
+        $(TMP_DIR)\itclMigrate2TclCore.obj \
+        $(TMP_DIR)\itclObject.obj \
+        $(TMP_DIR)\itclParse.obj \
+        $(TMP_DIR)\itclResolve.obj \
+        $(TMP_DIR)\itclStubs.obj \
+        $(TMP_DIR)\itclStubInit.obj \
+        $(TMP_DIR)\itclTclIntStubsFcn.obj \
+        $(TMP_DIR)\itclUtil.obj \
+!if !$(STATIC_BUILD)
+	$(TMP_DIR)\dllEntryPoint.obj \
+!endif
+
+PRJ_STUBOBJS = $(TMP_DIR)\itclStubLib.obj
+
+PRJ_DEFINES = /D_CRT_SECURE_NO_WARNINGS
+!if $(DEBUG)
+PRJ_DEFINES = $(PRJ_DEFINES) /DITCL_DEBUG
+!endif
+
+PRJ_HEADERS_PUBLIC = \
+	$(GENERICDIR)\itcl.h \
+	$(GENERICDIR)\itclDecls.h
+
+
+# Define the standard targets except we have a custom test target
+DISABLE_TARGET_test = 1
+!include "$(_RULESDIR)\targets.vc"
+
+pkgindex:   $(OUT_DIR)\pkgIndex.tcl
+$(OUT_DIR)\pkgIndex.tcl:
+	@$(COPY) << "$(OUT_DIR)\pkgIndex.tcl"
+if {[package vsatisfies 8.0 [package provide Tcl]]} {
+    set add 80
+} else {
+    set add {t}
+}
+if {[::tcl::pkgconfig get debug] && \
+        [file exists [file join $$dir itcl$(VERSION)$${add}g.dll]]} {
+    package ifneeded Itcl $(DOTVERSION) [list load [file join $$dir itcl$(VERSION)$${add}g.dll] Itcl]
+} else {
+    package ifneeded Itcl $(DOTVERSION) [list load [file join $$dir itcl$(VERSION)$${add}.dll] Itcl]
+}
+unset add
+<<
+
+!if $(STATIC_BUILD)
+test :
+	@echo test target not supported for a static library.
+!else
+test : setup $(PROJECT)
+	$(TCLSH) ..\tests\all.tcl $(TESTFLAGS) -loadfile <<
+	set env(ITCL_LIBRARY) [file normalize [file join $(MAKEDIR:\=/) .. library]]
+	package ifneeded $(PROJECT) $(DOTVERSION) [list load [file normalize [file join $(MAKEDIR:\=/) $(PRJLIB:\=/)]]]
+<<
+!endif
+
+genstubs:
+!if $(TCLINSTALL)
+	@echo Need the source distribution to regenerate the Stubs table.
+!else
+	$(TCLSH) $(TOOLSDIR)\genStubs.tcl $(GENERICDIR) \
+	       $(GENERICDIR)\$(PROJECT).decls $(GENERICDIR)\$(PROJECT)Int.decls
+!endif

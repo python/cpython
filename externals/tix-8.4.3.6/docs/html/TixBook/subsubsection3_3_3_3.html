@@ -1,0 +1,63 @@
+<HEAD>
+<TITLE> The <tt>subwidget</tt> Method<A NAME=133>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html370 HREF=subsubsection3_3_3_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html368 HREF=subsection3_3_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html362 HREF=subsubsection3_3_3_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html372 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html371 HREF=subsubsection3_3_3_4.html> Chaining the subwidget </A>
+<B>Up:</B> <A NAME=tex2html369 HREF=subsection3_3_3.html> Accessing The Components </A>
+<B> Previous:</B> <A NAME=tex2html363 HREF=subsubsection3_3_3_2.html> Subwidget Names</A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00033300000000000000> The <tt>subwidget</tt> Method<A NAME=133>&nbsp;</A></A></H3>
+<P>
+All Tix mega-widgets support the <tt>subwidget</tt> method. This method
+  takes at least one argument, the name of a subwidget. When you pass
+  only one argument to this method, it returns the pathname of the
+  subwidget which is identified by that name. For example, if .c is
+  the pathname of a TixControl widget, the command:
+<P>
+<blockquote> <tt>   .c subwidget entry
+</tt>
+</blockquote>
+<P>
+returns the pathname of the <tt>entry</tt> subwidget, which is <tt>.c.frame.entry</tt> in this case.
+<P>
+If you call the <tt>subwidget</tt> method with additional arguments, the
+  widget command of the specified subwidget will be called with these
+  arguments. For example, if <tt>.c</tt> is, again, the pathname of a
+  TixControl widget, the command:
+<P>
+<blockquote> <tt>   .c subwidget entry configure -bg gray
+</tt>
+</blockquote>
+<P>
+will cause the widget command of the <tt>entry</tt> subwidget of <tt>.c</tt> to be called with the arguments <tt>configure -bg gray</tt>. So
+  actually this command will be translated into the following call:
+<P>
+<blockquote> <tt>   .c.frame.entry configure -bg gray
+</tt>
+</blockquote>
+<P>
+which calls the <tt>configure</tt> method of the <tt>entry</tt> subwidget
+  with the arguments <tt>-bg gray</tt> and changes its background color
+  to <tt>gray</tt>.
+<P>
+We can call the <tt>subwidget</tt> method with other types of arguments
+  to access different methods of the specified subwidget. For example,
+  the following call:
+<P>
+<blockquote> <tt>   .c subwidget entry icursor end
+</tt>
+</blockquote>
+<P>
+calls the <tt>icursor</tt> method of the <tt>entry</tt> subwidget with the
+  argument <tt>end</tt> and sets the insert cursor of the <tt>entry</tt>
+  subwidget to the end of its input string.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

@@ -1,0 +1,188 @@
+'\"
+'\" Copyright (c) 1990-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tk_WindowId 3 "8.4" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_WindowId, Tk_Parent, Tk_Display, Tk_DisplayName, Tk_ScreenNumber, Tk_Screen, Tk_X, Tk_Y, Tk_Width, Tk_Height, Tk_Changes, Tk_Attributes, Tk_IsContainer, Tk_IsEmbedded, Tk_IsMapped, Tk_IsTopLevel, Tk_ReqWidth, Tk_ReqHeight, Tk_MinReqWidth, Tk_MinReqHeight, Tk_InternalBorderLeft, Tk_InternalBorderRight, Tk_InternalBorderTop, Tk_InternalBorderBottom, Tk_Visual, Tk_Depth, Tk_Colormap, Tk_Interp  \- retrieve information from Tk's local data structure
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Window
+\fBTk_WindowId\fR(\fItkwin\fR)
+.sp
+Tk_Window
+\fBTk_Parent\fR(\fItkwin\fR)
+.sp
+Display *
+\fBTk_Display\fR(\fItkwin\fR)
+.sp
+const char *
+\fBTk_DisplayName\fR(\fItkwin\fR)
+.sp
+int
+\fBTk_ScreenNumber\fR(\fItkwin\fR)
+.sp
+Screen *
+\fBTk_Screen\fR(\fItkwin\fR)
+.sp
+int
+\fBTk_X\fR(\fItkwin\fR)
+.sp
+int
+\fBTk_Y\fR(\fItkwin\fR)
+.sp
+int
+\fBTk_Width\fR(\fItkwin\fR)
+.sp
+int
+\fBTk_Height\fR(\fItkwin\fR)
+.sp
+XWindowChanges *
+\fBTk_Changes\fR(\fItkwin\fR)
+.sp
+XSetWindowAttributes *
+\fBTk_Attributes\fR(\fItkwin\fR)
+.sp
+int
+\fBTk_IsContainer\fR(\fItkwin\fR)
+.sp
+int
+\fBTk_IsEmbedded\fR(\fItkwin\fR)
+.sp
+int
+\fBTk_IsMapped\fR(\fItkwin\fR)
+.sp
+int
+\fBTk_IsTopLevel\fR(\fItkwin\fR)
+.sp
+int
+\fBTk_ReqWidth\fR(\fItkwin\fR)
+.sp
+int
+\fBTk_ReqHeight\fR(\fItkwin\fR)
+.sp
+int
+\fBTk_MinReqWidth\fR(\fItkwin\fR)
+.sp
+int
+\fBTk_MinReqHeight\fR(\fItkwin\fR)
+.sp
+int
+\fBTk_InternalBorderLeft\fR(\fItkwin\fR)
+.sp
+int
+\fBTk_InternalBorderRight\fR(\fItkwin\fR)
+.sp
+int
+\fBTk_InternalBorderTop\fR(\fItkwin\fR)
+.sp
+int
+\fBTk_InternalBorderBottom\fR(\fItkwin\fR)
+.sp
+Visual *
+\fBTk_Visual\fR(\fItkwin\fR)
+.sp
+int
+\fBTk_Depth\fR(\fItkwin\fR)
+.sp
+Colormap
+\fBTk_Colormap\fR(\fItkwin\fR)
+.sp
+Tcl_Interp *
+\fBTk_Interp\fR(\fItkwin\fR)
+.SH ARGUMENTS
+.AS Tk_Window tkwin
+.AP Tk_Window tkwin in
+Token for window.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_WindowId\fR and the other names listed above are
+all macros that return fields from Tk's local data structure
+for \fItkwin\fR.  None of these macros requires any
+interaction with the server;  it is safe to assume that
+all are fast.
+.PP
+\fBTk_WindowId\fR returns the X identifier for \fItkwin\fR,
+or \fBNULL\fR if no X window has been created for \fItkwin\fR
+yet.
+.PP
+\fBTk_Parent\fR returns Tk's token for the logical parent of
+\fItkwin\fR.  The parent is the token that was specified when
+\fItkwin\fR was created, or NULL for main windows.
+.PP
+\fBTk_Interp\fR returns the Tcl interpreter associated with a
+\fItkwin\fR or NULL if there is an error.
+.PP
+\fBTk_Display\fR returns a pointer to the Xlib display structure
+corresponding to \fItkwin\fR.  \fBTk_DisplayName\fR returns an
+ASCII string identifying \fItkwin\fR's display.  \fBTk_ScreenNumber\fR
+returns the index of \fItkwin\fR's screen among all the screens
+of \fItkwin\fR's display.  \fBTk_Screen\fR returns a pointer to
+the Xlib structure corresponding to \fItkwin\fR's screen.
+.PP
+\fBTk_X\fR, \fBTk_Y\fR, \fBTk_Width\fR, and \fBTk_Height\fR
+return information about \fItkwin's\fR location within its
+parent and its size.  The location information refers to the
+upper-left pixel in the window, or its border if there is one.
+The width and height information refers to the interior size
+of the window, not including any border.  \fBTk_Changes\fR
+returns a pointer to a structure containing all of the above
+information plus a few other fields.  \fBTk_Attributes\fR
+returns a pointer to an XSetWindowAttributes structure describing
+all of the attributes of the \fItkwin\fR's window, such as background
+pixmap, event mask, and so on (Tk keeps track of all this information
+as it is changed by the application).  Note: it is essential that
+applications use Tk procedures like \fBTk_ResizeWindow\fR instead
+of X procedures like \fBXResizeWindow\fR, so that Tk can keep its
+data structures up-to-date.
+.PP
+\fBTk_IsContainer\fR returns a non-zero value if \fItkwin\fR
+is a container, and that some other application may be embedding
+itself inside \fItkwin\fR.
+.PP
+\fBTk_IsEmbedded\fR returns a non-zero value if \fItkwin\fR
+is not a free-standing window, but rather is embedded in some
+other application.
+.PP
+\fBTk_IsMapped\fR returns a non-zero value if \fItkwin\fR
+is mapped and zero if \fItkwin\fR is not mapped.
+.PP
+\fBTk_IsTopLevel\fR returns a non-zero value if \fItkwin\fR
+is a top-level window (its X parent is the root window of the
+screen) and zero if \fItkwin\fR is not a top-level window.
+.PP
+\fBTk_ReqWidth\fR and \fBTk_ReqHeight\fR return information about
+the window's requested size.  These values correspond to the last
+call to \fBTk_GeometryRequest\fR for \fItkwin\fR.
+.PP
+\fBTk_MinReqWidth\fR and \fBTk_MinReqHeight\fR return information about
+the window's minimum requested size.  These values correspond to the last
+call to \fBTk_SetMinimumRequestSize\fR for \fItkwin\fR.
+.PP
+\fBTk_InternalBorderLeft\fR, \fBTk_InternalBorderRight\fR,
+\fBTk_InternalBorderTop\fR and \fBTk_InternalBorderBottom\fR
+return the width of one side of the internal border
+that has been requested for \fItkwin\fR, or 0 if no internal border was
+requested.  The return value is simply the last value passed to
+\fBTk_SetInternalBorder\fR or \fBTk_SetInternalBorderEx\fR for \fItkwin\fR.
+.PP
+\fBTk_Visual\fR, \fBTk_Depth\fR, and \fBTk_Colormap\fR return
+information about the visual characteristics of a window.
+\fBTk_Visual\fR returns the visual type for
+the window, \fBTk_Depth\fR returns the number of bits per pixel,
+and \fBTk_Colormap\fR returns the current
+colormap for the window.  The visual characteristics are
+normally set from the defaults for the window's screen, but
+they may be overridden by calling \fBTk_SetWindowVisual\fR.
+.SH KEYWORDS
+attributes, colormap, depth, display, height, geometry manager,
+identifier, mapped, requested size, screen, top-level,
+visual, width, window, x, y

@@ -1,0 +1,130 @@
+'\"
+'\" $Id: tixMeter.n,v 1.2 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH tixMeter n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH NAME
+tixMeter \- Create and manipulate Tix Meter widgets
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SYNOPSIS
+\fBtixMeter \fIpathName \fR?\fIoptions\fR?
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SUPER-CLASS
+None.
+'\"
+'\"----------------------------------------------------------------------
+.SH "STANDARD OPTIONS"
+'\"
+The Meter widget supports all the standard options of a frame widget.
+See the \fBoptions(n)\fR manual entry for details on the standard
+options.
+'\"
+.SH "WIDGET-SPECIFIC OPTIONS"
+'\"
+'\"----------BEGIN
+.OP \-fillcolor fillColor FillColor
+The color of the progress bar.
+'\"----------END
+'\"----------BEGIN
+.OP \-text text Text
+The text string to place inside the progress bar. If not specified,
+then the text string will be the percentage value specified by the
+\fB\-value\fR option.
+'\"----------END
+'\"----------BEGIN
+.OP \-value value Value
+A real value that specifies the progress. Must be between 0.0 to 1.0.
+'\"----------END
+'\"
+'\"----------------------------------------------------------------------
+.SH DESCRIPTION
+'\"
+.PP
+'\"
+The \fBtixMeter\fR command creates a new window (given by the
+\fIpathName\fR argument) and makes it into a Meter widget.
+Additional options, described above, may be specified on the command
+line or in the option database to configure aspects of the
+Meter widget such as its cursor and relief.
+
+The Meter widget can be used to show the pregress of a background job
+which may take a long time to execute.
+'\"----------------------------------------------------------------------
+.SH WIDGET COMMANDS
+.PP
+'\"
+The \fBtixMeter\fR command creates a new Tcl command whose name is
+the same as the path name of the Meter widget's window.  This
+command may be used to invoke various operations on the widget. It has
+the following general form:
+'\"
+.RS
+.CS
+'\"
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+.RE
+'\"
+\fIPathName\fR is the name of the command, which is the same as the
+Meter widget's path name. \fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command. The following commands
+are possible for Meter widgets:
+'\"
+.TP
+\fIpathName \fBcget\fR \fIoption\fR
+'\"
+Returns the current value of the configuration option given by
+\fIoption\fR. \fIOption\fR may have any of the values accepted by the
+\fBtixMeter\fR command.
+'\"
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? \fI?value option value ...\fR?
+'\"
+Query or modify the configuration options of the widget.  If no
+\fIoption\fR is specified, returns a list describing all of the
+available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list).  If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s); in
+this case the command returns an empty string.  \fIOption\fR may have
+any of the values accepted by the \fBtixMeter\fR command.
+'\"
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH BINDINGS
+.PP
+There is no bindings for the Meter widget.
+'\"
+'\"----------------------------------------------------------------------
+.SH KEYWORDS
+Tix(n), Meter Widget
+
+
+
+

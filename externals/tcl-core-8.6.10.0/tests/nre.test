@@ -1,0 +1,453 @@
+# Commands covered:  proc, apply, [interp alias], [namespce import]
+#
+# This file contains a collection of tests for the non-recursive executor that
+# avoids recursive calls to TEBC. Only the NRE behaviour is tested here, the
+# actual command functionality is tested in the specific test file.
+#
+# Copyright (c) 2008 by Miguel Sofer.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testnrelevels [llength [info commands testnrelevels]]
+
+#
+# The tests that risked blowing the C stack on failure have been removed: we
+# can now actually measure using testnrelevels.
+#
+
+if {[testConstraint testnrelevels]} {
+    namespace eval testnre {
+	namespace path ::tcl::mathop
+	#
+	# [testnrelevels] returns a 6-list with: C-stack depth, iPtr->numlevels,
+	# cmdFrame level, callFrame level, tosPtr and callback depth 
+	#
+	variable last [testnrelevels] 
+	proc depthDiff {} {
+	    variable last
+	    set depth [testnrelevels]
+	    set res {}
+	    foreach t $depth l $last {
+		lappend res [expr {$t-$l}]
+	    }
+	    set last $depth
+	    return $res
+	}
+	proc setabs {} {
+	    variable abs [- [lindex [testnrelevels] 0]]
+	}
+
+	variable body0 {
+	    set x [depthDiff]
+	    if {[incr i] > 10} {
+		namespace upvar [namespace qualifiers \
+			[namespace origin depthDiff]] abs abs
+		incr abs [lindex [testnrelevels] 0]
+		return [list [lrange $x 0 3] $abs]
+	    }
+	}
+	proc makebody txt {
+	    variable body0
+	    return "$body0; $txt"
+	}
+	namespace export *
+    }
+    namespace import testnre::*
+}
+
+test nre-0.1 {levels while unwinding} -body {
+    testnreunwind
+} -constraints {
+    testnrelevels
+} -result {0 0 0}
+
+test nre-1.1 {self-recursive procs} -setup {
+    proc a i [makebody {a $i}]
+} -body {
+    setabs
+    a 0
+} -cleanup {
+    rename a {}
+} -constraints {
+    testnrelevels
+} -result {{0 1 1 1} 0}
+test nre-1.2 {self-recursive lambdas} -setup {
+    set a [list i [makebody {apply $::a $i}]]
+} -body {
+    setabs
+    apply $a 0
+} -cleanup {
+    unset a
+} -constraints {
+    testnrelevels
+} -result {{0 1 1 1} 0}
+test nre-1.3 {mutually recursive procs and lambdas} -setup {
+    proc a i {
+	apply $::b [incr i]
+    }
+    set b [list i [makebody {a $i}]]
+} -body {
+    setabs
+    a 0
+} -cleanup {
+    rename a {}
+    unset b
+} -constraints {
+    testnrelevels
+} -result {{0 2 2 2} 0}
+
+#
+# Test that aliases are non-recursive
+#
+
+test nre-2.1 {alias is not recursive} -setup {
+    proc a i [makebody {b $i}]
+    interp alias {} b {} a
+} -body {
+    setabs
+    a 0
+} -cleanup {
+    rename a {}
+    rename b {}
+} -constraints {
+    testnrelevels
+} -result {{0 2 1 1} 0}
+
+#
+# Test that imports are non-recursive
+#
+
+test nre-3.1 {imports are not recursive} -setup {
+    namespace eval foo {
+	setabs
+	namespace export a
+    }
+    proc foo::a i [makebody {::a $i}]
+    namespace import foo::a
+} -body {
+    a 0
+} -cleanup {
+    rename a {}
+    namespace delete ::foo
+} -constraints {
+    testnrelevels
+} -result {{0 2 1 1} 0}
+
+test nre-4.1 {ensembles are not recursive} -setup {
+    proc a i [makebody {b foo $i}]
+    namespace ensemble create \
+	-command b \
+	-map [list foo a]
+} -body {
+    setabs
+    a 0
+} -cleanup {
+    rename a {}
+    rename b {}
+} -constraints {
+    testnrelevels
+} -result {{0 2 1 1} 0}
+
+test nre-4.2 {(compiled) ensembles do not break tailcall} -setup {
+    # Fix Bug d87cb18205
+    proc b {} {
+	tailcall append result first
+    }
+    set map [namespace ensemble configure ::dict -map]
+    dict set map a b
+    namespace ensemble configure ::dict -map $map
+    proc demo {} {
+	dict a
+	append result second
+    }
+} -body {
+    demo
+} -cleanup {
+    rename demo {}
+    namespace ensemble configure ::dict -map [dict remove $map a]
+    unset map
+    rename b {}
+} -result firstsecond
+
+test nre-5.1 {[namespace eval] is not recursive} -setup {
+    namespace eval ::foo {
+	setabs
+    }
+    proc foo::a i [makebody {namespace eval ::foo [list a $i]}]
+} -body {
+    ::foo::a 0
+} -cleanup {
+    namespace delete ::foo
+} -constraints {
+    testnrelevels
+} -result {{0 2 2 2} 0}
+test nre-5.2 {[namespace eval] is not recursive} -setup {
+    namespace eval ::foo {
+	setabs
+    }
+    proc foo::a i [makebody {namespace eval ::foo "set x $i; a $i"}]
+} -body {
+    foo::a 0
+} -cleanup {
+    namespace delete ::foo
+} -constraints {
+    testnrelevels
+} -result {{0 2 2 2} 0}
+
+test nre-6.1 {[uplevel] is not recursive} -setup {
+    proc a i [makebody {uplevel 1 [list a $i]}]
+} -body {
+    setabs
+    a 0
+} -cleanup {
+    rename a {}
+} -constraints {
+    testnrelevels
+} -result {{0 2 2 0} 0}
+test nre-6.2 {[uplevel] is not recursive} -setup {
+    setabs
+    proc a i [makebody {uplevel 1 "set x $i; a $i"}]
+} -body {
+    a 0
+} -cleanup {
+    rename a {}
+} -constraints {
+    testnrelevels
+} -result {{0 2 2 0} 0}
+
+test nre-7.1 {[catch] is not recursive} -setup {
+    setabs
+    proc a i [makebody {uplevel 1 "catch {a $i} msg; set msg"}]
+} -body {
+    a 0
+} -cleanup {
+    rename a {}
+} -constraints {
+    testnrelevels
+} -result {{0 3 3 0} 0}
+test nre-7.2 {[if] is not recursive} -setup {
+    setabs
+    proc a i [makebody {uplevel 1 "if 1 {a $i}"}]
+} -body {
+    a 0
+} -cleanup {
+    rename a {}
+} -constraints {
+    testnrelevels
+} -result {{0 2 2 0} 0}
+test nre-7.3 {[while] is not recursive} -setup {
+    setabs
+    proc a i [makebody {uplevel 1 "while 1 {set res \[a $i\]; break}; set res"}]
+} -body {
+    a 0
+} -cleanup {
+    rename a {}
+} -constraints {
+    testnrelevels
+} -result {{0 2 2 0} 0}
+test nre-7.4 {[for] is not recursive} -setup {
+    setabs
+    proc a i [makebody {uplevel 1 "for {set j 0} {\$j < 10} {incr j} {set res \[a $i\]; break}; set res"}]
+} -body {
+    a 0
+} -cleanup {
+    rename a {}
+} -constraints {
+    testnrelevels
+} -result {{0 2 2 0} 0}
+test nre-7.5 {[foreach] is not recursive} -setup {
+    #
+    # Enable once [foreach] is NR-enabled
+    #
+    setabs
+    proc a i [makebody {uplevel 1 "foreach j {1 2 3 4 5 6} {set res \[a $i\]; break}; set res"}]
+} -body {
+    a 0
+} -cleanup {
+    rename a {}
+} -constraints {
+    testnrelevels
+} -result {{0 3 3 0} 0}
+test nre-7.6 {[eval] is not recursive} -setup {
+    proc a i [makebody {eval [list a $i]}]
+} -body {
+    setabs
+    a 0
+} -cleanup {
+    rename a {}
+} -constraints {
+    testnrelevels
+} -result {{0 2 2 1} 0}
+test nre-7.7 {[eval] is not recursive} -setup {
+    proc a i [makebody {eval "a $i"}]
+} -body {
+    setabs
+    a 0
+} -cleanup {
+    rename a {}
+} -constraints {
+    testnrelevels
+} -result {{0 2 2 1} 0}
+test nre-7.8 {bug #2910748: switch out of stale BC is not nre-aware} -setup {
+    proc foo args {}
+    foo
+    coroutine bar apply {{} {
+	yield
+	proc foo args {return ok}
+	while 1 {
+	    yield [incr i]
+	    foo
+	}
+    }}
+} -body {
+    # if switching to plain eval is not nre aware, this will cause a "cannot
+    # yield" error
+    list [bar] [bar] [bar]
+} -cleanup {
+    rename bar {}
+    rename foo {}
+} -result {1 2 3}
+
+test nre-8.1 {nre and {*}} -body {
+    # force an expansion that grows the evaluation stack, check that nre
+    # adapts the TEBCdataPtr. This crashes on failure.
+    proc inner {} {
+	set long [lrepeat 1000000 1]
+	list {*}$long
+    }
+    proc outer {} inner
+    lrange [outer] 0 2
+} -cleanup {
+    rename inner {}
+    rename outer {}
+} -result {1 1 1} 
+test nre-8.2 {nre and {*}, [Bug 2415422]} -body {
+    # force an expansion that grows the evaluation stack, check that nre
+    # adapts the bcFramePtr. This causes an NRE assertion to fail if it is not
+    # done properly.
+    proc nop {} {}
+    proc crash {} {
+	foreach val [list {*}[lrepeat 100000 x]] {
+	    nop
+	}
+    }
+    crash
+} -cleanup {
+    rename nop {}
+    rename crash {}
+}
+
+#
+#  Basic TclOO tests
+#
+
+test nre-oo.1 {really deep calls in oo - direct} -setup {
+    oo::object create foo
+    oo::objdefine foo method bar i [makebody {foo bar $i}]
+} -body {
+    setabs
+    foo bar 0
+} -cleanup {
+    foo destroy
+} -constraints {
+    testnrelevels
+} -result {{0 1 1 1} 0}
+test nre-oo.2 {really deep calls in oo - call via [self]} -setup {
+    oo::object create foo
+    oo::objdefine foo method bar i [makebody {[self] bar $i}]
+} -body {
+    setabs
+    foo bar 0
+} -cleanup {
+    foo destroy
+} -constraints {
+    testnrelevels
+} -result {{0 1 1 1} 0}
+test nre-oo.3 {really deep calls in oo - private calls} -setup {
+    oo::object create foo
+    oo::objdefine foo method bar i [makebody {my bar $i}]
+} -body {
+    setabs
+    foo bar 0
+} -cleanup {
+    foo destroy
+} -constraints {
+    testnrelevels
+} -result {{0 1 1 1} 0}
+test nre-oo.4 {really deep calls in oo - overriding} -setup {
+    oo::class create foo {
+	method bar i [makebody {my bar $i}]
+    }
+    oo::class create boo {
+	superclass foo
+	method bar i [makebody {next $i}]
+    }
+} -body {
+    setabs
+    [boo new] bar 0
+} -cleanup {
+    foo destroy
+} -constraints {
+    testnrelevels
+} -result {{0 1 1 1} 0}
+test nre-oo.5 {really deep calls in oo - forwards} -setup {
+    oo::object create foo
+    set body [makebody {my boo $i}]
+    oo::objdefine foo "
+	method bar i {$body}
+	forward boo ::foo bar
+    "
+} -body {
+    setabs
+    foo bar 0
+} -cleanup {
+    foo destroy
+} -constraints {
+    testnrelevels
+} -result {{0 2 1 1} 0}
+
+#
+# NASTY BUG found by tcllib's interp package
+#
+
+test nre-X.1 {eval in wrong interp} -setup {
+    set i [interp create]
+    $i eval {proc filter lst {lsearch -all -inline -not $lst "::tcl"}}
+} -body {
+    $i eval {
+	set x {namespace children ::}
+	set y [list namespace children ::]
+	namespace delete {*}[filter [{*}$y]]
+	set j [interp create]
+	$j alias filter filter
+	$j eval {namespace delete {*}[filter [namespace children ::]]}
+	namespace eval foo {}
+	list [filter [eval $x]] [filter [eval $y]] [filter [$j eval $x]] [filter [$j eval $y]]
+    }
+} -cleanup {
+    interp delete $i
+} -result {::foo ::foo {} {}}
+
+# cleanup
+::tcltest::cleanupTests
+
+if {[testConstraint testnrelevels]} {
+    namespace forget testnre::*
+    namespace delete testnre
+}
+
+return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:

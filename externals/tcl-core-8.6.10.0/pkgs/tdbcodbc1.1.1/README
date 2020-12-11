@@ -1,0 +1,38 @@
+README: tdbcodbc
+
+    This is the 1.1.1 source distribution of the bridge between Tcl
+    Database Connectivity (TDBC) and Open Database Connectivity
+    (ODBC), a database-neutral API layer available on all Windows
+    systems and many others.. TDBC and its drivers are available from
+    a Fossil version control repository at http://tdbc.tcl.tk/
+
+RCS: @(#) $Id: $
+
+1. Introduction
+
+This directory contains the source code, documentation, and test
+scripts for the ODBC driver for Tcl Database Connectivity. This
+module, plus TDBC itself, allow you to access ODBC databases using a
+standard application programming interface (API) from a Tcl script.
+This module is also available from http://tdbc.tcl.tk along with the
+source code of TDBC itself. A bug database and Wiki are available at
+the same location.
+
+Tdbc::odbc is a freely-available open source package.  You can do
+virtually anything you like with it, such as modifying it,
+redistributing it, and selling it either in whole or in part.  See the
+file "license.terms" for complete information.
+
+2. Documentation
+
+The 'doc' subdirectory in this release contains a set of reference
+manual entries for tdbc::odbc.  Files with an extension '.n' are for
+Tcl classes and commands; files with an extension '.3' are for C
+library functions. The file, 'doc/tdbcodbc.n' gives an overview,
+listing the classes and functions
+
+3. See also
+
+More information about TDBC and its drivers are available in the
+README file for TDBC itself; refer to that file for compilation and
+installation instructions, and support information.

@@ -1,0 +1,88 @@
+# This file is a Tcl script to test out embedded Windows.
+#
+# Copyright (c) 1996-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+
+
+test embed-1.1 {TkpUseWindow procedure, bad window identifier} -setup {
+    deleteWindows
+} -body {
+    toplevel .t -use xyz
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {expected integer but got "xyz"}
+
+test embed-1.2 {CreateFrame procedure, bad window identifier} -setup {
+    deleteWindows
+} -body {
+    toplevel .t -container xyz
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {expected boolean value but got "xyz"}
+
+test embed-1.3 {CreateFrame procedure, both -use and -container is invalid} -setup {
+    deleteWindows
+} -body {
+    toplevel .container -container 1
+    toplevel .t -use [winfo id .container] -container 1
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {windows cannot have both the -use and the -container option set}
+
+# testing window embedding for win platforms
+test embed-1.4.win {TkpUseWindow procedure, -container must be set} -constraints {
+	win
+} -setup {
+    deleteWindows
+} -body {
+    toplevel .container
+    toplevel .embd -use [winfo id .container]
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {the window to use is not a Tk container}
+# testing window embedding for win platforms
+test embed-1.5.win {TkpUseWindow procedure, -container must be set} -constraints {
+	win
+} -setup {
+    deleteWindows
+} -body {
+    frame .container
+    toplevel .embd -use [winfo id .container]
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {the window to use is not a Tk container}
+
+# testing window embedding for other than win platforms
+test embed-1.4.nonwin {TkpUseWindow procedure, -container must be set} -constraints {
+	nonwin
+} -setup {
+    deleteWindows
+} -body {
+    toplevel .container
+    toplevel .embd -use [winfo id .container]
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {window ".container" doesn't have -container option set}
+# testing window embedding for other than win platforms
+test embed-1.5.nonwin {TkpUseWindow procedure, -container must be set} -constraints {
+	nonwin
+} -setup {
+    deleteWindows
+} -body {
+    frame .container
+    toplevel .embd -use [winfo id .container]
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {window ".container" doesn't have -container option set}
+
+
+cleanupTests
+return
+
+

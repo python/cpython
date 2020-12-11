@@ -1,0 +1,248 @@
+# This file is a Tcl script to test the Safe Tk facility. It is organized in
+# the standard fashion for Tk tests.
+#
+# Copyright (c) 1994 The Regents of the University of California.
+# Copyright (c) 1994-1995 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+namespace import -force tcltest::test
+
+## NOTE: Any time tests fail here with an error like:
+
+# Can't find a usable tk.tcl in the following directories:
+#     {$p(:26:)}
+#
+# $p(:26:)/tk.tcl: script error
+# script error
+#     invoked from within
+# "source {$p(:26:)/tk.tcl}"
+#     ("uplevel" body line 1)
+#     invoked from within
+# "uplevel #0 [list source $file]"
+#
+#
+# This probably means that tk wasn't installed properly.
+
+## it indicates that something went wrong sourcing tk.tcl.
+## Ensure that any changes that occured to tk.tcl will work or are properly
+## prevented in a safe interpreter.  -- hobbs
+
+# The set of hidden commands is platform dependent:
+
+set hidden_cmds {bell cd clipboard encoding exec exit fconfigure glob grab load menu open pwd selection socket source tcl:encoding:dirs toplevel unload wm}
+lappend hidden_cmds {*}[apply {{} {
+    foreach cmd {
+	atime attributes copy delete dirname executable exists extension
+	isdirectory isfile link lstat mkdir mtime nativename normalize owned
+	readable readlink rename rootname size stat tail tempfile type
+	volumes writable
+    } {lappend result tcl:file:$cmd}; return $result
+}}]
+if {[tk windowingsystem] ne "x11"} {
+    lappend hidden_cmds tk_chooseColor tk_chooseDirectory tk_getOpenFile \
+	tk_getSaveFile tk_messageBox
+}
+if {[llength [info commands send]]} {
+    lappend hidden_cmds send
+}
+
+set saveAutoPath $::auto_path
+set auto_path [list [info library] $::tk_library]
+set hidden_cmds [lsort $hidden_cmds]
+
+test safe-1.1 {Safe Tk loading into an interpreter} -setup {
+    catch {safe::interpDelete a}
+} -body {
+    safe::loadTk [safe::interpCreate a]
+    safe::interpDelete a
+    set x {}
+    return $x
+} -result {}
+test safe-1.2 {Safe Tk loading into an interpreter} -setup {
+    catch {safe::interpDelete a}
+} -body {
+    safe::interpCreate a
+    safe::loadTk a
+    lsort [interp hidden a]
+} -cleanup {
+    safe::interpDelete a
+} -result $hidden_cmds
+test safe-1.3 {Safe Tk loading into an interpreter} -setup {
+    catch {safe::interpDelete a}
+} -body {
+    safe::interpCreate a
+    safe::loadTk a
+    lsort [interp aliases a]
+} -cleanup {
+    safe::interpDelete a
+} -match glob -result {*encoding*exit*glob*load*source*}
+
+test safe-2.1 {Unsafe commands not available} -setup {
+    catch {safe::interpDelete a}
+} -body {
+    safe::interpCreate a
+    safe::loadTk a
+    set status broken
+    if {[catch {interp eval a {toplevel .t}} msg]} {
+	set status ok
+    }
+    return $status
+} -cleanup {
+    safe::interpDelete a
+} -result ok
+test safe-2.2 {Unsafe commands not available} -setup {
+    catch {safe::interpDelete a}
+} -body {
+    safe::interpCreate a
+    safe::loadTk a
+    set status broken
+    if {[catch {interp eval a {menu .m}} msg]} {
+	set status ok
+    }
+    return $status
+} -cleanup {
+    safe::interpDelete a
+} -result ok
+test safe-2.3 {Unsafe subcommands not available} -setup {
+    catch {safe::interpDelete a}
+} -body {
+    safe::interpCreate a
+    safe::loadTk a
+    set status broken
+    if {[catch {interp eval a {tk appname}} msg]} {
+	set status ok
+    }
+    list $status $msg
+} -cleanup {
+    safe::interpDelete a
+} -result {ok {appname not accessible in a safe interpreter}}
+test safe-2.4 {Unsafe subcommands not available} -setup {
+    catch {safe::interpDelete a}
+} -body {
+    safe::interpCreate a
+    safe::loadTk a
+    set status broken
+    if {[catch {interp eval a {tk scaling}} msg]} {
+	set status ok
+    }
+    list $status $msg
+} -cleanup {
+    safe::interpDelete a
+} -result {ok {scaling not accessible in a safe interpreter}}
+
+test safe-3.1 {Unsafe commands are available hidden} -setup {
+    catch {safe::interpDelete a}
+} -body {
+    safe::interpCreate a
+    safe::loadTk a
+    set status ok
+    if {[catch {interp invokehidden a toplevel .t} msg]} {
+	set status broken
+    }
+    return $status
+} -cleanup {
+    safe::interpDelete a
+} -result ok
+test safe-3.2 {Unsafe commands are available hidden} -setup {
+    catch {safe::interpDelete a}
+} -body {
+    safe::interpCreate a
+    safe::loadTk a
+    set status ok
+    if {[catch {interp invokehidden a menu .m} msg]} {
+	set status broken
+    }
+    return $status
+} -cleanup {
+    safe::interpDelete a
+} -result ok
+
+test safe-4.1 {testing loadTk} -body {
+    # no error shall occur, the user will eventually see a new toplevel
+    set i [safe::loadTk [safe::interpCreate]]
+    interp eval $i {button .b -text "hello world!"; pack .b}
+    # lets don't update because it might imply that the user has to position
+    # the window (if the wm does not do it automatically) and thus make the
+    # test suite not runable non interactively
+    safe::interpDelete $i
+} -result {}
+test safe-4.2 {testing loadTk -use} -setup {
+    destroy .safeTkFrame
+} -body {
+    set w .safeTkFrame
+    frame $w -container 1;
+    pack $w
+    set i [safe::loadTk [safe::interpCreate] -use [winfo id $w]]
+    interp eval $i {button .b -text "hello world!"; pack .b}
+    safe::interpDelete $i
+    destroy $w
+} -result {}
+
+test safe-5.1 {loading Tk in safe interps without master's clearance} -body {
+    set i [safe::interpCreate]
+    interp eval $i {load {} Tk}
+} -cleanup {
+    safe::interpDelete $i
+} -returnCodes error -result {not allowed}
+test safe-5.2 {multi-level Tk loading with clearance} -setup {
+    set safeParent [safe::interpCreate]
+} -body {
+    # No error shall occur in that test and no window shall remain at the end.
+    set i [safe::interpCreate [list $safeParent x]]
+    safe::loadTk $i
+    interp eval $i {
+	button .b -text Ok -command {destroy .}
+	pack .b
+#	tkwait window . ; # for interactive testing/debugging
+    }
+} -cleanup {
+    catch {safe::interpDelete $i}
+    safe::interpDelete $safeParent
+} -result {}
+
+test safe-6.1 {loadTk -use windowPath} -setup {
+    destroy .safeTkFrame
+} -body {
+    set w .safeTkFrame
+    frame $w -container 1;
+    pack $w
+    set i [safe::loadTk [safe::interpCreate] -use $w]
+    interp eval $i {button .b -text "hello world!"; pack .b}
+    safe::interpDelete $i
+    destroy $w
+} -result {}
+test safe-6.2 {loadTk -use windowPath, conflicting -display} -setup {
+    destroy .safeTkFrame
+} -body {
+    set w .safeTkFrame
+    frame $w -container 1;
+    pack $w
+    set i     [safe::interpCreate]
+    catch {safe::loadTk $i -use $w -display :23.56} msg
+    string range $msg 0 36
+} -cleanup {
+    safe::interpDelete $i
+    destroy $w
+} -result {conflicting -display :23.56 and -use }
+
+test safe-7.1 {canvas printing} -body {
+    set i [safe::loadTk [safe::interpCreate]]
+    interp eval $i {canvas .c; .c postscript}
+} -cleanup {
+    safe::interpDelete $i
+} -returnCodes ok -match glob -result *
+
+# cleanup
+set ::auto_path $saveAutoPath
+unset hidden_cmds
+cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:

@@ -1,0 +1,49 @@
+'\"
+'\" Copyright (c) 1989-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_StringMatch 3 8.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_StringMatch, Tcl_StringCaseMatch \- test whether a string matches a pattern
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_StringMatch\fR(\fIstr\fR, \fIpattern\fR)
+.sp
+int
+\fBTcl_StringCaseMatch\fR(\fIstr\fR, \fIpattern\fR, \fIflags\fR)
+.SH ARGUMENTS
+.AS "const char" *pattern
+.AP "const char" *str in
+String to test.
+.AP "const char" *pattern in
+Pattern to match against string.  May contain special
+characters from the set *?\e[].
+.AP int flags in
+OR-ed combination of match flags, currently only \fBTCL_MATCH_NOCASE\fR.
+0 specifies a case-sensitive search.
+.BE
+
+.SH DESCRIPTION
+.PP
+This utility procedure determines whether a string matches
+a given pattern.  If it does, then \fBTcl_StringMatch\fR returns
+1.  Otherwise \fBTcl_StringMatch\fR returns 0.  The algorithm
+used for matching is the same algorithm used in the \fBstring match\fR
+Tcl command and is similar to the algorithm used by the C-shell
+for file name matching;  see the Tcl manual entry for details.
+.PP
+In \fBTcl_StringCaseMatch\fR, the algorithm is
+the same, but you have the option to make the matching case-insensitive.
+If you choose this (by passing \fBTCL_MATCH_NOCASE\fR), then the string and
+pattern are essentially matched in the lower case.
+
+.SH KEYWORDS
+match, pattern, string

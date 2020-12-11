@@ -1,0 +1,59 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH concat n 8.3 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+concat \- Join lists together
+.SH SYNOPSIS
+\fBconcat\fI \fR?\fIarg arg ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+This command joins each of its arguments together with spaces after
+trimming leading and trailing white-space from each of them.  If all of the
+arguments are lists, this has the same effect as concatenating them
+into a single list.
+Arguments that are empty (after trimming) are ignored entirely.
+It permits any number of arguments;
+if no \fIarg\fRs are supplied, the result is an empty string.
+.SH EXAMPLES
+Although \fBconcat\fR will concatenate lists, flattening them in the process
+(so giving the following interactive session):
+.PP
+.CS
+\fI%\fR \fBconcat\fR a b {c d e} {f {g h}}
+\fIa b c d e f {g h}\fR
+.CE
+.PP
+it will also concatenate things that are not lists, as can be seen from this
+session:
+.PP
+.CS
+\fI%\fR \fBconcat\fR " a b {c   " d "  e} f"
+\fIa b {c d e} f\fR
+.CE
+.PP
+Note also that the concatenation does not remove spaces from the middle of
+values, as can be seen here:
+.PP
+.CS
+\fI%\fR \fBconcat\fR "a   b   c" { d e f }
+\fIa   b   c d e f\fR
+.CE
+.PP
+(i.e., there are three spaces between each of the \fBa\fR, the \fBb\fR and the
+\fBc\fR).
+.SH "SEE ALSO"
+append(n), eval(n), join(n)
+.SH KEYWORDS
+concatenate, join, list
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

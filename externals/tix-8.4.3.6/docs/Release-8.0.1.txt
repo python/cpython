@@ -1,0 +1,72 @@
+$Id: Release-8.0.1.txt,v 1.2 2000/10/11 05:36:04 idiscovery Exp $
+
+============
+BUILDING TIX
+============
+1. You must have a recent source distribution of Tcl/Tk installed (we
+   have tested with 8.0.4 and 8.0.5).
+
+2. For Unix, You should be able to change to unix/tk8.0; then,
+   configure and compile with:
+        ./configure
+        make > make.log
+
+   Before running "make", you can edit the Makefile and change the -O
+   compile option to -O2 for slightly better performance with gcc/egcs.
+
+   You may find the configure options --prefix, --with-tcl, --with-tk
+   etc. useful. For example, I have a copy of the egcs compiler
+   installed as /d2a/exper/bin/gcc, the tcl8.0.5 and tk8.0.5 source
+   distributions at /d2a/src/tcl-tk/tcl8.0.5 and
+   /d2a/src/tcl-tk/tk8.0.5 respectively, and prefer to install Tix to
+   /d2a/exper, so I use something like this:
+
+        env PATH=/d2a/exper/bin:$PATH ./configure \
+            --prefix=/d2a/exper --enable-gcc --enable-shared \
+            --with-tcl=/d2a/src/tcl-tk/tcl8.0.5 \
+            --with-tk=/d2a/src/tcl-tk/tk8.0.5
+
+   [If you reassign the PATH variable like this, remember to do the
+   same thing with all the "make" commands as well.]
+
+   If the compile failed for some reason, you can look at the files
+   make.errs and make.log for clues.
+
+3. If the compile is successful, you should now be able to run it:
+        ./tixwish
+        source ../../demos/widget
+   This will bring up a demo window with lots of Tix megawidgets.
+
+4. You can now run the test suite if you wish and install Tix:
+      make tests [optional]
+      make install
+   [If the "make tests" fails with a complaint like this:
+           ld.so: open error 2 for /libtix4180.so.1.0
+    edit Makefile and remove the line that assigns a value to
+    LD_LIBRARY_PATH for the "tests" target (I had to do this on SunOS)].
+
+5. For WinNT, read win/README.
+
+========================
+NOTES ON FUTURE RELEASES
+========================
+
+1. If you are interested in support see the web site at:
+   http://www.sourceforge.net
+
+2. Support for all versions of Tcl/Tk preceding 8.0 is now discontinued.
+
+====================
+CHANGES in tix-8.0.1
+====================
+
+1. Restored missing files from Tix-4.1.0.006.
+
+2. Changed documentation to reflect    http://www.sourceforge.net
+
+3. The Tix Programming Guide in HTML is now included in the release; see
+    docs/tix-book. Note that we have not made any changes to
+    this document and have not been able to locate the original
+    TeX/LaTeX file.
+
+

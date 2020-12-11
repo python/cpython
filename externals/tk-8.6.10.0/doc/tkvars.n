@@ -1,0 +1,110 @@
+'\"
+'\" Copyright (c) 1990-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH tkvars n 4.1 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+geometry, tk_library, tk_patchLevel, tk_strictMotif, tk_version \- Variables used or set by Tk
+.BE
+.SH DESCRIPTION
+.PP
+The following Tcl variables are either set or used by Tk at various times
+in its execution:
+.TP 15
+\fBtk_library\fR
+.
+This variable holds the file name for a directory containing a library
+of Tcl scripts related to Tk.  These scripts include an initialization
+file that is normally processed whenever a Tk application starts up,
+plus other files containing procedures that implement default behaviors
+for widgets.
+.RS
+.PP
+The initial value of \fBtcl_library\fR is set when Tk is added to
+an interpreter;  this is done by searching several different directories
+until one is found that contains an appropriate Tk startup script.
+If the \fBTK_LIBRARY\fR environment variable exists, then
+the directory it names is checked first.
+If \fBTK_LIBRARY\fR is not set or does not refer to an appropriate
+directory, then Tk checks several other directories based on a
+compiled-in default location, the location of the Tcl library directory,
+the location of the binary containing the application, and the current
+working directory.
+.PP
+The variable can be modified by an application to switch to a different
+library.
+.RE
+.TP
+\fBtk_patchLevel\fR
+.
+Contains a dot-separated sequence of decimal integers giving the
+current patch level for Tk.
+The patch level is incremented for each new release or patch, and
+it uniquely identifies an official version of Tk.
+.RS
+.PP
+This value is normally the same as the result of
+.QW "\fBpackage require\fR \fBTk\fR" .
+.RE
+.TP
+\fBtk_strictMotif\fR
+.
+This variable is set to zero by default.
+If an application sets it to one, then Tk attempts to adhere as
+closely as possible to Motif look-and-feel standards.
+For example, active elements such as buttons and scrollbar
+sliders will not change color when the pointer passes over them.
+Modern applications should not normally set this variable.
+.TP 15
+\fBtk_version\fR
+.
+Tk sets this variable in the interpreter for each application.
+The variable holds the current version number of the Tk
+library in the form \fImajor\fR.\fIminor\fR.  \fIMajor\fR and
+\fIminor\fR are integers.  The major version number increases in
+any Tk release that includes changes that are not backward compatible
+(i.e. whenever existing Tk applications and scripts may have to change to
+work with the new release).  The minor version number increases with
+each new release of Tk, except that it resets to zero whenever the
+major version number changes.
+.SS "INTERNAL AND DEBUGGING VARIABLES"
+.PP
+These variables should not normally be set by user code.
+.TP
+\fBtk::Priv\fR
+.
+This variable is an array containing several pieces of information
+that are private to Tk.  The elements of \fBtk::Priv\fR are used by
+Tk library procedures and default bindings.
+They should not be accessed by any code outside Tk.
+.TP
+\fBtk_textRedraw\fR
+.TP
+\fBtk_textRelayout\fR
+.
+These variables are set by text widgets when they have debugging
+turned on.  The values written to these variables can be used to
+test or debug text widget operations.  These variables are mostly
+used by Tk's test suite.
+.SH "OTHER GLOBAL VARIABLES"
+The following variables are only guaranteed to exist in \fBwish\fR
+executables; the Tk library does not define them itself but many Tk
+environments do.
+.TP 6
+\fBgeometry\fR
+.
+If set, contains the user-supplied geometry specification to use for
+the main Tk window.
+.SH "SEE ALSO"
+package(n), tclvars(n), wish(1)
+.SH KEYWORDS
+environment, text, variables, version
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

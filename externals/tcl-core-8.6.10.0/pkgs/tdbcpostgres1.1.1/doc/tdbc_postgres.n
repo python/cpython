@@ -1,0 +1,157 @@
+'\"
+.\" tdbc_postgres.n --
+.\"
+.\" Copyright (c) 2009 by Slawomir Cygan
+.\"
+.\" See the file "license.terms" for information on usage and redistribution of
+.\" this file, and for a DISCLAIMER OF ALL WARRANTIES.
+.TH "tdbc::postgres" n 8.6 Tcl "Tcl Database Connectivity"
+.\" .so man.macros
+.if t .wh -1.3i ^B
+.nr ^l \n(.l
+.ad b
+.\"	# BS - start boxed text
+.\"	# ^y = starting y location
+.\"	# ^b = 1
+.de BS
+.br
+.mk ^y
+.nr ^b 1u
+.if n .nf
+.if n .ti 0
+.if n \l'\\n(.lu\(ul'
+.if n .fi
+..
+.\"	# BE - end boxed text (draw box now)
+.de BE
+.nf
+.ti 0
+.mk ^t
+.ie n \l'\\n(^lu\(ul'
+.el \{\
+.\"	Draw four-sided box normally, but don't draw top of
+.\"	box if the box started on an earlier page.
+.ie !\\n(^b-1 \{\
+\h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.el \}\
+\h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.\}
+.fi
+.br
+.nr ^b 0
+..
+.\"	# CS - begin code excerpt
+.de CS
+.RS
+.nf
+.ta .25i .5i .75i 1i
+..
+.\"	# CE - end code excerpt
+.de CE
+.fi
+.RE
+..
+.BS
+.SH "NAME"
+tdbc::postgres \- TDBC-POSTGRES bridge
+.SH "SYNOPSIS"
+package require \fBtdbc::postgres 1.0\fR
+.sp
+\fBtdbc::postgres::connection create\fR \fIdb\fR ?\fI-option value...\fR?
+.br
+\fBtdbc::postgres::connection new\fR ?\fI-option value...\fR?
+.BE
+.SH "DESCRIPTION"
+.PP
+The \fBtdbc::postgres\fR driver provides a database interface that conforms
+to Tcl DataBase Connectivity (TDBC) and allows a Tcl script to connect
+to a Postgres database.
+.PP
+Connection to a POSTGRES database is established by invoking
+\fBtdbc::postgres::connection create\fR, passing it the name to give the
+database handle and a set of \fI-option-value\fR pairs. The available
+options are enumerated under CONNECTION OPTIONS below.
+As an alternative, \fBtdbc::postgres::connection new\fR may be used to create
+a database connection with an automatically assigned name. The return value
+from \fBtdbc::postgres::connection new\fR is the name that was chosen for the
+connection handle.
+.PP
+The side effect of \fBtdbc::postgres::connection create\fR is to create a
+new database connection.. See \fBtdbc::connection(n)\fR for the
+details of how to use the connection to manipulate a database.
+.SH "CONNECTION OPTIONS"
+.PP
+The \fBtdbc::postgres::connection create\fR object command supports the
+\fB-encoding\fR, \fB-isolation\fR, \fB-readonly\fR and \fB-timeout\fR
+options common to all TDBC drivers. The \fB-timeout\fR option will
+only affect connection process, once connected this value will be
+ignored and cannot be changed after connecting.
+.PP
+In addition, the following options are recognized (these options must be
+set on the initial creation of the connection; they cannot be changed
+after connecting) :
+.IP "\fB-host\fR \fIhostname\fR"
+Connects to the host specified by \fIhostname\fR. Default is to connect using a local Unix domain socket.
+.IP "\fB-hostaddr\fR \fIaddress\fR"
+Connects to the host specified by given IP \fIaddress\fR. If both \fB-host\fR and \fB-hostaddr\fR are given, the value
+of \fB-host\fR is ignored. Default is to connect using a local Unix domain socket.
+.IP "\fB-port\fR \fInumber\fR"
+Connects to a Postgres server listening on the port specified by \fInumber\fR.
+It is used only when \fIhost\fR  or \fIhostaddr\fR is specified.
+.IP "\fB-user\fR \fIname\fR"
+Presents \fIname\fR as the user name to the Postgres server. Default is the
+current user ID.
+.IP "\fB-passwd\fR \fIpassword\fR"
+.IP "\fB-password\fR \fIpassword\fR"
+These two options are synonymous. They present the given \fIpassword\fR as
+the user's password to the Postgres server. Default is not to present a password.
+.IP "\fB-database\fR \fIname\fR"
+.IP "\fB-db\fR \fIname\fR"
+These two options are synonymous.  They present the given \fIname\fR as the
+name of the default database to use in Postgres queries. If not specified,
+the default database for the current user is used.
+.IP "\fB-options\fR \fIopts\fR"
+This sets \fIopts\fR as additional command line options send to the server.
+.IP "\fB-tty\fR \fIfile\fR"
+This option is ignored on never servers. Formerly this specified where to send debug
+output. This option is left for compatibility with older servers.
+.IP "\fB-sslmode\fR \fImode\fR"
+This option determines whether or with what priority an SSL connection will be negotiated with
+the server. There are four \fImodes\fR: \fBdisable\fR will attempt only an unencrypted SSL connection;
+\fBallow\fR will negotiate, trying first a non-SSL connection, then if that fails, trying an SSL
+connection; \fBprefer\fR (the default) will negotiate, trying first an SSL connection,
+then if that fails, trying a regular non-SSL connection; \fBrequire\fR will try only an SSL connection.
+If PostgreSQL is compiled without SSL support, using option \fBrequire\fR will cause an error,
+and options \fBallow\fR and \fBprefer\fR will be tolerated but the driver will be unable to negotiate
+an SSL connection.
+.IP \fB-requiressl\fR \fIflag\fR
+This option is deprecated in favor of the \fB-sslmode\fR setting.
+The \fIflag\fR value must be a Boolean value. If it is \fBtrue\fR (or
+any equivalent), driver will then refuse to connect if the server does
+not accept an SSL connection. The default value is \fBfalse\fR (or any
+equivalent), and acts the same like \fB-sslmode\fR \fBpreffered\fR
+.IP \fB-service\fR \fIname\fR
+It specifies a service \fIname\fR in pg_service.conf file that holds additional connection parameters.
+This allows applications to specify only a service name so connection parameters can be
+centrally maintained. Refer to PostgreSQL Documentation or PREFIX/share/pg_service.conf.sample file
+for details.
+.SH EXAMPLES
+.PP
+.CS
+tdbc::postgres::connection -user joe -passwd sesame -db joes_database
+.CE
+Connects to the Postgres server on the local host using the default
+connection method, presenting user ID 'joe' and password 'sesame'.
+Uses 'joes_database' as the default database name.
+.SH "SEE ALSO"
+tdbc(n), tdbc::connection(n), tdbc::resultset(n), tdbc::statement(n)
+.SH "KEYWORDS"
+TDBC, SQL, Postgres, database, connectivity, connection
+.SH "COPYRIGHT"
+Copyright (c) 2009 by Slawomir Cygan
+.\" Local Variables:
+.\" mode: nroff
+.\" End:
+.\"

@@ -1,0 +1,89 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1998 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_GetAnchorFromObj 3 8.1 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_GetAnchorFromObj, Tk_GetAnchor, Tk_NameOfAnchor \- translate between strings and anchor positions
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+int
+\fBTk_GetAnchorFromObj(\fIinterp, objPtr, anchorPtr\fB)\fR
+.sp
+int
+\fBTk_GetAnchor(\fIinterp, string, anchorPtr\fB)\fR
+.sp
+const char *
+\fBTk_NameOfAnchor(\fIanchor\fB)\fR
+.SH ARGUMENTS
+.AS "Tk_Anchor" *anchorPtr
+.AP Tcl_Interp *interp in
+Interpreter to use for error reporting, or NULL.
+.AP Tcl_Obj *objPtr in/out
+String value contains name of anchor point:
+.QW \fBn\fR  ,
+.QW \fBne\fR ,
+.QW \fBe\fR  ,
+.QW \fBse\fR ,
+.QW \fBs\fR  ,
+.QW \fBsw\fR ,
+.QW \fBw\fR  ,
+.QW \fBnw\fR ,
+or
+.QW \fBcenter\fR ;
+internal rep will be modified to cache corresponding Tk_Anchor. In the
+case of
+.QW \fBcenter\fR
+on input, a non-empty abbreviation of it may also be used on input.
+.AP "const char" *string in
+Same as \fIobjPtr\fR except description of anchor point is passed as
+a string.
+.AP int *anchorPtr out
+Pointer to location in which to store anchor position corresponding to
+\fIobjPtr\fR or \fIstring\fR.
+.AP Tk_Anchor anchor in
+Anchor position, e.g. \fBTCL_ANCHOR_CENTER\fR.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_GetAnchorFromObj\fR places in \fI*anchorPtr\fR an anchor position
+(enumerated type \fBTk_Anchor\fR)
+corresponding to \fIobjPtr\fR's value.  The result will be one of
+\fBTK_ANCHOR_N\fR, \fBTK_ANCHOR_NE\fR, \fBTK_ANCHOR_E\fR, \fBTK_ANCHOR_SE\fR,
+\fBTK_ANCHOR_S\fR, \fBTK_ANCHOR_SW\fR, \fBTK_ANCHOR_W\fR, \fBTK_ANCHOR_NW\fR,
+or \fBTK_ANCHOR_CENTER\fR.
+Anchor positions are typically used for indicating a point on an object
+that will be used to position the object, e.g. \fBTK_ANCHOR_N\fR means
+position the top center point of the object at a particular place.
+.PP
+Under normal circumstances the return value is \fBTCL_OK\fR and
+\fIinterp\fR is unused.
+If \fIstring\fR does not contain a valid anchor position
+or an abbreviation of one of these names, \fBTCL_ERROR\fR is returned,
+\fI*anchorPtr\fR is unmodified, and an error message is
+stored in \fIinterp\fR's result if \fIinterp\fR is not NULL.
+\fBTk_GetAnchorFromObj\fR caches information about the return
+value in \fIobjPtr\fR, which speeds up future calls to
+\fBTk_GetAnchorFromObj\fR with the same \fIobjPtr\fR.
+.PP
+\fBTk_GetAnchor\fR is identical to \fBTk_GetAnchorFromObj\fR except
+that the description of the anchor is specified with a string instead
+of an object.  This prevents \fBTk_GetAnchor\fR from caching the
+return value, so \fBTk_GetAnchor\fR is less efficient than
+\fBTk_GetAnchorFromObj\fR.
+.PP
+\fBTk_NameOfAnchor\fR is the logical inverse of \fBTk_GetAnchor\fR.
+Given an anchor position such as \fBTK_ANCHOR_N\fR it returns a
+statically-allocated string corresponding to \fIanchor\fR.
+If \fIanchor\fR is not a legal anchor value, then
+.QW "unknown anchor position"
+is returned.
+.SH KEYWORDS
+anchor position

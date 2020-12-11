@@ -1,0 +1,16 @@
+# Tcl autoload index file, version 2.0
+# Hand-generated for testing puurpose.
+# 
+# Typically each line is a command that
+# sets an element in the auto_index array, where the
+# element name is the name of a command and the value is
+# a script that loads the command.
+#
+# Copyright (c) 2000-2001 Tix Project Group.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# $Id: tclIndex,v 1.3 2002/12/11 07:14:12 idiscovery Exp $
+
+set auto_index(tixTestClass_method:foo) [list source [file join $dir auto_loaded.tcl]]

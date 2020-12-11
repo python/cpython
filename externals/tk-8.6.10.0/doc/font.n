@@ -1,0 +1,409 @@
+'\"
+'\" Copyright (c) 1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2006-2007 Daniel A. Steffen <das@users.sourceforge.net>
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH font n 8.0 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+font \- Create and inspect fonts.
+.SH SYNOPSIS
+\fBfont\fI option \fR?\fIarg arg ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+The \fBfont\fR command provides several facilities for dealing with
+fonts, such as defining named fonts and inspecting the actual attributes of
+a font.  The command has several different forms, determined by the
+first argument.  The following forms are currently supported:
+.TP
+\fBfont actual \fIfont\fR ?\fB\-displayof \fIwindow\fR? ?\fIoption\fR? ?\fB\-\|\-\fR? ?\fIchar\fR?
+.
+Returns information about the actual attributes that are obtained when
+\fIfont\fR is used on \fIwindow\fR's display; the actual attributes obtained
+may differ from the attributes requested due to platform-dependent
+limitations, such as the availability of font families and point sizes.
+\fIfont\fR is a font description; see \fBFONT DESCRIPTIONS\fR below.  If the
+\fIwindow\fR argument is omitted, it defaults to the main window.  If
+\fIoption\fR is specified, returns the value of that attribute; if it is
+omitted, the return value is a list of all the attributes and their values.
+See \fBFONT OPTIONS\fR below for a list of the possible attributes.  If the
+\fIchar\fR argument is supplied, it must be a single character. The font
+attributes returned will be those of the specific font used to render
+that character, which will be different from the base font if the base
+font does not contain the given character.  If \fIchar\fR may be a hyphen, it
+should be preceded by \fB\-\|\-\fR to distinguish it from a misspelled
+\fIoption\fR.
+.TP
+\fBfont configure \fIfontname\fR ?\fIoption\fR? ?\fIvalue option value ...\fR?
+.
+Query or modify the desired attributes for the named font called
+\fIfontname\fR.  If no \fIoption\fR is specified, returns a list describing
+all the options and their values for \fIfontname\fR.  If a single \fIoption\fR
+is specified with no \fIvalue\fR, then returns the current value of that
+attribute.  If one or more \fIoption\fR\-\fIvalue\fR pairs are specified,
+then the command modifies the given named font to have the given values; in
+this case, all widgets using that font will redisplay themselves using the
+new attributes for the font.  See \fBFONT OPTIONS\fR below for a list of the
+possible attributes.
+.RS
+.PP
+Note that on Aqua/Mac OS X, the system fonts (see
+\fBPLATFORM SPECIFIC FONTS\fR below) may not be actually altered because they
+are implemented by the system theme. To achieve the effect of modification,
+use \fBfont actual\fR to get their configuration and \fBfont create\fR to
+synthesize a copy of the font which can be modified.
+.RE
+.TP
+\fBfont create\fR ?\fIfontname\fR? ?\fIoption value ...\fR?
+.
+Creates a new named font and returns its name.  \fIfontname\fR specifies the
+name for the font; if it is omitted, then Tk generates a new name of the
+form \fBfont\fIx\fR, where \fIx\fR is an integer.  There may be any number
+of \fIoption\fR\-\fIvalue\fR pairs, which provide the desired attributes for
+the new named font.  See \fBFONT OPTIONS\fR below for a list of the possible
+attributes.
+.TP
+\fBfont delete\fR \fIfontname\fR ?\fIfontname ...\fR?
+.
+Delete the specified named fonts.  If there are widgets using the named font,
+the named font will not actually be deleted until all the instances are
+released.  Those widgets will continue to display using the last known values
+for the named font.  If a deleted named font is subsequently recreated with
+another call to \fBfont create\fR, the widgets will use the new named font
+and redisplay themselves using the new attributes of that font.
+.TP
+\fBfont families\fR ?\fB\-displayof \fIwindow\fR?
+.
+The return value is a list of the case-insensitive names of all font families
+that exist on \fIwindow\fR's display.  If the \fIwindow\fR argument is
+omitted, it defaults to the main window.
+.TP
+\fBfont measure \fIfont\fR ?\fB\-displayof \fIwindow\fR? \fItext\fR
+.
+Measures the amount of space the string \fItext\fR would use in the given
+\fIfont\fR when displayed in \fIwindow\fR.  \fIfont\fR is a font description;
+see \fBFONT DESCRIPTIONS\fR below.  If the \fIwindow\fR argument is
+omitted, it
+defaults to the main window.  The return value is the total width in pixels
+of \fItext\fR, not including the extra pixels used by highly exaggerated
+characters such as cursive
+.QW f .
+If the string contains newlines or tabs,
+those characters are not expanded or treated specially when measuring the
+string.
+.TP
+\fBfont metrics \fIfont\fR ?\fB\-displayof \fIwindow\fR? ?\fIoption\fR?
+.
+Returns information about the metrics (the font-specific data), for
+\fIfont\fR when it is used on \fIwindow\fR's display.  \fIfont\fR is a font
+description; see \fBFONT DESCRIPTIONS\fR below.  If the \fIwindow\fR
+argument is
+omitted, it defaults to the main window.  If \fIoption\fR is specified,
+returns the value of that metric; if it is omitted, the return value is a
+list of all the metrics and their values.  See \fBFONT METRICS\fR
+below for a list of the possible metrics.
+.TP
+\fBfont names\fR
+The return value is a list of all the named fonts that are currently defined.
+.SH "FONT DESCRIPTIONS"
+.PP
+The following formats are accepted as a font description anywhere
+\fIfont\fR is specified as an argument above; these same forms are also
+permitted when specifying the \fB\-font\fR option for widgets.
+.TP
+[1] \fIfontname\fR
+.
+The name of a named font, created using the \fBfont create\fR command.  When
+a widget uses a named font, it is guaranteed that this will never cause an
+error, as long as the named font exists, no matter what potentially invalid
+or meaningless set of attributes the named font has.  If the named font
+cannot be displayed with exactly the specified attributes, some other close
+font will be substituted automatically.
+.TP
+[2] \fIsystemfont\fR
+.
+The platform-specific name of a font, interpreted by the graphics server.
+This also includes, under X, an XLFD (see [4]) for which a single
+.QW \fB*\fR
+character was used to elide more than one field in the middle of the
+name.  See \fBPLATFORM SPECIFIC FONTS\fR for a list of the system fonts.
+.TP
+[3] \fIfamily \fR?\fIsize\fR? ?\fIstyle\fR? ?\fIstyle ...\fR?
+.
+A properly formed list whose first element is the desired font
+\fIfamily\fR and whose optional second element is the desired \fIsize\fR.
+The interpretation of the \fIsize\fR attribute follows the same rules
+described for \fB\-size\fR in \fBFONT OPTIONS\fR below.  Any
+additional optional
+arguments following the \fIsize\fR are font \fIstyle\fRs.  Possible values
+for the \fIstyle\fR arguments are as follows:
+.RS
+.DS
+.ta 3c 6c 9c
+\fBnormal\fR	\fBbold\fR	\fBroman\fR	\fBitalic\fR
+\fBunderline\fR	\fBoverstrike\fR
+.DE
+.RE
+.TP
+[4] X-font names (XLFD)
+.
+A Unix-centric font name of the form
+\fI\-foundry\-family\-weight\-slant\-setwidth\-addstyle\-pixel\-point\-resx\-resy\-spacing\-width\-charset\-encoding\fR.
+The
+.QW \fB*\fR
+character may be used to skip individual fields that the
+user does not care about.  There must be exactly one
+.QW \fB*\fR
+for each field skipped, except that a
+.QW \fB*\fR
+at the end of the XLFD skips any
+remaining fields; the shortest valid XLFD is simply
+.QW \fB*\fR ,
+signifying all fields as defaults.  Any fields that were skipped are
+given default
+values.  For compatibility, an XLFD always chooses a font of the specified
+pixel size (not point size); although this interpretation is not strictly
+correct, all existing applications using XLFDs assumed that one
+.QW point
+was in fact one pixel and would display incorrectly (generally larger) if
+the correct size font were actually used.
+.TP
+[5] \fIoption value \fR?\fIoption value ...\fR?
+.
+A properly formed list of \fIoption\fR\-\fIvalue\fR pairs that specify
+the desired attributes of the font, in the same format used when defining
+a named font; see \fBFONT OPTIONS\fR below.
+.LP
+When font description \fIfont\fR is used, the system attempts to parse the
+description according to each of the above five rules, in the order specified.
+Cases [1] and [2] must match the name of an existing named font or of a
+system font.  Cases [3], [4], and [5] are accepted on all
+platforms and the closest available font will be used.  In some situations
+it may not be possible to find any close font (e.g., the font family was
+a garbage value); in that case, some system-dependent default font is
+chosen.  If the font description does not match any of the above patterns,
+an error is generated.
+.SH "FONT METRICS"
+.PP
+The following options are used by the \fBfont metrics\fR command to query
+font-specific data determined when the font was created.  These properties are
+for the whole font itself and not for individual characters drawn in that
+font.  In the following definitions, the
+.QW baseline
+of a font is the
+horizontal line where the bottom of most letters line up; certain letters,
+such as lower-case
+.QW g
+stick below the baseline.
+.TP
+\fB\-ascent        \0\fR
+.
+The amount in pixels that the tallest letter sticks up above the baseline of
+the font, plus any extra blank space added by the designer of the font.
+.TP
+\fB\-descent       \0\fR
+.
+The largest amount in pixels that any letter sticks down below the baseline
+of the font, plus any extra blank space added by the designer of the font.
+.TP
+\fB\-linespace\fR
+.
+Returns how far apart vertically in pixels two lines of text using the same
+font should be placed so that none of the characters in one line overlap any
+of the characters in the other line.  This is generally the sum of the ascent
+above the baseline line plus the descent below the baseline.
+.TP
+\fB\-fixed          \0\fR
+.
+Returns a boolean flag that is
+.QW \fB1\fR
+if this is a fixed-width font,
+where each normal character is the same width as all the other
+characters, or is
+.QW \fB0\fR
+if this is a proportionally-spaced font, where
+individual characters have different widths.  The widths of control
+characters, tab characters, and other non-printing characters are not
+included when calculating this value.
+.SH "FONT OPTIONS"
+.PP
+The following options are supported on all platforms, and are used when
+constructing a named font or when specifying a font using style [5] as
+above:
+.TP
+\fB\-family \fIname\fR
+.
+The case-insensitive font family name.  Tk guarantees to support the font
+families named \fBCourier\fR (a monospaced
+.QW typewriter
+font), \fBTimes\fR (a serifed
+.QW newspaper
+font), and \fBHelvetica\fR (a sans-serif
+.QW European
+font).  The most closely matching native font family will
+automatically be substituted when one of the above font families is used.
+The \fIname\fR may also be the name of a native, platform-specific font
+family; in that case it will work as desired on one platform but may not
+display correctly on other platforms.  If the family is unspecified or
+unrecognized, a platform-specific default font will be chosen.
+.TP
+\fB\-size \fIsize\fR
+.
+The desired size of the font.  If the \fIsize\fR argument is a positive
+number, it is interpreted as a size in points.  If \fIsize\fR is a negative
+number, its absolute value is interpreted as a size in pixels.  If a
+font cannot be displayed at the specified size, a nearby size will be
+chosen.  If \fIsize\fR is unspecified or zero, a platform-dependent default
+size will be chosen.
+.RS
+.PP
+Sizes should normally be specified in points so the application will remain
+the same ruler size on the screen, even when changing screen resolutions or
+moving scripts across platforms.  However, specifying pixels is useful in
+certain circumstances such as when a piece of text must line up with respect
+to a fixed-size bitmap.  The mapping between points and pixels is set when
+the application starts, based on properties of the installed monitor, but it
+can be overridden by calling the \fBtk scaling\fR command.
+.RE
+.TP
+\fB\-weight \fIweight\fR
+.
+The nominal thickness of the characters in the font.  The value
+\fBnormal\fR specifies a normal weight font, while \fBbold\fR specifies a
+bold font.  The closest available weight to the one specified will
+be chosen.  The default weight is \fBnormal\fR.
+.TP
+\fB\-slant \fIslant\fR
+The amount the characters in the font are slanted away from the
+vertical.  Valid values for slant are \fBroman\fR and \fBitalic\fR.
+A roman font is the normal, upright appearance of a font, while
+an italic font is one that is tilted some number of degrees from upright.
+The closest available slant to the one specified will be chosen.
+The default slant is \fBroman\fR.
+.TP
+\fB\-underline \fIboolean\fR
+The value is a boolean flag that specifies whether characters in this
+font should be underlined.  The default value for underline is \fBfalse\fR.
+.TP
+\fB\-overstrike \fIboolean\fR
+The value is a boolean flag that specifies whether a horizontal line should
+be drawn through the middle of characters in this font.  The default value
+for overstrike is \fBfalse\fR.
+.SH "STANDARD FONTS"
+.PP
+The following named fonts are supported on all systems, and default to values
+that match appropriate system defaults.
+.TP
+\fBTkDefaultFont\fR
+.
+This font is the default for all GUI items not otherwise specified.
+.TP
+\fBTkTextFont\fR
+.
+This font should be used for user text in entry widgets, listboxes etc.
+.TP
+\fBTkFixedFont\fR
+.
+This font is the standard fixed-width font.
+.TP
+\fBTkMenuFont\fR
+.
+This font is used for menu items.
+.TP
+\fBTkHeadingFont\fR
+.
+This font should be used for column headings in lists and tables.
+.TP
+\fBTkCaptionFont\fR
+.
+This font should be used for window and dialog caption bars.
+.TP
+\fBTkSmallCaptionFont\fR
+.
+This font should be used for captions on contained windows or tool dialogs.
+.TP
+\fBTkIconFont\fR
+.
+This font should be used for icon captions.
+.TP
+\fBTkTooltipFont\fR
+.
+This font should be used for tooltip windows (transient information windows).
+.LP
+It is \fInot\fR advised to change these fonts, as they may be modified by Tk
+itself in response to system changes. Instead, make a copy of the font and
+modify that.
+.SH "PLATFORM SPECIFIC FONTS"
+.PP
+The following system fonts are supported:
+.TP
+\fBX Windows\fR
+All valid X font names, including those listed by xlsfonts(1), are available.
+.TP
+\fBMS Windows\fR
+The following fonts are supported, and are mapped to the user's
+style defaults.
+.RS
+.DS
+.ta 3c 6c
+\fBsystem\fR	\fBansi\fR	\fBdevice\fR
+\fBsystemfixed\fR	\fBansifixed\fR	\fBoemfixed\fR
+.DE
+.RE
+.TP
+\fBMac OS X\fR
+The following fonts are supported, and are mapped to the user's
+style defaults.
+.RS
+.DS
+.ta 3c 6c
+\fBsystem\fR	\fBapplication\fR	\fBmenu\fR
+.DE
+.PP
+Additionally, the following named fonts provide access to the Aqua
+theme fonts:
+.DS
+.ta 5c
+\fBsystemSystemFont\fR	\fBsystemEmphasizedSystemFont\fR
+\fBsystemSmallSystemFont\fR	\fBsystemSmallEmphasizedSystemFont\fR
+\fBsystemApplicationFont\fR	\fBsystemLabelFont\fR
+\fBsystemViewsFont\fR	\fBsystemMenuTitleFont\fR
+\fBsystemMenuItemFont\fR	\fBsystemMenuItemMarkFont\fR
+\fBsystemMenuItemCmdKeyFont\fR	\fBsystemWindowTitleFont\fR
+\fBsystemPushButtonFont\fR	\fBsystemUtilityWindowTitleFont\fR
+\fBsystemAlertHeaderFont\fR	\fBsystemToolbarFont\fR
+\fBsystemMiniSystemFont\fR	\fBsystemDetailSystemFont\fR
+\fBsystemDetailEmphasizedSystemFont\fR
+.DE
+.RE
+.SH EXAMPLE
+.PP
+Fill a text widget with lots of font demonstrators, one for every font
+family installed on your system:
+.CS
+pack [text .t \-wrap none] \-fill both \-expand 1
+set count 0
+set tabwidth 0
+foreach family [lsort \-dictionary [\fBfont families\fR]] {
+    .t tag configure f[incr count] \-font [list $family 10]
+    .t insert end ${family}:\\t {} \e
+            "This is a simple sampler\en" f$count
+    set w [\fBfont measure\fR [.t cget \-font] ${family}:]
+    if {$w+5 > $tabwidth} {
+        set tabwidth [expr {$w+5}]
+        .t configure \-tabs $tabwidth
+    }
+}
+.CE
+.SH "SEE ALSO"
+options(n)
+.SH KEYWORDS
+font
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

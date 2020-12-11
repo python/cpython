@@ -1,0 +1,45 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH flush n 7.5 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+flush \- Flush buffered output for a channel
+.SH SYNOPSIS
+\fBflush \fIchannelId\fR
+.BE
+.SH DESCRIPTION
+.PP
+Flushes any output that has been buffered for \fIchannelId\fR.
+.PP
+\fIChannelId\fR must be an identifier for an open channel such as a
+Tcl standard channel (\fBstdout\fR or \fBstderr\fR), the return
+value from an invocation of \fBopen\fR or \fBsocket\fR, or the result
+of a channel creation command provided by a Tcl extension.  The
+channel must have been opened for writing.
+.PP
+If the channel is in blocking mode the command does not return until all the
+buffered output has been flushed to the channel. If the channel is in
+nonblocking mode, the command may return before all buffered output has been
+flushed; the remainder will be flushed in the background as fast as the
+underlying file or device is able to absorb it.
+.SH EXAMPLE
+.PP
+Prompt for the user to type some information in on the console:
+.PP
+.CS
+puts -nonewline "Please type your name: "
+\fBflush\fR stdout
+gets stdin name
+puts "Hello there, $name!"
+.CE
+.SH "SEE ALSO"
+file(n), open(n), socket(n), Tcl_StandardChannels(3)
+.SH KEYWORDS
+blocking, buffer, channel, flush, nonblocking, output

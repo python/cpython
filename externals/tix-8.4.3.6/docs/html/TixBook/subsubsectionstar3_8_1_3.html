@@ -1,0 +1,44 @@
+<HEAD>
+<TITLE>  Variables<A NAME=6121>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html1134 HREF=subsubsectionstar3_8_1_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html1132 HREF=subsection3_8_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html1126 HREF=subsubsection3_8_1_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html1136 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html1135 HREF=subsubsectionstar3_8_1_4.html>  Methods</A>
+<B>Up:</B> <A NAME=tex2html1133 HREF=subsection3_8_1.html> Introduction to Tix </A>
+<B> Previous:</B> <A NAME=tex2html1127 HREF=subsubsection3_8_1_2.html> What is in </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00081300000000000000>  Variables<A NAME=6121>&nbsp;</A></A></H3>
+<P>
+Each widget instance is associated with a set of variables. In the
+  example of an instance of the TixArrowButton class, we may use a
+  variable to store the direction to which the arrow is pointing
+  to. We may also use a variable to count how many times the user has
+  pressed the button.
+<P>
+   Each variable can be public or private. Public variables may be
+  accessed by the application programmer (usually via <tt>configure</tt>
+  or cget <tt>methods</tt>) and their names usually start with a dash
+  (<tt>-</tt>). They usually are used to represent some user-configurable
+  options of the widget instance. Private variables, on the other
+  hand, cannot be accessed by the application programmer. They are
+  usually used to store information about the widget instance that are
+  of interests only to the widget writer.
+<P>
+   All the variables of an instance are stored in a global array that
+  has the same name as the instance. For example, the variables of the
+  instance <tt>.up</tt> are stored in the global array <tt>.up:</tt>. The
+  public variable <tt>-direction</tt>, which records the direction to
+  which the arrow is pointing to, is stored in <tt>.up(-direction)</tt>.
+  The private variable <tt>count</tt>, which counts how many times the
+  user has pressed the button, is stored in <tt>.up(count)</tt>. In
+  comparison, the same variables of the <tt>.down</tt> instance are
+  stored in <tt>.down(-direction)</tt> and <tt>.down(count)</tt>.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

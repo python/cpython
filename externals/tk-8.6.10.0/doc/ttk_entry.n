@@ -1,0 +1,472 @@
+'\"
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 1998-2000 Scriptics Corporation.
+'\" Copyright (c) 2004 Joe English
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH ttk::entry n 8.5 Tk "Tk Themed Widget"
+.so man.macros
+.BS
+.SH NAME
+ttk::entry \- Editable text field widget
+.SH SYNOPSIS
+\fBttk::entry\fR \fIpathName \fR?\fIoptions\fR?
+.BE
+.SH DESCRIPTION
+.PP
+An \fBttk::entry\fR widget displays a one-line text string and
+allows that string to be edited by the user.
+The value of the string may be linked to a Tcl variable
+with the \fB\-textvariable\fR option.
+Entry widgets support horizontal scrolling with the
+standard \fB\-xscrollcommand\fR option and \fBxview\fR widget command.
+.SO ttk_widget
+\-class	\-cursor	\-style
+\-takefocus	\-xscrollcommand
+.SE
+.SH "WIDGET-SPECIFIC OPTIONS"
+.OP \-exportselection exportSelection ExportSelection
+A boolean value specifying whether or not
+a selection in the widget should be linked to the X selection.
+If the selection is exported, then selecting in the widget deselects
+the current X selection, selecting outside the widget deselects any
+widget selection, and the widget will respond to selection retrieval
+requests when it has a selection.
+.\" MAYBE: .OP \-font font Font
+.\" MAYBE: .OP \-foreground foreground Foreground
+.\" MAYBE: .OP \-insertbackground insertBackground Foreground
+.\" MAYBE: .OP \-insertwidth insertWidth InsertWidth
+.OP \-invalidcommand invalidCommand InvalidCommand
+A script template to evaluate whenever the \fB\-validatecommand\fR returns 0.
+See \fBVALIDATION\fR below for more information.
+.OP \-justify justify Justify
+Specifies how the text is aligned within the entry widget.
+One of \fBleft\fR, \fBcenter\fR, or \fBright\fR.
+.\" MAYBE: .OP \-selectbackground selectBackground Foreground
+.\" MAYBE: .OP \-selectborderwidth selectBorderWidth BorderWidth
+.\" MAYBE: .OP \-selectforeground selectForeground Background
+.OP \-show show Show
+If this option is specified, then the true contents of the entry
+are not displayed in the window.
+Instead, each character in the entry's value will be displayed as
+the first character in the value of this option, such as
+.QW *
+or a bullet.
+This is useful, for example, if the entry is to be used to enter
+a password.
+If characters in the entry are selected and copied elsewhere, the
+information copied will be what is displayed, not the true contents
+of the entry.
+.OP \-state state State
+Compatibility option; see \fIttk::widget(n)\fR for details.
+Specifies one of three states for the entry,
+\fBnormal\fR, \fBdisabled\fR, or \fBreadonly\fR.
+See \fBWIDGET STATES\fR, below.
+.OP \-textvariable textVariable Variable
+Specifies the name of a global variable whose value is linked
+to the entry widget's contents.
+Whenever the variable changes value, the widget's contents are updated,
+and vice versa.
+.OP \-validate validate Validate
+Specifies the mode in which validation should operate:
+\fBnone\fR, \fBfocus\fR, \fBfocusin\fR, \fBfocusout\fR, \fBkey\fR, or \fBall\fR.
+Default is \fBnone\fR, meaning that validation is disabled.
+See \fBVALIDATION\fR below.
+.OP \-validatecommand validateCommand ValidateCommand
+A script template to evaluate whenever validation is triggered.
+If set to the empty string (the default), validation is disabled.
+The script must return a boolean value.
+See \fBVALIDATION\fR below.
+.OP \-width width Width
+Specifies an integer value indicating the desired width of the entry window,
+in average-size characters of the widget's font.
+.\" Not in ttk: If the value is less than or equal to zero, the widget picks a
+.\" Not in ttk: size just large enough to hold its current text.
+.SH NOTES
+.PP
+A portion of the entry may be selected as described below.
+If an entry is exporting its selection (see the \fB\-exportselection\fR
+option), then it will observe the standard X11 protocols for handling the
+selection;  entry selections are available as type \fBSTRING\fR.
+Entries also observe the standard Tk rules for dealing with the
+input focus.  When an entry has the input focus it displays an
+\fIinsert cursor\fR to indicate where new characters will be
+inserted.
+.PP
+Entries are capable of displaying strings that are too long to
+fit entirely within the widget's window.  In this case, only a
+portion of the string will be displayed;  commands described below
+may be used to change the view in the window.  Entries use
+the standard \fB\-xscrollcommand\fR mechanism for interacting with
+scrollbars (see the description of the \fB\-xscrollcommand\fR option
+for details).
+.SH "INDICES"
+.PP
+Many of the \fBentry\fR widget commands take one or more indices as
+arguments.  An index specifies a particular character in the entry's
+string, in any of the following ways:
+.IP \fInumber\fR
+Specifies the character as a numerical index, where 0 corresponds
+to the first character in the string.
+.IP \fB@\fInumber\fR
+In this form, \fInumber\fR is treated as an x-coordinate in the
+entry's window;  the character spanning that x-coordinate is used.
+For example,
+.QW \fB@0\fR
+indicates the left-most character in the window.
+.IP \fBend\fR
+Indicates the character just after the last one in the entry's string.
+This is equivalent to specifying a numerical index equal to the length
+of the entry's string.
+.IP \fBinsert\fR
+Indicates the character adjacent to and immediately following the
+insert cursor.
+.IP \fBsel.first\fR
+Indicates the first character in the selection.  It is an error to
+use this form if the selection is not in the entry window.
+.IP \fBsel.last\fR
+Indicates the character just after the last one in the selection.
+It is an error to use this form if the selection is not in the
+entry window.
+.LP
+Abbreviations may be used for any of the forms above, e.g.\|
+.QW \fBe\fR
+or
+.QW \fBsel.l\fR .
+In general, out-of-range indices are automatically rounded to the
+nearest legal value.
+.SH "WIDGET COMMAND"
+.PP
+The following subcommands are possible for entry widgets:
+.TP
+\fIpathName \fBbbox \fIindex\fR
+Returns a list of four numbers describing the bounding box of the
+character given by \fIindex\fR.
+The first two elements of the list give the x and y coordinates of
+the upper-left corner of the screen area covered by the character
+(in pixels relative to the widget) and the last two elements give
+the width and height of the character, in pixels.
+The bounding box may refer to a region outside the visible area
+of the window.
+'\".TP
+'\"\fIpathName \fBcget\fR \fIoption\fR
+'\"Returns the current value of the specified \fIoption\fR.
+'\"See \fIttk::widget(n)\fR.
+'\".TP
+'\"\fIpathName \fBconfigure\fR ?\fIoption\fR? ?\fIvalue option value ...\fR?
+'\"Modify or query widget options.
+'\"See \fIttk::widget(n)\fR.
+.TP
+\fIpathName \fBdelete \fIfirst \fR?\fIlast\fR?
+Delete one or more elements of the entry.
+\fIFirst\fR is the index of the first character to delete, and
+\fIlast\fR is the index of the character just after the last
+one to delete.
+If \fIlast\fR is not specified it defaults to \fIfirst\fR+1,
+i.e. a single character is deleted.
+This command returns the empty string.
+.TP
+\fIpathName \fBget\fR
+Returns the entry's string.
+.TP
+\fIpathName \fBicursor \fIindex\fR
+Arrange for the insert cursor to be displayed just before the character
+given by \fIindex\fR.  Returns the empty string.
+'\".TP
+'\"\fIpathName \fBidentify \fIx y\fR
+'\"Returns the name of the element at position \fIx\fR, \fIy\fR,
+'\"or the empty string if the coordinates are outside the window.
+.TP
+\fIpathName \fBindex\fI index\fR
+Returns the numerical index corresponding to \fIindex\fR.
+.TP
+\fIpathName \fBinsert \fIindex string\fR
+Insert \fIstring\fR just before the character
+indicated by \fIindex\fR.  Returns the empty string.
+'\".TP
+'\"\fIpathName \fBinstate \fIstatespec\fR ?\fIscript\fR?
+'\"Test the widget state.
+'\"See \fIttk::widget(n)\fR.
+.TP
+\fIpathName \fBselection \fIoption arg\fR
+This command is used to adjust the selection within an entry.  It
+has several forms, depending on \fIoption\fR:
+.RS
+.TP
+\fIpathName \fBselection clear\fR
+Clear the selection if it is currently in this widget.
+If the selection is not in this widget then the command has no effect.
+Returns the empty string.
+.TP
+\fIpathName \fBselection present\fR
+Returns 1 if there is are characters selected in the entry,
+0 if nothing is selected.
+.TP
+\fIpathName \fBselection range \fIstart\fR \fIend\fR
+Sets the selection to include the characters starting with
+the one indexed by \fIstart\fR and ending with the one just
+before \fIend\fR.
+If \fIend\fR refers to the same character as \fIstart\fR or an
+earlier one, then the entry's selection is cleared.
+.RE
+'\".TP
+'\"\fIpathName \fBstate\fR ?\fIstateSpec\fR?
+'\"Modify or query the widget state.
+'\"See \fIttk::widget(n)\fR.
+.TP
+\fIpathName \fBvalidate\fR
+Force revalidation, independent of the conditions specified
+by the \fB\-validate\fR option.
+Returns 0 if validation fails, 1 if it succeeds.
+Sets or clears the \fBinvalid\fR state accordingly.
+See \fBVALIDATION\fR below for more details.
+.PP
+The entry widget also supports the following generic \fBttk::widget\fR
+widget subcommands (see \fIttk::widget(n)\fR for details):
+.DS
+.ta 5.5c 11c
+\fBcget\fR	\fBconfigure\fR	\fBidentify\fR
+\fBinstate\fR	\fBstate\fR	\fBxview\fR
+.DE
+.SH VALIDATION
+.PP
+The \fB\-validate\fR, \fB\-validatecommand\fR, and \fB\-invalidcommand\fR
+options are used to enable entry widget validation.
+.SS "VALIDATION MODES"
+.PP
+There are two main validation modes: \fIprevalidation\fR,
+in which the \fB\-validatecommand\fR is evaluated prior to each edit
+and the return value is used to determine whether to accept
+or reject the change;
+and \fIrevalidation\fR, in which the \fB\-validatecommand\fR is
+evaluated to determine whether the current value is valid.
+.PP
+The \fB\-validate\fR option determines when validation occurs;
+it may be set to any of the following values:
+.RS
+.IP \fBnone\fR
+Default.  This means validation will only occur when
+specifically requested by the \fBvalidate\fR widget command.
+.IP \fBkey\fR
+The entry will be prevalidated prior to each edit
+(specifically, whenever the \fBinsert\fR or \fBdelete\fR
+widget commands are called).
+If prevalidation fails, the edit is rejected.
+.IP \fBfocus\fR
+The entry is revalidated when the entry receives or loses focus.
+.IP \fBfocusin\fR
+The entry is revalidated when the entry receives focus.
+.IP \fBfocusout\fR
+The entry is revalidated when the entry loses focus.
+.IP \fBall\fR
+Validation is performed for all above conditions.
+.RE
+.PP
+The \fB\-invalidcommand\fR is evaluated whenever
+the \fB\-validatecommand\fR returns a false value.
+.PP
+The \fB\-validatecommand\fR and \fB\-invalidcommand\fR
+may modify the entry widget's value
+via the widget \fBinsert\fR or \fBdelete\fR commands,
+or by setting the linked \fB\-textvariable\fR.
+If either does so during prevalidation,
+then the edit is rejected
+regardless of the value returned by the \fB\-validatecommand\fR.
+.PP
+If \fB\-validatecommand\fR is empty (the default),
+validation always succeeds.
+.SS "VALIDATION SCRIPT SUBSTITUTIONS"
+.PP
+It is possible to perform percent substitutions on the
+\fB\-validatecommand\fR and \fB\-invalidcommand\fR,
+just as in a \fBbind\fR script.
+The following substitutions are recognized:
+.RS
+.IP \fB%d\fR
+Type of action: 1 for \fBinsert\fR prevalidation,
+0 for \fBdelete\fR prevalidation,
+or \-1 for revalidation.
+.IP \fB%i\fR
+Index of character string to be inserted/deleted, if any, otherwise \-1.
+.IP \fB%P\fR
+In prevalidation, the new value of the entry if the edit is accepted.
+In revalidation, the current value of the entry.
+.IP \fB%s\fR
+The current value of entry prior to editing.
+.IP \fB%S\fR
+The text string being inserted/deleted, if any, {} otherwise.
+.IP \fB%v\fR
+The current value of the \fB\-validate\fR option.
+.IP \fB%V\fR
+The validation condition that triggered the callback
+(\fBkey\fR, \fBfocusin\fR, \fBfocusout\fR, or \fBforced\fR).
+.IP \fB%W\fR
+The name of the entry widget.
+.RE
+.SS "DIFFERENCES FROM TK ENTRY WIDGET VALIDATION"
+.PP
+The standard Tk entry widget automatically disables validation
+(by setting \fB\-validate\fR to \fBnone\fR)
+if the \fB\-validatecommand\fR or \fB\-invalidcommand\fR modifies
+the entry's value.
+The Tk themed entry widget only disables validation if one
+of the validation scripts raises an error, or if \fB\-validatecommand\fR
+does not return a valid boolean value.
+(Thus, it is not necessary to re-enable validation after
+modifying the entry value in a validation script).
+.PP
+In addition, the standard entry widget invokes validation whenever the linked
+\fB\-textvariable\fR is modified; the Tk themed entry widget does not.
+.SH "DEFAULT BINDINGS"
+.PP
+The entry widget's default bindings enable the following behavior.
+In the descriptions below,
+.QW word
+refers to a contiguous group of letters, digits, or
+.QW _
+characters, or any single character other than these.
+.IP \0\(bu 4
+Clicking mouse button 1 positions the insert cursor
+just before the character underneath the mouse cursor, sets the
+input focus to this widget, and clears any selection in the widget.
+Dragging with mouse button 1 down strokes out a selection between
+the insert cursor and the character under the mouse.
+.IP \0\(bu 4
+Double-clicking with mouse button 1 selects the word under the mouse
+and positions the insert cursor at the end of the word.
+Dragging after a double click strokes out a selection consisting
+of whole words.
+.IP \0\(bu 4
+Triple-clicking with mouse button 1 selects all of the text in the
+entry and positions the insert cursor at the end of the line.
+.IP \0\(bu 4
+The ends of the selection can be adjusted by dragging with mouse
+button 1 while the Shift key is down.
+If the button is double-clicked before dragging then the selection
+will be adjusted in units of whole words.
+.IP \0\(bu 4
+Clicking mouse button 1 with the Control key down will position the
+insert cursor in the entry without affecting the selection.
+.IP \0\(bu 4
+If any normal printing characters are typed in an entry, they are
+inserted at the point of the insert cursor.
+.IP \0\(bu 4
+The view in the entry can be adjusted by dragging with mouse button 2.
+If mouse button 2 is clicked without moving the mouse, the selection
+is copied into the entry at the position of the mouse cursor.
+.IP \0\(bu 4
+If the mouse is dragged out of the entry on the left or right sides
+while button 1 is pressed, the entry will automatically scroll to
+make more text visible (if there is more text off-screen on the side
+where the mouse left the window).
+.IP \0\(bu 4
+The Left and Right keys move the insert cursor one character to the
+left or right;  they also clear any selection in the entry.
+If Left or Right is typed with the Shift key down, then the insertion
+cursor moves and the selection is extended to include the new character.
+Control-Left and Control-Right move the insert cursor by words, and
+Control-Shift-Left and Control-Shift-Right move the insert cursor
+by words and also extend the selection.
+Control-b and Control-f behave the same as Left and Right, respectively.
+.IP \0\(bu 4
+The Home key and Control-a move the insert cursor to the
+beginning of the entry and clear any selection in the entry.
+Shift-Home moves the insert cursor to the beginning of the entry
+and extends the selection to that point.
+.IP \0\(bu 4
+The End key and Control-e move the insert cursor to the
+end of the entry and clear any selection in the entry.
+Shift-End moves the cursor to the end and extends the selection
+to that point.
+.IP \0\(bu 4
+Control-/ selects all the text in the entry.
+.IP \0\(bu 4
+Control-\e clears any selection in the entry.
+.IP \0\(bu 4
+The standard Tk <<Cut>>, <<Copy>>, <<Paste>>, and <<Clear>>
+virtual events operate on the selection in the expected manner.
+.IP \0\(bu 4
+The Delete key deletes the selection, if there is one in the entry.
+If there is no selection, it deletes the character to the right of
+the insert cursor.
+.IP \0\(bu 4
+The BackSpace key and Control-h delete the selection, if there is one
+in the entry.
+If there is no selection, it deletes the character to the left of
+the insert cursor.
+.IP \0\(bu 4
+Control-d deletes the character to the right of the insert cursor.
+.IP \0\(bu 4
+Control-k deletes all the characters to the right of the insertion
+cursor.
+.SH "WIDGET STATES"
+.PP
+In the \fBdisabled\fR state,
+the entry cannot be edited and the text cannot be selected.
+In the \fBreadonly\fR state,
+no insert cursor is displayed and
+the entry cannot be edited
+(specifically: the \fBinsert\fR and \fBdelete\fR commands have no effect).
+The \fBdisabled\fR state is the same as \fBreadonly\fR,
+and in addition text cannot be selected.
+.PP
+Note that changes to the linked \fB\-textvariable\fR will
+still be reflected in the entry, even if it is disabled or readonly.
+.PP
+Typically, the text is
+.QW grayed-out
+in the \fBdisabled\fR state,
+and a different background is used in the \fBreadonly\fR state.
+.PP
+The entry widget sets the \fBinvalid\fR state if revalidation fails,
+and clears it whenever validation succeeds.
+.SH "STYLING OPTIONS"
+.PP
+The class name for a \fBttk::entry\fP is \fBTEntry\fP.
+.PP
+Dynamic states: \fBdisabled\fP, \fBfocus\fP, \fBreadonly\fP.
+.PP
+\fBTEntry\fP styling options configurable with \fBttk::style\fP
+are:
+.PP
+\fB\-background\fP \fIcolor\fP
+.RS
+For backwards compatibility, when using the aqua theme (for macOS), this
+option behaves as an alias for the \fB\-fieldbackground\fP provided that no
+value is specified for \fB\-fieldbackground\fP. Otherwise it is ignored.
+.RE
+\fB\-bordercolor\fP \fIcolor\fP
+.br
+\fB\-darkcolor\fP \fIcolor\fP
+.br
+\fB\-fieldbackground\fP \fIcolor\fP
+.RS
+Some themes use a graphical background and their field background colors cannot be changed.
+.RE
+\fB\-foreground\fP \fIcolor\fP
+.br
+\fB\-insertwidth\fP \fIamount\fP
+.br
+\fB\-lightcolor\fP \fIcolor\fP
+.br
+\fB\-padding\fP \fIpadding\fP
+.br
+\fB\-relief\fP \fIrelief\fP
+.br
+\fB\-selectbackground\fP \fIcolor\fP
+.br
+\fB\-selectborderwidth\fP \fIamount\fP
+.br
+\fB\-selectforeground\fP \fIcolor\fP
+.PP
+See the \fBttk::style\fP manual page for information on how to configure
+ttk styles.
+.SH "SEE ALSO"
+ttk::widget(n), entry(n)
+.SH KEYWORDS
+entry, widget, text field
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

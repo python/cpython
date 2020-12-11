@@ -1,0 +1,83 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_AppInit 3 7.0 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_AppInit \- perform application-specific initialization
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_AppInit\fR(\fIinterp\fR)
+.SH ARGUMENTS
+.AS Tcl_Interp *interp
+.AP Tcl_Interp *interp in
+Interpreter for the application.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBTcl_AppInit\fR is a
+.QW hook
+procedure that is invoked by
+the main programs for Tcl applications such as \fBtclsh\fR and \fBwish\fR.
+Its purpose is to allow new Tcl applications to be created without
+modifying the main programs provided as part of Tcl and Tk.
+To create a new application you write a new version of
+\fBTcl_AppInit\fR to replace the default version provided by Tcl,
+then link your new \fBTcl_AppInit\fR with the Tcl library.
+.PP
+\fBTcl_AppInit\fR is invoked by \fBTcl_Main\fR and \fBTk_Main\fR
+after their own initialization and before entering the main loop
+to process commands.
+Here are some examples of things that \fBTcl_AppInit\fR might do:
+.IP [1]
+Call initialization procedures for various packages used by
+the application.
+Each initialization procedure adds new commands to \fIinterp\fR
+for its package and performs other package-specific initialization.
+.IP [2]
+Process command-line arguments, which can be accessed from the
+Tcl variables \fBargv\fR and \fBargv0\fR in \fIinterp\fR.
+.IP [3]
+Invoke a startup script to initialize the application.
+.IP [4]
+Use the routines \fBTcl_SetStartupScript\fR and
+\fBTcl_GetStartupScript\fR to set or query the file and encoding
+that the active \fBTcl_Main\fR or \fBTk_Main\fR routine will
+use as a startup script.
+.LP
+\fBTcl_AppInit\fR returns \fBTCL_OK\fR or \fBTCL_ERROR\fR.
+If it returns \fBTCL_ERROR\fR then it must leave an error message in
+for the interpreter's result;  otherwise the result is ignored.
+.PP
+In addition to \fBTcl_AppInit\fR, your application should also contain
+a procedure \fBmain\fR that calls \fBTcl_Main\fR as follows:
+.PP
+.CS
+Tcl_Main(argc, argv, Tcl_AppInit);
+.CE
+.PP
+The third argument to \fBTcl_Main\fR gives the address of the
+application-specific initialization procedure to invoke.
+This means that you do not have to use the name \fBTcl_AppInit\fR
+for the procedure, but in practice the name is nearly always
+\fBTcl_AppInit\fR (in versions before Tcl 7.4 the name \fBTcl_AppInit\fR
+was implicit;  there was no way to specify the procedure explicitly).
+The best way to get started is to make a copy of the file
+\fBtclAppInit.c\fR from the Tcl library or source directory.
+It already contains a \fBmain\fR procedure and a template for
+\fBTcl_AppInit\fR that you can modify for your application.
+
+.SH "SEE ALSO"
+Tcl_Main(3)
+
+.SH KEYWORDS
+application, argument, command, initialization, interpreter

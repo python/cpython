@@ -1,0 +1,63 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_GetJoinStyle 3 "" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_GetJoinStyle, Tk_NameOfJoinStyle \- translate between strings and join styles
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+int
+\fBTk_GetJoinStyle(\fIinterp, string, joinPtr\fB)\fR
+.sp
+const char *
+\fBTk_NameOfJoinStyle(\fIjoin\fB)\fR
+.SH ARGUMENTS
+.AS "Tcl_Interp" *joinPtr
+.AP Tcl_Interp *interp in
+Interpreter to use for error reporting.
+.AP "const char" *string in
+String containing name of join style \- one of
+.QW \fBbevel\fR ,
+.QW \fBmiter\fR ,
+or
+.QW \fBround\fR
+\- or a unique abbreviation of one.
+.AP int *joinPtr out
+Pointer to location in which to store X join style corresponding to
+\fIstring\fR.
+.AP int join in
+Join style: one of \fBJoinBevel\fR, \fBJoinMiter\fR, \fBJoinRound\fR.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_GetJoinStyle\fR places in \fI*joinPtr\fR the X join style
+corresponding to \fIstring\fR, which will be one of
+\fBJoinBevel\fR, \fBJoinMiter\fR, or \fBJoinRound\fR.
+Join styles are typically used in X graphics contexts to indicate
+how adjacent line segments should be joined together.
+See the X documentation for information on what each style
+implies.
+.PP
+Under normal circumstances the return value is \fBTCL_OK\fR and
+\fIinterp\fR is unused.
+If \fIstring\fR does not contain a valid join style
+or an abbreviation of one of these names, then an error message is
+stored in interpreter \fIinterp\fR's result, \fBTCL_ERROR\fR is returned, and
+\fI*joinPtr\fR is unmodified.
+.PP
+\fBTk_NameOfJoinStyle\fR is the logical inverse of \fBTk_GetJoinStyle\fR.
+Given a join style such as \fBJoinBevel\fR it returns a
+statically-allocated string corresponding to \fIjoin\fR.
+If \fIjoin\fR is not a legal join style, then
+.QW "unknown join style"
+is returned.
+.SH KEYWORDS
+bevel, join style, miter, round

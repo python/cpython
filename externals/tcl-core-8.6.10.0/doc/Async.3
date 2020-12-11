@@ -1,0 +1,161 @@
+'\"
+'\" Copyright (c) 1989-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_AsyncCreate 3 7.0 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_AsyncCreate, Tcl_AsyncMark, Tcl_AsyncInvoke, Tcl_AsyncDelete, Tcl_AsyncReady \- handle asynchronous events
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+Tcl_AsyncHandler
+\fBTcl_AsyncCreate\fR(\fIproc, clientData\fR)
+.sp
+\fBTcl_AsyncMark\fR(\fIasync\fR)
+.sp
+int
+\fBTcl_AsyncInvoke\fR(\fIinterp, code\fR)
+.sp
+\fBTcl_AsyncDelete\fR(\fIasync\fR)
+.sp
+int
+\fBTcl_AsyncReady\fR()
+.SH ARGUMENTS
+.AS Tcl_AsyncHandler clientData
+.AP Tcl_AsyncProc *proc in
+Procedure to invoke to handle an asynchronous event.
+.AP ClientData clientData in
+One-word value to pass to \fIproc\fR.
+.AP Tcl_AsyncHandler async in
+Token for asynchronous event handler.
+.AP Tcl_Interp *interp in
+Tcl interpreter in which command was being evaluated when handler was
+invoked, or NULL if handler was invoked when there was no interpreter
+active.
+.AP int code in
+Completion code from command that just completed in \fIinterp\fR,
+or 0 if \fIinterp\fR is NULL.
+.BE
+
+.SH DESCRIPTION
+.PP
+These procedures provide a safe mechanism for dealing with
+asynchronous events such as signals.
+If an event such as a signal occurs while a Tcl script is being
+evaluated then it is not safe to take any substantive action to
+process the event.
+For example, it is not safe to evaluate a Tcl script since the
+interpreter may already be in the middle of evaluating a script;
+it may not even be safe to allocate memory, since a memory
+allocation could have been in progress when the event occurred.
+The only safe approach is to set a flag indicating that the event
+occurred, then handle the event later when the world has returned
+to a clean state, such as after the current Tcl command completes.
+.PP
+\fBTcl_AsyncCreate\fR, \fBTcl_AsyncDelete\fR, and \fBTcl_AsyncReady\fR
+are thread sensitive.  They access and/or set a thread-specific data
+structure in the event of a core built with \fI\-\-enable\-threads\fR.  The token
+created by \fBTcl_AsyncCreate\fR contains the needed thread information it
+was called from so that calling \fBTcl_AsyncMark\fR(\fItoken\fR) will only yield
+the origin thread into the asynchronous handler.
+.PP
+\fBTcl_AsyncCreate\fR creates an asynchronous handler and returns
+a token for it.
+The asynchronous handler must be created before
+any occurrences of the asynchronous event that it is intended
+to handle (it is not safe to create a handler at the time of
+an event).
+When an asynchronous event occurs the code that detects the event
+(such as a signal handler) should call \fBTcl_AsyncMark\fR with the
+token for the handler.
+\fBTcl_AsyncMark\fR will mark the handler as ready to execute, but it
+will not invoke the handler immediately.
+Tcl will call the \fIproc\fR associated with the handler later, when
+the world is in a safe state, and \fIproc\fR can then carry out
+the actions associated with the asynchronous event.
+\fIProc\fR should have arguments and result that match the
+type \fBTcl_AsyncProc\fR:
+.PP
+.CS
+typedef int \fBTcl_AsyncProc\fR(
+        ClientData \fIclientData\fR,
+        Tcl_Interp *\fIinterp\fR,
+        int \fIcode\fR);
+.CE
+.PP
+The \fIclientData\fR will be the same as the \fIclientData\fR
+argument passed to \fBTcl_AsyncCreate\fR when the handler was
+created.
+If \fIproc\fR is invoked just after a command has completed
+execution in an interpreter, then \fIinterp\fR will identify
+the interpreter in which the command was evaluated and
+\fIcode\fR will be the completion code returned by that
+command.
+The command's result will be present in the interpreter's result.
+When \fIproc\fR returns, whatever it leaves in the interpreter's result
+will be returned as the result of the command and the integer
+value returned by \fIproc\fR will be used as the new completion
+code for the command.
+.PP
+It is also possible for \fIproc\fR to be invoked when no interpreter
+is active.
+This can happen, for example, if an asynchronous event occurs while
+the application is waiting for interactive input or an X event.
+In this case \fIinterp\fR will be NULL and \fIcode\fR will be
+0, and the return value from \fIproc\fR will be ignored.
+.PP
+The procedure \fBTcl_AsyncInvoke\fR is called to invoke all of the
+handlers that are ready.
+The procedure \fBTcl_AsyncReady\fR will return non-zero whenever any
+asynchronous handlers are ready;  it can be checked to avoid calls
+to \fBTcl_AsyncInvoke\fR when there are no ready handlers.
+Tcl calls \fBTcl_AsyncReady\fR after each command is evaluated
+and calls \fBTcl_AsyncInvoke\fR if needed.
+Applications may also call \fBTcl_AsyncInvoke\fR at interesting
+times for that application.
+For example, Tcl's event handler calls \fBTcl_AsyncReady\fR
+after each event and calls \fBTcl_AsyncInvoke\fR if needed.
+The \fIinterp\fR and \fIcode\fR arguments to \fBTcl_AsyncInvoke\fR
+have the same meaning as for \fIproc\fR:  they identify the active
+interpreter, if any, and the completion code from the command
+that just completed.
+.PP
+\fBTcl_AsyncDelete\fR removes an asynchronous handler so that
+its \fIproc\fR will never be invoked again.
+A handler can be deleted even when ready, and it will still
+not be invoked.
+.PP
+If multiple handlers become active at the same time, the
+handlers are invoked in the order they were created (oldest
+handler first).
+The \fIcode\fR and the interpreter's result for later handlers
+reflect the values returned by earlier handlers, so that
+the most recently created handler has last say about
+the interpreter's result and completion code.
+If new handlers become ready while handlers are executing,
+\fBTcl_AsyncInvoke\fR will invoke them all;  at each point it
+invokes the highest-priority (oldest) ready handler, repeating
+this over and over until there are no longer any ready handlers.
+.SH WARNING
+.PP
+It is almost always a bad idea for an asynchronous event
+handler to modify the interpreter's result or return a code different
+from its \fIcode\fR argument.
+This sort of behavior can disrupt the execution of scripts in
+subtle ways and result in bugs that are extremely difficult
+to track down.
+If an asynchronous event handler needs to evaluate Tcl scripts
+then it should first save the interpreter's state by calling
+\fBTcl_SaveInterpState\fR, passing in the \fIcode\fR argument.
+When the asynchronous handler is finished it should restore
+the interpreter's state by calling \fBTcl_RestoreInterpState\fR,
+and then returning the \fIcode\fR argument.
+
+.SH KEYWORDS
+asynchronous event, handler, signal, Tcl_SaveInterpState, thread

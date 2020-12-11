@@ -1,0 +1,1201 @@
+# Commands covered:  thread
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-2000 Scriptics Corporation.
+# Copyright (c) 2002 ActiveState Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest
+namespace import ::tcltest::*
+tcltest::loadTestedCommands
+package require Thread
+
+tcltest::testConstraint chanTransfer               \
+    [expr {   $::tcl_platform(platform) == "unix"  \
+           || $::tcl_patchLevel > "8.4.10"}]
+
+set dummy [makeFile dummyForTransfer dummyForTransfer]
+set tcltest::mainThread [thread::id]
+
+proc ThreadReap {} {
+    while {[llength [thread::names]] > 1} {
+        foreach tid [thread::names] {
+            if {$tid != $::tcltest::mainThread} {
+                catch {thread::release -wait $tid}
+            }
+        }
+    }
+    llength [thread::names]
+}
+
+test thread-2.0 {no global thread command} {
+    info commands thread
+} {}
+
+test thread-2.84 {thread subcommands} {
+    set cmds [info commands thread::*]
+    set idx [lsearch -exact $cmds ::thread::cancel]
+    lsort [lreplace $cmds $idx $idx]
+} {::thread::attach ::thread::broadcast ::thread::cond ::thread::configure ::thread::create ::thread::detach ::thread::errorproc ::thread::eval ::thread::exists ::thread::exit ::thread::id ::thread::join ::thread::mutex ::thread::names ::thread::preserve ::thread::release ::thread::rwmutex ::thread::send ::thread::transfer ::thread::unwind ::thread::wait}
+
+test thread-3.0 {thread::names initial thread list} {
+    list [ThreadReap] [llength [thread::names]]
+} {1 1}
+
+test thread-4.0 {thread::create: create server thread} {
+    ThreadReap
+    set tid [thread::create]
+    update
+    set l [llength [thread::names]]
+    ThreadReap
+    set l
+} {2}
+
+test thread-4.1 {thread::create: create one shot thread} {
+    ThreadReap
+    thread::create {set x 5}
+    foreach try {0 1 2 4 5 6} {
+        # Try various ways to yield
+        update
+        after 10
+        set l [llength [thread::names]]
+        if {$l == 1} {
+            break
+        }
+    }
+    ThreadReap
+    set l
+} {1}
+
+test thread-4.2 {thread::create - create preservable thread} {
+    ThreadReap
+    set tid [thread::create -preserved]
+    set c [thread::preserve $tid]
+    thread::release -wait $tid
+    ThreadReap
+    set c
+} {2}
+
+test thread-4.3 {thread::create - release a thread} {
+    ThreadReap
+    set tid [thread::create {thread::release}]
+    update
+    after 10
+    set l [llength [thread::names]]
+    ThreadReap
+    set l
+} {1}
+
+test thread-4.4 {thread::create - create joinable thread} {
+    ThreadReap
+    set tid [thread::create -joinable {set x 5}]
+    set c [thread::join $tid]
+    ThreadReap
+    set c
+} {0}
+
+test thread-4.5 {thread::create - join detached thread} {
+    ThreadReap
+    set tid [thread::create]
+    thread::send -async $tid {after 1000 ; thread::release}
+    catch {set res [thread::join $tid]} msg
+    ThreadReap
+    lrange $msg 0 2
+} {cannot join thread}
+
+test thread-5.0 {thread::release} {
+    ThreadReap
+    set tid [thread::create {thread::release}]
+    update
+    after 10
+    set l [llength [thread::names]]
+    ThreadReap
+    set l
+} {1}
+
+test thread-6.0 {thread::unwind - simple unwind} {
+    ThreadReap
+    thread::create {thread::unwind}
+    update
+    after 10
+    set l [llength [thread::names]]
+    ThreadReap
+    set l
+} {1}
+
+test thread-6.1 {thread::unwind - blocked unwind} {
+    ThreadReap
+    thread::create {thread::unwind; vwait dummy}
+    update
+    after 10
+    set l [llength [thread::names]]
+    ThreadReap
+    set l
+} {2}
+
+test thread-7.0 {thread::exit} {
+    ThreadReap
+    set tid [thread::create -joinable {thread::exit}]
+    set c [thread::join $tid]
+    ThreadReap
+    set c
+} {666}
+
+test thread-7.1 {thread::exit - # args} {
+    set tid [thread::create]
+    catch {thread::send $tid {thread::exit 1 0}} msg
+    set msg
+} {wrong # args: should be "thread::exit ?status?"}
+
+test thread-7.2 {thread::exit - args} {
+    set tid [thread::create]
+    catch {thread::send $tid {thread::exit foo}} msg
+    set msg
+} {expected integer but got "foo"}
+
+test thread-7.3 {thread::exit - status} {
+    ThreadReap
+    set tid [thread::create -joinable {thread::exit 0}]
+    set c [thread::join $tid]
+    ThreadReap
+    set c
+} {0}
+
+test thread-8.0 {thread::exists - true} {
+    ThreadReap
+    set c [thread::exists [thread::create]]
+    ThreadReap
+    set c
+} {1}
+
+test thread-8.1 {thread::exists - false} {
+    ThreadReap
+    set tid [thread::create {set x 5}]
+    update
+    after 10
+    set c [thread::exists $tid]
+    ThreadReap
+    set c
+} {0}
+
+test thread-9.0 {thread::id} {
+    expr {[thread::id] == $::tcltest::mainThread}
+} {1}
+
+test thread-9.1 {thread::id - args} {
+    set x [catch {thread::id x} msg]
+    list $x $msg
+} {1 {wrong # args: should be "thread::id"}}
+
+test thread-10.0 {thread::names args} {
+    set x [catch {thread::names x} msg]
+    list $x $msg
+} {1 {wrong # args: should be "thread::names"}}
+
+test thread-11.0 {thread::send - no args} {
+    set x [catch {thread::send} msg]
+    list $x $msg
+} {1 {wrong # args: should be "thread::send ?-async? ?-head? id script ?varName?"}}
+
+test thread-11.1 {thread::send - simple script} {
+    ThreadReap
+    set tid [thread::create]
+    set five [thread::send $tid {set x 5}]
+    ThreadReap
+    set five
+} 5
+
+test thread-11.2 {thread::send - bad thread id} {
+    set tid dummy
+    set x [catch {thread::send $tid {set x 5}} msg]
+    list $x $msg
+} {1 {invalid thread handle "dummy"}}
+
+test thread-11.3 {thread::send - test TCL_ERROR return code} {
+    ThreadReap
+    set tid [thread::create]
+    set c [thread::send $tid {dummy} msg]
+    ThreadReap
+    list $c $msg} {1 {invalid command name "dummy"}}
+
+test thread-11.4 {thread::send - test TCL_RETURN return code} {
+    ThreadReap
+    set tid [thread::create]
+    set c [thread::send $tid {return} msg]
+    ThreadReap
+    list $c $msg
+} {2 {}}
+
+test thread-11.5 {thread::send - test TCL_BREAK return code} {
+    ThreadReap
+    set tid [thread::create]
+    set c [thread::send $tid {break} msg]
+    ThreadReap
+    list $c $msg
+} {3 {}}
+
+test thread-11.6 {thread::send - asynchronous send} {
+    ThreadReap
+    set tid [thread::create]
+    thread::send -async $tid {set x 5}
+    update
+    after 10
+    set five [thread::send $tid {set x}]
+    ThreadReap
+    set five
+} {5}
+
+test thread-11.7 {thread::send - async send with event-loop wait} {
+    ThreadReap
+    set res {}
+    set tid [thread::create]
+    thread::send -async $tid {set x 5} five
+    vwait five
+    lappend res $five; set five {}
+    thread::send -async $tid {set x 5} [binary format cccc 0x66 0x69 0x76 0x65]; # five as byte array without str-rep.
+    vwait five
+    lappend res $five; set five {}
+    ThreadReap
+    set res
+} {5 5}
+
+test thread-11.7.1 {thread::send - sync send with var} {
+    ThreadReap
+    set res {}
+    set tid [thread::create]
+    thread::send $tid {set x 5} five
+    lappend res $five; set five {}
+    thread::send $tid {set x 5} [binary format cccc 0x66 0x69 0x76 0x65]; # five as byte array without str-rep.
+    lappend res $five; set five {}
+    ThreadReap
+    set res
+} {5 5}
+
+test thread-11.8 {thread::send - send to self directly} {
+    thread::send [thread::id] {set x 5} five
+    set five
+} {5}
+
+test thread-11.9 {thread::send - send to self asynchronously} {
+    set c [catch {thread::send -async [thread::id] {set x 5} five} msg]
+    list $c $msg
+} {1 {can't notify self}}
+
+
+test thread-11.10 {thread::send - preserve errorInfo} {
+    ThreadReap
+    set len [llength [thread::names]]
+    set tid [thread::create]
+    set c [catch {thread::send $tid {set undef}} msg]
+    ThreadReap
+    list $c $msg $errorInfo
+} {1 {can't read "undef": no such variable} {can't read "undef": no such variable
+    while executing
+"set undef"
+    invoked from within
+"thread::send $tid {set undef}"}}
+
+test thread-11.11 {Thread_Send preserve errorCode} {
+    ThreadReap
+    set tid [thread::create]
+    set c [catch {thread::send $tid {error ERR INFO CODE}} msg]
+    ThreadReap
+    list $c $msg $errorCode
+} {1 ERR CODE}
+
+test thread-12.0 {thread::wait} {
+    ThreadReap
+    set tid [thread::create {set x 5; thread::wait}]
+    thread::send $tid {set x} five
+    ThreadReap
+    set five
+} {5}
+
+test thread-13.0 {thread::broadcast} {
+    ThreadReap
+    catch {unset tids}
+    foreach i {1 2 3 4} {
+        lappend tids [thread::create]
+    }
+    thread::broadcast {set x 5}
+    update
+    catch {unset r}
+    foreach tid $tids {
+        lappend r [thread::send $tid {if {[info exists x]} {set x}}]
+    }
+    ThreadReap
+    set r
+} {5 5 5 5}
+
+test thread-13.1 {thread::broadcast no args} {
+    set c [catch {thread::broadcast} msg]
+    list $c $msg
+} {1 {wrong # args: should be "thread::broadcast script"}}
+
+
+test thread-14.0 {thread::eval - no arguments} {
+    set c [catch {thread::eval} msg]
+    list $c $msg
+} {1 {wrong # args: should be "thread::eval ?-lock <mutexHandle>? arg ?arg...?"}}
+
+test thread-14.1 {thread::eval - bad arguments} {
+    set c [catch {thread::eval -lock} msg]
+    list $c $msg
+} {1 {wrong # args: should be "thread::eval ?-lock <mutexHandle>? arg ?arg...?"}}
+
+test thread-14.2 {thread::eval - missing script argument} {
+    set c [catch {thread::eval -lock dummy} msg]
+    list $c $msg
+} {1 {wrong # args: should be "thread::eval ?-lock <mutexHandle>? arg ?arg...?"}}
+
+test thread-14.3 {thread::eval - bad mutex handle} {
+    set c [catch {thread::eval -lock dummy {set x 5}} msg]
+    list $c $msg
+} {1 {no such mutex "dummy"}}
+
+test thread-14.4 {thread::eval - nested eval} {
+    thread::eval {thread::eval {thread::eval {set x 5}}}
+} {5}
+
+test thread-15.0 {thread::configure - bad arguments} {
+    set c [catch {thread::configure} msg]
+    list $c $msg
+} {1 {wrong # args: should be "thread::configure threadlId ?optionName? ?value? ?optionName value?..."}}
+
+test thread-15.1 {thread::configure - bad thread id argument} {
+    set c [catch {thread::configure dummy} msg]
+    list $c $msg
+} {1 {invalid thread handle "dummy"}}
+
+test thread-15.2 {thread::configure - bad configure option} {
+    set c [catch {thread::configure [thread::id] -dummy} msg]
+    list $c $msg
+} {1 {bad option "-dummy", should be one of -eventmark, -unwindonerror or -errorstate}}
+
+test thread-15.3 {thread::configure - read all configure options} {
+    ThreadReap
+    set tid [thread::create]
+    catch {unset opts}
+    set opts [thread::configure $tid]
+    ThreadReap
+    expr {[llength $opts] % 2}
+} {0}
+
+test thread-15.4 {thread::configure - check configure option names} {
+    ThreadReap
+    set tid [thread::create]
+    update
+    after 10
+    catch {unset opts}
+    array set opts [thread::configure $tid]
+    ThreadReap
+    array names opts
+} {-errorstate -unwindonerror -eventmark}
+
+test thread-15.5 {thread::configure - get one config option} {
+    ThreadReap
+    set tid [thread::create]
+    update
+    after 10
+    set l ""
+    lappend l [thread::configure $tid -eventmark]
+    lappend l [thread::configure $tid -unwindonerror]
+    lappend l [thread::configure $tid -errorstate]
+    ThreadReap
+    set l
+} {0 0 0}
+
+test thread-15.6 {thread::configure - set -unwindonerror option} {
+    ThreadReap
+    set tid [thread::create]
+    update
+    after 10
+    thread::configure $tid -unwindonerror 1
+    set c [catch {thread::send $tid {set dummy}}]
+    update
+    after 10
+    set e [thread::exists $tid]
+    ThreadReap
+    list $c $e
+} {1 0}
+
+test thread-15.7 {thread::configure - set -errorstate option} {
+    ThreadReap
+    set tid [thread::create]
+    update
+    after 10
+    thread::configure $tid -errorstate 1
+    set c [thread::send $tid {set dummy} msg]
+    ThreadReap
+    list $c $msg
+} {1 {thread is in error}}
+
+test thread-15.8 {thread::configure - set -eventmark option} {
+    ThreadReap
+    set tid [thread::create]
+    update
+    after 10
+    thread::configure $tid -eventmark 1
+    thread::send -async $tid {after 2000}
+    set t1 [clock seconds]
+    thread::send -async $tid {after 2000}
+    set t2 [clock seconds]
+    ThreadReap
+    expr {($t2 - $t1) >= 2}
+} {1}
+
+test thread-16.0 {thread::errorproc - args} {
+    set x [catch {thread::errorproc foo bar} msg]
+    list $x $msg
+} {1 {wrong # args: should be "thread::errorproc ?proc?"}}
+
+test thread-16.1 {thread::errorproc - errorproc change} {
+    thread::errorproc foo
+    thread::errorproc ThreadError
+    set new [thread::errorproc]
+} {ThreadError}
+
+test thread-16.2 {thread::errorproc - async reporting} {
+    set etid ""
+    set emsg ""
+    proc myerrproc {tid msg} {
+        global etid emsg
+        set etid $tid
+        set emsg $msg
+    }
+    ThreadReap
+    thread::errorproc myerrproc
+    set tid [thread::create]
+    update
+    after 10
+    thread::send -async $tid {set x}
+    after 10
+    update
+    ThreadReap
+    list [expr {$etid == $tid}] $emsg
+} {1 {can't read "x": no such variable
+    while executing
+"set x"}}
+
+test thread-17.1 {thread::transfer - channel lists} {chanTransfer} {
+    ThreadReap
+    set tid [thread::create]
+    set file [open $dummy r]
+    set res [regexp $file [file channels]]
+    thread::transfer $tid $file
+    lappend res [regexp $file [file channels]]
+    lappend res [regexp $file [thread::send $tid {file channels}]]
+    thread::send $tid "close $file"
+    ThreadReap
+    set res
+} {1 0 1}
+
+test thread-17.2 {thread::transfer - target thread dying} {chanTransfer} {
+    ThreadReap
+    set tid [thread::create]
+    set file [open $dummy r]
+    thread::send -async $tid {after 3000 ; thread::release}
+    catch {thread::transfer $tid $file} msg
+    close $file
+    ThreadReap
+    set msg
+} {transfer failed: target thread died}
+
+test thread-17.3 {thread::transfer - clearing of fileevents} {chanTransfer} {
+    proc _HandleIt_ {} {
+        global gotEvents tid file
+        if {$gotEvents == 0} {
+            thread::transfer $tid $file
+            # From now on no events should be delivered anymore,
+            # restricting the end value to 1
+        }
+        incr gotEvents
+    }
+    ThreadReap
+    set tid [thread::create]
+    set file [open $dummy r]
+    set gotEvents 0
+    fileevent $file readable _HandleIt_
+    vwait gotEvents
+    thread::send $tid "close $file"
+    ThreadReap
+    set gotEvents
+} {1}
+
+test thread-17.4 {thread::transfer - file - readable?} {chanTransfer} {
+    ThreadReap
+    set tid [thread::create]
+    set file [open $dummy r]
+    set res [regexp $file [file channels]]
+    thread::transfer $tid $file
+    set res [string length [thread::send $tid "read -nonewline $file"]]
+    thread::send $tid "close $file"
+    ThreadReap
+    set res
+} [string length [::tcltest::viewFile dummyForTransfer]]
+
+test thread-17.5 {thread::transfer - file - closeable?} {chanTransfer} {
+    set tid [thread::create]
+    set file [open $dummy r]
+    set res [regexp $file [file channels]]
+    thread::transfer $tid $file
+    set res [thread::send $tid "close $file"]
+    ThreadReap
+    set res
+} {}
+
+test thread-17.6 {thread::transfer - socket - readable?} {chanTransfer} {
+    set tid [thread::create]
+    set lsock ""
+    proc accept {sock host port} {global lsock ; set lsock $sock}
+    set listener [socket -server accept 0]
+    set port [lindex [fconfigure $listener -sockname] 2]
+    set socket [socket localhost $port]
+    vwait lsock
+
+    thread::transfer $tid $socket
+
+    puts  $lsock hello
+    flush $lsock
+
+    set res [thread::send $tid [list gets $socket]]
+    thread::send $tid [list close $socket]
+
+    ThreadReap
+    close $listener
+    close $lsock
+
+    set res
+} {hello}
+
+test thread-17.7 {thread::transfer - socket - closeable?} {chanTransfer} {
+    set tid [thread::create]
+    set lsock ""
+    proc accept {sock host port} {global lsock ; set lsock $sock}
+    set listener [socket -server accept 0]
+    set port [lindex [fconfigure $listener -sockname] 2]
+    set socket [socket localhost $port]
+    vwait lsock
+
+    thread::transfer $tid $socket
+
+    set     res [thread::send $tid "regexp {$socket} \[file channels\]"]
+    lappend res [thread::send $tid [list close $socket]]
+    lappend res [thread::send $tid "regexp {$socket} \[file channels\]"]
+
+    ThreadReap
+    close $listener
+    close $lsock
+
+    set res
+} {1 {} 0}
+
+# We cannot test console channels, nor serials. Because we do not
+# really know if they are available, and under what names. But a pipe
+# channel, which uses the same type of code is something we can
+# do. Lucky us.
+
+test thread-17.8 {thread::transfer - pipe - readable?} {chanTransfer} {
+    set tid [thread::create]
+
+    set s [makeFile {
+	puts hello
+	flush stdout
+	exit
+    } pscript]
+    set pipe [open "|[info nameofexecutable] $s" r]
+
+    thread::transfer $tid $pipe
+
+    thread::send $tid [list set pipe $pipe]
+
+    set res [thread::send $tid {gets $pipe}]
+    thread::send  $tid {catch {close $pipe}}
+
+    ThreadReap
+    removeFile pscript
+
+    set res
+} {hello}
+
+# The difference between 9 and 10 is the location of the close
+# operation. For 9 it is the original thread, for 10 the other
+# thread. 10 currently fails. It seems to be some signal stuff.
+
+test thread-17.9 {thread::transfer - pipe - closable?} {chanTransfer} {
+    set tid [thread::create]
+
+    set s [makeFile {
+	fileevent stdin readable {if {[eof stdin]} {exit 0} ; gets stdin}
+	vwait forever
+	exit 0
+    } pscript]
+    set pipe [open "|[info nameofexecutable] $s" r+]
+    thread::send $tid [list set chan $pipe]
+
+    thread::transfer $tid $pipe
+    thread::send     $tid {thread::detach $chan}
+    thread::attach $pipe
+
+    set     res [regexp $pipe [file channels]]
+    lappend res [close  $pipe]
+    lappend res [regexp $pipe [file channels]]
+
+    ThreadReap
+    removeFile pscript
+
+    set res
+} {1 {} 0}
+
+test thread-17.10 {thread::transfer - pipe - closable?} {chanTransfer} {
+
+    set tid [thread::create]
+
+    set s [makeFile {
+	fileevent stdin readable {if {[eof stdin]} {exit 0} ; gets stdin}
+	vwait forever
+	exit 0
+    } pscript]
+    set pipe [open "|[info nameofexecutable] $s" r+]
+    thread::send $tid [list set chan $pipe]
+
+    thread::transfer $tid $pipe
+
+    set     res [thread::send $tid {regexp $chan [file channels]}]
+
+    if {[catch {
+	# This can fail on Linux, because there a thread cannot 'wait' on
+	# the children of a different thread (in the same process). This
+	# is for Linux < 2.4. For 2.4 it should be possible, but the
+	# language is cautionary, so it may still fail.
+
+	lappend res [thread::send $tid {close  $chan}]
+    }]} {
+	# Fake a result
+	lappend res {}
+    }
+
+    lappend res [thread::send $tid {regexp $chan [file channels]}]
+
+    ThreadReap
+    removeFile pscript
+
+    set res
+} {1 {} 0}
+
+test thread-17.11a {thread::transfer - pipe - readable event - no transfer} {
+    set tid [thread::create]
+
+    set s [makeFile {
+	after 5000 {exit 0}
+	fileevent stdin readable {
+	    if {[eof  stdin]} {exit 0}
+	    if {[gets stdin line] <0} return
+	    puts response
+	}
+	vwait forever
+	exit 0
+    } pscript] ;# {}
+
+    set pipe [open "|[info nameofexecutable] $s" r+]
+
+    fconfigure $pipe -blocking 0
+    fileevent  $pipe readable {read $pipe ; set cond ok}
+    after 3000 {set cond timeout}
+
+    puts $pipe tick ; flush $pipe
+
+    vwait ::cond
+    catch {close $pipe}
+    removeFile pscript
+
+    set cond
+} ok
+
+test thread-17.11b {thread::transfer - pipe - readable event - with transfer} {
+    set tid [thread::create]
+
+    set s [makeFile {
+	after 5000 {exit 0}
+	fileevent stdin readable {
+	    if {[eof stdin]} {exit 0}
+	    if {[gets stdin line] <0} return
+	    puts response
+	}
+	vwait forever
+	exit 0
+    } pscript] ;# {}
+    set pipe [open "|[info nameofexecutable] $s" r+]
+
+    thread::transfer $tid $pipe
+
+    thread::send $tid [list set chan $pipe]
+    set cond [thread::send $tid {
+	fconfigure $chan -blocking 0
+	fileevent  $chan readable {read $chan ; set cond ok}
+	after 3000 {set cond timeout}
+
+	puts $chan tick ; flush $chan
+
+	vwait ::cond
+	catch {close $pipe}
+	set cond
+    }]
+
+    ThreadReap
+    removeFile pscript
+
+    set cond
+} ok
+
+
+test thread-18.0 {thread::detach - args} {
+    set x [catch {thread::detach} msg]
+    list $x $msg
+} {1 {wrong # args: should be "thread::detach channel"}}
+
+
+test thread-18.1 {thread::detach - channel} {
+    global fd
+    set fd [open $dummy r]
+    set r1 [regexp $fd [file channels]]
+    thread::detach $fd
+    set r2 [regexp $fd [file channels]]
+    list $r1 $r2
+} {1 0}
+
+test thread-18.2 {thread::attach - in different thread} {
+    global fd
+    ThreadReap
+    set tid [thread::create]
+    thread::send $tid "thread::attach $fd"
+    set r1 [thread::send $tid "regexp $fd \[file channels\]"]
+    thread::send $tid "thread::detach $fd"
+    list $r1
+} {1}
+
+test thread-18.3 {thread::attach - in same thread} {
+    global fd
+    thread::attach $fd
+    set r1 [regexp $fd [file channels]]
+    close $fd
+    set r1
+} {1}
+
+test thread-19.0 {thread::mutex - args} {
+    set x [catch {thread::mutex} msg]
+    list $x $msg
+} {1 {wrong # args: should be "thread::mutex option ?args?"}}
+
+test thread-19.1 {thread::mutex - command options} {
+    set x [catch {thread::mutex dummy} msg]
+    list $x $msg
+} {1 {bad option "dummy": must be create, destroy, lock, or unlock}}
+
+test thread-19.2 {thread::mutex - more command options} {
+    set x [catch {thread::mutex create -dummy} msg]
+    list $x $msg
+} {1 {wrong # args: should be "thread::mutex create ?-recursive?"}}
+
+
+test thread-19.3 {thread::mutex - create exclusive mutex} {
+    set emutex [thread::mutex create]
+    set c [regexp {mid[0-9]+} $emutex]
+    thread::mutex destroy $emutex
+    set c
+} {1}
+
+test thread-19.4 {thread::mutex - create recursive mutex} {
+    set rmutex [thread::mutex create -recursive]
+    set c [regexp {rid[0-9]+} $rmutex]
+    thread::mutex destroy $rmutex
+    set c
+} {1}
+
+test thread-19.5 {thread::mutex - lock/unlock exclusive mutex} {
+    set emutex [thread::mutex create]
+    thread::mutex lock $emutex
+    thread::mutex unlock $emutex
+    thread::mutex destroy $emutex
+} {}
+
+test thread-19.6 {thread::mutex - deadlock exclusive mutex} {
+    set emutex [thread::mutex create]
+    thread::mutex lock $emutex
+    set x [catch {thread::mutex lock $emutex} msg]
+    thread::mutex unlock $emutex
+    thread::mutex destroy $emutex
+    list $x $msg
+} {1 {locking the same exclusive mutex twice from the same thread}}
+
+test thread-19.7 {thread::mutex - lock invalid mutex} {
+    set x [catch {thread::mutex lock dummy} msg]
+    list $x $msg
+} {1 {no such mutex "dummy"}}
+
+test thread-19.8 {thread::mutex - lock/unlock recursive mutex} {
+    set rmutex [thread::mutex create -recursive]
+    thread::mutex lock $rmutex
+    thread::mutex unlock $rmutex
+    thread::mutex destroy $rmutex
+} {}
+
+test thread-19.9 {thread::mutex - deadlock exclusive mutex} {
+    set rmutex [thread::mutex create -recursive]
+    thread::mutex lock $rmutex
+    set x [catch {thread::mutex lock $rmutex} msg]
+    thread::mutex unlock $rmutex
+    thread::mutex unlock $rmutex
+    thread::mutex destroy $rmutex
+    list $x $msg
+} {0 {}}
+
+test thread-19.10 {thread::mutex - destroy locked exclusive mutex} {
+    set emutex [thread::mutex create]
+    thread::mutex lock $emutex
+    set x [catch {thread::mutex destroy $emutex} msg]
+    thread::mutex unlock $emutex
+    thread::mutex destroy $emutex
+    list $x $msg
+} {1 {mutex is in use}}
+
+test thread-19.11 {thread::mutex - destroy locked recursive mutex} {
+    set rmutex [thread::mutex create -recursive]
+    thread::mutex lock $rmutex
+    set x [catch {thread::mutex destroy $rmutex} msg]
+    thread::mutex unlock $rmutex
+    thread::mutex destroy $rmutex
+    list $x $msg
+} {1 {mutex is in use}}
+
+test thread-19.12 {thread::mutex - lock exclusive between threads} {
+    ThreadReap
+    set tid [thread::create]
+    set emutex [thread::mutex create]
+    thread::send -async $tid [subst {
+        thread::mutex lock $emutex
+        after 2000
+        thread::mutex unlock $emutex
+    }]
+    update
+    after 10
+    set time1 [clock seconds]
+    thread::mutex lock $emutex
+    set time2 [clock seconds]
+    thread::mutex unlock $emutex
+    ThreadReap
+    thread::mutex destroy $emutex
+    expr {($time2 - $time1) >= 1}
+} {1}
+
+test thread-19.13 {thread::mutex - lock args} {
+    set x [catch {thread::mutex lock} msg]
+    list $x $msg
+} {1 {wrong # args: should be "thread::mutex lock mutexHandle"}}
+
+test thread-19.14 {thread::mutex - unlock args} {
+    set x [catch {thread::mutex unlock} msg]
+    list $x $msg
+} {1 {wrong # args: should be "thread::mutex unlock mutexHandle"}}
+
+test thread-19.15 {thread::mutex - destroy args} {
+    set x [catch {thread::mutex destroy} msg]
+    list $x $msg
+} {1 {wrong # args: should be "thread::mutex destroy mutexHandle"}}
+
+test thread-20.0 {thread::rwmutex - args} {
+    set x [catch {thread::rwmutex} msg]
+    list $x $msg
+} {1 {wrong # args: should be "thread::rwmutex option ?args?"}}
+
+test thread-20.1 {thread::rwmutex - command options} {
+    set x [catch {thread::rwmutex dummy} msg]
+    list $x $msg
+} {1 {bad option "dummy": must be create, destroy, rlock, wlock, or unlock}}
+
+test thread-20.2 {thread::rwmutex - more command options} {
+    set x [catch {thread::rwmutex create dummy} msg]
+    list $x $msg
+} {1 {wrong # args: should be "thread::rwmutex create"}}
+
+test thread-20.3 {thread::rwmutex - more command options} {
+    set x [catch {thread::rwmutex create dummy} msg]
+    list $x $msg
+} {1 {wrong # args: should be "thread::rwmutex create"}}
+
+test thread-20.4 {thread::rwmutex - mutex handle} {
+    set rwmutex [thread::rwmutex create]
+    set c [regexp {wid[0-9]+} $rwmutex]
+    thread::rwmutex destroy $rwmutex
+    set c
+} {1}
+
+test thread-20.5 {thread::rwmutex - bad handle} {
+    set x [catch {thread::rwmutex rlock dummy} msg]
+    list $x $msg
+} {1 {no such mutex "dummy"}}
+
+test thread-20.6 {thread::mutex - destroy readlocked mutex} {
+    set rwmutex [thread::rwmutex create]
+    thread::rwmutex rlock $rwmutex
+    set x [catch {thread::rwmutex destroy $rwmutex} msg]
+    thread::rwmutex unlock $rwmutex
+    thread::rwmutex destroy $rwmutex
+    list $x $msg
+} {1 {mutex is in use}}
+
+test thread-20.7 {thread::mutex - destroy writelocked mutex} {
+    set rwmutex [thread::rwmutex create]
+    thread::rwmutex wlock $rwmutex
+    set x [catch {thread::rwmutex destroy $rwmutex} msg]
+    thread::rwmutex unlock $rwmutex
+    thread::rwmutex destroy $rwmutex
+    list $x $msg
+} {1 {mutex is in use}}
+
+test thread-20.8 {thread::rwmutex - readlock mutex} {
+    ThreadReap
+    set tid [thread::create]
+    set rwmutex [thread::rwmutex create]
+    thread::send -async $tid [subst {
+        thread::rwmutex rlock $rwmutex
+        after 1000
+        thread::rwmutex unlock $rwmutex
+    }]
+    update
+    after 10
+    set time1 [clock seconds]
+    thread::rwmutex rlock $rwmutex
+    set time2 [clock seconds]
+    thread::rwmutex unlock $rwmutex
+    ThreadReap
+    thread::rwmutex destroy $rwmutex
+    expr {($time2 - $time1) < 1}
+} {1}
+
+test thread-20.9 {thread::rwmutex - writelock mutex} {
+    ThreadReap
+    set tid [thread::create]
+    set rwmutex [thread::rwmutex create]
+    thread::send -async $tid [subst {
+        thread::rwmutex wlock $rwmutex
+        after 2000
+        thread::rwmutex unlock $rwmutex
+    }]
+    update
+    after 10
+    set time1 [clock seconds]
+    thread::rwmutex rlock $rwmutex
+    set time2 [clock seconds]
+    thread::rwmutex unlock $rwmutex
+    ThreadReap
+    thread::rwmutex destroy $rwmutex
+    expr {($time2 - $time1) >= 1}
+} {1}
+
+test thread-20.10 {thread::rwmutex - readlock args} {
+    set x [catch {thread::rwmutex rlock} msg]
+    list $x $msg
+} {1 {wrong # args: should be "thread::rwmutex rlock mutexHandle"}}
+
+test thread-20.11 {thread::rwmutex - writelock args} {
+    set x [catch {thread::rwmutex wlock} msg]
+    list $x $msg
+} {1 {wrong # args: should be "thread::rwmutex wlock mutexHandle"}}
+
+test thread-20.12 {thread::rwmutex - unlock args} {
+    set x [catch {thread::rwmutex unlock} msg]
+    list $x $msg
+} {1 {wrong # args: should be "thread::rwmutex unlock mutexHandle"}}
+
+test thread-20.13 {thread::rwmutex - destroy args} {
+    set x [catch {thread::rwmutex destroy} msg]
+    list $x $msg
+} {1 {wrong # args: should be "thread::rwmutex destroy mutexHandle"}}
+
+test thread-20.14 {thread::mutex - write-lock write-locked mutex} {
+    set rwmutex [thread::rwmutex create]
+    thread::rwmutex wlock $rwmutex
+    set x [catch {thread::rwmutex wlock $rwmutex} msg]
+    thread::rwmutex unlock $rwmutex
+    thread::rwmutex destroy $rwmutex
+    list $x $msg
+} {1 {write-locking the same read-write mutex twice from the same thread}}
+
+test thread-20.15 {thread::mutex - read-lock write-locked mutex} {
+    set rwmutex [thread::rwmutex create]
+    thread::rwmutex wlock $rwmutex
+    set x [catch {thread::rwmutex rlock $rwmutex} msg]
+    thread::rwmutex unlock $rwmutex
+    thread::rwmutex destroy $rwmutex
+    list $x $msg
+} {1 {read-locking already write-locked mutex from the same thread}}
+
+test thread-20.16 {thread::mutex - unlock not locked mutex} {
+    set rwmutex [thread::rwmutex create]
+    set x [catch {thread::rwmutex unlock $rwmutex} msg]
+    thread::rwmutex destroy $rwmutex
+    list $x $msg
+} {1 {mutex is not locked}}
+
+test thread-21.0 {thread::cond - args} {
+    set x [catch {thread::cond} msg]
+    list $x $msg
+} {1 {wrong # args: should be "thread::cond option ?args?"}}
+
+test thread-21.1 {thread::cond - command options} {
+    set x [catch {thread::cond dummy} msg]
+    list $x $msg
+} {1 {bad option "dummy": must be create, destroy, notify, or wait}}
+
+test thread-21.2 {thread::cond - more command options} {
+    set x [catch {thread::cond create dummy} msg]
+    list $x $msg
+} {1 {wrong # args: should be "thread::cond create"}}
+
+test thread-21.3 {thread::cond - cond handle} {
+    set cond [thread::cond create]
+    set c [regexp {cid[0-9]+} $cond]
+    thread::cond destroy $cond
+    set c
+} {1}
+
+test thread-21.4 {thread::cond - destroy args} {
+    set x [catch {thread::cond destroy} msg]
+    list $x $msg
+} {1 {wrong # args: should be "thread::cond destroy condHandle ?args?"}}
+
+test thread-21.5 {thread::cond - destroy bad handle} {
+    set x [catch {thread::cond destroy dummy} msg]
+    list $x $msg
+} {1 {no such condition variable "dummy"}}
+
+test thread-21.6 {thread::cond - notify args} {
+    set x [catch {thread::cond notify} msg]
+    list $x $msg
+} {1 {wrong # args: should be "thread::cond notify condHandle ?args?"}}
+
+test thread-21.7 {thread::cond - wait args} {
+    set x [catch {thread::cond wait} msg]
+    list $x $msg
+} {1 {wrong # args: should be "thread::cond wait condHandle ?args?"}}
+
+test thread-21.8 {thread::cond - wait bad handle} {
+    set x [catch {thread::cond wait dummy} msg]
+    list $x $msg
+} {1 {no such condition variable "dummy"}}
+
+test thread-21.9 {thread::cond - wait no mutex} {
+    set cond [thread::cond create]
+    set x [catch {thread::cond wait $cond} msg]
+    thread::cond destroy $cond
+    list $x $msg
+} {1 {wrong # args: should be "thread::cond wait condHandle mutexHandle ?timeout?"}}
+
+test thread-21.10 {thread::cond - wait bad mutex} {
+    set cond [thread::cond create]
+    set x [catch {thread::cond wait $cond dummy} msg]
+    thread::cond destroy $cond
+    list $x $msg
+} {1 {no such mutex "dummy"}}
+
+test thread-21.11 {thread::cond - wait unlocked mutex} {
+    set cond [thread::cond create]
+    set emutex [thread::mutex create]
+    set x [catch {thread::cond wait $cond $emutex} msg]
+    thread::cond destroy $cond
+    thread::mutex destroy $emutex
+    list $x $msg
+} {1 {mutex not locked or wrong type}}
+
+test thread-21.12 {thread::cond - wait locked mutex from wrong thread} {
+    ThreadReap
+    set tid [thread::create]
+    set emutex [thread::mutex create]
+    set cond [thread::cond create]
+    thread::mutex lock $emutex
+    thread::send -async $tid [subst -nocommands {
+        set code [catch {thread::cond wait $cond $emutex 1000} result]
+    }]
+    update
+    after 20
+    thread::cond notify $cond
+    set c [thread::send $tid "set code"]
+    set r [thread::send $tid "set result"]
+    ThreadReap
+    thread::cond destroy $cond
+    thread::mutex unlock $emutex
+    thread::mutex destroy $emutex
+    list $c $r
+} {1 {mutex not locked or wrong type}}
+
+test thread-21.13 {thread::cond - wait recursive mutex} {
+    set cond [thread::cond create]
+    set rmutex [thread::mutex create -recursive]
+    set x [catch {thread::cond wait $cond $rmutex} msg]
+    thread::cond destroy $cond
+    thread::mutex destroy $rmutex
+    list $x $msg
+} {1 {mutex not locked or wrong type}}
+
+test thread-21.14 {thread::cond - wait readwrite mutex} {
+    set cond [thread::cond create]
+    set rwmutex [thread::rwmutex create]
+    set x [catch {thread::cond wait $cond $rwmutex} msg]
+    thread::cond destroy $cond
+    thread::rwmutex destroy $rwmutex
+    list $x $msg
+} {1 {mutex not locked or wrong type}}
+
+test thread-21.15 {thread::cond - regular timed wait} {
+    ThreadReap
+    set tid [thread::create]
+    set emutex [thread::mutex create]
+    set cond [thread::cond create]
+    thread::send -async $tid [subst {
+        thread::mutex lock $emutex
+        thread::cond wait $cond $emutex 2000
+        thread::mutex unlock $emutex
+        set test 1
+    }]
+    update
+    after 10
+    set time1 [clock seconds]
+    thread::cond notify $cond
+    set c [thread::send $tid "info exists test"]
+    set time2 [clock seconds]
+    ThreadReap
+    thread::mutex destroy $emutex
+    thread::cond destroy $cond
+    list $c [expr {($time2 - $time1) < 2}]
+} {1 1}
+
+test thread-21.16 {thread::cond - delete waited variable} {
+    ThreadReap
+    set tid [thread::create]
+    set emutex [thread::mutex create]
+    set cond [thread::cond create]
+    thread::send -async $tid [subst {
+        thread::mutex lock $emutex
+        thread::cond wait $cond $emutex 500
+        thread::mutex unlock $emutex
+    }]
+    update
+    after 10
+    set c1 [catch {thread::cond destroy $cond} r1]
+    thread::cond notify $cond
+    after 1000
+    set c2 [catch {thread::cond destroy $cond} r2]
+    ThreadReap
+    thread::mutex destroy $emutex
+    list $c1 $c2 $r1 $r2
+} {1 0 {condition variable is in use} {}}
+
+removeFile dummyForTransfer
+::tcltest::cleanupTests

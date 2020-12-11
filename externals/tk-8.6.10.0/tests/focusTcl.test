@@ -1,0 +1,485 @@
+# This file is a Tcl script to test out the features of the script
+# file focus.tcl, which includes the procedures tk_focusNext and
+# tk_focusPrev, among other things.  This file is organized in the
+# standard fashion for Tcl tests.
+#
+# Copyright (c) 1995 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+namespace import -force tcltest::test
+
+option add *takeFocus 1
+option add *highlightThickness 2
+. configure -takefocus 1 -highlightthickness 2
+
+proc setup1 w {
+    if {$w == "."} {
+        set w ""
+    }
+    foreach i {a b c d} {
+        destroy $w.$i
+        frame  $w.$i -width 200 -height 50 -bd 2 -relief raised
+        pack $w.$i
+    }
+    .b configure -width 0 -height 0
+    foreach i {x y z} {
+        destroy $w.b.$i
+        button $w.b.$i -text "Button $w.b.$i"
+        pack $w.b.$i -side left
+    }
+    if {![winfo ismapped $w.b.z]} {
+        tkwait visibility $w.b.z
+    }
+}
+
+proc cleanup1 w {
+    if {$w == "."} {
+        set w ""
+    }
+    foreach i {a b c d} {
+        destroy $w.$i
+    }
+    foreach i {x y z} {
+        destroy $w.b.$i
+    }
+}
+
+
+test focusTcl-1.1 {tk_focusNext procedure, no children} -body {
+    tk_focusNext .
+} -result {.}
+
+test focusTcl-1.2 {tk_focusNext procedure, basic tree traversal} -body {
+    setup1 .
+    tk_focusNext .
+} -cleanup {
+    cleanup1 .
+} -result {.a}
+test focusTcl-1.3 {tk_focusNext procedure, basic tree traversal} -body {
+    setup1 .
+    tk_focusNext .a
+} -cleanup {
+    cleanup1 .
+} -result {.b}
+test focusTcl-1.4 {tk_focusNext procedure, basic tree traversal} -body {
+    setup1 .
+    tk_focusNext .b
+} -cleanup {
+    cleanup1 .
+} -result {.b.x}
+test focusTcl-1.5 {tk_focusNext procedure, basic tree traversal} -body {
+    setup1 .
+    tk_focusNext .b.x
+} -cleanup {
+    cleanup1 .
+} -result {.b.y}
+test focusTcl-1.6 {tk_focusNext procedure, basic tree traversal} -body {
+    setup1 .
+    tk_focusNext .b.y
+} -cleanup {
+    cleanup1 .
+} -result {.b.z}
+test focusTcl-1.7 {tk_focusNext procedure, basic tree traversal} -body {
+    setup1 .
+    tk_focusNext .b.z
+} -cleanup {
+    cleanup1 .
+} -result {.c}
+test focusTcl-1.8 {tk_focusNext procedure, basic tree traversal} -body {
+    setup1 .
+    tk_focusNext .c
+} -cleanup {
+    cleanup1 .
+} -result {.d}
+test focusTcl-1.9 {tk_focusNext procedure, basic tree traversal} -body {
+    setup1 .
+    tk_focusNext .d
+} -cleanup {
+    cleanup1 .
+} -result {.}
+
+test focusTcl-1.10 {tk_focusNext procedure, basic tree traversal} -body {
+    setup1 .
+    foreach w {.b .b.x .b.y .c .d} {
+        $w configure -takefocus 0
+    }
+    tk_focusNext .a
+} -cleanup {
+    cleanup1 .
+} -result {.b.z}
+test focusTcl-1.11 {tk_focusNext procedure, basic tree traversal} -body {
+    setup1 .
+    foreach w {.b .b.x .b.y .c .d} {
+        $w configure -takefocus 0
+    }
+    tk_focusNext .b.z
+} -cleanup {
+    cleanup1 .
+} -result {.}
+
+test focusTcl-1.12 {tk_focusNext procedure, basic tree traversal} -body {
+    setup1 .
+    deleteWindows
+    setup1 .
+    update
+    . configure -takefocus 0
+    tk_focusNext .d
+} -cleanup {
+    . configure -takefocus 1
+    cleanup1 .
+} -result {.a}
+
+
+test focusTcl-2.1 {tk_focusNext procedure, toplevels} -setup {
+    deleteWindows
+} -body {
+    setup1 .
+    toplevel .t
+    wm geom .t +0+0
+    toplevel .t2
+    wm geom .t2 -0+0
+    raise .t .a
+
+    tk_focusNext .a
+} -cleanup {
+    deleteWindows
+} -result {.b}
+test focusTcl-2.2 {tk_focusNext procedure, toplevels} -setup {
+    deleteWindows
+} -body {
+    setup1 .
+    toplevel .t
+    wm geom .t +0+0
+    toplevel .t2
+    wm geom .t2 -0+0
+    raise .t .a
+
+    tk_focusNext .d
+} -cleanup {
+    deleteWindows
+} -result {.}
+test focusTcl-2.3 {tk_focusNext procedure, toplevels} -setup {
+    deleteWindows
+} -body {
+    setup1 .
+    toplevel .t
+    wm geom .t +0+0
+    toplevel .t2
+    wm geom .t2 -0+0
+    raise .t .a
+
+    tk_focusNext .t
+} -cleanup {
+    deleteWindows
+} -result {.t}
+test focusTcl-2.4 {tk_focusNext procedure, toplevels} -setup {
+    deleteWindows
+} -body {
+    setup1 .
+    toplevel .t
+    wm geom .t +0+0
+    toplevel .t2
+    wm geom .t2 -0+0
+    raise .t .a
+    setup1 .t
+    raise .t.b
+
+    tk_focusNext .t
+} -cleanup {
+    deleteWindows
+} -result {.t.a}
+test focusTcl-2.5 {tk_focusNext procedure, toplevels} -setup {
+    deleteWindows
+} -body {
+    setup1 .
+    toplevel .t
+    wm geom .t +0+0
+    toplevel .t2
+    wm geom .t2 -0+0
+    raise .t .a
+    setup1 .t
+    raise .t.b
+
+    tk_focusNext .t.b.z
+} -cleanup {
+    deleteWindows
+} -result {.t}
+
+
+test focusTcl-3.1 {tk_focusPrev procedure, no children} -body {
+    tk_focusPrev .
+} -result {.}
+
+test focusTcl-3.2 {tk_focusPrev procedure, basic tree traversal} -body {
+    setup1 .
+    tk_focusPrev .
+} -cleanup {
+    cleanup1 .
+} -result {.d}
+test focusTcl-3.3 {tk_focusPrev procedure, basic tree traversal} -body {
+    setup1 .
+    tk_focusPrev .d
+} -cleanup {
+    cleanup1 .
+} -result {.c}
+test focusTcl-3.4 {tk_focusPrev procedure, basic tree traversal} -body {
+    setup1 .
+    tk_focusPrev .c
+} -cleanup {
+    cleanup1 .
+} -result {.b.z}
+test focusTcl-3.5 {tk_focusPrev procedure, basic tree traversal} -body {
+    setup1 .
+    tk_focusPrev .b.z
+} -cleanup {
+    cleanup1 .
+} -result {.b.y}
+test focusTcl-3.6 {tk_focusPrev procedure, basic tree traversal} -body {
+    setup1 .
+    tk_focusPrev .b.y
+} -cleanup {
+    cleanup1 .
+} -result {.b.x}
+test focusTcl-3.7 {tk_focusPrev procedure, basic tree traversal} -body {
+    setup1 .
+    tk_focusPrev .b.x
+} -cleanup {
+    cleanup1 .
+} -result {.b}
+test focusTcl-3.8 {tk_focusPrev procedure, basic tree traversal} -body {
+    setup1 .
+    tk_focusPrev .b
+} -cleanup {
+    cleanup1 .
+} -result {.a}
+test focusTcl-3.9 {tk_focusPrev procedure, basic tree traversal} -body {
+    setup1 .
+    tk_focusPrev .a
+} -cleanup {
+    cleanup1 .
+} -result {.}
+
+
+deleteWindows
+setup1 .
+toplevel .t
+wm geom .t +0+0
+toplevel .t2
+wm geom .t2 -0+0
+raise .t .a
+test focusTcl-4.1 {tk_focusPrev procedure, toplevels} -setup {
+    deleteWindows
+} -body {
+    setup1 .
+    toplevel .t
+    wm geom .t +0+0
+    toplevel .t2
+    wm geom .t2 -0+0
+    raise .t .a
+
+    tk_focusPrev .
+} -cleanup {
+    deleteWindows
+} -result {.d}
+test focusTcl-4.2 {tk_focusPrev procedure, toplevels} -setup {
+    deleteWindows
+} -body {
+    setup1 .
+    toplevel .t
+    wm geom .t +0+0
+    toplevel .t2
+    wm geom .t2 -0+0
+    raise .t .a
+
+    tk_focusPrev .b
+} -cleanup {
+    deleteWindows
+} -result {.a}
+test focusTcl-4.3 {tk_focusPrev procedure, toplevels} -setup {
+    deleteWindows
+} -body {
+    setup1 .
+    toplevel .t
+    wm geom .t +0+0
+    toplevel .t2
+    wm geom .t2 -0+0
+    raise .t .a
+
+    tk_focusPrev .t
+} -cleanup {
+    deleteWindows
+} -result {.t}
+
+test focusTcl-4.4 {tk_focusPrev procedure, toplevels} -setup {
+    deleteWindows
+} -body {
+    setup1 .
+    toplevel .t
+    wm geom .t +0+0
+    toplevel .t2
+    wm geom .t2 -0+0
+    raise .t .a
+    setup1 .t
+    update
+    .t configure -takefocus 0
+    raise .t.b
+
+    tk_focusPrev .t
+} -cleanup {
+    deleteWindows
+} -result {.t.b.z}
+test focusTcl-4.5 {tk_focusPrev procedure, toplevels} -setup {
+    deleteWindows
+} -body {
+    setup1 .
+    toplevel .t
+    wm geom .t +0+0
+    toplevel .t2
+    wm geom .t2 -0+0
+    raise .t .a
+    setup1 .t
+    update
+    .t configure -takefocus 0
+    raise .t.b
+
+    tk_focusPrev .t.a
+} -cleanup {
+    deleteWindows
+} -result {.t.b.z}
+
+
+test focusTcl-5.1 {tkFocusOK procedure, -takefocus 0} -body {
+    setup1 .
+    .b.x configure -takefocus 0
+    tk_focusNext .b
+} -cleanup {
+    cleanup1 .
+} -result {.b.y}
+test focusTcl-5.2 {tkFocusOK procedure, -takefocus 1} -body {
+    setup1 .
+    pack forget .b
+    update
+    .b configure -takefocus ""
+    .b.y configure -takefocus ""
+    .b.z configure -takefocus ""
+    list [tk_focusNext .a] [tk_focusNext .b.x]
+} -cleanup {
+    cleanup1 .
+} -result {.c .c}
+test focusTcl-5.3 {tkFocusOK procedure, -takefocus procedure} -body {
+    proc t w {
+    if {$w == ".b.x"} {
+        return 1
+    } elseif {$w == ".b.y"} {
+        return ""
+    }
+    return 0
+    }
+
+    setup1 .
+    pack forget .b.y
+    update
+    .b configure -takefocus ""
+    foreach w {.b.x .b.y .b.z .c} {
+        $w configure -takefocus t
+    }
+    list [tk_focusNext .a] [tk_focusNext .b.x]
+} -cleanup {
+    cleanup1 .
+} -result {.b.x .d}
+test focusTcl-5.4 {tkFocusOK procedure, -takefocus ""} -body {
+    setup1 .
+    .b.x configure -takefocus ""
+    update
+    tk_focusNext .b
+} -cleanup {
+    cleanup1 .
+} -result {.b.x}
+test focusTcl-5.5 {tkFocusOK procedure, -takefocus "", not mapped} -body {
+    setup1 .
+    .b.x configure -takefocus ""
+    pack forget .b.x
+    update
+    tk_focusNext .b
+} -cleanup {
+    cleanup1 .
+} -result {.b.y}
+test focusTcl-5.6 {tkFocusOK procedure, -takefocus "", not mapped} -body {
+    setup1 .
+    foreach w {.b.x .b.y .b.z} {
+        $w configure -takefocus ""
+    }
+    pack forget .b
+    update
+    tk_focusNext .b
+} -cleanup {
+    cleanup1 .
+} -result {.c}
+test focusTcl-5.7 {tkFocusOK procedure, -takefocus "", not mapped} -body {
+    setup1 .
+    .b.y configure -takefocus 1
+    pack forget .b.y
+    update
+    tk_focusNext .b.x
+} -cleanup {
+    cleanup1 .
+} -result {.b.z}
+test focusTcl-5.8 {tkFocusOK procedure, -takefocus "", not mapped} -body {
+    proc always args {return 1}
+    setup1 .
+    .b.y configure -takefocus always
+    pack forget .b.y
+    update
+    tk_focusNext .b.x
+} -cleanup {
+    cleanup1 .
+} -result {.b.y}
+test focusTcl-5.9 {tkFocusOK procedure, -takefocus "", window disabled} -body {
+    setup1 .
+    foreach w {.b.x .b.y .b.z} {
+        $w configure -takefocus ""
+    }
+    update
+    .b.x configure -state disabled
+    tk_focusNext .b
+} -cleanup {
+    cleanup1 .
+} -result {.b.y}
+test focusTcl-5.10 {tkFocusOK procedure, -takefocus "", check for bindings} -body {
+    setup1 .
+    foreach w {.a .b .c .d} {
+        $w configure -takefocus ""
+    }
+    update
+    bind .a <Key> {foo}
+    list [tk_focusNext .] [tk_focusNext .a]
+} -cleanup {
+    cleanup1 .
+} -result {.a .b.x}
+test focusTcl-5.11 {tkFocusOK procedure, -takefocus "", check for bindings} -body {
+    setup1 .
+    foreach w {.a .b .c .d} {
+        $w configure -takefocus ""
+    }
+    update
+    bind Frame <Key> {foo}
+    list [tk_focusNext .] [tk_focusNext .a]
+} -cleanup {
+    cleanup1 .
+    bind Frame <Key> {}
+} -result {.a .b}
+
+
+. configure -takefocus 0 -highlightthickness 0
+option clear
+
+# cleanup
+cleanupTests
+return
+
+
+

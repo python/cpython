@@ -1,0 +1,283 @@
+2015-01-26  Don Porter  <dgp@users.sourceforge.net>
+
+	* configure.in:
+	* README:
+	* library/tdbcsqlite3.tcl:
+			Advanced version number to 1.0.3.
+	* configure:	autoconf-2.69
+
+2014-10-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* configure.in:
+	* README:
+	* library/tdbcsqlite3.tcl:
+			Advanced version number to 1.0.2.
+	* configure:    TEA update; autoconf-2.68
+
+	* doc/*.n: [TDBC Bug 00b792] OpenBSD friendly docs.
+
+2012-11-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* configure.in:
+	* README:
+	* library/tdbcsqlite3.tcl:
+			Advanced version number to 1.0.1.
+	* configure:    autoconf-2.68
+
+2012-11-14  Donal K. Fellows  <Donal.K.Fellows@man.ac.uk>
+
+	* configure.in:  Added configuration code to allow `make test` to
+	* Makefile.in:   run against an uninstalled 'tdbc' package.
+	* configure:     autoconf-2.68
+		*** UPGRADED THE AUTOCONF VERSION IN USE ***
+
+2012-11-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* configure.in:
+	* README:
+	* library/tdbcsqlite3.tcl:
+			Advanced version number to 1.0.0.
+	* configure:    autoconf-2.59
+
+2012-09-24  Harald Oehlmann  <oehhar@users.sf.net>
+
+	* tdbcsqlite3/win/makefile.vc: Get DOTVERSION from file configure.in.
+	* tdbcsqlite3/win/nmakehelp.c: Copied from tcl Checkin [8be494c5ee]:
+	Let "nmakehlp -V" start searching digits after the found match
+	(nijtmans).
+
+2012-08-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/nmakehlp.c: Add "-V<num>" option, in order to be able
+	to detect partial version numbers.
+
+2012-07-26  Jan Nijtmans  <jan.nijtmans@gmail.com>
+
+	* tclconfig/install-sh:  Update to latest TEA
+	* tclconfig/tcl.m4:
+	* configure:		autoconf-2.59
+
+2012-05-07  Kevin B. Kenny  <kennyb@acm.org>
+
+	* library/tdbcsqlite.tcl: Revised the syntax of the 'variable'
+	                          command to avoid tripping over the
+	                          Tcl core changes made for TIP 380.
+
+2011-09-19  Kevin B. Kenny <kennykb@acm.org>
+
+	* library/tdbcsqlite3.tcl: Reworked handling of the end of results
+	to avoid a bug where an empty result set at the end of the results
+	would crash in 'allrows' or 'foreach'. Thanks to Colin McCormack
+	for reporting the bug and providing a test case.
+	* tests/tdbcsqlite.tcl: Added a test case for the above bug,
+	observed to fail without the above change and pass with it.
+
+2011-07-19  Kevin B. Kenny <kennykb@acm.org>
+
+	* configure.in:
+	* README:
+	* library/tdbcsqlite3.tcl:
+			Advanced version number to 1.0b17.
+	* configure:    autoconf-2.59
+
+2011-07-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* configure.in: Update to latest TEA 3.9 revisions.
+	* Makefile.in:
+	* tclconfig/*:
+
+	* configure:    autoconf-2.59
+
+2011-04-12  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tdbcsqlite3.tcl ([resultset nextresults]):
+		Corrected a bug in the handling of multiple result
+		sets when one or more is empty.
+	* tests/tdbcsqlite3.test (tdbc::sqlite3-30.6):
+		Added a test case for the above bug.
+
+2011-02-20  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tests/tdbcsqlite3.test (tdbc::sqlite3-30.[45]):
+			Added tests for [foreach] and [allrows] against
+			multiple result sets.
+
+2011-01-26  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/tdbc_sqlite3.n:
+	Added empty comment at the start of each manpage because 'man'
+	interprets comments there as directives. Thanks to Konstantin
+	Kohmoutov for reporting and diagnosing this error.
+
+2010-09-03  Kevin B. Kenny  <kennykb@acm.org>
+
+	* Makefile.in:	Added a semicolon to the end of the -load option
+			on 'make test'. Without it, msys make changes all
+			the forward slashes in the -load option to backslashes.
+
+	* library/tdbcsqlite3.tcl:
+	* tests/tdbcsqlite3.test:
+			Changed 'keySequence' in 'foreignkeys' to
+			'ordinalPosition' for consistency with 'primarykeys'.
+
+	* configure.in:
+	* README:
+	* library/tdbcsqlite3.tcl:
+	* tclconfig/:	Upgraded the build to use TEA 3.9.
+			Advanced version number to 1.0b16.
+
+2010-06-19  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tdbcsqlite3.tcl:	Added 'primarykeys' and 'foreignkeys'
+	* tdbcsqlite3.test:	methods to the 'connection' object.  Added
+				test cases for these methods.
+
+2010-05-10  Kevin B. Kenny  <kennykb@acm.org>
+
+	* aclocal.m4:	Synchronized with 'tdbc'.
+	* configure.in: Advanced version to 1.0b15. Advanced TEA to 3.7.
+	* library/tdbcsqlite3.tcl:
+			Advanced version to 1.0b15.
+	* README:	Advanced version to 1.0b15.
+	* tclconfig/:	Advanced TEA to 3.7.
+	* configure:	autoconf-2.59
+
+2009-10-26  Kevin B. Kenny  <kennykb@acm.org>
+
+	* README:			Advanced version number to 1.0b14.
+	* configure.in:
+	* library/tdbcsqlite3.tcl:
+	* configure:			autoconf 2.59
+
+	* tests/tdbcsqlite3.test:	Added test cases (known bugs) for
+					duplicate column names in results.
+	* doc/tdbcsqlite3.n:		Added a BUGS section documenting the
+					known problem with duplicate column
+					names.
+
+2009-09-29  Kevin B. Kenny  <kennykb@acm.org>
+
+	* README:			Advanced version number to 1.0b13
+	* configure.in:
+	* library/tdbcsqlite3.tcl:
+	* configure:			autoconf-2.59
+
+
+2009-07-03  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tempTest.tcl (removed):	Deleted obsolete test harness;
+					this package has used proper tcltest
+					testing for months.
+
+	* README:			Advanced version number to 1.0b12
+	* configure.in:
+	* library/tdbcsqlite3.tcl:
+	* configure:			autoconf-2.59
+
+2009-05-29  Kevin B. Kenny  <kennykb@acm.org>
+
+	* README:			Advanced version number to 1.0b11
+	* configure.in:
+	* library/tdbcsqlite3.tcl:
+	* configure:			autoconf-2.59
+
+2009-04-19  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/tdbc_sqlite3.n: Added missing documentation for 'new'
+	                      constructors.
+
+2009-04-18  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tests/tdbcsqlite3.test: Changed the 'invalid path name' to a
+	                          path name that is more likely actually
+	                          to be invalid. Changed the tests for
+	                          inappropriate access to an array variable
+	                          not to expect failure.
+	* doc/tdbc_sqlite3.n: Made changes so that NROFF formatting matches
+	                      the Tcl standard.
+
+2008-04-16  Kevin B. Kenny  <kennykb@acm.org>
+
+	* README:			Advanced version number to 1.0b10
+	* configure.in:
+	* library/tdbcsqlite3.tcl:
+	* configure:			autoconf-2.59
+
+2008-02-16  Kevin B. Kenny  <kennykb@acm.org>
+
+	* README:			Advanced version number to 1.0b9
+	* configure.in:
+	* library/tdbcsqlite3.tcl:
+	* configure:			autoconf-2.59
+
+2008-01-31  Kevin B. Kenny  <kennykb@acm.org>
+
+	* README:			Advanced version number to 1.0b7
+	* configure.in:
+	* configure:			autoconf-2.59
+	* library/tdbcsqlite3.tcl:	Changed ::errorCode returns to
+					follow TDBC [try]-friendly convention
+					TDBC errorClass sqlState driver detail
+
+2008-01-05  Kevin B. Kenny  <kennykb@acm.org>
+
+	* README:			Advanced version number to 1.0b6
+	* configure.in:
+	* library/tdbcsqlite3.tcl:
+	* configure:			autoconf-2.59
+
+2008-01-04  Kevin B. Kenny  <kennykb@acm.org>
+
+	* Makefile.in:			Changes to make 'make dist' work
+	* README:			Advanced version number to 1.0b5
+	* configure.in:
+	* library/tdbcsqlite3.tcl:
+	* configure:			autoconf-2.59
+
+2008-12-30  Kevin B. Kenny  <kennykb@acm.org>
+
+	* README:			Advanced version number to 1.0b4
+	* configure.in:
+	* library/tdbcsqlite3.tcl:
+	* configure:			autoconf-2.59
+
+2008-12-08  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/tdbcsqlite3.n: Added a man page for the driver.
+	* library/tdbcsqlite3.tcl (configure):         Added a configurator for
+	* tests/tdbcsqlite3.test (tdbc::sqlite3-19.*): SQLite3 connections and
+	rudimentary test cases for connection configuration.
+
+2008-12-07  Kevin B. Kenny  <kennykb@acm.org>
+
+	* Makefile.in:
+	* aclocal.m4:
+	* configure.in:
+	* library/tdbcsqlite3.tcl:
+	* license.terms:
+	* pkgIndex.tcl.in:
+	* tclconfig/*:
+	* tests/all.tcl:
+	* tests/tdbcsqlite3.test:
+	Added infrastructure needed to make tdbc::sqlite3
+	a TEA-compliant module.  Advanced revision number to 1.0b1 in
+	preparation for release.
+
+2008-06-11  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tdbcsqlite3.tcl: Split [$resultset nextrow] into two
+	primitive methods: [$resultset nextlist] and [$resultset nextdict].
+
+2008-05-13  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tests/tdbcsqlite3.test: Added cleanup for the test for
+	failing to open a database, in case we actually open it successfully.
+
+2008-05-10  Kevin B. Kenny  <kennykb@acm.org>
+
+	* ChangeLog: Added a change log.
+	* library/tdbcsqlite3.tcl: Added the 'columns' and 'tables'
+	methods for schema introspection.
+	* tests/tdbcsqlite3.test: Removed some superfluous debugging print.
+	Renumbered tdbcsqlite3-9.9. Corrected the tests for column
+	types to match SQLite's view of the world.

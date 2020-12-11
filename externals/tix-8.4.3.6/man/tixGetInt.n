@@ -1,0 +1,49 @@
+'\"
+'\" $Id: tixGetInt.n,v 1.2 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH tixGetInt n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+.SH NAME
+tixGetInt - Get the integer value of a string.
+'\"
+'\"
+'\"
+.SH SYNOPSIS
+\fBtixGetInt\fI ?-nocomplain? ?-trunc? string\fR
+.BE
+.SH DESCRIPTION
+.PP
+'\"
+'\"
+The command \fBtixGetInt\fR converts any number into an integer
+number. By default, it will round the number to the nearest integer.
+When the \fB-trunc\fR option is specified, the number is truncated
+instead of rounded.
+.PP
+When the string is not a valid TCL numerical value and the
+\fB-nocomplain\fR option is specified, \fBtixGetInt\fR will return
+"0". Otherwise it will generate an error.
+'\"
+'\"
+'\"
+'\"
+.PP
+.SH KEYWORDS
+Tix(n)
+

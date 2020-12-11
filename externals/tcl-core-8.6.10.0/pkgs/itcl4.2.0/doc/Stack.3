@@ -1,0 +1,59 @@
+'\"
+'\" Copyright (c) 1993-1998  Lucent Technologies, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Itcl_InitStack 3 3.0 itcl "[incr\ Tcl] Library Procedures"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Itcl_InitStack, Itcl_DeleteStack, Itcl_PushStack, Itcl_PopStack, Itcl_PeekStack, Itcl_GetStackValue, Itcl_GetStackSize \- Manipulate an Itcl stack object.
+.SH SYNOPSIS
+.nf
+\fB#include <itcl.h>\fR
+
+int
+\fBItcl_InitStack\fR(\fIstack\fR)
+
+int
+\fBItcl_DeleteStack\fR(\fIstack\fR)
+
+int
+\fBItcl_PushStack\fR(\fIcdata, stack\fR)
+
+ClientData
+\fBItcl_PopStack\fR(\fIstack\fR)
+
+ClientData
+\fBItcl_PeekStack\fR(\fIstack\fR)
+
+ClientData
+\fBItcl_GetStackValue\fR(\fIstack, pos\fR)
+
+int
+\fBItcl_GetStackSize\fR(\fIstack\fR)
+.fi
+.SH ARGUMENTS
+.AP Itcl_Stack *stack in
+Stack info structure.
+.AP int pos in
+position in stack order from the top.
+.AP ClientData clientData in
+Arbitrary one-word value to save in the stack.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBItcl_InitStack\fR initializes a stack structure and \fBItcl_DeleteStack\fR
+deletes it. \fBItcl_PushStack\fR pushes the \fIcdata\fR value onto the stack.
+\fBItcl_PopStack\fR removes and returns the top most \fIcdata\fR value.
+\fBItcl_PeekStack\fR returns the top most value, but does not remove it.
+\fBItcl_GetStackValue\fR gets a value at some index within the stack.  Index
+"0" is the first value pushed onto the stack. \fBItcl_GetStackSize\fR
+returns the count of entries on the stack.
+
+.SH KEYWORDS
+stack
+

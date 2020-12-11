@@ -1,0 +1,107 @@
+package require tcltest
+namespace import ::tcltest::*
+tcltest::loadTestedCommands
+package require Thread
+
+set backends {gdbm lmdb}
+
+foreach b $backends {
+    testConstraint have_$b [expr {$b in [tsv::handlers]}]
+}
+
+foreach backend $backends {
+    set db "data"
+    file delete -force $db
+    set ::handle $backend:$db
+
+    proc setup {} {
+        tsv::array bind a $::handle
+    }
+    proc cleanup {} {
+        tsv::array unbind a
+    }
+
+    test tsv-$backend-1.0 {tsv::array isboud} \
+    -constraints have_$backend \
+    -setup {
+        setup
+    } -body {
+        tsv::array isbound a
+    } -cleanup {
+        cleanup
+    } -result {1}
+
+    test tsv-$backend-1.1 {tsv::array bind - empty} \
+    -constraints have_$backend \
+    -setup {
+        setup
+    } -body {
+        tsv::array names b
+    } -cleanup {
+       cleanup
+    } -result {}
+
+    test tsv-$backend-1.2 {tsv::set} \
+    -constraints have_$backend \
+    -setup {
+        setup
+    } -body {
+        tsv::set a Key Val
+    } -cleanup {
+        cleanup
+    } -result {Val}
+
+    test tsv-$backend-1.3 {tsv::get - previously set was persisted} \
+    -constraints have_$backend \
+    -setup {
+        setup
+    } -body {
+        tsv::get a Key
+    } -cleanup {
+        cleanup
+    } -result {Val}
+
+    test tsv-$backend-1.4 {tsv::array names - previously set was persisted} \
+    -constraints have_$backend \
+    -setup {
+        setup
+    } -body {
+        tsv::array names a
+    } -cleanup {
+        cleanup
+    } -result {Key}
+
+    test tsv-$backend-1.5 {tsv::exists - previously set exists} \
+    -constraints have_$backend \
+    -setup {
+        setup
+    } -body {
+        tsv::exists a Key
+    } -cleanup {
+        cleanup
+    } -result {1}
+
+    test tsv-$backend-1.6 {tsv::pop - get previously set} \
+    -constraints have_$backend \
+    -setup {
+        setup
+    } -body {
+        tsv::pop a Key
+    } -cleanup {
+        cleanup
+    } -result {Val}
+
+    test tsv-$backend-1.7 {tsv::exists - popped was removed} \
+    -constraints have_$backend \
+    -setup {
+        setup
+    } -body {
+        tsv::exists a Key
+    } -cleanup {
+        cleanup
+    } -result {0}
+
+    file delete -force $db
+}
+
+::tcltest::cleanupTests
