@@ -38,7 +38,7 @@ class Something(object):
     def smeth(a, b, c, d=None): pass
 
 
-class Typos(object):
+class Typos():
     autospect = None
     auto_spec = None
     set_spec = None
@@ -2182,7 +2182,7 @@ class MockTest(unittest.TestCase):
         self.assertEqual(obj.obj_with_bool_func.__bool__.call_count, 0)
 
     def test_misspelled_arguments(self):
-        class Foo(object):
+        class Foo():
             one = 'one'
         # patch, patch.object and create_autospec need to check for misspelled
         # arguments explicitly and throw a RuntimError if found.

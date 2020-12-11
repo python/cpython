@@ -1245,7 +1245,7 @@ def _importer(target):
 # _check_spec_arg_typos takes kwargs from commands like patch and checks that
 # they don't contain common misspellings of arguments related to autospeccing.
 def _check_spec_arg_typos(kwargs_to_check):
-    typos = ["autospect", "auto_spec", "set_spec"]
+    typos = ("autospect", "auto_spec", "set_spec")
     for typo in typos:
         if typo in kwargs_to_check:
             raise RuntimeError(
