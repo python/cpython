@@ -373,16 +373,16 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         self.loop = None
         asyncio.set_event_loop_policy(None)
 
-    def test_async_gen_operator_anext(self):
+    def test_async_gen_anext(self):
         async def gen():
             yield 1
             yield 2
         g = gen()
         async def consume():
             results = []
-            results.append(await operator.anext(g))
-            results.append(await operator.anext(g))
-            results.append(await operator.anext(g, 'buckle my shoe'))
+            results.append(await anext(g))
+            results.append(await anext(g))
+            results.append(await anext(g, 'buckle my shoe'))
             return results
         res = self.loop.run_until_complete(consume())
         self.assertEqual(res, [1, 2, 'buckle my shoe'])
@@ -395,7 +395,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             yield 2
         g = gen()
         async def consume():
-            return [i async for i in operator.aiter(g)]
+            return [i async for i in aiter(g)]
         res = self.loop.run_until_complete(consume())
         self.assertEqual(res, [1, 2])
 
@@ -409,10 +409,10 @@ class AsyncGenAsyncioTest(unittest.TestCase):
                 yield 2
         g = Gen()
         async def consume():
-            ait = operator.aiter(g)
+            ait = aiter(g)
             while True:
                 try:
-                    results.append(await operator.anext(ait))
+                    results.append(await anext(ait))
                 except StopAsyncIteration:
                     break
         self.loop.run_until_complete(consume())
@@ -425,7 +425,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             yield 3
         g = gen()
         async def foo():
-            return await operator.anext(g)
+            return await anext(g)
         async def consume():
             return [i async for i in aiter(foo, 3)]
         res = self.loop.run_until_complete(consume())
@@ -442,11 +442,11 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         res = self.loop.run_until_complete(consume())
         self.assertEqual(res, [1, 2])
 
-    def test_operator_anext_bad_args(self):
-        self._test_bad_args(operator.anext)
+    def test_anext_bad_args(self):
+        self._test_bad_args(anext)
 
     def test_operator_aiter_bad_args(self):
-        self._test_bad_args(operator.aiter)
+        self._test_bad_args(aiter)
 
     def _test_bad_args(self, afn):
         async def gen():

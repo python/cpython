@@ -1571,6 +1571,48 @@ Get an iterator from an object.  In the first form, the argument must\n\
 supply its own iterator, or be a sequence.\n\
 In the second form, the callable is called until it returns the sentinel.");
 
+/*[clinic input]
+anext as builtin_anext
+
+    aiterator: object
+    default: object = NULL
+    /
+
+Return the next item from the async iterator.
+[clinic start generated code]*/
+
+static PyObject *
+builtin_anext_impl(PyObject *module, PyObject *aiterator,
+                   PyObject *default_value)
+/*[clinic end generated code: output=f02c060c163a81fa input=699d11f4e38eca24]*/
+{
+    PyTypeObject *t;
+    PyObject *awaitable;
+
+    t = Py_TYPE(aiterator);
+    if (t->tp_as_async == NULL || t->tp_as_async->am_anext == NULL) {
+        PyErr_Format(PyExc_TypeError,
+            "'%.200s' object is not an async iterator",
+            t->tp_name);
+        return NULL;
+    }
+
+    awaitable = (*t->tp_as_async->am_anext)(aiterator);
+    if (default_value == NULL) {
+        // do we need to account for _NOT_PROVIDED i.e. if the default is None?
+        return awaitable;
+    }
+
+    return PyCallAnext_New(awaitable, default_value);
+}
+
+// TODO
+PyDoc_STRVAR(anext_doc,
+"anext(iterator[, default])\n\
+\n\
+Return the next item from the iterator. If default is given and the iterator\n\
+is exhausted, it is returned instead of raising StopIteration.");
+
 
 /*[clinic input]
 len as builtin_len
@@ -2853,6 +2895,7 @@ static PyMethodDef builtin_methods[] = {
     {"max",             (PyCFunction)(void(*)(void))builtin_max,        METH_VARARGS | METH_KEYWORDS, max_doc},
     {"min",             (PyCFunction)(void(*)(void))builtin_min,        METH_VARARGS | METH_KEYWORDS, min_doc},
     {"next",            (PyCFunction)(void(*)(void))builtin_next,       METH_FASTCALL, next_doc},
+    {"anext",            (PyCFunction)(void(*)(void))builtin_anext,       METH_FASTCALL, anext_doc},
     BUILTIN_OCT_METHODDEF
     BUILTIN_ORD_METHODDEF
     BUILTIN_POW_METHODDEF

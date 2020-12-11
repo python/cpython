@@ -483,7 +483,7 @@ def anext(async_iterator, default=_NOT_PROVIDED):
     if default is _NOT_PROVIDED:
         return anxt
 
-    return _anext_default(anxt, default)
+    return _anext_default(anxt.__await__(), default)
 
 
 class _anext_default:

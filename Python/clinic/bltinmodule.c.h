@@ -564,6 +564,41 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(builtin_anext__doc__,
+"anext($module, aiterator, default=<unrepresentable>, /)\n"
+"--\n"
+"\n"
+"Return the next item from the async iterator.");
+
+#define BUILTIN_ANEXT_METHODDEF    \
+    {"anext", (PyCFunction)(void(*)(void))builtin_anext, METH_FASTCALL, builtin_anext__doc__},
+
+static PyObject *
+builtin_anext_impl(PyObject *module, PyObject *aiterator,
+                   PyObject *default_value);
+
+static PyObject *
+builtin_anext(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *aiterator;
+    PyObject *default_value = NULL;
+
+    if (!_PyArg_CheckPositional("anext", nargs, 1, 2)) {
+        goto exit;
+    }
+    aiterator = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    default_value = args[1];
+skip_optional:
+    return_value = builtin_anext_impl(module, aiterator, default_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(builtin_len__doc__,
 "len($module, obj, /)\n"
 "--\n"
@@ -864,4 +899,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=64b83ddea2a46bc5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b5248d88ee495198 input=a9049054013a1b77]*/
