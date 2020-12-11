@@ -633,8 +633,8 @@ class NonCallableMock(Base):
         if not self._mock_unsafe:
             if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')):
                 raise AttributeError(
-                    f"{name} is not a valid assertion. Use a spec "
-                    f"for the mock if {name} is meant to be an attribute.")
+                    f"{name!r} is not a valid assertion. Use a spec "
+                    f"for the mock if {name!r} is meant to be an attribute.")
 
         result = self._mock_children.get(name)
         if result is _deleted:
@@ -654,8 +654,8 @@ class NonCallableMock(Base):
 
         elif isinstance(result, _SpecState):
             result = create_autospec(
-                result.spec, spec_set=result.spec_set, instance=result.instance,
-                _parent=result.parent, _name=result.name
+                result.spec, result.spec_set, result.instance,
+                result.parent, result.name
             )
             self._mock_children[name]  = result
 
@@ -1249,7 +1249,7 @@ def _check_spec_arg_typos(kwargs_to_check):
     for typo in typos:
         if typo in kwargs_to_check:
             raise RuntimeError(
-                f"{typo} might be a typo; use unsafe=True if this is intended"
+                f"{typo!r} might be a typo; use unsafe=True if this is intended"
             )
 
 
@@ -1260,7 +1260,7 @@ class _patch(object):
 
     def __init__(
             self, getter, attribute, new, spec, create,
-            spec_set, autospec, new_callable, unsafe, kwargs
+            spec_set, autospec, new_callable, kwargs, *, unsafe=False
         ):
         if new_callable is not None:
             if new is not DEFAULT:
@@ -1291,7 +1291,7 @@ class _patch(object):
         patcher = _patch(
             self.getter, self.attribute, self.new, self.spec,
             self.create, self.spec_set,
-            self.autospec, self.new_callable, False, self.kwargs
+            self.autospec, self.new_callable, self.kwargs
         )
         patcher.attribute_name = self.attribute_name
         patcher.additional_patchers = [
@@ -1582,7 +1582,7 @@ def _get_target(target):
 def _patch_object(
         target, attribute, new=DEFAULT, spec=None,
         create=False, spec_set=None, autospec=None,
-        new_callable=None, unsafe=False, **kwargs
+        new_callable=None, *, unsafe=False, **kwargs
     ):
     """
     patch the named member (`attribute`) on an object (`target`) with a mock
@@ -1604,7 +1604,7 @@ def _patch_object(
     getter = lambda: target
     return _patch(
         getter, attribute, new, spec, create,
-        spec_set, autospec, new_callable, unsafe, kwargs
+        spec_set, autospec, new_callable, kwargs, unsafe=unsafe
     )
 
 
@@ -1644,13 +1644,13 @@ def _patch_multiple(target, spec=None, create=False, spec_set=None,
     attribute, new = items[0]
     patcher = _patch(
         getter, attribute, new, spec, create, spec_set,
-        autospec, new_callable, False, {}
+        autospec, new_callable, {}
     )
     patcher.attribute_name = attribute
     for attribute, new in items[1:]:
         this_patcher = _patch(
             getter, attribute, new, spec, create, spec_set,
-            autospec, new_callable, False, {}
+            autospec, new_callable, {}
         )
         this_patcher.attribute_name = attribute
         patcher.additional_patchers.append(this_patcher)
@@ -1659,7 +1659,7 @@ def _patch_multiple(target, spec=None, create=False, spec_set=None,
 
 def patch(
         target, new=DEFAULT, spec=None, create=False,
-        spec_set=None, autospec=None, new_callable=None, unsafe=False, **kwargs
+        spec_set=None, autospec=None, new_callable=None, *, unsafe=False, **kwargs
     ):
     """
     `patch` acts as a function decorator, class decorator or a context
@@ -1735,7 +1735,7 @@ def patch(
     getter, attribute = _get_target(target)
     return _patch(
         getter, attribute, new, spec, create,
-        spec_set, autospec, new_callable, unsafe, kwargs
+        spec_set, autospec, new_callable, kwargs, unsafe=unsafe
     )
 
 
@@ -2584,8 +2584,8 @@ class _Call(tuple):
 call = _Call(from_kall=False)
 
 
-def create_autospec(spec, spec_set=False, instance=False, unsafe=False,
-                    _parent=None, _name=None, **kwargs):
+def create_autospec(spec, spec_set=False, instance=False, _parent=None,
+                    _name=None, *, unsafe=False, **kwargs):
     """Create a mock object using another object as a spec. Attributes on the
     mock will use the corresponding attribute on the `spec` object as their
     spec.
