@@ -2225,7 +2225,7 @@ class MockTest(unittest.TestCase):
         m = create_autospec(Foo, set_spec=True, unsafe=True)
         with patch.multiple(
             f'{__name__}.Typos', autospect=True, set_spec=True, auto_spec=True):
-                pass
+            pass
 
 
 if __name__ == '__main__':
