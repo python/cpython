@@ -446,17 +446,6 @@ class CallableTests(BaseTestCase):
             type(c)()
 
     def test_callable_wrong_forms(self):
-        ## These no longer raise TypeError since Callable no longer type checks
-        ## args. That responsiblity is deferred to static type checkers
-        ## to simplify implementation of PEP 612 ParamSpec.
-        # with self.assertRaises(TypeError):
-        #     Callable[[...], int]
-        # with self.assertRaises(TypeError):
-        #     Callable[(), int]
-        # with self.assertRaises(TypeError):
-        #     Callable[[()], int]
-        # with self.assertRaises(TypeError):
-        #     Callable[[int, 1], 2]
         with self.assertRaises(TypeError):
             Callable[int]
 
@@ -1862,11 +1851,6 @@ class GenericTests(BaseTestCase):
         class MyTup(Tuple[T, T]): ...
         self.assertIs(MyTup[int]().__class__, MyTup)
         self.assertEqual(MyTup[int]().__orig_class__, MyTup[int])
-        # This isn't valid as Callable isn't a valid base class.
-        ## class MyCall(Callable[..., T]):
-        ##     def __call__(self): return None
-        ## self.assertIs(MyCall[T]().__class__, MyCall)
-        ## self.assertEqual(MyCall[T]().__orig_class__, MyCall[T])
         class MyDict(typing.Dict[T, T]): ...
         self.assertIs(MyDict[int]().__class__, MyDict)
         self.assertEqual(MyDict[int]().__orig_class__, MyDict[int])
