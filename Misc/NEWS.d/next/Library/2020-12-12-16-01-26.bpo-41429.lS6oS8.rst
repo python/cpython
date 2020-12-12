@@ -1,0 +1,1 @@
+:func:`fnmatch.filter` now supports taking multiple patterns as a tuple via its *pattern* parameter. Patch by Andre Delfino.
