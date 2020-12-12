@@ -573,6 +573,10 @@ New Features
 * The :c:func:`PyType_GetSlot` function can accept static types.
   (Contributed by Hai Shi and Petr Viktorin in :issue:`41073`.)
 
+* The :c:func:`PyState_AddModule` function can't accept a ``NULL`` module now
+  to avoid the segmentation fault.
+  (Contributed by Hai Shi in :issue:`42625`.)
+
 
 Porting to Python 3.10
 ----------------------

@@ -1,0 +1,2 @@
+The :c:func:`PyState_AddModule` function can't accept a ``NULL`` module now to
+avoid the segmentation fault.

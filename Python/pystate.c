@@ -732,6 +732,10 @@ _PyState_AddModule(PyThreadState *tstate, PyObject* module, struct PyModuleDef* 
 int
 PyState_AddModule(PyObject* module, struct PyModuleDef* def)
 {
+    if (!module) {
+        Py_FatalError("module is NULL");
+        return -1;
+    }
     if (!def) {
         Py_FatalError("module definition is NULL");
         return -1;
