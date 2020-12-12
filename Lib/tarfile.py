@@ -215,7 +215,7 @@ def itn(n, digits=8, format=DEFAULT_FORMAT):
             s.insert(1, n & 0o377)
             n >>= 8
     else:
-        raise ValueError("overflow in number field processing %r as %r" % (original_n, format))
+        raise ValueError("overflow in number field")
 
     return s
 
