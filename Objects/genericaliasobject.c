@@ -429,8 +429,8 @@ ga_getattro(PyObject *self, PyObject *name)
 static PyObject *
 ga_richcompare(PyObject *a, PyObject *b, int op)
 {
-    if (!Py_IS_TYPE(a, &Py_GenericAliasType) ||
-        !Py_IS_TYPE(b, &Py_GenericAliasType) ||
+    if (!PyObject_TypeCheck(a, &Py_GenericAliasType) ||
+        !PyObject_TypeCheck(b, &Py_GenericAliasType) ||
         (op != Py_EQ && op != Py_NE))
     {
         Py_RETURN_NOTIMPLEMENTED;
@@ -564,6 +564,29 @@ static PyGetSetDef ga_properties[] = {
     {0}
 };
 
+/* A helper function to create GenericAlias' args tuple and set its attributes.
+ * Returns 1 on success, 0 on failure. 
+ */
+static inline int
+setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {
+    if (!PyTuple_Check(args)) {
+        args = PyTuple_Pack(1, args);
+        if (args == NULL) {
+            return 0;
+        }
+    }
+    else {
+        Py_INCREF(args);
+    }
+
+    Py_INCREF(origin);
+    alias->origin = origin;
+    alias->args = args;
+    alias->parameters = NULL;
+    alias->weakreflist = NULL;
+    return 1;
+}
+
 static PyObject *
 ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -575,7 +598,15 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     PyObject *origin = PyTuple_GET_ITEM(args, 0);
     PyObject *arguments = PyTuple_GET_ITEM(args, 1);
-    return Py_GenericAlias(origin, arguments);
+    gaobject *self = (gaobject *)type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
+    }
+    if (!setup_ga(self, origin, arguments)) {
+        type->tp_free((PyObject *)self);
+        return NULL;
+    }
+    return (PyObject *)self;
 }
 
 static PyNumberMethods ga_as_number = {
@@ -600,7 +631,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_hash = ga_hash,
     .tp_call = ga_call,
     .tp_getattro = ga_getattro,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
     .tp_traverse = ga_traverse,
     .tp_richcompare = ga_richcompare,
     .tp_weaklistoffset = offsetof(gaobject, weakreflist),
@@ -615,27 +646,14 @@ PyTypeObject Py_GenericAliasType = {
 PyObject *
 Py_GenericAlias(PyObject *origin, PyObject *args)
 {
-    if (!PyTuple_Check(args)) {
-        args = PyTuple_Pack(1, args);
-        if (args == NULL) {
-            return NULL;
-        }
-    }
-    else {
-        Py_INCREF(args);
-    }
-
     gaobject *alias = PyObject_GC_New(gaobject, &Py_GenericAliasType);
     if (alias == NULL) {
-        Py_DECREF(args);
         return NULL;
     }
-
-    Py_INCREF(origin);
-    alias->origin = origin;
-    alias->args = args;
-    alias->parameters = NULL;
-    alias->weakreflist = NULL;
+    if (!setup_ga(alias, origin, args)) {
+        PyObject_GC_Del((PyObject *)alias);
+        return NULL;
+    }
     _PyObject_GC_TRACK(alias);
     return (PyObject *)alias;
 }
