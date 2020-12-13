@@ -11108,10 +11108,10 @@ else
       main() {
         pthread_attr_t attr;
         pthread_t id;
-        if (pthread_attr_init(&attr)) exit(-1);
-        if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) exit(-1);
-        if (pthread_create(&id, &attr, foo, NULL)) exit(-1);
-        exit(0);
+        if (pthread_attr_init(&attr)) return (-1);
+        if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) return (-1);
+        if (pthread_create(&id, &attr, foo, NULL)) return (-1);
+        return (0);
       }
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
@@ -15130,7 +15130,7 @@ else
   int main()
   {
 	/* Success: exit code 0 */
-        exit((((wchar_t) -1) < ((wchar_t) 0)) ? 0 : 1);
+        return ((((wchar_t) -1) < ((wchar_t) 0)) ? 0 : 1);
   }
 
 _ACEOF
@@ -15511,7 +15511,7 @@ else
 
 int main()
 {
-	exit(((-1)>>3 == -1) ? 0 : 1);
+	return (((-1)>>3 == -1) ? 0 : 1);
 }
 
 _ACEOF
@@ -15981,6 +15981,7 @@ else
 /* end confdefs.h.  */
 
 #include <poll.h>
+#include <unistd.h>
 
 int main()
 {
