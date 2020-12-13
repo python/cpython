@@ -76,9 +76,12 @@ patterns.
 .. function:: filter(names, pattern)
 
    Return the subset of the list of *names* that match *pattern*.  *pattern*
-   can be a tuple of patterns.  It is the same as
+   can be a string or a tuple of strings.  It is the same as
    ``[n for n in names if fnmatch(n, pattern)]``, but implemented more efficiently.
 
+   .. versionchanged:: 3.10
+      Before 3.10, the *pattern* parameter could only be a string. Starting with
+      3.10 it can also be a tuple of strings.
 
 .. function:: translate(pattern)
 

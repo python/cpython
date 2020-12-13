@@ -153,9 +153,11 @@ class FilterTestCase(unittest.TestCase):
                          [b'Python', b'Perl'])
 
     def test_filter_multipattern(self):
-        self.assertEqual(filter(['Python', 'Ruby', 'Perl', 'Tcl'], ('P*', 'T*')),
+        self.assertEqual(filter(['Python', 'Ruby', 'Perl', 'Tcl'],
+                         ('P*', 'T*')),
                          ['Python', 'Perl', 'Tcl'])
-        self.assertEqual(filter([b'Python', b'Ruby', b'Perl', b'Tcl'], (b'P*', b'T*')),
+        self.assertEqual(filter([b'Python', b'Ruby', b'Perl', b'Tcl'],
+                         (b'P*', b'T*')),
                          [b'Python', b'Perl', b'Tcl'])
 
     def test_mix_bytes_str(self):
