@@ -1455,33 +1455,6 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
     return f;
 }
 
-/* Wrapper to fopen().
-
-   The file descriptor is created non-inheritable.
-
-   If interrupted by a signal, fail with EINTR. */
-FILE*
-_Py_fopen(const char *pathname, const char *mode)
-{
-    PyObject *pathname_obj = PyUnicode_DecodeFSDefault(pathname);
-    if (pathname_obj == NULL) {
-        return NULL;
-    }
-    if (PySys_Audit("open", "Osi", pathname_obj, mode, 0) < 0) {
-        Py_DECREF(pathname_obj);
-        return NULL;
-    }
-    Py_DECREF(pathname_obj);
-
-    FILE *f = fopen(pathname, mode);
-    if (f == NULL)
-        return NULL;
-    if (make_non_inheritable(fileno(f)) < 0) {
-        fclose(f);
-        return NULL;
-    }
-    return f;
-}
 
 /* Open a file. Call _wfopen() on Windows, or encode the path to the filesystem
    encoding and call fopen() otherwise.
