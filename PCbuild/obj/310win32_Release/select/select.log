@@ -1,0 +1,5 @@
+﻿  selectmodule.c
+     Creating library C:\cpython\PCbuild\win32\select.lib and object C:\cpython\PCbuild\win32\select.exp
+  Generating code
+  Finished generating code
+  select.vcxproj -> C:\cpython\PCbuild\win32\select.pyd

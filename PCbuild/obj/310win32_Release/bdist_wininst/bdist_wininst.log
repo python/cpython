@@ -1,0 +1,11 @@
+﻿  extract.c
+  install.c
+  adler32.c
+  crc32.c
+  inffast.c
+  inflate.c
+  inftrees.c
+  zutil.c
+  Generating code
+  Finished generating code
+  bdist_wininst.vcxproj -> C:\cpython\lib\distutils\command\wininst-16.0.exe

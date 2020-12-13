@@ -1,0 +1,5 @@
+﻿  python3dll.c
+     Creating library C:\cpython\PCbuild\win32\python3.lib and object C:\cpython\PCbuild\win32\python3.exp
+  Generating code
+  Finished generating code
+  python3dll.vcxproj -> C:\cpython\PCbuild\win32\python3.dll

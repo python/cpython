@@ -1,0 +1,5 @@
+﻿  winsound.c
+     Creating library C:\cpython\PCbuild\arm64\winsound.lib and object C:\cpython\PCbuild\arm64\winsound.exp
+  Generating code
+  Finished generating code
+  winsound.vcxproj -> C:\cpython\PCbuild\arm64\winsound.pyd

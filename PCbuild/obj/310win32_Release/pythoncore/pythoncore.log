@@ -1,6 +1,9 @@
-﻿  Killing any running python.exe instances...
+﻿C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Microsoft\VC\v160\Microsoft.CppClean.targets(77,5): warning : The process cannot access the file 'c:\cpython\pcbuild\obj\310win32_release\pythoncore\_codecs_hk.obj' because it is being used by another process.
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Microsoft\VC\v160\Microsoft.CppClean.targets(77,5): warning : The process cannot access the file 'c:\cpython\pcbuild\obj\310win32_release\pythoncore\compile.obj' because it is being used by another process.
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Microsoft\VC\v160\Microsoft.CppClean.targets(77,5): warning : The process cannot access the file 'c:\cpython\pcbuild\obj\310win32_release\pythoncore\pystate.obj' because it is being used by another process.
+  Killing any running python.exe instances...
   Getting build info from git
-  Building heads/master:827331f2a3 master
+  Building heads/master-dirty:e099008e9e master
   _abc.c
   _bisectmodule.c
   blake2module.c

@@ -1,0 +1,8 @@
+﻿  _zoneinfo.c
+C:\cpython\Modules\_zoneinfo.c(1222,9): warning C4068: unknown pragma 'GCC'
+C:\cpython\Modules\_zoneinfo.c(1223,9): warning C4068: unknown pragma 'GCC'
+C:\cpython\Modules\_zoneinfo.c(1225,9): warning C4068: unknown pragma 'GCC'
+     Creating library C:\cpython\PCbuild\arm64\_zoneinfo.lib and object C:\cpython\PCbuild\arm64\_zoneinfo.exp
+  Generating code
+  Finished generating code
+  _zoneinfo.vcxproj -> C:\cpython\PCbuild\arm64\_zoneinfo.pyd
