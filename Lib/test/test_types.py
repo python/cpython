@@ -717,14 +717,16 @@ class TypesTests(unittest.TestCase):
         a = list[int]
         b = list[str]
         c = dict[float, str]
+        class SubClass(types.GenericAlias): ...
+        d = SubClass(list, float)
         # equivalence with typing.Union
-        self.assertEqual(a | b | c, typing.Union[a, b, c])
+        self.assertEqual(a | b | c | d, typing.Union[a, b, c, d])
         # de-duplicate
-        self.assertEqual(a | c | b | b | a | c, a | b | c)
+        self.assertEqual(a | c | b | b | a | c | d | d, a | b | c | d)
         # order shouldn't matter
-        self.assertEqual(a | b, b | a)
-        self.assertEqual(repr(a | b | c),
-                         "list[int] | list[str] | dict[float, str]")
+        self.assertEqual(a | b | d, b | a | d)
+        self.assertEqual(repr(a | b | c | d),
+                         "list[int] | list[str] | dict[float, str] | list[float]")
 
         class BadType(type):
             def __eq__(self, other):

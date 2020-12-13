@@ -120,6 +120,16 @@ __all__ = [
 # namespace, but excluded from __all__ because they might stomp on
 # legitimate imports of those modules.
 
+
+def _type_convert(arg):
+    """For converting None to type(None), and strings to ForwardRef."""
+    if arg is None:
+        return type(None)
+    if isinstance(arg, str):
+        return ForwardRef(arg)
+    return arg
+
+
 def _type_check(arg, msg, is_argument=True):
     """Check that the argument is a type, and return it (internal helper).
 
@@ -136,10 +146,7 @@ def _type_check(arg, msg, is_argument=True):
     if is_argument:
         invalid_generic_forms = invalid_generic_forms + (ClassVar, Final)
 
-    if arg is None:
-        return type(None)
-    if isinstance(arg, str):
-        return ForwardRef(arg)
+    arg = _type_convert(arg)
     if (isinstance(arg, _GenericAlias) and
             arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
@@ -900,13 +907,13 @@ class _CallableType(_SpecialGenericAlias, _root=True):
             raise TypeError("Callable must be used as "
                             "Callable[[arg, ...], result].")
         args, result = params
-        if args is Ellipsis:
-            params = (Ellipsis, result)
-        else:
-            if not isinstance(args, list):
-                raise TypeError(f"Callable[args, result]: args must be a list."
-                                f" Got {args}")
+        # This relaxes what args can be on purpose to allow things like
+        # PEP 612 ParamSpec.  Responsibility for whether a user is using
+        # Callable[...] properly is deferred to static type checkers.
+        if isinstance(args, list):
             params = (tuple(args), result)
+        else:
+            params = (args, result)
         return self.__getitem_inner__(params)
 
     @_tp_cache
@@ -916,8 +923,9 @@ class _CallableType(_SpecialGenericAlias, _root=True):
         result = _type_check(result, msg)
         if args is Ellipsis:
             return self.copy_with((_TypingEllipsis, result))
-        msg = "Callable[[arg, ...], result]: each arg must be a type."
-        args = tuple(_type_check(arg, msg) for arg in args)
+        if not isinstance(args, tuple):
+            args = (args,)
+        args = tuple(_type_convert(arg) for arg in args)
         params = args + (result,)
         return self.copy_with(params)
 
