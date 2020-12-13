@@ -14562,16 +14562,16 @@ invalid_kwarg_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_kwarg[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression '='"));
-        Token * _literal;
         expr_ty a;
+        Token * b;
         if (
             (a = expression_rule(p))  // expression
             &&
-            (_literal = _PyPegen_expect_token(p, 22))  // token='='
+            (b = _PyPegen_expect_token(p, 22))  // token='='
         )
         {
             D(fprintf(stderr, "%*c+ invalid_kwarg[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression '='"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "expression cannot contain assignment, perhaps you meant \"==\"?" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( b , "expression cannot contain assignment, perhaps you meant \"==\"?" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
