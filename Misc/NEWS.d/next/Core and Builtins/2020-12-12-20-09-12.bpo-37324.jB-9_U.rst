@@ -1,0 +1,2 @@
+Remove deprecated aliases to :ref:`collections-abstract-base-classes` from
+the :mod:`collections` module.
