@@ -1281,7 +1281,7 @@ be used directly:
 
 becomes::
 
-   output=check_output("dmesg | grep hda", shell=True)
+   output = check_output("dmesg | grep hda", shell=True)
 
 
 Replacing :func:`os.system`
