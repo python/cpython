@@ -62,7 +62,6 @@ class BaseTest(unittest.TestCase):
                      Iterable, Iterator,
                      Reversible,
                      Container, Collection,
-                     Callable,
                      Mailbox, _PartialFile,
                      ContextVar, Token,
                      Field,
@@ -306,6 +305,63 @@ class BaseTest(unittest.TestCase):
         # bpo-42576
         with self.assertRaises(TypeError):
             GenericAlias(bad=float)
+
+    def test_subclassing_types_genericalias(self):
+        class SubClass(GenericAlias): ...
+        alias = SubClass(list, int)
+        class Bad(GenericAlias):
+            def __new__(cls, *args, **kwargs):
+                super().__new__(cls, *args, **kwargs)
+
+        self.assertEqual(alias, list[int])
+        with self.assertRaises(TypeError):
+            Bad(list, int, bad=int)
+
+    def test_abc_callable(self):
+        # A separate test is needed for Callable since it uses a subclass of
+        # GenericAlias.
+        alias = Callable[[int, str], float]
+        with self.subTest("Testing subscription"):
+            self.assertIs(alias.__origin__, Callable)
+            self.assertEqual(alias.__args__, (int, str, float))
+            self.assertEqual(alias.__parameters__, ())
+
+        with self.subTest("Testing instance checks"):
+            self.assertIsInstance(alias, GenericAlias)
+
+        with self.subTest("Testing weakref"):
+            self.assertEqual(ref(alias)(), alias)
+
+        with self.subTest("Testing pickling"):
+            s = pickle.dumps(alias)
+            loaded = pickle.loads(s)
+            self.assertEqual(alias.__origin__, loaded.__origin__)
+            self.assertEqual(alias.__args__, loaded.__args__)
+            self.assertEqual(alias.__parameters__, loaded.__parameters__)
+
+        with self.subTest("Testing TypeVar substitution"):
+            C1 = Callable[[int, T], T]
+            C2 = Callable[[K, T], V]
+            C3 = Callable[..., T]
+            self.assertEqual(C1[str], Callable[[int, str], str])
+            self.assertEqual(C2[int, float, str], Callable[[int, float], str])
+            self.assertEqual(C3[int], Callable[..., int])
+
+        with self.subTest("Testing type erasure"):
+            class C1(Callable):
+                def __call__(self):
+                    return None
+            a = C1[[int], T]
+            self.assertIs(a().__class__, C1)
+            self.assertEqual(a().__orig_class__, C1[[int], T])
+
+        # bpo-42195
+        with self.subTest("Testing collections.abc.Callable's consistency "
+                          "with typing.Callable"):
+            c1 = typing.Callable[[int, str], dict]
+            c2 = Callable[[int, str], dict]
+            self.assertEqual(c1.__args__, c2.__args__)
+            self.assertEqual(hash(c1.__args__), hash(c2.__args__))
 
 
 if __name__ == "__main__":
