@@ -1,0 +1,5 @@
+﻿  _asynciomodule.c
+     Creating library C:\cpython\PCbuild\arm64\_asyncio.lib and object C:\cpython\PCbuild\arm64\_asyncio.exp
+  Generating code
+  Finished generating code
+  _asyncio.vcxproj -> C:\cpython\PCbuild\arm64\_asyncio.pyd

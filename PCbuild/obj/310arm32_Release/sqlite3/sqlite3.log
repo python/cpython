@@ -1,0 +1,5 @@
+﻿  sqlite3.c
+     Creating library C:\cpython\PCbuild\arm32\sqlite3.lib and object C:\cpython\PCbuild\arm32\sqlite3.exp
+  Generating code
+  Finished generating code
+  sqlite3.vcxproj -> C:\cpython\PCbuild\arm32\sqlite3.dll

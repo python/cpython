@@ -1,0 +1,5 @@
+﻿  overlapped.c
+     Creating library C:\cpython\PCbuild\arm32\_overlapped.lib and object C:\cpython\PCbuild\arm32\_overlapped.exp
+  Generating code
+  Finished generating code
+  _overlapped.vcxproj -> C:\cpython\PCbuild\arm32\_overlapped.pyd

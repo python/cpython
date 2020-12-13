@@ -1,0 +1,6 @@
+﻿  multiprocessing.c
+  semaphore.c
+     Creating library C:\cpython\PCbuild\arm32\_multiprocessing.lib and object C:\cpython\PCbuild\arm32\_multiprocessing.exp
+  Generating code
+  Finished generating code
+  _multiprocessing.vcxproj -> C:\cpython\PCbuild\arm32\_multiprocessing.pyd

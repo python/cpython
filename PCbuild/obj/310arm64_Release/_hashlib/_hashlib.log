@@ -1,0 +1,2 @@
+﻿  _hashopenssl.c
+C:\cpython\Modules\_hashopenssl.c(22,10): fatal error C1083: Cannot open include file: 'openssl/evp.h': No such file or directory

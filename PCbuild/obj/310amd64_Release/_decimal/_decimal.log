@@ -1,0 +1,21 @@
+﻿  Performing Custom Build Tools
+   Assembling: C:\cpython\Modules\_decimal\libmpdec\vcdiv64.asm
+  _decimal.c
+  basearith.c
+  constants.c
+  context.c
+  convolute.c
+  crt.c
+  difradix2.c
+  fnt.c
+  fourstep.c
+  io.c
+  mpalloc.c
+  mpdecimal.c
+  numbertheory.c
+  sixstep.c
+  transpose.c
+     Creating library C:\cpython\PCbuild\amd64\_decimal.lib and object C:\cpython\PCbuild\amd64\_decimal.exp
+  Generating code
+  Finished generating code
+  _decimal.vcxproj -> C:\cpython\PCbuild\amd64\_decimal.pyd
