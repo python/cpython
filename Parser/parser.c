@@ -14562,12 +14562,12 @@ invalid_kwarg_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_kwarg[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression '='"));
-        Token * _literal;
-        expr_ty a;
+        Token * a;
+        expr_ty expression_var;
         if (
-            (a = expression_rule(p))  // expression
+            (expression_var = expression_rule(p))  // expression
             &&
-            (_literal = _PyPegen_expect_token(p, 22))  // token='='
+            (a = _PyPegen_expect_token(p, 22))  // token='='
         )
         {
             D(fprintf(stderr, "%*c+ invalid_kwarg[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression '='"));
