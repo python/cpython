@@ -25,7 +25,7 @@ dd {
 /* -- ruler -- */
 div.hr_blue { 
   height:  3px; 
-  background:#ffffff url("/images/hr_blue.png") repeat-x; }
+  background:#ffffff url("../images/hr_blue.png") repeat-x; }
 div.hr_blue hr { display:none; }
 
 /* release styles */
@@ -38,7 +38,7 @@ div.hr_blue hr { display:none; }
 ul  { 
  margin:     0px 4px 16px 16px;
  padding:    0px;
- list-style: url("/images/li-blue.png"); 
+ list-style: url("../images/li-blue.png"); 
 }
 ul li { 
  margin-bottom: 10px;

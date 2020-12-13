@@ -9,7 +9,7 @@
 <book lang="en" id="userman" xreflabel="bzip2 Manual">
 
  <bookinfo>
-  <title>bzip2 and libbzip2, version 1.0.6</title>
+  <title>bzip2 and libbzip2, version &bz-version;</title>
   <subtitle>A program and library for data compression</subtitle>
   <copyright>
    <year>&bz-lifespan;</year>
@@ -27,7 +27,7 @@
    </author>
   </authorgroup>
 
-  <legalnotice>
+  <legalnotice id="legal">
 
   <para>This program, <computeroutput>bzip2</computeroutput>, the
   associated library <computeroutput>libbzip2</computeroutput>, and
@@ -139,7 +139,7 @@ else.</para>
 
  <listitem><para><computeroutput>bzip2</computeroutput>,
   <computeroutput>bunzip2</computeroutput> - a block-sorting file
-  compressor, v1.0.6</para></listitem>
+  compressor, v&bz-version;</para></listitem>
 
  <listitem><para><computeroutput>bzcat</computeroutput> -
    decompresses files to stdout</para></listitem>
@@ -160,11 +160,20 @@ else.</para>
  <listitem><para><computeroutput>bzip2</computeroutput> [
   -cdfkqstvzVL123456789 ] [ filenames ...  ]</para></listitem>
 
+ <listitem><para><computeroutput>bzip2</computeroutput> [
+  -h | --help ]</para></listitem>
+
  <listitem><para><computeroutput>bunzip2</computeroutput> [
   -fkvsVL ] [ filenames ...  ]</para></listitem>
 
+ <listitem><para><computeroutput>bunzip2</computeroutput> [
+  -h | --help ]</para></listitem>
+
  <listitem><para><computeroutput>bzcat</computeroutput> [ -s ] [
   filenames ...  ]</para></listitem>
+
+ <listitem><para><computeroutput>bzcat</computeroutput> [
+  -h | --help ]</para></listitem>
 
  <listitem><para><computeroutput>bzip2recover</computeroutput>
   filename</para></listitem>
@@ -395,6 +404,10 @@ consistency error (eg, bug) which caused
  <listitem><para>Suppress non-essential warning messages.
   Messages pertaining to I/O errors and other critical events
   will not be suppressed.</para></listitem>
+ </varlistentry>
+
+ <varlistentry><term><computeroutput>-h --help</computeroutput></term>
+ <listitem><para>Print a help message and exit.</para></listitem>
  </varlistentry>
 
  <varlistentry>
@@ -653,7 +666,7 @@ unsigned 64-bit integer.</para>
 <title>AUTHOR</title>
 
 <para>Julian Seward,
-<computeroutput>&bz-email;</computeroutput></para>
+<computeroutput>&bz-author;</computeroutput></para>
 
 <para>The ideas embodied in
 <computeroutput>bzip2</computeroutput> are due to (at least) the
@@ -1570,6 +1583,8 @@ BZ_MEM_ERROR
 BZ_STREAM_END
   if the logical end of the data stream was detected and all
   output in has been consumed, eg s-->avail_out > 0
+BZ_SEQUENCE_ERROR
+  if called after an earlier call already returned BZ_STREAM_END
 BZ_OK
   otherwise
 </programlisting>
@@ -2487,12 +2502,12 @@ message:</para>
 <blockquote>
 <para>bzip2/libbzip2: internal error number N.</para>
 <para>This is a bug in bzip2/libbzip2, &bz-version; of &bz-date;.
-Please report it to me at: &bz-email;.  If this happened
+Please report it to: &bz-email;.  If this happened
 when you were using some program which uses libbzip2 as a
 component, you should also report this bug to the author(s)
 of that program.  Please make an effort to report this bug;
 timely and accurate bug reports eventually lead to higher
-quality software.  Thanks.  Julian Seward, &bz-date;.
+quality software.  Thanks.
 </para></blockquote>
 
 <para>where <computeroutput>N</computeroutput> is some error code
@@ -2537,7 +2552,7 @@ recovered from.</para>
 <para>Everything related to Windows has been contributed by
 Yoshioka Tsuneo
 (<computeroutput>tsuneo@rr.iij4u.or.jp</computeroutput>), so
-you should send your queries to him (but perhaps Cc: me,
+you should send your queries to him (but please Cc:
 <computeroutput>&bz-email;</computeroutput>).</para>
 
 <para>My vague understanding of what to do is: using Visual C++

@@ -8,8 +8,8 @@
    This file is part of bzip2/libbzip2, a program and library for
    lossless, block-sorting data compression.
 
-   bzip2/libbzip2 version 1.0.6 of 6 September 2010
-   Copyright (C) 1996-2010 Julian Seward <jseward@bzip.org>
+   bzip2/libbzip2 version 1.0.8 of 13 July 2019
+   Copyright (C) 1996-2019 Julian Seward <jseward@acm.org>
 
    Please read the WARNING, DISCLAIMER and PATENTS sections in the 
    README file.
@@ -285,7 +285,7 @@ Int32 BZ2_decompress ( DState* s )
 
       /*--- Now the selectors ---*/
       GET_BITS(BZ_X_SELECTOR_1, nGroups, 3);
-      if (nGroups < 2 || nGroups > 6) RETURN(BZ_DATA_ERROR);
+      if (nGroups < 2 || nGroups > BZ_N_GROUPS) RETURN(BZ_DATA_ERROR);
       GET_BITS(BZ_X_SELECTOR_2, nSelectors, 15);
       if (nSelectors < 1) RETURN(BZ_DATA_ERROR);
       for (i = 0; i < nSelectors; i++) {
@@ -296,8 +296,14 @@ Int32 BZ2_decompress ( DState* s )
             j++;
             if (j >= nGroups) RETURN(BZ_DATA_ERROR);
          }
-         s->selectorMtf[i] = j;
+         /* Having more than BZ_MAX_SELECTORS doesn't make much sense
+            since they will never be used, but some implementations might
+            "round up" the number of selectors, so just ignore those. */
+         if (i < BZ_MAX_SELECTORS)
+           s->selectorMtf[i] = j;
       }
+      if (nSelectors > BZ_MAX_SELECTORS)
+        nSelectors = BZ_MAX_SELECTORS;
 
       /*--- Undo the MTF values for the selectors. ---*/
       {

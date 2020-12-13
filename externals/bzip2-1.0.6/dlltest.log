@@ -1,0 +1,23 @@
+﻿cl : command line warning D9035: option 'Gm' has been deprecated and will be removed in a future release
+cl : command line warning D9007: '/Gm' requires '/Zi or /ZI'; option ignored
+  dlltest.c
+C:\cpython\externals\bzip2-1.0.6\dlltest.c(36,60): warning C4113: 'FARPROC' differs in parameter lists from 'const char *(__stdcall *)(void)'
+C:\cpython\externals\bzip2-1.0.6\dlltest.c(36,60): warning C4047: '=': 'const char *(__stdcall *)(void)' differs in levels of indirection from 'FARPROC'
+C:\cpython\externals\bzip2-1.0.6\dlltest.c(37,48): warning C4113: 'FARPROC' differs in parameter lists from 'BZFILE *(__stdcall *)(const char *,const char *)'
+C:\cpython\externals\bzip2-1.0.6\dlltest.c(37,48): warning C4047: '=': 'BZFILE *(__stdcall *)(const char *,const char *)' differs in levels of indirection from 'FARPROC'
+C:\cpython\externals\bzip2-1.0.6\dlltest.c(38,50): warning C4113: 'FARPROC' differs in parameter lists from 'BZFILE *(__stdcall *)(int,const char *)'
+C:\cpython\externals\bzip2-1.0.6\dlltest.c(38,50): warning C4047: '=': 'BZFILE *(__stdcall *)(int,const char *)' differs in levels of indirection from 'FARPROC'
+C:\cpython\externals\bzip2-1.0.6\dlltest.c(39,48): warning C4113: 'FARPROC' differs in parameter lists from 'int (__stdcall *)(BZFILE *,void *,int)'
+C:\cpython\externals\bzip2-1.0.6\dlltest.c(40,50): warning C4113: 'FARPROC' differs in parameter lists from 'int (__stdcall *)(BZFILE *,void *,int)'
+C:\cpython\externals\bzip2-1.0.6\dlltest.c(41,50): warning C4113: 'FARPROC' differs in parameter lists from 'int (__stdcall *)(BZFILE *)'
+C:\cpython\externals\bzip2-1.0.6\dlltest.c(42,50): warning C4113: 'FARPROC' differs in parameter lists from 'void (__stdcall *)(BZFILE *)'
+C:\cpython\externals\bzip2-1.0.6\dlltest.c(43,50): warning C4113: 'FARPROC' differs in parameter lists from 'const char *(__stdcall *)(BZFILE *,int *)'
+C:\cpython\externals\bzip2-1.0.6\dlltest.c(43,50): warning C4047: '=': 'const char *(__stdcall *)(BZFILE *,int *)' differs in levels of indirection from 'FARPROC'
+C:\cpython\externals\bzip2-1.0.6\dlltest.c(124,24): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\cpython\externals\bzip2-1.0.6\dlltest.c(132,53): warning C4996: 'fileno': The POSIX name for this item is deprecated. Instead, use the ISO C and C++ conformant name: _fileno. See online help for details.
+C:\cpython\externals\bzip2-1.0.6\dlltest.c(147,24): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\cpython\externals\bzip2-1.0.6\dlltest.c(159,53): warning C4996: 'fileno': The POSIX name for this item is deprecated. Instead, use the ISO C and C++ conformant name: _fileno. See online help for details.
+C:\cpython\externals\bzip2-1.0.6\dlltest.c(61): warning C4715: 'BZ2DLLFreeLibrary': not all control paths return a value
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Microsoft\VC\v160\Microsoft.CppBuild.targets(1341,5): warning MSB8012: TargetPath(C:\cpython\externals\bzip2-1.0.6\dlltest_\dlltest.exe) does not match the Linker's OutputFile property value (C:\cpython\externals\bzip2-1.0.6\minibz2.exe). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Link.OutputFile).
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Microsoft\VC\v160\Microsoft.CppBuild.targets(1343,5): warning MSB8012: TargetName(dlltest) does not match the Linker's OutputFile property value (minibz2). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Link.OutputFile).
+  dlltest.vcxproj -> C:\cpython\externals\bzip2-1.0.6\dlltest_\dlltest.exe

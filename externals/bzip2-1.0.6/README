@@ -6,8 +6,8 @@ This version is fully compatible with the previous public releases.
 This file is part of bzip2/libbzip2, a program and library for
 lossless, block-sorting data compression.
 
-bzip2/libbzip2 version 1.0.6 of 6 September 2010
-Copyright (C) 1996-2010 Julian Seward <jseward@bzip.org>
+bzip2/libbzip2 version 1.0.8 of 13 July 2019
+Copyright (C) 1996-2019 Julian Seward <jseward@acm.org>
 
 Please read the WARNING, DISCLAIMER and PATENTS sections in this file.
 
@@ -73,7 +73,7 @@ HOW TO BUILD -- Windows 95, NT, DOS, Mac, etc.
 
 It's difficult for me to support compilation on all these platforms.
 My approach is to collect binaries for these platforms, and put them
-on the master web site (http://www.bzip.org).  Look there.  However
+on the master web site (https://sourceware.org/bzip2/).  Look there.  However
 (FWIW), bzip2-1.0.X is very standard ANSI C and should compile
 unmodified with MS Visual C.  If you have difficulties building, you
 might want to read README.COMPILATION.PROBLEMS.
@@ -161,43 +161,22 @@ WHAT'S NEW IN 0.9.5 ?
    * Many small improvements in file and flag handling.
    * A Y2K statement.
 
-WHAT'S NEW IN 1.0.0 ?
+WHAT'S NEW IN 1.0.x ?
 
    See the CHANGES file.
 
-WHAT'S NEW IN 1.0.2 ?
-
-   See the CHANGES file.
-
-WHAT'S NEW IN 1.0.3 ?
-
-   See the CHANGES file.
-
-WHAT'S NEW IN 1.0.4 ?
-
-   See the CHANGES file.
-
-WHAT'S NEW IN 1.0.5 ?
-
-   See the CHANGES file.
-
-WHAT'S NEW IN 1.0.6 ?
-
-   See the CHANGES file.
-
-
-I hope you find bzip2 useful.  Feel free to contact me at
-   jseward@bzip.org
+I hope you find bzip2 useful.  Feel free to contact the developers at
+   bzip2-devel@sourceware.org
 if you have any suggestions or queries.  Many people mailed me with
 comments, suggestions and patches after the releases of bzip-0.15,
 bzip-0.21, and bzip2 versions 0.1pl2, 0.9.0, 0.9.5, 1.0.0, 1.0.1,
 1.0.2 and 1.0.3, and the changes in bzip2 are largely a result of this
 feedback.  I thank you for your comments.
 
-bzip2's "home" is http://www.bzip.org/
+bzip2's "home" is https://sourceware.org/bzip2/
 
 Julian Seward
-jseward@bzip.org
+jseward@acm.org
 Cambridge, UK.
 
 18     July 1996 (version 0.15)
@@ -213,3 +192,5 @@ Cambridge, UK.
 20 December 2006 (bzip2, version 1.0.4)
 10 December 2007 (bzip2, version 1.0.5)
  6     Sept 2010 (bzip2, version 1.0.6)
+27     June 2019 (bzip2, version 1.0.7)
+13     July 2019 (bzip2, version 1.0.8)

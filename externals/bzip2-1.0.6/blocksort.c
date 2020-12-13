@@ -8,8 +8,8 @@
    This file is part of bzip2/libbzip2, a program and library for
    lossless, block-sorting data compression.
 
-   bzip2/libbzip2 version 1.0.6 of 6 September 2010
-   Copyright (C) 1996-2010 Julian Seward <jseward@bzip.org>
+   bzip2/libbzip2 version 1.0.8 of 13 July 2019
+   Copyright (C) 1996-2019 Julian Seward <jseward@acm.org>
 
    Please read the WARNING, DISCLAIMER and PATENTS sections in the 
    README file.
@@ -202,9 +202,9 @@ void fallbackQSort3 ( UInt32* fmap,
       bhtab [ 0 .. 2+(nblock/32) ] destroyed
 */
 
-#define       SET_BH(zz)  bhtab[(zz) >> 5] |= (1 << ((zz) & 31))
-#define     CLEAR_BH(zz)  bhtab[(zz) >> 5] &= ~(1 << ((zz) & 31))
-#define     ISSET_BH(zz)  (bhtab[(zz) >> 5] & (1 << ((zz) & 31)))
+#define       SET_BH(zz)  bhtab[(zz) >> 5] |= ((UInt32)1 << ((zz) & 31))
+#define     CLEAR_BH(zz)  bhtab[(zz) >> 5] &= ~((UInt32)1 << ((zz) & 31))
+#define     ISSET_BH(zz)  (bhtab[(zz) >> 5] & ((UInt32)1 << ((zz) & 31)))
 #define      WORD_BH(zz)  bhtab[(zz) >> 5]
 #define UNALIGNED_BH(zz)  ((zz) & 0x01f)
 

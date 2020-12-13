@@ -7,11 +7,14 @@
 <xsl:import href="http://docbook.sourceforge.net/release/xsl/current/html/docbook.xsl"/>
 <xsl:import href="bz-common.xsl"/>
 
-<!-- use 8859-1 encoding -->
-<xsl:output method="html" encoding="ISO-8859-1" indent="yes"/>
+<!-- use UTF-8 encoding -->
+<xsl:output method="html" encoding="UTF-8" indent="yes"/>
 
-<!-- we include the css directly when generating one large file -->
-<xsl:template name="user.head.content">  
+<!-- we include the css as link and directly when generating one large file -->
+<xsl:template name="user.head.content">
+  <xsl:text disable-output-escaping="yes">
+<![CDATA[<]]>link rel="stylesheet" type="text/css" href="bzip.css" />
+  </xsl:text>
   <style type="text/css" media="screen">
     <xsl:text>&bz-css;</xsl:text>
   </style>

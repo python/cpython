@@ -4,7 +4,7 @@
 @rem rebuild.
 @rem This is only meant as a convenience for developing CPython
 @rem and using it outside of that context is ill-advised.
-@echo Running Release x64 interpreter compiled by Fernando O on Dec 10 2020 at 11:04:10
+@echo Running Release x64 interpreter of CPython 3.10.0a2+ compiled by Fernando O, made on Dec 11 2020, at hour 03:52:34...
 @setlocal
 @set PYTHONHOME=C:\cpython\
 

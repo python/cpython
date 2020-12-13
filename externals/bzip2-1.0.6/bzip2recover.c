@@ -7,8 +7,8 @@
    This file is part of bzip2/libbzip2, a program and library for
    lossless, block-sorting data compression.
 
-   bzip2/libbzip2 version 1.0.6 of 6 September 2010
-   Copyright (C) 1996-2010 Julian Seward <jseward@bzip.org>
+   bzip2/libbzip2 version 1.0.8 of 13 July 2019
+   Copyright (C) 1996-2019 Julian Seward <jseward@acm.org>
 
    Please read the WARNING, DISCLAIMER and PATENTS sections in the 
    README file.
@@ -309,11 +309,12 @@ Int32 main ( Int32 argc, Char** argv )
    UInt32      buffHi, buffLo, blockCRC;
    Char*       p;
 
-   strcpy ( progName, argv[0] );
+   strncpy ( progName, argv[0], BZ_MAX_FILENAME-1);
+   progName[BZ_MAX_FILENAME-1]='\0';
    inFileName[0] = outFileName[0] = 0;
 
    fprintf ( stderr, 
-             "bzip2recover 1.0.6: extracts blocks from damaged .bz2 files.\n" );
+             "bzip2recover 1.0.8: extracts blocks from damaged .bz2 files.\n" );
 
    if (argc != 2) {
       fprintf ( stderr, "%s: usage is `%s damaged_file_name'.\n",
@@ -457,6 +458,7 @@ Int32 main ( Int32 argc, Char** argv )
             bsPutUChar ( bsWr, 0x50 ); bsPutUChar ( bsWr, 0x90 );
             bsPutUInt32 ( bsWr, blockCRC );
             bsClose ( bsWr );
+            outFile = NULL;
          }
          if (wrBlock >= rbCtr) break;
          wrBlock++;

@@ -2,8 +2,8 @@
  This file is part of bzip2/libbzip2, a program and library for
  lossless, block-sorting data compression.
 
- bzip2/libbzip2 version 1.0.6 of 6 September 2010
- Copyright (C) 1996-2010 Julian Seward <jseward@bzip.org>
+ bzip2/libbzip2 version 1.0.8 of 13 July 2019
+ Copyright (C) 1996-2019 Julian Seward <jseward@acm.org>
 
  Please read the WARNING, DISCLAIMER and PATENTS sections in the 
  README file.
@@ -325,3 +325,32 @@ Security fix only.  Fixes CERT-FI 20469 as it applies to bzip2.
   Izdebski.
 
 * Make the documentation build on Ubuntu 10.04
+
+1.0.7 (27 Jun 19)
+~~~~~~~~~~~~~~~~~
+
+* Fix undefined behavior in the macros SET_BH, CLEAR_BH, & ISSET_BH
+
+* bzip2: Fix return value when combining --test,-t and -q.
+
+* bzip2recover: Fix buffer overflow for large argv[0]
+
+* bzip2recover: Fix use after free issue with outFile (CVE-2016-3189)
+
+* Make sure nSelectors is not out of range (CVE-2019-12900)
+
+1.0.8 (13 Jul 19)
+~~~~~~~~~~~~~~~~~
+
+* Accept as many selectors as the file format allows.
+  This relaxes the fix for CVE-2019-12900 from 1.0.7
+  so that bzip2 allows decompression of bz2 files that
+  use (too) many selectors again.
+
+* Fix handling of large (> 4GB) files on Windows.
+
+* Cleanup of bzdiff and bzgrep scripts so they don't use
+  any bash extensions and handle multiple archives correctly.
+
+* There is now a bz2-files testsuite at
+  https://sourceware.org/git/bzip2-tests.git

@@ -24,10 +24,10 @@ else
   # 'stty min 1' resets eof to ^a on both SunOS and SysV!
   cb='min 1 -icanon'; ncb='icanon eof ^d'
 fi
-if test $? -eq 0 && test -n "$oldtty"; then
-   trap 'stty $oldtty 2>/dev/null; exit' 0 INT QUIT TRAP USR1 PIPE TERM
+if test $? -eq 0 -a -n "$oldtty"; then
+   trap 'stty $oldtty 2>/dev/null; exit' 0 2 3 5 10 13 15
 else
-   trap 'stty $ncb echo 2>/dev/null; exit' 0 INT QUIT TRAP USR1 PIPE TERM
+   trap 'stty $ncb echo 2>/dev/null; exit' 0 2 3 5 10 13 15
 fi
 
 if test $# = 0; then
@@ -46,7 +46,7 @@ else
 		ANS=`dd bs=1 count=1 2>/dev/null` 
 		stty $ncb echo 2>/dev/null
 		echo " "
-		if test "$ANS" = 'e' || test "$ANS" = 'q'; then
+		if test "$ANS" = 'e' -o "$ANS" = 'q'; then
 			exit
 		fi
 	fi

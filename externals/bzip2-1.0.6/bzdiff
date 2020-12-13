@@ -37,10 +37,6 @@ if test -z "$FILES"; then
 	echo "Usage: $prog [${comp}_options] file [file]"
 	exit 1
 fi
-tmp=`mktemp ${TMPDIR:-/tmp}/bzdiff.XXXXXXXXXX` || {
-      echo 'cannot create a temporary file' >&2
-      exit 1
-}
 set $FILES
 if test $# -eq 1; then
 	FILE=`echo "$1" | sed 's/.bz2$//'`
@@ -53,10 +49,14 @@ elif test $# -eq 2; then
                 case "$2" in
 	        *.bz2)
 			F=`echo "$2" | sed 's|.*/||;s|.bz2$||'`
-                        bzip2 -cdfq "$2" > $tmp
-                        bzip2 -cdfq "$1" | $comp $OPTIONS - $tmp
+			tmp=`mktemp "${TMPDIR:-/tmp}"/bzdiff.XXXXXXXXXX` || {
+			      echo 'cannot create a temporary file' >&2
+			      exit 1
+			}
+                        bzip2 -cdfq "$2" > "$tmp"
+                        bzip2 -cdfq "$1" | $comp $OPTIONS - "$tmp"
                         STAT="$?"
-			/bin/rm -f $tmp;;
+			/bin/rm -f "$tmp";;
 
                 *)      bzip2 -cdfq "$1" | $comp $OPTIONS - "$2"
                         STAT="$?";;
@@ -69,8 +69,8 @@ elif test $# -eq 2; then
                         STAT="$?";;
                 esac;;
 	esac
-        exit "$STAT"
 else
 	echo "Usage: $prog [${comp}_options] file [file]"
 	exit 1
 fi
+exit "$STAT"
