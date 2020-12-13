@@ -16,9 +16,7 @@
 #include "simple_coder.h"
 
 
-typedef struct lzma_simple_s lzma_simple;
-
-struct lzma_coder_s {
+typedef struct {
 	/// Next filter in the chain
 	lzma_next_coder next;
 
@@ -33,12 +31,12 @@ struct lzma_coder_s {
 
 	/// Pointer to filter-specific function, which does
 	/// the actual filtering.
-	size_t (*filter)(lzma_simple *simple, uint32_t now_pos,
+	size_t (*filter)(void *simple, uint32_t now_pos,
 			bool is_encoder, uint8_t *buffer, size_t size);
 
 	/// Pointer to filter-specific data, or NULL if filter doesn't need
 	/// any extra data.
-	lzma_simple *simple;
+	void *simple;
 
 	/// The lowest 32 bits of the current position in the data. Most
 	/// filters need this to do conversions between absolute and relative
@@ -62,13 +60,13 @@ struct lzma_coder_s {
 
 	/// Temporary buffer
 	uint8_t buffer[];
-};
+} lzma_simple_coder;
 
 
 extern lzma_ret lzma_simple_coder_init(lzma_next_coder *next,
 		const lzma_allocator *allocator,
 		const lzma_filter_info *filters,
-		size_t (*filter)(lzma_simple *simple, uint32_t now_pos,
+		size_t (*filter)(void *simple, uint32_t now_pos,
 			bool is_encoder, uint8_t *buffer, size_t size),
 		size_t simple_size, size_t unfiltered_max,
 		uint32_t alignment, bool is_encoder);

@@ -586,8 +586,7 @@ extern LZMA_API(lzma_index *) lzma_index_dup(
  * \param       i           Pointer to lzma_index which should be encoded.
  *
  * The valid `action' values for lzma_code() are LZMA_RUN and LZMA_FINISH.
- * It is enough to use only one of them (you can choose freely; use LZMA_RUN
- * to support liblzma versions older than 5.0.0).
+ * It is enough to use only one of them (you can choose freely).
  *
  * \return      - LZMA_OK: Initialization succeeded, continue with lzma_code().
  *              - LZMA_MEM_ERROR
@@ -610,16 +609,21 @@ extern LZMA_API(lzma_ret) lzma_index_encoder(
  *                          to a new lzma_index, which the application
  *                          has to later free with lzma_index_end().
  * \param       memlimit    How much memory the resulting lzma_index is
- *                          allowed to require.
+ *                          allowed to require. liblzma 5.2.3 and earlier
+ *                          don't allow 0 here and return LZMA_PROG_ERROR;
+ *                          later versions treat 0 as if 1 had been specified.
  *
- * The valid `action' values for lzma_code() are LZMA_RUN and LZMA_FINISH.
- * It is enough to use only one of them (you can choose freely; use LZMA_RUN
- * to support liblzma versions older than 5.0.0).
+ * Valid `action' arguments to lzma_code() are LZMA_RUN and LZMA_FINISH.
+ * There is no need to use LZMA_FINISH, but it's allowed because it may
+ * simplify certain types of applications.
  *
  * \return      - LZMA_OK: Initialization succeeded, continue with lzma_code().
  *              - LZMA_MEM_ERROR
- *              - LZMA_MEMLIMIT_ERROR
  *              - LZMA_PROG_ERROR
+ *
+ *              liblzma 5.2.3 and older list also LZMA_MEMLIMIT_ERROR here
+ *              but that error code has never been possible from this
+ *              initialization function.
  */
 extern LZMA_API(lzma_ret) lzma_index_decoder(
 		lzma_stream *strm, lzma_index **i, uint64_t memlimit)
@@ -679,4 +683,70 @@ extern LZMA_API(lzma_ret) lzma_index_buffer_encode(const lzma_index *i,
 extern LZMA_API(lzma_ret) lzma_index_buffer_decode(lzma_index **i,
 		uint64_t *memlimit, const lzma_allocator *allocator,
 		const uint8_t *in, size_t *in_pos, size_t in_size)
+		lzma_nothrow;
+
+
+/**
+ * \brief       Initialize a .xz file information decoder
+ *
+ * \param       strm        Pointer to a properly prepared lzma_stream
+ * \param       dest_index  Pointer to a pointer where the decoder will put
+ *                          the decoded lzma_index. The old value
+ *                          of *dest_index is ignored (not freed).
+ * \param       memlimit    How much memory the resulting lzma_index is
+ *                          allowed to require. Use UINT64_MAX to
+ *                          effectively disable the limiter.
+ * \param       file_size   Size of the input .xz file
+ *
+ * This decoder decodes the Stream Header, Stream Footer, Index, and
+ * Stream Padding field(s) from the input .xz file and stores the resulting
+ * combined index in *dest_index. This information can be used to get the
+ * uncompressed file size with lzma_index_uncompressed_size(*dest_index) or,
+ * for example, to implement random access reading by locating the Blocks
+ * in the Streams.
+ *
+ * To get the required information from the .xz file, lzma_code() may ask
+ * the application to seek in the input file by returning LZMA_SEEK_NEEDED
+ * and having the target file position specified in lzma_stream.seek_pos.
+ * The number of seeks required depends on the input file and how big buffers
+ * the application provides. When possible, the decoder will seek backward
+ * and forward in the given buffer to avoid useless seek requests. Thus, if
+ * the application provides the whole file at once, no external seeking will
+ * be required (that is, lzma_code() won't return LZMA_SEEK_NEEDED).
+ *
+ * The value in lzma_stream.total_in can be used to estimate how much data
+ * liblzma had to read to get the file information. However, due to seeking
+ * and the way total_in is updated, the value of total_in will be somewhat
+ * inaccurate (a little too big). Thus, total_in is a good estimate but don't
+ * expect to see the same exact value for the same file if you change the
+ * input buffer size or switch to a different liblzma version.
+ *
+ * Valid `action' arguments to lzma_code() are LZMA_RUN and LZMA_FINISH.
+ * You only need to use LZMA_RUN; LZMA_FINISH is only supported because it
+ * might be convenient for some applications. If you use LZMA_FINISH and if
+ * lzma_code() asks the application to seek, remember to reset `action' back
+ * to LZMA_RUN unless you hit the end of the file again.
+ *
+ * Possible return values from lzma_code():
+ *   - LZMA_OK: All OK so far, more input needed
+ *   - LZMA_SEEK_NEEDED: Provide more input starting from the absolute
+ *     file position strm->seek_pos
+ *   - LZMA_STREAM_END: Decoding was successful, *dest_index has been set
+ *   - LZMA_FORMAT_ERROR: The input file is not in the .xz format (the
+ *     expected magic bytes were not found from the beginning of the file)
+ *   - LZMA_OPTIONS_ERROR: File looks valid but contains headers that aren't
+ *     supported by this version of liblzma
+ *   - LZMA_DATA_ERROR: File is corrupt
+ *   - LZMA_BUF_ERROR
+ *   - LZMA_MEM_ERROR
+ *   - LZMA_MEMLIMIT_ERROR
+ *   - LZMA_PROG_ERROR
+ *
+ * \return      - LZMA_OK
+ *              - LZMA_MEM_ERROR
+ *              - LZMA_PROG_ERROR
+ */
+extern LZMA_API(lzma_ret) lzma_file_info_decoder(
+		lzma_stream *strm, lzma_index **dest_index,
+		uint64_t memlimit, uint64_t file_size)
 		lzma_nothrow;

@@ -9,7 +9,7 @@ XZ Utils
        1.3. Documentation for liblzma
     2. Version numbering
     3. Reporting bugs
-    4. Translating the xz tool
+    4. Translations
     5. Other implementations of the .xz format
     6. Contact information
 
@@ -55,9 +55,11 @@ XZ Utils
     Similarly, it is possible that some day there is a filter that will
     compress better than LZMA2.
 
-    XZ Utils doesn't support multithreaded compression or decompression
-    yet. It has been planned though and taken into account when designing
-    the .xz file format.
+    XZ Utils supports multithreaded compression. XZ Utils doesn't support
+    multithreaded decompression yet. It has been planned though and taken
+    into account when designing the .xz file format. In the future, files
+    that were created in threaded mode can be decompressed in threaded
+    mode too.
 
 
 1. Documentation
@@ -103,14 +105,13 @@ XZ Utils
     and data type as Doxygen tags. These docs should be quite OK as
     a quick reference.
 
-    I have planned to write a bunch of very well documented example
-    programs, which (due to comments) should work as a tutorial to
-    various features of liblzma. No such example programs have been
-    written yet.
+    There are a few example/tutorial programs that should help in
+    getting started with liblzma. In the source package the examples
+    are in "doc/examples" and in binary packages they may be under
+    "examples" in the same directory as this README.
 
-    For now, if you have never used liblzma, libbzip2, or zlib, I
-    recommend learning the *basics* of the zlib API. Once you know that,
-    it should be easier to learn liblzma.
+    Since the liblzma API has similarities to the zlib API, some people
+    may find it useful to read the zlib docs and tutorial too:
 
         http://zlib.net/manual.html
         http://zlib.net/zlib_how.html
@@ -192,19 +193,19 @@ XZ Utils
     system.
 
 
-4. Translating the xz tool
---------------------------
+4. Translations
+---------------
 
-    The messages from the xz tool have been translated into a few
-    languages. Before starting to translate into a new language, ask
-    the author whether someone else hasn't already started working on it.
+    The xz command line tool and all man pages can be translated.
+    The translations are handled via the Translation Project. If you
+    wish to help translating xz, please join the Translation Project:
 
-    Test your translation. Testing includes comparing the translated
-    output to the original English version by running the same commands
-    in both your target locale and with LC_ALL=C. Ask someone to
-    proof-read and test the translation.
+        https://translationproject.org/html/translators.html
 
-    Testing can be done e.g. by installing xz into a temporary directory:
+    Below are notes and testing instructions specific to xz
+    translations.
+
+    Testing can be done by installing xz into a temporary directory:
 
         ./configure --disable-shared --prefix=/tmp/xz-test
         # <Edit the .po file in the po directory.>
@@ -257,14 +258,11 @@ XZ Utils
         at the beginning and end of the strings.
 
       - Read the TRANSLATORS comments that have been extracted from the
-        source code and included in xz.pot. If they suggest testing the
-        translation with some type of command, do it. If testing needs
-        input files, use e.g. tests/files/good-*.xz.
-
-      - When updating the translation, read the fuzzy (modified) strings
-        carefully, and don't mark them as updated before you actually
-        have updated them. Reading through the unchanged messages can be
-        good too; sometimes you may find a better wording for them.
+        source code and included in xz.pot. Some comments suggest
+        testing with a specific command which needs an .xz file. You
+        may use e.g. any tests/files/good-*.xz. However, these test
+        commands are included in translations.bash output, so reading
+        translations.bash output carefully can be enough.
 
       - If you find language problems in the original English strings,
         feel free to suggest improvements. Ask if something is unclear.
@@ -274,9 +272,7 @@ XZ Utils
         make a direct word-by-word translation from English especially if
         the result doesn't sound good in your language.
 
-    In short, take your time and pay attention to the details. Making
-    a good translation is not a quick and trivial thing to do. The
-    translated xz should look as polished as the English version.
+    Thanks for your help!
 
 
 5. Other implementations of the .xz format
@@ -291,7 +287,7 @@ XZ Utils
     XZ Embedded is a limited implementation written for use in the Linux
     kernel, but it is also suitable for other embedded use.
 
-        http://tukaani.org/xz/embedded.html
+        https://tukaani.org/xz/embedded.html
 
 
 6. Contact information

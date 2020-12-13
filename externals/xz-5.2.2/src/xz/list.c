@@ -57,18 +57,118 @@ typedef struct {
 } block_header_info;
 
 
+/// Strings ending in a colon. These are used for lines like
+/// "  Foo:   123 MiB". These are grouped because translated strings
+/// may have different maximum string length, and we want to pad all
+/// strings so that the values are aligned nicely.
+static const char *colon_strs[] = {
+	N_("Streams:"),
+	N_("Blocks:"),
+	N_("Compressed size:"),
+	N_("Uncompressed size:"),
+	N_("Ratio:"),
+	N_("Check:"),
+	N_("Stream Padding:"),
+	N_("Memory needed:"),
+	N_("Sizes in headers:"),
+	// This won't be aligned because it's so long:
+	//N_("Minimum XZ Utils version:"),
+	N_("Number of files:"),
+};
+
+/// Enum matching the above strings.
+enum {
+	COLON_STR_STREAMS,
+	COLON_STR_BLOCKS,
+	COLON_STR_COMPRESSED_SIZE,
+	COLON_STR_UNCOMPRESSED_SIZE,
+	COLON_STR_RATIO,
+	COLON_STR_CHECK,
+	COLON_STR_STREAM_PADDING,
+	COLON_STR_MEMORY_NEEDED,
+	COLON_STR_SIZES_IN_HEADERS,
+	//COLON_STR_MINIMUM_XZ_VERSION,
+	COLON_STR_NUMBER_OF_FILES,
+};
+
+/// Field widths to use with printf to pad the strings to use the same number
+/// of columns on a terminal.
+static int colon_strs_fw[ARRAY_SIZE(colon_strs)];
+
+/// Convenience macro to get the translated string and its field width
+/// using a COLON_STR_foo enum.
+#define COLON_STR(num) colon_strs_fw[num], _(colon_strs[num])
+
+
+/// Column headings
+static struct {
+	/// Table column heading string
+	const char *str;
+
+	/// Number of terminal-columns to use for this table-column.
+	/// If a translated string is longer than the initial value,
+	/// this value will be increased in init_headings().
+	int columns;
+
+	/// Field width to use for printf() to pad "str" to use "columns"
+	/// number of columns on a terminal. This is calculated in
+	/// init_headings().
+	int fw;
+
+} headings[] = {
+	{ N_("Stream"), 6, 0 },
+	{ N_("Block"), 9, 0 },
+	{ N_("Blocks"), 9, 0 },
+	{ N_("CompOffset"), 15, 0 },
+	{ N_("UncompOffset"), 15, 0 },
+	{ N_("CompSize"), 15, 0 },
+	{ N_("UncompSize"), 15, 0 },
+	{ N_("TotalSize"), 15, 0 },
+	{ N_("Ratio"), 5, 0 },
+	{ N_("Check"), 10, 0 },
+	{ N_("CheckVal"), 1, 0 },
+	{ N_("Padding"), 7, 0 },
+	{ N_("Header"), 5, 0 },
+	{ N_("Flags"), 2, 0 },
+	{ N_("MemUsage"), 7 + 4, 0 }, // +4 is for " MiB"
+	{ N_("Filters"), 1, 0 },
+};
+
+/// Enum matching the above strings.
+enum {
+	HEADING_STREAM,
+	HEADING_BLOCK,
+	HEADING_BLOCKS,
+	HEADING_COMPOFFSET,
+	HEADING_UNCOMPOFFSET,
+	HEADING_COMPSIZE,
+	HEADING_UNCOMPSIZE,
+	HEADING_TOTALSIZE,
+	HEADING_RATIO,
+	HEADING_CHECK,
+	HEADING_CHECKVAL,
+	HEADING_PADDING,
+	HEADING_HEADERSIZE,
+	HEADING_HEADERFLAGS,
+	HEADING_MEMUSAGE,
+	HEADING_FILTERS,
+};
+
+#define HEADING_STR(num) headings[num].fw, _(headings[num].str)
+
+
 /// Check ID to string mapping
 static const char check_names[LZMA_CHECK_ID_MAX + 1][12] = {
 	// TRANSLATORS: Indicates that there is no integrity check.
-	// This string is used in tables, so the width must not
-	// exceed ten columns with a fixed-width font.
+	// This string is used in tables. In older xz version this
+	// string was limited to ten columns in a fixed-width font, but
+	// nowadays there is no strict length restriction anymore.
 	N_("None"),
 	"CRC32",
 	// TRANSLATORS: Indicates that integrity check name is not known,
-	// but the Check ID is known (here 2). This and other "Unknown-N"
-	// strings are used in tables, so the width must not exceed ten
-	// columns with a fixed-width font. It's OK to omit the dash if
-	// you need space for one extra letter, but don't use spaces.
+	// but the Check ID is known (here 2). In older xz version these
+	// strings were limited to ten columns in a fixed-width font, but
+	// nowadays there is no strict length restriction anymore.
 	N_("Unknown-2"),
 	N_("Unknown-3"),
 	"CRC64",
@@ -109,7 +209,105 @@ static struct {
 	uint32_t checks;
 	uint32_t min_version;
 	bool all_have_sizes;
-} totals = { 0, 0, 0, 0, 0, 0, 0, 0, 0, true };
+} totals = { 0, 0, 0, 0, 0, 0, 0, 0, 50000002, true };
+
+
+/// Initialize colon_strs_fw[].
+static void
+init_colon_strs(void)
+{
+	// Lengths of translated strings as bytes.
+	size_t lens[ARRAY_SIZE(colon_strs)];
+
+	// Lengths of translated strings as columns.
+	size_t widths[ARRAY_SIZE(colon_strs)];
+
+	// Maximum number of columns needed by a translated string.
+	size_t width_max = 0;
+
+	for (unsigned i = 0; i < ARRAY_SIZE(colon_strs); ++i) {
+		widths[i] = tuklib_mbstr_width(_(colon_strs[i]), &lens[i]);
+
+		// If debugging is enabled, catch invalid strings with
+		// an assertion. However, when not debugging, use the
+		// byte count as the fallback width. This shouldn't
+		// ever happen unless there is a bad string in the
+		// translations, but in such case I guess it's better
+		// to try to print something useful instead of failing
+		// completely.
+		assert(widths[i] != (size_t)-1);
+		if (widths[i] == (size_t)-1)
+			widths[i] = lens[i];
+
+		if (widths[i] > width_max)
+			width_max = widths[i];
+	}
+
+	// Calculate the field width for printf("%*s") so that the strings
+	// will use width_max columns on a terminal.
+	for (unsigned i = 0; i < ARRAY_SIZE(colon_strs); ++i)
+		colon_strs_fw[i] = (int)(lens[i] + width_max - widths[i]);
+
+	return;
+}
+
+
+/// Initialize headings[].
+static void
+init_headings(void)
+{
+	// Before going through the heading strings themselves, treat
+	// the Check heading specially: Look at the widths of the various
+	// check names and increase the width of the Check column if needed.
+	// The width of the heading name "Check" will then be handled normally
+	// with other heading names in the second loop in this function.
+	for (unsigned i = 0; i < ARRAY_SIZE(check_names); ++i) {
+		size_t len;
+		size_t w = tuklib_mbstr_width(_(check_names[i]), &len);
+
+		// Error handling like in init_colon_strs().
+		assert(w != (size_t)-1);
+		if (w == (size_t)-1)
+			w = len;
+
+		// If the translated string is wider than the minimum width
+		// set at compile time, increase the width.
+		if ((size_t)(headings[HEADING_CHECK].columns) < w)
+			headings[HEADING_CHECK].columns = w;
+	}
+
+	for (unsigned i = 0; i < ARRAY_SIZE(headings); ++i) {
+		size_t len;
+		size_t w = tuklib_mbstr_width(_(headings[i].str), &len);
+
+		// Error handling like in init_colon_strs().
+		assert(w != (size_t)-1);
+		if (w == (size_t)-1)
+			w = len;
+
+		// If the translated string is wider than the minimum width
+		// set at compile time, increase the width.
+		if ((size_t)(headings[i].columns) < w)
+			headings[i].columns = w;
+
+		// Calculate the field width for printf("%*s") so that
+		// the string uses .columns number of columns on a terminal.
+		headings[i].fw = (int)(len + (size_t)headings[i].columns - w);
+	}
+
+	return;
+}
+
+
+/// Initialize the printf field widths that are needed to get nicely aligned
+/// output with translated strings.
+static void
+init_field_widths(void)
+{
+	init_colon_strs();
+	init_headings();
+	return;
+}
 
 
 /// Convert XZ Utils version number to a string.
@@ -143,9 +341,6 @@ xz_ver_to_str(uint32_t ver)
 ///
 /// \return     On success, false is returned. On error, true is returned.
 ///
-// TODO: This function is pretty big. liblzma should have a function that
-// takes a callback function to parse the Index(es) from a .xz file to make
-// it easy for applications.
 static bool
 parse_indexes(xz_file_info *xfi, file_pair *pair)
 {
@@ -161,238 +356,74 @@ parse_indexes(xz_file_info *xfi, file_pair *pair)
 	}
 
 	io_buf buf;
-	lzma_stream_flags header_flags;
-	lzma_stream_flags footer_flags;
-	lzma_ret ret;
-
-	// lzma_stream for the Index decoder
 	lzma_stream strm = LZMA_STREAM_INIT;
+	lzma_index *idx = NULL;
 
-	// All Indexes decoded so far
-	lzma_index *combined_index = NULL;
+	lzma_ret ret = lzma_file_info_decoder(&strm, &idx,
+			hardware_memlimit_get(MODE_LIST),
+			(uint64_t)(pair->src_st.st_size));
+	if (ret != LZMA_OK) {
+		message_error("%s: %s", pair->src_name, message_strm(ret));
+		return true;
+	}
 
-	// The Index currently being decoded
-	lzma_index *this_index = NULL;
-
-	// Current position in the file. We parse the file backwards so
-	// initialize it to point to the end of the file.
-	off_t pos = pair->src_st.st_size;
-
-	// Each loop iteration decodes one Index.
-	do {
-		// Check that there is enough data left to contain at least
-		// the Stream Header and Stream Footer. This check cannot
-		// fail in the first pass of this loop.
-		if (pos < 2 * LZMA_STREAM_HEADER_SIZE) {
-			message_error("%s: %s", pair->src_name,
-					message_strm(LZMA_DATA_ERROR));
-			goto error;
-		}
-
-		pos -= LZMA_STREAM_HEADER_SIZE;
-		lzma_vli stream_padding = 0;
-
-		// Locate the Stream Footer. There may be Stream Padding which
-		// we must skip when reading backwards.
-		while (true) {
-			if (pos < LZMA_STREAM_HEADER_SIZE) {
-				message_error("%s: %s", pair->src_name,
-						message_strm(
-							LZMA_DATA_ERROR));
-				goto error;
-			}
-
-			if (io_pread(pair, &buf,
-					LZMA_STREAM_HEADER_SIZE, pos))
-				goto error;
-
-			// Stream Padding is always a multiple of four bytes.
-			int i = 2;
-			if (buf.u32[i] != 0)
-				break;
-
-			// To avoid calling io_pread() for every four bytes
-			// of Stream Padding, take advantage that we read
-			// 12 bytes (LZMA_STREAM_HEADER_SIZE) already and
-			// check them too before calling io_pread() again.
-			do {
-				stream_padding += 4;
-				pos -= 4;
-				--i;
-			} while (i >= 0 && buf.u32[i] == 0);
-		}
-
-		// Decode the Stream Footer.
-		ret = lzma_stream_footer_decode(&footer_flags, buf.u8);
-		if (ret != LZMA_OK) {
-			message_error("%s: %s", pair->src_name,
-					message_strm(ret));
-			goto error;
-		}
-
-		// Check that the Stream Footer doesn't specify something
-		// that we don't support. This can only happen if the xz
-		// version is older than liblzma and liblzma supports
-		// something new.
-		//
-		// It is enough to check Stream Footer. Stream Header must
-		// match when it is compared against Stream Footer with
-		// lzma_stream_flags_compare().
-		if (footer_flags.version != 0) {
-			message_error("%s: %s", pair->src_name,
-					message_strm(LZMA_OPTIONS_ERROR));
-			goto error;
-		}
-
-		// Check that the size of the Index field looks sane.
-		lzma_vli index_size = footer_flags.backward_size;
-		if ((lzma_vli)(pos) < index_size + LZMA_STREAM_HEADER_SIZE) {
-			message_error("%s: %s", pair->src_name,
-					message_strm(LZMA_DATA_ERROR));
-			goto error;
-		}
-
-		// Set pos to the beginning of the Index.
-		pos -= index_size;
-
-		// See how much memory we can use for decoding this Index.
-		uint64_t memlimit = hardware_memlimit_get(MODE_LIST);
-		uint64_t memused = 0;
-		if (combined_index != NULL) {
-			memused = lzma_index_memused(combined_index);
-			if (memused > memlimit)
-				message_bug();
-
-			memlimit -= memused;
-		}
-
-		// Decode the Index.
-		ret = lzma_index_decoder(&strm, &this_index, memlimit);
-		if (ret != LZMA_OK) {
-			message_error("%s: %s", pair->src_name,
-					message_strm(ret));
-			goto error;
-		}
-
-		do {
-			// Don't give the decoder more input than the
-			// Index size.
-			strm.avail_in = my_min(IO_BUFFER_SIZE, index_size);
-			if (io_pread(pair, &buf, strm.avail_in, pos))
-				goto error;
-
-			pos += strm.avail_in;
-			index_size -= strm.avail_in;
-
+	while (true) {
+		if (strm.avail_in == 0) {
 			strm.next_in = buf.u8;
-			ret = lzma_code(&strm, LZMA_RUN);
+			strm.avail_in = io_read(pair, &buf, IO_BUFFER_SIZE);
+			if (strm.avail_in == SIZE_MAX)
+				goto error;
+		}
 
-		} while (ret == LZMA_OK);
+		ret = lzma_code(&strm, LZMA_RUN);
 
-		// If the decoding seems to be successful, check also that
-		// the Index decoder consumed as much input as indicated
-		// by the Backward Size field.
-		if (ret == LZMA_STREAM_END)
-			if (index_size != 0 || strm.avail_in != 0)
-				ret = LZMA_DATA_ERROR;
+		switch (ret) {
+		case LZMA_OK:
+			break;
 
-		if (ret != LZMA_STREAM_END) {
-			// LZMA_BUFFER_ERROR means that the Index decoder
-			// would have liked more input than what the Index
-			// size should be according to Stream Footer.
-			// The message for LZMA_DATA_ERROR makes more
-			// sense in that case.
-			if (ret == LZMA_BUF_ERROR)
-				ret = LZMA_DATA_ERROR;
+		case LZMA_SEEK_NEEDED:
+			// liblzma won't ask us to seek past the known size
+			// of the input file.
+			assert(strm.seek_pos
+					<= (uint64_t)(pair->src_st.st_size));
+			if (io_seek_src(pair, strm.seek_pos))
+				goto error;
 
+			// avail_in must be zero so that we will read new
+			// input.
+			strm.avail_in = 0;
+			break;
+
+		case LZMA_STREAM_END: {
+			lzma_end(&strm);
+			xfi->idx = idx;
+
+			// Calculate xfi->stream_padding.
+			lzma_index_iter iter;
+			lzma_index_iter_init(&iter, xfi->idx);
+			while (!lzma_index_iter_next(&iter,
+					LZMA_INDEX_ITER_STREAM))
+				xfi->stream_padding += iter.stream.padding;
+
+			return false;
+		}
+
+		default:
 			message_error("%s: %s", pair->src_name,
 					message_strm(ret));
 
 			// If the error was too low memory usage limit,
 			// show also how much memory would have been needed.
-			if (ret == LZMA_MEMLIMIT_ERROR) {
-				uint64_t needed = lzma_memusage(&strm);
-				if (UINT64_MAX - needed < memused)
-					needed = UINT64_MAX;
-				else
-					needed += memused;
-
-				message_mem_needed(V_ERROR, needed);
-			}
+			if (ret == LZMA_MEMLIMIT_ERROR)
+				message_mem_needed(V_ERROR,
+						lzma_memusage(&strm));
 
 			goto error;
 		}
-
-		// Decode the Stream Header and check that its Stream Flags
-		// match the Stream Footer.
-		pos -= footer_flags.backward_size + LZMA_STREAM_HEADER_SIZE;
-		if ((lzma_vli)(pos) < lzma_index_total_size(this_index)) {
-			message_error("%s: %s", pair->src_name,
-					message_strm(LZMA_DATA_ERROR));
-			goto error;
-		}
-
-		pos -= lzma_index_total_size(this_index);
-		if (io_pread(pair, &buf, LZMA_STREAM_HEADER_SIZE, pos))
-			goto error;
-
-		ret = lzma_stream_header_decode(&header_flags, buf.u8);
-		if (ret != LZMA_OK) {
-			message_error("%s: %s", pair->src_name,
-					message_strm(ret));
-			goto error;
-		}
-
-		ret = lzma_stream_flags_compare(&header_flags, &footer_flags);
-		if (ret != LZMA_OK) {
-			message_error("%s: %s", pair->src_name,
-					message_strm(ret));
-			goto error;
-		}
-
-		// Store the decoded Stream Flags into this_index. This is
-		// needed so that we can print which Check is used in each
-		// Stream.
-		ret = lzma_index_stream_flags(this_index, &footer_flags);
-		if (ret != LZMA_OK)
-			message_bug();
-
-		// Store also the size of the Stream Padding field. It is
-		// needed to show the offsets of the Streams correctly.
-		ret = lzma_index_stream_padding(this_index, stream_padding);
-		if (ret != LZMA_OK)
-			message_bug();
-
-		if (combined_index != NULL) {
-			// Append the earlier decoded Indexes
-			// after this_index.
-			ret = lzma_index_cat(
-					this_index, combined_index, NULL);
-			if (ret != LZMA_OK) {
-				message_error("%s: %s", pair->src_name,
-						message_strm(ret));
-				goto error;
-			}
-		}
-
-		combined_index = this_index;
-		this_index = NULL;
-
-		xfi->stream_padding += stream_padding;
-
-	} while (pos > 0);
-
-	lzma_end(&strm);
-
-	// All OK. Make combined_index available to the caller.
-	xfi->idx = combined_index;
-	return false;
+	}
 
 error:
-	// Something went wrong, free the allocated memory.
 	lzma_end(&strm);
-	lzma_index_end(combined_index, NULL);
-	lzma_index_end(this_index, NULL);
 	return true;
 }
 
@@ -454,6 +485,10 @@ parse_block_header(file_pair *pair, const lzma_index_iter *iter,
 	// Check the Block Flags. These must be done before calling
 	// lzma_block_compressed_size(), because it overwrites
 	// block.compressed_size.
+	//
+	// NOTE: If you add new characters here, update the minimum number of
+	// columns in headings[HEADING_HEADERFLAGS] to match the number of
+	// characters used here.
 	bhi->flags[0] = block.compressed_size != LZMA_VLI_UNKNOWN
 			? 'c' : '-';
 	bhi->flags[1] = block.uncompressed_size != LZMA_VLI_UNKNOWN
@@ -483,6 +518,8 @@ parse_block_header(file_pair *pair, const lzma_index_iter *iter,
 
 		// If the above fails, the file is corrupt so
 		// LZMA_DATA_ERROR is a good error code.
+
+	// Fall through
 
 	case LZMA_DATA_ERROR:
 		// Free the memory allocated by lzma_block_header_decode().
@@ -551,7 +588,7 @@ parse_check_value(file_pair *pair, const lzma_index_iter *iter)
 
 	// Locate and read the Check field.
 	const uint32_t size = lzma_check_size(iter->stream.flags->check);
-	const off_t offset = iter->block.compressed_file_offset
+	const uint64_t offset = iter->block.compressed_file_offset
 			+ iter->block.total_size - size;
 	io_buf buf;
 	if (io_pread(pair, &buf, size, offset))
@@ -636,7 +673,11 @@ static void
 get_check_names(char buf[CHECKS_STR_SIZE],
 		uint32_t checks, bool space_after_comma)
 {
-	assert(checks != 0);
+	// If we get called when there are no Checks to print, set checks
+	// to 1 so that we print "None". This can happen in the robot mode
+	// when printing the totals line if there are no valid input files.
+	if (checks == 0)
+		checks = 1;
 
 	char *pos = buf;
 	size_t left = CHECKS_STR_SIZE;
@@ -708,20 +749,20 @@ print_adv_helper(uint64_t stream_count, uint64_t block_count,
 	char checks_str[CHECKS_STR_SIZE];
 	get_check_names(checks_str, checks, true);
 
-	printf(_("  Streams:            %s\n"),
+	printf("  %-*s %s\n", COLON_STR(COLON_STR_STREAMS),
 			uint64_to_str(stream_count, 0));
-	printf(_("  Blocks:             %s\n"),
+	printf("  %-*s %s\n", COLON_STR(COLON_STR_BLOCKS),
 			uint64_to_str(block_count, 0));
-	printf(_("  Compressed size:    %s\n"),
+	printf("  %-*s %s\n", COLON_STR(COLON_STR_COMPRESSED_SIZE),
 			uint64_to_nicestr(compressed_size,
 				NICESTR_B, NICESTR_TIB, true, 0));
-	printf(_("  Uncompressed size:  %s\n"),
+	printf("  %-*s %s\n", COLON_STR(COLON_STR_UNCOMPRESSED_SIZE),
 			uint64_to_nicestr(uncompressed_size,
 				NICESTR_B, NICESTR_TIB, true, 0));
-	printf(_("  Ratio:              %s\n"),
+	printf("  %-*s %s\n", COLON_STR(COLON_STR_RATIO),
 			get_ratio(compressed_size, uncompressed_size));
-	printf(_("  Check:              %s\n"), checks_str);
-	printf(_("  Stream padding:     %s\n"),
+	printf("  %-*s %s\n", COLON_STR(COLON_STR_CHECK), checks_str);
+	printf("  %-*s %s\n", COLON_STR(COLON_STR_STREAM_PADDING),
 			uint64_to_nicestr(stream_padding,
 				NICESTR_B, NICESTR_TIB, true, 0));
 	return;
@@ -746,13 +787,19 @@ print_info_adv(xz_file_info *xfi, file_pair *pair)
 
 	// Print information about the Streams.
 	//
-	// TRANSLATORS: The second line is column headings. All except
-	// Check are right aligned; Check is left aligned. Test with
-	// "xz -lv foo.xz".
-	puts(_("  Streams:\n    Stream    Blocks"
-			"      CompOffset    UncompOffset"
-			"        CompSize      UncompSize  Ratio"
-			"  Check      Padding"));
+	// All except Check are right aligned; Check is left aligned.
+	// Test with "xz -lv foo.xz".
+	printf("  %s\n    %*s %*s %*s %*s %*s %*s  %*s  %-*s %*s\n",
+			_(colon_strs[COLON_STR_STREAMS]),
+			HEADING_STR(HEADING_STREAM),
+			HEADING_STR(HEADING_BLOCKS),
+			HEADING_STR(HEADING_COMPOFFSET),
+			HEADING_STR(HEADING_UNCOMPOFFSET),
+			HEADING_STR(HEADING_COMPSIZE),
+			HEADING_STR(HEADING_UNCOMPSIZE),
+			HEADING_STR(HEADING_RATIO),
+			HEADING_STR(HEADING_CHECK),
+			HEADING_STR(HEADING_PADDING));
 
 	lzma_index_iter iter;
 	lzma_index_iter_init(&iter, xfi->idx);
@@ -765,10 +812,18 @@ print_info_adv(xz_file_info *xfi, file_pair *pair)
 			uint64_to_str(iter.stream.uncompressed_offset, 3),
 		};
 		printf("    %*s %*s %*s %*s ",
-				tuklib_mbstr_fw(cols1[0], 6), cols1[0],
-				tuklib_mbstr_fw(cols1[1], 9), cols1[1],
-				tuklib_mbstr_fw(cols1[2], 15), cols1[2],
-				tuklib_mbstr_fw(cols1[3], 15), cols1[3]);
+			tuklib_mbstr_fw(cols1[0],
+				headings[HEADING_STREAM].columns),
+			cols1[0],
+			tuklib_mbstr_fw(cols1[1],
+				headings[HEADING_BLOCKS].columns),
+			cols1[1],
+			tuklib_mbstr_fw(cols1[2],
+				headings[HEADING_COMPOFFSET].columns),
+			cols1[2],
+			tuklib_mbstr_fw(cols1[3],
+				headings[HEADING_UNCOMPOFFSET].columns),
+			cols1[3]);
 
 		const char *cols2[5] = {
 			uint64_to_str(iter.stream.compressed_size, 0),
@@ -779,11 +834,21 @@ print_info_adv(xz_file_info *xfi, file_pair *pair)
 			uint64_to_str(iter.stream.padding, 2),
 		};
 		printf("%*s %*s  %*s  %-*s %*s\n",
-				tuklib_mbstr_fw(cols2[0], 15), cols2[0],
-				tuklib_mbstr_fw(cols2[1], 15), cols2[1],
-				tuklib_mbstr_fw(cols2[2], 5), cols2[2],
-				tuklib_mbstr_fw(cols2[3], 10), cols2[3],
-				tuklib_mbstr_fw(cols2[4], 7), cols2[4]);
+			tuklib_mbstr_fw(cols2[0],
+				headings[HEADING_COMPSIZE].columns),
+			cols2[0],
+			tuklib_mbstr_fw(cols2[1],
+				headings[HEADING_UNCOMPSIZE].columns),
+			cols2[1],
+			tuklib_mbstr_fw(cols2[2],
+				headings[HEADING_RATIO].columns),
+			cols2[2],
+			tuklib_mbstr_fw(cols2[3],
+				headings[HEADING_CHECK].columns),
+			cols2[3],
+			tuklib_mbstr_fw(cols2[4],
+				headings[HEADING_PADDING].columns),
+			cols2[4]);
 
 		// Update the maximum Check size.
 		if (lzma_check_size(iter.stream.flags->check) > check_max)
@@ -799,26 +864,44 @@ print_info_adv(xz_file_info *xfi, file_pair *pair)
 	// Print information about the Blocks but only if there is
 	// at least one Block.
 	if (lzma_index_block_count(xfi->idx) > 0) {
-		// Calculate the width of the CheckVal field.
-		const int checkval_width = my_max(8, 2 * check_max);
+		// Calculate the width of the CheckVal column. This can be
+		// used as is as the field width for printf() when printing
+		// the actual check value as it is hexadecimal. However, to
+		// print the column heading, further calculation is needed
+		// to handle a translated string (it's done a few lines later).
+		assert(check_max <= LZMA_CHECK_SIZE_MAX);
+		const int checkval_width = my_max(
+				headings[HEADING_CHECKVAL].columns,
+				(int)(2 * check_max));
 
-		// TRANSLATORS: The second line is column headings. All
-		// except Check are right aligned; Check is left aligned.
-		printf(_("  Blocks:\n    Stream     Block"
-			"      CompOffset    UncompOffset"
-			"       TotalSize      UncompSize  Ratio  Check"));
+		// All except Check are right aligned; Check is left aligned.
+		printf("  %s\n    %*s %*s %*s %*s %*s %*s  %*s  %-*s",
+				_(colon_strs[COLON_STR_BLOCKS]),
+				HEADING_STR(HEADING_STREAM),
+				HEADING_STR(HEADING_BLOCK),
+				HEADING_STR(HEADING_COMPOFFSET),
+				HEADING_STR(HEADING_UNCOMPOFFSET),
+				HEADING_STR(HEADING_TOTALSIZE),
+				HEADING_STR(HEADING_UNCOMPSIZE),
+				HEADING_STR(HEADING_RATIO),
+				detailed ? headings[HEADING_CHECK].fw : 1,
+				_(headings[HEADING_CHECK].str));
 
 		if (detailed) {
-			// TRANSLATORS: These are additional column headings
-			// for the most verbose listing mode. CheckVal
-			// (Check value), Flags, and Filters are left aligned.
-			// Header (Block Header Size), CompSize, and MemUsage
-			// are right aligned. %*s is replaced with 0-120
-			// spaces to make the CheckVal column wide enough.
-			// Test with "xz -lvv foo.xz".
-			printf(_("      CheckVal %*s Header  Flags        "
-					"CompSize    MemUsage  Filters"),
-					checkval_width - 8, "");
+			// CheckVal (Check value), Flags, and Filters are
+			// left aligned. Block Header Size, CompSize, and
+			// MemUsage are right aligned. Test with
+			// "xz -lvv foo.xz".
+			printf(" %-*s  %*s  %-*s %*s %*s  %s",
+				headings[HEADING_CHECKVAL].fw
+					+ checkval_width
+					- headings[HEADING_CHECKVAL].columns,
+				_(headings[HEADING_CHECKVAL].str),
+				HEADING_STR(HEADING_HEADERSIZE),
+				HEADING_STR(HEADING_HEADERFLAGS),
+				HEADING_STR(HEADING_COMPSIZE),
+				HEADING_STR(HEADING_MEMUSAGE),
+				_(headings[HEADING_FILTERS].str));
 		}
 
 		putchar('\n');
@@ -840,10 +923,18 @@ print_info_adv(xz_file_info *xfi, file_pair *pair)
 					iter.block.uncompressed_file_offset, 3)
 			};
 			printf("    %*s %*s %*s %*s ",
-				tuklib_mbstr_fw(cols1[0], 6), cols1[0],
-				tuklib_mbstr_fw(cols1[1], 9), cols1[1],
-				tuklib_mbstr_fw(cols1[2], 15), cols1[2],
-				tuklib_mbstr_fw(cols1[3], 15), cols1[3]);
+				tuklib_mbstr_fw(cols1[0],
+					headings[HEADING_STREAM].columns),
+				cols1[0],
+				tuklib_mbstr_fw(cols1[1],
+					headings[HEADING_BLOCK].columns),
+				cols1[1],
+				tuklib_mbstr_fw(cols1[2],
+					headings[HEADING_COMPOFFSET].columns),
+				cols1[2],
+				tuklib_mbstr_fw(cols1[3], headings[
+					HEADING_UNCOMPOFFSET].columns),
+				cols1[3]);
 
 			const char *cols2[4] = {
 				uint64_to_str(iter.block.total_size, 0),
@@ -854,11 +945,18 @@ print_info_adv(xz_file_info *xfi, file_pair *pair)
 				_(check_names[iter.stream.flags->check])
 			};
 			printf("%*s %*s  %*s  %-*s",
-				tuklib_mbstr_fw(cols2[0], 15), cols2[0],
-				tuklib_mbstr_fw(cols2[1], 15), cols2[1],
-				tuklib_mbstr_fw(cols2[2], 5), cols2[2],
-				tuklib_mbstr_fw(cols2[3], detailed ? 11 : 1),
-					cols2[3]);
+				tuklib_mbstr_fw(cols2[0],
+					headings[HEADING_TOTALSIZE].columns),
+				cols2[0],
+				tuklib_mbstr_fw(cols2[1],
+					headings[HEADING_UNCOMPSIZE].columns),
+				cols2[1],
+				tuklib_mbstr_fw(cols2[2],
+					headings[HEADING_RATIO].columns),
+				cols2[2],
+				tuklib_mbstr_fw(cols2[3], detailed
+					? headings[HEADING_CHECK].columns : 1),
+				cols2[3]);
 
 			if (detailed) {
 				const lzma_vli compressed_size
@@ -879,13 +977,20 @@ print_info_adv(xz_file_info *xfi, file_pair *pair)
 				};
 				// Show MiB for memory usage, because it
 				// is the only size which is not in bytes.
-				printf("%-*s  %*s  %-5s %*s %*s MiB  %s",
+				printf(" %-*s  %*s  %-*s %*s %*s MiB  %s",
 					checkval_width, cols3[0],
-					tuklib_mbstr_fw(cols3[1], 6), cols3[1],
+					tuklib_mbstr_fw(cols3[1], headings[
+						HEADING_HEADERSIZE].columns),
+					cols3[1],
+					tuklib_mbstr_fw(cols3[2], headings[
+						HEADING_HEADERFLAGS].columns),
 					cols3[2],
-					tuklib_mbstr_fw(cols3[3], 15),
-						cols3[3],
-					tuklib_mbstr_fw(cols3[4], 7), cols3[4],
+					tuklib_mbstr_fw(cols3[3], headings[
+						HEADING_COMPSIZE].columns),
+					cols3[3],
+					tuklib_mbstr_fw(cols3[4], headings[
+						HEADING_MEMUSAGE].columns - 4),
+					cols3[4],
 					cols3[5]);
 			}
 
@@ -894,10 +999,12 @@ print_info_adv(xz_file_info *xfi, file_pair *pair)
 	}
 
 	if (detailed) {
-		printf(_("  Memory needed:      %s MiB\n"), uint64_to_str(
+		printf("  %-*s %s MiB\n", COLON_STR(COLON_STR_MEMORY_NEEDED),
+				uint64_to_str(
 				round_up_to_mib(xfi->memusage_max), 0));
-		printf(_("  Sizes in headers:   %s\n"),
+		printf("  %-*s %s\n", COLON_STR(COLON_STR_SIZES_IN_HEADERS),
 				xfi->all_have_sizes ? _("Yes") : _("No"));
+		//printf("  %-*s %s\n", COLON_STR(COLON_STR_MINIMUM_XZ_VERSION),
 		printf(_("  Minimum XZ Utils version: %s\n"),
 				xz_ver_to_str(xfi->min_version));
 	}
@@ -1062,17 +1169,19 @@ print_totals_adv(void)
 {
 	putchar('\n');
 	puts(_("Totals:"));
-	printf(_("  Number of files:    %s\n"),
+	printf("  %-*s %s\n", COLON_STR(COLON_STR_NUMBER_OF_FILES),
 			uint64_to_str(totals.files, 0));
 	print_adv_helper(totals.streams, totals.blocks,
 			totals.compressed_size, totals.uncompressed_size,
 			totals.checks, totals.stream_padding);
 
 	if (message_verbosity_get() >= V_DEBUG) {
-		printf(_("  Memory needed:      %s MiB\n"), uint64_to_str(
+		printf("  %-*s %s MiB\n", COLON_STR(COLON_STR_MEMORY_NEEDED),
+				uint64_to_str(
 				round_up_to_mib(totals.memusage_max), 0));
-		printf(_("  Sizes in headers:   %s\n"),
+		printf("  %-*s %s\n", COLON_STR(COLON_STR_SIZES_IN_HEADERS),
 				totals.all_have_sizes ? _("Yes") : _("No"));
+		//printf("  %-*s %s\n", COLON_STR(COLON_STR_MINIMUM_XZ_VERSION),
 		printf(_("  Minimum XZ Utils version: %s\n"),
 				xz_ver_to_str(totals.min_version));
 	}
@@ -1147,6 +1256,8 @@ list_file(const char *filename)
 				"standard input"));
 		return;
 	}
+
+	init_field_widths();
 
 	// Unset opt_stdout so that io_open_src() won't accept special files.
 	// Set opt_force so that io_open_src() will follow symlinks.

@@ -630,6 +630,22 @@ test_corrupt(void)
 }
 
 
+// Allocator that succeeds for the first two allocation but fails the rest.
+static void *
+my_alloc(void *opaque, size_t a, size_t b)
+{
+	(void)opaque;
+
+	static unsigned count = 0;
+	if (++count > 2)
+		return NULL;
+
+	return malloc(a * b);
+}
+
+static const lzma_allocator my_allocator = { &my_alloc, NULL, NULL };
+
+
 int
 main(void)
 {
@@ -654,6 +670,20 @@ main(void)
 	test_locate();
 
 	test_corrupt();
+
+	// Test for the bug fix 21515d79d778b8730a434f151b07202d52a04611:
+	// liblzma: Fix lzma_index_dup() for empty Streams.
+	i = create_empty();
+	expect(lzma_index_stream_padding(i, 4) == LZMA_OK);
+	test_copy(i);
+	lzma_index_end(i, NULL);
+
+	// Test for the bug fix 3bf857edfef51374f6f3fffae3d817f57d3264a0:
+	// liblzma: Fix a memory leak in error path of lzma_index_dup().
+	// Use Valgrind to see that there are no leaks.
+	i = create_small();
+	expect(lzma_index_dup(i, &my_allocator) == NULL);
+	lzma_index_end(i, NULL);
 
 	return 0;
 }

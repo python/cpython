@@ -19,7 +19,7 @@ extern LZMA_API(uint64_t)
 lzma_physmem(void)
 {
 	// It is simpler to make lzma_physmem() a wrapper for
-	// tuklib_physmem() than to hack appropriate symbol visiblity
+	// tuklib_physmem() than to hack appropriate symbol visibility
 	// support for the tuklib modules.
 	return tuklib_physmem();
 }

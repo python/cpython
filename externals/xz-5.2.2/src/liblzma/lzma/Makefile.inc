@@ -9,12 +9,16 @@ EXTRA_DIST += lzma/fastpos_tablegen.c
 
 liblzma_la_SOURCES += lzma/lzma_common.h
 
+if COND_FILTER_LZMA1
+liblzma_la_SOURCES += \
+	lzma/lzma_encoder_presets.c
+endif
+
 if COND_ENCODER_LZMA1
 liblzma_la_SOURCES += \
 	lzma/fastpos.h \
 	lzma/lzma_encoder.h \
 	lzma/lzma_encoder.c \
-	lzma/lzma_encoder_presets.c \
 	lzma/lzma_encoder_private.h \
 	lzma/lzma_encoder_optimum_fast.c \
 	lzma/lzma_encoder_optimum_normal.c

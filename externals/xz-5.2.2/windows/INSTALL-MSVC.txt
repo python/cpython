@@ -30,6 +30,10 @@ Building
     compiler switch to link to the CRT statically, so it will not
     have any other DLL dependencies.
 
+    The VS2017 project files don't set <WindowsTargetPlatformVersion>.
+    This means that you may need to either install Windows SDK 8.1 or
+    you may need to set the target platform version before building.
+
     Currently no test programs are built or run under MSVC.
 
     MSVC gives a bunch of compiler warnings. Some warnings are specific

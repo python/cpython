@@ -16,8 +16,6 @@ xz_SOURCES = \
 	file_io.h \
 	hardware.c \
 	hardware.h \
-	list.c \
-	list.h \
 	main.c \
 	main.h \
 	message.c \
@@ -39,6 +37,12 @@ xz_SOURCES = \
 	../common/tuklib_mbstr_width.c \
 	../common/tuklib_mbstr_fw.c
 
+if COND_MAIN_DECODER
+xz_SOURCES += \
+	list.c \
+	list.h
+endif
+
 if COND_W32
 xz_SOURCES += xz_w32res.rc
 endif
@@ -49,7 +53,7 @@ xz_CPPFLAGS = \
 	-I$(top_srcdir)/src/liblzma/api \
 	-I$(top_builddir)/lib
 
-xz_LDADD = $(top_builddir)/src/liblzma/liblzma.la
+xz_LDADD = $(top_builddir)/src/liblzma/liblzma.la $(CAPSICUM_LIB)
 
 if COND_GNULIB
 xz_LDADD += $(top_builddir)/lib/libgnu.a
@@ -77,31 +81,53 @@ xzlinks += lzma unlzma lzcat
 endif
 
 install-exec-hook:
-	cd $(DESTDIR)$(bindir) && \
+	cd "$(DESTDIR)$(bindir)" && \
 	target=`echo xz | sed '$(transform)'`$(EXEEXT) && \
 	for name in $(xzlinks); do \
 		link=`echo $$name | sed '$(transform)'`$(LN_EXEEXT) && \
-		rm -f $$link && \
-		$(LN_S) $$target $$link; \
+		rm -f "$$link" && \
+		$(LN_S) "$$target" "$$link"; \
 	done
 
+# The installation of translated man pages abuses Automake internals
+# by calling "install-man" with redefined dist_man_MANS and man_MANS.
+# If this breaks some day, don't blame Automake developers.
 install-data-hook:
-	cd $(DESTDIR)$(mandir)/man1 && \
+	languages= ; \
+	if test "$(USE_NLS)" = yes && test -d "$(top_srcdir)/po4a/man"; then \
+		languages=`ls "$(top_srcdir)/po4a/man"`; \
+	fi; \
 	target=`echo xz | sed '$(transform)'` && \
-	for name in $(xzlinks); do \
-		link=`echo $$name | sed '$(transform)'` && \
-		rm -f $$link.1 && \
-		$(LN_S) $$target.1 $$link.1; \
+	for lang in . $$languages; do \
+		man="$(top_srcdir)/po4a/man/$$lang/xz.1" ; \
+		if test -f "$$man"; then \
+			$(MAKE) dist_man_MANS="$$man" man_MANS= \
+				mandir="$(mandir)/$$lang" install-man; \
+		fi; \
+		man1dir="$(DESTDIR)$(mandir)/$$lang/man1" && \
+		if test -f "$$man1dir/$$target.1"; then ( \
+			cd "$$man1dir" && \
+			for name in $(xzlinks); do \
+				link=`echo $$name | sed '$(transform)'` && \
+				rm -f "$$link.1" && \
+				$(LN_S) "$$target.1" "$$link.1"; \
+			done \
+		); fi; \
 	done
 
 uninstall-hook:
-	cd $(DESTDIR)$(bindir) && \
+	cd "$(DESTDIR)$(bindir)" && \
 	for name in $(xzlinks); do \
 		link=`echo $$name | sed '$(transform)'`$(LN_EXEEXT) && \
-		rm -f $$link; \
+		rm -f "$$link"; \
 	done
-	cd $(DESTDIR)$(mandir)/man1 && \
-	for name in $(xzlinks); do \
-		link=`echo $$name | sed '$(transform)'` && \
-		rm -f $$link.1; \
+	languages= ; \
+	if test "$(USE_NLS)" = yes && test -d "$(top_srcdir)/po4a/man"; then \
+		languages=`ls "$(top_srcdir)/po4a/man"`; \
+	fi; \
+	for lang in . $$languages; do \
+		for name in xz $(xzlinks); do \
+			name=`echo $$name | sed '$(transform)'` && \
+			rm -f "$(DESTDIR)$(mandir)/$$lang/man1/$$name.1"; \
+		done; \
 	done

@@ -313,8 +313,11 @@ lzma_index_hash_decode(lzma_index_hash *index_hash, const uint8_t *in,
 				return LZMA_OK;
 
 			if (((index_hash->crc32 >> (index_hash->pos * 8))
-					& 0xFF) != in[(*in_pos)++])
+					& 0xFF) != in[(*in_pos)++]) {
+#ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 				return LZMA_DATA_ERROR;
+#endif
+			}
 
 		} while (++index_hash->pos < 4);
 

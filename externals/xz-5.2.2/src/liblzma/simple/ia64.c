@@ -15,7 +15,7 @@
 
 
 static size_t
-ia64_code(lzma_simple *simple lzma_attribute((__unused__)),
+ia64_code(void *simple lzma_attribute((__unused__)),
 		uint32_t now_pos, bool is_encoder,
 		uint8_t *buffer, size_t size)
 {
@@ -70,7 +70,7 @@ ia64_code(lzma_simple *simple lzma_attribute((__unused__)),
 				inst_norm |= (uint64_t)(dest & 0x100000)
 						<< (36 - 20);
 
-				instruction &= (1 << bit_res) - 1;
+				instruction &= (1U << bit_res) - 1;
 				instruction |= (inst_norm << bit_res);
 
 				for (size_t j = 0; j < 6; j++)

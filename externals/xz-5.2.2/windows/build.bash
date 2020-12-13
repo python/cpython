@@ -112,7 +112,7 @@ buildit()
 	strip -vg "$DESTDIR/"*.a
 }
 
-# Copy files and convert newlines from LF to CR+LF. Optinally add a suffix
+# Copy files and convert newlines from LF to CR+LF. Optionally add a suffix
 # to the destination filename.
 #
 # The first argument is the destination directory. The second argument is

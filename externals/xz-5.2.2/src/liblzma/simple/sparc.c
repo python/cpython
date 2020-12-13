@@ -15,7 +15,7 @@
 
 
 static size_t
-sparc_code(lzma_simple *simple lzma_attribute((__unused__)),
+sparc_code(void *simple lzma_attribute((__unused__)),
 		uint32_t now_pos, bool is_encoder,
 		uint8_t *buffer, size_t size)
 {

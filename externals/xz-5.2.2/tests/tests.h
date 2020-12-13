@@ -94,13 +94,8 @@ coder_loop(lzma_stream *strm, uint8_t *in, size_t in_size,
 	if (ret != expected_ret)
 		error = true;
 
-	if (expected_ret == LZMA_STREAM_END) {
-		if (strm->total_in != in_size || strm->total_out != out_size)
-			error = true;
-	} else {
-		if (strm->total_in != in_size || strm->total_out != out_size)
-			error = true;
-	}
+	if (strm->total_in != in_size || strm->total_out != out_size)
+		error = true;
 
 	return error;
 }

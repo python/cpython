@@ -258,7 +258,7 @@ set_lzma(void *options, unsigned key, uint64_t value, const char *valuestr)
 		if (valuestr[0] < '0' || valuestr[0] > '9')
 			error_lzma_preset(valuestr);
 
-		uint32_t preset = valuestr[0] - '0';
+		uint32_t preset = (uint32_t)(valuestr[0] - '0');
 
 		// Currently only "e" is supported as a modifier,
 		// so keep this simple for now.

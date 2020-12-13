@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-/// \file       filter_decoder.c
+/// \file       filter_decoder.h
 /// \brief      Filter ID mapping to filter-specific functions
 //
 //  Author:     Lasse Collin

@@ -16,6 +16,12 @@
 #include "lzma_decoder.h"
 #include "range_decoder.h"
 
+// The macros unroll loops with switch statements.
+// Silence warnings about missing fall-through comments.
+#if TUKLIB_GNUC_REQ(7, 0)
+#	pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#endif
+
 
 #ifdef HAVE_SMALL
 
@@ -161,7 +167,7 @@ typedef struct {
 } lzma_length_decoder;
 
 
-struct lzma_coder_s {
+typedef struct {
 	///////////////////
 	// Probabilities //
 	///////////////////
@@ -277,14 +283,16 @@ struct lzma_coder_s {
 	/// If decoding a literal: match byte.
 	/// If decoding a match: length of the match.
 	uint32_t len;
-};
+} lzma_lzma1_decoder;
 
 
 static lzma_ret
-lzma_decode(lzma_coder *restrict coder, lzma_dict *restrict dictptr,
+lzma_decode(void *coder_ptr, lzma_dict *restrict dictptr,
 		const uint8_t *restrict in,
 		size_t *restrict in_pos, size_t in_size)
 {
+	lzma_lzma1_decoder *restrict coder = coder_ptr;
+
 	////////////////////
 	// Initialization //
 	////////////////////
@@ -390,7 +398,7 @@ lzma_decode(lzma_coder *restrict coder, lzma_dict *restrict dictptr,
 				// ("match byte") to "len" to minimize the
 				// number of variables we need to store
 				// between decoder calls.
-				len = dict_get(&dict, rep0) << 1;
+				len = (uint32_t)(dict_get(&dict, rep0)) << 1;
 
 				// The usage of "offset" allows omitting some
 				// branches, which should give tiny speed
@@ -561,7 +569,7 @@ lzma_decode(lzma_coder *restrict coder, lzma_dict *restrict dictptr,
 #ifdef HAVE_SMALL
 					do {
 						rc_bit(probs[symbol], ,
-							rep0 += 1 << offset,
+							rep0 += 1U << offset,
 							SEQ_DIST_MODEL);
 					} while (++offset < limit);
 #else
@@ -569,25 +577,25 @@ lzma_decode(lzma_coder *restrict coder, lzma_dict *restrict dictptr,
 					case 5:
 						assert(offset == 0);
 						rc_bit(probs[symbol], ,
-							rep0 += 1,
+							rep0 += 1U,
 							SEQ_DIST_MODEL);
 						++offset;
 						--limit;
 					case 4:
 						rc_bit(probs[symbol], ,
-							rep0 += 1 << offset,
+							rep0 += 1U << offset,
 							SEQ_DIST_MODEL);
 						++offset;
 						--limit;
 					case 3:
 						rc_bit(probs[symbol], ,
-							rep0 += 1 << offset,
+							rep0 += 1U << offset,
 							SEQ_DIST_MODEL);
 						++offset;
 						--limit;
 					case 2:
 						rc_bit(probs[symbol], ,
-							rep0 += 1 << offset,
+							rep0 += 1U << offset,
 							SEQ_DIST_MODEL);
 						++offset;
 						--limit;
@@ -599,7 +607,7 @@ lzma_decode(lzma_coder *restrict coder, lzma_dict *restrict dictptr,
 						// the unneeded updating of
 						// "symbol".
 						rc_bit_last(probs[symbol], ,
-							rep0 += 1 << offset,
+							rep0 += 1U << offset,
 							SEQ_DIST_MODEL);
 					}
 #endif
@@ -627,7 +635,7 @@ lzma_decode(lzma_coder *restrict coder, lzma_dict *restrict dictptr,
 					do {
 						rc_bit(coder->pos_align[
 								symbol], ,
-							rep0 += 1 << offset,
+							rep0 += 1U << offset,
 							SEQ_ALIGN);
 					} while (++offset < ALIGN_BITS);
 #else
@@ -840,23 +848,17 @@ out:
 
 
 static void
-lzma_decoder_uncompressed(lzma_coder *coder, lzma_vli uncompressed_size)
+lzma_decoder_uncompressed(void *coder_ptr, lzma_vli uncompressed_size)
 {
+	lzma_lzma1_decoder *coder = coder_ptr;
 	coder->uncompressed_size = uncompressed_size;
 }
 
-/*
-extern void
-lzma_lzma_decoder_uncompressed(void *coder_ptr, lzma_vli uncompressed_size)
-{
-	// This is hack.
-	(*(lzma_coder **)(coder))->uncompressed_size = uncompressed_size;
-}
-*/
 
 static void
-lzma_decoder_reset(lzma_coder *coder, const void *opt)
+lzma_decoder_reset(void *coder_ptr, const void *opt)
 {
+	lzma_lzma1_decoder *coder = coder_ptr;
 	const lzma_options_lzma *options = opt;
 
 	// NOTE: We assume that lc/lp/pb are valid since they were
@@ -941,7 +943,7 @@ lzma_lzma_decoder_create(lzma_lz_decoder *lz, const lzma_allocator *allocator,
 		const void *opt, lzma_lz_options *lz_options)
 {
 	if (lz->coder == NULL) {
-		lz->coder = lzma_alloc(sizeof(lzma_coder), allocator);
+		lz->coder = lzma_alloc(sizeof(lzma_lzma1_decoder), allocator);
 		if (lz->coder == NULL)
 			return LZMA_MEM_ERROR;
 
@@ -1014,7 +1016,8 @@ extern uint64_t
 lzma_lzma_decoder_memusage_nocheck(const void *options)
 {
 	const lzma_options_lzma *const opt = options;
-	return sizeof(lzma_coder) + lzma_lz_decoder_memusage(opt->dict_size);
+	return sizeof(lzma_lzma1_decoder)
+			+ lzma_lz_decoder_memusage(opt->dict_size);
 }
 
 
@@ -1046,7 +1049,7 @@ lzma_lzma_props_decode(void **options, const lzma_allocator *allocator,
 	// All dictionary sizes are accepted, including zero. LZ decoder
 	// will automatically use a dictionary at least a few KiB even if
 	// a smaller dictionary is requested.
-	opt->dict_size = unaligned_read32le(props + 1);
+	opt->dict_size = read32le(props + 1);
 
 	opt->preset_dict = NULL;
 	opt->preset_dict_size = 0;

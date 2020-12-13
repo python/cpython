@@ -21,6 +21,10 @@ liblzma_la_SOURCES += \
 	common/stream_flags_common.h \
 	common/vli_size.c
 
+if COND_THREADS
+liblzma_la_SOURCES += common/hardware_cputhreads.c
+endif
+
 if COND_MAIN_ENCODER
 liblzma_la_SOURCES += \
 	common/alone_encoder.c \
@@ -45,7 +49,6 @@ liblzma_la_SOURCES += \
 
 if COND_THREADS
 liblzma_la_SOURCES += \
-	common/hardware_cputhreads.c \
 	common/outqueue.c \
 	common/outqueue.h \
 	common/stream_encoder_mt.c
@@ -62,11 +65,13 @@ liblzma_la_SOURCES += \
 	common/block_decoder.h \
 	common/block_header_decoder.c \
 	common/easy_decoder_memusage.c \
+	common/file_info.c \
 	common/filter_buffer_decoder.c \
 	common/filter_decoder.c \
 	common/filter_decoder.h \
 	common/filter_flags_decoder.c \
 	common/index_decoder.c \
+	common/index_decoder.h \
 	common/index_hash.c \
 	common/stream_buffer_decoder.c \
 	common/stream_decoder.c \

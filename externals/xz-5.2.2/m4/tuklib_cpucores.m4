@@ -10,6 +10,8 @@
 #
 #   Supported methods:
 #     - GetSystemInfo(): Windows (including Cygwin)
+#     - sched_getaffinity(): glibc (GNU/Linux, GNU/kFreeBSD)
+#     - cpuset_getaffinity(): FreeBSD
 #     - sysctl(): BSDs, OS/2
 #     - sysconf(): GNU/Linux, Solaris, Tru64, IRIX, AIX, QNX, Cygwin (but
 #       GetSystemInfo() is used on Cygwin)
@@ -45,8 +47,29 @@ compile error
 #endif
 ]])], [tuklib_cv_cpucores_method=special], [
 
+# glibc-based systems (GNU/Linux and GNU/kFreeBSD) have sched_getaffinity().
+# The CPU_COUNT() macro was added in glibc 2.9 so we try to link the
+# test program instead of merely compiling it. glibc 2.9 is old enough that
+# if someone uses the code on older glibc, the fallback to sysconf() should
+# be good enough.
+AC_LINK_IFELSE([AC_LANG_SOURCE([[
+#include <sched.h>
+int
+main(void)
+{
+	cpu_set_t cpu_mask;
+	sched_getaffinity(0, sizeof(cpu_mask), &cpu_mask);
+	return CPU_COUNT(&cpu_mask);
+}
+]])], [tuklib_cv_cpucores_method=sched_getaffinity], [
+
 # FreeBSD has both cpuset and sysctl. Look for cpuset first because
 # it's a better approach.
+#
+# This test would match on GNU/kFreeBSD too but it would require
+# -lfreebsd-glue when linking and thus in the current form this would
+# fail on GNU/kFreeBSD. The above test for sched_getaffinity() matches
+# on GNU/kFreeBSD so the test below should never run on that OS.
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 #include <sys/param.h>
 #include <sys/cpuset.h>
@@ -72,7 +95,6 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 #ifdef __QNX__
 compile error
 #endif
-#include <sys/types.h>
 #ifdef HAVE_SYS_PARAM_H
 #	include <sys/param.h>
 #endif
@@ -120,9 +142,14 @@ main(void)
 ]])], [tuklib_cv_cpucores_method=pstat_getdynamic], [
 
 	tuklib_cv_cpucores_method=unknown
-])])])])])])
+])])])])])])])
 
 case $tuklib_cv_cpucores_method in
+	sched_getaffinity)
+		AC_DEFINE([TUKLIB_CPUCORES_SCHED_GETAFFINITY], [1],
+			[Define to 1 if the number of available CPU cores
+			can be detected with sched_getaffinity()])
+		;;
 	cpuset)
 		AC_DEFINE([TUKLIB_CPUCORES_CPUSET], [1],
 			[Define to 1 if the number of available CPU cores

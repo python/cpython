@@ -15,16 +15,16 @@
 
 
 static size_t
-arm_code(lzma_simple *simple lzma_attribute((__unused__)),
+arm_code(void *simple lzma_attribute((__unused__)),
 		uint32_t now_pos, bool is_encoder,
 		uint8_t *buffer, size_t size)
 {
 	size_t i;
 	for (i = 0; i + 4 <= size; i += 4) {
 		if (buffer[i + 3] == 0xEB) {
-			uint32_t src = (buffer[i + 2] << 16)
-					| (buffer[i + 1] << 8)
-					| (buffer[i + 0]);
+			uint32_t src = ((uint32_t)(buffer[i + 2]) << 16)
+					| ((uint32_t)(buffer[i + 1]) << 8)
+					| (uint32_t)(buffer[i + 0]);
 			src <<= 2;
 
 			uint32_t dest;

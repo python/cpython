@@ -16,7 +16,7 @@
 #include "lzma_decoder.h"
 
 
-struct lzma_coder_s {
+typedef struct {
 	enum sequence {
 		SEQ_CONTROL,
 		SEQ_UNCOMPRESSED_1,
@@ -50,14 +50,16 @@ struct lzma_coder_s {
 	bool need_dictionary_reset;
 
 	lzma_options_lzma options;
-};
+} lzma_lzma2_coder;
 
 
 static lzma_ret
-lzma2_decode(lzma_coder *restrict coder, lzma_dict *restrict dict,
+lzma2_decode(void *coder_ptr, lzma_dict *restrict dict,
 		const uint8_t *restrict in, size_t *restrict in_pos,
 		size_t in_size)
 {
+	lzma_lzma2_coder *restrict coder = coder_ptr;
+
 	// With SEQ_LZMA it is possible that no new input is needed to do
 	// some progress. The rest of the sequences assume that there is
 	// at least one byte of input.
@@ -134,7 +136,7 @@ lzma2_decode(lzma_coder *restrict coder, lzma_dict *restrict dict,
 		break;
 
 	case SEQ_UNCOMPRESSED_2:
-		coder->uncompressed_size += in[(*in_pos)++] + 1;
+		coder->uncompressed_size += in[(*in_pos)++] + 1U;
 		coder->sequence = SEQ_COMPRESSED_0;
 		coder->lzma.set_uncompressed(coder->lzma.coder,
 				coder->uncompressed_size);
@@ -146,7 +148,7 @@ lzma2_decode(lzma_coder *restrict coder, lzma_dict *restrict dict,
 		break;
 
 	case SEQ_COMPRESSED_1:
-		coder->compressed_size += in[(*in_pos)++] + 1;
+		coder->compressed_size += in[(*in_pos)++] + 1U;
 		coder->sequence = coder->next_sequence;
 		break;
 
@@ -209,8 +211,10 @@ lzma2_decode(lzma_coder *restrict coder, lzma_dict *restrict dict,
 
 
 static void
-lzma2_decoder_end(lzma_coder *coder, const lzma_allocator *allocator)
+lzma2_decoder_end(void *coder_ptr, const lzma_allocator *allocator)
 {
+	lzma_lzma2_coder *coder = coder_ptr;
+
 	assert(coder->lzma.end == NULL);
 	lzma_free(coder->lzma.coder, allocator);
 
@@ -224,25 +228,27 @@ static lzma_ret
 lzma2_decoder_init(lzma_lz_decoder *lz, const lzma_allocator *allocator,
 		const void *opt, lzma_lz_options *lz_options)
 {
-	if (lz->coder == NULL) {
-		lz->coder = lzma_alloc(sizeof(lzma_coder), allocator);
-		if (lz->coder == NULL)
+	lzma_lzma2_coder *coder = lz->coder;
+	if (coder == NULL) {
+		coder = lzma_alloc(sizeof(lzma_lzma2_coder), allocator);
+		if (coder == NULL)
 			return LZMA_MEM_ERROR;
 
+		lz->coder = coder;
 		lz->code = &lzma2_decode;
 		lz->end = &lzma2_decoder_end;
 
-		lz->coder->lzma = LZMA_LZ_DECODER_INIT;
+		coder->lzma = LZMA_LZ_DECODER_INIT;
 	}
 
 	const lzma_options_lzma *options = opt;
 
-	lz->coder->sequence = SEQ_CONTROL;
-	lz->coder->need_properties = true;
-	lz->coder->need_dictionary_reset = options->preset_dict == NULL
+	coder->sequence = SEQ_CONTROL;
+	coder->need_properties = true;
+	coder->need_dictionary_reset = options->preset_dict == NULL
 			|| options->preset_dict_size == 0;
 
-	return lzma_lzma_decoder_create(&lz->coder->lzma,
+	return lzma_lzma_decoder_create(&coder->lzma,
 			allocator, options, lz_options);
 }
 
@@ -263,7 +269,7 @@ lzma_lzma2_decoder_init(lzma_next_coder *next, const lzma_allocator *allocator,
 extern uint64_t
 lzma_lzma2_decoder_memusage(const void *options)
 {
-	return sizeof(lzma_coder)
+	return sizeof(lzma_lzma2_coder)
 			+ lzma_lzma_decoder_memusage_nocheck(options);
 }
 
@@ -291,8 +297,8 @@ lzma_lzma2_props_decode(void **options, const lzma_allocator *allocator,
 	if (props[0] == 40) {
 		opt->dict_size = UINT32_MAX;
 	} else {
-		opt->dict_size = 2 | (props[0] & 1);
-		opt->dict_size <<= props[0] / 2 + 11;
+		opt->dict_size = 2 | (props[0] & 1U);
+		opt->dict_size <<= props[0] / 2U + 11;
 	}
 
 	opt->preset_dict = NULL;

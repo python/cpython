@@ -94,10 +94,10 @@ write_random(FILE *file)
 	for (size_t i = 0; i < 123456; ++i) {
 		n = 101771 * n + 71777;
 
-		putc(n & 0xFF, file);
-		putc((n >> 8) & 0xFF, file);
-		putc((n >> 16) & 0xFF, file);
-		putc(n >> 24, file);
+		putc((uint8_t)(n), file);
+		putc((uint8_t)(n >> 8), file);
+		putc((uint8_t)(n >> 16), file);
+		putc((uint8_t)(n >> 24), file);
 	}
 }
 

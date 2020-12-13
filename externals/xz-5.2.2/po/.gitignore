@@ -1,0 +1,31 @@
+# autopoint
+Makefile.in.in
+Makevars.template
+Rules-quot
+boldquot.sed
+en@boldquot.header
+en@quot.header
+insert-header.sin
+quot.sed
+remove-potcdate.sin
+
+# configure
+Makefile.in
+Makefile
+POTFILES
+
+# intermediate files (make)
+stamp-poT
+xz.po
+xz.1po
+xz.2po
+*.new.po
+
+# make
+remove-potcdate.sed
+xz.mo
+stamp-po
+*.gmo
+
+# cached templates (make)
+xz.pot

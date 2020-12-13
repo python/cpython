@@ -14,6 +14,7 @@ XZ Utils Installation
             1.2.6. Tru64
             1.2.7. Windows
             1.2.8. DOS
+            1.2.9. z/OS
        1.3. Adding support for new platforms
     2. configure options
        2.1. Static vs. dynamic linking of liblzma
@@ -123,8 +124,11 @@ XZ Utils Installation
     as an argument to the configure script.
 
     test_scripts.sh in "make check" may fail if good enough tools are
-    missing from PATH (/usr/xpg4/bin or /usr/xpg6/bin). See sections
-    4.5 and 3.2 for more information.
+    missing from PATH (/usr/xpg4/bin or /usr/xpg6/bin). Nowadays
+    /usr/xpg4/bin is added to the script PATH by default on Solaris
+    (see --enable-path-for-scripts=PREFIX in section 2), but old xz
+    releases needed extra steps. See sections 4.5 and 3.2 for more
+    information.
 
 
 1.2.6. Tru64
@@ -136,8 +140,22 @@ XZ Utils Installation
 
 1.2.7. Windows
 
-    Building XZ Utils on Windows is supported under the following
-    environments:
+    If it is enough to build liblzma (no command line tools):
+
+      - There is experimental CMake support. As it is, it should be
+        good enough to build static liblzma with Visual Studio.
+        Building liblzma.dll might work too (if it doesn't, it should
+        be fixed). The CMake support may work with MinGW or MinGW-w64.
+        Read the comment in the beginning of CMakeLists.txt before
+        running CMake!
+
+      - There are Visual Studio project files under the "windows"
+        directory. See windows/INSTALL-MSVC.txt. In the future the
+        project files will be removed when CMake support is good
+        enough. Thus, please test the CMake version and help fix
+        possible issues.
+
+    To build also the command line tools:
 
       - MinGW-w64 + MSYS (32-bit and 64-bit x86): This is used
         for building the official binary packages for Windows.
@@ -153,9 +171,6 @@ XZ Utils Installation
         which is safe under older Cygwin versions. You can check
         the Cygwin version with the command "cygcheck -V".
 
-      - Microsoft Visual Studio 2013 update 2 or later (MSVC for short):
-        See windows/INSTALL-MSVC.txt for more information.
-
     It may be possible to build liblzma with other toolchains too, but
     that will probably require writing a separate makefile. Building
     the command line tools with non-GNU toolchains will be harder than
@@ -168,12 +183,31 @@ XZ Utils Installation
 
 1.2.8. DOS
 
-    There is an experimental Makefile in the "dos" directory to build
-    XZ Utils on DOS using DJGPP. Support for long file names (LFN) is
-    needed. See dos/README for more information.
+    There is a Makefile in the "dos" directory to build XZ Utils on
+    DOS using DJGPP. Support for long file names (LFN) is needed at
+    build time but the resulting xz.exe works without LFN support too.
+    See dos/INSTALL.txt and dos/README.txt for more information.
 
-    GNU Autotools based build hasn't been tried on DOS. If you try, I
-    would like to hear if it worked.
+
+1.2.9. z/OS
+
+    To build XZ Utils on z/OS UNIX System Services using xlc, pass
+    these options to the configure script: CC='xlc -qhaltonmsg=CCN3296'
+    CPPFLAS='-D_UNIX03_THREADS -D_XOPEN_SOURCE=600'. The first makes
+    xlc throw an error if a header file is missing, which is required
+    to make the tests in configure work. The CPPFLAGS are needed to
+    get pthread support (some other CPPFLAGS may work too; if there
+    are problems, try -D_UNIX95_THREADS instead of -D_UNIX03_THREADS).
+
+    test_scripts.sh in "make check" will fail even if the scripts
+    actually work because the test data includes compressed files
+    with US-ASCII text.
+
+    No other tests should fail. If test_files.sh fails, check that
+    the included .xz test files weren't affected by EBCDIC conversion.
+
+    XZ Utils doesn't have code to detect the amount of physical RAM and
+    number of CPU cores on z/OS.
 
 
 1.3. Adding support for new platforms
@@ -245,6 +279,42 @@ XZ Utils Installation
                 Disabling integrity checks may remove some symbols from
                 the liblzma ABI, so this option should be used only when
                 it is known to not cause problems.
+
+    --enable-external-sha256
+                Try to use SHA-256 code from the operating system libc
+                or similar base system libraries. This doesn't try to
+                use OpenSSL or libgcrypt or such libraries.
+
+                The reasons to use this option:
+
+                  - It makes liblzma slightly smaller.
+
+                  - It might improve SHA-256 speed if the implementation
+                    in the operating is very good (but see below).
+
+                External SHA-256 is disabled by default for two reasons:
+
+                  - On some operating systems the symbol names of the
+                    SHA-256 functions conflict with OpenSSL's libcrypto.
+                    This causes weird problems such as decompression
+                    errors if an application is linked against both
+                    liblzma and libcrypto. This problem affects at least
+                    FreeBSD 10 and older and MINIX 3.3.0 and older, but
+                    other OSes that provide a function "SHA256_Init" might
+                    also be affected. FreeBSD 11 has the problem fixed.
+                    NetBSD had the problem but it was fixed it in 2009
+                    already. OpenBSD uses "SHA256Init" and thus never had
+                    a conflict with libcrypto.
+
+                  - The SHA-256 code in liblzma is faster than the SHA-256
+                    code provided by some operating systems. If you are
+                    curious, build two copies of xz (internal and external
+                    SHA-256) and compare the decompression (xz --test)
+                    times:
+
+                        dd if=/dev/zero bs=1024k count=1024 \
+                            | xz -v -0 -Csha256 > foo.xz
+                        time xz --test foo.xz
 
     --disable-xz
     --disable-xzdec
@@ -363,6 +433,29 @@ XZ Utils Installation
                                 calls any liblzma functions from more than
                                 one thread, something bad may happen.
 
+    --enable-sandbox=METHOD
+                There is limited sandboxing support in the xz tool. If
+                built with sandbox support, it's used automatically when
+                (de)compressing exactly one file to standard output and
+                the options --files or --files0 weren't used. This is a
+                common use case, for example, (de)compressing .tar.xz
+                files via GNU tar. The sandbox is also used for
+                single-file `xz --test' or `xz --list'.
+
+                Supported METHODs:
+
+                        auto    Look for a supported sandboxing method
+                                and use it if found. If no method is
+                                found, then sandboxing isn't used.
+                                This is the default.
+
+                        no      Disable sandboxing support.
+
+                        capsicum
+                                Use Capsicum (FreeBSD >= 10) for
+                                sandboxing. If no Capsicum support
+                                is found, configure will give an error.
+
     --enable-symbol-versions
                 Use symbol versioning for liblzma. This is enabled by
                 default on GNU/Linux, other GNU-based systems, and
@@ -378,6 +471,23 @@ XZ Utils Installation
                 that abort the compilation. This may help catching bugs,
                 and should work on most systems. This has no effect on the
                 resulting binaries.
+
+    --enable-path-for-scripts=PREFIX
+                If PREFIX isn't empty, PATH=PREFIX:$PATH will be set in
+                the beginning of the scripts (xzgrep and others).
+                The default is empty except on Solaris the default is
+                /usr/xpg4/bin.
+
+                This can be useful if the default PATH doesn't contain
+                modern POSIX tools (as can be the case on Solaris) or if
+                one wants to ensure that the correct xz binary is in the
+                PATH for the scripts. Note that the latter use can break
+                "make check" if the prefixed PATH causes a wrong xz binary
+                (other than the one that was just built) to be used.
+
+                Older xz releases support a different method for setting
+                the PATH for the scripts. It is described in section 3.2
+                and is supported in this xz version too.
 
 
 2.1. Static vs. dynamic linking of liblzma
@@ -451,11 +561,17 @@ XZ Utils Installation
 
 3.2. PATH
 
+    The method described below is supported by older xz releases.
+    It is supported by the current version too, but the newer
+    --enable-path-for-scripts=PREFIX described in section 2 may be
+    more convenient.
+
     The scripts assume that the required tools (standard POSIX utilities,
-    mktemp, and xz) are in PATH; the scripts don't set the PATH themselves.
-    Some people like this while some think this is a bug. Those in the
-    latter group can easily patch the scripts before running the configure
-    script by taking advantage of a placeholder line in the scripts.
+    mktemp, and xz) are in PATH; the scripts don't set the PATH themselves
+    (except as described for --enable-path-for-scripts=PREFIX). Some
+    people like this while some think this is a bug. Those in the latter
+    group can easily patch the scripts before running the configure script
+    by taking advantage of a placeholder line in the scripts.
 
     For example, to make the scripts prefix /usr/bin:/bin to PATH:
 
@@ -529,8 +645,9 @@ XZ Utils Installation
     some tools are missing from the current PATH or the tools lack
     support for some POSIX features. This can happen at least on
     Solaris where the tools in /bin may be ancient but good enough
-    tools are available in /usr/xpg4/bin or /usr/xpg6/bin. One fix
-    for this problem is described in section 3.2 of this file.
+    tools are available in /usr/xpg4/bin or /usr/xpg6/bin. For possible
+    fixes, see --enable-path-for-scripts=PREFIX in section 2 and the
+    older alternative method described in section 3.2 of this file.
 
     If tests other than test_scripts.sh fail, a likely reason is that
     libtool links the test programs against an installed version of

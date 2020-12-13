@@ -68,8 +68,38 @@ hardware_memlimit_set(uint64_t new_memlimit,
 		new_memlimit = (uint32_t)new_memlimit * total_ram / 100;
 	}
 
-	if (set_compress)
+	if (set_compress) {
 		memlimit_compress = new_memlimit;
+
+#if SIZE_MAX == UINT32_MAX
+		// FIXME?
+		//
+		// When running a 32-bit xz on a system with a lot of RAM and
+		// using a percentage-based memory limit, the result can be
+		// bigger than the 32-bit address space. Limiting the limit
+		// below SIZE_MAX for compression (not decompression) makes
+		// xz lower the compression settings (or number of threads)
+		// to a level that *might* work. In practice it has worked
+		// when using a 64-bit kernel that gives full 4 GiB address
+		// space to 32-bit programs. In other situations this might
+		// still be too high, like 32-bit kernels that may give much
+		// less than 4 GiB to a single application.
+		//
+		// So this is an ugly hack but I will keep it here while
+		// it does more good than bad.
+		//
+		// Use a value less than SIZE_MAX so that there's some room
+		// for the xz program and so on. Don't use 4000 MiB because
+		// it could look like someone mixed up base-2 and base-10.
+		const uint64_t limit_max = UINT64_C(4020) << 20;
+
+		// UINT64_MAX is a special case for the string "max" so
+		// that has to be handled specially.
+		if (memlimit_compress != UINT64_MAX
+				&& memlimit_compress > limit_max)
+			memlimit_compress = limit_max;
+#endif
+	}
 
 	if (set_decompress)
 		memlimit_decompress = new_memlimit;
@@ -98,15 +128,22 @@ hardware_memlimit_get(enum operation_mode mode)
 
 /// Helper for hardware_memlimit_show() to print one human-readable info line.
 static void
-memlimit_show(const char *str, uint64_t value)
+memlimit_show(const char *str, size_t str_columns, uint64_t value)
 {
+	// Calculate the field width so that str will be padded to take
+	// str_columns on the terminal.
+	//
+	// NOTE: If the string is invalid, this will be -1. Using -1 as
+	// the field width is fine here so it's not handled specially.
+	const int fw = tuklib_mbstr_fw(str, (int)(str_columns));
+
 	// The memory usage limit is considered to be disabled if value
 	// is 0 or UINT64_MAX. This might get a bit more complex once there
 	// is threading support. See the comment in hardware_memlimit_get().
 	if (value == 0 || value == UINT64_MAX)
-		printf("%s %s\n", str, _("Disabled"));
+		printf("%-*s  %s\n", fw, str, _("Disabled"));
 	else
-		printf("%s %s MiB (%s B)\n", str,
+		printf("%-*s  %s MiB (%s B)\n", fw, str,
 				uint64_to_str(round_up_to_mib(value), 0),
 				uint64_to_str(value, 1));
 
@@ -121,14 +158,30 @@ hardware_memlimit_show(void)
 		printf("%" PRIu64 "\t%" PRIu64 "\t%" PRIu64 "\n", total_ram,
 				memlimit_compress, memlimit_decompress);
 	} else {
-		// TRANSLATORS: Test with "xz --info-memory" to see if
-		// the alignment looks nice.
-		memlimit_show(_("Total amount of physical memory (RAM): "),
-				total_ram);
-		memlimit_show(_("Memory usage limit for compression:    "),
-				memlimit_compress);
-		memlimit_show(_("Memory usage limit for decompression:  "),
-				memlimit_decompress);
+		const char *msgs[] = {
+			_("Amount of physical memory (RAM):"),
+			_("Memory usage limit for compression:"),
+			_("Memory usage limit for decompression:"),
+		};
+
+		size_t width_max = 1;
+		for (unsigned i = 0; i < ARRAY_SIZE(msgs); ++i) {
+			size_t w = tuklib_mbstr_width(msgs[i], NULL);
+
+			// When debugging, catch invalid strings with
+			// an assertion. Otherwise fallback to 1 so
+			// that the columns just won't be aligned.
+			assert(w != (size_t)-1);
+			if (w == (size_t)-1)
+				w = 1;
+
+			if (width_max < w)
+				width_max = w;
+		}
+
+		memlimit_show(msgs[0], width_max, total_ram);
+		memlimit_show(msgs[1], width_max, memlimit_compress);
+		memlimit_show(msgs[2], width_max, memlimit_decompress);
 	}
 
 	tuklib_exit(E_SUCCESS, E_ERROR, message_verbosity_get() != V_SILENT);

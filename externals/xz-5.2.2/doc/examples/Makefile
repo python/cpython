@@ -13,7 +13,8 @@ PROGS = \
 	01_compress_easy \
 	02_decompress \
 	03_compress_custom \
-	04_compress_easy_mt
+	04_compress_easy_mt \
+	11_file_info
 
 all: $(PROGS)
 

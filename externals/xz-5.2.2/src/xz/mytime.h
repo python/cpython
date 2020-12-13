@@ -21,10 +21,6 @@
 extern uint64_t opt_flush_timeout;
 
 
-/// \brief      True when flushing is needed due to expired timeout
-extern bool flush_needed;
-
-
 /// \brief      Store the time when (de)compression was started
 ///
 /// The start time is also stored as the time of the first flush.
@@ -43,5 +39,5 @@ extern void mytime_set_flush_time(void);
 ///
 /// This returns -1 if no timed flushing is used.
 ///
-/// The return value is inteded for use with poll().
+/// The return value is intended for use with poll().
 extern int mytime_get_flush_timeout(void);

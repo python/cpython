@@ -1,0 +1,98 @@
+﻿  tuklib_cpucores.c
+  tuklib_physmem.c
+C:\cpython\externals\xz-5.2.2\src\common\tuklib_physmem.c(82,7): warning C4996: 'GetVersion': was declared deprecated
+  check.c
+  crc32_fast.c
+  crc32_table.c
+  crc64_fast.c
+C:\cpython\externals\xz-5.2.2\src\liblzma\check\crc64_fast.c(52,1): warning C4244: 'initializing': conversion from 'uint64_t' to 'const uint32_t', possible loss of data
+  crc64_table.c
+  sha256.c
+  alone_decoder.c
+  alone_encoder.c
+  auto_decoder.c
+  block_buffer_decoder.c
+  block_buffer_encoder.c
+C:\cpython\externals\xz-5.2.2\src\liblzma\common\block_buffer_encoder.c(84,12): warning C4244: 'return': conversion from 'uint64_t' to 'size_t', possible loss of data
+C:\cpython\externals\xz-5.2.2\src\liblzma\common\block_buffer_encoder.c(147,43): warning C4267: '=': conversion from 'size_t' to 'uint8_t', possible loss of data
+C:\cpython\externals\xz-5.2.2\src\liblzma\common\block_buffer_encoder.c(184,47): warning C4244: '=': conversion from 'lzma_vli' to 'size_t', possible loss of data
+  block_decoder.c
+  block_encoder.c
+  block_header_decoder.c
+  block_header_encoder.c
+C:\cpython\externals\xz-5.2.2\src\liblzma\common\block_header_encoder.c(85,23): warning C4267: '=': conversion from 'size_t' to 'uint8_t', possible loss of data
+  block_util.c
+  common.c
+  easy_buffer_encoder.c
+  Generating Code...
+  Compiling...
+  easy_decoder_memusage.c
+  easy_encoder.c
+  easy_encoder_memusage.c
+  easy_preset.c
+  file_info.c
+C:\cpython\externals\xz-5.2.2\src\liblzma\common\file_info.c(405,41): warning C4244: '=': conversion from 'lzma_vli' to 'size_t', possible loss of data
+C:\cpython\externals\xz-5.2.2\src\liblzma\common\file_info.c(567,31): warning C4244: '=': conversion from 'lzma_vli' to 'size_t', possible loss of data
+  filter_buffer_decoder.c
+  filter_buffer_encoder.c
+  filter_common.c
+  filter_decoder.c
+  filter_encoder.c
+  filter_flags_decoder.c
+C:\cpython\externals\xz-5.2.2\src\liblzma\common\filter_flags_decoder.c(41,47): warning C4244: 'function': conversion from 'lzma_vli' to 'size_t', possible loss of data
+C:\cpython\externals\xz-5.2.2\src\liblzma\common\filter_flags_decoder.c(43,23): warning C4244: '+=': conversion from 'lzma_vli' to 'size_t', possible loss of data
+  filter_flags_encoder.c
+  hardware_cputhreads.c
+  hardware_physmem.c
+  index.c
+C:\cpython\externals\xz-5.2.2\src\liblzma\common\index.c(892,46): warning C4244: 'function': conversion from 'const lzma_vli' to 'size_t', possible loss of data
+C:\cpython\externals\xz-5.2.2\src\liblzma\common\index.c(903,38): warning C4244: '=': conversion from 'const lzma_vli' to 'size_t', possible loss of data
+C:\cpython\externals\xz-5.2.2\src\liblzma\common\index.c(904,37): warning C4244: '=': conversion from 'const lzma_vli' to 'size_t', possible loss of data
+  index_decoder.c
+  index_encoder.c
+  index_hash.c
+  outqueue.c
+  stream_buffer_decoder.c
+  Generating Code...
+  Compiling...
+  stream_buffer_encoder.c
+  stream_decoder.c
+  stream_encoder.c
+  stream_encoder_mt.c
+  stream_flags_common.c
+  stream_flags_decoder.c
+  stream_flags_encoder.c
+  vli_decoder.c
+  vli_encoder.c
+  vli_size.c
+  delta_common.c
+  delta_decoder.c
+  delta_encoder.c
+  fastpos_table.c
+  lzma2_decoder.c
+  lzma2_encoder.c
+C:\cpython\externals\xz-5.2.2\src\liblzma\lzma\lzma2_encoder.c(85,33): warning C4267: '+=': conversion from 'size_t' to 'uint8_t', possible loss of data
+C:\cpython\externals\xz-5.2.2\src\liblzma\lzma\lzma2_encoder.c(91,31): warning C4267: '=': conversion from 'size_t' to 'uint8_t', possible loss of data
+C:\cpython\externals\xz-5.2.2\src\liblzma\lzma\lzma2_encoder.c(126,53): warning C4267: '=': conversion from 'size_t' to 'uint8_t', possible loss of data
+  lzma_decoder.c
+  lzma_encoder.c
+  lzma_encoder_optimum_fast.c
+  lzma_encoder_optimum_normal.c
+  Generating Code...
+  Compiling...
+  lzma_encoder_presets.c
+  lz_decoder.c
+  lz_encoder.c
+  lz_encoder_mf.c
+  price_table.c
+  arm.c
+  armthumb.c
+  ia64.c
+  powerpc.c
+  simple_coder.c
+  simple_decoder.c
+  simple_encoder.c
+  sparc.c
+  x86.c
+  Generating Code...
+  liblzma.vcxproj -> C:\cpython\externals\xz-5.2.2\windows\vs2019\Debug\Win32\liblzma\liblzma.lib

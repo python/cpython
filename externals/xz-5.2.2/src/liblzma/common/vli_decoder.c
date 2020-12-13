@@ -72,7 +72,7 @@ lzma_vli_decode(lzma_vli *restrict vli, size_t *vli_pos,
 		// corrupt.
 		//
 		// If we need bigger integers in future, old versions liblzma
-		// will confusingly indicate the file being corrupt istead of
+		// will confusingly indicate the file being corrupt instead of
 		// unsupported. I suppose it's still better this way, because
 		// in the foreseeable future (writing this in 2008) the only
 		// reason why files would appear having over 63-bit integers

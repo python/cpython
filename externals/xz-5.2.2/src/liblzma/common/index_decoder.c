@@ -10,11 +10,11 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "index.h"
+#include "index_decoder.h"
 #include "check.h"
 
 
-struct lzma_coder_s {
+typedef struct {
 	enum {
 		SEQ_INDICATOR,
 		SEQ_COUNT,
@@ -50,11 +50,11 @@ struct lzma_coder_s {
 
 	/// CRC32 of the List of Records field
 	uint32_t crc32;
-};
+} lzma_index_coder;
 
 
 static lzma_ret
-index_decode(lzma_coder *coder, const lzma_allocator *allocator,
+index_decode(void *coder_ptr, const lzma_allocator *allocator,
 		const uint8_t *restrict in, size_t *restrict in_pos,
 		size_t in_size,
 		uint8_t *restrict out lzma_attribute((__unused__)),
@@ -62,6 +62,8 @@ index_decode(lzma_coder *coder, const lzma_allocator *allocator,
 		size_t out_size lzma_attribute((__unused__)),
 		lzma_action action lzma_attribute((__unused__)))
 {
+	lzma_index_coder *coder = coder_ptr;
+
 	// Similar optimization as in index_encoder.c
 	const size_t in_start = *in_pos;
 	lzma_ret ret = LZMA_OK;
@@ -178,8 +180,11 @@ index_decode(lzma_coder *coder, const lzma_allocator *allocator,
 				return LZMA_OK;
 
 			if (((coder->crc32 >> (coder->pos * 8)) & 0xFF)
-					!= in[(*in_pos)++])
+					!= in[(*in_pos)++]) {
+#ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 				return LZMA_DATA_ERROR;
+#endif
+			}
 
 		} while (++coder->pos < 4);
 
@@ -207,8 +212,9 @@ out:
 
 
 static void
-index_decoder_end(lzma_coder *coder, const lzma_allocator *allocator)
+index_decoder_end(void *coder_ptr, const lzma_allocator *allocator)
 {
+	lzma_index_coder *coder = coder_ptr;
 	lzma_index_end(coder->index, allocator);
 	lzma_free(coder, allocator);
 	return;
@@ -216,9 +222,11 @@ index_decoder_end(lzma_coder *coder, const lzma_allocator *allocator)
 
 
 static lzma_ret
-index_decoder_memconfig(lzma_coder *coder, uint64_t *memusage,
+index_decoder_memconfig(void *coder_ptr, uint64_t *memusage,
 		uint64_t *old_memlimit, uint64_t new_memlimit)
 {
+	lzma_index_coder *coder = coder_ptr;
+
 	*memusage = lzma_index_memusage(1, coder->count);
 	*old_memlimit = coder->memlimit;
 
@@ -234,7 +242,7 @@ index_decoder_memconfig(lzma_coder *coder, uint64_t *memusage,
 
 
 static lzma_ret
-index_decoder_reset(lzma_coder *coder, const lzma_allocator *allocator,
+index_decoder_reset(lzma_index_coder *coder, const lzma_allocator *allocator,
 		lzma_index **i, uint64_t memlimit)
 {
 	// Remember the pointer given by the application. We will set it
@@ -251,7 +259,7 @@ index_decoder_reset(lzma_coder *coder, const lzma_allocator *allocator,
 
 	// Initialize the rest.
 	coder->sequence = SEQ_INDICATOR;
-	coder->memlimit = memlimit;
+	coder->memlimit = my_max(1, memlimit);
 	coder->count = 0; // Needs to be initialized due to _memconfig().
 	coder->pos = 0;
 	coder->crc32 = 0;
@@ -260,36 +268,38 @@ index_decoder_reset(lzma_coder *coder, const lzma_allocator *allocator,
 }
 
 
-static lzma_ret
-index_decoder_init(lzma_next_coder *next, const lzma_allocator *allocator,
+extern lzma_ret
+lzma_index_decoder_init(lzma_next_coder *next, const lzma_allocator *allocator,
 		lzma_index **i, uint64_t memlimit)
 {
-	lzma_next_coder_init(&index_decoder_init, next, allocator);
+	lzma_next_coder_init(&lzma_index_decoder_init, next, allocator);
 
-	if (i == NULL || memlimit == 0)
+	if (i == NULL)
 		return LZMA_PROG_ERROR;
 
-	if (next->coder == NULL) {
-		next->coder = lzma_alloc(sizeof(lzma_coder), allocator);
-		if (next->coder == NULL)
+	lzma_index_coder *coder = next->coder;
+	if (coder == NULL) {
+		coder = lzma_alloc(sizeof(lzma_index_coder), allocator);
+		if (coder == NULL)
 			return LZMA_MEM_ERROR;
 
+		next->coder = coder;
 		next->code = &index_decode;
 		next->end = &index_decoder_end;
 		next->memconfig = &index_decoder_memconfig;
-		next->coder->index = NULL;
+		coder->index = NULL;
 	} else {
-		lzma_index_end(next->coder->index, allocator);
+		lzma_index_end(coder->index, allocator);
 	}
 
-	return index_decoder_reset(next->coder, allocator, i, memlimit);
+	return index_decoder_reset(coder, allocator, i, memlimit);
 }
 
 
 extern LZMA_API(lzma_ret)
 lzma_index_decoder(lzma_stream *strm, lzma_index **i, uint64_t memlimit)
 {
-	lzma_next_strm_init(index_decoder_init, strm, i, memlimit);
+	lzma_next_strm_init(lzma_index_decoder_init, strm, i, memlimit);
 
 	strm->internal->supported_actions[LZMA_RUN] = true;
 	strm->internal->supported_actions[LZMA_FINISH] = true;
@@ -309,7 +319,7 @@ lzma_index_buffer_decode(lzma_index **i, uint64_t *memlimit,
 		return LZMA_PROG_ERROR;
 
 	// Initialize the decoder.
-	lzma_coder coder;
+	lzma_index_coder coder;
 	return_if_error(index_decoder_reset(&coder, allocator, i, *memlimit));
 
 	// Store the input start position so that we can restore it in case

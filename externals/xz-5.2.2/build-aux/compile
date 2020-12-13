@@ -1,9 +1,9 @@
 #! /bin/sh
 # Wrapper for compilers which do not understand '-c -o'.
 
-scriptversion=2012-10-14.11; # UTC
+scriptversion=2018-03-07.03; # UTC
 
-# Copyright (C) 1999-2014 Free Software Foundation, Inc.
+# Copyright (C) 1999-2020 Free Software Foundation, Inc.
 # Written by Tom Tromey <tromey@cygnus.com>.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,7 +17,7 @@ scriptversion=2012-10-14.11; # UTC
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # As a special exception to the GNU General Public License, if you
 # distribute this file as part of a program that contains a
@@ -53,7 +53,7 @@ func_file_conv ()
 	  MINGW*)
 	    file_conv=mingw
 	    ;;
-	  CYGWIN*)
+	  CYGWIN* | MSYS*)
 	    file_conv=cygwin
 	    ;;
 	  *)
@@ -67,7 +67,7 @@ func_file_conv ()
 	mingw/*)
 	  file=`cmd //C echo "$file " | sed -e 's/"\(.*\) " *$/\1/'`
 	  ;;
-	cygwin/*)
+	cygwin/* | msys/*)
 	  file=`cygpath -m "$file" || echo "$file"`
 	  ;;
 	wine/*)
@@ -255,7 +255,8 @@ EOF
     echo "compile $scriptversion"
     exit $?
     ;;
-  cl | *[/\\]cl | cl.exe | *[/\\]cl.exe )
+  cl | *[/\\]cl | cl.exe | *[/\\]cl.exe | \
+  icl | *[/\\]icl | icl.exe | *[/\\]icl.exe )
     func_cl_wrapper "$@"      # Doesn't return...
     ;;
 esac
@@ -339,9 +340,9 @@ exit $ret
 # Local Variables:
 # mode: shell-script
 # sh-indentation: 2
-# eval: (add-hook 'write-file-hooks 'time-stamp)
+# eval: (add-hook 'before-save-hook 'time-stamp)
 # time-stamp-start: "scriptversion="
 # time-stamp-format: "%:y-%02m-%02d.%02H"
-# time-stamp-time-zone: "UTC"
+# time-stamp-time-zone: "UTC0"
 # time-stamp-end: "; # UTC"
 # End:

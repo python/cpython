@@ -1,0 +1,2 @@
+[libfuzzer]
+dict = fuzz.dict

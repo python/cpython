@@ -1,3 +1,4 @@
+# This file, Rules-quot, can be copied and used freely without restrictions.
 # Special Makefile rules for English message catalogs with quotation marks.
 
 DISTFILES.common.extra1 = quot.sed boldquot.sed en@quot.header en@boldquot.header insert-header.sin Rules-quot
@@ -14,13 +15,23 @@ en@boldquot.po-update: en@boldquot.po-update-en
 
 .insert-header.po-update-en:
 	@lang=`echo $@ | sed -e 's/\.po-update-en$$//'`; \
-	if test "$(PACKAGE)" = "gettext"; then PATH=`pwd`/../src:$$PATH; GETTEXTLIBDIR=`cd $(top_srcdir)/src && pwd`; export GETTEXTLIBDIR; fi; \
+	if test "$(PACKAGE)" = "gettext-tools" && test "$(CROSS_COMPILING)" != "yes"; then PATH=`pwd`/../src:$$PATH; GETTEXTLIBDIR=`cd $(top_srcdir)/src && pwd`; export GETTEXTLIBDIR; fi; \
 	tmpdir=`pwd`; \
 	echo "$$lang:"; \
 	ll=`echo $$lang | sed -e 's/@.*//'`; \
 	LC_ALL=C; export LC_ALL; \
 	cd $(srcdir); \
-	if $(MSGINIT) -i $(DOMAIN).pot --no-translator -l $$lang -o - 2>/dev/null | sed -f $$tmpdir/$$lang.insert-header | $(MSGCONV) -t UTF-8 | $(MSGFILTER) sed -f `echo $$lang | sed -e 's/.*@//'`.sed 2>/dev/null > $$tmpdir/$$lang.new.po; then \
+	if $(MSGINIT) $(MSGINIT_OPTIONS) -i $(DOMAIN).pot --no-translator -l $$lang -o - 2>/dev/null \
+	   | $(SED) -f $$tmpdir/$$lang.insert-header | $(MSGCONV) -t UTF-8 | \
+	   { case `$(MSGFILTER) --version | sed 1q | sed -e 's,^[^0-9]*,,'` in \
+	     '' | 0.[0-9] | 0.[0-9].* | 0.1[0-8] | 0.1[0-8].*) \
+	       $(MSGFILTER) $(SED) -f `echo $$lang | sed -e 's/.*@//'`.sed \
+	       ;; \
+	     *) \
+	       $(MSGFILTER) `echo $$lang | sed -e 's/.*@//'` \
+	       ;; \
+	     esac } 2>/dev/null > $$tmpdir/$$lang.new.po \
+	     ; then \
 	  if cmp $$lang.po $$tmpdir/$$lang.new.po >/dev/null 2>&1; then \
 	    rm -f $$tmpdir/$$lang.new.po; \
 	  else \

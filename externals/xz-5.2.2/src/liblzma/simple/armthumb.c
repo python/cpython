@@ -15,7 +15,7 @@
 
 
 static size_t
-armthumb_code(lzma_simple *simple lzma_attribute((__unused__)),
+armthumb_code(void *simple lzma_attribute((__unused__)),
 		uint32_t now_pos, bool is_encoder,
 		uint8_t *buffer, size_t size)
 {
@@ -23,10 +23,10 @@ armthumb_code(lzma_simple *simple lzma_attribute((__unused__)),
 	for (i = 0; i + 4 <= size; i += 2) {
 		if ((buffer[i + 1] & 0xF8) == 0xF0
 				&& (buffer[i + 3] & 0xF8) == 0xF8) {
-			uint32_t src = ((buffer[i + 1] & 0x7) << 19)
-					| (buffer[i + 0] << 11)
-					| ((buffer[i + 3] & 0x7) << 8)
-					| (buffer[i + 2]);
+			uint32_t src = (((uint32_t)(buffer[i + 1]) & 7) << 19)
+				| ((uint32_t)(buffer[i + 0]) << 11)
+				| (((uint32_t)(buffer[i + 3]) & 7) << 8)
+				| (uint32_t)(buffer[i + 2]);
 
 			src <<= 1;
 

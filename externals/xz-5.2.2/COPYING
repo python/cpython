@@ -47,7 +47,7 @@ XZ Utils Licensing
     naturally it is not legally required. Here is an example of a good
     notice to put into "about box" or into documentation:
 
-        This software includes code from XZ Utils <http://tukaani.org/xz/>.
+        This software includes code from XZ Utils <https://tukaani.org/xz/>.
 
     The following license texts are included in the following files:
       - COPYING.LGPLv2.1: GNU Lesser General Public License version 2.1

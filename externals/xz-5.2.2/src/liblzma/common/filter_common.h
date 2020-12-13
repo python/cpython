@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-/// \file       filter_common.c
+/// \file       filter_common.h
 /// \brief      Filter-specific stuff common for both encoder and decoder
 //
 //  Author:     Lasse Collin

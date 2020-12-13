@@ -19,9 +19,9 @@
 
 
 /// Maximum number of symbols that can be put pending into lzma_range_encoder
-/// structure between calls to lzma_rc_encode(). For LZMA, 52+5 is enough
+/// structure between calls to lzma_rc_encode(). For LZMA, 48+5 is enough
 /// (match with big distance and length followed by range encoder flush).
-#define RC_SYMBOLS_MAX 58
+#define RC_SYMBOLS_MAX 53
 
 
 typedef struct {

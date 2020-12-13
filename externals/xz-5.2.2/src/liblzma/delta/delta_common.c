@@ -15,8 +15,9 @@
 
 
 static void
-delta_coder_end(lzma_coder *coder, const lzma_allocator *allocator)
+delta_coder_end(void *coder_ptr, const lzma_allocator *allocator)
 {
+	lzma_delta_coder *coder = coder_ptr;
 	lzma_next_end(&coder->next, allocator);
 	lzma_free(coder, allocator);
 	return;
@@ -28,14 +29,17 @@ lzma_delta_coder_init(lzma_next_coder *next, const lzma_allocator *allocator,
 		const lzma_filter_info *filters)
 {
 	// Allocate memory for the decoder if needed.
-	if (next->coder == NULL) {
-		next->coder = lzma_alloc(sizeof(lzma_coder), allocator);
-		if (next->coder == NULL)
+	lzma_delta_coder *coder = next->coder;
+	if (coder == NULL) {
+		coder = lzma_alloc(sizeof(lzma_delta_coder), allocator);
+		if (coder == NULL)
 			return LZMA_MEM_ERROR;
+
+		next->coder = coder;
 
 		// End function is the same for encoder and decoder.
 		next->end = &delta_coder_end;
-		next->coder->next = LZMA_NEXT_CODER_INIT;
+		coder->next = LZMA_NEXT_CODER_INIT;
 	}
 
 	// Validate the options.
@@ -44,15 +48,14 @@ lzma_delta_coder_init(lzma_next_coder *next, const lzma_allocator *allocator,
 
 	// Set the delta distance.
 	const lzma_options_delta *opt = filters[0].options;
-	next->coder->distance = opt->dist;
+	coder->distance = opt->dist;
 
 	// Initialize the rest of the variables.
-	next->coder->pos = 0;
-	memzero(next->coder->history, LZMA_DELTA_DIST_MAX);
+	coder->pos = 0;
+	memzero(coder->history, LZMA_DELTA_DIST_MAX);
 
 	// Initialize the next decoder in the chain, if any.
-	return lzma_next_filter_init(&next->coder->next,
-			allocator, filters + 1);
+	return lzma_next_filter_init(&coder->next, allocator, filters + 1);
 }
 
 
@@ -66,5 +69,5 @@ lzma_delta_coder_memusage(const void *options)
 			|| opt->dist > LZMA_DELTA_DIST_MAX)
 		return UINT64_MAX;
 
-	return sizeof(lzma_coder);
+	return sizeof(lzma_delta_coder);
 }

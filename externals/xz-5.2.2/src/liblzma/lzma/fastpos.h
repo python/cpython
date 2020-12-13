@@ -101,7 +101,7 @@ extern const uint8_t lzma_fastpos[1 << FASTPOS_BITS];
 	(UINT32_C(1) << (FASTPOS_BITS + fastpos_shift(extra, n)))
 
 #define fastpos_result(dist, extra, n) \
-	lzma_fastpos[(dist) >> fastpos_shift(extra, n)] \
+	(uint32_t)(lzma_fastpos[(dist) >> fastpos_shift(extra, n)]) \
 			+ 2 * fastpos_shift(extra, n)
 
 

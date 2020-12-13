@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-/// \file       tuklib_mstr.h
+/// \file       tuklib_mbstr.h
 /// \brief      Utility functions for handling multibyte strings
 ///
 /// If not enough multibyte string support is available in the C library,

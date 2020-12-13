@@ -341,9 +341,10 @@ extern LZMA_API(lzma_ret) lzma_properties_encode(
  * \param       filter      filter->id must have been set to the correct
  *                          Filter ID. filter->options doesn't need to be
  *                          initialized (it's not freed by this function). The
- *                          decoded options will be stored to filter->options.
- *                          filter->options is set to NULL if there are no
- *                          properties or if an error occurs.
+ *                          decoded options will be stored in filter->options;
+ *                          it's application's responsibility to free it when
+ *                          appropriate. filter->options is set to NULL if
+ *                          there are no properties or if an error occurs.
  * \param       allocator   Custom memory allocator used to allocate the
  *                          options. Set to NULL to use the default malloc(),
  *                          and in case of an error, also free().

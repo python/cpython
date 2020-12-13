@@ -102,7 +102,12 @@ global:
 	lzma_get_progress;
 	lzma_stream_encoder_mt;
 	lzma_stream_encoder_mt_memusage;
+} XZ_5.0;
+
+XZ_5.3.1alpha {
+global:
+	lzma_file_info_decoder;
 
 local:
 	*;
-} XZ_5.0;
+} XZ_5.2;

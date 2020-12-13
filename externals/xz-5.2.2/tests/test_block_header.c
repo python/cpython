@@ -127,7 +127,8 @@ test1(void)
 	known_options.filters = filters_one;
 	expect(lzma_block_header_size(&known_options) == LZMA_OK);
 
-	known_options.check = 999; // Some invalid value, which gets ignored.
+	// Some invalid value, which gets ignored.
+	known_options.check = (lzma_check)(99);
 	expect(lzma_block_header_size(&known_options) == LZMA_OK);
 
 	known_options.compressed_size = 5;
@@ -211,7 +212,7 @@ test3(void)
 	// Unsupported filter
 	// NOTE: This may need updating when new IDs become supported.
 	buf[2] ^= 0x1F;
-	unaligned_write32le(buf + known_options.header_size - 4,
+	write32le(buf + known_options.header_size - 4,
 			lzma_crc32(buf, known_options.header_size - 4, 0));
 	expect(lzma_block_header_decode(&decoded_options, NULL, buf)
 			== LZMA_OPTIONS_ERROR);
@@ -219,7 +220,7 @@ test3(void)
 
 	// Non-nul Padding
 	buf[known_options.header_size - 4 - 1] ^= 1;
-	unaligned_write32le(buf + known_options.header_size - 4,
+	write32le(buf + known_options.header_size - 4,
 			lzma_crc32(buf, known_options.header_size - 4, 0));
 	expect(lzma_block_header_decode(&decoded_options, NULL, buf)
 			== LZMA_OPTIONS_ERROR);

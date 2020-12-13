@@ -1,9 +1,9 @@
 #! /bin/sh
 # Common wrapper for a few potentially missing GNU programs.
 
-scriptversion=2013-10-28.13; # UTC
+scriptversion=2018-03-07.03; # UTC
 
-# Copyright (C) 1996-2014 Free Software Foundation, Inc.
+# Copyright (C) 1996-2020 Free Software Foundation, Inc.
 # Originally written by Fran,cois Pinard <pinard@iro.umontreal.ca>, 1996.
 
 # This program is free software; you can redistribute it and/or modify
@@ -17,7 +17,7 @@ scriptversion=2013-10-28.13; # UTC
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # As a special exception to the GNU General Public License, if you
 # distribute this file as part of a program that contains a
@@ -101,9 +101,9 @@ else
   exit $st
 fi
 
-perl_URL=http://www.perl.org/
-flex_URL=http://flex.sourceforge.net/
-gnu_software_URL=http://www.gnu.org/software
+perl_URL=https://www.perl.org/
+flex_URL=https://github.com/westes/flex
+gnu_software_URL=https://www.gnu.org/software
 
 program_details ()
 {
@@ -207,9 +207,9 @@ give_advice "$1" | sed -e '1s/^/WARNING: /' \
 exit $st
 
 # Local variables:
-# eval: (add-hook 'write-file-hooks 'time-stamp)
+# eval: (add-hook 'before-save-hook 'time-stamp)
 # time-stamp-start: "scriptversion="
 # time-stamp-format: "%:y-%02m-%02d.%02H"
-# time-stamp-time-zone: "UTC"
+# time-stamp-time-zone: "UTC0"
 # time-stamp-end: "; # UTC"
 # End:

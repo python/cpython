@@ -113,7 +113,7 @@ normalize(lzma_mf *mf)
 	// may be match finders that use larger resolution than one byte.
 	const uint32_t subvalue
 			= (MUST_NORMALIZE_POS - mf->cyclic_size);
-				// & (~(UINT32_C(1) << 10) - 1);
+				// & ~((UINT32_C(1) << 10) - 1);
 
 	for (uint32_t i = 0; i < mf->hash_count; ++i) {
 		// If the distance is greater than the dictionary size,

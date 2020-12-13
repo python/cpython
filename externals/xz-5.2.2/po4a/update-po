@@ -1,0 +1,45 @@
+#!/bin/sh
+#
+#############################################################################
+#
+# Updates xz-man.pot and the *.po files, and generates translated man pages.
+# These are done using the program po4a. If po4a is missing, it is still
+# possible to build the package without translated man pages.
+#
+#############################################################################
+#
+# Author: Lasse Collin
+#
+# This file has been put into the public domain.
+# You can do whatever you want with this file.
+#
+#############################################################################
+
+if type po4a > /dev/null 2>&1; then
+	:
+else
+	echo "po4a/update-po: The program 'po4a' was not found." >&2
+	echo "po4a/update-po: Translated man pages were not generated." >&2
+	exit 1
+fi
+
+if test ! -f po4a.conf; then
+	cd `dirname "$0"` || exit 1
+	if test ! -f po4a.conf; then
+		echo "update-po: Error: Cannot find po4a.conf." >&2
+		exit 1
+	fi
+fi
+
+PACKAGE_VERSION=`cd .. && sh build-aux/version.sh` || exit 1
+
+# Using --force to get up-to-date version numbers in the output files
+# when nothing else has changed. This makes it slower but it's fine
+# as long as this isn't run every time when "make" is run at the
+# top level directory. (po4a isn't super-fast even without --force).
+set -x
+po4a --force --verbose \
+	--package-name="XZ Utils" \
+	--package-version="$PACKAGE_VERSION" \
+	--copyright-holder="This file is put in the public domain." \
+	po4a.conf

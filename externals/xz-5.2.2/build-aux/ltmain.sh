@@ -1,5 +1,5 @@
 #! /bin/sh
-## DO NOT EDIT - This file generated from ./build-aux/ltmain.in
+## DO NOT EDIT - This file generated from ../libtool-2.4.6/build-aux/ltmain.in
 ##               by inline-source v2014-01-03.01
 
 # libtool (GNU libtool) 2.4.6
@@ -4966,7 +4966,7 @@ func_win32_libid ()
     ;;
   *executable*) # but shell scripts are "executable" too...
     case $win32_fileres in
-    *MS\ Windows\ PE\ Intel*)
+    *PE32*Intel\ 80386,\ for\ MS\ Windows*)
       win32_libid_type="x86 DLL"
       ;;
     esac
@@ -5554,7 +5554,7 @@ EOF
 
 /* declarations of non-ANSI functions */
 #if defined __MINGW32__
-# ifdef __STRICT_ANSI__
+# if defined(__STRICT_ANSI__) && !defined(__MINGW64_VERSION_MAJOR) || defined(_POSIX_)
 int _putenv (const char *);
 # endif
 #elif defined __CYGWIN__
@@ -6456,6 +6456,41 @@ EOF
 }
 # end: func_emit_cwrapperexe_src
 
+# func_emit_exe_manifest
+# emit a Win32 UAC manifest for executable on stdout
+# Must ONLY be called from within func_mode_link because
+# it depends on a number of variable set therein.
+func_emit_exe_manifest ()
+{
+    cat <<EOF
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <assemblyIdentity version="1.0.0.0"
+EOF
+
+    case $host in
+    i?86-*-* )   echo '     processorArchitecture="x86"' ;;
+    ia64-*-* )   echo '     processorArchitecture="ia64"' ;;
+    x86_64-*-* ) echo '     processorArchitecture="amd64"' ;;
+    *)           echo '     processorArchitecture="*"' ;;
+    esac
+
+    cat <<EOF
+     name="$host_os.$PROGRAM.$outputname"
+     type="win32"/>
+
+  <!-- Identify the application security requirements. -->
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
+    <security>
+      <requestedPrivileges>
+        <requestedExecutionLevel level="asInvoker" uiAccess="false"/>
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+</assembly>
+EOF
+}
+
 # func_win32_import_lib_p ARG
 # True if ARG is an import lib, as indicated by $file_magic_cmd
 func_win32_import_lib_p ()
@@ -7273,9 +7308,12 @@ func_mode_link ()
       # --sysroot=*          for sysroot support
       # -O*, -g*, -flto*, -fwhopr*, -fuse-linker-plugin GCC link-time optimization
       # -stdlib=*            select c++ std lib with clang
+      # -{shared,static}-libgcc, -static-{libgfortran|libstdc++}
+      #                      link against specified runtime library
       -64|-mips[0-9]|-r[0-9][0-9]*|-xarch=*|-xtarget=*|+DA*|+DD*|-q*|-m*| \
       -t[45]*|-txscale*|-p|-pg|--coverage|-fprofile-*|-F*|@*|-tp=*|--sysroot=*| \
-      -O*|-g*|-flto*|-fwhopr*|-fuse-linker-plugin|-fstack-protector*|-stdlib=*)
+      -O*|-g*|-flto*|-fwhopr*|-fuse-linker-plugin|-fstack-protector*|-stdlib=*| \
+      -shared-libgcc|-static-libgcc|-static-libgfortran|-static-libstdc++)
         func_quote_for_eval "$arg"
 	arg=$func_quote_for_eval_result
         func_append compile_command " $arg"
@@ -7762,8 +7800,15 @@ func_mode_link ()
 	  fi
 	  case $linkmode in
 	  lib)
-	    # Linking convenience modules into shared libraries is allowed,
-	    # but linking other static libraries is non-portable.
+	    # Linking convenience modules and compiler provided static libraries
+	    # into shared libraries is allowed, but linking other static
+	    # libraries is non-portable.
+	    case $deplib in
+	      */libgcc*.$libext | */libclang_rt*.$libext)
+		deplibs="$deplib $deplibs"
+		continue
+	      ;;
+	    esac
 	    case " $dlpreconveniencelibs " in
 	    *" $deplib "*) ;;
 	    *)
@@ -8523,7 +8568,9 @@ func_mode_link ()
 		  eval libdir=`$SED -n -e 's/^libdir=\(.*\)$/\1/p' $deplib`
 		  test -z "$libdir" && \
 		    func_fatal_error "'$deplib' is not a valid libtool archive"
-		  test "$absdir" != "$libdir" && \
+		  abs_inode=`ls -i "$deplib" | awk '{print $1}'`
+		    lib_inode=`ls -i "$libdir/$(basename $deplib)" | awk '{print $1}'`
+		  test "$abs_inode" != "$lib_inode" && \
 		    func_warning "'$deplib' seems to be moved"
 
 		  path=-L$absdir
@@ -9824,20 +9871,7 @@ EOF
 	  last_robj=
 	  k=1
 
-	  if test -n "$save_libobjs" && test : != "$skipped_export" && test yes = "$with_gnu_ld"; then
-	    output=$output_objdir/$output_la.lnkscript
-	    func_verbose "creating GNU ld script: $output"
-	    echo 'INPUT (' > $output
-	    for obj in $save_libobjs
-	    do
-	      func_to_tool_file "$obj"
-	      $ECHO "$func_to_tool_file_result" >> $output
-	    done
-	    echo ')' >> $output
-	    func_append delfiles " $output"
-	    func_to_tool_file "$output"
-	    output=$func_to_tool_file_result
-	  elif test -n "$save_libobjs" && test : != "$skipped_export" && test -n "$file_list_spec"; then
+	  if test -n "$save_libobjs" && test : != "$skipped_export" && test -n "$file_list_spec"; then
 	    output=$output_objdir/$output_la.lnk
 	    func_verbose "creating linker input file list: $output"
 	    : > $output
@@ -9856,6 +9890,19 @@ EOF
 	    func_append delfiles " $output"
 	    func_to_tool_file "$output"
 	    output=$firstobj\"$file_list_spec$func_to_tool_file_result\"
+	  elif test -n "$save_libobjs" && test : != "$skipped_export" && test yes = "$with_gnu_ld"; then
+	    output=$output_objdir/$output_la.lnkscript
+	    func_verbose "creating GNU ld script: $output"
+	    echo 'INPUT (' > $output
+	    for obj in $save_libobjs
+	    do
+	      func_to_tool_file "$obj"
+	      $ECHO "$func_to_tool_file_result" >> $output
+	    done
+	    echo ')' >> $output
+	    func_append delfiles " $output"
+	    func_to_tool_file "$output"
+	    output=$func_to_tool_file_result
 	  else
 	    if test -n "$save_libobjs"; then
 	      func_verbose "creating reloadable object files..."
@@ -10534,7 +10581,7 @@ EOF
 	    cwrappersource=$output_path/$objdir/lt-$output_name.c
 	    cwrapper=$output_path/$output_name.exe
 	    $RM $cwrappersource $cwrapper
-	    trap "$RM $cwrappersource $cwrapper; exit $EXIT_FAILURE" 1 2 15
+	    trap "$RM $cwrappersource $cwrapper $cwrapper.manifest; exit $EXIT_FAILURE" 1 2 15
 
 	    func_emit_cwrapperexe_src > $cwrappersource
 
@@ -10554,6 +10601,16 @@ EOF
 	    $opt_dry_run || {
 	      # note: this script will not be executed, so do not chmod.
 	      if test "x$build" = "x$host"; then
+		# Create the UAC manifests first if necessary (but the
+		# manifest files must have executable permission regardless).
+		case $output_name in
+		  *instal*|*patch*|*setup*|*update*)
+		    func_emit_exe_manifest > $cwrapper.manifest
+		    func_emit_exe_manifest > $output_path/$objdir/$output_name.exe.manifest
+		    chmod +x $cwrapper.manifest
+		    chmod +x $output_path/$objdir/$output_name.exe.manifest
+		  ;;
+		esac
 		$cwrapper --lt-dump-script > $func_ltwrapper_scriptname_result
 	      else
 		func_emit_wrapper no > $func_ltwrapper_scriptname_result
@@ -11078,8 +11135,9 @@ func_mode_uninstall ()
 	    # note $name still contains .exe if it was in $file originally
 	    # as does the version of $file that was added into $rmfiles
 	    func_append rmfiles " $odir/$name $odir/${name}S.$objext"
+	    func_append rmfiles " ${name}.manifest $objdir/${name}.manifest"
 	    if test yes = "$fast_install" && test -n "$relink_command"; then
-	      func_append rmfiles " $odir/lt-$name"
+	      func_append rmfiles " $odir/lt-$name $objdir/lt-${name}.manifest"
 	    fi
 	    if test "X$noexename" != "X$name"; then
 	      func_append rmfiles " $odir/lt-$noexename.c"

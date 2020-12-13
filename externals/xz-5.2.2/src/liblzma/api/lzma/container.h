@@ -520,7 +520,10 @@ extern LZMA_API(lzma_ret) lzma_stream_buffer_encode(
  *
  * \param       strm        Pointer to properly prepared lzma_stream
  * \param       memlimit    Memory usage limit as bytes. Use UINT64_MAX
- *                          to effectively disable the limiter.
+ *                          to effectively disable the limiter. liblzma
+ *                          5.2.3 and earlier don't allow 0 here and return
+ *                          LZMA_PROG_ERROR; later versions treat 0 as if 1
+ *                          had been specified.
  * \param       flags       Bitwise-or of zero or more of the decoder flags:
  *                          LZMA_TELL_NO_CHECK, LZMA_TELL_UNSUPPORTED_CHECK,
  *                          LZMA_TELL_ANY_CHECK, LZMA_CONCATENATED
@@ -544,7 +547,10 @@ extern LZMA_API(lzma_ret) lzma_stream_decoder(
  *
  * \param       strm        Pointer to properly prepared lzma_stream
  * \param       memlimit    Memory usage limit as bytes. Use UINT64_MAX
- *                          to effectively disable the limiter.
+ *                          to effectively disable the limiter. liblzma
+ *                          5.2.3 and earlier don't allow 0 here and return
+ *                          LZMA_PROG_ERROR; later versions treat 0 as if 1
+ *                          had been specified.
  * \param       flags       Bitwise-or of flags, or zero for no flags.
  *
  * \return      - LZMA_OK: Initialization was successful.
@@ -560,9 +566,16 @@ extern LZMA_API(lzma_ret) lzma_auto_decoder(
 /**
  * \brief       Initialize .lzma decoder (legacy file format)
  *
+ * \param       strm        Pointer to properly prepared lzma_stream
+ * \param       memlimit    Memory usage limit as bytes. Use UINT64_MAX
+ *                          to effectively disable the limiter. liblzma
+ *                          5.2.3 and earlier don't allow 0 here and return
+ *                          LZMA_PROG_ERROR; later versions treat 0 as if 1
+ *                          had been specified.
+ *
  * Valid `action' arguments to lzma_code() are LZMA_RUN and LZMA_FINISH.
- * There is no need to use LZMA_FINISH, but allowing it may simplify
- * certain types of applications.
+ * There is no need to use LZMA_FINISH, but it's allowed because it may
+ * simplify certain types of applications.
  *
  * \return      - LZMA_OK
  *              - LZMA_MEM_ERROR

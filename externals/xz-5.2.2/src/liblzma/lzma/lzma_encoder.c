@@ -43,7 +43,7 @@ literal_matched(lzma_range_encoder *rc, probability *subcoder,
 
 
 static inline void
-literal(lzma_coder *coder, lzma_mf *mf, uint32_t position)
+literal(lzma_lzma1_encoder *coder, lzma_mf *mf, uint32_t position)
 {
 	// Locate the literal byte to be encoded and the subcoder.
 	const uint8_t cur_byte = mf->buffer[
@@ -140,7 +140,7 @@ length(lzma_range_encoder *rc, lzma_length_encoder *lc,
 ///////////
 
 static inline void
-match(lzma_coder *coder, const uint32_t pos_state,
+match(lzma_lzma1_encoder *coder, const uint32_t pos_state,
 		const uint32_t distance, const uint32_t len)
 {
 	update_match(coder->state);
@@ -187,7 +187,7 @@ match(lzma_coder *coder, const uint32_t pos_state,
 ////////////////////
 
 static inline void
-rep_match(lzma_coder *coder, const uint32_t pos_state,
+rep_match(lzma_lzma1_encoder *coder, const uint32_t pos_state,
 		const uint32_t rep, const uint32_t len)
 {
 	if (rep == 0) {
@@ -231,7 +231,7 @@ rep_match(lzma_coder *coder, const uint32_t pos_state,
 //////////
 
 static void
-encode_symbol(lzma_coder *coder, lzma_mf *mf,
+encode_symbol(lzma_lzma1_encoder *coder, lzma_mf *mf,
 		uint32_t back, uint32_t len, uint32_t position)
 {
 	const uint32_t pos_state = position & coder->pos_mask;
@@ -265,7 +265,7 @@ encode_symbol(lzma_coder *coder, lzma_mf *mf,
 
 
 static bool
-encode_init(lzma_coder *coder, lzma_mf *mf)
+encode_init(lzma_lzma1_encoder *coder, lzma_mf *mf)
 {
 	assert(mf_position(mf) == 0);
 
@@ -293,7 +293,7 @@ encode_init(lzma_coder *coder, lzma_mf *mf)
 
 
 static void
-encode_eopm(lzma_coder *coder, uint32_t position)
+encode_eopm(lzma_lzma1_encoder *coder, uint32_t position)
 {
 	const uint32_t pos_state = position & coder->pos_mask;
 	rc_bit(&coder->rc, &coder->is_match[coder->state][pos_state], 1);
@@ -309,7 +309,7 @@ encode_eopm(lzma_coder *coder, uint32_t position)
 
 
 extern lzma_ret
-lzma_lzma_encode(lzma_coder *restrict coder, lzma_mf *restrict mf,
+lzma_lzma_encode(lzma_lzma1_encoder *restrict coder, lzma_mf *restrict mf,
 		uint8_t *restrict out, size_t *restrict out_pos,
 		size_t out_size, uint32_t limit)
 {
@@ -402,7 +402,7 @@ lzma_lzma_encode(lzma_coder *restrict coder, lzma_mf *restrict mf,
 
 
 static lzma_ret
-lzma_encode(lzma_coder *restrict coder, lzma_mf *restrict mf,
+lzma_encode(void *coder, lzma_mf *restrict mf,
 		uint8_t *restrict out, size_t *restrict out_pos,
 		size_t out_size)
 {
@@ -473,7 +473,8 @@ length_encoder_reset(lzma_length_encoder *lencoder,
 
 
 extern lzma_ret
-lzma_lzma_encoder_reset(lzma_coder *coder, const lzma_options_lzma *options)
+lzma_lzma_encoder_reset(lzma_lzma1_encoder *coder,
+		const lzma_options_lzma *options)
 {
 	if (!is_options_valid(options))
 		return LZMA_OPTIONS_ERROR;
@@ -545,18 +546,18 @@ lzma_lzma_encoder_reset(lzma_coder *coder, const lzma_options_lzma *options)
 
 
 extern lzma_ret
-lzma_lzma_encoder_create(lzma_coder **coder_ptr,
+lzma_lzma_encoder_create(void **coder_ptr,
 		const lzma_allocator *allocator,
 		const lzma_options_lzma *options, lzma_lz_options *lz_options)
 {
-	// Allocate lzma_coder if it wasn't already allocated.
+	// Allocate lzma_lzma1_encoder if it wasn't already allocated.
 	if (*coder_ptr == NULL) {
-		*coder_ptr = lzma_alloc(sizeof(lzma_coder), allocator);
+		*coder_ptr = lzma_alloc(sizeof(lzma_lzma1_encoder), allocator);
 		if (*coder_ptr == NULL)
 			return LZMA_MEM_ERROR;
 	}
 
-	lzma_coder *coder = *coder_ptr;
+	lzma_lzma1_encoder *coder = *coder_ptr;
 
 	// Set compression mode. We haven't validates the options yet,
 	// but it's OK here, since nothing bad happens with invalid
@@ -636,7 +637,7 @@ lzma_lzma_encoder_memusage(const void *options)
 	if (lz_memusage == UINT64_MAX)
 		return UINT64_MAX;
 
-	return (uint64_t)(sizeof(lzma_coder)) + lz_memusage;
+	return (uint64_t)(sizeof(lzma_lzma1_encoder)) + lz_memusage;
 }
 
 
@@ -662,7 +663,7 @@ lzma_lzma_props_encode(const void *options, uint8_t *out)
 	if (lzma_lzma_lclppb_encode(opt, out))
 		return LZMA_PROG_ERROR;
 
-	unaligned_write32le(out + 1, opt->dict_size);
+	write32le(out + 1, opt->dict_size);
 
 	return LZMA_OK;
 }

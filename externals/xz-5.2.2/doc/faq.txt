@@ -206,7 +206,7 @@ Q:  How do I build a program that needs liblzmadec (lzmadec.h)?
 A:  liblzmadec is part of LZMA Utils. XZ Utils has liblzma, but no
     liblzmadec. The code using liblzmadec should be ported to use
     liblzma instead. If you cannot or don't want to do that, download
-    LZMA Utils from <http://tukaani.org/lzma/>.
+    LZMA Utils from <https://tukaani.org/lzma/>.
 
 
 Q:  The default build of liblzma is too big. How can I make it smaller?
@@ -220,5 +220,5 @@ A:  Give --enable-small to the configure script. Use also appropriate
     If the result is still too big, take a look at XZ Embedded. It is
     a separate project, which provides a limited but significantly
     smaller XZ decoder implementation than XZ Utils. You can find it
-    at <http://tukaani.org/xz/embedded.html>.
+    at <https://tukaani.org/xz/embedded.html>.
 

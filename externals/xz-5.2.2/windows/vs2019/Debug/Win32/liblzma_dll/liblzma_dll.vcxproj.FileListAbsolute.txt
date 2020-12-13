@@ -1,0 +1,2 @@
+C:\cpython\externals\xz-5.2.2\windows\vs2019\Debug\Win32\liblzma_dll\liblzma.dll
+C:\cpython\externals\xz-5.2.2\windows\vs2019\Debug\Win32\liblzma_dll\liblzma.pdb

@@ -23,8 +23,18 @@ static bool warn_fchown;
 
 #if defined(HAVE_FUTIMES) || defined(HAVE_FUTIMESAT) || defined(HAVE_UTIMES)
 #	include <sys/time.h>
+#elif defined(HAVE__FUTIME)
+#	include <sys/utime.h>
 #elif defined(HAVE_UTIME)
 #	include <utime.h>
+#endif
+
+#ifdef HAVE_CAPSICUM
+#	ifdef HAVE_SYS_CAPSICUM_H
+#		include <sys/capsicum.h>
+#	else
+#		include <sys/capability.h>
+#	endif
 #endif
 
 #include "tuklib_open_stdxxx.h"
@@ -37,6 +47,14 @@ static bool warn_fchown;
 #	define O_NOCTTY 0
 #endif
 
+// Using this macro to silence a warning from gcc -Wlogical-op.
+#if EAGAIN == EWOULDBLOCK
+#	define IS_EAGAIN_OR_EWOULDBLOCK(e) ((e) == EAGAIN)
+#else
+#	define IS_EAGAIN_OR_EWOULDBLOCK(e) \
+		((e) == EAGAIN || (e) == EWOULDBLOCK)
+#endif
+
 
 typedef enum {
 	IO_WAIT_MORE,    // Reading or writing is possible.
@@ -47,6 +65,11 @@ typedef enum {
 
 /// If true, try to create sparse files when decompressing.
 static bool try_sparse = true;
+
+#ifdef ENABLE_SANDBOX
+/// True if the conditions for sandboxing (described in main()) have been met.
+static bool sandbox_allowed = false;
+#endif
 
 #ifndef TUKLIB_DOSLIKE
 /// File status flags of standard input. This is used by io_open_src()
@@ -132,6 +155,77 @@ io_no_sparse(void)
 }
 
 
+#ifdef ENABLE_SANDBOX
+extern void
+io_allow_sandbox(void)
+{
+	sandbox_allowed = true;
+	return;
+}
+
+
+/// Enables operating-system-specific sandbox if it is possible.
+/// src_fd is the file descriptor of the input file.
+static void
+io_sandbox_enter(int src_fd)
+{
+	if (!sandbox_allowed) {
+		// This message is more often annoying than useful so
+		// it's commented out. It can be useful when developing
+		// the sandboxing code.
+		//message(V_DEBUG, _("Sandbox is disabled due "
+		//		"to incompatible command line arguments"));
+		return;
+	}
+
+	const char dummy_str[] = "x";
+
+	// Try to ensure that both libc and xz locale files have been
+	// loaded when NLS is enabled.
+	snprintf(NULL, 0, "%s%s", _(dummy_str), strerror(EINVAL));
+
+	// Try to ensure that iconv data files needed for handling multibyte
+	// characters have been loaded. This is needed at least with glibc.
+	tuklib_mbstr_width(dummy_str, NULL);
+
+#ifdef HAVE_CAPSICUM
+	// Capsicum needs FreeBSD 10.0 or later.
+	cap_rights_t rights;
+
+	if (cap_rights_limit(src_fd, cap_rights_init(&rights,
+			CAP_EVENT, CAP_FCNTL, CAP_LOOKUP, CAP_READ, CAP_SEEK)))
+		goto error;
+
+	if (cap_rights_limit(STDOUT_FILENO, cap_rights_init(&rights,
+			CAP_EVENT, CAP_FCNTL, CAP_FSTAT, CAP_LOOKUP,
+			CAP_WRITE, CAP_SEEK)))
+		goto error;
+
+	if (cap_rights_limit(user_abort_pipe[0], cap_rights_init(&rights,
+			CAP_EVENT)))
+		goto error;
+
+	if (cap_rights_limit(user_abort_pipe[1], cap_rights_init(&rights,
+			CAP_WRITE)))
+		goto error;
+
+	if (cap_enter())
+		goto error;
+
+#else
+#	error ENABLE_SANDBOX is defined but no sandboxing method was found.
+#endif
+
+	// This message is annoying in xz -lvv.
+	//message(V_DEBUG, _("Sandbox was successfully enabled"));
+	return;
+
+error:
+	message_fatal(_("Failed to enable the sandbox"));
+}
+#endif // ENABLE_SANDBOX
+
+
 #ifndef TUKLIB_DOSLIKE
 /// \brief      Waits for input or output to become available or for a signal
 ///
@@ -176,11 +270,8 @@ io_wait(file_pair *pair, int timeout, bool is_reading)
 			return IO_WAIT_ERROR;
 		}
 
-		if (ret == 0) {
-			assert(opt_flush_timeout != 0);
-			flush_needed = true;
+		if (ret == 0)
 			return IO_WAIT_TIMEOUT;
-		}
 
 		if (pfd[0].revents != 0)
 			return IO_WAIT_MORE;
@@ -270,13 +361,14 @@ io_copy_attrs(const file_pair *pair)
 	// Try changing the owner of the file. If we aren't root or the owner
 	// isn't already us, fchown() probably doesn't succeed. We warn
 	// about failing fchown() only if we are root.
-	if (fchown(pair->dest_fd, pair->src_st.st_uid, -1) && warn_fchown)
+	if (fchown(pair->dest_fd, pair->src_st.st_uid, (gid_t)(-1))
+			&& warn_fchown)
 		message_warning(_("%s: Cannot set the file owner: %s"),
 				pair->dest_name, strerror(errno));
 
 	mode_t mode;
 
-	if (fchown(pair->dest_fd, -1, pair->src_st.st_gid)) {
+	if (fchown(pair->dest_fd, (uid_t)(-1), pair->src_st.st_gid)) {
 		message_warning(_("%s: Cannot set the file group: %s"),
 				pair->dest_name, strerror(errno));
 		// We can still safely copy some additional permissions:
@@ -369,6 +461,22 @@ io_copy_attrs(const file_pair *pair)
 	(void)utimes(pair->dest_name, tv);
 #	endif
 
+#elif defined(HAVE__FUTIME)
+	// Use one-second precision with Windows-specific _futime().
+	// We could use utime() too except that for some reason the
+	// timestamp will get reset at close(). With _futime() it works.
+	// This struct cannot be const as _futime() takes a non-const pointer.
+	struct _utimbuf buf = {
+		.actime = pair->src_st.st_atime,
+		.modtime = pair->src_st.st_mtime,
+	};
+
+	// Avoid warnings.
+	(void)atime_nsec;
+	(void)mtime_nsec;
+
+	(void)_futime(pair->dest_fd, &buf);
+
 #elif defined(HAVE_UTIME)
 	// Use one-second precision. utime() doesn't support using file
 	// descriptor either. Some systems have broken utime() prototype
@@ -419,7 +527,10 @@ io_open_src_real(file_pair *pair)
 #endif
 #ifdef HAVE_POSIX_FADVISE
 		// It will fail if stdin is a pipe and that's fine.
-		(void)posix_fadvise(STDIN_FILENO, 0, 0, POSIX_FADV_SEQUENTIAL);
+		(void)posix_fadvise(STDIN_FILENO, 0, 0,
+				opt_mode == MODE_LIST
+					? POSIX_FADV_RANDOM
+					: POSIX_FADV_SEQUENTIAL);
 #endif
 		return false;
 	}
@@ -610,7 +721,10 @@ io_open_src_real(file_pair *pair)
 
 #ifdef HAVE_POSIX_FADVISE
 	// It will fail with some special files like FIFOs but that is fine.
-	(void)posix_fadvise(pair->src_fd, 0, 0, POSIX_FADV_SEQUENTIAL);
+	(void)posix_fadvise(pair->src_fd, 0, 0,
+			opt_mode == MODE_LIST
+				? POSIX_FADV_RANDOM
+				: POSIX_FADV_SEQUENTIAL);
 #endif
 
 	return false;
@@ -639,6 +753,8 @@ io_open_src(const char *src_name)
 		.src_fd = -1,
 		.dest_fd = -1,
 		.src_eof = false,
+		.src_has_seen_input = false,
+		.flush_needed = false,
 		.dest_try_sparse = false,
 		.dest_pending_sparse = 0,
 	};
@@ -648,6 +764,11 @@ io_open_src(const char *src_name)
 	signals_block();
 	const bool error = io_open_src_real(&pair);
 	signals_unblock();
+
+#ifdef ENABLE_SANDBOX
+	if (!error)
+		io_sandbox_enter(pair.src_fd);
+#endif
 
 	return error ? NULL : &pair;
 }
@@ -675,23 +796,22 @@ io_close_src(file_pair *pair, bool success)
 #endif
 
 	if (pair->src_fd != STDIN_FILENO && pair->src_fd != -1) {
-#ifdef TUKLIB_DOSLIKE
-		(void)close(pair->src_fd);
-#endif
-
-		// If we are going to unlink(), do it before closing the file.
-		// This way there's no risk that someone replaces the file and
-		// happens to get same inode number, which would make us
-		// unlink() wrong file.
+		// Close the file before possibly unlinking it. On DOS-like
+		// systems this is always required since unlinking will fail
+		// if the file is open. On POSIX systems it usually works
+		// to unlink open files, but in some cases it doesn't and
+		// one gets EBUSY in errno.
 		//
-		// NOTE: DOS-like systems are an exception to this, because
-		// they don't allow unlinking files that are open. *sigh*
+		// xz 5.2.2 and older unlinked the file before closing it
+		// (except on DOS-like systems). The old code didn't handle
+		// EBUSY and could fail e.g. on some CIFS shares. The
+		// advantage of unlinking before closing is negligible
+		// (avoids a race between close() and stat()/lstat() and
+		// unlink()), so let's keep this simple.
+		(void)close(pair->src_fd);
+
 		if (success && !opt_keep_original)
 			io_unlink(pair->src_name, &pair->src_st);
-
-#ifndef TUKLIB_DOSLIKE
-		(void)close(pair->src_fd);
-#endif
 	}
 
 	return;
@@ -993,16 +1113,16 @@ io_fix_src_pos(file_pair *pair, size_t rewind_size)
 
 
 extern size_t
-io_read(file_pair *pair, io_buf *buf_union, size_t size)
+io_read(file_pair *pair, io_buf *buf, size_t size)
 {
 	// We use small buffers here.
 	assert(size < SSIZE_MAX);
 
-	uint8_t *buf = buf_union->u8;
-	size_t left = size;
+	size_t pos = 0;
 
-	while (left > 0) {
-		const ssize_t amount = read(pair->src_fd, buf, left);
+	while (pos < size) {
+		const ssize_t amount = read(
+				pair->src_fd, buf->u8 + pos, size - pos);
 
 		if (amount == 0) {
 			pair->src_eof = true;
@@ -1018,11 +1138,16 @@ io_read(file_pair *pair, io_buf *buf_union, size_t size)
 			}
 
 #ifndef TUKLIB_DOSLIKE
-			if (errno == EAGAIN || errno == EWOULDBLOCK) {
-				const io_wait_ret ret = io_wait(pair,
-						mytime_get_flush_timeout(),
-						true);
-				switch (ret) {
+			if (IS_EAGAIN_OR_EWOULDBLOCK(errno)) {
+				// Disable the flush-timeout if no input has
+				// been seen since the previous flush and thus
+				// there would be nothing to flush after the
+				// timeout expires (avoids busy waiting).
+				const int timeout = pair->src_has_seen_input
+						? mytime_get_flush_timeout()
+						: -1;
+
+				switch (io_wait(pair, timeout, true)) {
 				case IO_WAIT_MORE:
 					continue;
 
@@ -1030,7 +1155,8 @@ io_read(file_pair *pair, io_buf *buf_union, size_t size)
 					return SIZE_MAX;
 
 				case IO_WAIT_TIMEOUT:
-					return size - left;
+					pair->flush_needed = true;
+					return pos;
 
 				default:
 					message_bug();
@@ -1044,24 +1170,48 @@ io_read(file_pair *pair, io_buf *buf_union, size_t size)
 			return SIZE_MAX;
 		}
 
-		buf += (size_t)(amount);
-		left -= (size_t)(amount);
+		pos += (size_t)(amount);
+
+		if (!pair->src_has_seen_input) {
+			pair->src_has_seen_input = true;
+			mytime_set_flush_time();
+		}
 	}
 
-	return size - left;
+	return pos;
 }
 
 
 extern bool
-io_pread(file_pair *pair, io_buf *buf, size_t size, off_t pos)
+io_seek_src(file_pair *pair, uint64_t pos)
 {
-	// Using lseek() and read() is more portable than pread() and
-	// for us it is as good as real pread().
-	if (lseek(pair->src_fd, pos, SEEK_SET) != pos) {
+	// Caller must not attempt to seek past the end of the input file
+	// (seeking to 100 in a 100-byte file is seeking to the end of
+	// the file, not past the end of the file, and thus that is allowed).
+	//
+	// This also validates that pos can be safely cast to off_t.
+	if (pos > (uint64_t)(pair->src_st.st_size))
+		message_bug();
+
+	if (lseek(pair->src_fd, (off_t)(pos), SEEK_SET) == -1) {
 		message_error(_("%s: Error seeking the file: %s"),
 				pair->src_name, strerror(errno));
 		return true;
 	}
+
+	pair->src_eof = false;
+
+	return false;
+}
+
+
+extern bool
+io_pread(file_pair *pair, io_buf *buf, size_t size, uint64_t pos)
+{
+	// Using lseek() and read() is more portable than pread() and
+	// for us it is as good as real pread().
+	if (io_seek_src(pair, pos))
+		return true;
 
 	const size_t amount = io_read(pair, buf, size);
 	if (amount == SIZE_MAX)
@@ -1106,7 +1256,7 @@ io_write_buf(file_pair *pair, const uint8_t *buf, size_t size)
 			}
 
 #ifndef TUKLIB_DOSLIKE
-			if (errno == EAGAIN || errno == EWOULDBLOCK) {
+			if (IS_EAGAIN_OR_EWOULDBLOCK(errno)) {
 				if (io_wait(pair, -1, false) == IO_WAIT_MORE)
 					continue;
 
@@ -1156,8 +1306,15 @@ io_write(file_pair *pair, const io_buf *buf, size_t size)
 		// if the file ends with sparse block, we must also return
 		// if size == 0 to avoid doing the lseek().
 		if (size == IO_BUFFER_SIZE) {
-			if (is_sparse(buf)) {
-				pair->dest_pending_sparse += size;
+			// Even if the block was sparse, treat it as non-sparse
+			// if the pending sparse amount is large compared to
+			// the size of off_t. In practice this only matters
+			// on 32-bit systems where off_t isn't always 64 bits.
+			const off_t pending_max
+				= (off_t)(1) << (sizeof(off_t) * CHAR_BIT - 2);
+			if (is_sparse(buf) && pair->dest_pending_sparse
+					< pending_max) {
+				pair->dest_pending_sparse += (off_t)(size);
 				return false;
 			}
 		} else if (size == 0) {

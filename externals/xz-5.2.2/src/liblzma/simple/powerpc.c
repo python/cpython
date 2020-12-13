@@ -15,7 +15,7 @@
 
 
 static size_t
-powerpc_code(lzma_simple *simple lzma_attribute((__unused__)),
+powerpc_code(void *simple lzma_attribute((__unused__)),
 		uint32_t now_pos, bool is_encoder,
 		uint8_t *buffer, size_t size)
 {
@@ -25,10 +25,11 @@ powerpc_code(lzma_simple *simple lzma_attribute((__unused__)),
 		if ((buffer[i] >> 2) == 0x12
 				&& ((buffer[i + 3] & 3) == 1)) {
 
-			const uint32_t src = ((buffer[i + 0] & 3) << 24)
-					| (buffer[i + 1] << 16)
-					| (buffer[i + 2] << 8)
-					| (buffer[i + 3] & (~3));
+			const uint32_t src
+				= (((uint32_t)(buffer[i + 0]) & 3) << 24)
+				| ((uint32_t)(buffer[i + 1]) << 16)
+				| ((uint32_t)(buffer[i + 2]) << 8)
+				| ((uint32_t)(buffer[i + 3]) & ~UINT32_C(3));
 
 			uint32_t dest;
 			if (is_encoder)

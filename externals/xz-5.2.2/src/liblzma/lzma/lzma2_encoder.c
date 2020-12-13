@@ -17,7 +17,7 @@
 #include "lzma2_encoder.h"
 
 
-struct lzma_coder_s {
+typedef struct {
 	enum {
 		SEQ_INIT,
 		SEQ_LZMA_ENCODE,
@@ -27,7 +27,7 @@ struct lzma_coder_s {
 	} sequence;
 
 	/// LZMA encoder
-	lzma_coder *lzma;
+	void *lzma;
 
 	/// LZMA options currently in use.
 	lzma_options_lzma opt_cur;
@@ -48,11 +48,11 @@ struct lzma_coder_s {
 
 	/// Buffer to hold the chunk header and LZMA compressed data
 	uint8_t buf[LZMA2_HEADER_MAX + LZMA2_CHUNK_MAX];
-};
+} lzma_lzma2_coder;
 
 
 static void
-lzma2_header_lzma(lzma_coder *coder)
+lzma2_header_lzma(lzma_lzma2_coder *coder)
 {
 	assert(coder->uncompressed_size > 0);
 	assert(coder->uncompressed_size <= LZMA2_UNCOMPRESSED_MAX);
@@ -108,7 +108,7 @@ lzma2_header_lzma(lzma_coder *coder)
 
 
 static void
-lzma2_header_uncompressed(lzma_coder *coder)
+lzma2_header_uncompressed(lzma_lzma2_coder *coder)
 {
 	assert(coder->uncompressed_size > 0);
 	assert(coder->uncompressed_size <= LZMA2_CHUNK_MAX);
@@ -133,10 +133,12 @@ lzma2_header_uncompressed(lzma_coder *coder)
 
 
 static lzma_ret
-lzma2_encode(lzma_coder *restrict coder, lzma_mf *restrict mf,
+lzma2_encode(void *coder_ptr, lzma_mf *restrict mf,
 		uint8_t *restrict out, size_t *restrict out_pos,
 		size_t out_size)
 {
+	lzma_lzma2_coder *restrict coder = coder_ptr;
+
 	while (*out_pos < out_size)
 	switch (coder->sequence) {
 	case SEQ_INIT:
@@ -262,8 +264,9 @@ lzma2_encode(lzma_coder *restrict coder, lzma_mf *restrict mf,
 
 
 static void
-lzma2_encoder_end(lzma_coder *coder, const lzma_allocator *allocator)
+lzma2_encoder_end(void *coder_ptr, const lzma_allocator *allocator)
 {
+	lzma_lzma2_coder *coder = coder_ptr;
 	lzma_free(coder->lzma, allocator);
 	lzma_free(coder, allocator);
 	return;
@@ -271,8 +274,10 @@ lzma2_encoder_end(lzma_coder *coder, const lzma_allocator *allocator)
 
 
 static lzma_ret
-lzma2_encoder_options_update(lzma_coder *coder, const lzma_filter *filter)
+lzma2_encoder_options_update(void *coder_ptr, const lzma_filter *filter)
 {
+	lzma_lzma2_coder *coder = coder_ptr;
+
 	// New options can be set only when there is no incomplete chunk.
 	// This is the case at the beginning of the raw stream and right
 	// after LZMA_SYNC_FLUSH.
@@ -310,30 +315,32 @@ lzma2_encoder_init(lzma_lz_encoder *lz, const lzma_allocator *allocator,
 	if (options == NULL)
 		return LZMA_PROG_ERROR;
 
-	if (lz->coder == NULL) {
-		lz->coder = lzma_alloc(sizeof(lzma_coder), allocator);
-		if (lz->coder == NULL)
+	lzma_lzma2_coder *coder = lz->coder;
+	if (coder == NULL) {
+		coder = lzma_alloc(sizeof(lzma_lzma2_coder), allocator);
+		if (coder == NULL)
 			return LZMA_MEM_ERROR;
 
+		lz->coder = coder;
 		lz->code = &lzma2_encode;
 		lz->end = &lzma2_encoder_end;
 		lz->options_update = &lzma2_encoder_options_update;
 
-		lz->coder->lzma = NULL;
+		coder->lzma = NULL;
 	}
 
-	lz->coder->opt_cur = *(const lzma_options_lzma *)(options);
+	coder->opt_cur = *(const lzma_options_lzma *)(options);
 
-	lz->coder->sequence = SEQ_INIT;
-	lz->coder->need_properties = true;
-	lz->coder->need_state_reset = false;
-	lz->coder->need_dictionary_reset
-			= lz->coder->opt_cur.preset_dict == NULL
-			|| lz->coder->opt_cur.preset_dict_size == 0;
+	coder->sequence = SEQ_INIT;
+	coder->need_properties = true;
+	coder->need_state_reset = false;
+	coder->need_dictionary_reset
+			= coder->opt_cur.preset_dict == NULL
+			|| coder->opt_cur.preset_dict_size == 0;
 
 	// Initialize LZMA encoder
-	return_if_error(lzma_lzma_encoder_create(&lz->coder->lzma, allocator,
-			&lz->coder->opt_cur, lz_options));
+	return_if_error(lzma_lzma_encoder_create(&coder->lzma, allocator,
+			&coder->opt_cur, lz_options));
 
 	// Make sure that we will always have enough history available in
 	// case we need to use uncompressed chunks. They are used when the
@@ -364,7 +371,7 @@ lzma_lzma2_encoder_memusage(const void *options)
 	if (lzma_mem == UINT64_MAX)
 		return UINT64_MAX;
 
-	return sizeof(lzma_coder) + lzma_mem;
+	return sizeof(lzma_lzma2_coder) + lzma_mem;
 }
 
 

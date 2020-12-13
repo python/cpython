@@ -23,7 +23,7 @@ volatile sig_atomic_t user_abort = false;
 /// been done.
 static volatile sig_atomic_t exit_signal = 0;
 
-/// Mask of signals for which have have established a signal handler to set
+/// Mask of signals for which we have established a signal handler to set
 /// user_abort to true.
 static sigset_t hooked_signals;
 
@@ -152,7 +152,7 @@ signals_unblock(void)
 extern void
 signals_exit(void)
 {
-	const int sig = exit_signal;
+	const int sig = (int)exit_signal;
 
 	if (sig != 0) {
 #if defined(TUKLIB_DOSLIKE) || defined(__VMS)
@@ -166,7 +166,7 @@ signals_exit(void)
 		sigfillset(&sa.sa_mask);
 		sa.sa_flags = 0;
 		sigaction(sig, &sa, NULL);
-		raise(exit_signal);
+		raise(sig);
 #endif
 	}
 

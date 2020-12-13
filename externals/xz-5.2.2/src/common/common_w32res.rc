@@ -17,7 +17,7 @@
 #define MY_VERSION LZMA_VERSION_MAJOR,LZMA_VERSION_MINOR,LZMA_VERSION_PATCH,MY_BUILD
 
 #define MY_FILENAME    MY_NAME MY_SUFFIX
-#define MY_COMPANY     "The Tukaani Project <http://tukaani.org/>"
+#define MY_COMPANY     "The Tukaani Project <https://tukaani.org/>"
 #define MY_PRODUCT     PACKAGE_NAME " <" PACKAGE_URL ">"
 
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US

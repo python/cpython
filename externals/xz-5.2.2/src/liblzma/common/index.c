@@ -105,7 +105,7 @@ typedef struct {
 
 
 typedef struct {
-	/// Every index_stream is a node in the tree of Sreams.
+	/// Every index_stream is a node in the tree of Streams.
 	index_tree_node node;
 
 	/// Number of this Stream (first one is 1)
@@ -166,7 +166,7 @@ struct lzma_index_s {
 	lzma_vli index_list_size;
 
 	/// How many Records to allocate at once in lzma_index_append().
-	/// This defaults to INDEX_GROUP_SIZE but can be overriden with
+	/// This defaults to INDEX_GROUP_SIZE but can be overridden with
 	/// lzma_index_prealloc().
 	size_t prealloc;
 
@@ -202,22 +202,21 @@ index_tree_node_end(index_tree_node *node, const lzma_allocator *allocator,
 	if (node->right != NULL)
 		index_tree_node_end(node->right, allocator, free_func);
 
-	if (free_func != NULL)
-		free_func(node, allocator);
-
-	lzma_free(node, allocator);
+	free_func(node, allocator);
 	return;
 }
 
 
-/// Free the meory allocated for a tree. If free_func is not NULL,
-/// it is called on each node before freeing the node. This is used
-/// to free the Record groups from each index_stream before freeing
-/// the index_stream itself.
+/// Free the memory allocated for a tree. Each node is freed using the
+/// given free_func which is either &lzma_free or &index_stream_end.
+/// The latter is used to free the Record groups from each index_stream
+/// before freeing the index_stream itself.
 static void
 index_tree_end(index_tree *tree, const lzma_allocator *allocator,
 		void (*free_func)(void *node, const lzma_allocator *allocator))
 {
+	assert(free_func != NULL);
+
 	if (tree->root != NULL)
 		index_tree_node_end(tree->root, allocator, free_func);
 
@@ -371,7 +370,8 @@ static void
 index_stream_end(void *node, const lzma_allocator *allocator)
 {
 	index_stream *s = node;
-	index_tree_end(&s->groups, allocator, NULL);
+	index_tree_end(&s->groups, allocator, &lzma_free);
+	lzma_free(s, allocator);
 	return;
 }
 
@@ -825,10 +825,13 @@ lzma_index_cat(lzma_index *restrict dest, lzma_index *restrict src,
 				s->groups.root = &newg->node;
 			}
 
-			if (s->groups.rightmost == &g->node)
-				s->groups.rightmost = &newg->node;
+			assert(s->groups.rightmost == &g->node);
+			s->groups.rightmost = &newg->node;
 
 			lzma_free(g, allocator);
+
+			// NOTE: newg isn't leaked here because
+			// newg == (void *)&newg->node.
 		}
 	}
 
@@ -869,17 +872,18 @@ index_dup_stream(const index_stream *src, const lzma_allocator *allocator)
 	index_stream *dest = index_stream_init(src->node.compressed_base,
 			src->node.uncompressed_base, src->number,
 			src->block_number_base, allocator);
-
-	// Return immediately if allocation failed or if there are
-	// no groups to duplicate.
-	if (dest == NULL || src->groups.leftmost == NULL)
-		return dest;
+	if (dest == NULL)
+		return NULL;
 
 	// Copy the overall information.
 	dest->record_count = src->record_count;
 	dest->index_list_size = src->index_list_size;
 	dest->stream_flags = src->stream_flags;
 	dest->stream_padding = src->stream_padding;
+
+	// Return if there are no groups to duplicate.
+	if (src->groups.leftmost == NULL)
+		return dest;
 
 	// Allocate memory for the Records. We put all the Records into
 	// a single group. It's simplest and also tends to make

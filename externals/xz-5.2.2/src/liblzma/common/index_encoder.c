@@ -15,7 +15,7 @@
 #include "check.h"
 
 
-struct lzma_coder_s {
+typedef struct {
 	enum {
 		SEQ_INDICATOR,
 		SEQ_COUNT,
@@ -37,11 +37,11 @@ struct lzma_coder_s {
 
 	/// CRC32 of the List of Records field
 	uint32_t crc32;
-};
+} lzma_index_coder;
 
 
 static lzma_ret
-index_encode(lzma_coder *coder,
+index_encode(void *coder_ptr,
 		const lzma_allocator *allocator lzma_attribute((__unused__)),
 		const uint8_t *restrict in lzma_attribute((__unused__)),
 		size_t *restrict in_pos lzma_attribute((__unused__)),
@@ -50,6 +50,8 @@ index_encode(lzma_coder *coder,
 		size_t out_size,
 		lzma_action action lzma_attribute((__unused__)))
 {
+	lzma_index_coder *coder = coder_ptr;
+
 	// Position where to start calculating CRC32. The idea is that we
 	// need to call lzma_crc32() only once per call to index_encode().
 	const size_t out_start = *out_pos;
@@ -159,7 +161,7 @@ out:
 
 
 static void
-index_encoder_end(lzma_coder *coder, const lzma_allocator *allocator)
+index_encoder_end(void *coder, const lzma_allocator *allocator)
 {
 	lzma_free(coder, allocator);
 	return;
@@ -167,7 +169,7 @@ index_encoder_end(lzma_coder *coder, const lzma_allocator *allocator)
 
 
 static void
-index_encoder_reset(lzma_coder *coder, const lzma_index *i)
+index_encoder_reset(lzma_index_coder *coder, const lzma_index *i)
 {
 	lzma_index_iter_init(&coder->iter, i);
 
@@ -190,7 +192,7 @@ lzma_index_encoder_init(lzma_next_coder *next, const lzma_allocator *allocator,
 		return LZMA_PROG_ERROR;
 
 	if (next->coder == NULL) {
-		next->coder = lzma_alloc(sizeof(lzma_coder), allocator);
+		next->coder = lzma_alloc(sizeof(lzma_index_coder), allocator);
 		if (next->coder == NULL)
 			return LZMA_MEM_ERROR;
 
@@ -230,7 +232,7 @@ lzma_index_buffer_encode(const lzma_index *i,
 
 	// The Index encoder needs just one small data structure so we can
 	// allocate it on stack.
-	lzma_coder coder;
+	lzma_index_coder coder;
 	index_encoder_reset(&coder, i);
 
 	// Do the actual encoding. This should never fail, but store

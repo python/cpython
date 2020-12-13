@@ -138,7 +138,7 @@ decompress(lzma_stream *strm, const char *inname, FILE *infile, FILE *outfile)
 			// Once the end of the input file has been reached,
 			// we need to tell lzma_code() that no more input
 			// will be coming. As said before, this isn't required
-			// if the LZMA_CONATENATED flag isn't used when
+			// if the LZMA_CONCATENATED flag isn't used when
 			// initializing the decoder.
 			if (feof(infile))
 				action = LZMA_FINISH;

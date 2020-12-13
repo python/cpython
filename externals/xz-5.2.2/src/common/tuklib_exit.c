@@ -14,6 +14,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "tuklib_gettext.h"
 #include "tuklib_progname.h"

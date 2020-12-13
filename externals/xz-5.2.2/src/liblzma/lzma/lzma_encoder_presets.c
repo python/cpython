@@ -2,6 +2,7 @@
 //
 /// \file       lzma_encoder_presets.c
 /// \brief      Encoder presets
+/// \note       xz needs this even when only decoding is enabled.
 //
 //  Author:     Lasse Collin
 //

@@ -5,7 +5,7 @@
 .\" This file has been put into the public domain.
 .\" You can do whatever you want with this file.
 .\"
-.TH XZ 1 "2015-05-11" "Tukaani" "XZ Utils"
+.TH XZ 1 "2020-02-01" "Tukaani" "XZ Utils"
 .
 .SH NAME
 xz, unxz, xzcat, lzma, unlzma, lzcat \- Compress or decompress .xz and .lzma files
@@ -1005,6 +1005,25 @@ instead of
 until the details have been decided.
 .RE
 .IP ""
+For 32-bit
+.BR xz
+there is a special case: if the
+.I limit
+would be over
+.BR "4020\ MiB" ,
+the
+.I limit
+is set to
+.BR "4020\ MiB" .
+(The values
+.B 0
+and
+.B max
+aren't affected by this.
+A similar feature doesn't exist for decompression.)
+This can be helpful when a 32-bit executable has access
+to 4\ GiB address space while hopefully doing no harm in other situations.
+.IP ""
 See also the section
 .BR "Memory usage" .
 .TP
@@ -1052,7 +1071,7 @@ if using more threads would exceed the memory usage limit.
 Currently the only threading method is to split the input into
 blocks and compress them independently from each other.
 The default block size depends on the compression level and
-can be overriden with the
+can be overridden with the
 .BI \-\-block\-size= size
 option.
 .IP ""
@@ -1551,7 +1570,7 @@ The old BCJ filters will still be useful in embedded systems,
 because the decoder of the new filter will be bigger
 and use more memory.
 .IP ""
-Different instruction sets have have different alignment:
+Different instruction sets have different alignment:
 .RS
 .RS
 .PP
@@ -2779,8 +2798,8 @@ have the same number of bytes per pixel.
 .BR bzip2 (1),
 .BR 7z (1)
 .PP
-XZ Utils: <http://tukaani.org/xz/>
+XZ Utils: <https://tukaani.org/xz/>
 .br
-XZ Embedded: <http://tukaani.org/xz/embedded.html>
+XZ Embedded: <https://tukaani.org/xz/embedded.html>
 .br
 LZMA SDK: <http://7-zip.org/sdk.html>

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-/// \file       tuklib_mstr_width.c
+/// \file       tuklib_mbstr_width.c
 /// \brief      Calculate width of a multibyte string
 //
 //  Author:     Lasse Collin
@@ -11,6 +11,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "tuklib_mbstr.h"
+#include <string.h>
 
 #if defined(HAVE_MBRTOWC) && defined(HAVE_WCWIDTH)
 #	include <wchar.h>
@@ -50,7 +51,7 @@ tuklib_mbstr_width(const char *str, size_t *bytes)
 		if (wc_width < 0)
 			return (size_t)-1;
 
-		width += wc_width;
+		width += (size_t)wc_width;
 	}
 
 	// Require that the string ends in the initial shift state.

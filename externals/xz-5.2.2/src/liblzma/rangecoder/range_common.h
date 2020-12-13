@@ -14,9 +14,7 @@
 #ifndef LZMA_RANGE_COMMON_H
 #define LZMA_RANGE_COMMON_H
 
-#ifdef HAVE_CONFIG_H
-#	include "common.h"
-#endif
+#include "common.h"
 
 
 ///////////////

@@ -32,7 +32,7 @@ lzma_simple_props_encode(const void *options, uint8_t *out)
 	if (opt == NULL || opt->start_offset == 0)
 		return LZMA_OK;
 
-	unaligned_write32le(out, opt->start_offset);
+	write32le(out, opt->start_offset);
 
 	return LZMA_OK;
 }

@@ -14,7 +14,7 @@
 #define TUKLIB_COMMON_H
 
 // The config file may be replaced by a package-specific file.
-// It should include at least stddef.h, inttypes.h, and limits.h.
+// It should include at least stddef.h, stdbool.h, inttypes.h, and limits.h.
 #include "tuklib_config.h"
 
 // TUKLIB_SYMBOL_PREFIX is prefixed to all symbols exported by

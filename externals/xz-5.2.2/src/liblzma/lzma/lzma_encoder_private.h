@@ -25,8 +25,7 @@
 // MATCH_LEN_MIN bytes. Unaligned access gives tiny gain so there's no
 // reason to not use it when it is supported.
 #ifdef TUKLIB_FAST_UNALIGNED_ACCESS
-#	define not_equal_16(a, b) \
-		(*(const uint16_t *)(a) != *(const uint16_t *)(b))
+#	define not_equal_16(a, b) (read16ne(a) != read16ne(b))
 #else
 #	define not_equal_16(a, b) \
 		((a)[0] != (b)[0] || (a)[1] != (b)[1])
@@ -69,7 +68,7 @@ typedef struct {
 } lzma_optimal;
 
 
-struct lzma_coder_s {
+struct lzma_lzma1_encoder_s {
 	/// Range encoder
 	lzma_range_encoder rc;
 
@@ -138,10 +137,10 @@ struct lzma_coder_s {
 
 
 extern void lzma_lzma_optimum_fast(
-		lzma_coder *restrict coder, lzma_mf *restrict mf,
+		lzma_lzma1_encoder *restrict coder, lzma_mf *restrict mf,
 		uint32_t *restrict back_res, uint32_t *restrict len_res);
 
-extern void lzma_lzma_optimum_normal(lzma_coder *restrict coder,
+extern void lzma_lzma_optimum_normal(lzma_lzma1_encoder *restrict coder,
 		lzma_mf *restrict mf, uint32_t *restrict back_res,
 		uint32_t *restrict len_res, uint32_t position);
 

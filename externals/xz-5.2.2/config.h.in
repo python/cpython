@@ -22,17 +22,20 @@
 /* Define to 1 if you have the <byteswap.h> header file. */
 #undef HAVE_BYTESWAP_H
 
+/* Define to 1 if Capsicum is available. */
+#undef HAVE_CAPSICUM
+
 /* Define to 1 if the system has the type `CC_SHA256_CTX'. */
 #undef HAVE_CC_SHA256_CTX
 
 /* Define to 1 if you have the `CC_SHA256_Init' function. */
 #undef HAVE_CC_SHA256_INIT
 
-/* Define to 1 if you have the MacOS X function CFLocaleCopyCurrent in the
+/* Define to 1 if you have the Mac OS X function CFLocaleCopyCurrent in the
    CoreFoundation framework. */
 #undef HAVE_CFLOCALECOPYCURRENT
 
-/* Define to 1 if you have the MacOS X function CFPreferencesCopyAppValue in
+/* Define to 1 if you have the Mac OS X function CFPreferencesCopyAppValue in
    the CoreFoundation framework. */
 #undef HAVE_CFPREFERENCESCOPYAPPVALUE
 
@@ -63,6 +66,9 @@
    to 0 if you don't. */
 #undef HAVE_DECL_PROGRAM_INVOCATION_NAME
 
+/* Define to 1 if any of HAVE_DECODER_foo have been defined. */
+#undef HAVE_DECODERS
+
 /* Define to 1 if arm decoder is enabled. */
 #undef HAVE_DECODER_ARM
 
@@ -92,6 +98,9 @@
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
+
+/* Define to 1 if any of HAVE_ENCODER_foo have been defined. */
+#undef HAVE_ENCODERS
 
 /* Define to 1 if arm encoder is enabled. */
 #undef HAVE_ENCODER_ARM
@@ -174,9 +183,6 @@
 /* Define to 1 to enable hc4 match finder. */
 #undef HAVE_MF_HC4
 
-/* Define to 1 if you have the <minix/sha2.h> header file. */
-#undef HAVE_MINIX_SHA2_H
-
 /* Define to 1 if getopt.h declares extern int optreset. */
 #undef HAVE_OPTRESET
 
@@ -243,6 +249,9 @@
 /* Define to 1 if you have the <sys/byteorder.h> header file. */
 #undef HAVE_SYS_BYTEORDER_H
 
+/* Define to 1 if you have the <sys/capsicum.h> header file. */
+#undef HAVE_SYS_CAPSICUM_H
+
 /* Define to 1 if you have the <sys/endian.h> header file. */
 #undef HAVE_SYS_ENDIAN_H
 
@@ -280,8 +289,22 @@
 /* Define to 1 if the system has the type `_Bool'. */
 #undef HAVE__BOOL
 
+/* Define to 1 if you have the `_futime' function. */
+#undef HAVE__FUTIME
+
 /* Define to 1 if _mm_movemask_epi8 is available. */
 #undef HAVE__MM_MOVEMASK_EPI8
+
+/* Define to 1 if the GNU C extension __builtin_assume_aligned is supported.
+   */
+#undef HAVE___BUILTIN_ASSUME_ALIGNED
+
+/* Define to 1 if the GNU C extensions __builtin_bswap16/32/64 are supported.
+   */
+#undef HAVE___BUILTIN_BSWAPXX
+
+/* Define if running the test suite so that test #27 works on MinGW. */
+#undef LT_MINGW_STATIC_TESTSUITE_HACK
 
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
@@ -340,6 +363,10 @@
 #undef TUKLIB_CPUCORES_PSTAT_GETDYNAMIC
 
 /* Define to 1 if the number of available CPU cores can be detected with
+   sched_getaffinity() */
+#undef TUKLIB_CPUCORES_SCHED_GETAFFINITY
+
+/* Define to 1 if the number of available CPU cores can be detected with
    sysconf(_SC_NPROCESSORS_ONLN) or sysconf(_SC_NPROC_ONLN). */
 #undef TUKLIB_CPUCORES_SYSCONF
 
@@ -378,6 +405,11 @@
 /* Define to 1 if the amount of physical memory can be detected with Linux
    sysinfo(). */
 #undef TUKLIB_PHYSMEM_SYSINFO
+
+/* Define to 1 to use unsafe type punning, e.g. char *x = ...; *(int *)x =
+   123; which violates strict aliasing rules and thus is undefined behavior
+   and might result in broken code. */
+#undef TUKLIB_USE_UNSAFE_TYPE_PUNNING
 
 /* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE

@@ -150,7 +150,8 @@ extern void message_filename(const char *src_name);
 /// \param      strm      Pointer to lzma_stream used for the coding.
 /// \param      in_size   Size of the input file, or zero if unknown.
 ///
-extern void message_progress_start(lzma_stream *strm, uint64_t in_size);
+extern void message_progress_start(lzma_stream *strm,
+		bool is_passthru, uint64_t in_size);
 
 
 /// Update the progress info if in verbose mode and enough time has passed

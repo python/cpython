@@ -7,7 +7,7 @@ Introduction
 
     This package includes command line tools (xz.exe and a few others)
     and the liblzma compression library from XZ Utils. You can find the
-    latest version and full source code from <http://tukaani.org/xz/>.
+    latest version and full source code from <https://tukaani.org/xz/>.
 
     The parts of the XZ Utils source code, that are relevant to this
     binary package, are in the public domain. XZ Utils have been built

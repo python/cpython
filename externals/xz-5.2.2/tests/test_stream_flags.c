@@ -83,7 +83,7 @@ test_footer(void)
 static void
 test_encode_invalid(void)
 {
-	known_flags.check = LZMA_CHECK_ID_MAX + 1;
+	known_flags.check = (lzma_check)(LZMA_CHECK_ID_MAX + 1);
 	known_flags.backward_size = 1024;
 
 	expect(lzma_stream_header_encode(&known_flags, buffer)
@@ -133,13 +133,13 @@ test_decode_invalid(void)
 
 	// Test 2a (valid CRC32)
 	uint32_t crc = lzma_crc32(buffer + 6, 2, 0);
-	unaligned_write32le(buffer + 8, crc);
+	write32le(buffer + 8, crc);
 	succeed(test_header_decoder(LZMA_OK));
 
 	// Test 2b (invalid Stream Flags with valid CRC32)
 	buffer[6] ^= 0x20;
 	crc = lzma_crc32(buffer + 6, 2, 0);
-	unaligned_write32le(buffer + 8, crc);
+	write32le(buffer + 8, crc);
 	succeed(test_header_decoder(LZMA_OPTIONS_ERROR));
 
 	// Test 3 (invalid CRC32)
@@ -151,7 +151,7 @@ test_decode_invalid(void)
 	expect(lzma_stream_footer_encode(&known_flags, buffer) == LZMA_OK);
 	buffer[9] ^= 0x40;
 	crc = lzma_crc32(buffer + 4, 6, 0);
-	unaligned_write32le(buffer, crc);
+	write32le(buffer, crc);
 	succeed(test_footer_decoder(LZMA_OPTIONS_ERROR));
 
 	// Test 5 (invalid Magic Bytes)

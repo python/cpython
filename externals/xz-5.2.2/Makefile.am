@@ -47,6 +47,7 @@ dist_examplesold_DATA = \
 endif
 
 EXTRA_DIST = \
+	po4a \
 	extra \
 	dos \
 	windows \
@@ -77,7 +78,8 @@ manfiles = \
 # Convert the man pages to PDF and plain text (ASCII only) formats.
 dist-hook:
 	if test -d "$(srcdir)/.git" && type git > /dev/null 2>&1; then \
-		( cd "$(srcdir)" && git log --date=iso --stat ) \
+		( cd "$(srcdir)" && git log --date=iso --stat \
+			b667a3ef6338a2c1db7b7706b1f6c99ea392221c^..HEAD ) \
 			> "$(distdir)/ChangeLog"; \
 	fi
 	if type groff > /dev/null 2>&1 && type ps2pdf > /dev/null 2>&1; then \
@@ -98,8 +100,11 @@ dist-hook:
 	fi
 
 # This works with GNU tar and gives cleaner package than normal 'make dist'.
+# This also ensures that the man page translations are up to date (dist-hook
+# would be too late for that).
 mydist:
 	sh "$(srcdir)/src/liblzma/validate_map.sh"
+	cd "$(srcdir)/po4a" && sh update-po
 	VERSION=$(VERSION); \
 	if test -d "$(srcdir)/.git" && type git > /dev/null 2>&1; then \
 		SNAPSHOT=`cd "$(srcdir)" && git describe --abbrev=4 | cut -b2-`; \

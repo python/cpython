@@ -126,7 +126,7 @@ lzma_block_header_encode(const lzma_block *block, uint8_t *out)
 	memzero(out + out_pos, out_size - out_pos);
 
 	// CRC32
-	unaligned_write32le(out + out_size, lzma_crc32(out, out_size, 0));
+	write32le(out + out_size, lzma_crc32(out, out_size, 0));
 
 	return LZMA_OK;
 }

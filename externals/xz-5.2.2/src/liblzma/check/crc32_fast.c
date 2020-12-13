@@ -49,7 +49,7 @@ lzma_crc32(const uint8_t *buf, size_t size, uint32_t crc)
 
 		// Calculate the CRC32 using the slice-by-eight algorithm.
 		while (buf < limit) {
-			crc ^= *(const uint32_t *)(buf);
+			crc ^= aligned_read32ne(buf);
 			buf += 4;
 
 			crc = lzma_crc32_table[7][A(crc)]
@@ -57,7 +57,7 @@ lzma_crc32(const uint8_t *buf, size_t size, uint32_t crc)
 			    ^ lzma_crc32_table[5][C(crc)]
 			    ^ lzma_crc32_table[4][D(crc)];
 
-			const uint32_t tmp = *(const uint32_t *)(buf);
+			const uint32_t tmp = aligned_read32ne(buf);
 			buf += 4;
 
 			// At least with some compilers, it is critical for

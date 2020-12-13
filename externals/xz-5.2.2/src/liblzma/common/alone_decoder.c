@@ -15,7 +15,7 @@
 #include "lz_decoder.h"
 
 
-struct lzma_coder_s {
+typedef struct {
 	lzma_next_coder next;
 
 	enum {
@@ -46,17 +46,18 @@ struct lzma_coder_s {
 	/// Options decoded from the header needed to initialize
 	/// the LZMA decoder
 	lzma_options_lzma options;
-};
+} lzma_alone_coder;
 
 
 static lzma_ret
-alone_decode(lzma_coder *coder,
-		const lzma_allocator *allocator lzma_attribute((__unused__)),
+alone_decode(void *coder_ptr, const lzma_allocator *allocator,
 		const uint8_t *restrict in, size_t *restrict in_pos,
 		size_t in_size, uint8_t *restrict out,
 		size_t *restrict out_pos, size_t out_size,
 		lzma_action action)
 {
+	lzma_alone_coder *coder = coder_ptr;
+
 	while (*out_pos < out_size
 			&& (coder->sequence == SEQ_CODE || *in_pos < in_size))
 	switch (coder->sequence) {
@@ -166,8 +167,9 @@ alone_decode(lzma_coder *coder,
 
 
 static void
-alone_decoder_end(lzma_coder *coder, const lzma_allocator *allocator)
+alone_decoder_end(void *coder_ptr, const lzma_allocator *allocator)
 {
+	lzma_alone_coder *coder = coder_ptr;
 	lzma_next_end(&coder->next, allocator);
 	lzma_free(coder, allocator);
 	return;
@@ -175,9 +177,11 @@ alone_decoder_end(lzma_coder *coder, const lzma_allocator *allocator)
 
 
 static lzma_ret
-alone_decoder_memconfig(lzma_coder *coder, uint64_t *memusage,
+alone_decoder_memconfig(void *coder_ptr, uint64_t *memusage,
 		uint64_t *old_memlimit, uint64_t new_memlimit)
 {
+	lzma_alone_coder *coder = coder_ptr;
+
 	*memusage = coder->memusage;
 	*old_memlimit = coder->memlimit;
 
@@ -198,29 +202,29 @@ lzma_alone_decoder_init(lzma_next_coder *next, const lzma_allocator *allocator,
 {
 	lzma_next_coder_init(&lzma_alone_decoder_init, next, allocator);
 
-	if (memlimit == 0)
-		return LZMA_PROG_ERROR;
+	lzma_alone_coder *coder = next->coder;
 
-	if (next->coder == NULL) {
-		next->coder = lzma_alloc(sizeof(lzma_coder), allocator);
-		if (next->coder == NULL)
+	if (coder == NULL) {
+		coder = lzma_alloc(sizeof(lzma_alone_coder), allocator);
+		if (coder == NULL)
 			return LZMA_MEM_ERROR;
 
+		next->coder = coder;
 		next->code = &alone_decode;
 		next->end = &alone_decoder_end;
 		next->memconfig = &alone_decoder_memconfig;
-		next->coder->next = LZMA_NEXT_CODER_INIT;
+		coder->next = LZMA_NEXT_CODER_INIT;
 	}
 
-	next->coder->sequence = SEQ_PROPERTIES;
-	next->coder->picky = picky;
-	next->coder->pos = 0;
-	next->coder->options.dict_size = 0;
-	next->coder->options.preset_dict = NULL;
-	next->coder->options.preset_dict_size = 0;
-	next->coder->uncompressed_size = 0;
-	next->coder->memlimit = memlimit;
-	next->coder->memusage = LZMA_MEMUSAGE_BASE;
+	coder->sequence = SEQ_PROPERTIES;
+	coder->picky = picky;
+	coder->pos = 0;
+	coder->options.dict_size = 0;
+	coder->options.preset_dict = NULL;
+	coder->options.preset_dict_size = 0;
+	coder->uncompressed_size = 0;
+	coder->memlimit = my_max(1, memlimit);
+	coder->memusage = LZMA_MEMUSAGE_BASE;
 
 	return LZMA_OK;
 }

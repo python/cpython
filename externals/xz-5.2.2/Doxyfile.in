@@ -564,7 +564,7 @@ REFERENCES_RELATION    = YES
 # If the REFERENCES_LINK_SOURCE tag is set to YES (the default)
 # and SOURCE_BROWSER tag is set to YES, then the hyperlinks from
 # functions in REFERENCES_RELATION and REFERENCED_BY_RELATION lists will
-# link to the source code.  Otherwise they will link to the documentstion.
+# link to the source code.  Otherwise they will link to the documentation.
 
 REFERENCES_LINK_SOURCE = YES
 

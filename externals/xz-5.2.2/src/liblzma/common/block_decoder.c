@@ -15,7 +15,7 @@
 #include "check.h"
 
 
-struct lzma_coder_s {
+typedef struct {
 	enum {
 		SEQ_CODE,
 		SEQ_PADDING,
@@ -48,7 +48,7 @@ struct lzma_coder_s {
 
 	/// True if the integrity check won't be calculated and verified.
 	bool ignore_check;
-};
+} lzma_block_coder;
 
 
 static inline bool
@@ -74,11 +74,13 @@ is_size_valid(lzma_vli size, lzma_vli reference)
 
 
 static lzma_ret
-block_decode(lzma_coder *coder, const lzma_allocator *allocator,
+block_decode(void *coder_ptr, const lzma_allocator *allocator,
 		const uint8_t *restrict in, size_t *restrict in_pos,
 		size_t in_size, uint8_t *restrict out,
 		size_t *restrict out_pos, size_t out_size, lzma_action action)
 {
+	lzma_block_coder *coder = coder_ptr;
+
 	switch (coder->sequence) {
 	case SEQ_CODE: {
 		const size_t in_start = *in_pos;
@@ -177,8 +179,9 @@ block_decode(lzma_coder *coder, const lzma_allocator *allocator,
 
 
 static void
-block_decoder_end(lzma_coder *coder, const lzma_allocator *allocator)
+block_decoder_end(void *coder_ptr, const lzma_allocator *allocator)
 {
+	lzma_block_coder *coder = coder_ptr;
 	lzma_next_end(&coder->next, allocator);
 	lzma_free(coder, allocator);
 	return;
@@ -198,27 +201,29 @@ lzma_block_decoder_init(lzma_next_coder *next, const lzma_allocator *allocator,
 			|| !lzma_vli_is_valid(block->uncompressed_size))
 		return LZMA_PROG_ERROR;
 
-	// Allocate and initialize *next->coder if needed.
-	if (next->coder == NULL) {
-		next->coder = lzma_alloc(sizeof(lzma_coder), allocator);
-		if (next->coder == NULL)
+	// Allocate *next->coder if needed.
+	lzma_block_coder *coder = next->coder;
+	if (coder == NULL) {
+		coder = lzma_alloc(sizeof(lzma_block_coder), allocator);
+		if (coder == NULL)
 			return LZMA_MEM_ERROR;
 
+		next->coder = coder;
 		next->code = &block_decode;
 		next->end = &block_decoder_end;
-		next->coder->next = LZMA_NEXT_CODER_INIT;
+		coder->next = LZMA_NEXT_CODER_INIT;
 	}
 
 	// Basic initializations
-	next->coder->sequence = SEQ_CODE;
-	next->coder->block = block;
-	next->coder->compressed_size = 0;
-	next->coder->uncompressed_size = 0;
+	coder->sequence = SEQ_CODE;
+	coder->block = block;
+	coder->compressed_size = 0;
+	coder->uncompressed_size = 0;
 
 	// If Compressed Size is not known, we calculate the maximum allowed
 	// value so that encoded size of the Block (including Block Padding)
 	// is still a valid VLI and a multiple of four.
-	next->coder->compressed_limit
+	coder->compressed_limit
 			= block->compressed_size == LZMA_VLI_UNKNOWN
 				? (LZMA_VLI_MAX & ~LZMA_VLI_C(3))
 					- block->header_size
@@ -228,14 +233,14 @@ lzma_block_decoder_init(lzma_next_coder *next, const lzma_allocator *allocator,
 	// Initialize the check. It's caller's problem if the Check ID is not
 	// supported, and the Block decoder cannot verify the Check field.
 	// Caller can test lzma_check_is_supported(block->check).
-	next->coder->check_pos = 0;
-	lzma_check_init(&next->coder->check, block->check);
+	coder->check_pos = 0;
+	lzma_check_init(&coder->check, block->check);
 
-	next->coder->ignore_check = block->version >= 1
+	coder->ignore_check = block->version >= 1
 			? block->ignore_check : false;
 
 	// Initialize the filter chain.
-	return lzma_raw_decoder_init(&next->coder->next, allocator,
+	return lzma_raw_decoder_init(&coder->next, allocator,
 			block->filters);
 }
 

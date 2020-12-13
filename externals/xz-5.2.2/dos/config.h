@@ -10,6 +10,9 @@
 /* Define to 1 if sha256 integrity check is enabled. */
 #define HAVE_CHECK_SHA256 1
 
+/* Define to 1 if any of HAVE_DECODER_foo have been defined. */
+#define HAVE_DECODERS 1
+
 /* Define to 1 if arm decoder is enabled. */
 #define HAVE_DECODER_ARM 1
 
@@ -36,6 +39,9 @@
 
 /* Define to 1 if x86 decoder is enabled. */
 #define HAVE_DECODER_X86 1
+
+/* Define to 1 if any of HAVE_ENCODER_foo have been defined. */
+#define HAVE_ENCODERS 1
 
 /* Define to 1 if arm encoder is enabled. */
 #define HAVE_ENCODER_ARM 1
@@ -110,6 +116,14 @@
 /* Define to 1 if the system has the type `_Bool'. */
 #define HAVE__BOOL 1
 
+/* Define to 1 if the GNU C extension __builtin_assume_aligned is supported.
+   */
+#define HAVE___BUILTIN_ASSUME_ALIGNED 1
+
+/* Define to 1 if the GNU C extensions __builtin_bswap16/32/64 are supported.
+   */
+#define HAVE___BUILTIN_BSWAPXX 1
+
 /* Define to 1 to disable debugging code. */
 #define NDEBUG 1
 
@@ -120,7 +134,7 @@
 #define PACKAGE_NAME "XZ Utils"
 
 /* Define to the home page for this package. */
-#define PACKAGE_URL "http://tukaani.org/xz/"
+#define PACKAGE_URL "https://tukaani.org/xz/"
 
 /* The size of `size_t', as computed by sizeof. */
 #define SIZEOF_SIZE_T 4

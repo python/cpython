@@ -15,8 +15,13 @@
 #include "tests.h"
 
 
-static const uint8_t test_string[9] = "123456789";
-static const uint8_t test_unaligned[12] = "xxx123456789";
+// These must be specified as numbers so that the test works on EBCDIC
+// systems too.
+// static const uint8_t test_string[9] = "123456789";
+// static const uint8_t test_unaligned[12] = "xxx123456789";
+static const uint8_t test_string[9] = { 49, 50, 51, 52, 53, 54, 55, 56, 57 };
+static const uint8_t test_unaligned[12]
+		= { 120, 120, 120, 49, 50, 51, 52, 53, 54, 55, 56, 57 };
 
 
 static bool

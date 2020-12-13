@@ -86,7 +86,8 @@ tuklib_physmem(void)
 		// GlobalMemoryStatusEx() conditionally.
 		HMODULE kernel32 = GetModuleHandle("kernel32.dll");
 		if (kernel32 != NULL) {
-			BOOL (WINAPI *gmse)(LPMEMORYSTATUSEX) = GetProcAddress(
+			typedef BOOL (WINAPI *gmse_type)(LPMEMORYSTATUSEX);
+			gmse_type gmse = (gmse_type)GetProcAddress(
 					kernel32, "GlobalMemoryStatusEx");
 			if (gmse != NULL) {
 				MEMORYSTATUSEX meminfo;

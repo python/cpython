@@ -191,19 +191,18 @@ typedef struct {
 
 typedef struct {
 	/// Data specific to the LZ-based encoder
-	lzma_coder *coder;
+	void *coder;
 
 	/// Function to encode from *dict to out[]
-	lzma_ret (*code)(lzma_coder *restrict coder,
+	lzma_ret (*code)(void *coder,
 			lzma_mf *restrict mf, uint8_t *restrict out,
 			size_t *restrict out_pos, size_t out_size);
 
 	/// Free allocated resources
-	void (*end)(lzma_coder *coder, const lzma_allocator *allocator);
+	void (*end)(void *coder, const lzma_allocator *allocator);
 
 	/// Update the options in the middle of the encoding.
-	lzma_ret (*options_update)(lzma_coder *coder,
-			const lzma_filter *filter);
+	lzma_ret (*options_update)(void *coder, const lzma_filter *filter);
 
 } lzma_lz_encoder;
 
