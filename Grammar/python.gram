@@ -646,9 +646,9 @@ invalid_arguments:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "Generator expression must be parenthesized") }
     | a=args ',' args { _PyPegen_arguments_parsing_error(p, a) }
 invalid_kwarg:
-    | a=expression b='=' {
+    | expression a='=' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
-            b, "expression cannot contain assignment, perhaps you meant \"==\"?") }
+            a, "expression cannot contain assignment, perhaps you meant \"==\"?") }
 invalid_named_expression:
     | a=expression ':=' expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
