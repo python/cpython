@@ -441,8 +441,8 @@ static PyObject *
 asynccallawaitable_iternext(asynccallawaitableobject *obj)
 {
     PyObject *result;
-    PyObject *type, *value, *traceback;
     PyObject *stop_value = NULL;
+    int ok;
 
     if (obj->it->it_sentinel == NULL) {
         return PyErr_Format(PyExc_TypeError, "'%.200s' object is already exhausted", obj->it);
@@ -454,40 +454,28 @@ asynccallawaitable_iternext(asynccallawaitableobject *obj)
         return result;
     }
 
-    if (PyErr_Occurred() == NULL) {
-        PyErr_SetString(PyExc_AssertionError, "No exception set");
+    ok = _PyGen_FetchStopIterationValue(&stop_value);
+    if (ok == -1) {
+        // wasn't StopIteration (TODO: should this error message be better?)
+        PyErr_SetString(PyExc_AssertionError, "Unexpected exception");
         return NULL;
-    } else if (PyErr_ExceptionMatches(PyExc_StopIteration) == 0) {
-        return result;
-    }
-
-    PyErr_Fetch(&type, &value, &traceback);
-    PyErr_NormalizeException(&type, &value, &traceback);
-
-    if (value != NULL) {
-        stop_value = PyObject_GetAttrString(value, "value");
     }
 
     if (stop_value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Coroutine iterator raised StopIteration without value");
-        goto raise;
+        return NULL;
     }
 
-    int ok = PyObject_RichCompareBool(obj->it->it_sentinel, stop_value, Py_EQ);
+    ok = PyObject_RichCompareBool(obj->it->it_sentinel, stop_value, Py_EQ);
     Py_DECREF(stop_value);
     if (ok == 0) {
-        PyErr_Restore(type, value, traceback);
+        _PyGen_SetStopIterationValue(stop_value);
         return NULL;
     }
 
     Py_CLEAR(obj->it->it_callable);
     Py_CLEAR(obj->it->it_sentinel);
     PyErr_SetNone(PyExc_StopAsyncIteration);
-
-raise:
-    Py_XDECREF(value);
-    Py_XDECREF(type);
-    Py_XDECREF(traceback);
     return NULL;
 }
 
