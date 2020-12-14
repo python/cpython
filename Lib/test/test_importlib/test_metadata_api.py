@@ -2,20 +2,26 @@ import re
 import textwrap
 import unittest
 
-from collections.abc import Iterator
-
 from . import fixtures
 from importlib.metadata import (
-    Distribution, PackageNotFoundError, distribution,
-    entry_points, files, metadata, requires, version,
-    )
+    Distribution,
+    PackageNotFoundError,
+    distribution,
+    entry_points,
+    files,
+    metadata,
+    requires,
+    version,
+)
 
 
 class APITests(
-        fixtures.EggInfoPkg,
-        fixtures.DistInfoPkg,
-        fixtures.EggInfoFile,
-        unittest.TestCase):
+    fixtures.EggInfoPkg,
+    fixtures.DistInfoPkg,
+    fixtures.DistInfoPkgWithDot,
+    fixtures.EggInfoFile,
+    unittest.TestCase,
+):
 
     version_pattern = r'\d+\.\d+(\.\d)?'
 
@@ -33,16 +39,28 @@ class APITests(
         with self.assertRaises(PackageNotFoundError):
             distribution('does-not-exist')
 
+    def test_name_normalization(self):
+        names = 'pkg.dot', 'pkg_dot', 'pkg-dot', 'pkg..dot', 'Pkg.Dot'
+        for name in names:
+            with self.subTest(name):
+                assert distribution(name).metadata['Name'] == 'pkg.dot'
+
+    def test_prefix_not_matched(self):
+        prefixes = 'p', 'pkg', 'pkg.'
+        for prefix in prefixes:
+            with self.subTest(prefix):
+                with self.assertRaises(PackageNotFoundError):
+                    distribution(prefix)
+
     def test_for_top_level(self):
         self.assertEqual(
-            distribution('egginfo-pkg').read_text('top_level.txt').strip(),
-            'mod')
+            distribution('egginfo-pkg').read_text('top_level.txt').strip(), 'mod'
+        )
 
     def test_read_text(self):
         top_level = [
-            path for path in files('egginfo-pkg')
-            if path.name == 'top_level.txt'
-            ][0]
+            path for path in files('egginfo-pkg') if path.name == 'top_level.txt'
+        ][0]
         self.assertEqual(top_level.read_text(), 'mod\n')
 
     def test_entry_points(self):
@@ -50,6 +68,13 @@ class APITests(
         ep = entries['main']
         self.assertEqual(ep.value, 'mod:main')
         self.assertEqual(ep.extras, [])
+
+    def test_entry_points_distribution(self):
+        entries = dict(entry_points()['entries'])
+        for entry in ("main", "ns:sub"):
+            ep = entries[entry]
+            self.assertIn(ep.dist.name, ('distinfo-pkg', 'egginfo-pkg'))
+            self.assertEqual(ep.dist.version, "1.0.0")
 
     def test_metadata_for_this_package(self):
         md = metadata('egginfo-pkg')
@@ -75,13 +100,8 @@ class APITests(
     def test_file_hash_repr(self):
         assertRegex = self.assertRegex
 
-        util = [
-            p for p in files('distinfo-pkg')
-            if p.name == 'mod.py'
-            ][0]
-        assertRegex(
-            repr(util.hash),
-            '<FileHash mode: sha256 value: .*>')
+        util = [p for p in files('distinfo-pkg') if p.name == 'mod.py'][0]
+        assertRegex(repr(util.hash), '<FileHash mode: sha256 value: .*>')
 
     def test_files_dist_info(self):
         self._test_files(files('distinfo-pkg'))
@@ -99,10 +119,7 @@ class APITests(
     def test_requires_egg_info(self):
         deps = requires('egginfo-pkg')
         assert len(deps) == 2
-        assert any(
-            dep == 'wheel >= 1.0; python_version >= "2.7"'
-            for dep in deps
-            )
+        assert any(dep == 'wheel >= 1.0; python_version >= "2.7"' for dep in deps)
 
     def test_requires_dist_info(self):
         deps = requires('distinfo-pkg')
@@ -112,7 +129,8 @@ class APITests(
         assert "pytest; extra == 'test'" in deps
 
     def test_more_complex_deps_requires_text(self):
-        requires = textwrap.dedent("""
+        requires = textwrap.dedent(
+            """
             dep1
             dep2
 
@@ -124,7 +142,8 @@ class APITests(
 
             [extra2:python_version < "3"]
             dep5
-            """)
+            """
+        )
         deps = sorted(Distribution._deps_from_requires_text(requires))
         expected = [
             'dep1',
@@ -132,7 +151,7 @@ class APITests(
             'dep3; python_version < "3"',
             'dep4; extra == "extra1"',
             'dep5; (python_version < "3") and extra == "extra2"',
-            ]
+        ]
         # It's important that the environment marker expression be
         # wrapped in parentheses to avoid the following 'and' binding more
         # tightly than some other part of the environment expression.
@@ -140,17 +159,27 @@ class APITests(
         assert deps == expected
 
 
+class LegacyDots(fixtures.DistInfoPkgWithDotLegacy, unittest.TestCase):
+    def test_name_normalization(self):
+        names = 'pkg.dot', 'pkg_dot', 'pkg-dot', 'pkg..dot', 'Pkg.Dot'
+        for name in names:
+            with self.subTest(name):
+                assert distribution(name).metadata['Name'] == 'pkg.dot'
+
+    def test_name_normalization_versionless_egg_info(self):
+        names = 'pkg.lot', 'pkg_lot', 'pkg-lot', 'pkg..lot', 'Pkg.Lot'
+        for name in names:
+            with self.subTest(name):
+                assert distribution(name).metadata['Name'] == 'pkg.lot'
+
+
 class OffSysPathTests(fixtures.DistInfoPkgOffPath, unittest.TestCase):
     def test_find_distributions_specified_path(self):
         dists = Distribution.discover(path=[str(self.site_dir)])
-        assert any(
-            dist.metadata['Name'] == 'distinfo-pkg'
-            for dist in dists
-            )
+        assert any(dist.metadata['Name'] == 'distinfo-pkg' for dist in dists)
 
     def test_distribution_at_pathlib(self):
-        """Demonstrate how to load metadata direct from a directory.
-        """
+        """Demonstrate how to load metadata direct from a directory."""
         dist_info_path = self.site_dir / 'distinfo_pkg-1.0.0.dist-info'
         dist = Distribution.at(dist_info_path)
         assert dist.version == '1.0.0'
