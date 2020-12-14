@@ -2632,18 +2632,15 @@ Py_ExitStatusException(PyStatus status)
     }
 }
 
+
 /* Clean up and exit */
 
 static void
 call_py_exitfuncs(PyThreadState *tstate)
 {
-    PyInterpreterState *interp = tstate->interp;
-    if (interp->atexit_func == NULL)
-        return;
-
-    interp->atexit_func(interp->atexit_module);
-    _PyErr_Clear(tstate);
+    _PyAtExit_Call(tstate->interp->atexit_module);
 }
+
 
 /* Wait until threading._shutdown completes, provided
    the threading module was imported in the first place.
