@@ -370,7 +370,7 @@ termios_tcgetwinsize_impl(PyObject *module, int fd)
     return v;
 #else
     PyErr_SetString(PyExc_NotImplementedError,
-                    "termios.TIOCGWINSZ and termios.TIOCGSIZE undefined");
+                    "requires termios.TIOCGWINSZ and/or termios.TIOCGSIZE");
     return NULL;
 #endif /* defined(TIOCGWINSZ) */
 }
@@ -401,8 +401,8 @@ termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
 
     termiosmodulestate *state = PyModule_GetState(module);
     struct winsize w;
-    /* Get the old winsize, in case there are
-       more fields such as xpixel, ypixel */
+    /* Get the old winsize because it might have
+       more fields such as xpixel, ypixel. */
     if (ioctl(fd, TIOCGWINSZ, &w) == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
@@ -418,9 +418,34 @@ termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
     }
 
     Py_RETURN_NONE;
+#elif defined(TIOCGSIZE) && defined(TIOCSSIZE)
+    if (!PyList_Check(winsz) || PyList_Size(winsz) != 2) {
+        PyErr_SetString(PyExc_TypeError,
+                     "tcsetwinsize, arg 2: must be 2 element list");
+        return NULL;
+    }
+
+    termiosmodulestate *state = PyModule_GetState(module);
+    struct ttysize s;
+    /* Get the old ttysize because it might have more fields. */
+    if (ioctl(fd, TIOCGSIZE, &s) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
+
+    s.ts_lines = (unsigned short) PyLong_AsLong(PyList_GetItem(winsz, 0));
+    s.ts_cols = (unsigned short) PyLong_AsLong(PyList_GetItem(winsz, 1));
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+
+    if (ioctl(fd, TIOCSSIZE, &s) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
+
+    Py_RETURN_NONE;
 #else
     PyErr_SetString(PyExc_NotImplementedError,
-                    "termios.TIOCGWINSZ and/or termios.TIOCSWINSZ undefined");
+                    "requires termios.TIOCGWINSZ, termios.TIOCSWINSZ and/or termios.TIOCGSIZE, termios.TIOCSSIZE");
     return NULL;
 #endif /* defined(TIOCGWINSZ) && defined(TIOCSWINSZ) */
 }
@@ -1087,6 +1112,9 @@ static struct constant {
 #endif
 #ifdef TIOCSSERIAL
     {"TIOCSSERIAL", TIOCSSERIAL},
+#endif
+#ifdef TIOCSSIZE
+    {"TIOCSSIZE", TIOCSSIZE},
 #endif
 #ifdef TIOCSSOFTCAR
     {"TIOCSSOFTCAR", TIOCSSOFTCAR},
