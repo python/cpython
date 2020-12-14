@@ -234,8 +234,8 @@ struct _is {
     PyObject *after_forkers_child;
 #endif
     /* AtExit module */
-    void (*pyexitfunc)(PyObject *);
-    PyObject *pyexitmodule;
+    void (*atexit_func)(PyObject *);
+    PyObject *atexit_module;
 
     uint64_t tstate_next_unique_id;
 
