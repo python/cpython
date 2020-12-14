@@ -2054,13 +2054,6 @@ class TestEnum(unittest.TestCase):
         except ValueError:
             pass
 
-    def test_private_variable_is_normal_attribute(self):
-        class Private(Enum):
-            __corporal = 'Radar'
-            __major_ = 'Hoolihan'
-        self.assertEqual(Private._Private__corporal, 'Radar')
-        self.assertEqual(Private._Private__major_, 'Hoolihan')
-
 
 class TestOrder(unittest.TestCase):
 

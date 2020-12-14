@@ -95,9 +95,14 @@ class _EnumDict(dict):
         Single underscore (sunder) names are reserved.
         """
         if _is_private(self._cls_name, key):
-            # do nothing, name will be a normal attribute
-            pass
-        elif _is_sunder(key):
+            import warnings
+            warnings.warn(
+                    "private variables, such as %r, will be normal attributes in 3.10"
+                        % (key, ),
+                    DeprecationWarning,
+                    stacklevel=2,
+                    )
+        if _is_sunder(key):
             if key not in (
                     '_order_', '_create_pseudo_member_',
                     '_generate_next_value_', '_missing_', '_ignore_',
