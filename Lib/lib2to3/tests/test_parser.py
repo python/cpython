@@ -272,6 +272,12 @@ class TestUnpackingGeneralizations(GrammarTest):
     def test_dict_display_2(self):
         self.validate("""{**{}, 3:4, **{5:6, 7:8}}""")
 
+    def test_complex_star_expression(self):
+        self.validate("func(* [] or [1])")
+
+    def test_complex_double_star_expression(self):
+        self.validate("func(**{1: 3} if False else {x: x for x in range(3)})")
+
     def test_argument_unpacking_1(self):
         self.validate("""f(a, *b, *c, d)""")
 
