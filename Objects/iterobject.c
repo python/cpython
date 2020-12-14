@@ -332,7 +332,9 @@ PyObject *
 PyCallAnext_New(PyObject *awaitable, PyObject *default_value)
 {
     anextobject *anext = PyObject_GC_New(anextobject, &PyAnext_Type);
+    Py_INCREF(awaitable);
     anext->wrapped = awaitable;
+    Py_INCREF(default_value);
     anext->default_value = default_value;
     _PyObject_GC_TRACK(anext);
     return (PyObject *)anext;
@@ -492,19 +494,14 @@ raise:
 static PyObject *
 anext_iternext(anextobject *obj)
 {
-    // PyTypeObject *t;
-    // t = Py_TYPE(obj->wrapped);
-    // PyObject *result = (*t->tp_as_async->am_anext)(obj->wrapped);
     PyObject *result = PyIter_Next(obj->wrapped);
-    if (result == NULL) {
-        if (obj->default_value != NULL) {
-            Py_INCREF(obj->default_value);
-            PyErr_SetObject(PyExc_StopIteration, obj->default_value);
-        } else {
-            PyErr_SetNone(PyExc_StopIteration);
-        }
+    if (result != NULL) {
+        return result;
     }
-    return result;
+    if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration)) {
+        _PyGen_SetStopIterationValue(obj->default_value);
+    }
+    return NULL;
 }
 
 static PyObject *
