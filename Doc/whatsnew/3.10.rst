@@ -501,6 +501,13 @@ Changes in the Python API
   have been renamed to *exc*.
   (Contributed by Zackery Spytz and Matthias Bussonnier in :issue:`26389`.)
 
+* :mod:`atexit`: At Python exit, if a callback registered with
+  :func:`atexit.register` fails, its exception is now logged. Previously, only
+  some exceptions were logged, and the last exception was always silently
+  ignored.
+  (Contributed by Victor Stinner in :issue:`42639`.)
+
+
 CPython bytecode changes
 ========================
 
@@ -519,6 +526,8 @@ Build Changes
 * :mod:`sqlite3` requires SQLite 3.7.3 or higher.
   (Contributed by Sergey Fedoseev and Erlend E. Aasland :issue:`40744`.)
 
+* The :mod:`atexit` module must now always be built as a built-in module.
+  (Contributed by Victor Stinner in :issue:`42639`.)
 
 
 C API Changes
