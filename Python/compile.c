@@ -1572,17 +1572,6 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b)
     } \
 }
 
-/* These macros allows to check only for errors and not emmit bytecode
- * while visiting nodes.
-*/
-
-#define BEGIN_DO_NOT_EMIT_BYTECODE { \
-    c->c_do_not_emit_bytecode++;
-
-#define END_DO_NOT_EMIT_BYTECODE \
-    c->c_do_not_emit_bytecode--; \
-}
-
 /* Search if variable annotations are present statically in a block. */
 
 static int
@@ -6257,7 +6246,7 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
                     case JUMP_FORWARD:
                         if (inst->i_target != target->i_target) {
                             inst->i_target = target->i_target;
-                            --i;
+//                             --i;
                         }
                         break;
                     case JUMP_ABSOLUTE:
