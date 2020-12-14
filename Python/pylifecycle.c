@@ -2634,26 +2634,14 @@ Py_ExitStatusException(PyStatus status)
 
 /* Clean up and exit */
 
-/* For the atexit module. */
-void _Py_PyAtExit(void (*func)(PyObject *), PyObject *module)
-{
-    PyInterpreterState *is = _PyInterpreterState_GET();
-
-    /* Guard against API misuse (see bpo-17852) */
-    assert(is->pyexitfunc == NULL || is->pyexitfunc == func);
-
-    is->pyexitfunc = func;
-    is->pyexitmodule = module;
-}
-
 static void
 call_py_exitfuncs(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
-    if (interp->pyexitfunc == NULL)
+    if (interp->atexit_func == NULL)
         return;
 
-    (*interp->pyexitfunc)(interp->pyexitmodule);
+    interp->atexit_func(interp->atexit_module);
     _PyErr_Clear(tstate);
 }
 
