@@ -667,7 +667,10 @@ def _rmtree_safe_fd(topfd, path, onerror):
                         except OSError:
                             onerror(os.path.islink, fullname, sys.exc_info())
                 finally:
-                    os.close(dirfd)
+                    try:
+                        os.close(dirfd)
+                    except OSError:
+                        onerror(os.close, fullname, sys.exc_info())
         else:
             try:
                 os.unlink(entry.name, dir_fd=topfd)
@@ -727,7 +730,10 @@ def rmtree(path, ignore_errors=False, onerror=None):
                 except OSError:
                     onerror(os.path.islink, path, sys.exc_info())
         finally:
-            os.close(fd)
+            try:
+                os.close(fd)
+            except OSError:
+                onerror(os.close, path, sys.exc_info())
     else:
         try:
             if _rmtree_islink(path):
