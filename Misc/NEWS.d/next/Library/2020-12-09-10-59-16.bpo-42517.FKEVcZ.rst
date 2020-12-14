@@ -1,2 +1,2 @@
-Enum: private names do not become members / do not generate errors -- they
-remain normal attributes
+Enum: private names will raise a DeprecationWarning; in 3.10 they will
+become normal attributes

@@ -1125,9 +1125,9 @@ and raise an error if the two do not match::
 _Private__names
 """""""""""""""
 
-Private names are not converted to Enum members, but remain normal attributes.
-
-.. versionchanged:: 3.10
+Private names will be normal attributes in Python 3.10 instead of either an error
+or a member (depending on if the name ends with an underscore). Using these names
+in 3.9 will issue a :exc:`DeprecationWarning`.
 
 
 ``Enum`` member type
