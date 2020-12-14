@@ -1,8 +1,9 @@
-import sys
-import unittest
-import io
 import atexit
+import io
 import os
+import sys
+import textwrap
+import unittest
 from test import support
 from test.support import script_helper
 
@@ -156,7 +157,7 @@ class GeneralTest(unittest.TestCase):
 
     def test_shutdown(self):
         # Actually test the shutdown mechanism in a subprocess
-        code = """if 1:
+        code = textwrap.dedent("""
             import atexit
 
             def f(msg):
@@ -164,7 +165,7 @@ class GeneralTest(unittest.TestCase):
 
             atexit.register(f, "one")
             atexit.register(f, "two")
-            """
+        """)
         res = script_helper.assert_python_ok("-c", code)
         self.assertEqual(res.out.decode().splitlines(), ["two", "one"])
         self.assertFalse(res.err)
@@ -178,13 +179,13 @@ class SubinterpreterTest(unittest.TestCase):
         # take care to free callbacks in its per-subinterpreter module
         # state.
         n = atexit._ncallbacks()
-        code = r"""if 1:
+        code = textwrap.dedent(r"""
             import atexit
             def f():
                 pass
             atexit.register(f)
             del atexit
-            """
+        """)
         ret = support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
         self.assertEqual(atexit._ncallbacks(), n)
@@ -193,13 +194,13 @@ class SubinterpreterTest(unittest.TestCase):
         # Similar to the above, but with a refcycle through the atexit
         # module.
         n = atexit._ncallbacks()
-        code = r"""if 1:
+        code = textwrap.dedent(r"""
             import atexit
             def f():
                 pass
             atexit.register(f)
             atexit.__atexit = atexit
-            """
+        """)
         ret = support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
         self.assertEqual(atexit._ncallbacks(), n)
@@ -210,13 +211,13 @@ class SubinterpreterTest(unittest.TestCase):
         expected = b"The test has passed!"
         r, w = os.pipe()
 
-        code = r"""if 1:
+        code = textwrap.dedent(r"""
             import os
             import atexit
             def callback():
                 os.write({:d}, b"The test has passed!")
             atexit.register(callback)
-        """.format(w)
+        """.format(w))
         ret = support.run_in_subinterp(code)
         os.close(w)
         self.assertEqual(os.read(r, len(expected)), expected)
