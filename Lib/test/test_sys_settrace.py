@@ -629,6 +629,49 @@ class TraceTestCase(unittest.TestCase):
              (3, 'line'),
              (3, 'return')])
 
+    def test_try_except_no_exception(self):
+
+        def func():
+            try:
+                2
+            except:
+                4
+            finally:
+                6
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (6, 'line'),
+             (6, 'return')])
+
+    def test_nested_loops(self):
+
+        def func():
+            for i in range(2):
+                for j in range(2):
+                    a = i + j
+            return a == 1
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (2, 'line'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (2, 'line'),
+             (1, 'line'),
+             (4, 'line'),
+             (4, 'return')])
+
 
 class SkipLineEventsTraceTestCase(TraceTestCase):
     """Repeat the trace tests, but with per-line events skipped"""

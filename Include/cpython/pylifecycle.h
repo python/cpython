@@ -44,6 +44,7 @@ PyAPI_FUNC(void) _Py_PyAtExit(void (*func)(PyObject *), PyObject *);
 PyAPI_FUNC(void) _Py_RestoreSignals(void);
 
 PyAPI_FUNC(int) Py_FdIsInteractive(FILE *, const char *);
+PyAPI_FUNC(int) _Py_FdIsInteractive(FILE *fp, PyObject *filename);
 
 PyAPI_FUNC(void) _Py_SetProgramFullPath(const wchar_t *);
 
