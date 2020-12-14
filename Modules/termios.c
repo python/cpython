@@ -349,8 +349,28 @@ termios_tcgetwinsize_impl(PyObject *module, int fd)
         return NULL;
     }
     return v;
+#elif defined(TIOCGSIZE)
+    termiosmodulestate *state = PyModule_GetState(module);
+    struct ttysize s;
+    if (ioctl(fd, TIOCGSIZE, &s) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
+
+    PyObject *v;
+    if (!(v = PyList_New(2))) {
+        return NULL;
+    }
+
+    PyList_SetItem(v, 0, PyLong_FromLong((long)s.ts_lines));
+    PyList_SetItem(v, 1, PyLong_FromLong((long)s.ts_cols));
+    if (PyErr_Occurred()) {
+        Py_DECREF(v);
+        return NULL;
+    }
+    return v;
 #else
-    PyErr_SetString(PyExc_NotImplementedError, "termios.TIOCGWINSZ undefined");
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "termios.TIOCGWINSZ and termios.TIOCGSIZE undefined");
     return NULL;
 #endif /* defined(TIOCGWINSZ) */
 }
@@ -932,6 +952,9 @@ static struct constant {
 #endif
 #ifdef TIOCGSERIAL
     {"TIOCGSERIAL", TIOCGSERIAL},
+#endif
+#ifdef TIOCGSIZE
+    {"TIOCGSIZE", TIOCGSIZE},
 #endif
 #ifdef TIOCGSOFTCAR
     {"TIOCGSOFTCAR", TIOCGSOFTCAR},
