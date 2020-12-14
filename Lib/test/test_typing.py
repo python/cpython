@@ -1131,10 +1131,6 @@ class ProtocolTests(BaseTestCase):
             PR[int]
         with self.assertRaises(TypeError):
             P[int, str]
-        with self.assertRaises(TypeError):
-            PR[int, 1]
-        with self.assertRaises(TypeError):
-            PR[int, ClassVar]
 
         class C(PR[int, T]): pass
 
@@ -1156,8 +1152,6 @@ class ProtocolTests(BaseTestCase):
         self.assertIsSubclass(P, PR)
         with self.assertRaises(TypeError):
             PR[int]
-        with self.assertRaises(TypeError):
-            PR[int, 1]
 
         class P1(Protocol, Generic[T]):
             def bar(self, x: T) -> str: ...
@@ -1176,8 +1170,6 @@ class ProtocolTests(BaseTestCase):
                 return x
 
         self.assertIsInstance(Test(), PSub)
-        with self.assertRaises(TypeError):
-            PR[int, ClassVar]
 
     def test_init_called(self):
         T = TypeVar('T')
@@ -4346,25 +4338,30 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(G2.__parameters__, (P_2,))
 
         # currently raises TypeError for _type_check
-        # G3 = X[int, [int, bool]]
-        # self.assertEqual(G3.__args__, (int, [int, bool]))
-        # self.assertEqual(G3.__parameters__, ())
+        G3 = X[int, [int, bool]]
+        self.assertEqual(G3.__args__, (int, (int, bool)))
+        self.assertEqual(G3.__parameters__, ())
 
-        # G4 = X[int, ...]
-        # self.assertEqual(G4.__args__, (int, type(Ellipsis)))
-        # self.assertEqual(G4.__parameters__, ())
-        #
-        # class Z(Generic[P]):
-        #     f: Callable[P, int]
+        G4 = X[int, ...]
+        self.assertEqual(G4.__args__, (int, Ellipsis))
+        self.assertEqual(G4.__parameters__, ())
 
-        # These are valid
-        # currently raises TypeError for _type_check
-        # G5 = Z[[int, str, bool]]
+        class Z(Generic[P]):
+            f: Callable[P, int]
 
-        # currently raises TypeError for too many parameters (not enough TypeVars)
-        # G6 = Z[int, str, bool]
-        # self.assertEqual(G6.__args__, (int, str, bool))
-        # self.assertEqual(G6.__parameters__, ())
+        G5 = Z[[int, str, bool]]
+        self.assertEqual(G5.__args__, ((int, str, bool),))
+        self.assertEqual(G5.__parameters__, ())
+
+        G6 = Z[int, str, bool]
+        self.assertEqual(G6.__args__, ((int, str, bool),))
+        self.assertEqual(G6.__parameters__, ())
+
+        # G5 and G6 should be equivalent according to the PEP
+        self.assertEqual(G5.__args__, G6.__args__)
+        self.assertEqual(G5.__origin__, G6.__origin__)
+        self.assertEqual(G5.__parameters__, G6.__parameters__)
+        self.assertEqual(G5, G6)
 
 
 class ConcatenateTests(BaseTestCase):

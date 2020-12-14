@@ -1127,8 +1127,7 @@ class Generic:
         if not params and cls is not Tuple:
             raise TypeError(
                 f"Parameter list to {cls.__qualname__}[...] cannot be empty")
-        msg = "Parameters to generic types must be types."
-        params = tuple(_type_check(p, msg) for p in params)
+        params = tuple(_type_convert(p) for p in params)
         if cls in (Generic, Protocol):
             # Generic and Protocol can only be subscripted with unique type variables.
             if not all(isinstance(p, (TypeVar, ParamSpec)) for p in params):
@@ -1140,6 +1139,23 @@ class Generic:
                     f"Parameters to {cls.__name__}[...] must all be unique")
         else:
             # Subscripting a regular Generic subclass.
+
+            # Code below handles PEP 612 ParamSpec.
+            if any(isinstance(t, ParamSpec) for t in cls.__parameters__):
+                # Special case where Z[[int, str, bool]] == Z[int, str, bool]
+                # in PEP 612.
+                if len(cls.__parameters__) == 1 and len(params) > 1:
+                    params = (params,)
+                else:
+                    _params = []
+                    # Convert lists to tuples to help other libraries cache the
+                    # results.
+                    for p, tvar in zip(params, cls.__parameters__):
+                        if isinstance(tvar, ParamSpec) and isinstance(p, list):
+                            p = tuple(p)
+                        _params.append(p)
+                    params = tuple(_params)
+
             _check_generic(cls, params, len(cls.__parameters__))
         return _GenericAlias(cls, params)
 
