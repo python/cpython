@@ -900,7 +900,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     if (groups_list != Py_None) {
 #ifdef HAVE_SETGROUPS
         Py_ssize_t i;
-        unsigned long gid;
+        gid_t gid;
 
         if (!PyList_Check(groups_list)) {
             PyErr_SetString(PyExc_TypeError,
