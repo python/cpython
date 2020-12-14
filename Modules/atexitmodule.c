@@ -65,7 +65,7 @@ atexit_cleanup(struct atexit_state *state)
 /* Installed into pylifecycle.c's atexit mechanism */
 
 static void
-atexit_callfuncs(PyObject *module)
+atexit_callfuncs(PyObject *module, int ignore_exc)
 {
     assert(!PyErr_Occurred());
 
@@ -87,18 +87,23 @@ atexit_callfuncs(PyObject *module)
 
         PyObject *res = PyObject_Call(cb->func, cb->args, cb->kwargs);
         if (res == NULL) {
-            /* Maintain the last exception, but don't leak if there are
-               multiple exceptions. */
-            if (exc_type) {
-                Py_DECREF(exc_type);
-                Py_XDECREF(exc_value);
-                Py_XDECREF(exc_tb);
+            if (ignore_exc) {
+                _PyErr_WriteUnraisableMsg("in atexit callback", cb->func);
             }
-            PyErr_Fetch(&exc_type, &exc_value, &exc_tb);
-            if (!PyErr_GivenExceptionMatches(exc_type, PyExc_SystemExit)) {
-                PySys_WriteStderr("Error in atexit._run_exitfuncs:\n");
-                PyErr_NormalizeException(&exc_type, &exc_value, &exc_tb);
-                PyErr_Display(exc_type, exc_value, exc_tb);
+            else {
+                /* Maintain the last exception, but don't leak if there are
+                   multiple exceptions. */
+                if (exc_type) {
+                    Py_DECREF(exc_type);
+                    Py_XDECREF(exc_value);
+                    Py_XDECREF(exc_tb);
+                }
+                PyErr_Fetch(&exc_type, &exc_value, &exc_tb);
+                if (!PyErr_GivenExceptionMatches(exc_type, PyExc_SystemExit)) {
+                    PySys_WriteStderr("Error in atexit._run_exitfuncs:\n");
+                    PyErr_NormalizeException(&exc_type, &exc_value, &exc_tb);
+                    PyErr_Display(exc_type, exc_value, exc_tb);
+                }
             }
         }
         else {
@@ -108,10 +113,23 @@ atexit_callfuncs(PyObject *module)
 
     atexit_cleanup(state);
 
-    if (exc_type) {
-        PyErr_Restore(exc_type, exc_value, exc_tb);
+    if (ignore_exc) {
+        assert(!PyErr_Occurred());
+    }
+    else {
+        if (exc_type) {
+            PyErr_Restore(exc_type, exc_value, exc_tb);
+        }
     }
 }
+
+
+void
+_PyAtExit_Call(PyObject *module)
+{
+    atexit_callfuncs(module, 1);
+}
+
 
 /* ===================================================================== */
 /* Module methods. */
@@ -180,7 +198,7 @@ Run all registered exit functions.");
 static PyObject *
 atexit_run_exitfuncs(PyObject *module, PyObject *unused)
 {
-    atexit_callfuncs(module);
+    atexit_callfuncs(module, 0);
     if (PyErr_Occurred()) {
         return NULL;
     }
@@ -308,9 +326,8 @@ atexit_exec(PyObject *module)
         return -1;
     }
 
-    PyInterpreterState *is = _PyInterpreterState_GET();
-    is->atexit_func = atexit_callfuncs;
-    is->atexit_module = module;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    interp->atexit_module = module;
     return 0;
 }
 
