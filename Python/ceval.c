@@ -144,6 +144,39 @@ is_tstate_valid(PyThreadState *tstate)
 }
 #endif
 
+void printStack(PyObject **stack_pointer, int level) {
+    printf("(%d) [", level);
+    for (int i = 1; i <= level; i++) {
+        PyObject *obj = stack_pointer[-i];
+        if (i != 1) {
+            printf(", ");
+        }
+        if (obj) {
+            PyObject *type = PyObject_Type(obj);
+            if (type == &PyUnicode_Type || type == &_PyNone_Type ||
+                type == &PyLong_Type || type == &PyBool_Type) {
+                PyObject_Print(obj, stdout, 0);
+            } else {
+                PyObject *typeName = PyObject_GetAttr(type, PyUnicode_FromString("__name__"));
+                if (PyObject_RichCompareBool(typeName, PyUnicode_FromString("builtin_function_or_method"), Py_EQ)) {
+                    PyObject *methodName = PyObject_GetAttr(obj, PyUnicode_FromString("__qualname__"));
+                    PyObject_Print(methodName, stdout, Py_PRINT_RAW);
+                    printf("()");
+                } else {
+                    printf("<object ");
+                    PyObject_Print(typeName, stdout, Py_PRINT_RAW);
+                    printf(">");
+                }
+            }
+        }
+    }
+    printf("]\n");
+}
+
+void logOp(char *label, PyObject **stack_pointer, int level) {
+    printf("%s: ", label);
+    printStack(stack_pointer, level);
+}
 
 /* This can set eval_breaker to 0 even though gil_drop_request became
    1.  We believe this is all right because the eval loop will release
@@ -1597,7 +1630,6 @@ main_loop:
             }
         }
 #endif
-
         switch (opcode) {
 
         /* BEWARE!
@@ -1605,10 +1637,12 @@ main_loop:
            and that all operation that succeed call [FAST_]DISPATCH() ! */
 
         case TARGET(NOP): {
+            logOp("NOP", stack_pointer, STACK_LEVEL());
             FAST_DISPATCH();
         }
 
         case TARGET(LOAD_FAST): {
+            logOp("LOAD_FAST", stack_pointer, STACK_LEVEL());
             PyObject *value = GETLOCAL(oparg);
             if (value == NULL) {
                 format_exc_check_arg(tstate, PyExc_UnboundLocalError,
@@ -1622,6 +1656,7 @@ main_loop:
         }
 
         case TARGET(LOAD_CONST): {
+            logOp("LOAD_CONST", stack_pointer, STACK_LEVEL());
             PREDICTED(LOAD_CONST);
             PyObject *value = GETITEM(consts, oparg);
             Py_INCREF(value);
@@ -1630,6 +1665,7 @@ main_loop:
         }
 
         case TARGET(STORE_FAST): {
+            logOp("STORE_FAST", stack_pointer, STACK_LEVEL());
             PREDICTED(STORE_FAST);
             PyObject *value = POP();
             SETLOCAL(oparg, value);
@@ -1637,12 +1673,14 @@ main_loop:
         }
 
         case TARGET(POP_TOP): {
+            logOp("POP_TOP", stack_pointer, STACK_LEVEL());
             PyObject *value = POP();
             Py_DECREF(value);
             FAST_DISPATCH();
         }
 
         case TARGET(ROT_TWO): {
+            logOp("ROT_TWO", stack_pointer, STACK_LEVEL());
             PyObject *top = TOP();
             PyObject *second = SECOND();
             SET_TOP(second);
@@ -1651,6 +1689,7 @@ main_loop:
         }
 
         case TARGET(ROT_THREE): {
+            logOp("ROT_THREE", stack_pointer, STACK_LEVEL());
             PyObject *top = TOP();
             PyObject *second = SECOND();
             PyObject *third = THIRD();
@@ -1661,6 +1700,7 @@ main_loop:
         }
 
         case TARGET(ROT_FOUR): {
+            logOp("ROT_FOUR", stack_pointer, STACK_LEVEL());
             PyObject *top = TOP();
             PyObject *second = SECOND();
             PyObject *third = THIRD();
@@ -1673,6 +1713,7 @@ main_loop:
         }
 
         case TARGET(DUP_TOP): {
+            logOp("DUP_TOP", stack_pointer, STACK_LEVEL());
             PyObject *top = TOP();
             Py_INCREF(top);
             PUSH(top);
@@ -1680,6 +1721,7 @@ main_loop:
         }
 
         case TARGET(DUP_TOP_TWO): {
+            logOp("DUP_TOP_TWO", stack_pointer, STACK_LEVEL());
             PyObject *top = TOP();
             PyObject *second = SECOND();
             Py_INCREF(top);
@@ -1691,6 +1733,7 @@ main_loop:
         }
 
         case TARGET(UNARY_POSITIVE): {
+            logOp("UNARY_POSITIVE", stack_pointer, STACK_LEVEL());
             PyObject *value = TOP();
             PyObject *res = PyNumber_Positive(value);
             Py_DECREF(value);
@@ -1701,6 +1744,7 @@ main_loop:
         }
 
         case TARGET(UNARY_NEGATIVE): {
+            logOp("UNARY_NEGATIVE", stack_pointer, STACK_LEVEL());
             PyObject *value = TOP();
             PyObject *res = PyNumber_Negative(value);
             Py_DECREF(value);
@@ -1711,6 +1755,7 @@ main_loop:
         }
 
         case TARGET(UNARY_NOT): {
+            logOp("UNARY_NOT", stack_pointer, STACK_LEVEL());
             PyObject *value = TOP();
             int err = PyObject_IsTrue(value);
             Py_DECREF(value);
@@ -1729,6 +1774,7 @@ main_loop:
         }
 
         case TARGET(UNARY_INVERT): {
+            logOp("UNARY_INVERT", stack_pointer, STACK_LEVEL());
             PyObject *value = TOP();
             PyObject *res = PyNumber_Invert(value);
             Py_DECREF(value);
@@ -1739,6 +1785,7 @@ main_loop:
         }
 
         case TARGET(BINARY_POWER): {
+            logOp("BINARY_POWER", stack_pointer, STACK_LEVEL());
             PyObject *exp = POP();
             PyObject *base = TOP();
             PyObject *res = PyNumber_Power(base, exp, Py_None);
@@ -1751,6 +1798,7 @@ main_loop:
         }
 
         case TARGET(BINARY_MULTIPLY): {
+            logOp("BINARY_MULTIPLY", stack_pointer, STACK_LEVEL());
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_Multiply(left, right);
@@ -1763,6 +1811,7 @@ main_loop:
         }
 
         case TARGET(BINARY_MATRIX_MULTIPLY): {
+            logOp("BINARY_MATRIX_MULTIPLY", stack_pointer, STACK_LEVEL());
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_MatrixMultiply(left, right);
@@ -1775,6 +1824,7 @@ main_loop:
         }
 
         case TARGET(BINARY_TRUE_DIVIDE): {
+            logOp("BINARY_TRUE_DIVIDE", stack_pointer, STACK_LEVEL());
             PyObject *divisor = POP();
             PyObject *dividend = TOP();
             PyObject *quotient = PyNumber_TrueDivide(dividend, divisor);
@@ -1787,6 +1837,7 @@ main_loop:
         }
 
         case TARGET(BINARY_FLOOR_DIVIDE): {
+            logOp("BINARY_FLOOR_DIVIDE", stack_pointer, STACK_LEVEL());
             PyObject *divisor = POP();
             PyObject *dividend = TOP();
             PyObject *quotient = PyNumber_FloorDivide(dividend, divisor);
@@ -1799,6 +1850,7 @@ main_loop:
         }
 
         case TARGET(BINARY_MODULO): {
+            logOp("BINARY_MODULO", stack_pointer, STACK_LEVEL());
             PyObject *divisor = POP();
             PyObject *dividend = TOP();
             PyObject *res;
@@ -1819,6 +1871,8 @@ main_loop:
         }
 
         case TARGET(BINARY_ADD): {
+            logOp("BINARY_ADD", stack_pointer, STACK_LEVEL());
+            
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *sum;
@@ -1845,6 +1899,8 @@ main_loop:
         }
 
         case TARGET(BINARY_SUBTRACT): {
+            logOp("BINARY_SUBTRACT", stack_pointer, STACK_LEVEL());
+
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *diff = PyNumber_Subtract(left, right);
@@ -1857,6 +1913,7 @@ main_loop:
         }
 
         case TARGET(BINARY_SUBSCR): {
+            logOp("BINARY_SUBSCR", stack_pointer, STACK_LEVEL());
             PyObject *sub = POP();
             PyObject *container = TOP();
             PyObject *res = PyObject_GetItem(container, sub);
@@ -1869,6 +1926,7 @@ main_loop:
         }
 
         case TARGET(BINARY_LSHIFT): {
+            logOp("BINARY_LSHIFT", stack_pointer, STACK_LEVEL());
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_Lshift(left, right);
@@ -1881,6 +1939,7 @@ main_loop:
         }
 
         case TARGET(BINARY_RSHIFT): {
+            logOp("BINARY_RSHIFT", stack_pointer, STACK_LEVEL());
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_Rshift(left, right);
@@ -1893,6 +1952,7 @@ main_loop:
         }
 
         case TARGET(BINARY_AND): {
+            logOp("BINARY_AND", stack_pointer, STACK_LEVEL());
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_And(left, right);
@@ -1905,6 +1965,7 @@ main_loop:
         }
 
         case TARGET(BINARY_XOR): {
+            logOp("BINARY_XOR", stack_pointer, STACK_LEVEL());
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_Xor(left, right);
@@ -1917,6 +1978,7 @@ main_loop:
         }
 
         case TARGET(BINARY_OR): {
+            logOp("BINARY_OR", stack_pointer, STACK_LEVEL());
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_Or(left, right);
@@ -1929,6 +1991,7 @@ main_loop:
         }
 
         case TARGET(LIST_APPEND): {
+            logOp("LIST_APPEND", stack_pointer, STACK_LEVEL());
             PyObject *v = POP();
             PyObject *list = PEEK(oparg);
             int err;
@@ -1941,6 +2004,7 @@ main_loop:
         }
 
         case TARGET(SET_ADD): {
+            logOp("SET_ADD", stack_pointer, STACK_LEVEL());
             PyObject *v = POP();
             PyObject *set = PEEK(oparg);
             int err;
@@ -1953,6 +2017,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_POWER): {
+            logOp("INPLACE_POWER", stack_pointer, STACK_LEVEL());
             PyObject *exp = POP();
             PyObject *base = TOP();
             PyObject *res = PyNumber_InPlacePower(base, exp, Py_None);
@@ -1965,6 +2030,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_MULTIPLY): {
+            logOp("INPLACE_MULTIPLY", stack_pointer, STACK_LEVEL());
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_InPlaceMultiply(left, right);
@@ -1977,6 +2043,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_MATRIX_MULTIPLY): {
+            logOp("INPLACE_MATRIX_MULTIPLY", stack_pointer, STACK_LEVEL());
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_InPlaceMatrixMultiply(left, right);
@@ -1989,6 +2056,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_TRUE_DIVIDE): {
+            logOp("INPLACE_TRUE_DIVIDE", stack_pointer, STACK_LEVEL());
             PyObject *divisor = POP();
             PyObject *dividend = TOP();
             PyObject *quotient = PyNumber_InPlaceTrueDivide(dividend, divisor);
@@ -2001,6 +2069,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_FLOOR_DIVIDE): {
+            logOp("INPLACE_FLOOR_DIVIDE", stack_pointer, STACK_LEVEL());
             PyObject *divisor = POP();
             PyObject *dividend = TOP();
             PyObject *quotient = PyNumber_InPlaceFloorDivide(dividend, divisor);
@@ -2013,6 +2082,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_MODULO): {
+            logOp("INPLACE_MODULO", stack_pointer, STACK_LEVEL());
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *mod = PyNumber_InPlaceRemainder(left, right);
@@ -2025,6 +2095,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_ADD): {
+            logOp("INPLACE_ADD", stack_pointer, STACK_LEVEL());
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *sum;
@@ -2044,6 +2115,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_SUBTRACT): {
+            logOp("INPLACE_SUBTRACT", stack_pointer, STACK_LEVEL());
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *diff = PyNumber_InPlaceSubtract(left, right);
@@ -2056,6 +2128,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_LSHIFT): {
+            logOp("INPLACE_LSHIFT", stack_pointer, STACK_LEVEL());
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_InPlaceLshift(left, right);
@@ -2068,6 +2141,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_RSHIFT): {
+            logOp("INPLACE_RSHIFT", stack_pointer, STACK_LEVEL());
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_InPlaceRshift(left, right);
@@ -2080,6 +2154,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_AND): {
+            logOp("INPLACE_AND", stack_pointer, STACK_LEVEL());
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_InPlaceAnd(left, right);
@@ -2092,6 +2167,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_XOR): {
+            logOp("INPLACE_XOR", stack_pointer, STACK_LEVEL());
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_InPlaceXor(left, right);
@@ -2104,6 +2180,7 @@ main_loop:
         }
 
         case TARGET(INPLACE_OR): {
+            logOp("INPLACE_OR", stack_pointer, STACK_LEVEL());
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *res = PyNumber_InPlaceOr(left, right);
@@ -2116,6 +2193,7 @@ main_loop:
         }
 
         case TARGET(STORE_SUBSCR): {
+            logOp("STORE_SUBSCR", stack_pointer, STACK_LEVEL());
             PyObject *sub = TOP();
             PyObject *container = SECOND();
             PyObject *v = THIRD();
@@ -2132,6 +2210,7 @@ main_loop:
         }
 
         case TARGET(DELETE_SUBSCR): {
+            logOp("DELETE_SUBSCR", stack_pointer, STACK_LEVEL());
             PyObject *sub = TOP();
             PyObject *container = SECOND();
             int err;
@@ -2146,6 +2225,7 @@ main_loop:
         }
 
         case TARGET(PRINT_EXPR): {
+            logOp("PRINT_EXPR", stack_pointer, STACK_LEVEL());
             _Py_IDENTIFIER(displayhook);
             PyObject *value = POP();
             PyObject *hook = _PySys_GetObjectId(&PyId_displayhook);
@@ -2165,6 +2245,7 @@ main_loop:
         }
 
         case TARGET(RAISE_VARARGS): {
+            logOp("RAISE_VARARGS", stack_pointer, STACK_LEVEL());
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
             case 2:
@@ -2187,6 +2268,7 @@ main_loop:
         }
 
         case TARGET(RETURN_VALUE): {
+            logOp("RETURN_VALUE", stack_pointer, STACK_LEVEL());
             retval = POP();
             assert(f->f_iblock == 0);
             assert(EMPTY());
@@ -2196,6 +2278,7 @@ main_loop:
         }
 
         case TARGET(GET_AITER): {
+            logOp("GET_AITER", stack_pointer, STACK_LEVEL());
             unaryfunc getter = NULL;
             PyObject *iter = NULL;
             PyObject *obj = TOP();
@@ -2240,6 +2323,7 @@ main_loop:
         }
 
         case TARGET(GET_ANEXT): {
+            logOp("GET_ANEXT", stack_pointer, STACK_LEVEL());
             unaryfunc getter = NULL;
             PyObject *next_iter = NULL;
             PyObject *awaitable = NULL;
@@ -2291,6 +2375,7 @@ main_loop:
         }
 
         case TARGET(GET_AWAITABLE): {
+            logOp("GET_AWAITABLE", stack_pointer, STACK_LEVEL());
             PREDICTED(GET_AWAITABLE);
             PyObject *iterable = TOP();
             PyObject *iter = _PyCoro_GetAwaitableIter(iterable);
@@ -2332,6 +2417,7 @@ main_loop:
         }
 
         case TARGET(YIELD_FROM): {
+            logOp("YIELD_FROM", stack_pointer, STACK_LEVEL());
             PyObject *v = POP();
             PyObject *receiver = TOP();
             PySendResult gen_status;
@@ -2384,6 +2470,7 @@ main_loop:
         }
 
         case TARGET(YIELD_VALUE): {
+            logOp("YIELD_VALUE", stack_pointer, STACK_LEVEL());
             retval = POP();
 
             if (co->co_flags & CO_ASYNC_GENERATOR) {
@@ -2401,6 +2488,7 @@ main_loop:
         }
 
         case TARGET(POP_EXCEPT): {
+            logOp("POP_EXCEPT", stack_pointer, STACK_LEVEL());
             PyObject *type, *value, *traceback;
             _PyErr_StackItem *exc_info;
             PyTryBlock *b = PyFrame_BlockPop(f);
@@ -2425,11 +2513,13 @@ main_loop:
         }
 
         case TARGET(POP_BLOCK): {
+            logOp("POP_BLOCK", stack_pointer, STACK_LEVEL());
             PyFrame_BlockPop(f);
             DISPATCH();
         }
 
         case TARGET(RERAISE): {
+            logOp("RERAISE", stack_pointer, STACK_LEVEL());
             PyObject *exc = POP();
             PyObject *val = POP();
             PyObject *tb = POP();
@@ -2439,6 +2529,7 @@ main_loop:
         }
 
         case TARGET(END_ASYNC_FOR): {
+            logOp("END_ASYNC_FOR", stack_pointer, STACK_LEVEL());
             PyObject *exc = POP();
             assert(PyExceptionClass_Check(exc));
             if (PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration)) {
@@ -2459,6 +2550,7 @@ main_loop:
         }
 
         case TARGET(LOAD_ASSERTION_ERROR): {
+            logOp("LOAD_ASSERTION_ERROR", stack_pointer, STACK_LEVEL());
             PyObject *value = PyExc_AssertionError;
             Py_INCREF(value);
             PUSH(value);
@@ -2466,6 +2558,7 @@ main_loop:
         }
 
         case TARGET(LOAD_BUILD_CLASS): {
+            logOp("LOAD_BUILD_CLASS", stack_pointer, STACK_LEVEL());
             _Py_IDENTIFIER(__build_class__);
 
             PyObject *bc;
@@ -2497,6 +2590,7 @@ main_loop:
         }
 
         case TARGET(STORE_NAME): {
+            logOp("STORE_NAME", stack_pointer, STACK_LEVEL());
             PyObject *name = GETITEM(names, oparg);
             PyObject *v = POP();
             PyObject *ns = f->f_locals;
@@ -2518,6 +2612,7 @@ main_loop:
         }
 
         case TARGET(DELETE_NAME): {
+            logOp("DELETE_NAME", stack_pointer, STACK_LEVEL());
             PyObject *name = GETITEM(names, oparg);
             PyObject *ns = f->f_locals;
             int err;
@@ -2537,6 +2632,7 @@ main_loop:
         }
 
         case TARGET(UNPACK_SEQUENCE): {
+            logOp("UNPACK_SEQUENCE", stack_pointer, STACK_LEVEL());
             PREDICTED(UNPACK_SEQUENCE);
             PyObject *seq = POP(), *item, **items;
             if (PyTuple_CheckExact(seq) &&
@@ -2568,6 +2664,7 @@ main_loop:
         }
 
         case TARGET(UNPACK_EX): {
+            logOp("UNPACK_EX", stack_pointer, STACK_LEVEL());
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
             PyObject *seq = POP();
 
@@ -2583,6 +2680,7 @@ main_loop:
         }
 
         case TARGET(STORE_ATTR): {
+            logOp("STORE_ATTR", stack_pointer, STACK_LEVEL());
             PyObject *name = GETITEM(names, oparg);
             PyObject *owner = TOP();
             PyObject *v = SECOND();
@@ -2597,6 +2695,7 @@ main_loop:
         }
 
         case TARGET(DELETE_ATTR): {
+            logOp("DELETE_ATTR", stack_pointer, STACK_LEVEL());
             PyObject *name = GETITEM(names, oparg);
             PyObject *owner = POP();
             int err;
@@ -2608,6 +2707,7 @@ main_loop:
         }
 
         case TARGET(STORE_GLOBAL): {
+            logOp("STORE_GLOBAL", stack_pointer, STACK_LEVEL());
             PyObject *name = GETITEM(names, oparg);
             PyObject *v = POP();
             int err;
@@ -2619,6 +2719,7 @@ main_loop:
         }
 
         case TARGET(DELETE_GLOBAL): {
+            logOp("DELETE_GLOBAL", stack_pointer, STACK_LEVEL());
             PyObject *name = GETITEM(names, oparg);
             int err;
             err = PyDict_DelItem(f->f_globals, name);
@@ -2633,6 +2734,7 @@ main_loop:
         }
 
         case TARGET(LOAD_NAME): {
+            logOp("LOAD_NAME", stack_pointer, STACK_LEVEL());
             PyObject *name = GETITEM(names, oparg);
             PyObject *locals = f->f_locals;
             PyObject *v;
@@ -2697,6 +2799,7 @@ main_loop:
         }
 
         case TARGET(LOAD_GLOBAL): {
+            logOp("LOAD_GLOBAL", stack_pointer, STACK_LEVEL());
             PyObject *name;
             PyObject *v;
             if (PyDict_CheckExact(f->f_globals)
@@ -2783,6 +2886,7 @@ main_loop:
         }
 
         case TARGET(DELETE_FAST): {
+            logOp("DELETE_FAST", stack_pointer, STACK_LEVEL());
             PyObject *v = GETLOCAL(oparg);
             if (v != NULL) {
                 SETLOCAL(oparg, NULL);
@@ -2797,6 +2901,7 @@ main_loop:
         }
 
         case TARGET(DELETE_DEREF): {
+            logOp("DELETE_DEREF", stack_pointer, STACK_LEVEL());
             PyObject *cell = freevars[oparg];
             PyObject *oldobj = PyCell_GET(cell);
             if (oldobj != NULL) {
@@ -2809,6 +2914,7 @@ main_loop:
         }
 
         case TARGET(LOAD_CLOSURE): {
+            logOp("LOAD_CLOSURE", stack_pointer, STACK_LEVEL());
             PyObject *cell = freevars[oparg];
             Py_INCREF(cell);
             PUSH(cell);
@@ -2816,6 +2922,7 @@ main_loop:
         }
 
         case TARGET(LOAD_CLASSDEREF): {
+            logOp("LOAD_CLASSDEREF", stack_pointer, STACK_LEVEL());
             PyObject *name, *value, *locals = f->f_locals;
             Py_ssize_t idx;
             assert(locals);
@@ -2855,6 +2962,7 @@ main_loop:
         }
 
         case TARGET(LOAD_DEREF): {
+            logOp("LOAD_DEREF", stack_pointer, STACK_LEVEL());
             PyObject *cell = freevars[oparg];
             PyObject *value = PyCell_GET(cell);
             if (value == NULL) {
@@ -2867,6 +2975,7 @@ main_loop:
         }
 
         case TARGET(STORE_DEREF): {
+            logOp("STORE_DEREF", stack_pointer, STACK_LEVEL());
             PyObject *v = POP();
             PyObject *cell = freevars[oparg];
             PyObject *oldobj = PyCell_GET(cell);
@@ -2876,6 +2985,7 @@ main_loop:
         }
 
         case TARGET(BUILD_STRING): {
+            logOp("BUILD_STRING", stack_pointer, STACK_LEVEL());
             PyObject *str;
             PyObject *empty = PyUnicode_New(0, 0);
             if (empty == NULL) {
@@ -2894,6 +3004,7 @@ main_loop:
         }
 
         case TARGET(BUILD_TUPLE): {
+            logOp("BUILD_TUPLE", stack_pointer, STACK_LEVEL());
             PyObject *tup = PyTuple_New(oparg);
             if (tup == NULL)
                 goto error;
@@ -2906,6 +3017,7 @@ main_loop:
         }
 
         case TARGET(BUILD_LIST): {
+            logOp("BUILD_LIST", stack_pointer, STACK_LEVEL());
             PyObject *list =  PyList_New(oparg);
             if (list == NULL)
                 goto error;
@@ -2918,6 +3030,7 @@ main_loop:
         }
 
         case TARGET(LIST_TO_TUPLE): {
+            logOp("LIST_TO_TUPLE", stack_pointer, STACK_LEVEL());
             PyObject *list = POP();
             PyObject *tuple = PyList_AsTuple(list);
             Py_DECREF(list);
@@ -2929,6 +3042,7 @@ main_loop:
         }
 
         case TARGET(LIST_EXTEND): {
+            logOp("LIST_EXTEND", stack_pointer, STACK_LEVEL());
             PyObject *iterable = POP();
             PyObject *list = PEEK(oparg);
             PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
@@ -2950,6 +3064,7 @@ main_loop:
         }
 
         case TARGET(SET_UPDATE): {
+            logOp("SET_UPDATE", stack_pointer, STACK_LEVEL());
             PyObject *iterable = POP();
             PyObject *set = PEEK(oparg);
             int err = _PySet_Update(set, iterable);
@@ -2961,6 +3076,7 @@ main_loop:
         }
 
         case TARGET(BUILD_SET): {
+            logOp("BUILD_SET", stack_pointer, STACK_LEVEL());
             PyObject *set = PySet_New(NULL);
             int err = 0;
             int i;
@@ -2982,6 +3098,7 @@ main_loop:
         }
 
         case TARGET(BUILD_MAP): {
+            logOp("BUILD_MAP", stack_pointer, STACK_LEVEL());
             Py_ssize_t i;
             PyObject *map = _PyDict_NewPresized((Py_ssize_t)oparg);
             if (map == NULL)
@@ -3006,6 +3123,7 @@ main_loop:
         }
 
         case TARGET(SETUP_ANNOTATIONS): {
+            logOp("SETUP_ANNOTATIONS", stack_pointer, STACK_LEVEL());
             _Py_IDENTIFIER(__annotations__);
             int err;
             PyObject *ann_dict;
@@ -3065,6 +3183,7 @@ main_loop:
         }
 
         case TARGET(BUILD_CONST_KEY_MAP): {
+            logOp("BUILD_CONST_KEY_MAP", stack_pointer, STACK_LEVEL());
             Py_ssize_t i;
             PyObject *map;
             PyObject *keys = TOP();
@@ -3098,6 +3217,7 @@ main_loop:
         }
 
         case TARGET(DICT_UPDATE): {
+            logOp("DICT_UPDATE", stack_pointer, STACK_LEVEL());
             PyObject *update = POP();
             PyObject *dict = PEEK(oparg);
             if (PyDict_Update(dict, update) < 0) {
@@ -3114,6 +3234,7 @@ main_loop:
         }
 
         case TARGET(DICT_MERGE): {
+            logOp("DICT_MERGE", stack_pointer, STACK_LEVEL());
             PyObject *update = POP();
             PyObject *dict = PEEK(oparg);
 
@@ -3128,6 +3249,7 @@ main_loop:
         }
 
         case TARGET(MAP_ADD): {
+            logOp("MAP_ADD", stack_pointer, STACK_LEVEL());
             PyObject *value = TOP();
             PyObject *key = SECOND();
             PyObject *map;
@@ -3145,6 +3267,7 @@ main_loop:
         }
 
         case TARGET(LOAD_ATTR): {
+            logOp("LOAD_ATTR", stack_pointer, STACK_LEVEL());
             PyObject *name = GETITEM(names, oparg);
             PyObject *owner = TOP();
 
@@ -3277,6 +3400,7 @@ main_loop:
         }
 
         case TARGET(COMPARE_OP): {
+            logOp("COMPARE_OP", stack_pointer, STACK_LEVEL());  
             assert(oparg <= Py_GE);
             PyObject *right = POP();
             PyObject *left = TOP();
@@ -3292,6 +3416,7 @@ main_loop:
         }
 
         case TARGET(IS_OP): {
+            logOp("IS_OP", stack_pointer, STACK_LEVEL());
             PyObject *right = POP();
             PyObject *left = TOP();
             int res = (left == right)^oparg;
@@ -3306,6 +3431,7 @@ main_loop:
         }
 
         case TARGET(CONTAINS_OP): {
+            logOp("CONTAINS_OP", stack_pointer, STACK_LEVEL());
             PyObject *right = POP();
             PyObject *left = POP();
             int res = PySequence_Contains(right, left);
@@ -3326,6 +3452,7 @@ main_loop:
                          "BaseException is not allowed"
 
         case TARGET(JUMP_IF_NOT_EXC_MATCH): {
+            logOp("JUMP_IF_NOT_EXC_MATCH", stack_pointer, STACK_LEVEL());
             PyObject *right = POP();
             PyObject *left = POP();
             if (PyTuple_Check(right)) {
@@ -3367,6 +3494,7 @@ main_loop:
         }
 
         case TARGET(IMPORT_NAME): {
+            logOp("IMPORT_NAME", stack_pointer, STACK_LEVEL());
             PyObject *name = GETITEM(names, oparg);
             PyObject *fromlist = POP();
             PyObject *level = TOP();
@@ -3381,6 +3509,7 @@ main_loop:
         }
 
         case TARGET(IMPORT_STAR): {
+            logOp("IMPORT_STAR", stack_pointer, STACK_LEVEL());
             PyObject *from = POP(), *locals;
             int err;
             if (PyFrame_FastToLocalsWithError(f) < 0) {
@@ -3404,6 +3533,7 @@ main_loop:
         }
 
         case TARGET(IMPORT_FROM): {
+            logOp("IMPORT_FROM", stack_pointer, STACK_LEVEL());
             PyObject *name = GETITEM(names, oparg);
             PyObject *from = TOP();
             PyObject *res;
@@ -3415,11 +3545,13 @@ main_loop:
         }
 
         case TARGET(JUMP_FORWARD): {
+            logOp("JUMP_FORWARD", stack_pointer, STACK_LEVEL());
             JUMPBY(oparg);
             FAST_DISPATCH();
         }
 
         case TARGET(POP_JUMP_IF_FALSE): {
+            logOp("POP_JUMP_IF_FALSE", stack_pointer, STACK_LEVEL());
             PREDICTED(POP_JUMP_IF_FALSE);
             PyObject *cond = POP();
             int err;
@@ -3444,6 +3576,7 @@ main_loop:
         }
 
         case TARGET(POP_JUMP_IF_TRUE): {
+            logOp("POP_JUMP_IF_TRUE", stack_pointer, STACK_LEVEL());
             PREDICTED(POP_JUMP_IF_TRUE);
             PyObject *cond = POP();
             int err;
@@ -3469,6 +3602,7 @@ main_loop:
         }
 
         case TARGET(JUMP_IF_FALSE_OR_POP): {
+            logOp("JUMP_IF_FALSE_OR_POP", stack_pointer, STACK_LEVEL());
             PyObject *cond = TOP();
             int err;
             if (cond == Py_True) {
@@ -3493,6 +3627,7 @@ main_loop:
         }
 
         case TARGET(JUMP_IF_TRUE_OR_POP): {
+            logOp("JUMP_IF_TRUE_OR_POP", stack_pointer, STACK_LEVEL());
             PyObject *cond = TOP();
             int err;
             if (cond == Py_False) {
@@ -3518,6 +3653,7 @@ main_loop:
         }
 
         case TARGET(JUMP_ABSOLUTE): {
+            logOp("JUMP_ABSOLUTE", stack_pointer, STACK_LEVEL());
             PREDICTED(JUMP_ABSOLUTE);
             JUMPTO(oparg);
 #if FAST_LOOPS
@@ -3535,6 +3671,7 @@ main_loop:
         }
 
         case TARGET(GET_ITER): {
+            logOp("GET_ITER", stack_pointer, STACK_LEVEL());
             /* before: [obj]; after [getiter(obj)] */
             PyObject *iterable = TOP();
             PyObject *iter = PyObject_GetIter(iterable);
@@ -3548,6 +3685,7 @@ main_loop:
         }
 
         case TARGET(GET_YIELD_FROM_ITER): {
+            logOp("GET_YIELD_FROM_ITER", stack_pointer, STACK_LEVEL());
             /* before: [obj]; after [getiter(obj)] */
             PyObject *iterable = TOP();
             PyObject *iter;
@@ -3577,6 +3715,7 @@ main_loop:
         }
 
         case TARGET(FOR_ITER): {
+            logOp("FOR_ITER", stack_pointer, STACK_LEVEL());
             PREDICTED(FOR_ITER);
             /* before: [iter]; after: [iter, iter()] *or* [] */
             PyObject *iter = TOP();
@@ -3604,12 +3743,14 @@ main_loop:
         }
 
         case TARGET(SETUP_FINALLY): {
+            logOp("SETUP_FINALLY", stack_pointer, STACK_LEVEL());
             PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
                                STACK_LEVEL());
             DISPATCH();
         }
 
         case TARGET(BEFORE_ASYNC_WITH): {
+            logOp("BEFORE_ASYNC_WITH", stack_pointer, STACK_LEVEL());
             _Py_IDENTIFIER(__aenter__);
             _Py_IDENTIFIER(__aexit__);
             PyObject *mgr = TOP();
@@ -3635,6 +3776,7 @@ main_loop:
         }
 
         case TARGET(SETUP_ASYNC_WITH): {
+            logOp("SETUP_ASYNC_WITH", stack_pointer, STACK_LEVEL());
             PyObject *res = POP();
             /* Setup the finally block before pushing the result
                of __aenter__ on the stack. */
@@ -3645,6 +3787,7 @@ main_loop:
         }
 
         case TARGET(SETUP_WITH): {
+            logOp("SETUP_WITH", stack_pointer, STACK_LEVEL());
             _Py_IDENTIFIER(__enter__);
             _Py_IDENTIFIER(__exit__);
             PyObject *mgr = TOP();
@@ -3674,6 +3817,7 @@ main_loop:
         }
 
         case TARGET(WITH_EXCEPT_START): {
+            logOp("WITH_EXCEPT_START", stack_pointer, STACK_LEVEL());
             /* At the top of the stack are 7 values:
                - (TOP, SECOND, THIRD) = exc_info()
                - (FOURTH, FIFTH, SIXTH) = previous exception for EXCEPT_HANDLER
@@ -3702,6 +3846,7 @@ main_loop:
         }
 
         case TARGET(LOAD_METHOD): {
+            logOp("LOAD_METHOD", stack_pointer, STACK_LEVEL());
             /* Designed to work in tandem with CALL_METHOD. */
             PyObject *name = GETITEM(names, oparg);
             PyObject *obj = TOP();
@@ -3715,6 +3860,7 @@ main_loop:
             }
 
             if (meth_found) {
+
                 /* We can bypass temporary bound method object.
                    meth is unbound method and obj is self.
 
@@ -3739,6 +3885,7 @@ main_loop:
         }
 
         case TARGET(CALL_METHOD): {
+            logOp("CALL_METHOD", stack_pointer, STACK_LEVEL());
             /* Designed to work in tamdem with LOAD_METHOD. */
             PyObject **sp, *res, *meth;
 
@@ -3788,6 +3935,7 @@ main_loop:
         }
 
         case TARGET(CALL_FUNCTION): {
+            logOp("CALL_FUNCTION", stack_pointer, STACK_LEVEL());
             PREDICTED(CALL_FUNCTION);
             PyObject **sp, *res;
             sp = stack_pointer;
@@ -3801,6 +3949,7 @@ main_loop:
         }
 
         case TARGET(CALL_FUNCTION_KW): {
+            logOp("CALL_FUNCTION_KW", stack_pointer, STACK_LEVEL());
             PyObject **sp, *res, *names;
 
             names = POP();
@@ -3820,6 +3969,7 @@ main_loop:
         }
 
         case TARGET(CALL_FUNCTION_EX): {
+            logOp("CALL_FUNCTION_EX", stack_pointer, STACK_LEVEL());
             PREDICTED(CALL_FUNCTION_EX);
             PyObject *func, *callargs, *kwargs = NULL, *result;
             if (oparg & 0x01) {
@@ -3866,6 +4016,7 @@ main_loop:
         }
 
         case TARGET(MAKE_FUNCTION): {
+            logOp("MAKE_FUNCTION", stack_pointer, STACK_LEVEL());
             PyObject *qualname = POP();
             PyObject *codeobj = POP();
             PyFunctionObject *func = (PyFunctionObject *)
@@ -3899,6 +4050,7 @@ main_loop:
         }
 
         case TARGET(BUILD_SLICE): {
+            logOp("BUILD_SLICE", stack_pointer, STACK_LEVEL());
             PyObject *start, *stop, *step, *slice;
             if (oparg == 3)
                 step = POP();
@@ -3917,6 +4069,7 @@ main_loop:
         }
 
         case TARGET(FORMAT_VALUE): {
+            logOp("FORMAT_VALUE", stack_pointer, STACK_LEVEL());
             /* Handles f-string value formatting. */
             PyObject *result;
             PyObject *fmt_spec;
@@ -3977,6 +4130,7 @@ main_loop:
         }
 
         case TARGET(EXTENDED_ARG): {
+            logOp("EXTENDED_ARG", stack_pointer, STACK_LEVEL());
             int oldoparg = oparg;
             NEXTOPARG();
             oparg |= oldoparg << 8;
@@ -5349,7 +5503,7 @@ call_function(PyThreadState *tstate, PyObject ***pp_stack, Py_ssize_t oparg, PyO
     Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
     Py_ssize_t nargs = oparg - nkwargs;
     PyObject **stack = (*pp_stack) - nargs - nkwargs;
-
+    
     if (tstate->use_tracing) {
         x = trace_call_function(tstate, func, stack, nargs, kwnames);
     }
