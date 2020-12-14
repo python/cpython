@@ -38,6 +38,12 @@ class Something(object):
     def smeth(a, b, c, d=None): pass
 
 
+class Typos():
+    autospect = None
+    auto_spec = None
+    set_spec = None
+
+
 def something(a): pass
 
 
@@ -2174,6 +2180,52 @@ class MockTest(unittest.TestCase):
         with unittest.mock.patch.object(obj, 'obj_with_bool_func', autospec=True): pass
 
         self.assertEqual(obj.obj_with_bool_func.__bool__.call_count, 0)
+
+    def test_misspelled_arguments(self):
+        class Foo():
+            one = 'one'
+        # patch, patch.object and create_autospec need to check for misspelled
+        # arguments explicitly and throw a RuntimError if found.
+        with self.assertRaises(RuntimeError):
+            with patch(f'{__name__}.Something.meth', autospect=True): pass
+        with self.assertRaises(RuntimeError):
+            with patch.object(Foo, 'one', autospect=True): pass
+        with self.assertRaises(RuntimeError):
+            with patch(f'{__name__}.Something.meth', auto_spec=True): pass
+        with self.assertRaises(RuntimeError):
+            with patch.object(Foo, 'one', auto_spec=True): pass
+        with self.assertRaises(RuntimeError):
+            with patch(f'{__name__}.Something.meth', set_spec=True): pass
+        with self.assertRaises(RuntimeError):
+            with patch.object(Foo, 'one', set_spec=True): pass
+        with self.assertRaises(RuntimeError):
+            m = create_autospec(Foo, set_spec=True)
+        # patch.multiple, on the other hand, should flag misspelled arguments
+        # through an AttributeError, when trying to find the keys from kwargs
+        # as attributes on the target.
+        with self.assertRaises(AttributeError):
+            with patch.multiple(
+                f'{__name__}.Something', meth=DEFAULT, autospect=True): pass
+        with self.assertRaises(AttributeError):
+            with patch.multiple(
+                f'{__name__}.Something', meth=DEFAULT, auto_spec=True): pass
+        with self.assertRaises(AttributeError):
+            with patch.multiple(
+                f'{__name__}.Something', meth=DEFAULT, set_spec=True): pass
+
+        with patch(f'{__name__}.Something.meth', unsafe=True, autospect=True):
+            pass
+        with patch.object(Foo, 'one', unsafe=True, autospect=True): pass
+        with patch(f'{__name__}.Something.meth', unsafe=True, auto_spec=True):
+            pass
+        with patch.object(Foo, 'one', unsafe=True, auto_spec=True): pass
+        with patch(f'{__name__}.Something.meth', unsafe=True, set_spec=True):
+            pass
+        with patch.object(Foo, 'one', unsafe=True, set_spec=True): pass
+        m = create_autospec(Foo, set_spec=True, unsafe=True)
+        with patch.multiple(
+            f'{__name__}.Typos', autospect=True, set_spec=True, auto_spec=True):
+            pass
 
 
 if __name__ == '__main__':
