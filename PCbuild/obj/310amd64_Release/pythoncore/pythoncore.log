@@ -1,6 +1,6 @@
 ﻿  Killing any running python.exe instances...
   Getting build info from git
-  Building heads/master-dirty:e099008e9e master
+  Building heads/master-dirty:5675072f20 master
   _abc.c
   _bisectmodule.c
   blake2module.c
