@@ -451,14 +451,6 @@ class CallableTests(BaseTestCase):
 
     def test_callable_wrong_forms(self):
         with self.assertRaises(TypeError):
-            Callable[[...], int]
-        with self.assertRaises(TypeError):
-            Callable[(), int]
-        with self.assertRaises(TypeError):
-            Callable[[()], int]
-        with self.assertRaises(TypeError):
-            Callable[[int, 1], 2]
-        with self.assertRaises(TypeError):
             Callable[int]
 
     def test_callable_instance_works(self):
