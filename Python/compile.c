@@ -6437,6 +6437,7 @@ optimize_cfg(struct assembler *a, PyObject *consts)
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
        if (b->b_reachable == 0) {
             b->b_iused = 0;
+            b->b_nofallthrough = 0;
        }
     }
     /* Delete jump instructions made redundant by previous step. If a non-empty
@@ -6453,8 +6454,6 @@ optimize_cfg(struct assembler *a, PyObject *consts)
                 b_last_instr->i_opcode == JUMP_FORWARD) {
                 basicblock *b_next_act = b->b_next;
                 while (b_next_act != NULL && b_next_act->b_iused == 0) {
-                    /* Next line reqd to prevent assertion failure in stackdepth() */
-                    b_next_act->b_nofallthrough = 0;
                     b_next_act = b_next_act->b_next;
                 }
                 if (b_last_instr->i_target == b_next_act) {
@@ -6471,6 +6470,12 @@ optimize_cfg(struct assembler *a, PyObject *consts)
                             b_last_instr->i_opcode = NOP;
                             clean_basic_block(b);
                             break;
+                    }
+                    /* The blocks after this one are now reachable through it */
+                    b_next_act = b->b_next;
+                    while (b_next_act != NULL && b_next_act->b_iused == 0) {
+                        b_next_act->b_reachable = 1;
+                        b_next_act = b_next_act->b_next;
                     }
                 }
             }
