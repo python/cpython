@@ -671,6 +671,9 @@ class TestPositionalOnlyArgs(GrammarTest):
         driver.parse_string(
                 "lambda a, b, /, c, d, *args, e, f, **kw: kw\n")
 
+    def test_only_positional_or_keyword(self):
+        driver.parse_string("def func(a,b,/,*,g,e=3): pass\n")
+
 
 class TestPickleableException(unittest.TestCase):
     def test_ParseError(self):
