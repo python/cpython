@@ -630,6 +630,7 @@ class TestLiterals(GrammarTest):
 
 
 class TestNamedAssignments(GrammarTest):
+    """Also known as the walrus operator."""
 
     def test_named_assignment_if(self):
         driver.parse_string("if f := x(): pass\n")
@@ -642,6 +643,27 @@ class TestNamedAssignments(GrammarTest):
 
     def test_named_assignment_listcomp(self):
         driver.parse_string("[(lastNum := num) == 1 for num in [1, 2, 3]]\n")
+
+
+class TestPositionalOnlyArgs(GrammarTest):
+
+    def test_one_pos_only_arg(self):
+        driver.parse_string("def one_pos_only_arg(a, /): pass\n")
+
+    def test_all_markers(self):
+        driver.parse_string(
+                "def all_markers(a, b=2, /, c, d=4, *, e=5, f): pass\n")
+
+    def test_all_with_args_and_kwargs(self):
+        driver.parse_string(
+                """def all_markers_with_args_and_kwargs(
+                           aa, b, /, _cc, d, *args, e, f_f, **kwargs,
+                   ):
+                       pass\n""")
+
+    def test_lambda_soup(self):
+        driver.parse_string(
+                "lambda a, b, /, c, d, *args, e, f, **kw: kw\n")
 
 
 class TestPickleableException(unittest.TestCase):
