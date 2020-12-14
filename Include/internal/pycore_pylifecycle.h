@@ -109,6 +109,8 @@ PyAPI_FUNC(void) _PyErr_Display(PyObject *file, PyObject *exception,
 
 PyAPI_FUNC(void) _PyThreadState_DeleteCurrent(PyThreadState *tstate);
 
+extern void _PyAtExit_Call(PyObject *module);
+
 #ifdef __cplusplus
 }
 #endif
