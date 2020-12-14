@@ -2773,6 +2773,8 @@ compiler_for(struct compiler *c, stmt_ty s)
     compiler_use_next_block(c, body);
     VISIT(c, expr, s->v.For.target);
     VISIT_SEQ(c, stmt, s->v.For.body);
+    /* Mark jump as artificial */
+    c->u->u_lineno = -1;
     ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
     compiler_use_next_block(c, cleanup);
 
