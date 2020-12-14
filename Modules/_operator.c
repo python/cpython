@@ -184,7 +184,7 @@ _tscmp(const unsigned char *a, const unsigned char *b,
     volatile const unsigned char *left;
     volatile const unsigned char *right;
     Py_ssize_t i;
-    unsigned char result;
+    volatile unsigned char result;
 
     /* loop count depends on length of b */
     length = len_b;
