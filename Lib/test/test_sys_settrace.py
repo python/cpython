@@ -756,7 +756,6 @@ class TraceTestCase(unittest.TestCase):
                 d = 12                              # line 12
             assert (a, b, c, d) == (5, 8, 10, 1)    # line 13
 
-
         self.run_and_compare(func,
             [(0, 'call'),
              (1, 'line'),
@@ -776,6 +775,22 @@ class TraceTestCase(unittest.TestCase):
              (3, 'line'),
              (13, 'line'),
              (13, 'return')])
+
+    def test_return_through_finally(self):
+
+        def func():
+            try:
+                return 2
+            finally:
+                4
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (4, 'line'),
+             (4, 'return')])
+
 
 class SkipLineEventsTraceTestCase(TraceTestCase):
     """Repeat the trace tests, but with per-line events skipped"""
