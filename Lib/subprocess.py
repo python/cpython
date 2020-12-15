@@ -761,7 +761,8 @@ class Popen(object):
                  startupinfo=None, creationflags=0,
                  restore_signals=True, start_new_session=False,
                  pass_fds=(), *, user=None, group=None, extra_groups=None,
-                 encoding=None, errors=None, text=None, umask=-1, pipesize=-1):
+                 encoding=None, errors=None, text=None, umask=-1, pipesize=-1,
+                 exec_raise=True):
         """Create new Popen instance."""
         _cleanup()
         # Held while anything is calling waitpid before returncode has been
@@ -955,15 +956,22 @@ class Popen(object):
                     self.stderr = io.TextIOWrapper(self.stderr,
                             encoding=encoding, errors=errors)
 
-            self._execute_child(args, executable, preexec_fn, close_fds,
-                                pass_fds, cwd, env,
-                                startupinfo, creationflags, shell,
-                                p2cread, p2cwrite,
-                                c2pread, c2pwrite,
-                                errread, errwrite,
-                                restore_signals,
-                                gid, gids, uid, umask,
-                                start_new_session)
+            try:
+                self._execute_child(args, executable, preexec_fn, close_fds,
+                                    pass_fds, cwd, env,
+                                    startupinfo, creationflags, shell,
+                                    p2cread, p2cwrite,
+                                    c2pread, c2pwrite,
+                                    errread, errwrite,
+                                    restore_signals,
+                                    gid, gids, uid, umask,
+                                    start_new_session)
+            except OSError as exc:
+                if exec_raise:
+                    raise
+                self.returncode = exc.errno
+                if not self.returncode:
+                    self.returncode = 255
         except:
             # Cleanup if the child failed starting.
             for f in filter(None, (self.stdin, self.stdout, self.stderr)):

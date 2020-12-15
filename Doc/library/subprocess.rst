@@ -341,7 +341,8 @@ functions.
                  startupinfo=None, creationflags=0, restore_signals=True, \
                  start_new_session=False, pass_fds=(), \*, group=None, \
                  extra_groups=None, user=None, umask=-1, \
-                 encoding=None, errors=None, text=None, pipesize=-1)
+                 encoding=None, errors=None, text=None, pipesize=-1,
+                 exec_raise=True)
 
    Execute a child program in a new process.  On POSIX, the class uses
    :meth:`os.execvpe`-like behavior to execute the child program.  On Windows,
@@ -649,8 +650,13 @@ functions.
    is only changed on platforms that support this (only Linux at this time of
    writing). Other platforms will ignore this parameter.
 
+   If *exec_raise* is false, :exc:`OSError` exception is catched when creating
+   the subprocess, and the :attr:`~Popen.returncode` attribute is set to the
+   exception ``errno`` attribute. For example, the :attr:`~Popen.returncode`
+   attribute is set to :data:`errno.ENOENT` if the program does not exist.
+
    .. versionadded:: 3.10
-      The ``pipesize`` parameter was added.
+      The ``pipesize`` and ``exec_raise`` parameters were added.
 
    Popen objects are supported as context managers via the :keyword:`with` statement:
    on exit, standard file descriptors are closed, and the process is waited for.
@@ -1377,7 +1383,7 @@ Return code handling translates as follows::
    if rc is not None and rc >> 8:
        print("There were some errors")
    ==>
-   process = Popen(cmd, stdin=PIPE)
+   process = Popen(cmd, stdin=PIPE, exec_raise=False)
    ...
    process.stdin.close()
    if process.wait() != 0:
@@ -1405,7 +1411,7 @@ Replacing functions from the :mod:`popen2` module
    (child_stdout, child_stdin) = popen2.popen2(["mycmd", "myarg"], bufsize, mode)
    ==>
    p = Popen(["mycmd", "myarg"], bufsize=bufsize,
-             stdin=PIPE, stdout=PIPE, close_fds=True)
+             stdin=PIPE, stdout=PIPE, close_fds=True, exec_raise=False)
    (child_stdout, child_stdin) = (p.stdout, p.stdin)
 
 :class:`popen2.Popen3` and :class:`popen2.Popen4` basically work as

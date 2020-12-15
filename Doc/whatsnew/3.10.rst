@@ -287,6 +287,21 @@ socket
 The exception :exc:`socket.timeout` is now an alias of :exc:`TimeoutError`.
 (Contributed by Christian Heimes in :issue:`42413`.)
 
+subprocess
+----------
+
+Add *pipesize* and *exec_raise* parameters to the :class:`subprocess.Popen`
+constructor:
+
+* *pipesize* can be used to change the size of the pipe when :data:`PIPE` is
+  used for *stdin*, *stdout* or *stderr*.
+  (Contributed by Ruben Vorderman in :issue:`41586`.)
+
+* If *exec_raise* is false, :exc:`OSError` exception is catched when creating
+  the subprocess, and the :attr:`~Popen.returncode` attribute is set to the
+  exception ``errno`` attribute.
+  (Contributed by Victor Stinner in :issue:`42648`.)
+
 sys
 ---
 

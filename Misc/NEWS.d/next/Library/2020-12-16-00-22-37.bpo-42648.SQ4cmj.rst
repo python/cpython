@@ -1,0 +1,2 @@
+Add a new *exec_raise* parameter to :class:`subprocess.Popen`. Patch by
+Victor Stinner.

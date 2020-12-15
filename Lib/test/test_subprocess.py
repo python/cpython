@@ -62,6 +62,7 @@ else:
 NONEXISTING_CMD = ('nonexisting_i_hope',)
 # Ignore errors that indicate the command was not found
 NONEXISTING_ERRORS = (FileNotFoundError, NotADirectoryError, PermissionError)
+NONEXISTING_ERRNOS = (errno.ENOENT, errno.ENOTDIR, errno.EACCES, errno.EPERM)
 
 ZERO_RETURN_CMD = (sys.executable, '-c', 'pass')
 
@@ -1509,6 +1510,25 @@ class ProcessTestCase(BaseTestCase):
     def test_class_getitems(self):
         self.assertIsInstance(subprocess.Popen[bytes], types.GenericAlias)
         self.assertIsInstance(subprocess.CompletedProcess[str], types.GenericAlias)
+
+    def test_exec_raise(self):
+        # check that OSError is raised by default (exec_raise=True)
+        with self.assertRaises(OSError):
+            subprocess.Popen(NONEXISTING_CMD)
+
+        # no exception with exec_raise=False
+        proc = subprocess.Popen(NONEXISTING_CMD, exec_raise=False)
+        self.assertIn(proc.returncode, NONEXISTING_ERRNOS)
+
+        # try to test the os.posix_spawn() code path:
+        # program with a directory and don't close FDs
+        if hasattr(os, "posix_spawn"):
+            program = os.path.join(os.curdir, NONEXISTING_CMD[0])
+            proc = subprocess.Popen([program],
+                                    exec_raise=False,
+                                    close_fds=False)
+            self.assertIn(proc.returncode, NONEXISTING_ERRNOS)
+
 
 class RunFuncTestCase(BaseTestCase):
     def run_python(self, code, **kwargs):
