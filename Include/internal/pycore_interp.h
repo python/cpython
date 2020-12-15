@@ -159,6 +159,20 @@ struct _Py_exc_state {
 };
 
 
+// atexit state
+typedef struct {
+    PyObject *func;
+    PyObject *args;
+    PyObject *kwargs;
+} atexit_callback;
+
+struct atexit_state {
+    atexit_callback **callbacks;
+    int ncallbacks;
+    int callback_len;
+};
+
+
 /* interpreter state */
 
 #define _PY_NSMALLPOSINTS           257
@@ -234,12 +248,10 @@ struct _is {
     PyObject *after_forkers_child;
 #endif
 
-    /* AtExit module */
-    PyObject *atexit_module;
-
     uint64_t tstate_next_unique_id;
 
     struct _warnings_runtime_state warnings;
+    struct atexit_state atexit;
 
     PyObject *audit_hooks;
 
