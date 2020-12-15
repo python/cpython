@@ -24,9 +24,7 @@ askstring -- get a string from the user
 """
 
 from tkinter import *
-from tkinter import messagebox
-
-import tkinter # used at _QueryDialog for tkinter._default_root
+from tkinter import messagebox, _get_default_root
 
 
 class SimpleDialog:
@@ -260,7 +258,7 @@ class _QueryDialog(Dialog):
                  parent = None):
 
         if not parent:
-            parent = tkinter._default_root
+            parent = _get_default_root('create query dialog')
 
         self.prompt   = prompt
         self.minvalue = minvalue

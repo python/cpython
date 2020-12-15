@@ -270,7 +270,7 @@ class Event:
         )
 
 
-_support_default_root = 1
+_support_default_root = True
 _default_root = None
 
 
@@ -280,11 +280,22 @@ def NoDefaultRoot():
     Call this function to inhibit that the first instance of
     Tk is used for windows without an explicit parent window.
     """
-    global _support_default_root
-    _support_default_root = 0
-    global _default_root
+    global _support_default_root, _default_root
+    _support_default_root = False
     _default_root = None
     del _default_root
+
+
+def _get_default_root(what=None):
+    if not _support_default_root:
+        raise RuntimeError("No master specified and tkinter is "
+                           "configured to not support default root")
+    if not _default_root:
+        if what:
+            raise RuntimeError(f"Too early to {what}: no default root window")
+        root = Tk()
+        assert _default_root is root
+    return _default_root
 
 
 def _tkerror(err):
@@ -330,7 +341,7 @@ class Variable:
             raise TypeError("name must be a string")
         global _varnum
         if not master:
-            master = _default_root
+            master = _get_default_root('create variable')
         self._root = master._root()
         self._tk = master.tk
         if name:
@@ -591,7 +602,7 @@ class BooleanVar(Variable):
 
 def mainloop(n=0):
     """Run the main loop of Tcl."""
-    _default_root.tk.mainloop(n)
+    _get_default_root('run the main loop').tk.mainloop(n)
 
 
 getint = int
@@ -600,9 +611,9 @@ getdouble = float
 
 
 def getboolean(s):
-    """Convert true and false to integer values 1 and 0."""
+    """Convert Tcl object to True or False."""
     try:
-        return _default_root.tk.getboolean(s)
+        return _get_default_root('use getboolean()').tk.getboolean(s)
     except TclError:
         raise ValueError("invalid literal for getboolean()")
 
@@ -2262,6 +2273,9 @@ class Tk(Misc, Wm):
         self.tk = _tkinter.create(screenName, baseName, className, interactive, wantobjects, useTk, sync, use)
         if useTk:
             self._loadtk()
+            global _default_root
+            if _support_default_root and not _default_root:
+                _default_root = self
         if not sys.flags.ignore_environment:
             # Issue #16248: Honor the -E flag to avoid code injection.
             self.readprofile(baseName, className)
@@ -2272,8 +2286,7 @@ class Tk(Misc, Wm):
             self._loadtk()
 
     def _loadtk(self):
-        self._tkloaded = 1
-        global _default_root
+        self._tkloaded = True
         # Version sanity checks
         tk_version = self.tk.getvar('tk_version')
         if tk_version != _tkinter.TK_VERSION:
@@ -2293,8 +2306,6 @@ class Tk(Misc, Wm):
         self.tk.createcommand('exit', _exit)
         self._tclCommands.append('tkerror')
         self._tclCommands.append('exit')
-        if _support_default_root and not _default_root:
-            _default_root = self
         self.protocol("WM_DELETE_WINDOW", self.destroy)
 
     def destroy(self):
@@ -2521,12 +2532,8 @@ class BaseWidget(Misc):
 
     def _setup(self, master, cnf):
         """Internal function. Sets up information about children."""
-        if _support_default_root:
-            global _default_root
-            if not master:
-                if not _default_root:
-                    _default_root = Tk()
-                master = _default_root
+        if not master:
+            master = _get_default_root()
         self.master = master
         self.tk = master.tk
         name = None
@@ -3990,9 +3997,7 @@ class Image:
     def __init__(self, imgtype, name=None, cnf={}, master=None, **kw):
         self.name = None
         if not master:
-            master = _default_root
-            if not master:
-                raise RuntimeError('Too early to create image')
+            master = _get_default_root('create image')
         self.tk = getattr(master, 'tk', master)
         if not name:
             Image._last_id += 1
@@ -4146,11 +4151,13 @@ class BitmapImage(Image):
 
 
 def image_names():
-    return _default_root.tk.splitlist(_default_root.tk.call('image', 'names'))
+    tk = _get_default_root('use image_names()').tk
+    return tk.splitlist(tk.call('image', 'names'))
 
 
 def image_types():
-    return _default_root.tk.splitlist(_default_root.tk.call('image', 'types'))
+    tk = _get_default_root('use image_types()').tk
+    return tk.splitlist(tk.call('image', 'types'))
 
 
 class Spinbox(Widget, XView):
