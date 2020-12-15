@@ -432,8 +432,8 @@ termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
-    s.ts_lines = (unsigned short) PyLong_AsLong(PyList_GetItem(winsz, 0));
-    s.ts_cols = (unsigned short) PyLong_AsLong(PyList_GetItem(winsz, 1));
+    s.ts_lines = (int) PyLong_AsLong(PyList_GetItem(winsz, 0));
+    s.ts_cols = (int) PyLong_AsLong(PyList_GetItem(winsz, 1));
     if (PyErr_Occurred()) {
         return NULL;
     }
