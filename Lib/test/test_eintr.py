@@ -15,7 +15,7 @@ class EINTRTests(unittest.TestCase):
     def test_all(self):
         # Run the tester in a sub-process, to make sure there is only one
         # thread (for reliable signal delivery).
-        script = support.findfile("eintr_tester.py", subdir="eintrdata")
+        script = support.findfile("_test_eintr.py")
         script_helper.run_test_script(script)
 
 
