@@ -1538,7 +1538,10 @@ class LabeledScale(Frame):
         scale_side = 'bottom' if self._label_top else 'top'
         label_side = 'top' if scale_side == 'bottom' else 'bottom'
         self.scale.pack(side=scale_side, fill='x')
-        tmp = Label(self).pack(side=label_side) # place holder
+        # Dummy required to make frame correct height
+        dummy = Label(self)
+        dummy.pack(side=label_side)
+        dummy.lower()
         self.label.place(anchor='n' if label_side == 'top' else 's')
 
         # update the label as scale or variable changes
