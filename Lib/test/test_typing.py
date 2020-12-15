@@ -1739,8 +1739,6 @@ class GenericTests(BaseTestCase):
         self.assertEqual(typing.Iterable[Tuple[T, T]][T], typing.Iterable[Tuple[T, T]])
         with self.assertRaises(TypeError):
             Tuple[T, int][()]
-        with self.assertRaises(TypeError):
-            Tuple[T, U][T, ...]
 
         self.assertEqual(Union[T, int][int], int)
         self.assertEqual(Union[T, U][int, Union[int, str]], Union[int, str])
@@ -1752,10 +1750,6 @@ class GenericTests(BaseTestCase):
 
         self.assertEqual(Callable[[T], T][KT], Callable[[KT], KT])
         self.assertEqual(Callable[..., List[T]][int], Callable[..., List[int]])
-        with self.assertRaises(TypeError):
-            Callable[[T], U][..., int]
-        with self.assertRaises(TypeError):
-            Callable[[T], U][[], int]
 
     def test_extended_generic_rules_repr(self):
         T = TypeVar('T')
@@ -4362,6 +4356,13 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(G5.__origin__, G6.__origin__)
         self.assertEqual(G5.__parameters__, G6.__parameters__)
         self.assertEqual(G5, G6)
+
+    def test_var_substitution(self):
+        T = TypeVar("T")
+        P = ParamSpec("P")
+        C1 = Callable[P, T]
+        self.assertEqual(C1[int, str], Callable[[int], str])
+        self.assertEqual(C1[[int, str, dict], float], Callable[[int, str, dict], float])
 
 
 class ConcatenateTests(BaseTestCase):

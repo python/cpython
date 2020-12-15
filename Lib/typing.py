@@ -212,6 +212,21 @@ def _check_generic(cls, parameters, elen):
         raise TypeError(f"Too {'many' if alen > elen else 'few'} parameters for {cls};"
                         f" actual {alen}, expected {elen}")
 
+def _prepare_paramspec_params(cls, params):
+    """Prepares the parameters for a Generic containing ParamSpec
+    variables (internal helper).
+    """
+    # Special case where Z[[int, str, bool]] == Z[int, str, bool] in PEP 612.
+    if len(cls.__parameters__) == 1 and len(params) > 1:
+        return params,
+    else:
+        _params = []
+        # Convert lists to tuples to help other libraries cache the results.
+        for p, tvar in zip(params, cls.__parameters__):
+            if isinstance(tvar, ParamSpec) and isinstance(p, list):
+                p = tuple(p)
+            _params.append(p)
+        return tuple(_params)
 
 def _deduplicate(params):
     # Weed out strict duplicates, preserving the first of each occurrence.
@@ -881,21 +896,26 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
             raise TypeError(f"Cannot subscript already-subscripted {self}")
         if not isinstance(params, tuple):
             params = (params,)
-        msg = "Parameters to generic types must be types."
-        params = tuple(_type_check(p, msg) for p in params)
+        params = tuple(_type_convert(p) for p in params)
+        if any(isinstance(t, ParamSpec) for t in self.__parameters__):
+            params = _prepare_paramspec_params(self, params)
         _check_generic(self, params, len(self.__parameters__))
 
         subst = dict(zip(self.__parameters__, params))
         new_args = []
         for arg in self.__args__:
-            if isinstance(arg, TypeVar):
+            if isinstance(arg, (TypeVar, ParamSpec)):
                 arg = subst[arg]
             elif isinstance(arg, (_GenericAlias, GenericAlias)):
                 subparams = arg.__parameters__
                 if subparams:
                     subargs = tuple(subst[x] for x in subparams)
                     arg = arg[subargs]
-            new_args.append(arg)
+            # Required to flatten out the args for CallableGenericAlias
+            if self.__origin__ == collections.abc.Callable and isinstance(arg, tuple):
+                new_args.extend(arg)
+            else:
+                new_args.append(arg)
         return self.copy_with(tuple(new_args))
 
     def copy_with(self, params):
@@ -1140,22 +1160,8 @@ class Generic:
         else:
             # Subscripting a regular Generic subclass.
 
-            # Code below handles PEP 612 ParamSpec.
             if any(isinstance(t, ParamSpec) for t in cls.__parameters__):
-                # Special case where Z[[int, str, bool]] == Z[int, str, bool]
-                # in PEP 612.
-                if len(cls.__parameters__) == 1 and len(params) > 1:
-                    params = (params,)
-                else:
-                    _params = []
-                    # Convert lists to tuples to help other libraries cache the
-                    # results.
-                    for p, tvar in zip(params, cls.__parameters__):
-                        if isinstance(tvar, ParamSpec) and isinstance(p, list):
-                            p = tuple(p)
-                        _params.append(p)
-                    params = tuple(_params)
-
+               params = _prepare_paramspec_params(cls, params)
             _check_generic(cls, params, len(cls.__parameters__))
         return _GenericAlias(cls, params)
 
