@@ -305,20 +305,23 @@ pymain_run_module(const wchar_t *modname, int set_argv0)
 
 
 static int
-pymain_run_file(const PyConfig *config, PyCompilerFlags *cf)
+pymain_run_file_obj(PyObject *program_name, PyObject *filename,
+                    int skip_source_first_line, PyCompilerFlags *cf)
 {
-    const wchar_t *filename = config->run_filename;
-    if (PySys_Audit("cpython.run_file", "u", filename) < 0) {
+    if (PySys_Audit("cpython.run_file", "O", filename) < 0) {
         return pymain_exit_err_print();
     }
-    FILE *fp = _Py_wfopen(filename, L"rb");
+
+    FILE *fp = _Py_fopen_obj(filename, "rb");
     if (fp == NULL) {
-        fprintf(stderr, "%ls: can't open file '%ls': [Errno %d] %s\n",
-                config->program_name, filename, errno, strerror(errno));
+        // Ignore the OSError
+        PyErr_Clear();
+        PySys_FormatStderr("%S: can't open file %R: [Errno %d] %s\n",
+                           program_name, filename, errno, strerror(errno));
         return 2;
     }
 
-    if (config->skip_source_first_line) {
+    if (skip_source_first_line) {
         int ch;
         /* Push back first newline so line numbers remain the same */
         while ((ch = getc(fp)) != EOF) {
@@ -331,29 +334,43 @@ pymain_run_file(const PyConfig *config, PyCompilerFlags *cf)
 
     struct _Py_stat_struct sb;
     if (_Py_fstat_noraise(fileno(fp), &sb) == 0 && S_ISDIR(sb.st_mode)) {
-        fprintf(stderr,
-                "%ls: '%ls' is a directory, cannot continue\n",
-                config->program_name, filename);
+        PySys_FormatStderr("%S: %R is a directory, cannot continue\n",
+                           program_name, filename);
         fclose(fp);
         return 1;
     }
 
-    /* call pending calls like signal handlers (SIGINT) */
+    // Call pending calls like signal handlers (SIGINT)
     if (Py_MakePendingCalls() == -1) {
         fclose(fp);
         return pymain_exit_err_print();
     }
 
-    PyObject *filename_obj = PyUnicode_FromWideChar(filename, -1);
-    if (filename_obj == NULL) {
+    /* PyRun_AnyFileExFlags(closeit=1) calls fclose(fp) before running code */
+    int run = _PyRun_AnyFileObject(fp, filename, 1, cf);
+    return (run != 0);
+}
+
+static int
+pymain_run_file(const PyConfig *config, PyCompilerFlags *cf)
+{
+    PyObject *filename = PyUnicode_FromWideChar(config->run_filename, -1);
+    if (filename == NULL) {
+        PyErr_Print();
+        return -1;
+    }
+    PyObject *program_name = PyUnicode_FromWideChar(config->program_name, -1);
+    if (program_name == NULL) {
+        Py_DECREF(filename);
         PyErr_Print();
         return -1;
     }
 
-    /* PyRun_AnyFileExFlags(closeit=1) calls fclose(fp) before running code */
-    int run = _PyRun_AnyFileObject(fp, filename_obj, 1, cf);
-    Py_XDECREF(filename_obj);
-    return (run != 0);
+    int res = pymain_run_file_obj(program_name, filename,
+                                  config->skip_source_first_line, cf);
+    Py_DECREF(filename);
+    Py_DECREF(program_name);
+    return res;
 }
 
 
