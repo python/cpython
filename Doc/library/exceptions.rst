@@ -91,7 +91,7 @@ The following exceptions are used mostly as base classes for other exceptions.
 
       This method sets *tb* as the new traceback for the exception and returns
       the exception object.  It was more commonly used before the exception
-      chaining features of :pep:`484` became available.  The following example
+      chaining features of :pep:`3134` became available.  The following example
       shows how we can convert an instance of ``SomeException`` into an
       instance of ``OtherException`` while preserving the traceback.  Once
       raised, the current frame is pushed onto the traceback of the
