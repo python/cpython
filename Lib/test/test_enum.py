@@ -2065,65 +2065,6 @@ class TestEnum(unittest.TestCase):
         except ValueError:
             pass
 
-    def test_strenum(self):
-        class GoodStrEnum(StrEnum):
-            one = '1'
-            two = '2'
-            three = b'3', 'ascii'
-            four = b'4', 'latin1', 'strict'
-        self.assertEqual(GoodStrEnum.one, '1')
-        self.assertEqual(str(GoodStrEnum.one), '1')
-        self.assertEqual(GoodStrEnum.one, str(GoodStrEnum.one))
-        self.assertEqual(GoodStrEnum.one, '{}'.format(GoodStrEnum.one))
-        #
-        class DumbMixin:
-            def __str__(self):
-                return "don't do this"
-        class DumbStrEnum(DumbMixin, StrEnum):
-            five = '5'
-            six = '6'
-            seven = '7'
-        self.assertEqual(DumbStrEnum.seven, '7')
-        self.assertEqual(str(DumbStrEnum.seven), "don't do this")
-        #
-        class EnumMixin(Enum):
-            def hello(self):
-                print('hello from %s' % (self, ))
-        class HelloEnum(EnumMixin, StrEnum):
-            eight = '8'
-        self.assertEqual(HelloEnum.eight, '8')
-        self.assertEqual(HelloEnum.eight, str(HelloEnum.eight))
-        #
-        class GoodbyeMixin:
-            def goodbye(self):
-                print('%s wishes you a fond farewell')
-        class GoodbyeEnum(GoodbyeMixin, EnumMixin, StrEnum):
-            nine = '9'
-        self.assertEqual(GoodbyeEnum.nine, '9')
-        self.assertEqual(GoodbyeEnum.nine, str(GoodbyeEnum.nine))
-        #
-        with self.assertRaisesRegex(TypeError, '1 is not a string'):
-            class FirstFailedStrEnum(StrEnum):
-                one = 1
-                two = '2'
-        with self.assertRaisesRegex(TypeError, "2 is not a string"):
-            class SecondFailedStrEnum(StrEnum):
-                one = '1'
-                two = 2,
-                three = '3'
-        with self.assertRaisesRegex(TypeError, '2 is not a string'):
-            class ThirdFailedStrEnum(StrEnum):
-                one = '1'
-                two = 2
-        with self.assertRaisesRegex(TypeError, 'encoding must be a string, not %r' % (sys.getdefaultencoding, )):
-            class ThirdFailedStrEnum(StrEnum):
-                one = '1'
-                two = b'2', sys.getdefaultencoding
-        with self.assertRaisesRegex(TypeError, 'errors must be a string, not 9'):
-            class ThirdFailedStrEnum(StrEnum):
-                one = '1'
-                two = b'2', 'ascii', 9
-                
     def test_init_subclass(self):
         class MyEnum(Enum):
             def __init_subclass__(cls, **kwds):
