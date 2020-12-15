@@ -55,7 +55,6 @@ static PyStatus add_main_module(PyInterpreterState *interp);
 static PyStatus init_import_site(void);
 static PyStatus init_set_builtins_open(void);
 static PyStatus init_sys_streams(PyThreadState *tstate);
-static void call_py_exitfuncs(PyThreadState *tstate);
 static void wait_for_thread_shutdown(PyThreadState *tstate);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
@@ -690,6 +689,12 @@ pycore_init_types(PyThreadState *tstate)
     if (_PyWarnings_InitState(tstate) < 0) {
         return _PyStatus_ERR("can't initialize warnings");
     }
+
+    status = _PyAtExit_Init(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     return _PyStatus_OK();
 }
 
@@ -1655,7 +1660,7 @@ Py_FinalizeEx(void)
      * the threads created via Threading.
      */
 
-    call_py_exitfuncs(tstate);
+    _PyAtExit_Call(tstate);
 
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
@@ -1946,7 +1951,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
 
-    call_py_exitfuncs(tstate);
+    _PyAtExit_Call(tstate);
 
     if (tstate != interp->tstate_head || tstate->next != NULL) {
         Py_FatalError("not the last thread");
@@ -2630,15 +2635,6 @@ Py_ExitStatusException(PyStatus status)
     else {
         Py_FatalError("Py_ExitStatusException() must not be called on success");
     }
-}
-
-
-/* Clean up and exit */
-
-static void
-call_py_exitfuncs(PyThreadState *tstate)
-{
-    _PyAtExit_Call(tstate->interp->atexit_module);
 }
 
 
