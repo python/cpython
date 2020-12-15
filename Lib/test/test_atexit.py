@@ -170,6 +170,24 @@ class GeneralTest(unittest.TestCase):
         self.assertEqual(res.out.decode().splitlines(), ["two", "one"])
         self.assertFalse(res.err)
 
+    def test_atexit_instances(self):
+        # bpo-42639: It is safe to have more than one atexit instance.
+        code = textwrap.dedent("""
+            import sys
+            import atexit as atexit1
+            del sys.modules['atexit']
+            import atexit as atexit2
+            del sys.modules['atexit']
+
+            assert atexit2 is not atexit1
+
+            atexit1.register(print, "atexit1")
+            atexit2.register(print, "atexit2")
+        """)
+        res = script_helper.assert_python_ok("-c", code)
+        self.assertEqual(res.out.decode().splitlines(), ["atexit2", "atexit1"])
+        self.assertFalse(res.err)
+
 
 @support.cpython_only
 class SubinterpreterTest(unittest.TestCase):
