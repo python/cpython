@@ -969,7 +969,8 @@ otherwise return -SIG, where SIG is the signal that killed it. """
 
     __all__.extend(["spawnlp", "spawnlpe"])
 
-
+# VxWorks has no user space shell provided. As a result, running
+# command in a shell can't be supported.
 if sys.platform != 'vxworks':
     # Supply os.popen()
     def popen(cmd, mode="r", buffering=-1):
