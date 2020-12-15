@@ -228,7 +228,7 @@ static int compiler_slice(struct compiler *, expr_ty);
 
 static int inplace_binop(operator_ty);
 static int are_all_items_const(asdl_expr_seq *, Py_ssize_t, Py_ssize_t);
-static int expr_constant(expr_ty);
+
 
 static int compiler_with(struct compiler *, stmt_ty, int);
 static int compiler_async_with(struct compiler *, stmt_ty, int);
@@ -1572,17 +1572,6 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b)
     } \
 }
 
-/* These macros allows to check only for errors and not emmit bytecode
- * while visiting nodes.
-*/
-
-#define BEGIN_DO_NOT_EMIT_BYTECODE { \
-    c->c_do_not_emit_bytecode++;
-
-#define END_DO_NOT_EMIT_BYTECODE \
-    c->c_do_not_emit_bytecode--; \
-}
-
 /* Search if variable annotations are present statically in a block. */
 
 static int
@@ -2704,48 +2693,28 @@ static int
 compiler_if(struct compiler *c, stmt_ty s)
 {
     basicblock *end, *next;
-    int constant;
     assert(s->kind == If_kind);
     end = compiler_new_block(c);
-    if (end == NULL)
+    if (end == NULL) {
         return 0;
-
-    constant = expr_constant(s->v.If.test);
-    /* constant = 0: "if 0"
-     * constant = 1: "if 1", "if 2", ...
-     * constant = -1: rest */
-    if (constant == 0) {
-        BEGIN_DO_NOT_EMIT_BYTECODE
-        VISIT_SEQ(c, stmt, s->v.If.body);
-        END_DO_NOT_EMIT_BYTECODE
-        if (s->v.If.orelse) {
-            VISIT_SEQ(c, stmt, s->v.If.orelse);
-        }
-    } else if (constant == 1) {
-        VISIT_SEQ(c, stmt, s->v.If.body);
-        if (s->v.If.orelse) {
-            BEGIN_DO_NOT_EMIT_BYTECODE
-            VISIT_SEQ(c, stmt, s->v.If.orelse);
-            END_DO_NOT_EMIT_BYTECODE
-        }
-    } else {
-        if (asdl_seq_LEN(s->v.If.orelse)) {
-            next = compiler_new_block(c);
-            if (next == NULL)
-                return 0;
-        }
-        else {
-            next = end;
-        }
-        if (!compiler_jump_if(c, s->v.If.test, next, 0)) {
+    }
+    if (asdl_seq_LEN(s->v.If.orelse)) {
+        next = compiler_new_block(c);
+        if (next == NULL) {
             return 0;
         }
-        VISIT_SEQ(c, stmt, s->v.If.body);
-        if (asdl_seq_LEN(s->v.If.orelse)) {
-            ADDOP_JUMP(c, JUMP_FORWARD, end);
-            compiler_use_next_block(c, next);
-            VISIT_SEQ(c, stmt, s->v.If.orelse);
-        }
+    }
+    else {
+        next = end;
+    }
+    if (!compiler_jump_if(c, s->v.If.test, next, 0)) {
+        return 0;
+    }
+    VISIT_SEQ(c, stmt, s->v.If.body);
+    if (asdl_seq_LEN(s->v.If.orelse)) {
+        ADDOP_JUMP(c, JUMP_FORWARD, end);
+        compiler_use_next_block(c, next);
+        VISIT_SEQ(c, stmt, s->v.If.orelse);
     }
     compiler_use_next_block(c, end);
     return 1;
@@ -2842,25 +2811,6 @@ static int
 compiler_while(struct compiler *c, stmt_ty s)
 {
     basicblock *loop, *body, *end, *anchor = NULL;
-    int constant = expr_constant(s->v.While.test);
-
-    if (constant == 0) {
-        BEGIN_DO_NOT_EMIT_BYTECODE
-        // Push a dummy block so the VISIT_SEQ knows that we are
-        // inside a while loop so it can correctly evaluate syntax
-        // errors.
-        if (!compiler_push_fblock(c, WHILE_LOOP, NULL, NULL, NULL)) {
-            return 0;
-        }
-        VISIT_SEQ(c, stmt, s->v.While.body);
-        // Remove the dummy block now that is not needed.
-        compiler_pop_fblock(c, WHILE_LOOP, NULL);
-        END_DO_NOT_EMIT_BYTECODE
-        if (s->v.While.orelse) {
-            VISIT_SEQ(c, stmt, s->v.While.orelse);
-        }
-        return 1;
-    }
     loop = compiler_new_block(c);
     body = compiler_new_block(c);
     anchor = compiler_new_block(c);
@@ -2872,15 +2822,16 @@ compiler_while(struct compiler *c, stmt_ty s)
     if (!compiler_push_fblock(c, WHILE_LOOP, loop, end, NULL)) {
         return 0;
     }
-    if (constant == -1) {
-        if (!compiler_jump_if(c, s->v.While.test, anchor, 0)) {
-            return 0;
-        }
+    if (!compiler_jump_if(c, s->v.While.test, anchor, 0)) {
+        return 0;
     }
 
     compiler_use_next_block(c, body);
     VISIT_SEQ(c, stmt, s->v.While.body);
-    ADDOP_JUMP(c, JUMP_ABSOLUTE, loop);
+    SET_LOC(c, s);
+    if (!compiler_jump_if(c, s->v.While.test, body, 1)) {
+        return 0;
+    }
 
     compiler_pop_fblock(c, WHILE_LOOP, loop);
 
@@ -4792,15 +4743,6 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
  */
 
 static int
-expr_constant(expr_ty e)
-{
-    if (e->kind == Constant_kind) {
-        return PyObject_IsTrue(e->v.Constant.value);
-    }
-    return -1;
-}
-
-static int
 compiler_with_except_finish(struct compiler *c) {
     basicblock *exit;
     exit = compiler_new_block(c);
@@ -6304,7 +6246,7 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
                     case JUMP_FORWARD:
                         if (inst->i_target != target->i_target) {
                             inst->i_target = target->i_target;
-                            --i;
+//                             --i;
                         }
                         break;
                     case JUMP_ABSOLUTE:
@@ -6317,8 +6259,8 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
                 }
                 if (inst->i_target->b_exit && inst->i_target->b_iused <= MAX_COPY_SIZE) {
                     basicblock *to_copy = inst->i_target;
-                    *inst = to_copy->b_instr[0];
-                    for (i = 1; i < to_copy->b_iused; i++) {
+                    inst->i_opcode = NOP;
+                    for (i = 0; i < to_copy->b_iused; i++) {
                         int index = compiler_next_instr(bb);
                         if (index < 0) {
                             return -1;

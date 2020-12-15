@@ -53,9 +53,8 @@ basic.events = [(0, 'call'),
 # following that clause?
 
 
-# Some constructs like "while 0:", "if 0:" or "if 1:...else:..." are optimized
-# away.  No code # exists for them, so the line numbers skip directly from
-# "del x" to "x = 1".
+# Some constructs like "while 0:", "if 0:" or "if 1:...else:..." could be optimized
+# away.  Make sure that those lines aren't skipped.
 def arigo_example0():
     x = 1
     del x
@@ -66,6 +65,7 @@ def arigo_example0():
 arigo_example0.events = [(0, 'call'),
                         (1, 'line'),
                         (2, 'line'),
+                        (3, 'line'),
                         (5, 'line'),
                         (5, 'return')]
 
@@ -79,6 +79,7 @@ def arigo_example1():
 arigo_example1.events = [(0, 'call'),
                         (1, 'line'),
                         (2, 'line'),
+                        (3, 'line'),
                         (5, 'line'),
                         (5, 'return')]
 
@@ -94,6 +95,7 @@ def arigo_example2():
 arigo_example2.events = [(0, 'call'),
                         (1, 'line'),
                         (2, 'line'),
+                        (3, 'line'),
                         (4, 'line'),
                         (7, 'line'),
                         (7, 'return')]
@@ -236,9 +238,13 @@ tightloop_example.events = [(0, 'call'),
                             (1, 'line'),
                             (2, 'line'),
                             (3, 'line'),
+                            (4, 'line'),
                             (5, 'line'),
+                            (4, 'line'),
                             (5, 'line'),
+                            (4, 'line'),
                             (5, 'line'),
+                            (4, 'line'),
                             (5, 'line'),
                             (5, 'exception'),
                             (6, 'line'),
