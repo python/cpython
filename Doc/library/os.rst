@@ -32,7 +32,7 @@ Notes on the availability of these functions:
   objects, and result in an object of the same type, if a path or file name is
   returned.
 
-* On VxWorks, os.fork, os.execv and os.spawn*p* are not supported.
+* On VxWorks, os.popen, os.fork, os.execv and os.spawn*p* are not supported.
 
 .. note::
 
