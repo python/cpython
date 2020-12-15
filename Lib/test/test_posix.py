@@ -724,10 +724,13 @@ class PosixTester(unittest.TestCase):
         chown_func(first_param, uid, -1)
         check_stat(uid, gid)
 
-        # On VxWorks root user id is 1 and 0 means no login user. And
-        # both are super users.
-        superuser_uids = ((0,) if sys.platform != "vxworks" else (0, 1))
-        if uid in superuser_uids:
+        if sys.platform == "vxworks":
+            # On VxWorks, root user id is 1 and 0 means no login user:
+            # both are super users.
+            is_root = (uid in (0, 1))
+        else:
+            is_root = (uid == 0)
+        if is_root:
             # Try an amusingly large uid/gid to make sure we handle
             # large unsigned values.  (chown lets you use any
             # uid/gid you like, even if they aren't defined.)
