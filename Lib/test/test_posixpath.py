@@ -1,6 +1,5 @@
 import os
 import posixpath
-import sys
 import unittest
 from posixpath import realpath, abspath, dirname, basename
 from test import test_genericpath
@@ -263,8 +262,6 @@ class PosixPathTest(unittest.TestCase):
                     self.assertEqual(posixpath.expanduser("~/"), "/")
                     self.assertEqual(posixpath.expanduser("~/foo"), "/foo")
 
-    @unittest.skipIf(sys.platform == "vxworks",
-                     "no home directory on VxWorks")
     def test_expanduser_pwd(self):
         pwd = import_helper.import_module('pwd')
 
