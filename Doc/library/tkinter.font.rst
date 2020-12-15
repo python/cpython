@@ -54,8 +54,8 @@ The different font weights and slants are:
 
       Due to some differences between operating systems (such as pointsizes
       and the availability of font families), some values returned by this
-      method may vary from those given as kwargs or similar method (and
-      retrieved by :meth:`Font.cget`).
+      method may vary from those given as keyword arguments to either the
+      constructor or :meth:`Font.config` (and retrieved by :meth:`Font.cget`).
 
       If *option* is specified, the value of just that attribute is returned.
       If it is omitted or ``None``, the returned value is a dictionary of all
