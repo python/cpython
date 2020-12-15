@@ -29,19 +29,16 @@ def cfmakeraw(mode):
                      INLCR | IGNCR | ICRNL | IXON | IXANY | IXOFF)
 
     # Do not post-process output.
-    mode[OFLAG] &= ~(OPOST)
+    mode[OFLAG] &= ~OPOST
 
     # Disable parity generation and detection; clear character size mask;
     # let character size be 8 bits.
     mode[CFLAG] &= ~(PARENB | CSIZE)
     mode[CFLAG] |= CS8
 
-    # Do not echo characters (including NL); disable canonical input; disable
-    # the checking of characters against the special control characters INTR,
-    # QUIT, and SUSP (disable sending of signals using control characters);
-    # disable any implementation-defined special control characters not
-    # currently controlled by ICANON, ISIG, IXON, or IXOFF.
-    mode[LFLAG] &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN)
+    # Clear all POSIX.1-2017 local mode flags.
+    mode[LFLAG] &= ~(ECHO | ECHOE | ECHOK | ECHONL | ICANON |
+                     IEXTEN | ISIG | NOFLSH | TOSTOP)
 
     # POSIX.1-2017, 11.1.7 Non-Canonical Mode Input Processing,
     # Case B: MIN>0, TIME=0
