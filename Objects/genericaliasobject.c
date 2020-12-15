@@ -280,7 +280,14 @@ subs_tvars(PyObject *obj, PyObject *params, PyObject **argitems)
             if (iparam >= 0) {
                 arg = argitems[iparam];
             }
-            Py_INCREF(arg);
+            // convert all the lists inside args to tuples to help
+            // with caching in other libaries
+            if (PyList_CheckExact(arg)) {
+                arg = PyList_AsTuple(arg);
+            }
+            else {
+                Py_INCREF(arg);
+            }
             PyTuple_SET_ITEM(subargs, i, arg);
         }
 
@@ -576,15 +583,29 @@ setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {
             return 0;
         }
     }
-    else {
-        Py_INCREF(args);
+    Py_ssize_t argslen = PyTuple_GET_SIZE(args);
+    PyObject *_args = PyList_New(argslen);
+    if (_args == NULL) {
+        return 0;
     }
+    // convert all the lists inside args to tuples to help
+    // with caching in other libaries
+    for (Py_ssize_t i = 0; i < argslen; ++i) {
+        PyObject *p = PyTuple_GET_ITEM(args, i);
+        if (PyList_CheckExact(p)) {
+            p = PyList_AsTuple(p);
+        }
+        PyList_SET_ITEM(_args, i, p);
+    }
+    args = PyList_AsTuple(_args);
+    PyObject_GC_Del(_args);
 
     Py_INCREF(origin);
     alias->origin = origin;
     alias->args = args;
     alias->parameters = NULL;
     alias->weakreflist = NULL;
+
     return 1;
 }
 

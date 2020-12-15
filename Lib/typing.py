@@ -1161,7 +1161,7 @@ class Generic:
             # Subscripting a regular Generic subclass.
 
             if any(isinstance(t, ParamSpec) for t in cls.__parameters__):
-               params = _prepare_paramspec_params(cls, params)
+                params = _prepare_paramspec_params(cls, params)
             _check_generic(cls, params, len(cls.__parameters__))
         return _GenericAlias(cls, params)
 
