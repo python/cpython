@@ -281,17 +281,17 @@ chaining exceptions. For example::
 This can be useful when you are transforming exceptions. For example::
 
     >>> def func():
-    ...     raise IOError
+    ...     raise ConnectionError
     ...
     >>> try:
     ...     func()
-    ... except IOError as exc:
+    ... except ConnectionError as exc:
     ...     raise RuntimeError('Failed to open database') from exc
     ...
     Traceback (most recent call last):
       File "<stdin>", line 2, in <module>
       File "<stdin>", line 2, in func
-    OSError
+    ConnectionError
     <BLANKLINE>
     The above exception was the direct cause of the following exception:
     <BLANKLINE>
@@ -300,7 +300,7 @@ This can be useful when you are transforming exceptions. For example::
     RuntimeError: Failed to open database
 
 Exception chaining happens automatically when an exception is raised inside an
-:keyword:`except` or :keyword:`finally` section. Exception chaining can be
+:keyword:`except` or :keyword:`finally` section. This can be
 disabled by using ``from None`` idiom:
 
     >>> try:
