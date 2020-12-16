@@ -1,0 +1,1 @@
+Raise :exc:`OSError` instead of :exc:`ThreadError` if thread creation fails.
