@@ -1695,19 +1695,22 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             return 1;
 
         case FINALLY_TRY:
+            /* This POP_BLOCK gets the line number of the unwinding statement */
             ADDOP(c, POP_BLOCK);
             if (preserve_tos) {
                 if (!compiler_push_fblock(c, POP_VALUE, NULL, NULL, NULL)) {
                     return 0;
                 }
             }
-            /* Emit the finally block, restoring the line number when done */
-            int saved_lineno = c->u->u_lineno;
+            /* Emit the finally block */
             VISIT_SEQ(c, stmt, info->fb_datum);
-            c->u->u_lineno = saved_lineno;
             if (preserve_tos) {
                 compiler_pop_fblock(c, POP_VALUE, NULL);
             }
+            /* The finally block should appear to execute after the
+             * statement causing the unwinding, so make the unwinding
+             * instruction artificial */
+            c->u->u_lineno = -1;
             return 1;
 
         case FINALLY_END:
@@ -2859,6 +2862,12 @@ compiler_return(struct compiler *c, stmt_ty s)
     }
     if (preserve_tos) {
         VISIT(c, expr, s->v.Return.value);
+    } else {
+        /* Emit instruction with line number for expression */
+        if (s->v.Return.value != NULL) {
+            SET_LOC(c, s->v.Return.value);
+            ADDOP(c, NOP);
+        }
     }
     if (!compiler_unwind_fblock_stack(c, preserve_tos, NULL))
         return 0;
@@ -2866,7 +2875,7 @@ compiler_return(struct compiler *c, stmt_ty s)
         ADDOP_LOAD_CONST(c, Py_None);
     }
     else if (!preserve_tos) {
-        VISIT(c, expr, s->v.Return.value);
+        ADDOP_LOAD_CONST(c, s->v.Return.value->v.Constant.value);
     }
     ADDOP(c, RETURN_VALUE);
     NEXT_BLOCK(c);
