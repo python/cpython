@@ -28,7 +28,6 @@ typedef struct _functools_state {
     /* this object is used delimit args and keywords in the cache keys */
     PyObject *kwd_mark;
     PyTypeObject *partial_type;
-    PyTypeObject *lru_cache_type;
     PyTypeObject *keyobject_type;
     PyTypeObject *lru_list_elem_type;
 } _functools_state;
@@ -67,15 +66,13 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
-    _functools_state *state = get_functools_state_by_type(type);
-    if (state == NULL) {
-        return NULL;
-    }
-
     pargs = pkw = NULL;
     func = PyTuple_GET_ITEM(args, 0);
-    if (Py_IS_TYPE(func, state->partial_type)
-        && type == state->partial_type) {
+    if (Py_TYPE(func)->tp_new == partial_new) {
+        // The type of "func" might not be exactly the same type object
+        // as "type", but if it is called using partial_new, it must have the
+        // same memory layout (fn, args and kw members).
+        // We can use its underlying function directly and merge the arguments.
         partialobject *part = (partialobject *)func;
         if (part->dict == NULL) {
             pargs = part->args;
@@ -555,19 +552,15 @@ keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds)
 {
     PyObject *object;
     keyobject *result;
-    _functools_state *state;
     static char *kwargs[] = {"obj", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:K", kwargs, &object))
         return NULL;
 
-    state = get_functools_state_by_type(Py_TYPE(ko));
-    if (state == NULL) {
+    result = PyObject_New(keyobject, Py_TYPE(ko));
+    if (result == NULL) {
         return NULL;
     }
-    result = PyObject_New(keyobject, state->keyobject_type);
-    if (!result)
-        return NULL;
     Py_INCREF(ko->cmp);
     result->cmp = ko->cmp;
     Py_INCREF(object);
@@ -584,13 +577,8 @@ keyobject_richcompare(PyObject *ko, PyObject *other, int op)
     PyObject *compare;
     PyObject *answer;
     PyObject* stack[2];
-    _functools_state *state;
 
-    state = get_functools_state_by_type(Py_TYPE(ko));
-    if (state == NULL) {
-        return NULL;
-    }
-    if (!Py_IS_TYPE(other, state->keyobject_type)) {
+    if (!Py_IS_TYPE(other, Py_TYPE(ko))) {
         PyErr_Format(PyExc_TypeError, "other argument must be K instance");
         return NULL;
     }
@@ -1437,12 +1425,13 @@ _functools_exec(PyObject *module)
         return -1;
     }
 
-    state->lru_cache_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
+    PyObject *lru_cache_type = PyType_FromModuleAndSpec(module,
         &lru_cache_type_spec, NULL);
-    if (state->lru_cache_type == NULL) {
+    if (lru_cache_type == NULL) {
         return -1;
     }
-    if (PyModule_AddType(module, state->lru_cache_type) < 0) {
+    if (PyModule_AddType(module, (PyTypeObject *)lru_cache_type) < 0) {
+        Py_DECREF(lru_cache_type);
         return -1;
     }
 
@@ -1473,7 +1462,6 @@ _functools_traverse(PyObject *module, visitproc visit, void *arg)
     _functools_state *state = get_functools_state(module);
     Py_VISIT(state->kwd_mark);
     Py_VISIT(state->partial_type);
-    Py_VISIT(state->lru_cache_type);
     Py_VISIT(state->keyobject_type);
     Py_VISIT(state->lru_list_elem_type);
     return 0;
@@ -1485,7 +1473,6 @@ _functools_clear(PyObject *module)
     _functools_state *state = get_functools_state(module);
     Py_CLEAR(state->kwd_mark);
     Py_CLEAR(state->partial_type);
-    Py_CLEAR(state->lru_cache_type);
     Py_CLEAR(state->keyobject_type);
     Py_CLEAR(state->lru_list_elem_type);
     return 0;
