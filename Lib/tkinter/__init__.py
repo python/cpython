@@ -2259,7 +2259,7 @@ class Tk(Misc, Wm):
         is the name of the widget class."""
         self.master = None
         self.children = {}
-        self._tkloaded = 0
+        self._tkloaded = False
         # to avoid recursions in the getattr code in case of failure, we
         # ensure that self.tk is always _something_.
         self.tk = None
@@ -2273,9 +2273,6 @@ class Tk(Misc, Wm):
         self.tk = _tkinter.create(screenName, baseName, className, interactive, wantobjects, useTk, sync, use)
         if useTk:
             self._loadtk()
-            global _default_root
-            if _support_default_root and not _default_root:
-                _default_root = self
         if not sys.flags.ignore_environment:
             # Issue #16248: Honor the -E flag to avoid code injection.
             self.readprofile(baseName, className)
@@ -2287,6 +2284,7 @@ class Tk(Misc, Wm):
 
     def _loadtk(self):
         self._tkloaded = True
+        global _default_root
         # Version sanity checks
         tk_version = self.tk.getvar('tk_version')
         if tk_version != _tkinter.TK_VERSION:
@@ -2306,6 +2304,8 @@ class Tk(Misc, Wm):
         self.tk.createcommand('exit', _exit)
         self._tclCommands.append('tkerror')
         self._tclCommands.append('exit')
+        if _support_default_root and not _default_root:
+            _default_root = self
         self.protocol("WM_DELETE_WINDOW", self.destroy)
 
     def destroy(self):

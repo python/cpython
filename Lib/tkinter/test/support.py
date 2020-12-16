@@ -1,11 +1,7 @@
-import contextlib
 import functools
 import re
 import tkinter
 import unittest
-
-import test.support
-
 
 class AbstractTkTest:
 
