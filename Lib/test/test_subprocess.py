@@ -1520,6 +1520,14 @@ class ProcessTestCase(BaseTestCase):
         proc = subprocess.Popen(NONEXISTING_CMD, exec_raise=False)
         self.assertIn(proc.returncode, NONEXISTING_ERRNOS)
 
+        # communicate() should not fail
+        proc = subprocess.Popen(NONEXISTING_CMD, exec_raise=False,
+                                stdout=subprocess.PIPE)
+        self.assertIn(proc.returncode, NONEXISTING_ERRNOS)
+        # ignore stderr
+        stdout, _ = proc.communicate()
+        self.assertEqual(stdout, b'')
+
         # try to test the os.posix_spawn() code path:
         # program with a directory and don't close FDs
         if hasattr(os, "posix_spawn"):
@@ -1752,6 +1760,12 @@ class POSIXProcessTestCase(BaseTestCase):
         else:
             self.fail("Expected OSError: %s" % desired_exception)
 
+        # test exec_raise=False
+        p = subprocess.Popen([sys.executable, "-c", ""],
+                             cwd=self._nonexistent_dir,
+                             exec_raise=False)
+        self.assertEqual(p.returncode, desired_exception.errno)
+
     def test_exception_bad_executable(self):
         """Test error in the child raised in the parent for a bad executable."""
         desired_exception = self._get_chdir_exception()
@@ -1767,6 +1781,12 @@ class POSIXProcessTestCase(BaseTestCase):
         else:
             self.fail("Expected OSError: %s" % desired_exception)
 
+        # test exec_raise=False
+        p = subprocess.Popen([sys.executable, "-c", ""],
+                             executable=self._nonexistent_dir,
+                             exec_raise=False)
+        self.assertEqual(p.returncode, desired_exception.errno)
+
     def test_exception_bad_args_0(self):
         """Test error in the child raised in the parent for a bad args[0]."""
         desired_exception = self._get_chdir_exception()
@@ -1780,6 +1800,11 @@ class POSIXProcessTestCase(BaseTestCase):
             self.assertEqual(desired_exception.filename, e.filename)
         else:
             self.fail("Expected OSError: %s" % desired_exception)
+
+        # test exec_raise=False
+        p = subprocess.Popen([self._nonexistent_dir, "-c", ""],
+                             exec_raise=False)
+        self.assertEqual(p.returncode, desired_exception.errno)
 
     # We mock the __del__ method for Popen in the next two tests
     # because it does cleanup based on the pid returned by fork_exec
