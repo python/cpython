@@ -1559,7 +1559,7 @@ builtin_aiter_impl(PyObject *module, PyObject *aiterable, PyObject *sentinel)
         return NULL;
     }
     // PyObject *sentinel = args[1];
-    return PyCallAiter_New(aiterable, sentinel);
+    return PyCallAsyncIter_New(aiterable, sentinel);
 }
 
 // TODO
@@ -1603,7 +1603,7 @@ builtin_anext_impl(PyObject *module, PyObject *aiterator,
         return awaitable;
     }
 
-    return PyCallAnext_New(awaitable, default_value);
+    return PyAnextAwaitable_New(awaitable, default_value);
 }
 
 // TODO

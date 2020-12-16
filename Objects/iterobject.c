@@ -294,7 +294,7 @@ typedef struct {
     PyObject_HEAD
     PyObject *it_callable; /* Set to NULL when iterator is exhausted */
     PyObject *it_sentinel; /* Set to NULL when iterator is exhausted */
-} asynccalliterobject;
+} callasynciterobject;
 
 typedef struct {
     PyObject_HEAD
@@ -304,20 +304,15 @@ typedef struct {
         If NULL this means that the iterator is already exhausted and when
         iterated it should raise StopAsyncIteration;
     */
-    asynccalliterobject *it; /* The iterator object, in order to clear it when done. */
-} asynccallawaitableobject;
+    callasynciterobject *it; /* The iterator object, in order to clear it when done. */
+} callasynciterawaitableobject;
 
-typedef struct {
-    PyObject_HEAD
-    PyObject *wrapped;
-    PyObject *default_value;
-} anextobject;
 
 PyObject *
-PyCallAiter_New(PyObject *callable, PyObject *sentinel)
+PyCallAsyncIter_New(PyObject *callable, PyObject *sentinel)
 {
-    asynccalliterobject *it;
-    it = PyObject_GC_New(asynccalliterobject, &PyCallAiter_Type);
+    callasynciterobject *it;
+    it = PyObject_GC_New(callasynciterobject, &PyCallAsyncIter_Type);
     if (it == NULL)
         return NULL;
     Py_INCREF(callable);
@@ -328,29 +323,17 @@ PyCallAiter_New(PyObject *callable, PyObject *sentinel)
     return (PyObject *)it;
 }
 
-PyObject *
-PyCallAnext_New(PyObject *awaitable, PyObject *default_value)
+static void
+callasynciter_dealloc(callasynciterobject *obj)
 {
-    anextobject *anext = PyObject_GC_New(anextobject, &PyAnext_Type);
-    Py_INCREF(awaitable);
-    anext->wrapped = awaitable;
-    Py_INCREF(default_value);
-    anext->default_value = default_value;
-    _PyObject_GC_TRACK(anext);
-    return (PyObject *)anext;
+    _PyObject_GC_UNTRACK(obj);
+    Py_XDECREF(obj->it_callable);
+    Py_XDECREF(obj->it_sentinel);
+    PyObject_GC_Del(obj);
 }
 
 static void
-asynccalliter_dealloc(asynccalliterobject *it)
-{
-    _PyObject_GC_UNTRACK(it);
-    Py_XDECREF(it->it_callable);
-    Py_XDECREF(it->it_sentinel);
-    PyObject_GC_Del(it);
-}
-
-static void
-asynccallawaitable_dealloc(asynccallawaitableobject *obj)
+callasynciterawaitable_dealloc(callasynciterawaitableobject *obj)
 {
     _PyObject_GC_UNTRACK(obj);
     Py_XDECREF(obj->wrapped_iter);
@@ -358,17 +341,8 @@ asynccallawaitable_dealloc(asynccallawaitableobject *obj)
     PyObject_GC_Del(obj);
 }
 
-static void
-anext_dealloc(anextobject *obj)
-{
-    _PyObject_GC_UNTRACK(obj);
-    Py_XDECREF(obj->wrapped);
-    Py_XDECREF(obj->default_value);
-    PyObject_GC_Del(obj);
-}
-
 static int
-asynccalliter_traverse(asynccalliterobject *it, visitproc visit, void *arg)
+callasynciter_traverse(callasynciterobject *it, visitproc visit, void *arg)
 {
     Py_VISIT(it->it_callable);
     Py_VISIT(it->it_sentinel);
@@ -376,27 +350,20 @@ asynccalliter_traverse(asynccalliterobject *it, visitproc visit, void *arg)
 }
 
 static int
-asynccallawaitable_traverse(asynccallawaitableobject *obj, visitproc visit, void *arg)
+callasyncawaitable_traverse(callasynciterawaitableobject *obj, visitproc visit, void *arg)
 {
     Py_VISIT(obj->wrapped_iter);
     Py_VISIT(obj->it);
     return 0;
 }
 
-static int
-anext_traverse(anextobject *obj, visitproc visit, void *arg)
-{
-    Py_VISIT(obj->wrapped);
-    Py_VISIT(obj->default_value);
-    return 0;
-}
 
 static PyObject *
-asynccalliter_anext(asynccalliterobject *it)
+callasynciter_anext(callasynciterobject *it)
 {
     PyObject *obj = NULL, *wrapped_iter = NULL;
     PyTypeObject *t = NULL;
-    asynccallawaitableobject *awaitable;
+    callasynciterawaitableobject *awaitable;
 
     if (it->it_callable == NULL) {
         /* Can we raise this at this point, or do we need to return an awaitable
@@ -423,7 +390,7 @@ asynccalliter_anext(asynccalliterobject *it)
     wrapped_iter = (*t->tp_as_async->am_await)(obj);
 
     awaitable = PyObject_GC_New(
-        asynccallawaitableobject,
+        callasynciterawaitableobject,
         &PyAsyncCallAwaitable_Type);
     if (awaitable == NULL) {
         return NULL;
@@ -438,7 +405,7 @@ asynccalliter_anext(asynccalliterobject *it)
 }
 
 static PyObject *
-asynccallawaitable_iternext(asynccallawaitableobject *obj)
+asynccallawaitable_iternext(callasynciterawaitableobject *obj)
 {
     PyObject *result;
     PyObject *stop_value = NULL;
@@ -479,52 +446,22 @@ asynccallawaitable_iternext(asynccallawaitableobject *obj)
     return NULL;
 }
 
-static PyObject *
-anext_iternext(anextobject *obj)
-{
-    PyObject *result = PyIter_Next(obj->wrapped);
-    if (result != NULL) {
-        return result;
-    }
-    if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration)) {
-        _PyGen_SetStopIterationValue(obj->default_value);
-    }
-    return NULL;
-}
 
-static PyObject *
-asynccalliter_reduce(asynccalliterobject *it, PyObject *Py_UNUSED(ignored))
-{
-    if (it->it_callable != NULL && it->it_sentinel != NULL)
-        return Py_BuildValue("N(OO)",
-        _PyEval_GetBuiltinId(&PyId_iter),  // TODO: not this
-            it->it_callable, it->it_sentinel);
-    else
-        return Py_BuildValue(
-            "N(...)", // FIXME: need to construct with an empty *async* iterable
-            _PyEval_GetBuiltinId(&PyId_iter)  // TODO: not this
-        );
-}
-
-static PyMethodDef asynccalliter_methods[] = {
-    {"__reduce__", (PyCFunction)asynccalliter_reduce, METH_NOARGS, reduce_doc},
-    {NULL,              NULL}           /* sentinel */
-};
 
 static PyAsyncMethods async_iter_as_async = {
     PyObject_SelfIter,                          /* am_await */
     PyObject_SelfIter,                          /* am_aiter */
-    (unaryfunc)asynccalliter_anext,                     /* am_anext */
+    (unaryfunc)callasynciter_anext,                     /* am_anext */
     0,                                          /* am_send  */
 };
 
-PyTypeObject PyCallAiter_Type = {
+PyTypeObject PyCallAsyncIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "callable_async_iterator",                        /* tp_name */
-    sizeof(asynccalliterobject),                     /* tp_basicsize */
+    sizeof(callasynciterobject),                     /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)asynccalliter_dealloc,               /* tp_dealloc */
+    (destructor)callasynciter_dealloc,               /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -541,14 +478,15 @@ PyTypeObject PyCallAiter_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
     0,                                          /* tp_doc */
-    (traverseproc)asynccalliter_traverse,            /* tp_traverse */
+    (traverseproc)callasynciter_traverse,            /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
     0,                                          /* tp_iternext */
-    asynccalliter_methods,                           /* tp_methods */
+    0,                                          /* tp_methods */
 };
+
 
 static PyAsyncMethods async_awaitable_as_async = {
     PyObject_SelfIter,                          /* am_await */
@@ -557,19 +495,13 @@ static PyAsyncMethods async_awaitable_as_async = {
     0,                                          /* am_send  */
 };
 
-static PyMethodDef async_awaitable_methods[] = {
-    // TODO...
-    {"__reduce__", (PyCFunction)asynccalliter_reduce, METH_NOARGS, reduce_doc},
-    {NULL,              NULL}           /* sentinel */
-};
-
 PyTypeObject PyAsyncCallAwaitable_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "callable_async_awaitable",                 /* tp_name */
-    sizeof(asynccallawaitableobject),           /* tp_basicsize */
+    "callable_async_iterator_awaitable",        /* tp_name */
+    sizeof(callasynciterawaitableobject),           /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)asynccallawaitable_dealloc,     /* tp_dealloc */
+    (destructor)callasynciterawaitable_dealloc, /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -586,33 +518,85 @@ PyTypeObject PyAsyncCallAwaitable_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     0,                                          /* tp_doc */
-    (traverseproc)asynccallawaitable_traverse,  /* tp_traverse */
+    (traverseproc)callasyncawaitable_traverse,  /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
     (unaryfunc)asynccallawaitable_iternext,     /* tp_iternext */
-    async_awaitable_methods,                  /* tp_methods */
+    0,                                          /* tp_methods */
 };
 
-static PyAsyncMethods anext_as_async = {
+/* -------------------------------------- */
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *wrapped;
+    PyObject *default_value;
+} anextawaitableobject;
+
+
+PyObject *
+PyAnextAwaitable_New(PyObject *awaitable, PyObject *default_value)
+{
+    anextawaitableobject *anext = PyObject_GC_New(anextawaitableobject, &PyAnextAwaitable_Type);
+    Py_INCREF(awaitable);
+    anext->wrapped = awaitable;
+    Py_INCREF(default_value);
+    anext->default_value = default_value;
+    _PyObject_GC_TRACK(anext);
+    return (PyObject *)anext;
+}
+
+static void
+anextawaitable_dealloc(anextawaitableobject *obj)
+{
+    _PyObject_GC_UNTRACK(obj);
+    Py_XDECREF(obj->wrapped);
+    Py_XDECREF(obj->default_value);
+    PyObject_GC_Del(obj);
+}
+
+static int
+anextawaitable_traverse(anextawaitableobject *obj, visitproc visit, void *arg)
+{
+    Py_VISIT(obj->wrapped);
+    Py_VISIT(obj->default_value);
+    return 0;
+}
+
+static PyObject *
+anextawaitable_iternext(anextawaitableobject *obj)
+{
+    PyObject *result = PyIter_Next(obj->wrapped);
+    if (result != NULL) {
+        return result;
+    }
+    if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration)) {
+        _PyGen_SetStopIterationValue(obj->default_value);
+    }
+    return NULL;
+}
+
+
+static PyAsyncMethods anextawaitable_as_async = {
     PyObject_SelfIter,                          /* am_await */
     0,                                          /* am_aiter */
     0,                                          /* am_anext */
     0,                                          /* am_send  */
 };
 
-PyTypeObject PyAnext_Type = {
+PyTypeObject PyAnextAwaitable_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "anext",                                    /* tp_name */
-    sizeof(anextobject),                        /* tp_basicsize */
+    "anext_awaitable",                          /* tp_name */
+    sizeof(anextawaitableobject),                        /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)anext_dealloc,                  /* tp_dealloc */
+    (destructor)anextawaitable_dealloc,                  /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    &anext_as_async,                            /* tp_as_async */
+    &anextawaitable_as_async,                   /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -625,11 +609,11 @@ PyTypeObject PyAnext_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     0,                                          /* tp_doc */
-    (traverseproc)anext_traverse,               /* tp_traverse */
+    (traverseproc)anextawaitable_traverse,               /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
-    (unaryfunc)anext_iternext,                  /* tp_iternext */
+    (unaryfunc)anextawaitable_iternext,                  /* tp_iternext */
     0,                                          /* tp_methods */
 };
