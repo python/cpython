@@ -552,8 +552,9 @@ Callable types
       | :attr:`__annotations__` | A dict containing annotations | Writable  |
       |                         | of parameters.  The keys of   |           |
       |                         | the dict are the parameter    |           |
-      |                         | names, and ``'return'`` for   |           |
-      |                         | the return annotation, if     |           |
+      |                         | names in the order declared,  |           |
+      |                         | and ``'return'`` for the      |           |
+      |                         | return annotation, if         |           |
       |                         | provided.                     |           |
       +-------------------------+-------------------------------+-----------+
       | :attr:`__kwdefaults__`  | A dict containing defaults    | Writable  |
