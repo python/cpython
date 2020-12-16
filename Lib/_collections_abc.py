@@ -444,7 +444,8 @@ class _CallableGenericAlias(GenericAlias):
         return super().__new__(cls, origin, ga_args)
 
     def __repr__(self):
-        if len(self.__args__) == 2 and self.__args__[0] is Ellipsis:
+        if len(self.__args__) == 2 and (self.__args__[0] is Ellipsis
+                                        or _is_typing(self.__args__[0])):
             return super().__repr__()
         return (f'collections.abc.Callable'
                 f'[[{", ".join([_type_repr(a) for a in self.__args__[:-1]])}], '
@@ -452,9 +453,16 @@ class _CallableGenericAlias(GenericAlias):
 
     def __reduce__(self):
         args = self.__args__
-        if not (len(args) == 2 and args[0] is Ellipsis):
+        if not (len(args) == 2 and (args[0] is Ellipsis or _is_typing(args[0]))):
             args = list(args[:-1]), args[-1]
         return _CallableGenericAlias, (Callable, args)
+
+
+def _is_typing(obj):
+    """Checks if obj is from typing.py"""
+    if isinstance(obj, type):
+        return obj.__module__ == 'typing'
+    return type(obj).__module__ == 'typing'
 
 
 def _type_repr(obj):
