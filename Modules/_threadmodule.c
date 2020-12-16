@@ -928,16 +928,15 @@ local_getattro(localobject *self, PyObject *name)
 static PyObject *
 _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
 {
-    PyObject *obj;
-    localobject *self;
     assert(PyWeakref_CheckRef(localweakref));
-    obj = PyWeakref_GET_OBJECT(localweakref);
-    if (obj == Py_None)
+    PyObject *obj = PyWeakref_GET_OBJECT(localweakref);
+    if (obj == Py_None) {
         Py_RETURN_NONE;
-    Py_INCREF(obj);
+    }
+
     /* If the thread-local object is still alive and not being cleared,
        remove the corresponding local dict */
-    self = (localobject *) obj;
+    localobject *self = (localobject *)Py_NewRef(obj);
     if (self->dummies != NULL) {
         PyObject *ldict;
         ldict = PyDict_GetItemWithError(self->dummies, dummyweakref);
@@ -957,24 +956,35 @@ struct bootstate {
     PyInterpreterState *interp;
     PyObject *func;
     PyObject *args;
-    PyObject *keyw;
+    PyObject *kwargs;
     PyThreadState *tstate;
     _PyRuntimeState *runtime;
 };
 
+
 static void
-t_bootstrap(void *boot_raw)
+thread_bootstate_free(struct bootstate *boot)
+{
+    Py_DECREF(boot->func);
+    Py_DECREF(boot->args);
+    Py_XDECREF(boot->kwargs);
+    PyMem_Free(boot);
+}
+
+
+static void
+thread_run(void *boot_raw)
 {
     struct bootstate *boot = (struct bootstate *) boot_raw;
     PyThreadState *tstate;
-    PyObject *res;
 
     tstate = boot->tstate;
     tstate->thread_id = PyThread_get_thread_ident();
     _PyThreadState_Init(tstate);
     PyEval_AcquireThread(tstate);
     tstate->interp->num_threads++;
-    res = PyObject_Call(boot->func, boot->args, boot->keyw);
+
+    PyObject *res = PyObject_Call(boot->func, boot->args, boot->kwargs);
     if (res == NULL) {
         if (PyErr_ExceptionMatches(PyExc_SystemExit))
             /* SystemExit is ignored silently */
@@ -986,13 +996,12 @@ t_bootstrap(void *boot_raw)
     else {
         Py_DECREF(res);
     }
-    Py_DECREF(boot->func);
-    Py_DECREF(boot->args);
-    Py_XDECREF(boot->keyw);
-    PyMem_Free(boot_raw);
+
+    thread_bootstate_free(boot);
     tstate->interp->num_threads--;
     PyThreadState_Clear(tstate);
     _PyThreadState_DeleteCurrent(tstate);
+
     PyThread_exit_thread();
 }
 
@@ -1000,12 +1009,10 @@ static PyObject *
 thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    PyObject *func, *args, *keyw = NULL;
-    struct bootstate *boot;
-    unsigned long ident;
+    PyObject *func, *args, *kwargs = NULL;
 
     if (!PyArg_UnpackTuple(fargs, "start_new_thread", 2, 3,
-                           &func, &args, &keyw))
+                           &func, &args, &kwargs))
         return NULL;
     if (!PyCallable_Check(func)) {
         PyErr_SetString(PyExc_TypeError,
@@ -1017,7 +1024,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
                         "2nd arg must be a tuple");
         return NULL;
     }
-    if (keyw != NULL && !PyDict_Check(keyw)) {
+    if (kwargs != NULL && !PyDict_Check(kwargs)) {
         PyErr_SetString(PyExc_TypeError,
                         "optional 3rd arg must be a dictionary");
         return NULL;
@@ -1030,31 +1037,26 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
         return NULL;
     }
 
-    boot = PyMem_NEW(struct bootstate, 1);
-    if (boot == NULL)
+    struct bootstate *boot = PyMem_NEW(struct bootstate, 1);
+    if (boot == NULL) {
         return PyErr_NoMemory();
+    }
     boot->interp = _PyInterpreterState_GET();
-    boot->func = func;
-    boot->args = args;
-    boot->keyw = keyw;
     boot->tstate = _PyThreadState_Prealloc(boot->interp);
-    boot->runtime = runtime;
     if (boot->tstate == NULL) {
         PyMem_Free(boot);
         return PyErr_NoMemory();
     }
-    Py_INCREF(func);
-    Py_INCREF(args);
-    Py_XINCREF(keyw);
+    boot->runtime = runtime;
+    boot->func = Py_NewRef(func);
+    boot->args = Py_NewRef(args);
+    boot->kwargs = Py_XNewRef(kwargs);
 
-    ident = PyThread_start_new_thread(t_bootstrap, (void*) boot);
+    unsigned long ident = PyThread_start_new_thread(thread_run, (void*) boot);
     if (ident == PYTHREAD_INVALID_THREAD_ID) {
         PyErr_SetString(ThreadError, "can't start new thread");
-        Py_DECREF(func);
-        Py_DECREF(args);
-        Py_XDECREF(keyw);
         PyThreadState_Clear(boot->tstate);
-        PyMem_Free(boot);
+        thread_bootstate_free(boot);
         return NULL;
     }
     return PyLong_FromUnsignedLong(ident);
