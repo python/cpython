@@ -3234,6 +3234,112 @@ class TestSignatureObject(unittest.TestCase):
         sig = MySignature.from_callable(_pickle.Pickler)
         self.assertIsInstance(sig, MySignature)
 
+    def test_signature_from_text(self):
+        def expect(params, returns=None):
+            for i, param in enumerate(params):
+                kind = None
+                kwargs = None
+                if isinstance(param, str):
+                    name = param
+                elif len(param) == 1:
+                    name, = param
+                elif len(param) == 2:
+                    name, kind = param
+                else:
+                    name, kind, kwargs = param
+                if kind is None:
+                    kind = inspect.Parameter.POSITIONAL_OR_KEYWORD
+                params[i] = inspect.Parameter(name, kind, **kwargs or {})
+            if returns:
+                return inspect.Signature(params, return_annotation=returns)
+            else:
+                return inspect.Signature(params)
+        tests = [
+            # (text, expected, expected-no-skip)
+            ('()',
+             expect([]),
+             None),
+            ('(a, b)',
+             expect(['a', 'b']),
+             None),
+            ('(a, b=2, /, c=3, *args, d=4, e, **kwargs)',
+             expect([
+                 ('a', inspect.Parameter.POSITIONAL_ONLY),
+                 ('b', inspect.Parameter.POSITIONAL_ONLY, {'default': 2}),
+                 ('c', None, {'default': 3}),
+                 ('args', inspect.Parameter.VAR_POSITIONAL),
+                 ('d', inspect.Parameter.KEYWORD_ONLY, {'default': 4}),
+                 ('e', inspect.Parameter.KEYWORD_ONLY, ),
+                 ('kwargs', inspect.Parameter.VAR_KEYWORD),
+                 ]),
+             None),
+            ('(a, b: int, c=3, *, d: Int = 4)',
+             ValueError('Annotations are not currently supported'),
+             # XXX Uncomment once annotations *are* supported.
+             #expect([
+             #    ('a',),
+             #    ('b', None, {'annotation': int}),
+             #    ('c', None, {'default': 3}),
+             #    ('d', inspect.Parameter.KEYWORD_ONLY, {'default': 4, 'annotation': 'Int'}),
+             #    ]),
+             None),
+            ('(*args, **kwargs)',
+             expect([
+                 ('args', inspect.Parameter.VAR_POSITIONAL),
+                 ('kwargs', inspect.Parameter.VAR_KEYWORD),
+                 ]),
+             None),
+            ('func()',
+             expect([]),
+             None),
+
+            # builtins
+            (pow, None, None),
+            (range, None, None),
+            (__import__, None, None),
+            ]
+        for text, expected, expected_no_skip in tests:
+            if isinstance(text, str):
+                obj = None
+            else:
+                obj = text
+                text = getattr(obj, '__text_signature__', None)
+                if not text:
+                    continue
+                if text.startswith('($module, '):
+                    text = '(' + text[9:]
+                if expected is None:
+                    expected = inspect.signature(obj)
+            if expected_no_skip is None:
+                expected_no_skip = expected
+            with self.subTest(text if obj is None else f'<{obj.__name__}> {text}'):
+                if isinstance(expected, Exception):
+                    with self.assertRaises(type(expected)) as cm:
+                        inspect.Signature.from_text(text, skip_bound_arg=True)
+                    self.assertEqual(str(cm.exception), str(expected))
+                else:
+                    sig = inspect.signature(text)
+                    sig_default = inspect.Signature.from_text(text)
+                    sig_skip = inspect.Signature.from_text(text, skip_bound_arg=True)
+
+                    self.assertEqual(sig, expected)
+                    self.assertEqual(sig_default, expected)
+                    self.assertEqual(sig_skip, expected)
+
+                if isinstance(expected_no_skip, Exception):
+                    with self.assertRaises(type(expected_no_skip)) as cm:
+                        inspect.Signature.from_text(text, skip_bound_arg=False)
+                    self.assertEqual(str(cm.exception), str(expected_no_skip))
+                else:
+                    sig_no_skip = inspect.Signature.from_text(text, skip_bound_arg=False)
+                    # round trip
+                    sig_roundtrip = inspect.Signature.from_text(
+                            str(sig_no_skip),
+                            skip_bound_arg=False)
+
+                    self.assertEqual(sig_no_skip, expected)
+                    self.assertEqual(sig_roundtrip, sig_no_skip)
+
     def test_signature_definition_order_preserved_on_kwonly(self):
         for fn in signatures_with_lexicographic_keyword_only_parameters():
             signature = inspect.signature(fn)

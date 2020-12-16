@@ -556,7 +556,7 @@ The Signature object represents the call signature of a callable object and its
 return annotation.  To retrieve a Signature object, use the :func:`signature`
 function.
 
-.. function:: signature(callable, \*, follow_wrapped=True)
+.. function:: signature(callable_or_text, \*, follow_wrapped=True)
 
    Return a :class:`Signature` object for the given ``callable``::
 
@@ -576,7 +576,8 @@ function.
       <class 'int'>
 
    Accepts a wide range of Python callables, from plain functions and classes to
-   :func:`functools.partial` objects.
+   :func:`functools.partial` objects.  Text (string) signature are also
+   supported.  See :func:`Signature.from_text`.
 
    Raises :exc:`ValueError` if no signature can be provided, and
    :exc:`TypeError` if that type of object is not supported.
@@ -589,6 +590,9 @@ function.
       ``follow_wrapped`` parameter. Pass ``False`` to get a signature of
       ``callable`` specifically (``callable.__wrapped__`` will not be used to
       unwrap decorated callables.)
+
+   .. versionchanged:: 3.9
+      Supports converting signature strings into :class:`Signature` objects.
 
    .. note::
 
@@ -683,6 +687,14 @@ function.
 
        .. versionadded:: 3.5
 
+   .. classmethod:: Signature.from_text(text)
+
+       Return a :class:`Signature` (or its subclass) object for a given string.
+
+       For any signature object, ``str(sig)`` will round-trip through
+       ``from_text()``.
+
+       .. versionadded:: 3.9
 
 .. class:: Parameter(name, kind, \*, default=Parameter.empty, annotation=Parameter.empty)
 
