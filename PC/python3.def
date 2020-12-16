@@ -266,6 +266,8 @@ EXPORTS
   PyFloat_GetMax=python39.PyFloat_GetMax
   PyFloat_GetMin=python39.PyFloat_GetMin
   PyFloat_Type=python39.PyFloat_Type DATA
+  PyFrame_GetCode=python39.PyFrame_GetCode
+  PyFrame_GetLineNumber=python39.PyFrame_GetLineNumber
   PyFrozenSet_New=python39.PyFrozenSet_New
   PyFrozenSet_Type=python39.PyFrozenSet_Type DATA
   PyGC_Collect=python39.PyGC_Collect
@@ -453,6 +455,7 @@ EXPORTS
   PyObject_CallFunctionObjArgs=python39.PyObject_CallFunctionObjArgs
   PyObject_CallMethod=python39.PyObject_CallMethod
   PyObject_CallMethodObjArgs=python39.PyObject_CallMethodObjArgs
+  PyObject_CallNoArgs=python39.PyObject_CallNoArgs
   PyObject_CallObject=python39.PyObject_CallObject
   PyObject_Calloc=python39.PyObject_Calloc
   PyObject_CheckReadBuffer=python39.PyObject_CheckReadBuffer
@@ -569,6 +572,9 @@ EXPORTS
   PyThreadState_DeleteCurrent=python39.PyThreadState_DeleteCurrent
   PyThreadState_Get=python39.PyThreadState_Get
   PyThreadState_GetDict=python39.PyThreadState_GetDict
+  PyThreadState_GetFrame=python39.PyThreadState_GetFrame
+  PyThreadState_GetID=python39.PyThreadState_GetID
+  PyThreadState_GetInterpreter=python39.PyThreadState_GetInterpreter
   PyThreadState_New=python39.PyThreadState_New
   PyThreadState_SetAsyncExc=python39.PyThreadState_SetAsyncExc
   PyThreadState_Swap=python39.PyThreadState_Swap
