@@ -1289,6 +1289,14 @@ class Manager(object):
         self.loggerClass = None
         self.logRecordFactory = None
 
+    @property
+    def disable(self):
+        return self._disable
+
+    @disable.setter
+    def disable(self, value):
+        self._disable = _checkLevel(value)
+
     def getLogger(self, name):
         """
         Get a logger with the specified name (channel name), creating it
