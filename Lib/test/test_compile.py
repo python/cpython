@@ -849,7 +849,7 @@ if 1:
                 else:
                     break
                 val = -1
-        
+
         INSTR_SIZE = 2
         HANDLED_JUMPS = (
             'POP_JUMP_IF_FALSE',
@@ -857,7 +857,7 @@ if 1:
             'JUMP_ABSOLUTE',
             'JUMP_FORWARD',
         )
-        
+
         for line, instr in enumerate(dis.Bytecode(if_else_break)):
             if instr.opname == 'JUMP_FORWARD':
                 self.assertNotEqual(instr.arg, 0)
