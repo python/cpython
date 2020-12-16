@@ -29,8 +29,9 @@ typedef struct {
 static void
 lock_dealloc(lockobject *self)
 {
-    if (self->in_weakreflist != NULL)
+    if (self->in_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) self);
+    }
     if (self->lock_lock != NULL) {
         /* Unlock the lock so it's safe to free it */
         if (self->locked)
@@ -51,12 +52,13 @@ acquire_timed(PyThread_type_lock lock, _PyTime_t timeout)
 {
     PyLockStatus r;
     _PyTime_t endtime = 0;
-    _PyTime_t microseconds;
 
-    if (timeout > 0)
+    if (timeout > 0) {
         endtime = _PyTime_GetMonotonicClock() + timeout;
+    }
 
     do {
+        _PyTime_t microseconds;
         microseconds = _PyTime_AsMicroseconds(timeout, _PyTime_ROUND_CEILING);
 
         /* first a simple non-blocking try without releasing the GIL */
@@ -141,12 +143,10 @@ static PyObject *
 lock_PyThread_acquire_lock(lockobject *self, PyObject *args, PyObject *kwds)
 {
     _PyTime_t timeout;
-    PyLockStatus r;
-
     if (lock_acquire_parse_args(args, kwds, &timeout) < 0)
         return NULL;
 
-    r = acquire_timed(self->lock_lock, timeout);
+    PyLockStatus r = acquire_timed(self->lock_lock, timeout);
     if (r == PY_LOCK_INTR) {
         return NULL;
     }
@@ -640,11 +640,10 @@ static PyObject *_localdummy_destroyed(PyObject *meth_self, PyObject *dummyweakr
 static PyObject *
 _local_create_dummy(localobject *self)
 {
-    PyObject *tdict, *ldict = NULL, *wr = NULL;
+    PyObject *ldict = NULL, *wr = NULL;
     localdummyobject *dummy = NULL;
-    int r;
 
-    tdict = PyThreadState_GetDict();
+    PyObject *tdict = PyThreadState_GetDict();
     if (tdict == NULL) {
         PyErr_SetString(PyExc_SystemError,
                         "Couldn't get thread-state dictionary");
@@ -652,25 +651,30 @@ _local_create_dummy(localobject *self)
     }
 
     ldict = PyDict_New();
-    if (ldict == NULL)
+    if (ldict == NULL) {
         goto err;
+    }
     dummy = (localdummyobject *) localdummytype.tp_alloc(&localdummytype, 0);
-    if (dummy == NULL)
+    if (dummy == NULL) {
         goto err;
+    }
     dummy->localdict = ldict;
     wr = PyWeakref_NewRef((PyObject *) dummy, self->wr_callback);
-    if (wr == NULL)
+    if (wr == NULL) {
         goto err;
+    }
 
     /* As a side-effect, this will cache the weakref's hash before the
        dummy gets deleted */
-    r = PyDict_SetItem(self->dummies, wr, ldict);
-    if (r < 0)
+    int r = PyDict_SetItem(self->dummies, wr, ldict);
+    if (r < 0) {
         goto err;
+    }
     Py_CLEAR(wr);
     r = PyDict_SetItem(tdict, self->key, (PyObject *) dummy);
-    if (r < 0)
+    if (r < 0) {
         goto err;
+    }
     Py_CLEAR(dummy);
 
     Py_DECREF(ldict);
@@ -687,7 +691,6 @@ static PyObject *
 local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
     localobject *self;
-    PyObject *wr;
     static PyMethodDef wr_callback_def = {
         "_localdummy_destroyed", (PyCFunction) _localdummy_destroyed, METH_O
     };
@@ -699,17 +702,18 @@ local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         if (rc == 0 && kw != NULL)
             rc = PyObject_IsTrue(kw);
         if (rc != 0) {
-            if (rc > 0)
+            if (rc > 0) {
                 PyErr_SetString(PyExc_TypeError,
                           "Initialization arguments are not supported");
+            }
             return NULL;
         }
     }
 
     self = (localobject *)type->tp_alloc(type, 0);
-    if (self == NULL)
+    if (self == NULL) {
         return NULL;
-
+    }
 
     self->args = Py_XNewRef(args);
     self->kw = Py_XNewRef(kw);
@@ -725,18 +729,18 @@ local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     /* We use a weak reference to self in the callback closure
        in order to avoid spurious reference cycles */
-    wr = PyWeakref_NewRef((PyObject *) self, NULL);
-    if (wr == NULL)
+    PyObject *wr = PyWeakref_NewRef((PyObject *) self, NULL);
+    if (wr == NULL) {
         goto err;
+    }
     self->wr_callback = PyCFunction_NewEx(&wr_callback_def, wr, NULL);
     Py_DECREF(wr);
-    if (self->wr_callback == NULL)
+    if (self->wr_callback == NULL) {
         goto err;
-
+    }
     if (_local_create_dummy(self) == NULL) {
         goto err;
     }
-
     return (PyObject *)self;
 
   err:
@@ -786,8 +790,9 @@ local_dealloc(localobject *self)
 {
     /* Weakrefs must be invalidated right now, otherwise they can be used
        from code called below, which is very dangerous since Py_REFCNT(self) == 0 */
-    if (self->weakreflist != NULL)
+    if (self->weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) self);
+    }
 
     PyObject_GC_UnTrack(self);
 
@@ -800,16 +805,15 @@ local_dealloc(localobject *self)
 static PyObject *
 _ldict(localobject *self)
 {
-    PyObject *tdict, *ldict, *dummy;
-
-    tdict = PyThreadState_GetDict();
+    PyObject *tdict = PyThreadState_GetDict();
     if (tdict == NULL) {
         PyErr_SetString(PyExc_SystemError,
                         "Couldn't get thread-state dictionary");
         return NULL;
     }
 
-    dummy = PyDict_GetItemWithError(tdict, self->key);
+    PyObject *ldict;
+    PyObject *dummy = PyDict_GetItemWithError(tdict, self->key);
     if (dummy == NULL) {
         if (PyErr_Occurred()) {
             return NULL;
@@ -839,27 +843,26 @@ _ldict(localobject *self)
 static int
 local_setattro(localobject *self, PyObject *name, PyObject *v)
 {
-    PyObject *ldict;
-    int r;
-
-    ldict = _ldict(self);
-    if (ldict == NULL)
+    PyObject *ldict = _ldict(self);
+    if (ldict == NULL) {
         return -1;
+    }
 
     PyObject *str_dict = _PyUnicode_FromId(&PyId___dict__);  // borrowed ref
     if (str_dict == NULL) {
         return -1;
     }
 
-    r = PyObject_RichCompareBool(name, str_dict, Py_EQ);
+    int r = PyObject_RichCompareBool(name, str_dict, Py_EQ);
+    if (r == -1) {
+        return -1;
+    }
     if (r == 1) {
         PyErr_Format(PyExc_AttributeError,
                      "'%.50s' object attribute '%U' is read-only",
                      Py_TYPE(self)->tp_name, name);
         return -1;
     }
-    if (r == -1)
-        return -1;
 
     return _PyObject_GenericSetAttrWithDict((PyObject *)self, name, v, ldict);
 }
