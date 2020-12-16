@@ -478,14 +478,15 @@ are always available.  They are listed here in alphabetical order.
    dictionaries as global and local namespace.  If the *globals* dictionary is
    present and does not contain a value for the key ``__builtins__``, a
    reference to the dictionary of the built-in module :mod:`builtins` is
-   inserted under that key before *expression* is parsed.  This means that
-   *expression* normally has full access to the standard :mod:`builtins`
-   module and restricted environments are propagated.  If the *locals*
-   dictionary is omitted it defaults to the *globals* dictionary.  If both
-   dictionaries are omitted, the expression is executed with the *globals* and
-   *locals* in the environment where :func:`eval` is called.  Note, *eval()*
-   does not have access to the :term:`nested scopes <nested scope>` (non-locals) in the
-   enclosing environment.
+   inserted under that key before *expression* is parsed.  That way you can
+   control what builtins are available to the executed code by inserting your
+   own ``__builtins__`` dictionary into *globals* before passing it to
+   :func:`eval`.  If the *locals* dictionary is omitted it defaults to the
+   *globals* dictionary.  If both dictionaries are omitted, the expression is
+   executed with the *globals* and *locals* in the environment where
+   :func:`eval` is called.  Note, *eval()* does not have access to the
+   :term:`nested scopes <nested scope>` (non-locals) in the enclosing
+   environment.
 
    The return value is the result of
    the evaluated expression. Syntax errors are reported as exceptions.  Example:
