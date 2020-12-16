@@ -303,6 +303,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     _PyAST_Fini(interp);
     _PyWarnings_Fini(interp);
+    _PyAtExit_Fini(interp);
 
     // All Python types must be destroyed before the last GC collection. Python
     // types create a reference cycle to themselves in their in their
@@ -724,7 +725,7 @@ _PyState_AddModule(PyThreadState *tstate, PyObject* module, struct PyModuleDef* 
         }
     }
 
-    Py_INCREF(module);
+    Py_XINCREF(module);
     return PyList_SetItem(interp->modules_by_index,
                           def->m_base.m_index, module);
 }
@@ -736,7 +737,6 @@ PyState_AddModule(PyObject* module, struct PyModuleDef* def)
         Py_FatalError("module definition is NULL");
         return -1;
     }
-    assert(module != NULL);
 
     PyThreadState *tstate = _PyThreadState_GET();
     PyInterpreterState *interp = tstate->interp;

@@ -609,9 +609,6 @@ since multiple such modules can be created from a single definition.
 
    .. versionadded:: 3.3
 
-   .. versionchanged:: 3.10
-      No longer accept a ``NULL`` module to avoid the segmentation fault.
-
 .. c:function:: int PyState_RemoveModule(PyModuleDef *def)
 
    Removes the module object created from *def* from the interpreter state.
