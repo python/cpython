@@ -303,6 +303,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     _PyAST_Fini(interp);
     _PyWarnings_Fini(interp);
+    _PyAtExit_Fini(interp);
 
     // All Python types must be destroyed before the last GC collection. Python
     // types create a reference cycle to themselves in their in their
@@ -605,7 +606,7 @@ new_threadstate(PyInterpreterState *interp, int init)
 
     tstate->frame = NULL;
     tstate->recursion_depth = 0;
-    tstate->overflowed = 0;
+    tstate->recursion_headroom = 0;
     tstate->stackcheck_counter = 0;
     tstate->tracing = 0;
     tstate->use_tracing = 0;
@@ -778,7 +779,7 @@ PyState_RemoveModule(struct PyModuleDef* def)
     return PyList_SetItem(interp->modules_by_index, index, Py_None);
 }
 
-/* Used by PyImport_Cleanup() */
+// Used by finalize_modules()
 void
 _PyInterpreterState_ClearModules(PyInterpreterState *interp)
 {
@@ -1920,11 +1921,17 @@ _PyInterpreterState_GetConfig(PyInterpreterState *interp)
 }
 
 
-PyStatus
-_PyInterpreterState_SetConfig(PyInterpreterState *interp,
-                              const PyConfig *config)
+int
+_PyInterpreterState_GetConfigCopy(PyConfig *config)
 {
-    return _PyConfig_Copy(&interp->config, config);
+    PyInterpreterState *interp = PyInterpreterState_Get();
+
+    PyStatus status = _PyConfig_Copy(config, &interp->config);
+    if (PyStatus_Exception(status)) {
+        _PyErr_SetFromPyStatus(status);
+        return -1;
+    }
+    return 0;
 }
 
 

@@ -641,7 +641,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    :ref:`type variables <generics>`, and unions of any of these types.
    For example::
 
-      def new_non_team_user(user_class: Type[Union[BaseUser, ProUser]]): ...
+      def new_non_team_user(user_class: Type[Union[BasicUser, ProUser]]): ...
 
    ``Type[Any]`` is equivalent to ``Type`` which in turn is equivalent
    to ``type``, which is the root of Python's metaclass hierarchy.
@@ -673,6 +673,12 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    impose restrictions. See :pep:`586` for more details about literal types.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.9.1
+      ``Literal`` now de-duplicates parameters.  Equality comparison of
+      ``Literal`` objects are no longer order dependent. ``Literal`` objects
+      will now raise a :exc:`TypeError` exception during equality comparisons
+      if one of their parameters are not :term:`immutable`.
 
 .. data:: ClassVar
 
@@ -1706,6 +1712,9 @@ Introspection helpers
    For a typing object of the form ``X[Y, Z, ...]`` these functions return
    ``X`` and ``(Y, Z, ...)``. If ``X`` is a generic alias for a builtin or
    :mod:`collections` class, it gets normalized to the original class.
+   If ``X`` is a :class:`Union` or :class:`Literal` contained in another
+   generic type, the order of ``(Y, Z, ...)`` may be different from the order
+   of the original arguments ``[Y, Z, ...]`` due to type caching.
    For unsupported objects return ``None`` and ``()`` correspondingly.
    Examples::
 

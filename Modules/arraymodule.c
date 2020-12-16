@@ -144,7 +144,7 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
     }
 
     if (newsize == 0) {
-        PyMem_FREE(self->ob_item);
+        PyMem_Free(self->ob_item);
         self->ob_item = NULL;
         Py_SET_SIZE(self, 0);
         self->allocated = 0;
@@ -665,7 +665,7 @@ array_dealloc(arrayobject *op)
     if (op->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) op);
     if (op->ob_item != NULL)
-        PyMem_DEL(op->ob_item);
+        PyMem_Free(op->ob_item);
     tp->tp_free(op);
     Py_DECREF(tp);
 }

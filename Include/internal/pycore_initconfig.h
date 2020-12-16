@@ -44,6 +44,8 @@ struct pyruntimestate;
 #define _PyStatus_UPDATE_FUNC(err) \
     do { err.func = _PyStatus_GET_FUNC(); } while (0)
 
+PyObject* _PyErr_SetFromPyStatus(PyStatus status);
+
 /* --- PyWideStringList ------------------------------------------------ */
 
 #define _PyWideStringList_INIT (PyWideStringList){.length = 0, .items = NULL}
@@ -149,12 +151,18 @@ PyAPI_FUNC(void) _PyConfig_InitCompatConfig(PyConfig *config);
 extern PyStatus _PyConfig_Copy(
     PyConfig *config,
     const PyConfig *config2);
-extern PyStatus _PyConfig_InitPathConfig(PyConfig *config);
+extern PyStatus _PyConfig_InitPathConfig(
+    PyConfig *config,
+    int compute_path_config);
+extern PyStatus _PyConfig_Read(PyConfig *config, int compute_path_config);
 extern PyStatus _PyConfig_Write(const PyConfig *config,
     struct pyruntimestate *runtime);
 extern PyStatus _PyConfig_SetPyArgv(
     PyConfig *config,
     const _PyArgv *args);
+
+PyAPI_FUNC(PyObject*) _PyConfig_AsDict(const PyConfig *config);
+PyAPI_FUNC(int) _PyConfig_FromDict(PyConfig *config, PyObject *dict);
 
 
 /* --- Function used for testing ---------------------------------- */

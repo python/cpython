@@ -40,7 +40,7 @@ def server(evt, buf, serv):
     evt.set()
     try:
         conn, addr = serv.accept()
-    except socket.timeout:
+    except TimeoutError:
         pass
     else:
         n = 500
@@ -193,7 +193,7 @@ def debugging_server(serv, serv_evt, client_evt):
 
             n -= 1
 
-    except socket.timeout:
+    except TimeoutError:
         pass
     finally:
         if not client_evt.is_set():

@@ -722,7 +722,7 @@ Overlapped_dealloc(OverlappedObject *self)
     SetLastError(olderr);
 
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 
