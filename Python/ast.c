@@ -166,7 +166,7 @@ validate_constant(struct validator *state, PyObject *value)
         }
 
         Py_DECREF(it);
-        ++state->recursion_depth;
+        --state->recursion_depth;
         return 1;
     }
 
