@@ -457,6 +457,21 @@ class _CallableGenericAlias(GenericAlias):
             args = list(args[:-1]), args[-1]
         return _CallableGenericAlias, (Callable, args)
 
+    def __getitem__(self, item):
+        # To allow the following::
+        #    C1 = Callable[P, T]
+        #    C1[[int, str], str] == Callable[[int, str], str]
+        # Where P is a PEP 612 ParamSpec.
+        ga = super().__getitem__(item)
+        new_args = []
+        # flatten args
+        if isinstance(ga.__args__[0], tuple):
+            new_args.extend(ga.__args__[0])
+            new_args.extend(ga.__args__[1:])
+        else:
+            new_args = ga.__args__
+        return GenericAlias(Callable, tuple(new_args))
+
 
 def _is_typing(obj):
     """Checks if obj is from typing.py"""

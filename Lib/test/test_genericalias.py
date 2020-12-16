@@ -368,14 +368,16 @@ class BaseTest(unittest.TestCase):
             C1 = Callable[P, T]
             # substitution
             self.assertEqual(C1[int, str], Callable[[int], str])
-            # sadly not yet
-            # self.assertEqual(C1[[int, str], str], Callable[[int, str], str])
+            self.assertEqual(C1[[int, str], str], Callable[[int, str], str])
 
             C2 = Callable[P, int]
             # special case in PEP 612 where
             # X[int, str, float] == X[[int, str, float]]
             self.assertEqual(C2[int, str, float], C2[[int, str, float]])
 
+        with self.subTest("Testing Concatenate uses"):
+            P = typing.ParamSpec('P')
+            Callable[typing.Concatenate[int, P], int]
 
 
 if __name__ == "__main__":
