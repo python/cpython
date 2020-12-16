@@ -6437,7 +6437,49 @@ optimize_cfg(struct assembler *a, PyObject *consts)
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
        if (b->b_reachable == 0) {
             b->b_iused = 0;
+            b->b_nofallthrough = 0;
        }
+    }
+    /* Delete jump instructions made redundant by previous step. If a non-empty
+       block ends with a jump instruction, check if the next non-empty block
+       reached through normal flow control is the target of that jump. If it
+       is, then the jump instruction is redundant and can be deleted.
+    */
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        if (b->b_iused > 0) {
+            struct instr *b_last_instr = &b->b_instr[b->b_iused - 1];
+            if (b_last_instr->i_opcode == POP_JUMP_IF_FALSE ||
+                b_last_instr->i_opcode == POP_JUMP_IF_TRUE ||
+                b_last_instr->i_opcode == JUMP_ABSOLUTE ||
+                b_last_instr->i_opcode == JUMP_FORWARD) {
+                basicblock *b_next_act = b->b_next;
+                while (b_next_act != NULL && b_next_act->b_iused == 0) {
+                    b_next_act = b_next_act->b_next;
+                }
+                if (b_last_instr->i_target == b_next_act) {
+                    b->b_nofallthrough = 0;
+                    switch(b_last_instr->i_opcode) {
+                        case POP_JUMP_IF_FALSE:
+                        case POP_JUMP_IF_TRUE:
+                            b_last_instr->i_opcode = POP_TOP;
+                            b_last_instr->i_target = NULL;
+                            b_last_instr->i_oparg = 0;
+                            break;
+                        case JUMP_ABSOLUTE:
+                        case JUMP_FORWARD:
+                            b_last_instr->i_opcode = NOP;
+                            clean_basic_block(b);
+                            break;
+                    }
+                    /* The blocks after this one are now reachable through it */
+                    b_next_act = b->b_next;
+                    while (b_next_act != NULL && b_next_act->b_iused == 0) {
+                        b_next_act->b_reachable = 1;
+                        b_next_act = b_next_act->b_next;
+                    }
+                }
+            }
+        }
     }
     minimize_lineno_table(a);
     return 0;
