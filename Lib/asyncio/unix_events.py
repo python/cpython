@@ -44,6 +44,16 @@ def _sighandler_noop(signum, frame):
     pass
 
 
+def waitstatus_to_exitcode(status):
+    try:
+        return os.waitstatus_to_exitcode(status)
+    except ValueError:
+        # The child exited, but we don't understand its status.
+        # This shouldn't happen, but if it does, let's just
+        # return that status; perhaps that helps debug it.
+        return status
+
+
 class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     """Unix event loop.
 
@@ -941,7 +951,7 @@ class PidfdChildWatcher(AbstractChildWatcher):
                 " will report returncode 255",
                 pid)
         else:
-            returncode = _compute_returncode(status)
+            returncode = waitstatus_to_exitcode(status)
 
         os.close(pidfd)
         callback(pid, returncode, *args)
@@ -954,20 +964,6 @@ class PidfdChildWatcher(AbstractChildWatcher):
         self._loop._remove_reader(pidfd)
         os.close(pidfd)
         return True
-
-
-def _compute_returncode(status):
-    if os.WIFSIGNALED(status):
-        # The child process died because of a signal.
-        return -os.WTERMSIG(status)
-    elif os.WIFEXITED(status):
-        # The child process exited (e.g sys.exit()).
-        return os.WEXITSTATUS(status)
-    else:
-        # The child exited, but we don't understand its status.
-        # This shouldn't happen, but if it does, let's just
-        # return that status; perhaps that helps debug it.
-        return status
 
 
 class BaseChildWatcher(AbstractChildWatcher):
@@ -1080,7 +1076,7 @@ class SafeChildWatcher(BaseChildWatcher):
                 # The child process is still alive.
                 return
 
-            returncode = _compute_returncode(status)
+            returncode = waitstatus_to_exitcode(status)
             if self._loop.get_debug():
                 logger.debug('process %s exited with returncode %s',
                              expected_pid, returncode)
@@ -1173,7 +1169,7 @@ class FastChildWatcher(BaseChildWatcher):
                     # A child process is still alive.
                     return
 
-                returncode = _compute_returncode(status)
+                returncode = waitstatus_to_exitcode(status)
 
             with self._lock:
                 try:
@@ -1296,7 +1292,7 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
                 # The child process is still alive.
                 return
 
-            returncode = _compute_returncode(status)
+            returncode = waitstatus_to_exitcode(status)
             debug_log = True
         try:
             loop, callback, args = self._callbacks.pop(pid)
@@ -1399,7 +1395,7 @@ class ThreadedChildWatcher(AbstractChildWatcher):
                 "Unknown child process pid %d, will report returncode 255",
                 pid)
         else:
-            returncode = _compute_returncode(status)
+            returncode = waitstatus_to_exitcode(status)
             if loop.get_debug():
                 logger.debug('process %s exited with returncode %s',
                              expected_pid, returncode)
