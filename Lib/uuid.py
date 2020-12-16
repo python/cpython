@@ -359,27 +359,26 @@ class UUID:
 def _get_command_stdout(command, *args):
     import io, os, shutil, subprocess
 
-    try:
-        path_dirs = os.environ.get('PATH', os.defpath).split(os.pathsep)
-        path_dirs.extend(['/sbin', '/usr/sbin'])
-        executable = shutil.which(command, path=os.pathsep.join(path_dirs))
-        if executable is None:
-            return None
-        # LC_ALL=C to ensure English output, stderr=DEVNULL to prevent output
-        # on stderr (Note: we don't have an example where the words we search
-        # for are actually localized, but in theory some system could do so.)
-        env = dict(os.environ)
-        env['LC_ALL'] = 'C'
-        proc = subprocess.Popen((executable,) + args,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.DEVNULL,
-                                env=env)
-        if not proc:
-            return None
-        stdout, stderr = proc.communicate()
-        return io.BytesIO(stdout)
-    except (OSError, subprocess.SubprocessError):
+    path_dirs = os.environ.get('PATH', os.defpath).split(os.pathsep)
+    path_dirs.extend(['/sbin', '/usr/sbin'])
+    executable = shutil.which(command, path=os.pathsep.join(path_dirs))
+    if executable is None:
         return None
+    # LC_ALL=C to ensure English output, stderr=DEVNULL to prevent output
+    # on stderr (Note: we don't have an example where the words we search
+    # for are actually localized, but in theory some system could do so.)
+    env = dict(os.environ)
+    env['LC_ALL'] = 'C'
+    proc = subprocess.Popen((executable,) + args,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.DEVNULL,
+                            env=env,
+                            # ignore command not found
+                            exec_raise=False)
+    if not proc:
+        return None
+    stdout, stderr = proc.communicate()
+    return io.BytesIO(stdout)
 
 
 # For MAC (a.k.a. IEEE 802, or EUI-48) addresses, the second least significant

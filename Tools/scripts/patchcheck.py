@@ -50,7 +50,8 @@ def get_git_branch():
     try:
         return subprocess.check_output(cmd,
                                        stderr=subprocess.DEVNULL,
-                                       cwd=SRCDIR)
+                                       cwd=SRCDIR,
+                                       exec_raise=False)
     except subprocess.CalledProcessError:
         return None
 
@@ -64,7 +65,8 @@ def get_git_upstream_remote():
     try:
         subprocess.check_output(cmd,
                                 stderr=subprocess.DEVNULL,
-                                cwd=SRCDIR)
+                                cwd=SRCDIR,
+                                exec_raise=False)
     except subprocess.CalledProcessError:
         return "origin"
     return "upstream"

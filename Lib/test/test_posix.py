@@ -17,6 +17,7 @@ import os
 import platform
 import pwd
 import stat
+import subprocess
 import tempfile
 import unittest
 import warnings
@@ -1046,15 +1047,18 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'getegid'), "test needs os.getegid()")
     def test_getgroups(self):
-        with os.popen('id -G 2>/dev/null') as idg:
-            groups = idg.read().strip()
-            ret = idg.close()
+        proc = subprocess.run(('id', '-G'),
+                              exec_raise=False,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.DEVNULL,
+                              text=True)
+        groups = proc.stdout.strip()
 
         try:
             idg_groups = set(int(g) for g in groups.split())
         except ValueError:
             idg_groups = set()
-        if ret is not None or not idg_groups:
+        if proc.returncode or not idg_groups:
             raise unittest.SkipTest("need working 'id -G'")
 
         # Issues 16698: OS X ABIs prior to 10.6 have limits on getgroups()

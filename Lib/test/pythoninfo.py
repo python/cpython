@@ -370,16 +370,13 @@ def collect_readline(info_add):
 def collect_gdb(info_add):
     import subprocess
 
-    try:
-        proc = subprocess.Popen(["gdb", "-nx", "--version"],
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                universal_newlines=True)
-        version = proc.communicate()[0]
-        if proc.returncode:
-            # ignore gdb failure: test_gdb will log the error
-            return
-    except OSError:
+    proc = subprocess.Popen(["gdb", "-nx", "--version"],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            text=True,
+                            exec_raise=False)
+    version = proc.communicate()[0]
+    if proc.returncode:
+        # ignore gdb failure: test_gdb will log the error
         return
 
     # Only keep the first line
@@ -641,20 +638,17 @@ def collect_cc(info_add):
     except ImportError:
         args = CC.split()
     args.append('--version')
-    try:
-        proc = subprocess.Popen(args,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT,
-                                universal_newlines=True)
-    except OSError:
+
+    proc = subprocess.Popen(args,
+                            exec_raise=False,
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            text=True)
+    stdout = proc.communicate()[0]
+    if proc.returncode:
+        # CC --version failed: ignore error.
         # Cannot run the compiler, for example when Python has been
         # cross-compiled and installed on the target platform where the
         # compiler is missing.
-        return
-
-    stdout = proc.communicate()[0]
-    if proc.returncode:
-        # CC --version failed: ignore error
         return
 
     text = stdout.splitlines()[0]

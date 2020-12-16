@@ -79,11 +79,10 @@ class FindLibraryLinux(unittest.TestCase):
         import subprocess
         import tempfile
 
-        try:
-            p = subprocess.Popen(['gcc', '--version'], stdout=subprocess.PIPE,
-                                 stderr=subprocess.DEVNULL)
-            out, _ = p.communicate()
-        except OSError:
+        p = subprocess.Popen(['gcc', '--version'], stdout=subprocess.PIPE,
+                             stderr=subprocess.DEVNULL, exec_raise=False)
+        out, _ = p.communicate()
+        if p.returncode:
             raise unittest.SkipTest('gcc, needed for test, not available')
         with tempfile.TemporaryDirectory() as d:
             # create an empty temporary file

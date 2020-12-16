@@ -49,7 +49,8 @@ def find_all_on_path(filename, extras=None):
 def find_working_perl(perls):
     for perl in perls:
         try:
-            subprocess.check_output([perl, "-e", "use Win32;"])
+            subprocess.check_output([perl, "-e", "use Win32;"],
+                                    exec_raise=False)
         except subprocess.CalledProcessError:
             continue
         else:

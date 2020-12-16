@@ -284,9 +284,11 @@ def _syscmd_ver(system='', release='', version='',
             info = subprocess.check_output(cmd,
                                            stderr=subprocess.DEVNULL,
                                            text=True,
-                                           shell=True)
-        except (OSError, subprocess.CalledProcessError) as why:
-            #print('Command %s failed: %s' % (cmd, why))
+                                           shell=True,
+                                           # ignore command not found
+                                           exec_raise=False)
+        except subprocess.CalledProcessError:
+            # command failed or not found
             continue
         else:
             break
@@ -616,8 +618,10 @@ def _syscmd_file(target, default=''):
         # -b: do not prepend filenames to output lines (brief mode)
         output = subprocess.check_output(['file', '-b', target],
                                          stderr=subprocess.DEVNULL,
-                                         env=env)
-    except (OSError, subprocess.CalledProcessError):
+                                         env=env,
+                                         # ignore command not found
+                                         exec_raise=False)
+    except subprocess.CalledProcessError:
         return default
     if not output:
         return default
@@ -751,8 +755,9 @@ class _Processor:
                 ['uname', '-p'],
                 stderr=subprocess.DEVNULL,
                 text=True,
+                exec_raise=False,
             ).strip()
-        except (OSError, subprocess.CalledProcessError):
+        except subprocess.CalledProcessError:
             pass
 
 

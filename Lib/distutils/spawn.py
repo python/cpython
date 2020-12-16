@@ -71,16 +71,8 @@ def spawn(cmd, search_path=1, verbose=0, dry_run=0):
             env = dict(os.environ,
                        MACOSX_DEPLOYMENT_TARGET=cur_target)
 
-    try:
-        proc = subprocess.Popen(cmd, env=env)
-        proc.wait()
-        exitcode = proc.returncode
-    except OSError as exc:
-        if not DEBUG:
-            cmd = cmd[0]
-        raise DistutilsExecError(
-            "command %r failed: %s" % (cmd, exc.args[-1])) from exc
-
+    proc = subprocess.Popen(cmd, env=env, exec_raise=False)
+    exitcode = proc.wait()
     if exitcode:
         if not DEBUG:
             cmd = cmd[0]

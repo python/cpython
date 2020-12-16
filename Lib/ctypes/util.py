@@ -120,13 +120,12 @@ elif os.name == "posix":
             env = dict(os.environ)
             env['LC_ALL'] = 'C'
             env['LANG'] = 'C'
-            try:
-                proc = subprocess.Popen(args,
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.STDOUT,
-                                        env=env)
-            except OSError:  # E.g. bad executable
-                return None
+            proc = subprocess.Popen(args,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT,
+                                    env=env,
+                                    # E.g. ignore bad executable
+                                    exec_raise=False)
             with proc:
                 trace = proc.stdout.read()
         finally:
@@ -155,12 +154,11 @@ elif os.name == "posix":
             if not f:
                 return None
 
-            try:
-                proc = subprocess.Popen(("/usr/ccs/bin/dump", "-Lpv", f),
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.DEVNULL)
-            except OSError:  # E.g. command not found
-                return None
+            proc = subprocess.Popen(("/usr/ccs/bin/dump", "-Lpv", f),
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.DEVNULL,
+                                    # E.g. ignore command not found
+                                    exec_raise=False)
             with proc:
                 data = proc.stdout.read()
             res = re.search(br'\[.*\]\sSONAME\s+([^\s]+)', data)
@@ -177,12 +175,11 @@ elif os.name == "posix":
                 # objdump is not available, give up
                 return None
 
-            try:
-                proc = subprocess.Popen((objdump, '-p', '-j', '.dynamic', f),
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.DEVNULL)
-            except OSError:  # E.g. bad executable
-                return None
+            proc = subprocess.Popen((objdump, '-p', '-j', '.dynamic', f),
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.DEVNULL,
+                                    # E.g. ignore bad executable
+                                    exec_raise=False)
             with proc:
                 dump = proc.stdout.read()
             res = re.search(br'\sSONAME\s+([^\s]+)', dump)
@@ -208,15 +205,13 @@ elif os.name == "posix":
             expr = r':-l%s\.\S+ => \S*/(lib%s\.\S+)' % (ename, ename)
             expr = os.fsencode(expr)
 
-            try:
-                proc = subprocess.Popen(('/sbin/ldconfig', '-r'),
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.DEVNULL)
-            except OSError:  # E.g. command not found
-                data = b''
-            else:
-                with proc:
-                    data = proc.stdout.read()
+            proc = subprocess.Popen(('/sbin/ldconfig', '-r'),
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.DEVNULL,
+                                    # E.g. ignore command not found
+                                    exec_raise=False)
+            with proc:
+                data = proc.stdout.read()
 
             res = re.findall(expr, data)
             if not res:
@@ -239,13 +234,12 @@ elif os.name == "posix":
                 args = ('/usr/bin/crle',)
 
             paths = None
-            try:
-                proc = subprocess.Popen(args,
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.DEVNULL,
-                                        env=env)
-            except OSError:  # E.g. bad executable
-                return None
+            proc = subprocess.Popen(args,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.DEVNULL,
+                                    env=env,
+                                    # E.g. ignore bad executable
+                                    exec_raise=False)
             with proc:
                 for line in proc.stdout:
                     line = line.strip()
@@ -285,17 +279,15 @@ elif os.name == "posix":
             # XXX assuming GLIBC's ldconfig (with option -p)
             regex = r'\s+(lib%s\.[^\s]+)\s+\(%s'
             regex = os.fsencode(regex % (re.escape(name), abi_type))
-            try:
-                with subprocess.Popen(['/sbin/ldconfig', '-p'],
-                                      stdin=subprocess.DEVNULL,
-                                      stderr=subprocess.DEVNULL,
-                                      stdout=subprocess.PIPE,
-                                      env={'LC_ALL': 'C', 'LANG': 'C'}) as p:
-                    res = re.search(regex, p.stdout.read())
-                    if res:
-                        return os.fsdecode(res.group(1))
-            except OSError:
-                pass
+            with subprocess.Popen(['/sbin/ldconfig', '-p'],
+                                  stdin=subprocess.DEVNULL,
+                                  stderr=subprocess.DEVNULL,
+                                  stdout=subprocess.PIPE,
+                                  env={'LC_ALL': 'C', 'LANG': 'C'},
+                                  exec_raise=False) as p:
+                res = re.search(regex, p.stdout.read())
+                if res:
+                    return os.fsdecode(res.group(1))
 
         def _findLib_ld(name):
             # See issue #9998 for why this is needed
@@ -306,23 +298,21 @@ elif os.name == "posix":
                 for d in libpath.split(':'):
                     cmd.extend(['-L', d])
             cmd.extend(['-o', os.devnull, '-l%s' % name])
-            result = None
-            try:
-                p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                     stderr=subprocess.PIPE,
-                                     universal_newlines=True)
-                out, _ = p.communicate()
-                res = re.findall(expr, os.fsdecode(out))
-                for file in res:
-                    # Check if the given file is an elf file: gcc can report
-                    # some files that are linker scripts and not actual
-                    # shared objects. See bpo-41976 for more details
-                    if not _is_elf(file):
-                        continue
-                    return os.fsdecode(file)
-            except Exception:
-                pass  # result will be None
-            return result
+
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE,
+                                 text=True,
+                                 exec_raise=False)
+            out, _ = p.communicate()
+            res = re.findall(expr, os.fsdecode(out))
+            for file in res:
+                # Check if the given file is an elf file: gcc can report
+                # some files that are linker scripts and not actual
+                # shared objects. See bpo-41976 for more details
+                if not _is_elf(file):
+                    continue
+                return os.fsdecode(file)
+            return None
 
         def find_library(name):
             # See issue #9998
