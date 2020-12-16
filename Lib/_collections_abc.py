@@ -434,7 +434,7 @@ class _CallableGenericAlias(GenericAlias):
             raise TypeError(
                 "Callable must be used as Callable[[arg, ...], result].")
         t_args, t_result = args
-        if isinstance(t_args, list):
+        if isinstance(t_args, (list, tuple)):
             ga_args = tuple(t_args) + (t_result,)
         # This relaxes what t_args can be on purpose to allow things like
         # PEP 612 ParamSpec.  Responsibility for whether a user is using
@@ -445,7 +445,7 @@ class _CallableGenericAlias(GenericAlias):
 
     def __repr__(self):
         if len(self.__args__) == 2 and (self.__args__[0] is Ellipsis
-                                        or _is_typing(self.__args__[0])):
+                                        or _concat_or_paramspec(self.__args__[0])):
             return super().__repr__()
         return (f'collections.abc.Callable'
                 f'[[{", ".join([_type_repr(a) for a in self.__args__[:-1]])}], '
@@ -453,7 +453,8 @@ class _CallableGenericAlias(GenericAlias):
 
     def __reduce__(self):
         args = self.__args__
-        if not (len(args) == 2 and (args[0] is Ellipsis or _is_typing(args[0]))):
+        if not (len(args) == 2 and (args[0] is Ellipsis
+                                    or _concat_or_paramspec(args[0]))):
             args = list(args[:-1]), args[-1]
         return _CallableGenericAlias, (Callable, args)
 
@@ -463,22 +464,21 @@ class _CallableGenericAlias(GenericAlias):
         #    C1[[int, str], str] == Callable[[int, str], str]
         # Where P is a PEP 612 ParamSpec.
         ga = super().__getitem__(item)
-        new_args = []
-        # flatten args
-        if isinstance(ga.__args__[0], tuple):
-            new_args.extend(ga.__args__[0])
-            new_args.extend(ga.__args__[1:])
-        else:
-            new_args = ga.__args__
-        return GenericAlias(Callable, tuple(new_args))
+        args = ga.__args__
+        if not isinstance(ga.__args__[0], tuple):
+            t_result = ga.__args__[-1]
+            t_args = ga.__args__[:-1]
+            args = (t_args, t_result)
+        return _CallableGenericAlias(Callable, args)
 
 
-def _is_typing(obj):
-    """Checks if obj is from typing.py"""
-    if isinstance(obj, type):
-        return obj.__module__ == 'typing'
-    return type(obj).__module__ == 'typing'
+def _is_typing_names(obj, names):
+    """Checks if obj matches one of the names in *names* in typing.py"""
+    obj = type(obj)
+    return obj.__module__ == 'typing' and any(obj.__name__ == name for name in names)
 
+def _concat_or_paramspec(obj):
+    return _is_typing_names(obj, ('ParamSpec', '_ConcatenateGenericAlias'))
 
 def _type_repr(obj):
     """Return the repr() of an object, special-casing types (internal helper).
