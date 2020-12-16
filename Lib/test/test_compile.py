@@ -728,10 +728,10 @@ if 1:
 
         for func in funcs:
             opcodes = list(dis.get_instructions(func))
-            self.assertEqual(2, len(opcodes))
-            self.assertEqual('LOAD_CONST', opcodes[0].opname)
-            self.assertEqual(None, opcodes[0].argval)
-            self.assertEqual('RETURN_VALUE', opcodes[1].opname)
+            self.assertLessEqual(len(opcodes), 3)
+            self.assertEqual('LOAD_CONST', opcodes[-2].opname)
+            self.assertEqual(None, opcodes[-2].argval)
+            self.assertEqual('RETURN_VALUE', opcodes[-1].opname)
 
     def test_false_while_loop(self):
         def break_in_while():
@@ -836,6 +836,34 @@ if 1:
         dict_size = 0xFFFF + 1
         the_dict = "{" + ",".join(f"{x}:{x}" for x in range(dict_size)) + "}"
         self.assertEqual(len(eval(the_dict)), dict_size)
+
+    def test_redundant_jump_in_if_else_break(self):
+        # Check if bytecode containing jumps that simply point to the next line
+        # is generated around if-else-break style structures. See bpo-42615.
+
+        def if_else_break():
+            val = 1
+            while True:
+                if val > 0:
+                    val -= 1
+                else:
+                    break
+                val = -1
+
+        INSTR_SIZE = 2
+        HANDLED_JUMPS = (
+            'POP_JUMP_IF_FALSE',
+            'POP_JUMP_IF_TRUE',
+            'JUMP_ABSOLUTE',
+            'JUMP_FORWARD',
+        )
+
+        for line, instr in enumerate(dis.Bytecode(if_else_break)):
+            if instr.opname == 'JUMP_FORWARD':
+                self.assertNotEqual(instr.arg, 0)
+            elif instr.opname in HANDLED_JUMPS:
+                self.assertNotEqual(instr.arg, (line + 1)*INSTR_SIZE)
+
 
 class TestExpressionStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object
