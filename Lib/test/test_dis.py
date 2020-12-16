@@ -366,16 +366,12 @@ dis_tryfinally = """\
 %3d           6 LOAD_FAST                1 (b)
               8 CALL_FUNCTION            0
              10 POP_TOP
-
-%3d          12 RETURN_VALUE
-
-%3d     >>   14 LOAD_FAST                1 (b)
+             12 RETURN_VALUE
+        >>   14 LOAD_FAST                1 (b)
              16 CALL_FUNCTION            0
              18 POP_TOP
              20 RERAISE
 """ % (_tryfinally.__code__.co_firstlineno + 1,
-       _tryfinally.__code__.co_firstlineno + 2,
-       _tryfinally.__code__.co_firstlineno + 4,
        _tryfinally.__code__.co_firstlineno + 2,
        _tryfinally.__code__.co_firstlineno + 4,
        )
@@ -388,17 +384,13 @@ dis_tryfinallyconst = """\
 %3d           4 LOAD_FAST                0 (b)
               6 CALL_FUNCTION            0
               8 POP_TOP
-
-%3d          10 LOAD_CONST               1 (1)
+             10 LOAD_CONST               1 (1)
              12 RETURN_VALUE
-
-%3d     >>   14 LOAD_FAST                0 (b)
+        >>   14 LOAD_FAST                0 (b)
              16 CALL_FUNCTION            0
              18 POP_TOP
              20 RERAISE
 """ % (_tryfinallyconst.__code__.co_firstlineno + 1,
-       _tryfinallyconst.__code__.co_firstlineno + 2,
-       _tryfinallyconst.__code__.co_firstlineno + 4,
        _tryfinallyconst.__code__.co_firstlineno + 2,
        _tryfinallyconst.__code__.co_firstlineno + 4,
        )
