@@ -123,7 +123,7 @@ validate_arguments(struct validator *state, arguments_ty args)
 }
 
 static int
-validate_constant(PyObject *value)
+validate_constant(struct validator *state, PyObject *value)
 {
     if (value == Py_None || value == Py_Ellipsis)
         return 1;
@@ -137,9 +137,13 @@ validate_constant(PyObject *value)
         return 1;
 
     if (PyTuple_CheckExact(value) || PyFrozenSet_CheckExact(value)) {
-        PyObject *it;
+        if (++state->recursion_depth > state->recursion_limit) {
+            PyErr_SetString(PyExc_RecursionError,
+                            "maximum recursion depth exceeded during compilation");
+            return 0;
+        }
 
-        it = PyObject_GetIter(value);
+        PyObject *it = PyObject_GetIter(value);
         if (it == NULL)
             return 0;
 
@@ -153,7 +157,7 @@ validate_constant(PyObject *value)
                 break;
             }
 
-            if (!validate_constant(item)) {
+            if (!validate_constant(state, item)) {
                 Py_DECREF(it);
                 Py_DECREF(item);
                 return 0;
@@ -162,6 +166,7 @@ validate_constant(PyObject *value)
         }
 
         Py_DECREF(it);
+        ++state->recursion_depth;
         return 1;
     }
 
@@ -306,7 +311,7 @@ validate_expr(struct validator *state, expr_ty exp, expr_context_ty ctx)
             validate_keywords(state, exp->v.Call.keywords);
         break;
     case Constant_kind:
-        if (!validate_constant(exp->v.Constant.value)) {
+        if (!validate_constant(state, exp->v.Constant.value)) {
             return 0;
         }
         ret = 1;
