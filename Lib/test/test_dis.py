@@ -1220,5 +1220,12 @@ class BytecodeTests(unittest.TestCase):
         b = dis.Bytecode.from_traceback(tb)
         self.assertEqual(b.dis(), dis_traceback)
 
+    def test_findlabels(self):
+        self.assertEqual(
+            dis.findlabels(jumpy.__code__), [
+                44, 30, 8, 52, 94, 82, 102, 200, 118, 144, 142, 188, 172, 178, 210
+            ])
+
+
 if __name__ == "__main__":
     unittest.main()
