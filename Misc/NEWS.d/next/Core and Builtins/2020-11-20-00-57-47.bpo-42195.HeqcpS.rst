@@ -6,6 +6,6 @@ for :class:`collections.abc.Callable` are now flattened while
 ``collections.abc.Callable``'s ``__class_getitem__`` will now return a subclass
 of ``types.GenericAlias``.  Tests for typing were also updated to not subclass 
 things like ``Callable[..., T]`` as that is not a valid base class.  Finally,
-both ``Callable``s no longer validate their ``argtypes``, in 
+both ``Callable``\ s no longer validate their ``argtypes``, in 
 ``Callable[[argtypes], resulttype]`` to prepare for :pep:`612`.  Patch by Ken Jin.  
 
