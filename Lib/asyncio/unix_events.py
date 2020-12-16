@@ -1226,13 +1226,15 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
 
     def close(self):
         self._callbacks.clear()
-        if self._saved_sighandler is not None:
-            handler = signal.getsignal(signal.SIGCHLD)
-            if handler != self._sig_chld:
-                logger.warning("SIGCHLD handler was changed by outside code")
-            else:
-                signal.signal(signal.SIGCHLD, self._saved_sighandler)
-            self._saved_sighandler = None
+        if self._saved_sighandler is None:
+            return
+
+        handler = signal.getsignal(signal.SIGCHLD)
+        if handler != self._sig_chld:
+            logger.warning("SIGCHLD handler was changed by outside code")
+        else:
+            signal.signal(signal.SIGCHLD, self._saved_sighandler)
+        self._saved_sighandler = None
 
     def __enter__(self):
         return self
@@ -1259,15 +1261,17 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
         # The reason to do it here is that attach_loop() is called from
         # unix policy only for the main thread.
         # Main thread is required for subscription on SIGCHLD signal
-        if self._saved_sighandler is None:
-            self._saved_sighandler = signal.signal(signal.SIGCHLD, self._sig_chld)
-            if self._saved_sighandler is None:
-                logger.warning("Previous SIGCHLD handler was set by non-Python code, "
-                               "restore to default handler on watcher close.")
-                self._saved_sighandler = signal.SIG_DFL
+        if self._saved_sighandler is not None:
+            return
 
-            # Set SA_RESTART to limit EINTR occurrences.
-            signal.siginterrupt(signal.SIGCHLD, False)
+        self._saved_sighandler = signal.signal(signal.SIGCHLD, self._sig_chld)
+        if self._saved_sighandler is None:
+            logger.warning("Previous SIGCHLD handler was set by non-Python code, "
+                           "restore to default handler on watcher close.")
+            self._saved_sighandler = signal.SIG_DFL
+
+        # Set SA_RESTART to limit EINTR occurrences.
+        signal.siginterrupt(signal.SIGCHLD, False)
 
     def _do_waitpid_all(self):
         for pid in list(self._callbacks):
