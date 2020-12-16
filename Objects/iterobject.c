@@ -501,7 +501,7 @@ asynccalliter_reduce(asynccalliterobject *it, PyObject *Py_UNUSED(ignored))
             it->it_callable, it->it_sentinel);
     else
         return Py_BuildValue(
-            "N(())",
+            "N(...)", // FIXME: need to construct with an empty *async* iterable
             _PyEval_GetBuiltinId(&PyId_iter)  // TODO: not this
         );
 }
