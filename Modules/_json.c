@@ -1699,7 +1699,7 @@ encoder_traverse(PyEncoderObject *self, visitproc visit, void *arg)
     Py_VISIT(self->defaultfn);
     Py_VISIT(self->encoder);
     Py_VISIT(self->indent);
-    Py_VISIT(s->encode_float);
+    Py_VISIT(self->encode_float);
     Py_VISIT(self->key_separator);
     Py_VISIT(self->item_separator);
     return 0;
@@ -1713,7 +1713,7 @@ encoder_clear(PyEncoderObject *self)
     Py_CLEAR(self->defaultfn);
     Py_CLEAR(self->encoder);
     Py_CLEAR(self->indent);
-    Py_CLEAR(s->encode_float);
+    Py_CLEAR(self->encode_float);
     Py_CLEAR(self->key_separator);
     Py_CLEAR(self->item_separator);
     return 0;
