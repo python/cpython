@@ -1,0 +1,21 @@
+﻿  blocksort.c
+  bzlib.c
+C:\cpython\externals\bzip2-1.0.6\bzlib.c(997,40): warning C4267: '=': conversion from 'size_t' to 'Int32', possible loss of data
+C:\cpython\externals\bzip2-1.0.6\bzlib.c(1056,43): warning C4267: '=': conversion from 'size_t' to 'Int32', possible loss of data
+C:\cpython\externals\bzip2-1.0.6\bzlib.c(1191,50): warning C4267: '=': conversion from 'size_t' to 'Int32', possible loss of data
+C:\cpython\externals\bzip2-1.0.6\bzlib.c(1417,10): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\cpython\externals\bzip2-1.0.6\bzlib.c(1418,10): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\cpython\externals\bzip2-1.0.6\bzlib.c(1423,9): warning C4996: 'setmode': The POSIX name for this item is deprecated. Instead, use the ISO C and C++ conformant name: _setmode. See online help for details.
+C:\cpython\externals\bzip2-1.0.6\bzlib.c(1425,14): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\cpython\externals\bzip2-1.0.6\bzlib.c(1431,12): warning C4996: 'fdopen': The POSIX name for this item is deprecated. Instead, use the ISO C and C++ conformant name: _fdopen. See online help for details.
+  compress.c
+C:\cpython\externals\bzip2-1.0.6\compress.c(205,33): warning C4244: '=': conversion from '__int64' to 'Int32', possible loss of data
+  crctable.c
+  decompress.c
+  huffman.c
+  randtable.c
+  Generating Code...
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Microsoft\VC\v160\Microsoft.CppBuild.targets(1341,5): warning MSB8012: TargetPath(C:\cpython\externals\bzip2-1.0.6\x64\Release\libbz2.dll) does not match the Linker's OutputFile property value (C:\cpython\externals\bzip2-1.0.6\libbz2.dll). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Link.OutputFile).
+.\libbz2.def(2): warning LNK4017: DESCRIPTION statement not supported for the target platform; ignored
+     Creating library .\Release\libbz2.lib and object .\Release\libbz2.exp
+  libbz2.vcxproj -> C:\cpython\externals\bzip2-1.0.6\x64\Release\libbz2.dll
