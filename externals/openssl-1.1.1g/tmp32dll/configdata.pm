@@ -1,4 +1,4 @@
-#! C:\Perl64\bin\perl.exe
+#! C:\Perlx64\perl\bin\perl.exe
 
 package configdata;
 
@@ -21,13 +21,13 @@ our %config = (
   CPPFLAGS => [  ],
   CPPINCLUDES => [  ],
   CXXFLAGS => [  ],
-  HASHBANGPERL => "C:\\Perl64\\bin\\perl.exe",
+  HASHBANGPERL => "C:\\Perlx64\\perl\\bin\\perl.exe",
   LD => "link",
   LDFLAGS => [ "/nologo /debug" ],
   LDLIBS => [  ],
   MT => "mt",
   MTFLAGS => [ "-nologo" ],
-  PERL => "C:\\Perl64\\bin\\perl.exe",
+  PERL => "C:\\Perlx64\\perl\\bin\\perl.exe",
   RANLIB => "ranlib",
   RC => "rc",
   RCFLAGS => [  ],
@@ -42,7 +42,7 @@ our %config = (
   build_type => "release",
   builddir => ".",
   cflags => [  ],
-  conf_files => [ "C:\\CPython\\externals\\openssl-1.1.1g\\Configurations\\00-base-templates.conf", "C:\\CPython\\externals\\openssl-1.1.1g\\Configurations\\10-main.conf" ],
+  conf_files => [ "C:\\cpython\\externals\\openssl-1.1.1g\\Configurations\\00-base-templates.conf", "C:\\cpython\\externals\\openssl-1.1.1g\\Configurations\\10-main.conf" ],
   cppflags => [  ],
   cxxflags => [  ],
   defines => [ "NDEBUG" ],
@@ -65,8 +65,8 @@ our %config = (
   openssldir => "",
   options => " no-afalgeng no-asan no-asm no-buildtest-c++ no-crypto-mdebug no-crypto-mdebug-backtrace no-devcryptoeng no-ec_nistp_64_gcc_128 no-egd no-external-tests no-fuzz-afl no-fuzz-libfuzzer no-heartbeats no-md2 no-msan no-rc5 no-sctp no-ssl-trace no-ssl3 no-ssl3-method no-ubsan no-unit-test no-weak-ssl-ciphers no-zlib no-zlib-dynamic",
   perl_archname => "MSWin32-x64-multi-thread",
-  perl_cmd => "C:\\Perl64\\bin\\perl.exe",
-  perl_version => "5.28.1",
+  perl_cmd => "C:\\Perlx64\\perl\\bin\\perl.exe",
+  perl_version => "5.32.0",
   perlargv => [ "VC-WIN32", "no-asm" ],
   perlenv => {
       "AR" => undef,
@@ -90,7 +90,7 @@ our %config = (
       "MT" => undef,
       "MTFLAGS" => undef,
       "OPENSSL_LOCAL_CONFIG_DIR" => undef,
-      "PERL" => "C:\\Perl64\\bin\\perl.exe",
+      "PERL" => "C:\\Perlx64\\perl\\bin\\perl.exe",
       "RANLIB" => undef,
       "RC" => undef,
       "RCFLAGS" => undef,
@@ -115,8 +115,8 @@ our %config = (
   sourcedir => "..",
   target => "VC-WIN32",
   tdirs => [ "ossl_shim" ],
-  version => "1.1.1h",
-  version_num => "0x1010108fL",
+  version => "1.1.1i",
+  version_num => "0x1010109fL",
 );
 
 our %target = (
@@ -132,9 +132,9 @@ our %target = (
   LDFLAGS => "/nologo /debug",
   MT => "mt",
   MTFLAGS => "-nologo",
-  RANLIB => "CODE(0x289b070)",
+  RANLIB => "CODE(0x2603658)",
   RC => "rc",
-  _conf_fname_int => [ "C:\\CPython\\externals\\openssl-1.1.1g\\Configurations\\00-base-templates.conf", "C:\\CPython\\externals\\openssl-1.1.1g\\Configurations\\00-base-templates.conf", "C:\\CPython\\externals\\openssl-1.1.1g\\Configurations\\10-main.conf", "C:\\CPython\\externals\\openssl-1.1.1g\\Configurations\\10-main.conf", "C:\\CPython\\externals\\openssl-1.1.1g\\Configurations\\00-base-templates.conf", "C:\\CPython\\externals\\openssl-1.1.1g\\Configurations\\10-main.conf", "C:\\CPython\\externals\\openssl-1.1.1g\\Configurations\\shared-info.pl" ],
+  _conf_fname_int => [ "C:\\cpython\\externals\\openssl-1.1.1g\\Configurations\\00-base-templates.conf", "C:\\cpython\\externals\\openssl-1.1.1g\\Configurations\\00-base-templates.conf", "C:\\cpython\\externals\\openssl-1.1.1g\\Configurations\\10-main.conf", "C:\\cpython\\externals\\openssl-1.1.1g\\Configurations\\10-main.conf", "C:\\cpython\\externals\\openssl-1.1.1g\\Configurations\\00-base-templates.conf", "C:\\cpython\\externals\\openssl-1.1.1g\\Configurations\\10-main.conf", "C:\\cpython\\externals\\openssl-1.1.1g\\Configurations\\shared-info.pl" ],
   aes_asm_src => "aes_core.c aes_cbc.c",
   aes_obj => "aes_core.o aes_cbc.o",
   apps_aux_src => "win32_init.c",
@@ -376,6 +376,34 @@ our %unified_info = (
                     "include\\crypto\\dso_conf.h",
                     "include\\openssl\\opensslconf.h",
                 ],
+            "..\\apps\\progs.h" =>
+                [
+                    "configdata.pm",
+                ],
+            "..\\crypto\\buildinf.h" =>
+                [
+                    "configdata.pm",
+                ],
+            "..\\include\\crypto\\bn_conf.h" =>
+                [
+                    "configdata.pm",
+                ],
+            "..\\include\\crypto\\dso_conf.h" =>
+                [
+                    "configdata.pm",
+                ],
+            "..\\include\\openssl\\opensslconf.h" =>
+                [
+                    "configdata.pm",
+                ],
+            "..\\libcrypto.def" =>
+                [
+                    "..\\util\\libcrypto.num",
+                ],
+            "..\\libssl.def" =>
+                [
+                    "..\\util\\libssl.num",
+                ],
             "apps\\asn1pars.o" =>
                 [
                     "apps\\progs.h",
@@ -497,10 +525,6 @@ our %unified_info = (
                 [
                     "apps\\progs.h",
                 ],
-            "apps\\progs.h" =>
-                [
-                    "configdata.pm",
-                ],
             "apps\\rand.o" =>
                 [
                     "apps\\progs.h",
@@ -609,10 +633,6 @@ our %unified_info = (
             "crypto\\bn\\x86-mont.s" =>
                 [
                     "..\\crypto\\perlasm\\x86asm.pl",
-                ],
-            "crypto\\buildinf.h" =>
-                [
-                    "configdata.pm",
                 ],
             "crypto\\camellia\\cmll-x86.s" =>
                 [
@@ -732,29 +752,9 @@ our %unified_info = (
                 [
                     "libcrypto",
                 ],
-            "include\\crypto\\bn_conf.h" =>
-                [
-                    "configdata.pm",
-                ],
-            "include\\crypto\\dso_conf.h" =>
-                [
-                    "configdata.pm",
-                ],
-            "include\\openssl\\opensslconf.h" =>
-                [
-                    "configdata.pm",
-                ],
-            "libcrypto.def" =>
-                [
-                    "..\\util\\libcrypto.num",
-                ],
             "libssl" =>
                 [
                     "libcrypto",
-                ],
-            "libssl.def" =>
-                [
-                    "..\\util\\libssl.num",
                 ],
             "test\\aborttest" =>
                 [
@@ -3194,9 +3194,9 @@ our %unified_info = (
                 {
                     "deps" =>
                         [
+                            "ms\\applink.o",
+                            "ms\\applink.o",
                             "ms\\uplink.o",
-                            "ms\\applink.o",
-                            "ms\\applink.o",
                         ],
                     "products" =>
                         {
@@ -3215,6 +3215,8 @@ our %unified_info = (
                 {
                     "deps" =>
                         [
+                            "ssl\\packet.o",
+                            "ssl\\tls13_enc.o",
                             "ssl\\bio_ssl.o",
                             "ssl\\d1_lib.o",
                             "ssl\\d1_msg.o",
@@ -3244,8 +3246,6 @@ our %unified_info = (
                             "ssl\\t1_trce.o",
                             "ssl\\tls13_enc.o",
                             "ssl\\tls_srp.o",
-                            "ssl\\packet.o",
-                            "ssl\\tls13_enc.o",
                         ],
                     "products" =>
                         {
@@ -4625,6 +4625,26 @@ our %unified_info = (
         },
     "includes" =>
         {
+            "..\\apps\\progs.h" =>
+                [
+                    ".",
+                ],
+            "..\\crypto\\buildinf.h" =>
+                [
+                    ".",
+                ],
+            "..\\include\\crypto\\bn_conf.h" =>
+                [
+                    ".",
+                ],
+            "..\\include\\crypto\\dso_conf.h" =>
+                [
+                    ".",
+                ],
+            "..\\include\\openssl\\opensslconf.h" =>
+                [
+                    ".",
+                ],
             "apps\\app_rand.o" =>
                 [
                     ".",
@@ -4884,10 +4904,6 @@ our %unified_info = (
                     "apps",
                     "..",
                     "..\\include",
-                ],
-            "apps\\progs.h" =>
-                [
-                    ".",
                 ],
             "apps\\rand.o" =>
                 [
@@ -6158,10 +6174,6 @@ our %unified_info = (
                     "include",
                     "..",
                     "..\\include",
-                ],
-            "crypto\\buildinf.h" =>
-                [
-                    ".",
                 ],
             "crypto\\camellia\\camellia.o" =>
                 [
@@ -9926,26 +9938,14 @@ our %unified_info = (
                     "include",
                     "..\\include",
                 ],
-            "include\\crypto\\bn_conf.h" =>
-                [
-                    ".",
-                ],
-            "include\\crypto\\dso_conf.h" =>
-                [
-                    ".",
-                ],
-            "include\\openssl\\opensslconf.h" =>
-                [
-                    ".",
-                ],
             "ms\\applink.o" =>
                 [
+                    "apps",
                     ".",
                     "include",
-                    "apps",
+                    "..\\apps",
                     "..",
                     "..\\include",
-                    "..\\apps",
                 ],
             "ms\\uplink.o" =>
                 [

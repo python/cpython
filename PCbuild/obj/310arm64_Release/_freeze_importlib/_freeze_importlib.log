@@ -1,6 +1,1 @@
-﻿  _freeze_importlib.c
-  Generating code
-  Finished generating code
-  _freeze_importlib.vcxproj -> C:\cpython\PCbuild\arm64\_freeze_importlib.exe
-  This version of C:\cpython\PCbuild\arm64\_freeze_importlib.exe is not compatible with the version of Windows you're running. Check your computer's system information and then contact the software publisher.
-C:\cpython\PCbuild\_freeze_importlib.vcxproj(131,5): error MSB3073: The command ""C:\cpython\PCbuild\arm64\_freeze_importlib.exe" "importlib._bootstrap" "C:\cpython\Lib\importlib\_bootstrap.py" "C:\cpython\PCbuild\obj\310arm64_Release\_freeze_importlib\importlib.g.h"" exited with code 216.
+﻿

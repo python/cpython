@@ -1,0 +1,4 @@
+﻿  _tkinter.c
+C:\cpython\Modules\_tkinter.c(45,10): fatal error C1083: Cannot open include file: 'tcl.h': No such file or directory
+  tkappinit.c
+C:\cpython\Modules\tkappinit.c(16,10): fatal error C1083: Cannot open include file: 'tcl.h': No such file or directory

@@ -4,7 +4,7 @@
 @rem rebuild.
 @rem This is only meant as a convenience for developing CPython
 @rem and using it outside of that context is ill-advised.
-@echo Running Release^|ARM64 interpreter...
+@echo Running Release^|x64 interpreter...
 @setlocal
 @set PYTHONHOME=C:\cpython\
 

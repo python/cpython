@@ -1,0 +1,5 @@
+﻿  _testinternalcapi.c
+     Creating library C:\cpython\PCbuild\arm32\_testinternalcapi.lib and object C:\cpython\PCbuild\arm32\_testinternalcapi.exp
+  Generating code
+  Finished generating code
+  _testinternalcapi.vcxproj -> C:\cpython\PCbuild\arm32\_testinternalcapi.pyd

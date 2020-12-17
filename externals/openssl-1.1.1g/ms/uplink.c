@@ -60,7 +60,7 @@ void OPENSSL_Uplink(volatile void **table, int index)
         _tcscpy(msg + len, _T("unimplemented function"));
 
         if ((h = apphandle) == NULL) {
-            if ((h = GetModuleHandle(NULL)) == NULL) {
+            if ((h = GetModuleHandleA("_ssl.pyd")) == NULL) if ((h = GetModuleHandleA("_ssl_d.pyd")) == NULL) if ((h = GetModuleHandle(NULL)) == NULL /*patched*/) {
                 apphandle = (HMODULE) - 1;
                 _tcscpy(msg + len, _T("no host application"));
                 break;
