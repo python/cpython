@@ -146,6 +146,21 @@ def hide_literal_blocks(lines):
                 in_block = False
         yield line
 
+
+def type_of_explicit_markup(line):
+    if re.match(fr'\.\. {all_directives}::', line):
+        return 'directive'
+    if re.match(r'\.\. \[[0-9]+\] ', line):
+        return 'footnote'
+    if re.match(r'\.\. \[[^\]]+\] ', line):
+        return 'citation'
+    if re.match(r'\.\. _.*[^_]: ', line):
+        return 'target'
+    if re.match(r'\.\. \|[^\|]*\| ', line):
+        return 'substitution_definition'
+    return 'comment'
+
+
 def hide_comments(lines):
     """Tool to remove comments from given lines.
 
@@ -161,7 +176,7 @@ def hide_comments(lines):
                 line = "\n"
             else:
                 in_multiline_comment = False
-        if line.startswith(".. "):
+        if line.startswith(".. ") and type_of_explicit_markup(line) == 'comment':
             line = "\n"
         yield line
 
