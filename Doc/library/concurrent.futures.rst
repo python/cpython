@@ -67,7 +67,7 @@ Executor Objects
        .. versionchanged:: 3.5
           Added the *chunksize* argument.
 
-    .. method:: shutdown(wait=True, \*, cancel_futures=False)
+    .. method:: shutdown(wait=True, *, cancel_futures=False)
 
        Signal the executor that it should free any resources that it is using
        when the currently pending futures are done executing.  Calls to
