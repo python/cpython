@@ -33,7 +33,6 @@ extern "C" {
 #define GET_LEN                  30
 #define MATCH_MAPPING            31
 #define MATCH_SEQUENCE           32
-#define RERAISE                  48
 #define WITH_EXCEPT_START        49
 #define GET_AITER                50
 #define GET_ANEXT                51
@@ -99,6 +98,7 @@ extern "C" {
 #define LOAD_GLOBAL             116
 #define IS_OP                   117
 #define CONTAINS_OP             118
+#define RERAISE                 119
 #define JUMP_IF_NOT_EXC_MATCH   121
 #define SETUP_FINALLY           122
 #define LOAD_FAST               124
