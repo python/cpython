@@ -622,7 +622,8 @@ PyTraceBack_Print(PyObject *v, PyObject *f)
     return err;
 }
 
-/* Reverse a string. For example, "abcd" becomes "dcba".
+/* Format an integer in range [0; 0xffffffff] to decimal and write it
+   into the file fd.
 
    This function is signal safe. */
 
