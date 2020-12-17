@@ -460,9 +460,9 @@ class _CallableGenericAlias(GenericAlias):
 
     def __getitem__(self, item):
         # To allow the following::
+        #    P = ParamSpec('P)
         #    C1 = Callable[P, T]
         #    C1[[int, str], str] == Callable[[int, str], str]
-        # Where P is a PEP 612 ParamSpec.
         ga = super().__getitem__(item)
         args = ga.__args__
         if not isinstance(ga.__args__[0], tuple):

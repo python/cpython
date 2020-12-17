@@ -347,7 +347,7 @@ ga_getitem(PyObject *self, PyObject *item)
     Py_ssize_t nitems = is_tuple ? PyTuple_GET_SIZE(item) : 1;
     PyObject **argitems = is_tuple ? &PyTuple_GET_ITEM(item, 0) : &item;
     // A special case in PEP 612 where if X = Callable[P, int], 
-    // then X[int, str] == X[[int, str], int].
+    // then X[int, str] == X[[int, str]].
     if (nparams == 1 && nitems > 1 && is_tuple &&
         is_paramspec(PyTuple_GET_ITEM(alias->parameters, 0))) {
         argitems = &item;
@@ -383,8 +383,8 @@ ga_getitem(PyObject *self, PyObject *item)
             Py_ssize_t iparam = tuple_index(alias->parameters, nparams, arg);
             assert(iparam >= 0);
             arg = argitems[iparam];
-            // convert all the lists inside args to tuples to help
-            // with caching in other libaries if substituting a ParamSpec
+            // If substituting a ParamSpec, convert lists to tuples to help
+            // with caching in other libaries.
             if (PyList_CheckExact(arg) && paramspec) {
                 arg = PyList_AsTuple(arg);
             }
