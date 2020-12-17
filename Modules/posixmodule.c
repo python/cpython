@@ -7118,22 +7118,21 @@ error:
 #  define DEV_PTY_FILE "/dev/ptmx"
 #endif
 
-#if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_DEV_PTMX)
-#ifdef HAVE_PTY_H
+#if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_LOGIN_TTY) || defined(HAVE_DEV_PTMX)
+#if defined(HAVE_PTY_H)
 #include <pty.h>
-#else
-#ifdef HAVE_LIBUTIL_H
+#if defined(HAVE_UTMP_H)
+#include <utmp.h>
+#endif /* HAVE_UTMP_H */
+#elif defined(HAVE_LIBUTIL_H)
 #include <libutil.h>
-#else
-#ifdef HAVE_UTIL_H
+#elif defined(HAVE_UTIL_H)
 #include <util.h>
-#endif /* HAVE_UTIL_H */
-#endif /* HAVE_LIBUTIL_H */
 #endif /* HAVE_PTY_H */
 #ifdef HAVE_STROPTS_H
 #include <stropts.h>
 #endif
-#endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_DEV_PTMX) */
+#endif /* if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_LOGIN_TTY) || defined(HAVE_DEV_PTMX) */
 
 
 #if defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX)
@@ -7235,6 +7234,84 @@ error:
 }
 #endif /* defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX) */
 
+#if defined(HAVE_SETSID)
+#if defined(TIOCSCTTY) || defined(HAVE_TTYNAME)
+#define HAVE_FALLBACK_LOGIN_TTY 1
+#endif /* defined(TIOCSCTTY) || defined(HAVE_TTYNAME) */
+#endif /* HAVE_SETSID */
+
+#if defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY)
+/*[clinic input]
+os.login_tty
+
+    fd: fildes
+    /
+
+Prepare the tty of which fd is a file descriptor for a new login session.
+
+Make the calling process a session leader; make the tty the
+controlling tty, the stdin, the stdout, and the stderr of the
+calling process; close fd.
+[clinic start generated code]*/
+
+static PyObject *
+os_login_tty_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=495a79911b4cc1bc input=5f298565099903a2]*/
+{
+#if defined(HAVE_LOGIN_TTY)
+    if (login_tty(fd) == -1) {
+        return posix_error();
+    }
+#else /* defined(HAVE_FALLBACK_LOGIN_TTY) */
+    /* Establish a new session. */
+    if (setsid() == -1) {
+        return posix_error();
+    }
+
+    /* The tty becomes the controlling terminal. */
+#if defined(TIOCSCTTY)
+    if (ioctl(fd, TIOCSCTTY, (char *)NULL) == -1) {
+        return posix_error();
+    }
+#else /* defined(HAVE_TTYNAME) */
+    /* Fallback method (archaic); from Advanced Programming in the UNIX(R)
+     * Environment, Third edition, 2013, Section 9.6 - Controlling Terminal:
+     * "Systems derived from UNIX System V allocate the controlling
+     * terminal for a session when the session leader opens the first
+     * terminal device that is not already associated with a session, as
+     * long as the call to open does not specify the O_NOCTTY flag." */
+    char *tmppath = ttyname(fd);
+    if (tmppath == NULL) {
+        return posix_error();
+    }
+
+#define CLOSE_IF_NOT_FD(otherfd) \
+    if (fd != otherfd) { \
+        close(otherfd); \
+    } \
+
+    CLOSE_IF_NOT_FD(0);
+    CLOSE_IF_NOT_FD(1);
+    CLOSE_IF_NOT_FD(2);
+
+    int tmpfd = open(tmppath, O_RDWR);
+    if (tmpfd == -1) {
+        return posix_error();
+    }
+    close(tmpfd);
+#endif /* defined(TIOCSCTTY) */
+
+    /* The tty becomes stdin/stdout/stderr */
+    if (dup2(fd, 0) == -1 || dup2(fd, 1) == -1 || dup2(fd, 2) == -1) {
+        return posix_error();
+    }
+    if (fd > 2) {
+        close(fd);
+    }
+#endif /* defined(HAVE_LOGIN_TTY) */
+    Py_RETURN_NONE;
+}
+#endif /* defined(HAVE_LOGIN_TTY) || defined(HAVE_FALLBACK_LOGIN_TTY) */
 
 #ifdef HAVE_FORKPTY
 /*[clinic input]
@@ -7271,8 +7348,9 @@ os_forkpty_impl(PyObject *module)
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
     }
-    if (pid == -1)
+    if (pid == -1) {
         return posix_error();
+    }
     return Py_BuildValue("(Ni)", PyLong_FromPid(pid), master_fd);
 }
 #endif /* HAVE_FORKPTY */
@@ -7613,7 +7691,7 @@ os_initgroups_impl(PyObject *module, PyObject *oname, gid_t gid)
     const char *username = PyBytes_AS_STRING(oname);
 
     if (initgroups(username, gid) == -1)
-        return PyErr_SetFromErrno(PyExc_OSError);
+        return posix_error();
 
     Py_RETURN_NONE;
 }
@@ -14652,6 +14730,7 @@ static PyMethodDef posix_methods[] = {
     OS_SCHED_GETAFFINITY_METHODDEF
     OS_OPENPTY_METHODDEF
     OS_FORKPTY_METHODDEF
+    OS_LOGIN_TTY_METHODDEF
     OS_GETEGID_METHODDEF
     OS_GETEUID_METHODDEF
     OS_GETGID_METHODDEF

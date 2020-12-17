@@ -990,6 +990,17 @@ as internal buffering of data.
    .. versionadded:: 3.3
 
 
+.. function:: login_tty(fd)
+
+   Prepare the tty of which fd is a file descriptor for a new login session.
+   Make the calling process a session leader; make the tty the controlling tty,
+   the stdin, the stdout, and the stderr of the calling process; close fd.
+
+   .. availability:: Unix.
+
+   .. versionadded:: 3.10
+
+
 .. function:: lseek(fd, pos, how)
 
    Set the current position of file descriptor *fd* to position *pos*, modified

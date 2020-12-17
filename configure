@@ -8041,7 +8041,7 @@ sys/audioio.h sys/xattr.h sys/bsdtty.h sys/event.h sys/file.h sys/ioctl.h \
 sys/kern_control.h sys/loadavg.h sys/lock.h sys/mkdev.h sys/modem.h \
 sys/param.h sys/random.h sys/select.h sys/sendfile.h sys/socket.h sys/statvfs.h \
 sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
-sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
+sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h utmp.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
 sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h \
@@ -12735,7 +12735,7 @@ $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-# check for openpty and forkpty
+# check for openpty, login_tty, and forkpty
 
 for ac_func in openpty
 do :
@@ -12824,6 +12824,103 @@ fi
 $as_echo "$ac_cv_lib_bsd_openpty" >&6; }
 if test "x$ac_cv_lib_bsd_openpty" = xyes; then :
   $as_echo "#define HAVE_OPENPTY 1" >>confdefs.h
+ LIBS="$LIBS -lbsd"
+fi
+
+
+fi
+
+
+fi
+done
+
+for ac_func in login_tty
+do :
+  ac_fn_c_check_func "$LINENO" "login_tty" "ac_cv_func_login_tty"
+if test "x$ac_cv_func_login_tty" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LOGIN_TTY 1
+_ACEOF
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for login_tty in -lutil" >&5
+$as_echo_n "checking for login_tty in -lutil... " >&6; }
+if ${ac_cv_lib_util_login_tty+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lutil  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char login_tty ();
+int
+main ()
+{
+return login_tty ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_util_login_tty=yes
+else
+  ac_cv_lib_util_login_tty=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_util_login_tty" >&5
+$as_echo "$ac_cv_lib_util_login_tty" >&6; }
+if test "x$ac_cv_lib_util_login_tty" = xyes; then :
+  $as_echo "#define HAVE_LOGIN_TTY 1" >>confdefs.h
+ LIBS="$LIBS -lutil"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for login_tty in -lbsd" >&5
+$as_echo_n "checking for login_tty in -lbsd... " >&6; }
+if ${ac_cv_lib_bsd_login_tty+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lbsd  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char login_tty ();
+int
+main ()
+{
+return login_tty ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_bsd_login_tty=yes
+else
+  ac_cv_lib_bsd_login_tty=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_bsd_login_tty" >&5
+$as_echo "$ac_cv_lib_bsd_login_tty" >&6; }
+if test "x$ac_cv_lib_bsd_login_tty" = xyes; then :
+  $as_echo "#define HAVE_LOGIN_TTY 1" >>confdefs.h
  LIBS="$LIBS -lbsd"
 fi
 
