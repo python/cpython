@@ -559,14 +559,23 @@ PyModule_GetState(PyObject* m)
 void
 _PyModule_Clear(PyObject *m)
 {
-    PyObject *d = ((PyModuleObject *)m)->md_dict;
-    if (d != NULL)
-        _PyModule_ClearDict(d);
+    PyModuleObject *module = (PyModuleObject *)m;
+    _PyModule_ClearDict(module->md_name, module->md_dict);
 }
 
 void
-_PyModule_ClearDict(PyObject *d)
+_PyModule_ClearDict(PyObject *module_name, PyObject *dict)
 {
+    int verbose = _Py_GetConfig()->verbose;
+    if (verbose) {
+        PySys_FormatStderr("# cleanup[3] wiping %S module\n", module_name);
+    }
+
+    // If the module has no dict: there is nothing to do.
+    if (dict == NULL) {
+        return;
+    }
+
     /* To make the execution order of destructors for global
        objects a bit more predictable, we first zap all objects
        whose name starts with a single underscore, before we clear
@@ -574,50 +583,64 @@ _PyModule_ClearDict(PyObject *d)
        None, rather than deleting them from the dictionary, to
        avoid rehashing the dictionary (to some extent). */
 
-    Py_ssize_t pos;
-    PyObject *key, *value;
+    for (int step=1; step <= 2; step++) {
+        PyObject *reversed = PyObject_CallOneArg((PyObject*)&PyReversed_Type, dict);
+        if (reversed == NULL) {
+            PyErr_WriteUnraisable(NULL);
+            return;
+        }
+        PyObject *keys = PyObject_CallOneArg((PyObject*)&PyList_Type, reversed);
+        Py_DECREF(reversed);
+        if (keys == NULL) {
+            PyErr_WriteUnraisable(NULL);
+            return;
+        }
+        PyObject *iter = PyObject_GetIter(keys);
+        Py_DECREF(keys);
+        if (iter == NULL) {
+            PyErr_WriteUnraisable(NULL);
+            return;
+        }
 
-    int verbose = _Py_GetConfig()->verbose;
+        /* First, clear only names starting with a single underscore */
+        PyObject *key;
+        while ((key = PyIter_Next(iter))) {
+            assert(!PyErr_Occurred());
+            PyObject *value = PyObject_GetItem(dict, key);
+            Py_XDECREF(value);  // only the value pointer is useful
+            if (value == Py_None) {
+                continue;
+            }
+            if (value == NULL) {
+                // ignore error
+                PyErr_Clear();
+            }
 
-    /* First, clear only names starting with a single underscore */
-    pos = 0;
-    while (PyDict_Next(d, &pos, &key, &value)) {
-        if (value != Py_None && PyUnicode_Check(key)) {
-            if (PyUnicode_READ_CHAR(key, 0) == '_' &&
-                PyUnicode_READ_CHAR(key, 1) != '_') {
-                if (verbose > 1) {
-                    const char *s = PyUnicode_AsUTF8(key);
-                    if (s != NULL)
-                        PySys_WriteStderr("#   clear[1] %s\n", s);
-                    else
-                        PyErr_Clear();
+            if (PyUnicode_Check(key)) {
+                if (step == 1) {
+                    if (PyUnicode_READ_CHAR(key, 0) != '_' ||
+                        PyUnicode_READ_CHAR(key, 1) == '_') {
+                        continue;
+                    }
                 }
-                if (PyDict_SetItem(d, key, Py_None) != 0) {
-                    PyErr_WriteUnraisable(NULL);
+                else {
+                    /* Step 2: clear all names except for __builtins__ */
+                    if (_PyUnicode_EqualToASCIIString(key, "__builtins__")) {
+                        continue;
+                    }
                 }
             }
-        }
-    }
-
-    /* Next, clear all names except for __builtins__ */
-    pos = 0;
-    while (PyDict_Next(d, &pos, &key, &value)) {
-        if (value != Py_None && PyUnicode_Check(key)) {
-            if (PyUnicode_READ_CHAR(key, 0) != '_' ||
-                !_PyUnicode_EqualToASCIIString(key, "__builtins__"))
-            {
-                if (verbose > 1) {
-                    const char *s = PyUnicode_AsUTF8(key);
-                    if (s != NULL)
-                        PySys_WriteStderr("#   clear[2] %s\n", s);
-                    else
-                        PyErr_Clear();
-                }
-                if (PyDict_SetItem(d, key, Py_None) != 0) {
-                    PyErr_WriteUnraisable(NULL);
-                }
+            if (verbose > 1) {
+                PySys_FormatStderr("#   clear[%i] %S.%S\n",
+                                   step, module_name, key);
             }
+            assert(!PyErr_Occurred());
+            if (PyDict_SetItem(dict, key, Py_None) != 0) {
+                PyErr_WriteUnraisable(NULL);
+            }
+            Py_DECREF(key);
         }
+        Py_DECREF(iter);
     }
 
     /* Note: we leave __builtins__ in place, so that destructors

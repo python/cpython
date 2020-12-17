@@ -901,8 +901,8 @@ class SysModuleTest(unittest.TestCase):
         self.assertIn(b'sys.flags', out[0])
         self.assertIn(b'sys.float_info', out[1])
 
-    def test_sys_ignores_cleaning_up_user_data(self):
-        code = """if 1:
+    def test_sys_cleaning_up_user_data(self):
+        code = textwrap.dedent("""
             import struct, sys
 
             class C:
@@ -912,11 +912,11 @@ class SysModuleTest(unittest.TestCase):
                     self.pack('I', -42)
 
             sys.x = C()
-            """
+        """)
         rc, stdout, stderr = assert_python_ok('-c', code)
         self.assertEqual(rc, 0)
         self.assertEqual(stdout.rstrip(), b"")
-        self.assertEqual(stderr.rstrip(), b"")
+        self.assertIn(b'Exception ignored in: <function C.__del__ at ', stderr)
 
     @unittest.skipUnless(hasattr(sys, 'getandroidapilevel'),
                          'need sys.getandroidapilevel()')

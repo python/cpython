@@ -615,18 +615,23 @@ class ThreadTests(BaseTestCase):
         code = """if 1:
             import gc, threading
 
-            main_thread = threading.current_thread()
-            assert main_thread is threading.main_thread()  # sanity check
-
             class RefCycle:
                 def __init__(self):
                     self.cycle = self
 
+                    self.current_thread = threading.current_thread
+                    self.main_thread = threading.main_thread
+                    self.enumerate = threading.enumerate
+
+                    self.thread = self.current_thread()
+                    assert self.thread is threading.main_thread()  # sanity check
+
+
                 def __del__(self):
                     print("GC:",
-                          threading.current_thread() is main_thread,
-                          threading.main_thread() is main_thread,
-                          threading.enumerate() == [main_thread])
+                          self.current_thread() is self.thread,
+                          self.main_thread() is self.thread,
+                          self.enumerate() == [self.thread])
 
             RefCycle()
             gc.collect()  # sanity check

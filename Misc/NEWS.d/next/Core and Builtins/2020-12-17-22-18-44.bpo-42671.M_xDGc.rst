@@ -1,0 +1,8 @@
+Make the Python finalization more deterministic:
+
+* First, clear the ``__main__`` module.
+* Then, clear modules from the most recently imported to the least
+  recently imported: ``reversed(sys.modules)``.
+* :mod:`builtins` and :mod:`sys` modules are always cleared last.
+* Module attributes are set to None from the most recently defined to the
+  least recently defined: ``reversed(module.__dict__)``.

@@ -1216,8 +1216,10 @@ _Py_InitializeMain(void)
 
 
 static void
-finalize_modules_delete_special(PyThreadState *tstate, int verbose)
+finalize_modules_delete_special(PyThreadState *tstate)
 {
+    int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
+
     // List of names to clear in sys
     static const char * const sys_deletes[] = {
         "path", "argv", "ps1", "ps2",
@@ -1272,75 +1274,99 @@ finalize_modules_delete_special(PyThreadState *tstate, int verbose)
 }
 
 
-static PyObject*
-finalize_remove_modules(PyObject *modules, int verbose)
+static void
+finalize_wipe_module(PyInterpreterState *interp, PyObject *mod, PyObject *name,
+                     int verbose)
 {
-    PyObject *weaklist = PyList_New(0);
-    if (weaklist == NULL) {
-        PyErr_WriteUnraisable(NULL);
+    assert(PyModule_Check(mod));
+    PyObject *dict = PyModule_GetDict(mod);
+    if (dict == interp->builtins || dict == interp->sysdict) {
+        return;
     }
 
-#define STORE_MODULE_WEAKREF(name, mod) \
-        if (weaklist != NULL) { \
-            PyObject *wr = PyWeakref_NewRef(mod, NULL); \
-            if (wr) { \
-                PyObject *tup = PyTuple_Pack(2, name, wr); \
-                if (!tup || PyList_Append(weaklist, tup) < 0) { \
-                    PyErr_WriteUnraisable(NULL); \
-                } \
-                Py_XDECREF(tup); \
-                Py_DECREF(wr); \
-            } \
-            else { \
-                PyErr_WriteUnraisable(NULL); \
-            } \
-        }
+    _PyModule_Clear(mod);
+}
+
+
+static void
+finalize_remove_modules(PyThreadState *tstate)
+{
+    PyInterpreterState *interp = tstate->interp;
+    int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
 
 #define CLEAR_MODULE(name, mod) \
+    do { \
         if (PyModule_Check(mod)) { \
             if (verbose && PyUnicode_Check(name)) { \
                 PySys_FormatStderr("# cleanup[2] removing %U\n", name); \
             } \
-            STORE_MODULE_WEAKREF(name, mod); \
-            if (PyObject_SetItem(modules, name, Py_None) < 0) { \
-                PyErr_WriteUnraisable(NULL); \
-            } \
-        }
+            finalize_wipe_module(interp, mod, name, verbose); \
+        } \
+        if (PyObject_SetItem(modules, name, Py_None) < 0) { \
+            PyErr_WriteUnraisable(NULL); \
+        } \
+    } while (0)
 
-    if (PyDict_CheckExact(modules)) {
-        Py_ssize_t pos = 0;
-        PyObject *key, *value;
-        while (PyDict_Next(modules, &pos, &key, &value)) {
-            CLEAR_MODULE(key, value);
-        }
-    }
-    else {
-        PyObject *iterator = PyObject_GetIter(modules);
-        if (iterator == NULL) {
-            PyErr_WriteUnraisable(NULL);
+    PyObject *modules = interp->modules;
+
+    // Wipe the __main__ module
+    PyObject *main_name = PyUnicode_FromString("__main__");
+    if (main_name != NULL) {
+        PyObject *main_mod = PyObject_GetItem(modules, main_name);
+        if (main_mod != NULL) {
+            CLEAR_MODULE(main_name, main_mod);
+            Py_DECREF(main_mod);
+
+            // Break reference cycles (if nay)
+            _PyGC_CollectNoFail(tstate);
         }
         else {
-            PyObject *key;
-            while ((key = PyIter_Next(iterator))) {
-                PyObject *value = PyObject_GetItem(modules, key);
-                if (value == NULL) {
-                    PyErr_WriteUnraisable(NULL);
-                    continue;
-                }
-                CLEAR_MODULE(key, value);
-                Py_DECREF(value);
-                Py_DECREF(key);
-            }
-            if (PyErr_Occurred()) {
-                PyErr_WriteUnraisable(NULL);
-            }
-            Py_DECREF(iterator);
+            PyErr_Clear();
         }
+        Py_DECREF(main_name);
     }
-#undef CLEAR_MODULE
-#undef STORE_MODULE_WEAKREF
+    else {
+        PyErr_Clear();
+    }
 
-    return weaklist;
+    PyObject *reversed = PyObject_CallOneArg((PyObject*)&PyReversed_Type, modules);
+    if (reversed == NULL) {
+        PyErr_WriteUnraisable(NULL);
+        return;
+    }
+    PyObject *keys = PyObject_CallOneArg((PyObject*)&PyList_Type, reversed);
+    Py_DECREF(reversed);
+    if (keys == NULL) {
+        PyErr_WriteUnraisable(NULL);
+        return;
+    }
+    PyObject *iter = PyObject_GetIter(keys);
+    Py_DECREF(keys);
+    if (iter == NULL) {
+        PyErr_WriteUnraisable(NULL);
+        return;
+    }
+
+    PyObject *name;
+    while ((name = PyIter_Next(iter))) {
+        PyObject *mod = PyObject_GetItem(modules, name);
+        if (mod == NULL) {
+            PyErr_WriteUnraisable(NULL);
+            continue;
+        }
+        PyObject *dict = PyModule_Check(mod) ? PyModule_GetDict(mod) : NULL;
+        // builtins and sys modules are cleared later
+        if (dict != interp->builtins && dict != interp->sysdict) {
+            CLEAR_MODULE(name, mod);
+        }
+        Py_DECREF(mod);
+        Py_DECREF(name);
+    }
+    if (PyErr_Occurred()) {
+        PyErr_WriteUnraisable(NULL);
+    }
+    Py_DECREF(iter);
+#undef CLEAR_MODULE
 }
 
 
@@ -1376,46 +1402,27 @@ finalize_restore_builtins(PyThreadState *tstate)
 
 
 static void
-finalize_modules_clear_weaklist(PyInterpreterState *interp,
-                                PyObject *weaklist, int verbose)
-{
-    // First clear modules imported later
-    for (Py_ssize_t i = PyList_GET_SIZE(weaklist) - 1; i >= 0; i--) {
-        PyObject *tup = PyList_GET_ITEM(weaklist, i);
-        PyObject *name = PyTuple_GET_ITEM(tup, 0);
-        PyObject *mod = PyWeakref_GET_OBJECT(PyTuple_GET_ITEM(tup, 1));
-        if (mod == Py_None) {
-            continue;
-        }
-        assert(PyModule_Check(mod));
-        PyObject *dict = PyModule_GetDict(mod);
-        if (dict == interp->builtins || dict == interp->sysdict) {
-            continue;
-        }
-        Py_INCREF(mod);
-        if (verbose && PyUnicode_Check(name)) {
-            PySys_FormatStderr("# cleanup[3] wiping %U\n", name);
-        }
-        _PyModule_Clear(mod);
-        Py_DECREF(mod);
-    }
-}
-
-
-static void
-finalize_clear_sys_builtins_dict(PyInterpreterState *interp, int verbose)
+finalize_clear_sys_builtins_dict(PyInterpreterState *interp)
 {
     // Clear sys dict
-    if (verbose) {
-        PySys_FormatStderr("# cleanup[3] wiping sys\n");
+    PyObject *name = PyUnicode_FromString("sys");
+    if (name != NULL) {
+        _PyModule_ClearDict(name, interp->sysdict);
+        Py_DECREF(name);
     }
-    _PyModule_ClearDict(interp->sysdict);
+    else {
+        PyErr_WriteUnraisable(NULL);
+    }
 
     // Clear builtins dict
-    if (verbose) {
-        PySys_FormatStderr("# cleanup[3] wiping builtins\n");
+    name = PyUnicode_FromString("builtins");
+    if (name != NULL) {
+        _PyModule_ClearDict(name, interp->builtins);
+        Py_DECREF(name);
     }
-    _PyModule_ClearDict(interp->builtins);
+    else {
+        PyErr_WriteUnraisable(NULL);
+    }
 }
 
 
@@ -1424,12 +1431,10 @@ static void
 finalize_modules(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
-    PyObject *modules = interp->modules;
-    if (modules == NULL) {
+    if (interp->modules == NULL) {
         // Already done
         return;
     }
-    int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
 
     // Delete some special builtins._ and sys attributes first.  These are
     // common places where user values hide and people complain when their
@@ -1438,19 +1443,29 @@ finalize_modules(PyThreadState *tstate)
     // destruction order.  Sigh.
     //
     // XXX Perhaps these precautions are obsolete. Who knows?
-    finalize_modules_delete_special(tstate, verbose);
+    finalize_modules_delete_special(tstate);
 
     // Remove all modules from sys.modules, hoping that garbage collection
     // can reclaim most of them: set all sys.modules values to None.
     //
-    // We prepare a list which will receive (name, weakref) tuples of
-    // modules when they are removed from sys.modules.  The name is used
-    // for diagnosis messages (in verbose mode), while the weakref helps
-    // detect those modules which have been held alive.
-    PyObject *weaklist = finalize_remove_modules(modules, verbose);
+    // * First, clear the __main__ module.
+    // * Then, clear modules from the most recently imported to the least
+    //   recently imported: reversed(sys.modules).
+    // * Exception: leave builtins and sys modules unchanged.
+    // * Module attributes are set to None from the most recently defined to the
+    //   least recently defined: reversed(module.__dict__).
+    //
+    // The special treatment of "builtins" here is because even
+    // when it's not referenced as a module, its dictionary is
+    // referenced by almost every module's __builtins__.  Since
+    // deleting a module clears its dictionary (even if there are
+    // references left to it), we need to delete the "builtins"
+    // module last.  Likewise, we don't delete sys until the very
+    // end because it is implicitly referenced (e.g. by print).
+    finalize_remove_modules(tstate);
 
     // Clear the modules dict
-    finalize_clear_modules_dict(modules);
+    finalize_clear_modules_dict(interp->modules);
 
     // Restore the original builtins dict, to ensure that any
     // user data gets cleared.
@@ -1463,27 +1478,8 @@ finalize_modules(PyThreadState *tstate)
     // machinery.
     _PyGC_DumpShutdownStats(tstate);
 
-    if (weaklist != NULL) {
-        // Now, if there are any modules left alive, clear their globals to
-        // minimize potential leaks.  All C extension modules actually end
-        // up here, since they are kept alive in the interpreter state.
-        //
-        // The special treatment of "builtins" here is because even
-        // when it's not referenced as a module, its dictionary is
-        // referenced by almost every module's __builtins__.  Since
-        // deleting a module clears its dictionary (even if there are
-        // references left to it), we need to delete the "builtins"
-        // module last.  Likewise, we don't delete sys until the very
-        // end because it is implicitly referenced (e.g. by print).
-        //
-        // Since dict is ordered in CPython 3.6+, modules are saved in
-        // importing order.  First clear modules imported later.
-        finalize_modules_clear_weaklist(interp, weaklist, verbose);
-        Py_DECREF(weaklist);
-    }
-
     // Clear sys and builtins modules dict
-    finalize_clear_sys_builtins_dict(interp, verbose);
+    finalize_clear_sys_builtins_dict(interp);
 
     // Clear module dict copies stored in the interpreter state:
     // clear PyInterpreterState.modules_by_index and
