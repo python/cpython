@@ -1,0 +1,4 @@
+
+    [distutils.setup_keywords]
+    use_incremental = incremental:_get_version
+    

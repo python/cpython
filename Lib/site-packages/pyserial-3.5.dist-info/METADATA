@@ -1,0 +1,47 @@
+Metadata-Version: 2.0
+Name: pyserial
+Version: 3.5
+Summary: Python Serial Port Extension
+Home-page: https://github.com/pyserial/pyserial
+Author: Chris Liechti
+Author-email: cliechti@gmx.net
+License: BSD
+Platform: any
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: End Users/Desktop
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Natural Language :: English
+Classifier: Operating System :: POSIX
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Topic :: Communications
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Terminals :: Serial
+Provides-Extra: cp2110
+Provides-Extra: cp2110
+Requires-Dist: hidapi; extra == 'cp2110'
+
+Python Serial Port Extension for Win32, OSX, Linux, BSD, Jython, IronPython
+
+Stable:
+
+- Documentation: http://pythonhosted.org/pyserial/
+- Download Page: https://pypi.python.org/pypi/pyserial
+
+Latest:
+
+- Documentation: http://pyserial.readthedocs.io/en/latest/
+- Project Homepage: https://github.com/pyserial/pyserial
+
+

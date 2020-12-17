@@ -1,0 +1,156 @@
+Metadata-Version: 2.1
+Name: filelock
+Version: 3.0.12
+Summary: A platform independent file lock.
+Home-page: https://github.com/benediktschmitt/py-filelock
+Author: Benedikt Schmitt
+Author-email: benedikt@benediktschmitt.de
+License: Public Domain <http://unlicense.org>
+Download-URL: https://github.com/benediktschmitt/py-filelock/archive/master.zip
+Platform: UNKNOWN
+Classifier: License :: Public Domain
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: System
+Classifier: Topic :: Internet
+Classifier: Topic :: Software Development :: Libraries
+Description-Content-Type: text/markdown
+
+# py-filelock
+
+![travis-ci](https://travis-ci.org/benediktschmitt/py-filelock.svg?branch=master)
+
+This package contains a single module, which implements a platform independent
+file lock in Python, which provides a simple way of inter-process communication:
+
+```Python
+from filelock import Timeout, FileLock
+
+lock = FileLock("high_ground.txt.lock")
+with lock:
+    open("high_ground.txt", "a").write("You were the chosen one.")        
+```
+
+**Don't use** a *FileLock* to lock the file you want to write to, instead create
+a separate *.lock* file as shown above.
+
+![animated example](https://raw.githubusercontent.com/benediktschmitt/py-filelock/master/example/example.gif)
+
+
+## Similar libraries
+
+Perhaps you are looking for something like
+
+*   https://pypi.python.org/pypi/pid/2.1.1
+*   https://docs.python.org/3.6/library/msvcrt.html#msvcrt.locking
+*   or https://docs.python.org/3/library/fcntl.html#fcntl.flock
+
+
+## Installation
+
+*py-filelock* is available via PyPi:
+
+```
+$ pip3 install filelock
+```
+
+
+## Documentation
+
+The documentation for the API is available on
+[readthedocs.org](https://filelock.readthedocs.io/).
+
+
+### Examples
+
+A *FileLock* is used to indicate another process of your application that a
+resource or working
+directory is currently used. To do so, create a *FileLock* first:
+
+```Python
+from filelock import Timeout, FileLock
+
+file_path = "high_ground.txt"
+lock_path = "high_ground.txt.lock"
+
+lock = FileLock(lock_path, timeout=1)
+```
+
+The lock object supports multiple ways for acquiring the lock, including the
+ones used to acquire standard Python thread locks:
+
+```Python
+with lock:
+    open(file_path, "a").write("Hello there!")
+
+lock.acquire()
+try:
+    open(file_path, "a").write("General Kenobi!")
+finally:
+    lock.release()
+```
+
+The *acquire()* method accepts also a *timeout* parameter. If the lock cannot be
+acquired within *timeout* seconds, a *Timeout* exception is raised:
+
+```Python
+try:
+    with lock.acquire(timeout=10):
+        open(file_path, "a").write("I have a bad feeling about this.")
+except Timeout:
+    print("Another instance of this application currently holds the lock.")
+```
+
+The lock objects are recursive locks, which means that once acquired, they will
+not block on successive lock requests:
+
+```Python
+def cite1():
+    with lock:
+        open(file_path, "a").write("I hate it when he does that.")
+
+def cite2():
+    with lock:
+        open(file_path, "a").write("You don't want to sell me death sticks.")
+
+# The lock is acquired here.
+with lock:
+    cite1()
+    cite2()
+
+# And released here.
+```
+
+
+## FileLock vs SoftFileLock
+
+The *FileLock* is platform dependent while the *SoftFileLock* is not. Use the
+*FileLock* if all instances of your application are running on the same host and
+a *SoftFileLock* otherwise.
+
+The *SoftFileLock* only watches the existence of the lock file. This makes it
+ultra portable, but also more prone to dead locks if the application crashes.
+You can simply delete the lock file in such cases.
+
+
+## Contributions
+
+Contributions are always welcome, please make sure they pass all tests before
+creating a pull request. Never hesitate to open a new issue, although it may
+take some time for me to respond.
+
+
+## License
+
+This package is [public domain](./LICENSE.rst).
+
+

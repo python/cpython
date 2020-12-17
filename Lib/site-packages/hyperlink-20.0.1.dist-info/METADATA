@@ -1,0 +1,37 @@
+Metadata-Version: 2.1
+Name: hyperlink
+Version: 20.0.1
+Summary: A featureful, immutable, and correct URL for Python.
+Home-page: https://github.com/python-hyper/hyperlink
+Author: Mahmoud Hashemi and Glyph Lefkowitz
+Author-email: mahmoud@hatnote.com
+License: MIT
+Platform: any
+Classifier: Topic :: Utilities
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: Implementation :: PyPy
+Classifier: License :: OSI Approved :: MIT License
+Requires-Python: >=2.6, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*
+Requires-Dist: idna (>=2.5)
+Requires-Dist: typing ; python_version < "3.5"
+
+The humble, but powerful, URL runs everything around us. Chances
+are you've used several just to read this text.
+
+Hyperlink is a featureful, pure-Python implementation of the URL, with
+an emphasis on correctness. MIT licensed.
+
+See the docs at http://hyperlink.readthedocs.io.
+
+

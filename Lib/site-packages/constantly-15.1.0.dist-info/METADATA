@@ -1,0 +1,39 @@
+Metadata-Version: 2.0
+Name: constantly
+Version: 15.1.0
+Summary: Symbolic constants in Python
+Home-page: https://github.com/twisted/constantly
+Author: Twisted Matrix Labs Developers
+Author-email: UNKNOWN
+License: MIT
+Keywords: constants,enum,twisted
+Platform: UNKNOWN
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3.3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Programming Language :: Python :: Implementation :: PyPy
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+
+Constantly
+==========
+
+A library that provides symbolic constant support.
+It includes collections and constants with text, numeric, and bit flag values.
+Originally ``twisted.python.constants`` from the `Twisted <https://twistedmatrix.com/>`_ project.
+
+
+Tests
+-----
+
+To run tests::
+
+    $ tox
+
+This will run tests on Python 2.7, 3.3, 3.4, and PyPy, as well as doing coverage and pyflakes checks.
+
+

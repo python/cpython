@@ -1,0 +1,15 @@
+setuptools
+
+[docs]
+Sphinx
+repoze.sphinx.autointerface
+
+[test]
+coverage>=5.0.3
+zope.event
+zope.testing
+
+[testing]
+coverage>=5.0.3
+zope.event
+zope.testing
