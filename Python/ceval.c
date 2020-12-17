@@ -2430,6 +2430,10 @@ main_loop:
         }
 
         case TARGET(RERAISE): {
+            assert(f->f_iblock > 0);
+            if (oparg) {
+                f->f_lasti = f->f_blockstack[f->f_iblock-1].b_handler;
+            }
             PyObject *exc = POP();
             PyObject *val = POP();
             PyObject *tb = POP();
@@ -4039,7 +4043,7 @@ exception_unwind:
                 int handler = b->b_handler;
                 _PyErr_StackItem *exc_info = tstate->exc_info;
                 /* Beware, this invalidates all b->b_* fields */
-                PyFrame_BlockSetup(f, EXCEPT_HANDLER, -1, STACK_LEVEL());
+                PyFrame_BlockSetup(f, EXCEPT_HANDLER, f->f_lasti, STACK_LEVEL());
                 PUSH(exc_info->exc_traceback);
                 PUSH(exc_info->exc_value);
                 if (exc_info->exc_type != NULL) {

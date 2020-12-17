@@ -708,7 +708,8 @@ iterations of the loop.
 
 .. opcode:: RERAISE
 
-    Re-raises the exception currently on top of the stack.
+    Re-raises the exception currently on top of the stack. If oparg is non-zero,
+    restores ``f_lasti`` of the current frame to its value when the exception was raised.
 
     .. versionadded:: 3.9
 

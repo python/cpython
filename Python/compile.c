@@ -2981,7 +2981,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     compiler_pop_fblock(c, FINALLY_END, end);
-    ADDOP(c, RERAISE);
+    ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, exit);
     return 1;
 }
@@ -3107,7 +3107,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
             compiler_nameop(c, handler->v.ExceptHandler.name, Del);
 
-            ADDOP(c, RERAISE);
+            ADDOP_I(c, RERAISE, 1);
         }
         else {
             basicblock *cleanup_body;
@@ -3129,7 +3129,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
         compiler_use_next_block(c, except);
     }
     compiler_pop_fblock(c, EXCEPTION_HANDLER, NULL);
-    ADDOP(c, RERAISE);
+    ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, orelse);
     VISIT_SEQ(c, stmt, s->v.Try.orelse);
     compiler_use_next_block(c, end);
@@ -4759,7 +4759,7 @@ compiler_with_except_finish(struct compiler *c) {
         return 0;
     ADDOP_JUMP(c, POP_JUMP_IF_TRUE, exit);
     NEXT_BLOCK(c);
-    ADDOP(c, RERAISE);
+    ADDOP_I(c, RERAISE, 1);
     compiler_use_next_block(c, exit);
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
